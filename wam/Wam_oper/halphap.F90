@@ -23,7 +23,7 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR       , FR5      ,DELTH
+      USE YOWFRED  , ONLY : FR       , TH       , FR5      ,DELTH
       USE YOWPARAM , ONLY : NANG     , NFRE
       USE YOWPCONS , ONLY : G        , ZPI      ,ZPI4GM2
       USE YOWPHYS  , ONLY : ALPHAPMAX
@@ -42,37 +42,52 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: HALP
 
-      INTEGER(KIND=JWIM) :: IJ, K
+      INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL(KIND=JWRB), PARAMETER :: RFM2FP = 0.9_JWRB   ! Ratio to convert mean frequency to peak frequency 
-      REAL(KIND=JWRB) :: F1D, FP
+      REAL(KIND=JWRB) :: F1D
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMSS, EM, FM 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: WD 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FLWD
 
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
-      CALL MEANSQS_LF(NFRE, IJS, IJL, FL1, XMSS)
-      CALL FEMEAN (FL1, IJS, IJL, EM, FM)
+      ! Find spectrum in wind direction
+      DO K = 1, NANG
+        DO IJ = IJS, IJL
+           WD(IJ,K) = 0.5_JWRB + 0.5_JWRB * SIGN(1.0_JWRB, COS(TH(K)-UDIR(IJ)) )
+        ENDDO
+      ENDDO
+
+      DO M = 1, NFRE
+        DO K = 1, NANG
+          DO IJ = IJS, IJL
+             FLWD(IJ,K,M) = FL1(IJ,K,M) * WD(IJ,K) 
+          ENDDO
+        ENDDO
+      ENDDO
+
+      CALL MEANSQS_LF(NFRE, IJS, IJL, FLWD, XMSS)
+      CALL FEMEAN (FLWD, IJS, IJL, EM, FM)
 
       DO IJ = IJS, IJL
         IF(EM(IJ) > 0.0_JWRB .AND. FM(IJ) < FR(NFRE-2) ) THEN
-          FP = RFM2FP * FM(IJ)
-          ALPHAP(IJ) = XMSS(IJ) /LOG(FR(NFRE)/FP)
+          ALPHAP(IJ) = XMSS(IJ) /LOG(FR(NFRE)/FM(IJ))
           IF ( ALPHAP(IJ) > ALPHAPMAX ) THEN
             ! some odd cases, revert to tail value
             F1D = 0.0_JWRB
             DO K = 1, NANG
-              F1D = F1D + FL1(IJ,K,NFRE)*DELTH
+              F1D = F1D + FLWD(IJ,K,NFRE)*DELTH
             ENDDO
             ALPHAP(IJ) = ZPI4GM2*FR5(NFRE)*F1D
           ENDIF
         ELSE
           F1D = 0.0_JWRB
           DO K = 1, NANG
-            F1D = F1D + FL1(IJ,K,NFRE)*DELTH
+            F1D = F1D + FLWD(IJ,K,NFRE)*DELTH
           ENDDO
           ALPHAP(IJ) = ZPI4GM2*FR5(NFRE)*F1D
         ENDIF
