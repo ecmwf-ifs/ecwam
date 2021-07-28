@@ -44,7 +44,8 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
 
       INTEGER(KIND=JWIM) :: IJ, K
 
-      REAL(KIND=JWRB) :: F1D
+      REAL(KIND=JWRB), PARAMETER :: RFM2FP = 0.9_JWRB   ! Ratio to convert mean frequency to peak frequency 
+      REAL(KIND=JWRB) :: F1D, FP
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMSS, EM, FM 
@@ -58,7 +59,8 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
       DO IJ = IJS, IJL
         IF(EM(IJ) > 0.0_JWRB .AND. FM(IJ) < FR(NFRE-2) ) THEN
-          ALPHAP(IJ) = XMSS(IJ) /LOG(FR(NFRE)/FM(IJ))
+          FP = RFM2FP * FM(IJ)
+          ALPHAP(IJ) = XMSS(IJ) /LOG(FR(NFRE)/FP)
           IF ( ALPHAP(IJ) > ALPHAPMAX ) THEN
             ! some odd cases, revert to tail value
             F1D = 0.0_JWRB
