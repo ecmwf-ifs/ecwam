@@ -1,4 +1,4 @@
-SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
+SUBROUTINE HALPHAP(IJS, IJL, UDIR, FL1, HALP)
 
 ! ----------------------------------------------------------------------
 
@@ -12,7 +12,6 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
 !          *UDIR* - WIND SPEED DIRECTION
-!          *USTAR* - FRICTION VELOCITY
 !          *FL1*  - SPECTRA
 !          *HALP*   - 1/2 PHILLIPS PARAMETER 
 
@@ -36,15 +35,13 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
 #include "meansqs_lf.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-!!! debile: it it works remove use of ustar and udir
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: UDIR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: HALP
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL(KIND=JWRB) :: F1D
+      REAL(KIND=JWRB) :: ZLNFRNFRE, F1D
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMSS, EM, FM 
@@ -54,6 +51,8 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
+
+      ZLNFRNFRE = LOG(FR(NFRE))
 
       ! Find spectrum in wind direction
       DO K = 1, NANG
@@ -75,7 +74,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
       DO IJ = IJS, IJL
         IF(EM(IJ) > 0.0_JWRB .AND. FM(IJ) < FR(NFRE-2) ) THEN
-          ALPHAP(IJ) = XMSS(IJ) /LOG(FR(NFRE)/FM(IJ))
+          ALPHAP(IJ) = XMSS(IJ) /(ZLNFRNFRE - LOG(FM(IJ)))
           IF ( ALPHAP(IJ) > ALPHAPMAX ) THEN
             ! some odd cases, revert to tail value
             F1D = 0.0_JWRB
