@@ -1,4 +1,4 @@
-      SUBROUTINE DOMINANT_PERIOD (F, IJS, IJL, DP)
+      SUBROUTINE DOMINANT_PERIOD (GFL, IJL, IJL, KIJL, KIJL, DP)
 
 ! ----------------------------------------------------------------------
 
@@ -12,11 +12,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *DOMINANT_PERIOD (F, IJS, IJL, DP)*
-!              *F*   - 2D-SPECTRUM.
-!              *IJS* - INDEX OF FIRST GRIDPOINT
-!              *IJL* - INDEX OF LAST GRIDPOINT
-!              *DP*  - DOMINANT PERIOD
+!       *CALL* *DOMINANT_PERIOD (GFL, IJL, IJL, KIJL, KIJL, DP)*
+!              *GFL*     - 2D-SPECTRUM.
+!              *IJS:IJL* - 1st DIMEMSION of GFL
+!              *KIJL*    - INDEX OF FIRST GRIDPOINT
+!              *KIJL*    - INDEX OF LAST GRIDPOINT
+!              *DP*      - DOMINANT PERIOD
 
 !     METHOD.
 !     -------
@@ -45,16 +46,19 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: DP
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJL, KIJL
+
+      REAL(KIND=JWRB), DIMENSION(IJL:IJL,NANG,NFRE), INTENT(IN) :: GFL 
+
+      REAL(KIND=JWRB), DIMENSION(KIJL:KIJL), INTENT(OUT) :: DP
+
 
       REAL(KIND=JWRB), PARAMETER :: FLTHRS = 0.1_JWRB
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP, EM, FCROP
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: F1D4
+      REAL(KIND=JWRB), DIMENSION(KIJL:KIJL) :: TEMP, EM, FCROP
+      REAL(KIND=JWRB), DIMENSION(KIJL:KIJL,NFRE) :: F1D4
 
 ! ----------------------------------------------------------------------
 
@@ -67,9 +71,9 @@
 
       DO M=1,NFRE
         DO K=1,NANG
-          DO IJ=IJS,IJL
-            IF( F(IJ,K,M) > FCROP(IJ) ) THEN
-               FCROP(IJ) = F(IJ,K,M)
+          DO IJ=KIJL,KIJL
+            IF( GFL(IJ,K,M) > FCROP(IJ) ) THEN
+               FCROP(IJ) = GFL(IJ,K,M)
             ENDIF
           ENDDO
         ENDDO
@@ -78,22 +82,22 @@
 
       DO M=1,NFRE
         DO K=1,NANG
-          DO IJ=IJS,IJL
-            IF(F(IJ,K,M) > FCROP(IJ)) F1D4(IJ,M) = F1D4(IJ,M)+F(IJ,K,M)*DELTH
+          DO IJ=KIJL,KIJL
+            IF(GFL(IJ,K,M) > FCROP(IJ)) F1D4(IJ,M) = F1D4(IJ,M)+GFL(IJ,K,M)*DELTH
           ENDDO
         ENDDO
       ENDDO
 
       DO M=1,NFRE
-        DO IJ=IJS,IJL
+        DO IJ=KIJL,KIJL
           F1D4(IJ,M) = F1D4(IJ,M)**4
           EM(IJ) = EM(IJ)+DFIM(M)*F1D4(IJ,M)
           DP(IJ) = DP(IJ)+DFIMFR(M)*F1D4(IJ,M)
         ENDDO
       ENDDO
 
-      DO IJ=IJS,IJL
-        IF(EM(IJ).GT.0.0_JWRB .AND. DP(IJ).GT.EPSMIN ) THEN
+      DO IJ=KIJL,KIJL
+        IF(EM(IJ) > 0.0_JWRB .AND. DP(IJ).GT.EPSMIN ) THEN
           DP(IJ) = EM(IJ)/DP(IJ)
         ELSE
           DP(IJ) = 0.0_JWRB 

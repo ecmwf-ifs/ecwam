@@ -1,5 +1,5 @@
-       SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USTAR, Z0,         &
-     &                      F, THWNEW, ROAIRN, RNFAC,                   &
+       SUBROUTINE TAU_PHI_HF(IJS, IJL, KIJS, KIJL, LTAUWSHELTER, USTAR, Z0, &
+     &                      GFL, THWNEW, ROAIRN, RNFAC,                     &
      &                      UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
@@ -18,23 +18,23 @@
 !**   INTERFACE.
 !     ---------
 
-!       *CALL* *TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USTAR, UST, Z0,
-!                          F, THWNEW, ROAIRN, RNFAC, &
+!       *CALL* *TAU_PHI_HF(IJS, IJL, KIJS, KIJL, LTAUWSHELTER, USTAR, UST, Z0,
+!                          GFL, THWNEW, ROAIRN, RNFAC, &
 !                          UST, TAUHF, PHIHF, LLPHIHF)
-!          *IJS* - INDEX OF FIRST GRIDPOINT
-!          *IJL* - INDEX OF LAST GRIDPOINT
+!          *IJS:IJL       - 1st DIMENSION OF GFL
+!          *KIJS*         - INDEX OF FIRST GRIDPOINT
+!          *KIJL*         - INDEX OF LAST GRIDPOINT
 !          *LTAUWSHELTER* - if true then TAUWSHELTER 
-!          *F*           - WAVE SPECTRUM.
-!          *THWNEW*      - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
-!          *ROAIRN*      - AIR DENSITY IN KG/M**3.
-!          *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
-!          *USTAR* FRICTION VELOCITY
-!          *UST*   REDUCED FRICTION VELOCITY DUE TO SHELTERING
-!          *Z0*    ROUGHNESS LENGTH 
-!          *TAUHF* HIGH-FREQUENCY STRESS
-!          *PHIHF* HIGH-FREQUENCY ENERGY FLUX INTO OCEAN
-!          *LLPHIHF* TRUE IF PHIHF NEEDS TO COMPUTED
-
+!          *GFL*          - WAVE SPECTRUM.
+!          *THWNEW*       - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
+!          *ROAIRN*       - AIR DENSITY IN KG/M**3.
+!          *RNFAC*        - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
+!          *USTAR*        - FRICTION VELOCITY
+!          *UST*          - REDUCED FRICTION VELOCITY DUE TO SHELTERING
+!          *Z0*           - ROUGHNESS LENGTH 
+!          *TAUHF*        - HIGH-FREQUENCY STRESS
+!          *PHIHF*        - HIGH-FREQUENCY ENERGY FLUX INTO OCEAN
+!          *LLPHIHF*      - TRUE IF PHIHF NEEDS TO COMPUTED
 
 
 !     METHOD.
@@ -62,22 +62,25 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G      , GM1       ,ZPI    , ZPI4GM1,  ZPI4GM2
       USE YOWPHYS  , ONLY : ZALP   , XKAPPA    ,TAUWSHELTER, GAMNCONST
-      USE YOMHOOK  , ONLY : LHOOK  , DR_HOOK
       USE YOWTEST  , ONLY : IU06
+
+      USE YOMHOOK  , ONLY : LHOOK  , DR_HOOK
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
 #include "omegagc.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
       LOGICAL, INTENT(IN) :: LTAUWSHELTER
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR, Z0
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, RNFAC
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USTAR, Z0
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, ROAIRN, RNFAC
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: UST
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: TAUHF, PHIHF
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: UST
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: TAUHF, PHIHF
       LOGICAL, INTENT(IN) :: LLPHIHF
 
       INTEGER(KIND=JWIM) :: NS
@@ -93,12 +96,12 @@
       REAL(KIND=JWRB) :: ZN1, ZN2, GAMCFR5
       REAL(KIND=JWRB) :: COSW, FCOSW2 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SQRTZ0OG, ZSUP, ZINF, DELZ
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUL, XLOGGZ0, SQRTGZ0
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USTPH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CONST1, CONST2, CONSTTAU, CONSTPHI
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1DCOS2, F1DCOS3 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1D, F1DSIN2 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SQRTZ0OG, ZSUP, ZINF, DELZ
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TAUL, XLOGGZ0, SQRTGZ0
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: USTPH
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CONST1, CONST2, CONSTTAU, CONSTPHI
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: F1DCOS2, F1DCOS3 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: F1D, F1DSIN2 
 
 ! ----------------------------------------------------------------------
 
@@ -112,7 +115,7 @@
 !*    COMPUTE THE INTEGRALS 
 !     ---------------------
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         XLOGGZ0(IJ) = LOG(G*Z0(IJ))
         OMEGACC = MAX(ZPIFR(NFRE), X0G/UST(IJ))
         SQRTZ0OG(IJ)  = SQRT(Z0(IJ)*GM1)
@@ -121,30 +124,30 @@
         ZINF(IJ) = LOG(YC)
       ENDDO
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         CONSTTAU(IJ) = ZPI4GM2*FR5(NFRE)
       ENDDO
 
       K=1
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-        FCOSW2   = F(IJ,K,NFRE)*COSW**2
+        FCOSW2   = GFL(IJ,K,NFRE)*COSW**2
         F1DCOS3(IJ) = FCOSW2*COSW
         F1DCOS2(IJ) = FCOSW2
-        F1DSIN2(IJ) = F(IJ,K,NFRE)*SIN(TH(K)-THWNEW(IJ))**2
-        F1D(IJ) = F(IJ,K,NFRE)
+        F1DSIN2(IJ) = GFL(IJ,K,NFRE)*SIN(TH(K)-THWNEW(IJ))**2
+        F1D(IJ) = GFL(IJ,K,NFRE)
       ENDDO
       DO K=2,NANG
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-          FCOSW2   = F(IJ,K,NFRE)*COSW**2
+          FCOSW2   = GFL(IJ,K,NFRE)*COSW**2
           F1DCOS3(IJ) = F1DCOS3(IJ) + FCOSW2*COSW
           F1DCOS2(IJ) = F1DCOS2(IJ) + FCOSW2 
-          F1DSIN2(IJ) = F1DSIN2(IJ) + F(IJ,K,NFRE)*SIN(TH(K)-THWNEW(IJ))**2
-          F1D(IJ) = F1D(IJ) + F(IJ,K,NFRE)
+          F1DSIN2(IJ) = F1DSIN2(IJ) + GFL(IJ,K,NFRE)*SIN(TH(K)-THWNEW(IJ))**2
+          F1D(IJ) = F1D(IJ) + GFL(IJ,K,NFRE)
         ENDDO
       ENDDO
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         F1DCOS3(IJ) = DELTH*F1DCOS3(IJ)
         F1DCOS2(IJ) = DELTH*F1DCOS2(IJ)
         F1DSIN2(IJ) = DELTH*F1DSIN2(IJ)
@@ -153,7 +156,7 @@
 
       IF(LLNORMAGAM) THEN
         GAMCFR5 = GAMNCONST*FR5(NFRE)
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           CONST1(IJ) = GAMCFR5*RNFAC(IJ)*F1DSIN2(IJ)*SQRTGZ0(IJ)
           CONST2(IJ) = GAMCFR5*RNFAC(IJ)*F1D(IJ)*SQRTGZ0(IJ)
         ENDDO
@@ -165,7 +168,7 @@
 
 !     TAUHF :
       IF(LLGCBZ0) THEN
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           CALL OMEGAGC(USTAR(IJ), NS, XKS, OMS)
           ZSUP(IJ) = MIN(LOG(OMS*SQRTZ0OG(IJ)),ZSUPMAX)
         ENDDO
@@ -173,7 +176,7 @@
         ZSUP(:) = ZSUPMAX
       ENDIF
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         TAUL(IJ) = UST(IJ)**2
         DELZ(IJ) = MAX((ZSUP(IJ)-ZINF(IJ))/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
         TAUHF(IJ) = 0.0_JWRB
@@ -181,7 +184,7 @@
 
      ! Intergrals are integrated following a change of variable : Z=LOG(Y)
       IF( LTAUWSHELTER ) THEN
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           DO J=1,JTOT_TAUHF
             Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
             OMEGA     = Y*SQRTGZ0(IJ)
@@ -202,7 +205,7 @@
           ENDDO
         ENDDO
       ELSE
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           DO J=1,JTOT_TAUHF
             Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
             OMEGA     = Y*SQRTGZ0(IJ)
@@ -228,19 +231,19 @@
 !     PHIHF:
 !     We are neglecting the gravity-capillary contribution 
 !     Recompute DELZ over the full interval
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         TAUL(IJ) = USTPH(IJ)**2
         ZSUP(IJ) = ZSUPMAX
         DELZ(IJ) = MAX((ZSUP(IJ)-ZINF(IJ))/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
       ENDDO
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         CONSTPHI(IJ) = ROAIRN(IJ)*ZPI4GM1*FR5(NFRE)
       ENDDO
 
      ! Intergrals are integrated following a change of variable : Z=LOG(Y)
       IF( LTAUWSHELTER ) THEN
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           DO J=1,JTOT_TAUHF
             Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
             OMEGA     = Y*SQRTGZ0(IJ)
@@ -261,7 +264,7 @@
           PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*PHIHF(IJ)
         ENDDO
       ELSE
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           DO J=1,JTOT_TAUHF
             Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
             OMEGA     = Y*SQRTGZ0(IJ)

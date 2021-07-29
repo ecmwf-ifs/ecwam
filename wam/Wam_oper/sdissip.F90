@@ -52,7 +52,8 @@
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : IPHYS
-      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE

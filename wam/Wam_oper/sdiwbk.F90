@@ -45,7 +45,8 @@
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : LBIWBK
-      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK
 
 ! ----------------------------------------------------------------------
 

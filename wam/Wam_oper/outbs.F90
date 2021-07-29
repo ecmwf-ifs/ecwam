@@ -82,10 +82,10 @@
       DO JKGLO=IJSLOC,IJLLOC,NPROMA
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
-        CALL OUTBLOCK(KIJS, KIJL, MIJ(KIJS),                            &
-     &                FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),         &
-     &                DEPTH(KIJS), CGROUP(KIJS:KIJL,:),                 &
-     &                BOUT(KIJS:KIJL,:))
+        CALL OUTBLOCK(IJSLOC, IJLLOC, KIJS, KIJL, MIJ(KIJS),            &
+     &                FL1, XLLWS, CGROUP,                               &
+     &                DEPTH(KIJS),                                      &
+     &                BOUT)
       ENDDO
 !$OMP END PARALLEL DO
       CALL GSTATS(1502,1)

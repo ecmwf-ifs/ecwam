@@ -48,6 +48,7 @@
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FR      , TH     ,ZPIFR
       USE YOWPCONS , ONLY : G        ,ZPI    ,ROWATER
       USE YOWPARAM , ONLY : NANG    ,NFRE
@@ -57,7 +58,8 @@
 &                  INDICESSAT, SATWEIGHTS, CUMULW
       USE YOWSHAL  , ONLY : TFAK    ,INDEP, TCGOND
       USE YOWSTAT  , ONLY : ISHALLO
-      USE YOMHOOK   ,ONLY : LHOOK   ,DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK
 
 ! ----------------------------------------------------------------------
 

@@ -45,6 +45,7 @@
       USE YOWSPEC, ONLY   : NSTART   ,NEND     ,                        &
      &            U10NEW   ,THWNEW   ,USNEW
       USE YOWTEST  , ONLY : IU06     ,ITEST
+
       USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
@@ -140,8 +141,8 @@
       IF (CDTPRO.EQ.CDTERS.AND.IERS.GT.0) THEN                          
 
 !       COMPUTE MEAN PARAMETERS
-        CALL FEMEAN (FL1, IJS, IJL, EM, FM)
-        CALL STHQ (FL1, IJS, IJL, THQ)
+        CALL FEMEAN (FL1, IJS, IJL, IJS, IJL, EM, FM)
+        CALL STHQ (FL1, IJS, IJL, IJS, IJL, THQ)
 
 !       COLLECT NECESSARY FIELDS TO PROCESS 1
 

@@ -1,4 +1,4 @@
-      SUBROUTINE OUTSETWMASK (IJS, IJL, IODP, CICVR, BOUT)
+      SUBROUTINE OUTSETWMASK (IJS, IJL, KIJS, KIJL, IODP, CICVR, GBOUT)
 ! ----------------------------------------------------------------------
 
 !**** *OUTSETWMASK* -
@@ -13,12 +13,13 @@
 !**   INTERFACE.
 !     ----------
 
-!        *CALL* *OUTSETWMASK (IJS, IJL, IODP, CICVR, BOUT)
-!         *IJS*    - INDEX OF FIRST LOCAL GRIDPOINT.
-!         *IJL*    - INDEX OF LAST LOCAL GRIDPOINT.
-!         *CICVR*  - SEA ICE COVER FIELD.
-!         *IODP*   - LAND MASK IF IODP(IJ)=0
-!         *BOUT*   - OUTPUT PARAMETERS
+!        *CALL* *OUTSETWMASK (IJS, IJL, KIJS, KIJL, IODP, CICVR, GBOUT)
+!         *IJS:IJL* - 1st DIMEMSION OF GBOUT
+!         *KIJS*    - INDEX OF FIRST LOCAL GRIDPOINT.
+!         *KIJL*    - INDEX OF LAST LOCAL GRIDPOINT.
+!         *CICVR*   - SEA ICE COVER FIELD.
+!         *IODP*    - LAND MASK IF IODP(IJ)=0
+!         *GBOUT*   - OUTPUT PARAMETERS
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
@@ -27,15 +28,17 @@
       USE YOWICE   , ONLY : LICERUN  ,CITHRSH
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : LLSOURCE
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IODP
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(INOUT) :: BOUT
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IODP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICVR 
+
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(INOUT) :: GBOUT
 
       INTEGER(KIND=JWIM) :: IJ, ITG, IR
 
@@ -49,15 +52,15 @@
         IF(ITG.GT.0) THEN
           IF (LICERUN .AND. LLSOURCE .AND. IPRMINFO(IR,4).EQ.1) THEN
 !         SEA ICE MASK IS APPLIED
-            DO IJ = IJS,IJL
-              IF (CICVR(IJ).GT.CITHRSH) BOUT(IJ,ITG) = ZMISS
+            DO IJ = KIJS,KIJL
+              IF (CICVR(IJ).GT.CITHRSH) GBOUT(IJ,ITG) = ZMISS
             ENDDO
           ENDIF
 
           IF (IPRMINFO(IR,5).EQ.1) THEN
 !           SEA MASK IS APPLIED
-            DO IJ = IJS,IJL
-              BOUT(IJ,ITG) = BOUT(IJ,ITG)*IODP(IJ) + (1-IODP(IJ))*ZMISS
+            DO IJ = KIJS,KIJL
+              GBOUT(IJ,ITG) = GBOUT(IJ,ITG)*IODP(IJ) + (1-IODP(IJ))*ZMISS
             ENDDO
           ENDIF
 

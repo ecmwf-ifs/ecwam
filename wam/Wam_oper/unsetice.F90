@@ -1,7 +1,7 @@
       SUBROUTINE UNSETICE(IJS, IJL, KIJS, KIJL,    &
      &                    DEPTH, EMAXDPT,          &
      &                    CICOVER, U10OLD, THWOLD, &
-     &                    FL)
+     &                    GFL)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      AUGUST 2006 
 
@@ -16,18 +16,18 @@
 !     *CALL* *UNSETICE(IJS, IJL, KIJS, KIJL,    &
 !    &                 DEPTH, EMAXDPT,          &
 !    &                 CICOVER, U10OLD, THWOLD, &
-!    &                 FL)
+!    &                 GFL)
 !     *IJS*     - GLOBAL INDEX OF FIRST GRIDPOINT
 !     *IJL*     - GLOBAL INDEX OF LAST GRIDPOINT
 !     *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
 !     *KIJL*    - LOCAL  INDEX OF LAST GRIDPOINT
-!     *DEPTH*     WATER DEPTH
-!     *EMAXDPT*   MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
-!     *CICOVER*   SEA ICE COVER
-!     *U10OLD*    WIND SPEED. (used with fetch law to fill empty 
+!     *DEPTH*   - WATER DEPTH
+!     *EMAXDPT* - MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
+!     *CICOVER* - SEA ICE COVER
+!     *U10OLD*  - WIND SPEED. (used with fetch law to fill empty 
 !                 sea points)
-!     *THWOLD*    WIND DIRECTION (RADIANS).
-!     *FL*        SPECTRA
+!     *THWOLD*  - WIND DIRECTION (RADIANS).
+!     *GFL*     - SPECTRA
 
 
 !     METHOD.
@@ -46,7 +46,6 @@
 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRID  , ONLY : DELPHI
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS
       USE YOWICE   , ONLY : FLMIN    ,LICERUN  ,LMASKICE ,CITHRSH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
@@ -54,7 +53,8 @@
       USE YOWSTAT  , ONLY : ISHALLO  ,LBIWBK
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE MPL_MODULE
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -66,21 +66,22 @@
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH, EMAXDPT 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER, U10OLD, THWOLD 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL
+
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: GFL
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: CILIMIT
-      REAL(KIND=JWRB) :: GAMMA, SA, SB, FETCH, GX, FPMAX, ZDP
+      REAL(KIND=JWRB) :: ZGAMMA, SA, SB, FETCH, GX, FPMAX, ZDP
       REAL(KIND=JWRB) :: U10, GXU, UG, FLLOWEST 
       REAL(KIND=JWRB) :: STK(NANG)
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FPK, ALPHAV
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: ET
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: SPRD, COS2NOISE
 
-      LOGICAL :: LICE2SEA(KIJS:KIJL)
+      LOGICAL, DIMENSION(KIJS:KIJL) :: LICE2SEA
 
 ! ----------------------------------------------------------------------
 
@@ -114,12 +115,12 @@
         DO K=1,NANG
           DO M=1,NFRE
             DO IJ=KIJS,KIJL
-               IF(FL(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
+               IF(GFL(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
             ENDDO
           ENDDO
         ENDDO
 
-        GAMMA=3.0_JWRB
+        ZGAMMA=3.0_JWRB
         SA=7.0E-02_JWRB
         SB=9.0E-02_JWRB
         FPMAX=FR(NFRE-1)
@@ -161,20 +162,20 @@
           ENDIF
         ENDDO
 
-        CALL JONSWAP(ALPHAV, GAMMA, SA, SB, FPK, KIJS, KIJL, ET)
+        CALL JONSWAP(ALPHAV, ZGAMMA, SA, SB, FPK, KIJS, KIJL, ET)
 
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              FL(IJ,K,M) = MAX(FL(IJ,K,M),ET(IJ,M)*SPRD(IJ,K))
+              GFL(IJ,K,M) = MAX(GFL(IJ,K,M),ET(IJ,M)*SPRD(IJ,K))
               FLLOWEST = FLMIN*COS2NOISE(IJ,K)
-              FL(IJ,K,M) = MAX(FL(IJ,K,M),FLLOWEST)
+              GFL(IJ,K,M) = MAX(GFL(IJ,K,M),FLLOWEST)
             ENDDO
           ENDDO
         ENDDO
 
         IF(ISHALLO.NE.1 .AND. LBIWBK) THEN
-          CALL SDEPTHLIM(IJS, IJL, KIJS, KIJL, EMAXDPT, FL)
+          CALL SDEPTHLIM(IJS, IJL, KIJS, KIJL, EMAXDPT, GFL)
         ENDIF
 
         IF (ITEST.GE.2) THEN

@@ -516,7 +516,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
           DO JKGLO=IJS,IJL,NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL)
-            CALL SETICE(FL1(KIJS:KIJL,:,:), KIJS, KIJL,                 &
+            CALL SETICE(IJS, IJL, KIJS, KIJL, FL1,                 &
      &                  CICOVER(KIJS), U10NEW(KIJS), THWNEW(KIJS))
           ENDDO
 !$OMP     END PARALLEL DO

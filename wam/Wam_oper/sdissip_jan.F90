@@ -63,7 +63,7 @@
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
-      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK
 
 ! ----------------------------------------------------------------------
 
