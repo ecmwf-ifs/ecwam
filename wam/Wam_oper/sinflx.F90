@@ -28,7 +28,6 @@ SUBROUTINE SINFLX (ICALL, NCALL, IJS, IJL, &
 #include "airsea.intfb.h"
 #include "femeanws.intfb.h"
 #include "frcutindex.intfb.h"
-#include "flmintail.intfb.h"
 #include "sinput.intfb.h"
 #include "stresso.intfb.h"
 
@@ -125,8 +124,6 @@ CALL FRCUTINDEX(IJS, IJL, FMEAN, FMEANWS, USNEW, CICVR, MIJ, RHOWGDFTH)
 ! UPDATE TAUW
 CALL STRESSO (FL1, SL, SPOS, IJS, IJL, THWNEW, USNEW, Z0NEW, ROAIRN, RNFAC, TAUW, TAUWDIR, PHIWA, LLPHIWA) 
 
-! INSURE MINIMUN ENERGY AT THE LAST FREQUENCY BIN.
-!!!1 not needed ? IF(ICALL < NCALL ) CALL FLMINTAIL(IJS, IJL, U10NEW, THWNEW, USNEW, FMEANWS, FL1) 
 
 ! ----------------------------------------------------------------------
 

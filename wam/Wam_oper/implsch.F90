@@ -153,7 +153,6 @@
 #include "ciwabr.intfb.h"
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
-#include "flmintail.intfb.h"
 #include "sbottom.intfb.h"
 #include "sdissip.intfb.h"
 #include "sdiwbk.intfb.h"
@@ -415,7 +414,6 @@
       CALL FEMEANWS(FL1, IJS, IJL, EMEANWS, FMEANWS, XLLWS)
 
       CALL IMPHFTAIL(IJS, IJL, MIJ, FLM, FL1)
-!!! not needed ?      CALL FLMINTAIL(IJS, IJL, U10NEW, THWNEW, USNEW, FMEANWS, FL1)
 
 
 !     UPDATE WINDSEA VARIANCE AND MEAN FREQUENCY IF PASSED TO ATMOSPHERE
