@@ -1,4 +1,4 @@
-      SUBROUTINE PEAKFRI (F, IJS, IJL, IPEAKF, EPEAKF, F1D)
+      SUBROUTINE PEAKFRI (F, IJS, IJL, KIJS, KIJL, IPEAKF, EPEAKF, F1D)
 
 ! ----------------------------------------------------------------------
 
@@ -18,13 +18,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PEAKFRI (F, IJS, IJL, IPEAKF, EPEAKF, F1D)*
-!          *F*     - SPECTRUM.
-!          *IJS*   - INDEX OF FIRST GRIDPOINT
-!          *IJL*   - INDEX OF LAST GRIDPOINT
-!          *IPEAKF - INDEX OF PEAK FREQUENCY 
-!          *EPEAKF* - 1-D SPECTRUM AT PEAK FREQUENCY
-!          *F1D*   - 1D FREQUENCY SPECTRUM
+!       *CALL* *PEAKFRI (F, IJS, IJL, KIJS, KIJL, IPEAKF, EPEAKF, F1D)*
+!          *F*       - SPECTRUM.
+!          *IJS:IJL* - 1st DIMENSION of F
+!          *KIJS*    - INDEX OF FIRST GRIDPOINT
+!          *KIJL*    - INDEX OF LAST GRIDPOINT
+!          *IPEAKF   - INDEX OF PEAK FREQUENCY 
+!          *EPEAKF*  - 1-D SPECTRUM AT PEAK FREQUENCY
+!          *F1D*     - 1D FREQUENCY SPECTRUM
 
 !     METHOD.
 !     -------
@@ -53,11 +54,12 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), INTENT(OUT) :: IPEAKF(IJS:IJL) 
       REAL(KIND=JWRB), INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: EPEAKF
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(OUT) :: F1D
+
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(OUT) :: IPEAKF(KIJS:KIJL) 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: EPEAKF
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(OUT) :: F1D
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -69,7 +71,7 @@
 !*    1. INITIALIZE ARRAYS
 !        -----------------
 
-      DO IJ = IJS,IJL
+      DO IJ = KIJS,KIJL
         EPEAKF(IJ) = 0.0_JWRB
         IPEAKF(IJ) = NFRE 
       ENDDO
@@ -82,11 +84,11 @@
 !*    2.1 COMPUTE 1-D SPECTRUM
 !        ---------------------
 
-        DO IJ = IJS,IJL
+        DO IJ = KIJS,KIJL
           F1D(IJ,M) = 0.0_JWRB
         ENDDO
         DO K = 1,NANG
-          DO IJ = IJS,IJL
+          DO IJ = KIJS,KIJL
             F1D(IJ,M) = F1D(IJ,M) + F(IJ,K,M)*DELTH
           ENDDO
         ENDDO
@@ -94,7 +96,7 @@
 !*    2.2 DEFINE PEAK FREQUENCY
 !         ---------------------
 
-        DO IJ = IJS,IJL
+        DO IJ = KIJS,KIJL
           IF (EPEAKF(IJ).LT.F1D(IJ,M)) THEN
             EPEAKF(IJ) = F1D(IJ,M)
             IPEAKF(IJ) = M 

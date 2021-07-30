@@ -7,6 +7,7 @@
 !*    ** *SHALLOW*   SHALLOW WATER TABLES.
 
       INTEGER(KIND=JWIM)              :: NDEPTH
+
       INTEGER(KIND=JWIM), ALLOCATABLE :: INDEP(:)
       INTEGER(KIND=JWIM), ALLOCATABLE :: IODP(:)
       INTEGER(KIND=JWIM), ALLOCATABLE :: IOBND(:)
@@ -18,13 +19,20 @@
       REAL(KIND=JWRB)              :: DEPTHA
       REAL(KIND=JWRB)              :: DEPTHD
       REAL(KIND=JWRB)              :: TOOSHALLOW
-      REAL(KIND=JWRB), ALLOCATABLE :: DEPTH(:)
+
       REAL(KIND=JWRB), ALLOCATABLE :: TCGOND(:,:)
-      REAL(KIND=JWRB), ALLOCATABLE :: CINV(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: TFAK(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: TSIHKD(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: TFAC_ST(:,:)
+
+!*    ** GRID POINT FIELDS **
+      REAL(KIND=JWRB), ALLOCATABLE :: DEPTH(:)
       REAL(KIND=JWRB), ALLOCATABLE :: EMAXDPT(:)
+
+!*    ** GRID POINT AND FREQUENCY FIELDS **
+      REAL(KIND=JWRB), ALLOCATABLE :: WAVNUM(:,:)
+      REAL(KIND=JWRB), ALLOCATABLE :: CINV(:,:)
+      REAL(KIND=JWRB), ALLOCATABLE :: CGROUP(:,:)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -39,15 +47,22 @@
 !      *TOOSHALLOW REAL      MINIMUM DEPTH THAT WILL BE ALLOWED
 !                            USED TO POINT TO LAND POINTS
 !      *DEPTHD*    REAL      DEPTH INCREMENT (METRES).
-!      *DEPTH*     REAL      WATER DEPTH IN METRES.
 !      *TCGOND*    REAL      SHALLOW WATER GROUP VELOCITY TABLE.
-!      *CINV*      REAL      RECIPROCAL OF THE PHASE VELOCITY (1/c)
 !      *TFAK*      REAL      WAVE NUMBER TABLE.
 !      *TSIHKD*    REAL      TABLE FOR OMEGA/SINH(2KD).
 !      *TFAC_ST*   REAL      TABLE FOR 2*G*K**2/(OMEGA*TANH(2KD)).
+
+!!     GRID POINT FIELDS:
+!      -----------------
+!      *DEPTH*     REAL      WATER DEPTH IN METRES.
 !      *EMAXDPT*   REAL      MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
 !                            EMAXDPT=0.0625*(GAM_B_J*DEPTH)**2
 
+!!     GRID POINT AND FREQUENCY FIELDS:
+!      --------------------------------
+!      *WAVNUM*    REAL      WAVE NUMBER
+!      *CINV*      REAL      RECIPROCAL OF THE PHASE VELOCITY (1/c)
+!      *CGROUP*    REAL      GROUP SPEED
 
 ! ----------------------------------------------------------------------
       END MODULE YOWSHAL

@@ -308,7 +308,7 @@
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
 
-      CALL SDISSIP (GFL ,FLD, SL, IJS, IJL KIJS, KIJL,                  &
+      CALL SDISSIP (GFL ,FLD, SL, IJS, IJL, KIJS, KIJL,                 &
      &              EMEANALL, F1MEAN, XKMEAN,                           &
      &              USNEW, THWNEW, ROAIRN)
       IF (ITEST.GE.2) THEN

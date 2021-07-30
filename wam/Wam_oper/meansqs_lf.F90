@@ -1,4 +1,4 @@
-      SUBROUTINE MEANSQS_LF(NFRE_EFF, IJS, IJL, F, XMSS)
+      SUBROUTINE MEANSQS_LF(NFRE_EFF, IJS, IJL, KIJS, KIJL, F, XMSS)
 
 ! ----------------------------------------------------------------------
 
@@ -13,12 +13,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MEANSQS_LF (NFRE_EFF, IJS, IJL, F, XMSS)*
-!              *XKMSS* - WAVE NUMBER CUT OFF
-!              *IJS* - INDEX OF FIRST GRIDPOINT
-!              *IJL* - INDEX OF LAST GRIDPOINT
-!              *F*   - SPECTRUM.
-!              *XMSS* - MEAN SQUARE SLOPE (OUTPUT).
+!       *CALL* *MEANSQS_LF (NFRE_EFF, IJS, IJL, KIJS, KIJL, F, XMSS)*
+!              *XKMSS*   - WAVE NUMBER CUT OFF
+!              *IJS:IJL* - 1st DIMENSION of F
+!              *KIJS*    - INDEX OF FIRST GRIDPOINT
+!              *KIJL*    - INDEX OF LAST GRIDPOINT
+!              *F*       - SPECTRUM.
+!              *XMSS*    - MEAN SQUARE SLOPE (OUTPUT).
 
 !     METHOD.
 !     -------
@@ -44,22 +45,25 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NFRE_EFF
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: XMSS 
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: XMSS 
+
 
       INTEGER(KIND=JWIM) :: IJ, M, K, KFRE
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FD
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP1, TEMP2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP1, TEMP2
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('MEANSQS_LF',0,ZHOOK_HANDLE)
@@ -81,15 +85,15 @@
         ENDDO
 
         DO M = 1, KFRE
-          DO IJ = IJS, IJL
+          DO IJ = KIJS, KIJL
             TEMP2(IJ) = 0.0_JWRB
           ENDDO
           DO K = 1, NANG
-            DO IJ = IJS, IJL
+            DO IJ = KIJS, KIJL
               TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
             ENDDO
           ENDDO
-          DO IJ = IJS, IJL
+          DO IJ = KIJS, KIJL
             XMSS(IJ) = XMSS(IJ)+FD(M)*TEMP2(IJ)
           ENDDO
         ENDDO
@@ -100,16 +104,16 @@
 !         --------------------------
 
         DO M = 1, KFRE
-          DO IJ = IJS, IJL
+          DO IJ = KIJS, KIJL
             TEMP1(IJ) = DFIM(M)*TFAK(INDEP(IJ),M)**2
             TEMP2(IJ) = 0.0_JWRB
           ENDDO
           DO K = 1, NANG
-            DO IJ = IJS, IJL
+            DO IJ = KIJS, KIJL
               TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
             ENDDO
           ENDDO
-          DO IJ = IJS, IJL
+          DO IJ = KIJS, KIJL
             XMSS(IJ) = XMSS(IJ)+TEMP1(IJ)*TEMP2(IJ)
           ENDDO
         ENDDO

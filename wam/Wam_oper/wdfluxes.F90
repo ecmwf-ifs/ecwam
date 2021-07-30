@@ -170,7 +170,7 @@
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
-        CALL SNONLIN (GFL, FLD, IJS, IJL, KIJS, KIJL, SL, DEPTH, AKMEAN)
+        CALL SNONLIN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, DEPTH, AKMEAN)
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. WDFLUXES: SNONLIN CALLED'
           CALL FLUSH (IU06)

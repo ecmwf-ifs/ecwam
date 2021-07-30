@@ -1,5 +1,4 @@
-
-      SUBROUTINE SEBTMEAN (F3, IJS, IJL, TB, TT, EBT)
+      SUBROUTINE SEBTMEAN (GFL, IJS, IJL, KIJS, KIJL, TB, TT, EBT)
 
 ! ----------------------------------------------------------------------
 
@@ -15,13 +14,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEBTMEAN(F3, IJS, IJL, TB, TT, EBT)*
-!          *F3*  - SPECTRUM.
-!          *IJS* - INDEX OF FIRST GRIDPOINT
-!          *IJL* - INDEX OF LAST GRIDPOINT
-!          *TB*  - BOTTOM PERIOD
-!          *TT*  - TOP PERIOD
-!          *EBT* - MEAN ENERGY
+!       *CALL* *SEBTMEAN(GFL, IJS, IJL, KIJS, KIJL, TB, TT, EBT)*
+!          *GFL*     - SPECTRUM.
+!          *IJS:IJL* - 1st DIMENSION of GFL
+!          *KIJS*    - INDEX OF FIRST GRIDPOINT
+!          *KIJL*    - INDEX OF LAST GRIDPOINT
+!          *TB*      - BOTTOM PERIOD
+!          *TT*      - TOP PERIOD
+!          *EBT*     - MEAN VARIANCE
 
 !     METHOD.
 !     -------
@@ -45,17 +45,19 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FLOGSPRDM1
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: GFL
+
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
 
       REAL(KIND=JWRB), INTENT(IN) :: TB, TT
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: EBT
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: F3
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: EBT
 
 
       INTEGER(KIND=JWIM) :: IJ, M, K, MCUTB, MCUTT
@@ -63,7 +65,7 @@
       REAL(KIND=JWRB) :: FCUTB, FCUTT, DFCUT
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE) :: DFIMLOC
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP
 
 ! ----------------------------------------------------------------------
 
@@ -85,12 +87,12 @@
       DFCUT=0.5_JWRB*MAX(0.0_JWRB,FCUTT-0.5_JWRB*(FR(MAX(1,MCUTT-1))+FR(MCUTT)))
       DFIMLOC(MCUTT)=MIN(DFCUT*DELTH,DFIM(MCUTT))
 
-      IF(FCUTB.EQ.FCUTT) MCUTT=MCUTB-1
+      IF(FCUTB == FCUTT) MCUTT=MCUTB-1
 
 !*    1. INITIALISE ENERGY ARRAY.
 !        ------------------------
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         EBT(IJ) = EPSMIN 
       ENDDO
 
@@ -101,15 +103,15 @@
 
       DO M=MCUTB,MCUTT
         K=1
-        DO IJ=IJS,IJL
-          TEMP(IJ) = F3(IJ,K,M)
+        DO IJ=KIJS,KIJL
+          TEMP(IJ) = GFL(IJ,K,M)
         ENDDO
         DO K=2,NANG
-          DO IJ=IJS,IJL
-            TEMP(IJ) = TEMP(IJ)+F3(IJ,K,M)
+          DO IJ=KIJS,KIJL
+            TEMP(IJ) = TEMP(IJ)+GFL(IJ,K,M)
           ENDDO
         ENDDO
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           EBT(IJ) = EBT(IJ)+DFIMLOC(M)*TEMP(IJ)
         ENDDO
       ENDDO

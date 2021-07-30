@@ -28,7 +28,7 @@ SUBROUTINE HALPHAP(IJS, IJL, KIJS, KIJL, USTAR, UDIR, GFL, HALP)
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        , GM1      ,ZPI       ,ZPI4GM2,EPSMIN
       USE YOWPHYS  , ONLY : ALPHAPMAX
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP    ,CINV
+      USE YOWSHAL  , ONLY : CINV
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -82,7 +82,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
       COEF = OLDWSFC*FRIC
       DO M = 1, NFRE
         DO IJ = KIJS, KIJL
-          XINVWVAGE(IJ,M)=USTAR(IJ)*CINV(INDEP(IJ),M)
+          XINVWVAGE(IJ,M)=USTAR(IJ)*CINV(IJ,M)
         ENDDO
       ENDDO
 
@@ -104,7 +104,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
       ENDDO
 
       ! Find peak of windsea 1d spectrum
-      CALL PEAKFRI (FLWS, KIJS, KIJL, MMAX, F1DMAX, F1DWS)
+      CALL PEAKFRI (FLWS, KIJS, KIJL, KIJS, KIJL, MMAX, F1DMAX, F1DWS)
 
       ! Find the Phillips parameter by weighting averaging its value over the Phillips range (see above)
       DO IJ = KIJS, KIJL

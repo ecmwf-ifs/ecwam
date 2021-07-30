@@ -1,4 +1,4 @@
-      SUBROUTINE SE10MEAN (F3, IJS, IJL, E10)
+      SUBROUTINE SE10MEAN (GFL, IJS, IJL, KIJS, KIJL, E10)
 
 ! ----------------------------------------------------------------------
 
@@ -13,11 +13,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SE10MEAN(F3, IJS, IJL, E10)*
-!          *F3*  - SPECTRUM.
-!          *IJS* - INDEX OF FIRST GRIDPOINT
-!          *IJL* - INDEX OF LAST GRIDPOINT
-!          *E10* - MEAN ENERGY
+!       *CALL* *SE10MEAN(GFL, IJS, IJL, KIJS, KIJL, E10)*
+!          *GFL      - SPECTRUM.
+!          *IJS:IJL* - 1s DIMENSION of GFL
+!          *KIJS*    - INDEX OF FIRST GRIDPOINT
+!          *KIJL*    - INDEX OF LAST GRIDPOINT
+!          *E10*     - MEAN ENERGY
 
 !     METHOD.
 !     -------
@@ -41,16 +42,18 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FLOGSPRDM1
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: GFL
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: F3
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: E10
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: E10
 
 
       INTEGER(KIND=JWIM) :: IJ, M, K, MCUT
@@ -59,7 +62,7 @@
       REAL(KIND=JWRB) :: DFCUT
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE) :: DFIMLOC
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP
 
 ! ----------------------------------------------------------------------
 
@@ -76,7 +79,7 @@
 !*    1. INITIALISE ENERGY ARRAY.
 !        ------------------------
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         E10(IJ) = EPSMIN 
       ENDDO
 
@@ -87,15 +90,15 @@
 
       DO M=1,MCUT
         K=1
-        DO IJ=IJS,IJL
-          TEMP(IJ) = F3(IJ,K,M)
+        DO IJ=KIJS,KIJL
+          TEMP(IJ) = GFL(IJ,K,M)
         ENDDO
         DO K=2,NANG
-          DO IJ=IJS,IJL
-            TEMP(IJ) = TEMP(IJ)+F3(IJ,K,M)
+          DO IJ=KIJS,KIJL
+            TEMP(IJ) = TEMP(IJ)+GFL(IJ,K,M)
           ENDDO
         ENDDO
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           E10(IJ) = E10(IJ)+DFIMLOC(M)*TEMP(IJ)
         ENDDO
       ENDDO

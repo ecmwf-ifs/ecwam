@@ -103,7 +103,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,GM1      ,ZPI  ,ROWATER   ,YEPS,  EPSUS
       USE YOWPHYS  , ONLY : ZALP     ,XKAPPA, BETAMAXOXKAPPA2
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP   , TCGOND
+      USE YOWSHAL  , ONLY : WAVNUM   ,CINV     ,CGROUP 
       USE YOWSTAT  , ONLY : ISHALLO  ,IDAMPING
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -136,9 +136,8 @@
       REAL(KIND=JWRB) :: X, ZLOG, ZLOG2X, ZBETA
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NGST) :: WSIN
-      REAL(KIND=JWRB), DIMENSION(NFRE) :: FAC, CONST
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CM
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SH, XK
+      REAL(KIND=JWRB), DIMENSION(NFRE) :: CONST
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SIG_N
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CNSN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EPSIL
@@ -192,19 +191,11 @@
 
       IF(LLNORMAGAM) THEN
         CSTRNFAC(:) = CONSTN * RNFAC(:)
-        IF (ISHALLO.EQ.1) THEN
-          DO M=1,NFRE
-            DO IJ=KIJS,KIJL
-              XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*0.5_JWRB*ZPIFR(M)**3*GM1*ROAIRNM(IJ)
-            ENDDO
+        DO M=1,NFRE
+          DO IJ=KIJS,KIJL
+            XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*WAVNUM(IJ,M)**2*CGROUP(IJ,M)*ROAIRNM(IJ)
           ENDDO
-        ELSE
-          DO M=1,NFRE
-            DO IJ=KIJS,KIJL
-              XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)*ROAIRNM(IJ)
-            ENDDO
-          ENDDO
-        ENDIF
+        ENDDO
 
         DO K=1,NANG
           DO IJ=KIJS,KIJL
@@ -280,28 +271,20 @@
 
       DO M=1,NFRE
 
-        FAC(M) = ZPIFR(M)
-        CONST(M)=FAC(M)*CONST1
+        CONST(M)=ZPIFR(M)*CONST1
 
-!*      INVERSE OF PHASE VELOCITIES.
-!       ----------------------------
+!*      PRECALCULATE FREQUENCY DEPENDENCE.
+!       ----------------------------------
 
         IF (ISHALLO.EQ.1) THEN
           DO IJ=KIJS,KIJL
-            XK(IJ) = FAC(M)**2/G
-            CM(IJ) = FAC(M)/G
             SH(IJ) = 1.0_JWRB
           ENDDO
         ELSE
           DO IJ=KIJS,KIJL
-            XK(IJ) = TFAK(INDEP(IJ),M)
-            CM(IJ) = XK(IJ)/FAC(M)
-            SH(IJ) = FAC(M)**2/(G*XK(IJ)) 
+            SH(IJ) = ZPIFR(M)**2/(G*WAVNUM(IJ,M)) 
           ENDDO
         ENDIF
-
-!*      PRECALCULATE FREQUENCY DEPENDENCE.
-!       ----------------------------------
 
         DO IJ=KIJS,KIJL
           CNSN(IJ) = CONST(M)*SH(IJ)*EPSIL(IJ)
@@ -309,11 +292,11 @@
 
         DO IGST=1,NGST
           DO IJ=KIJS,KIJL
-            UCN(IJ,IGST) = US(IJ,IGST)*CM(IJ) + ZALP
+            UCN(IJ,IGST) = US(IJ,IGST)*CINV(IJ,M) + ZALP
             CONST3_UCN2(IJ,IGST) = CONST3*UCN(IJ,IGST)**2
             UCND(IJ,IGST) = 1.0_JWRB/ UCN(IJ,IGST)
-            ZCN(IJ,IGST)  = LOG(XK(IJ)*Z0(IJ,IGST))
-            XVD(IJ,IGST) = 1.0_JWRB/(-US(IJ,IGST)*XKAPPAD*ZCN(IJ,IGST)*CM(IJ))
+            ZCN(IJ,IGST)  = LOG(WAVNUM(IJ,M)*Z0(IJ,IGST))
+            XVD(IJ,IGST) = 1.0_JWRB/(-US(IJ,IGST)*XKAPPAD*ZCN(IJ,IGST)*CINV(IJ,M))
           ENDDO
         ENDDO
 

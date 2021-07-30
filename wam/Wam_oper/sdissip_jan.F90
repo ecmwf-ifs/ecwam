@@ -1,4 +1,4 @@
-      SUBROUTINE SDISSIP_JAN (GFL, FLD, SL, IJS, KIJL, KIJS, KIJL,  &
+      SUBROUTINE SDISSIP_JAN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL,  &
      &                        EMEAN, F1MEAN, XKMEAN)
 
 ! ----------------------------------------------------------------------

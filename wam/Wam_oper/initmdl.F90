@@ -266,8 +266,7 @@
       USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
-     &            INDEP    ,TCGOND   ,IODP     ,IOBND    ,TOOSHALLOW,   &
-     &            CINV     ,TFAK     ,GAM_B_J  ,EMAXDPT
+     &            INDEP    ,TCGOND   ,IODP     ,IOBND    ,TOOSHALLOW
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,    &
      &            U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,TAUW     ,    &
      &            Z0B      ,TAUWDIR,  ROAIRO   ,ZIDLOLD  ,              &
@@ -319,6 +318,7 @@
 #include "inisnonlin.intfb.h"
 #include "init_sdiss_ardh.intfb.h"
 #include "init_x0tauhf.intfb.h"
+#include "initdpthflds.intfb.h"
 #include "initnemocpl.intfb.h"
 #include "iniwcst.intfb.h"
 #include "preset_wgrib_template.intfb.h"
@@ -820,28 +820,14 @@
         ENDDO
       ENDIF
 
+!     COMPUTE SHALLOW WATER TABLE INDICES AND THE RECIPROCAL PHASE VELOCITY.
+!     INDEP must contain the halo points.
+
       DO IJ=NINF,NSUP
         DEPTH(IJ) = MAX(DEPTH(IJ),DEPTHA)
       ENDDO
 
-!     COMPUTE THE MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
-      IF(.NOT.ALLOCATED(EMAXDPT)) ALLOCATE(EMAXDPT(IJS:IJL))
-      DO IJ = IJS, IJL
-!       REDUCE GAMMA FOR SMALL DEPTH ( < 4m)
-!       (might need to be revisted when grid is fine resolution)
-        IF (DEPTH(IJ).LT.4.0_JWRB) THEN
-          GAM=GAM_B_J*DEPTH(IJ)/4.0_JWRB
-        ELSE
-          GAM=GAM_B_J
-        ENDIF
-        EMAXDPT(IJ)=0.0625_JWRB*(GAM*DEPTH(IJ))**2
-      ENDDO
-
-
-!     COMPUTE SHALLOW WATER TABLE INDICES AND THE RECIPROCAL PHASE VELOCITY.
-!     INDEP must contain the halo points.
       IF (.NOT.ALLOCATED(INDEP)) ALLOCATE(INDEP(NINF-1:NSUP))
-      IF (.NOT.ALLOCATED(CINV)) ALLOCATE(CINV(NDEPTH,NFRE))
       INDEP(NINF-1)=NDEPTH
       IF (ISHALLO.NE.1) THEN
         DO IJ=NINF,NSUP
@@ -850,28 +836,15 @@
           ID = MAX(ID,1)
           INDEP(IJ) = MIN(ID,NDEPTH)
         ENDDO
-
-        DO M=1,NFRE
-          FAC = ZPI*FR(M)
-          DO JD=1,NDEPTH
-            CINV(JD,M)=TFAK(JD,M)/FAC
-          ENDDO
-        ENDDO
-
       ELSE
-
         DO IJ=NINF,NSUP
           INDEP(IJ) = NDEPTH
         ENDDO
-
-        DO M=1,NFRE
-          FAC = ZPI*FR(M)
-          DO JD=1,NDEPTH
-            CINV(JD,M)=FAC/G
-          ENDDO
-        ENDDO
-
       ENDIF
+
+
+!     INITIALISE GRID POINT FIELDS DEPENDENT ON WATER DEPTH AND FREQUENCY
+      CALL INITDPTHFLDS
 
 
 ! ----------------------------------------------------------------------

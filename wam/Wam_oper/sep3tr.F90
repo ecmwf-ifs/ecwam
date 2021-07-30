@@ -1,6 +1,6 @@
       SUBROUTINE SEP3TR (GFL, IJS, IJL, KIJS, KIJL, MIJ, U10NEW, THWNEW , &
-     &                   ESWELL, FSWELL, THSWELL, FSEA,                 &
-     &                   F1, SWM,                                      &
+     &                   ESWELL, FSWELL, THSWELL, FSEA,                   &
+     &                   FLSW, SWM,                                       &
      &                   EMTRAIN  ,THTRAIN  ,PMTRAIN)
 
 ! ----------------------------------------------------------------------
@@ -24,7 +24,7 @@
 
 !       *CALL* *SEP3TR (GFL, IJS, IJL, KIJS, KIJL, MIJ, U10NEW, THWNEW,
 !                       ESWELL, FSWELL, THSWELL, FSEA,
-!                       F1, SWM,
+!                       FLSW, SWM,
 !                       EMTRAIN  ,THTRAIN  ,PMTRAIN)
 !          *GFL*    - BLOCK OF FULL SPECTRA
 !          *IJS:IJL*  1st DIMENSION og GFL
@@ -37,7 +37,7 @@
 !          *FSWELL* - TOTAL SWELL MEAN FREQUENCY
 !          *THSWELL*- TOTAL SWELL MEAN DIRECTION
 !          *FSEA*   - WINDSEA MEAN FREQUENCY
-!          *F1*     - SWELL SPECTRA
+!          *FLSW*   - SWELL SPECTRA
 !          *SWM*    - ORIGINAL SWELL MASK
 !                     IT MIGHT NEED TO BE ADJUSTED
 !                     THIS IS POSSIBLE BECAUSE WE SUPPLY SWELL SPECTRA
@@ -68,7 +68,8 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,G        ,EPSMIN
       USE YOWTEST  , ONLY : IU06
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -85,7 +86,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: FSEA
 
 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: F1, SWM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLSW, SWM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NTRAIN), INTENT(OUT) :: EMTRAIN, THTRAIN, PMTRAIN
 
 
@@ -151,10 +152,10 @@
           IF (KP.GT.NANG) KP=1
           DO IJ=KIJS,KIJL
 !           RE-IMPOSE THE WINDSEA MASK
-            IF(F1(IJ,K,M) <= 0.0_JWRB) THEN
+            IF(FLSW(IJ,K,M) <= 0.0_JWRB) THEN
               FL(IJ,K,M) = 0.0_JWRB
             ELSE
-              FL(IJ,K,M) = 0.10_JWRB*(F1(IJ,KM,M)+F1(IJ,KP,M)) + 0.80_JWRB*F1(IJ,K,M) 
+              FL(IJ,K,M) = 0.10_JWRB*(FLSW(IJ,KM,M)+FLSW(IJ,KP,M)) + 0.80_JWRB*FLSW(IJ,K,M) 
               ENMAX(IJ)=MAX(ENMAX(IJ),FL(IJ,K,M))
             ENDIF
           ENDDO
@@ -260,14 +261,14 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            F1(IJ,K,M)=MAX(GFL(IJ,K,M),EPSMIN)*SWM(IJ,K,M)
+            FLSW(IJ,K,M)=MAX(GFL(IJ,K,M),EPSMIN)*SWM(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO
 
 !     TOTAL ENERGY IN THE UPDATED SWELL SPECTRA
       LLEPSMIN=.FALSE.
-      CALL SEMEAN (F1, KIJS, KIJL, KIJS, KIJL, ETT, LLEPSMIN)
+      CALL SEMEAN (FLSW, KIJS, KIJL, KIJS, KIJL, ETT, LLEPSMIN)
 
 !     REMOVE PARTITION WITH Hs < HSMIN 
 !     MEAN PERIOD > 1/FR(MIJ)

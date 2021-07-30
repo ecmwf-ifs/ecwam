@@ -79,10 +79,9 @@
       USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2,    &
      &                      BMAXOKAPDTH, RN1_RN, &
      &                      RNU      ,RNUM, &
-     &                      SWELLF   ,SWELLF2  ,SWELLF3  , SWELLF4  , SWELLF5, &
-     &                      SWELLF6  ,SWELLF7  ,Z0RAT    , Z0TUBMAX , ABMIN  ,ABMAX
-      USE YOWSHAL  , ONLY : TFAK     ,CINV     ,INDEP    ,TCGOND
-      USE YOWSTAT  , ONLY : ISHALLO
+     &                      SWELLF   ,SWELLF2  ,SWELLF3  ,SWELLF4  , SWELLF5, &
+     &                      SWELLF6  ,SWELLF7  ,Z0RAT    ,Z0TUBMAX , ABMIN  ,ABMAX
+      USE YOWSHAL  , ONLY : WAVNUM   ,CINV     ,CGROUP
       USE YOWTEST  , ONLY : IU06
       USE YOWTABL  , ONLY : IAB      ,SWELLFT
 
@@ -134,7 +133,6 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: USG2, TAUX, TAUY, USTP, USTPM1, USDIRP, UCN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: UCNZALPD
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: SIN2
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: CM, XK
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DSTAB1, TEMP1, TEMP2
@@ -170,19 +168,11 @@
 
       IF(LLNORMAGAM) THEN
         CSTRNFAC(:) = CONSTN * RNFAC(:)
-        IF (ISHALLO.EQ.1) THEN
-          DO M=1,NFRE
-            DO IJ=KIJS,KIJL
-              XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*0.5_JWRB*ZPIFR(M)**3*GM1*ROAIRNM(IJ)
-            ENDDO
+        DO M=1,NFRE
+          DO IJ=KIJS,KIJL
+            XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*WAVNUM(IJ,M)**2*CGROUP(IJ,M)*ROAIRNM(IJ)
           ENDDO
-        ELSE
-          DO M=1,NFRE
-            DO IJ=KIJS,KIJL
-              XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)*ROAIRNM(IJ)
-            ENDDO
-          ENDDO
-        ENDIF
+        ENDDO
 
         DO K=1,NANG
           DO IJ=KIJS,KIJL
@@ -341,23 +331,6 @@
       ENDDO
 
 
-!     INVERSE OF PHASE VELOCITIES AND WAVE NUMBER.
-      IF (ISHALLO.EQ.1) THEN
-        DO M=1,NFRE
-          DO IJ=KIJS,KIJL
-            CM(IJ,M) = SIG(M)/G
-            XK(IJ,M) = SIG2(M)/G
-          ENDDO
-        ENDDO
-      ELSE
-        DO M=1,NFRE
-          DO IJ=KIJS,KIJL
-            XK(IJ,M) = TFAK(INDEP(IJ),M)
-            CM(IJ,M) = XK(IJ,M)*SIGM1(M)
-          ENDDO
-        ENDDO
-      ENDIF
-
 !*    2. MAIN LOOP OVER FREQUENCIES.
 !        ---------------------------
       DO M=1,NFRE
@@ -382,7 +355,7 @@
           ENDDO
 
           DO IJ=KIJS,KIJL
-            CONSTF(IJ) = ROGOROAIR(IJ)*CINV(INDEP(IJ),M)*DFIM(M)
+            CONSTF(IJ) = ROGOROAIR(IJ)*CINV(IJ,M)*DFIM(M)
           ENDDO
         ENDIF
 
@@ -392,12 +365,12 @@
 
         DO IGST=1,NGST
           DO IJ=KIJS,KIJL
-            UCN(IJ,IGST) = USTP(IJ,IGST)*CM(IJ,M)
+            UCN(IJ,IGST) = USTP(IJ,IGST)*CINV(IJ,M)
             UCNZALPD(IJ,IGST) = XKAPPA/(UCN(IJ,IGST) + ZALP)
           ENDDO
         ENDDO
         DO IJ=KIJS,KIJL
-          ZCN(IJ) = LOG(XK(IJ,M)*Z0NEW(IJ))
+          ZCN(IJ) = LOG(WAVNUM(IJ,M)*Z0NEW(IJ))
           CNSN(IJ) = CONST(M)*ROAIRN(IJ)
         ENDDO
 
@@ -460,7 +433,7 @@
 !       SWELL DAMPING:
 
         DO IJ=KIJS,KIJL
-          DSTAB1(IJ) = COEF5(M)*ROAIRN_PVISC(IJ)*XK(IJ,M)
+          DSTAB1(IJ) = COEF5(M)*ROAIRN_PVISC(IJ)*WAVNUM(IJ,M)
           TEMP1(IJ) = COEF(M)*ROAIRN(IJ)
         ENDDO
 

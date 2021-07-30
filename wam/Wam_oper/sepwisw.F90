@@ -69,10 +69,11 @@
       USE YOWCOUT  , ONLY : NTRAIN   ,LLPARTITION
       USE YOWFRED  , ONLY : FR       ,TH       ,FRIC     ,OLDWSFC, ZPIFR
       USE YOWPCONS , ONLY : G        ,EPSMIN
-      USE YOWSHAL  , ONLY : INDEP    ,CINV
+      USE YOWSHAL  , ONLY : CINV
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! -----------------------------------------------------------------------
 
@@ -119,7 +120,7 @@
 
       DO M=1,NFRE
         DO IJ=KIJS,KIJL
-          XINVWVAGE(IJ,M)=USNEW(IJ)*CINV(INDEP(IJ),M)
+          XINVWVAGE(IJ,M)=USNEW(IJ)*CINV(IJ,M)
         ENDDO
       ENDDO
 
@@ -229,15 +230,15 @@
 
       IF(LLPARTITION) THEN
         CALL FEMEAN(F1, KIJS, KIJL, KIJS, KIJL, ESWELL, FSWELL)
-        CALL STHQ(F1, KIJS, KIJL, THSWELL)
+        CALL STHQ(F1, KIJS, KIJL, KIJS, KIJL, THSWELL)
         CALL SEP3TR (GFL, IJS, IJL, KIJS, KIJL, MIJ, U10NEW, THWNEW,   &
      &               ESWELL, FSWELL, THSWELL, FSEA,                    &
      &               F1, SWM,                                          &
      &               EMTRAIN  ,THTRAIN  ,PMTRAIN)
       ELSE
-        EMTRAIN(:,:)=0.0_JWRB
-        THTRAIN(:,:)=0.0_JWRB
-        PMTRAIN(:,:)=0.0_JWRB
+        EMTRAIN(:,:) = 0.0_JWRB
+        THTRAIN(:,:) = 0.0_JWRB
+        PMTRAIN(:,:) = 0.0_JWRB
       ENDIF
 
 !*    2.2 COMPUTATION OF TOTAL SWELL OUTPUT PARAMETERS
@@ -245,14 +246,14 @@
 
       CALL FEMEAN(F1, KIJS, KIJL, KIJS, KIJL, ESWELL, FSWELL)
       
-      CALL STHQ(F1, KIJS, KIJL, THSWELL)
+      CALL STHQ(F1, KIJS, KIJL, KIJS, KIJL, THSWELL)
 
-      CALL MWP1(F1, KIJS, KIJL, P1SWELL)
+      CALL MWP1(F1, KIJS, KIJL, KIJS, KIJL, P1SWELL)
 
-      CALL MWP2(F1, KIJS, KIJL, P2SWELL)
+      CALL MWP2(F1, KIJS, KIJL, KIJS, KIJL, P2SWELL)
 
       LLPEAKF = .TRUE.
-      CALL WDIRSPREAD (F1, KIJS, KIJL, ESWELL, LLPEAKF, SPRDSWELL)
+      CALL WDIRSPREAD (F1, KIJS, KIJL, KIJS, KIJL, ESWELL, LLPEAKF, SPRDSWELL)
 
 
 !*    3. COMPUTATION OF WIND SEA OUTPUT PARAMETERS
@@ -268,7 +269,7 @@
 
       CALL FEMEAN(F1, KIJS, KIJL, KIJS, KIJL, ESEA, FSEA)
 
-      CALL STHQ(F1, KIJS, KIJL, THWISEA)
+      CALL STHQ(F1, KIJS, KIJL, KIJS, KIJL, THWISEA)
 !     if there isn't any windsea energy, set the windsea mean direction
 !     to the wind direction.
       DO IJ=KIJS,KIJL
@@ -277,12 +278,12 @@
         ENDIF
       ENDDO
 
-      CALL MWP1(F1, KIJS, KIJL, P1SEA)
+      CALL MWP1(F1, KIJS, KIJL, KIJS, KIJL, P1SEA)
 
-      CALL MWP2(F1, KIJS, KIJL, P2SEA)
+      CALL MWP2(F1, KIJS, KIJL, KIJS, KIJL, P2SEA)
 
       LLPEAKF = .TRUE.
-      CALL WDIRSPREAD(F1, KIJS, KIJL, ESEA, LLPEAKF, SPRDSEA)
+      CALL WDIRSPREAD(F1, KIJS, KIJL, KIJS, KIJL, ESEA, LLPEAKF, SPRDSEA)
 
       IF (LHOOK) CALL DR_HOOK('SEPWISH',1,ZHOOK_HANDLE)
 

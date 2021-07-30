@@ -1,4 +1,4 @@
-      SUBROUTINE MWP1 (F, IJS, IJL, MEANWP1)
+      SUBROUTINE MWP1 (F, IJS, IJL, KIJS, KIJL, MEANWP1)
 
 ! ----------------------------------------------------------------------
 
@@ -15,10 +15,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MWP1 (F, IJS, IJL, MEANWP1)*
-!              *F*   - SPECTRUM.
-!              *IJS* - INDEX OF FIRST GRIDPOINT
-!              *IJL* - INDEX OF LAST GRIDPOINT
+!       *CALL* *MWP1 (F, IJS, IJL, KIJS, KIJL, MEANWP1)*
+!              *F*       - SPECTRUM.
+!              *IJS:IJL* - 1st DIMENSION of F
+!              *KIJS*    - INDEX OF FIRST GRIDPOINT
+!              *KIJL*    - INDEX OF LAST GRIDPOINT
 !              *MEANWP1* - MEAN PERIOD BASED ON THE FIRST MOMENT.
 
 !     METHOD.
@@ -43,39 +44,43 @@
       USE YOWFRED  , ONLY : FR       ,DFIM_SIM ,DFIMFR_SIM,DELTH  ,WETAIL, WP1TAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
       USE YOWPCONS , ONLY : EPSMIN
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: MEANWP1
+
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: MEANWP1
+
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELT25, COEF_FR, FR1M1
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP, EM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP, EM
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('MWP1',0,ZHOOK_HANDLE)
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         EM(IJ) = 0.0_JWRB
         MEANWP1(IJ) = 0.0_JWRB
       ENDDO
 
       DO M=1,NFRE_ODD
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           TEMP(IJ) = 0.0_JWRB
         ENDDO
         DO K=1,NANG
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             TEMP(IJ) = TEMP(IJ)+F(IJ,K,M)
           ENDDO
         ENDDO
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           EM(IJ) = EM(IJ)+DFIM_SIM(M)*TEMP(IJ)
           MEANWP1(IJ) = MEANWP1(IJ)+DFIMFR_SIM(M)*TEMP(IJ)
         ENDDO
@@ -88,7 +93,7 @@
       DELT25 = WETAIL*FR(NFRE_ODD)*DELTH
       COEF_FR = WP1TAIL*DELTH*FR(NFRE_ODD)**2
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         EM(IJ) = EM(IJ)+DELT25*TEMP(IJ)
         MEANWP1(IJ) = MEANWP1(IJ)+COEF_FR*TEMP(IJ)
         IF(EM(IJ).GT.0.0_JWRB .AND. MEANWP1(IJ).GT.EPSMIN ) THEN
