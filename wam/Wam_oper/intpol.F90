@@ -16,7 +16,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *INTPOL (GFL, FLA, IJL, IJL, KIJS, KIJL, IRA)*
+!       *CALL* *INTPOL (GFL, FLA, IJS, IJL, KIJS, KIJL, IRA)*
 !         *GFL*   - SPECTRA (INPUT) (1st dimension IJS:IJL).
 !         *FLA*   - SPECTRA (OUTPUT) (1st DIMENSION KIJS:KIJL).
 !         *KIJS*  - INDEX OF FIRST GRIDPOINT.
