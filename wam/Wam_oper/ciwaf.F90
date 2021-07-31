@@ -1,4 +1,4 @@
-      SUBROUTINE CIWAF (IJS,IJL,CICOVER,CITHICK,CIWA)
+      SUBROUTINE CIWAF (IJS, IJL, KIJS, KIJL, CICOVER, CITHICK, CIWA)
 
 ! ----------------------------------------------------------------------
 
@@ -13,11 +13,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *CIWAF (IJS,IJL,CICOVER,CITHICK,CIWA)
+!       *CALL* *CIWAF (IJS, IJL, KIJS, KIJL, CICOVER, CITHICK, CIWA)
 
 !
-!          *IJS*     - INDEX OF FIRST POINT.
-!          *IJL*     - INDEX OF LAST POINT.
+!          *IJS:IJL*  - 1st DIMENSION of CIWA
+!          *KIJS*     - INDEX OF FIRST POINT.
+!          *KIJL*     - INDEX OF LAST POINT.
 !          *CICOVER*  -SEA ICE COVER.
 !          *CITHICK*  -SEA ICE THICKNESS. 
 !          *CIWA*     -SEA ICE WAVE ATTENUATION FACTOR. 
@@ -47,15 +48,17 @@
       USE YOWSTAT  , ONLY : IDELT   ,ISHALLO 
       USE YOWTEST  , ONLY : IU06    ,ITEST
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL 
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: CICOVER
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: CITHICK
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL 
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: CITHICK
+
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(OUT) :: CIWA
+
 
       INTEGER(KIND=JWIM) :: ICM, I, MAXICM
       INTEGER(KIND=JWIM) :: M, IJ
@@ -67,8 +70,8 @@
       REAL(KIND=JWRB) :: A, B, C
       REAL(KIND=JWRB) :: CIDEAC_INT, WT, WT1, WH, WH1 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: DINV
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE) :: ALP 
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL) :: DINV
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL,NFRE) :: ALP 
 
 ! ----------------------------------------------------------------------
 
@@ -88,7 +91,7 @@
 !     for the limit value for sea ice = 0 (CIDMAX=A)
 !     to insure that CIDMEAN will be increasing with increasing sea ice cover
       MAXICM=INT(LOG(A/CIDMIN)/LOG(CIFRGMT))
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         IF(CITHICK(IJ).GT.0.0_JWRB) THEN
           ! sea ice foes maxmimum size (m)
 !!!       testing making it function of sea ice cover
@@ -117,7 +120,7 @@
         IT1=MAX(1,MIN(IT1,NICT))
         WT1=MAX(MIN(1.0_JWRB,(TW-(TICMIN+(IT-1)*DTIC))/DTIC),0.0_JWRB)
         WT=1.0_JWRB-WT1
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           IF(CITHICK(IJ).GT.0.0_JWRB) THEN
             IH=FLOOR((CITHICK(IJ)-HICMIN)/DHIC+1)
             IH=MAX(1,MIN(IH,NICH))
@@ -137,7 +140,7 @@
 
       IF (ISHALLO.NE.1) THEN
         DO M=1,NFRE
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             X=ALP(IJ,M)*TCGOND(INDEP(IJ),M)*IDELT
             IF(X.LT.EPSMIN) THEN
               CIWA(IJ,M)=1.0_JWRB
@@ -150,7 +153,7 @@
         ENDDO
       ELSE
         DO M=1,NFRE
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             X=ALP(IJ,M)*GOM(M)*IDELT
             IF(X.LT.EPSMIN) THEN
               CIWA(IJ,M)=1.0_JWRB

@@ -720,7 +720,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &                        TAUW(KIJS), TAUWDIR(KIJS),                &
      &                        Z0OLD(KIJS),                              &
      &                        ROAIRO(KIJS), ZIDLOLD(KIJS),              &
-     &                        CICOVER(KIJS), CIWA(KIJS:KIJL,:),         &
+     &                        CICOVER(KIJS), CIWA,                      &
      &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),  &
      &                        Z0NEW(KIJS), Z0B(KIJS),                   &
      &                        ROAIRN(KIJS), ZIDLNEW(KIJS),              &

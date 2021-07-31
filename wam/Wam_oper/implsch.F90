@@ -3,7 +3,7 @@
      &                    THWOLD, USOLD,                                &
      &                    TAUW, TAUWDIR, Z0OLD,                         &
      &                    ROAIRO, WSTAROLD,                             &
-     &                    CICVR, CIWA,                                  &
+     &                    CICVR, GCIWA,                                 &
      &                    U10NEW, THWNEW, USNEW,                        &
      &                    Z0NEW, Z0B, ROAIRN, WSTARNEW,                 &
      &                    WSEMEAN, WSFMEAN,                             &
@@ -48,7 +48,7 @@
 !    &                   DEPTH, EMAXDPT,
 !    &                   THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,
 !    &                   ROAIRO, WSTAROLD, 
-!    &                   CICVR, CIWA,
+!    &                   CICVR, GCIWA,
 !    &                   U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,WSTARNEW,
 !    &                   USTOKES, VSTOKES, STRNMS,                     &
 !    &                   MIJ,  GXLLWS)
@@ -78,7 +78,7 @@
 !      *WSTARNEW*  FREE CONVECTION VELOCITY SCALE (M/S)
 !      *WSTAROLD*   INTERMEDIATE STORAGE OF WSTAR
 !      *CICVR*     SEA ICE COVER.
-!      *CIWA*      SEA ICE WAVE ATTENUATION.
+!      *GCIWA*     SEA ICE WAVE ATTENUATION.
 !      *WSEMEAN*   WINDSEA VARIANCE.
 !      *WSFMEAN*   WINDSEA MEAN FREQUENCY.
 !      *USTOKES*   U-COMP SURFACE STOKES DRIFT.
@@ -183,8 +183,8 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: ROAIRN, WSTARNEW
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: WSEMEAN, WSFMEAN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CIWA
 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: GCIWA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: GXLLWS
 
       INTEGER(KIND=JWIM) :: IJ, K, M
@@ -260,7 +260,7 @@
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              CIREDUC(IJ,K,M)=CIWA(IJ,M)*CIREDUC(IJ,K,M)
+              CIREDUC(IJ,K,M)=GCIWA(IJ,M)*CIREDUC(IJ,K,M)
             ENDDO
           ENDDO
         ENDDO
@@ -268,7 +268,7 @@
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              CIREDUC(IJ,K,M)=CIWA(IJ,M)
+              CIREDUC(IJ,K,M)=GCIWA(IJ,M)
             ENDDO
           ENDDO
         ENDDO
