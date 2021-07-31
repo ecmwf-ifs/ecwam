@@ -377,7 +377,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MIJ
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: GXLLWS
 
       CHARACTER(LEN= 2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, CZERO
@@ -474,7 +474,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
             KIJL=MIN(KIJS+NPROMA-1,IJL)
             CALL WDFLUXES (IJS, IJL, KIJS, KIJL,                        &
      &                     MIJ(KIJS),                                   &
-     &                     FL1, XLLWS(KIJS:KIJL,:,:),    &
+     &                     FL1, GXLLWS,                                 &
      &                     DEPTH(KIJS),                                 &
      &                     CICOVER(KIJS),                               &
      &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),     &
@@ -493,7 +493,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
         ELSE
           MIJ(:) = NFRE
-          XLLWS(:,:,:)=0._JWRB
+          GXLLWS(:,:,:)=0._JWRB
         ENDIF
 
 !       SET FL1 ON ICE POINTS TO ZERO
@@ -557,7 +557,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 !         COMPUTE OUTPUT PARAMETERS
           IF(NIPRMOUT.GT.0) THEN
-            CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
+            CALL OUTBS (IJS, IJL, MIJ, FL1, GXLLWS)
 !           PRINT OUT NORMS
             !!!1 to do: decide if there are cases where we might want LDREPROD false
             LDREPROD=.TRUE.
@@ -726,7 +726,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &                        ROAIRN(KIJS), ZIDLNEW(KIJS),              &
      &                        WSEMEAN(KIJS), WSFMEAN(KIJS),             &
      &                        USTOKES(KIJS), VSTOKES(KIJS),STRNMS(KIJS),&
-     &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:))
+     &                        MIJ(KIJS), GXLLWS )
 
               ENDDO
 !$OMP       END PARALLEL DO
@@ -751,7 +751,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
                   DO K=1,NANG
                     DO M=1,NFRE
                       FL1(IJ,K,M) = MAX(FL1(IJ,K,M),EPSMIN)
-                      XLLWS(IJ,K,M) = 0.0_JWRB
+                      GXLLWS(IJ,K,M) = 0.0_JWRB
                     ENDDO
                   ENDDO
                 ENDDO
@@ -856,7 +856,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 !           COMPUTE OUTPUT PARAMETERS
             IF(NIPRMOUT.GT.0) THEN
-              CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
+              CALL OUTBS (IJS, IJL, MIJ, FL1, GXLLWS)
 
 !!!1 to do: decide if there are cases where we might want LDREPROD false
               LDREPROD=.TRUE.

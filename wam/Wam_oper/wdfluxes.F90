@@ -101,7 +101,7 @@
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TAUWDIR_LOC  ! TAUW should not be updated do use a local array
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEANALL, FMEANALL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEAN, FMEAN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEANWS, FMEANWS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: F1MEAN, AKMEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: PHIWA
@@ -125,25 +125,25 @@
 !*    1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
 !         -----------------------------------------
 
-      CALL FKMEAN(GFL, IJS, IJL, KIJS, KIJL, EMEANALL, FMEANALL,        &
+      CALL FKMEAN(GFL, IJS, IJL, KIJS, KIJL, EMEAN, FMEAN,        &
      &            F1MEAN, AKMEAN, XKMEAN)
 
       TAUW_LOC(:) = 0.0_JWRB
       TAUWDIR_LOC(:) = THWNEW(:)
 
       LUPDTUS = .FALSE.
-      FMEANWS(:) = FMEANALL(:)
+      FMEANWS(:) = FMEAN(:)
       FLM(:,:) = 0.0_JWRB
       NCALL = 1
       ICALL = 1
-      CALL SINFLX (ICALL, NCALL, IJS, IJL, KIJS, KIJL, &
-     &             LUPDTUS, &
-     &             U10NEW, THWNEW, ROAIRN, WSTAR, &
-     &             CICVR, &
-     &             FMEANALL, FMEANWS, &
-     &             FLM, GFL, &
+      CALL SINFLX (ICALL, NCALL, IJS, IJL, KIJS, KIJL,              &
+     &             LUPDTUS,                                         &
+     &             GFL,                                             &
+     &             U10NEW, THWNEW, ROAIRN, WSTAR, CICVR,            &
+     &             FMEAN, FMEANWS,                                  &
+     &             FLM,                                             &
      &             USNEW, TAUW_LOC, TAUWDIR_LOC, Z0NEW, Z0B, PHIWA, &
-     &             FLD, SL, SPOS, &
+     &             FLD, SL, SPOS,                                   &
      &             MIJ, RHOWGDFTH, GXLLWS)
 
       IF (ITEST.GE.2) THEN
@@ -153,8 +153,8 @@
 
       IF(LCFLX) THEN
 
-        CALL SDISSIP (GFL ,FLD, SL, IJS, IJL, KIJS, KIJL,               &
-     &                EMEANALL, F1MEAN, XKMEAN,                         &
+        CALL SDISSIP (GFL ,FLD, SL, IJS, IJL, KIJS, KIJL,   &
+     &                EMEAN, F1MEAN, XKMEAN,                &
      &                USNEW, THWNEW, ROAIRN)
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. WDFLUXES: SDISSIP CALLED'
@@ -162,11 +162,11 @@
         ENDIF
 
         IF(.NOT. LWVFLX_SNL) THEN
-          CALL WNFLUXES (KIJS, KIJL,                                      &
-     &                   MIJ, RHOWGDFTH,                                &
-     &                   SL, CICVR,                                     &
-     &                   PHIWA,                                         &
-     &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
+          CALL WNFLUXES (KIJS, KIJL,                        &
+     &                   MIJ, RHOWGDFTH,                    &
+     &                   SL, CICVR,                         &
+     &                   PHIWA,                             &
+     &                   EMEAN, F1MEAN, U10NEW, THWNEW,     &
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
@@ -177,11 +177,11 @@
         ENDIF
 
         IF(LWVFLX_SNL) THEN
-          CALL WNFLUXES (KIJS, KIJL,                                      &
-     &                   MIJ, RHOWGDFTH,                                &
-     &                   SL, CICVR,                                     &
-     &                   PHIWA,                                         &
-     &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
+          CALL WNFLUXES (KIJS, KIJL,                       &
+     &                   MIJ, RHOWGDFTH,                   &
+     &                   SL, CICVR,                        &
+     &                   PHIWA,                            &
+     &                   EMEAN, F1MEAN, U10NEW, THWNEW,    &
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
@@ -209,3 +209,4 @@
       IF (LHOOK) CALL DR_HOOK('WDFLUXES',1,ZHOOK_HANDLE)
 
       END SUBROUTINE WDFLUXES
+

@@ -222,10 +222,6 @@
 !        ---------------
 
       DELT = IDELT
-!      *IJS*     - GLOBAL INDEX OF FIRST GRIDPOINT
-!      *IJL*     - GLOBAL INDEX OF LAST GRIDPOINT
-!      *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
-!      *KIJL*    - LOCAL INDEX OF LAST GRIDPOINT
       DELTM = 1.0_JWRB/DELT
       XIMP = 1.0_JWRB
       DELT5 = XIMP*DELT
@@ -289,14 +285,14 @@
       LUPDTUS = .TRUE.
       NCALL = 2
       DO ICALL = 1, NCALL 
-        CALL SINFLX (ICALL, NCALL, IJS, IJL, KIJS, KIJL, &
-     &               LUPDTUS, &
-     &               U10NEW, THWNEW, ROAIRN, WSTARNEW, &
-     &               CICVR, &
-     &               FMEANALL, FMEANWS, &
-     &               FLM, GFL, &
-     &               USNEW, TAUW, TAUWDIR, Z0NEW, Z0B, PHIWA, &
-     &               FLD, SL, SPOS, &
+        CALL SINFLX (ICALL, NCALL, IJS, IJL, KIJS, KIJL,       &
+     &               LUPDTUS,                                  &
+     &               GFL,                                      &
+     &               U10NEW, THWNEW, ROAIRN, WSTARNEW, CICVR,  &
+     &               FMEANALL, FMEANWS,                        &
+     &               FLM,                                      &
+     &               USNEW, TAUW, TAUWDIR, Z0NEW, Z0B, PHIWA,  &
+     &               FLD, SL, SPOS,                            &
      &               MIJ, RHOWGDFTH, GXLLWS)
 
         IF (ITEST.GE.2) THEN
@@ -308,8 +304,8 @@
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
 
-      CALL SDISSIP (GFL ,FLD, SL, IJS, IJL, KIJS, KIJL,                 &
-     &              EMEANALL, F1MEAN, XKMEAN,                           &
+      CALL SDISSIP (GFL ,FLD, SL, IJS, IJL, KIJS, KIJL,       &
+     &              EMEANALL, F1MEAN, XKMEAN,                 &
      &              USNEW, THWNEW, ROAIRN)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
@@ -409,11 +405,11 @@
       ENDIF
 
       IF(LCFLX) THEN
-        CALL WNFLUXES (KIJS, KIJL,                                        &
-     &                 MIJ, RHOWGDFTH,                                  &
-     &                 SSOURCE, CICVR,                                  &
-     &                 PHIWA,                                           &
-     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
+        CALL WNFLUXES (KIJS, KIJL,                              &
+     &                 MIJ, RHOWGDFTH,                          &
+     &                 SSOURCE, CICVR,                          &
+     &                 PHIWA,                                   &
+     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,        &
      &                 USNEW, ROAIRN, .TRUE.)
       ENDIF
 ! ----------------------------------------------------------------------
