@@ -441,7 +441,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
           CALL UNSETICE(IJS, IJL, KIJS, KIJL,                      &
      &                  DEPTH(KIJS), EMAXDPT(KIJS),                &
      &                  CICOVER(KIJS), U10OLD(KIJS), THWOLD(KIJS), &
-     &                  FL1)
+     &                  FL1(IJS,1,1))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1236,1)
@@ -474,7 +474,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
             KIJL=MIN(KIJS+NPROMA-1,IJL)
             CALL WDFLUXES (IJS, IJL, KIJS, KIJL,                        &
      &                     MIJ(KIJS),                                   &
-     &                     FL1, GXLLWS,                                 &
+     &                     FL1(IJS,1,1), GXLLWS(IJS,1,1),               &
      &                     DEPTH(KIJS),                                 &
      &                     CICOVER(KIJS),                               &
      &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),     &
@@ -507,7 +507,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
           DO JKGLO=IJS,IJL,NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL)
-            CALL SETICE(IJS, IJL, KIJS, KIJL, FL1,                 &
+            CALL SETICE(IJS, IJL, KIJS, KIJL, FL1(IJS,1,1) ,            &
      &                  CICOVER(KIJS), U10NEW(KIJS), THWNEW(KIJS))
           ENDDO
 !$OMP     END PARALLEL DO
@@ -714,13 +714,13 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
               DO JKGLO=IJS,IJL,NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL)
-                CALL IMPLSCH (FL1(IJS,1,1), IJS, IJL, KIJS, KIJL,                &
+                CALL IMPLSCH (FL1(IJS,1,1), IJS, IJL, KIJS, KIJL,       &
      &                        DEPTH(KIJS), EMAXDPT(KIJS),               &
      &                        THWOLD(KIJS), USOLD(KIJS),                &
      &                        TAUW(KIJS), TAUWDIR(KIJS),                &
      &                        Z0OLD(KIJS),                              &
      &                        ROAIRO(KIJS), ZIDLOLD(KIJS),              &
-     &                        CICOVER(KIJS), CIWA(IJS,1),                      &
+     &                        CICOVER(KIJS), CIWA(IJS,1),               &
      &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),  &
      &                        Z0NEW(KIJS), Z0B(KIJS),                   &
      &                        ROAIRN(KIJS), ZIDLNEW(KIJS),              &

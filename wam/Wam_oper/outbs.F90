@@ -72,10 +72,10 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
       DO JKGLO = IJSLOC, IJLLOC, NPROMA
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
-        CALL OUTBLOCK(IJS, IJL, KIJS, KIJL, MIJ(KIJS),            &
-     &                FL1, XLLWS, CGROUP,                         &
-     &                DEPTH(KIJS),                                &
-     &                BOUT)
+        CALL OUTBLOCK(IJS, IJL, KIJS, KIJL, MIJ(KIJS),             &
+     &                FL1(IJS,1,1), XLLWS(IJS,1,1), CGROUP(IJS,1), &
+     &                DEPTH(KIJS),                                 &
+     &                BOUT(IJS,1))
       ENDDO
 !$OMP END PARALLEL DO
       CALL GSTATS(1502,1)
