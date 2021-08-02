@@ -1,4 +1,5 @@
-      SUBROUTINE IMPLSCH (GFL, IJS, IJL, KIJS, KIJL,                    &
+      SUBROUTINE IMPLSCH (IJS, IJL, KIJS, KIJL, GFL,                    &
+     &                    WAVNUM, CINV, CGROUP,                         &
      &                    DEPTH, EMAXDPT,                               &
      &                    THWOLD, USOLD,                                &
      &                    TAUW, TAUWDIR, Z0OLD,                         &
@@ -44,18 +45,22 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *IMPLSCH (GFL, FL, IJS, IJL, KIJS, KIJL,
+!       *CALL* *IMPLSCH (IJS, IJL, KIJS, KIJL, GFL,
+!    &                   WAVNUM, CINV, CGROUP,
 !    &                   DEPTH, EMAXDPT,
 !    &                   THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,
 !    &                   ROAIRO, WSTAROLD, 
 !    &                   CICVR, GCIWA,
 !    &                   U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,WSTARNEW,
-!    &                   USTOKES, VSTOKES, STRNMS,                     &
+!    &                   USTOKES, VSTOKES, STRNMS,
 !    &                   MIJ,  GXLLWS)
-!      *GFL*     - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
-!      *IJS:IJL*  - GLOBAL INDEX FIRST DIMENSION 
+!      *IJS:IJL* - GLOBAL INDEX FIRST DIMENSION 
 !      *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
 !      *KIJL*    - LOCAL INDEX OF LAST GRIDPOINT
+!      *GFL*     - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
+!      *WAVNUM*  - WAVE NUMBER.
+!      *CINV*    - INVERSE PHASE VELOCITY.
+!      *CGROUP*  - GROUP SPPED.
 !      *DEPTH*     WATER DEPTH
 !      *EMAXDPT*   MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
 !      *U10NEW*    NEW WIND SPEED IN M/S.
@@ -171,6 +176,8 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(KIJS:KIJL)
+
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH, EMAXDPT
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: THWOLD, USOLD, Z0OLD
@@ -288,6 +295,7 @@
         CALL SINFLX (ICALL, NCALL, IJS, IJL, KIJS, KIJL,       &
      &               LUPDTUS,                                  &
      &               GFL,                                      &
+     &               WAVNUM, CINV, CGROUP,                     &
      &               U10NEW, THWNEW, ROAIRN, WSTARNEW, CICVR,  &
      &               FMEANALL, FMEANWS,                        &
      &               FLM,                                      &

@@ -1,6 +1,7 @@
       SUBROUTINE WDFLUXES (IJS, IJL, KIJS, KIJL,                        &
      &                     MIJ,                                         &
      &                     GFL, GXLLWS,                                 &
+     &                     WAVNUM, CINV, CGROUP,                        &
      &                     DEPTH,                                       &
      &                     CICVR,                                       &
      &                     U10NEW, THWNEW, USNEW,                       &
@@ -25,13 +26,20 @@
 !       *CALL* *WDFLUXES (IJS, IJL, KIJS, KIJL,
 !    &                    MIJ,
 !    &                    GFL, GXLLWS,
+!    &                    WAVNUM, CINV, CGROUP,
 !    &                    CICVR,
 !    &                    THWNEW,USNEW,Z0NEW,Z0B,ROAIRN,WSTAR,
 !    &                    WSEMEAN, WSFMEAN,
 !    &                    USTOKES, VSTOKES, STRNMS)
-!          *GFL*    - SPECTRUM(INPUT).
+
+!          *IJS:IJL*- GLOBAL INDEX FIRST DIMENSION
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*   - INDEX OF LAST GRIDPOINT.
+!          *GFL*    - SPECTRUM(INPUT).
+!          *GXLLWS* - TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
+!          *WAVNUM* - WAVE NUMBER.
+!          *CINV*   - INVERSE PHASE VELOCITY.
+!          *CGROUP* - GROUP SPPED.
 !          *DEPTH*  - WATER DEPTH.
 !          *U10NEW* - WIND SPEED.
 !          *THWNEW* - WIND DIRECTION IN RADIANS.
@@ -82,6 +90,7 @@
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(KIJS:KIJL)
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: GFL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICVR
@@ -139,6 +148,7 @@
       CALL SINFLX (ICALL, NCALL, IJS, IJL, KIJS, KIJL,              &
      &             LUPDTUS,                                         &
      &             GFL,                                             &
+     &             WAVNUM, CINV, CGROUP,                            &
      &             U10NEW, THWNEW, ROAIRN, WSTAR, CICVR,            &
      &             FMEAN, FMEANWS,                                  &
      &             FLM,                                             &

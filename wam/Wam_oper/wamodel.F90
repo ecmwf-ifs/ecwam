@@ -302,7 +302,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSMIN
-      USE YOWSHAl  , ONLY : DEPTH    ,EMAXDPT
+      USE YOWSHAl  , ONLY : DEPTH    ,EMAXDPT  ,WAVNUM   ,CINV     ,CGROUP
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDATER   ,CDATES   ,CDTINTT  ,IDELPRO  ,IDELT    ,    &
      &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &
@@ -475,6 +475,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
             CALL WDFLUXES (IJS, IJL, KIJS, KIJL,                        &
      &                     MIJ(KIJS),                                   &
      &                     FL1(IJS,1,1), GXLLWS(IJS,1,1),               &
+     &                     WAVNUM(IJS,1), CINV(IJS,1), CGROUP(IJS,1),   &
      &                     DEPTH(KIJS),                                 &
      &                     CICOVER(KIJS),                               &
      &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),     &
@@ -714,7 +715,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
               DO JKGLO=IJS,IJL,NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL)
-                CALL IMPLSCH (FL1(IJS,1,1), IJS, IJL, KIJS, KIJL,       &
+                CALL IMPLSCH (IJS, IJL, KIJS, KIJL, FL1(IJS,1,1),       &
+     &                        WAVNUM(IJS,1), CINV(IJS,1), CGROUP(IJS,1),&
      &                        DEPTH(KIJS), EMAXDPT(KIJS),               &
      &                        THWOLD(KIJS), USOLD(KIJS),                &
      &                        TAUW(KIJS), TAUWDIR(KIJS),                &

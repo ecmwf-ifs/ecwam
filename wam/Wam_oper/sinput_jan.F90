@@ -1,4 +1,5 @@
       SUBROUTINE SINPUT_JAN (NGST, IJS, IJL, KIJS, KIJL, GFL , &
+     &                       WAVNUM, CINV, CGROUP,             &
      &                       THWNEW, U10NEW, USNEW, Z0NEW,     &
      &                       ROAIRN, WSTAR, RNFAC,             &
                              FLD, SL, SPOS, GXLLWS)
@@ -46,14 +47,18 @@
 !     ----------
 
 !     *CALL* *SINPUT_JAN (NGST, IJS, IJL, KIJS, KIJL, GFL,
-!    &                   THWNEW, U10NEW, USNEW, Z0NEW,
-!    &                   ROAIRN, WSTAR, RNFAC,
-!    &                   FLD, SL, SPOS, GXLLWS)
+!    &                    WAVNUM, CINV, CGROUP,
+!    &                    THWNEW, U10NEW, USNEW, Z0NEW,
+!    &                    ROAIRN, WSTAR, RNFAC,
+!    &                    FLD, SL, SPOS, GXLLWS)
 !         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
 !                - IF = 2 THEN GUSTINESS PARAMETERISATION
 !         *KIJS* - INDEX OF FIRST GRIDPOINT.
 !         *KIJL* - INDEX OF LAST GRIDPOINT.
 !          *GFL* - SPECTRUM.
+!       *WAVNUM* - WAVE NUMBER.
+!         *CINV* - INVERSE PHASE VELOCITY.
+!       *CGROUP* - GROUP SPPED.
 !       *THWNEW* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                  NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                  CLOCKWISE FROM NORTH).
@@ -103,7 +108,6 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,GM1      ,ZPI  ,ROWATER   ,YEPS,  EPSUS
       USE YOWPHYS  , ONLY : ZALP     ,XKAPPA, BETAMAXOXKAPPA2
-      USE YOWSHAL  , ONLY : WAVNUM   ,CINV     ,CGROUP 
       USE YOWSTAT  , ONLY : ISHALLO  ,IDAMPING
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -118,6 +122,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, U10NEW, USNEW, Z0NEW
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: ROAIRN, WSTAR, RNFAC

@@ -1,4 +1,5 @@
       SUBROUTINE STRESSO (IJS, IJL, KIJS, KIJL, GFL, SL, SPOS,          &
+     &                    CINV,                                         &
      &                    THWNEW, USNEW, Z0NEW, ROAIRN, RNFAC,          &
      &                    TAUW, TAUWDIR, PHIWA, LLPHIWA)
 
@@ -22,6 +23,7 @@
 !     ----------
 
 !        *CALL* *STRESSO (IJS, IJL, KIJS, KIJL, GFL, SL, SPOS,
+!    &                    CINV,
 !    &                    THWNEW, USNEW, Z0NEW, ROAIRN, RNFAC,
 !    &                    TAUW, TAUWDIR, PHIWA)*
 !         *IJS:IJL*     - 1st DIMENSION of GFL
@@ -30,6 +32,7 @@
 !         *GFL*         - WAVE SPECTRUM.
 !         *SL*          - WIND INPUT SOURCE FUNCTION ARRAY (positive and negative contributions).
 !         *SPOS*        - POSITIVE WIND INPUT SOURCE FUNCTION ARRAY.
+!         *CINV*        - INVERSE PHASE VELOCITY.
 !         *THWNEW*      - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                         NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                         CLOCKWISE FROM NORTH).
@@ -71,7 +74,6 @@
      &            COSTH    ,SINTH    ,FR5
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPHYS  , ONLY : TAUWSHELTER
-      USE YOWSHAL  , ONLY : CINV
       USE YOWTABL  , ONLY : EPS1
       USE YOWSTAT  , ONLY : IPHYS
 
@@ -85,6 +87,8 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
+
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CINV
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN, RNFAC
