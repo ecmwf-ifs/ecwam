@@ -714,19 +714,19 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
               DO JKGLO=IJS,IJL,NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL)
-                CALL IMPLSCH (FL1, IJS, IJL, KIJS, KIJL,                &
+                CALL IMPLSCH (FL1(IJS,:,:), IJS, IJL, KIJS, KIJL,                &
      &                        DEPTH(KIJS), EMAXDPT(KIJS),               &
      &                        THWOLD(KIJS), USOLD(KIJS),                &
      &                        TAUW(KIJS), TAUWDIR(KIJS),                &
      &                        Z0OLD(KIJS),                              &
      &                        ROAIRO(KIJS), ZIDLOLD(KIJS),              &
-     &                        CICOVER(KIJS), CIWA,                      &
+     &                        CICOVER(KIJS), CIWA(IJS,:),                      &
      &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),  &
      &                        Z0NEW(KIJS), Z0B(KIJS),                   &
      &                        ROAIRN(KIJS), ZIDLNEW(KIJS),              &
      &                        WSEMEAN(KIJS), WSFMEAN(KIJS),             &
      &                        USTOKES(KIJS), VSTOKES(KIJS),STRNMS(KIJS),&
-     &                        MIJ(KIJS), GXLLWS )
+     &                        MIJ(KIJS), GXLLWS(IJS,:,:) )
 
               ENDDO
 !$OMP       END PARALLEL DO
