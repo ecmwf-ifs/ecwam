@@ -74,7 +74,7 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
         CALL OUTBLOCK(IJS, IJL, KIJS, KIJL, MIJ(KIJS),                          &
      &                FL1(IJS,1,1), XLLWS(IJS,1,1),                             &
-     &                WAVNUM(IJ,1), CINV(IJS,1), CGROUP(IJS,1),                 &
+     &                WAVNUM(IJS,1), CINV(IJS,1), CGROUP(IJS,1),                &
      &                DEPTH(KIJS),                                              &
      &                BOUT(IJS,1))
       ENDDO
