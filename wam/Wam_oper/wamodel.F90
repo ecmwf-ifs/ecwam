@@ -438,10 +438,10 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL UNSETICE(IJS, IJL, KIJS, KIJL,                      &
+          CALL UNSETICE(KIJS, KIJL, KIJS, KIJL,                      &
      &                  DEPTH(KIJS), EMAXDPT(KIJS),                &
      &                  CICOVER(KIJS), U10OLD(KIJS), THWOLD(KIJS), &
-     &                  FL1(IJS,1,1))
+     &                  FL1(KIJS:KIJL,:,:))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1236,1)
@@ -472,10 +472,10 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
           DO JKGLO=IJS,IJL,NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL)
-            CALL WDFLUXES (IJS, IJL, KIJS, KIJL,                        &
+            CALL WDFLUXES (KIJS, KIJL, KIJS, KIJL,                        &
      &                     MIJ(KIJS),                                   &
-     &                     FL1(IJS,1,1), GXLLWS(IJS,1,1),               &
-     &                     WAVNUM(IJS,1), CINV(IJS,1), CGROUP(IJS,1),   &
+     &                     FL1(KIJS:KIJL,:,:), GXLLWS(KIJS:KIJL,:,:),               &
+     &                     WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:), CGROUP(KIJS:KIJL,:),   &
      &                     DEPTH(KIJS),                                 &
      &                     CICOVER(KIJS),                               &
      &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),     &
@@ -494,7 +494,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
         ELSE
           MIJ(:) = NFRE
-          GXLLWS(:,:,:)=0._JWRB
+          GXLLWS(:,:,:) = 0._JWRB
         ENDIF
 
 !       SET FL1 ON ICE POINTS TO ZERO
@@ -508,7 +508,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
           DO JKGLO=IJS,IJL,NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL)
-            CALL SETICE(IJS, IJL, KIJS, KIJL, FL1(IJS,1,1) ,            &
+            CALL SETICE(KIJS, KIJL, KIJS, KIJL, FL1(KIJS:KIJL,:,:) ,            &
      &                  CICOVER(KIJS), U10NEW(KIJS), THWNEW(KIJS))
           ENDDO
 !$OMP     END PARALLEL DO
@@ -715,20 +715,20 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
               DO JKGLO=IJS,IJL,NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL)
-                CALL IMPLSCH (IJS, IJL, KIJS, KIJL, FL1(IJS,1,1),       &
-     &                        WAVNUM(IJS,1), CINV(IJS,1), CGROUP(IJS,1),&
+                CALL IMPLSCH (KIJS, KIJL, KIJS, KIJL, FL1(KIJS:KIJL,:,:),       &
+     &                        WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:), CGROUP(KIJS:KIJL,:),&
      &                        DEPTH(KIJS), EMAXDPT(KIJS),               &
      &                        THWOLD(KIJS), USOLD(KIJS),                &
      &                        TAUW(KIJS), TAUWDIR(KIJS),                &
      &                        Z0OLD(KIJS),                              &
      &                        ROAIRO(KIJS), ZIDLOLD(KIJS),              &
-     &                        CICOVER(KIJS), CIWA(IJS,1),               &
+     &                        CICOVER(KIJS), CIWA(KIJS:KIJL,:),               &
      &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),  &
      &                        Z0NEW(KIJS), Z0B(KIJS),                   &
      &                        ROAIRN(KIJS), ZIDLNEW(KIJS),              &
      &                        WSEMEAN(KIJS), WSFMEAN(KIJS),             &
      &                        USTOKES(KIJS), VSTOKES(KIJS),STRNMS(KIJS),&
-     &                        MIJ(KIJS), GXLLWS(IJS,1,1) )
+     &                        MIJ(KIJS), GXLLWS(KIJS:KIJL,:,:) )
 
               ENDDO
 !$OMP       END PARALLEL DO
