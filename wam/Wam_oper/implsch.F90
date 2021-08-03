@@ -1,5 +1,5 @@
       SUBROUTINE IMPLSCH (IJS, IJL, KIJS, KIJL, GFL,                    &
-     &                    WAVNUM, CINV, CGROUP,                         &
+     &                    WAVNUM, CINV, CGROUP, STOKFAC,                &
      &                    DEPTH, EMAXDPT,                               &
      &                    THWOLD, USOLD,                                &
      &                    TAUW, TAUWDIR, Z0OLD,                         &
@@ -46,7 +46,7 @@
 !     ----------
 
 !       *CALL* *IMPLSCH (IJS, IJL, KIJS, KIJL, GFL,
-!    &                   WAVNUM, CINV, CGROUP,
+!    &                   WAVNUM, CINV, CGROUP, STOKFAC,
 !    &                   DEPTH, EMAXDPT,
 !    &                   THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,
 !    &                   ROAIRO, WSTAROLD, 
@@ -61,6 +61,7 @@
 !      *WAVNUM*  - WAVE NUMBER.
 !      *CINV*    - INVERSE PHASE VELOCITY.
 !      *CGROUP*  - GROUP SPPED.
+!      *STOKFAC* - FACTOR TO COMPUTE THE STOKES SURFACE DRIFT
 !      *DEPTH*     WATER DEPTH
 !      *EMAXDPT*   MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
 !      *U10NEW*    NEW WIND SPEED IN M/S.
@@ -146,10 +147,11 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : WSEMEAN_MIN 
       USE YOWSHAL  , ONLY : IODP     ,IOBND
-      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,CDTPRO   ,LBIWBK
+      USE YOWSTAT  , ONLY : IDELT    ,CDTPRO   ,LBIWBK
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -177,7 +179,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(KIJS:KIJL)
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP, STOKFAC
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH, EMAXDPT
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: THWOLD, USOLD, Z0OLD
@@ -245,14 +247,15 @@
 
 
 !     REDUCE WAVE ENERGY IF LARGER THAN DEPTH LIMITED WAVE HEIGHT
-      IF(ISHALLO.NE.1 .AND. LBIWBK) THEN
+      IF(LBIWBK) THEN
          CALL SDEPTHLIM(IJS, IJL, KIJS, KIJL, EMAXDPT, GFL)
       ENDIF
 
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
-      CALL FKMEAN(GFL, IJS, IJL, KIJS, KIJL, EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
+      CALL FKMEAN(IJS, IJL, KIJS, KIJL, GFL, WAVNUM,           &
+     &            EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
 
       DO K=1,NANG
         DO IJ=KIJS,KIJL
@@ -263,7 +266,7 @@
 !     COMPUTE DAMPING COEFFICIENT DUE TO FRICTION ON BOTTOM OF THE SEA ICE.
 !!! testing sea ice attenuation (might need to restrict usage when needed)
       IF(LCIWABR) THEN
-        CALL CIWABR(IJS, IJL, KIJS, KIJL, CICVR, GFL, CIREDUC)
+        CALL CIWABR(IJS, IJL, KIJS, KIJL, CICVR, GFL, WAVNUM, CGROUP, CIREDUC)
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=KIJS,KIJL
@@ -313,6 +316,7 @@
 !           ---------------------------
 
       CALL SDISSIP (GFL ,FLD, SL, IJS, IJL, KIJS, KIJL,       &
+     &              WAVNUM, CGROUP,                           &
      &              EMEANALL, F1MEAN, XKMEAN,                 &
      &              USNEW, THWNEW, ROAIRN)
       IF (ITEST.GE.2) THEN
@@ -331,7 +335,7 @@
         ENDDO
       ENDIF
 
-      CALL SNONLIN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, DEPTH, AKMEAN)
+      CALL SNONLIN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, WAVNUM, DEPTH, AKMEAN)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
         CALL FLUSH (IU06)
@@ -352,12 +356,9 @@
       ENDIF
 
 
-!SHALLOW
-      IF(ISHALLO.NE.1) THEN
-        CALL SDIWBK(IJS, IJL, KIJS, KIJL, GFL ,FLD, SL, DEPTH, EMAXDPT, EMEANALL, F1MEAN)
-        CALL SBOTTOM (IJS, IJL, KIJS, KIJL, GFL, FLD, SL, DEPTH)
-      ENDIF
-!SHALLOW
+      CALL SDIWBK(IJS, IJL, KIJS, KIJL, GFL ,FLD, SL, DEPTH, EMAXDPT, EMEANALL, F1MEAN)
+
+      CALL SBOTTOM (IJS, IJL, KIJS, KIJL, GFL, FLD, SL, WAVNUM, DEPTH)
 
 ! ----------------------------------------------------------------------
 
@@ -425,12 +426,14 @@
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
 
-      CALL FKMEAN(GFL, IJS, IJL, KIJS, KIJL, EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
+      CALL FKMEAN(IJS, IJL, KIJS, KIJL, GFL, WAVNUM,           &
+     &            EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
       CALL FEMEANWS(GFL, GXLLWS, IJS, IJL, KIJS, KIJL, EMEANWS, FMEANWS)
 
-      CALL IMPHFTAIL(IJS, IJL, KIJS, KIJL, MIJ, FLM, GFL)
+      CALL IMPHFTAIL(IJS, IJL, KIJS, KIJL, MIJ, FLM, WAVNUM, CGROUP, GFL)
+
       CALL FLMINTAIL(IJS, IJL, KIJS, KIJL, U10NEW, THWNEW, USNEW, FMEANWS, GFL)
 
 
@@ -464,9 +467,9 @@
 !*    2.7 SURFACE STOKES DRIFT AND STRAIN IN SEA ICE
 !         ------------------------------------------
 
-      CALL STOKESDRIFT(IJS, IJL, KIJS, KIJL, GFL, U10NEW, THWNEW, CICVR, USTOKES, VSTOKES)
+      CALL STOKESDRIFT(IJS, IJL, KIJS, KIJL, GFL, STOKFAC, U10NEW, THWNEW, CICVR, USTOKES, VSTOKES)
 
-      IF(LWNEMOCOUSTRN) CALL CIMSSTRN(IJS, IJL, KIJS, KIJL, GFL, DEPTH, STRNMS)
+      IF(LWNEMOCOUSTRN) CALL CIMSSTRN(IJS, IJL, KIJS, KIJL, GFL, WAVNUM, DEPTH, STRNMS)
 
 
 !*    2.8 SAVE WINDS INTO INTERMEDIATE STORAGE.

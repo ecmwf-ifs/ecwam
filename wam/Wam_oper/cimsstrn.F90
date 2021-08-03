@@ -1,4 +1,4 @@
-      SUBROUTINE CIMSSTRN(IJS, IJL, KIJS, KIJL, GFL, DEPTH, STRN)
+      SUBROUTINE CIMSSTRN(IJS, IJL, KIJS, KIJL, GFL, WAVNUM, DEPTH, STRN)
 
 ! ----------------------------------------------------------------------
 
@@ -14,11 +14,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *CIMSSTRN (IJS, IJL, KIJS, KIJL, GFL, DEPTH, STRN)*
+!       *CALL* *CIMSSTRN (IJS, IJL, KIJS, KIJL, GFL, WAVNUM, DEPTH, STRN)*
 !              *IJS:IJL* - 1st DIMENSION OF GFL
 !              *KIJS*    - INDEX OF FIRST GRIDPOINT
 !              *KIJL*    - INDEX OF LAST GRIDPOINT
 !              *GFL*     - SPECTRUM.
+!              *WAVNUM*  - OPEN WATER WAVE NUMBER
 !              *DEPTH*   - WATER DEPTH
 !              *STRN*    - MEAN SQUARE WAVE STRAIN IN ICE (OUTPUT).
 
@@ -48,8 +49,6 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP
-      USE YOWSTAT  , ONLY : ISHALLO
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -59,7 +58,8 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
 
-      REAL(KIND=JWRB), INTENT(IN) :: GFL(IJS:IJL,NANG,NFRE)
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: STRN
@@ -68,7 +68,7 @@
       INTEGER(KIND=JWIM) :: IJ,M,K,JD
       REAL(KIND=JWRB) :: AKI_ICE
       REAL(KIND=JWRB) :: F1LIM 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XK, XKI, E, SUME 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XKI, E, SUME 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -90,20 +90,9 @@
 !        ------------------------------------------
 
       DO M=1,NFRE
-        IF (ISHALLO.EQ.1) THEN
-          DO IJ=KIJS,KIJL
-            XK(IJ)=(ZPI*FR(M))**2/G
-          ENDDO
-        ELSE
-          DO IJ=KIJS,KIJL
-            JD=INDEP(IJ)
-            XK(IJ)=TFAK(JD,M)
-          ENDDO
-        ENDIF
-
         DO IJ=KIJS,KIJL
-          XKI(IJ)=AKI_ICE(G,XK(IJ),DEPTH(IJ),ROWATER,CITHICK(IJ))
-          E(IJ)=0.5_JWRB*CITHICK(IJ)*XKI(IJ)**3/XK(IJ)
+          XKI(IJ)=AKI_ICE(G,WAVNUM(IJ,M),DEPTH(IJ),ROWATER,CITHICK(IJ))
+          E(IJ)=0.5_JWRB*CITHICK(IJ)*XKI(IJ)**3/WAVNUM(IJ,M)
         ENDDO
 
         DO IJ=KIJS,KIJL

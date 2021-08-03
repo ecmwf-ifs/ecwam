@@ -38,7 +38,7 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSHAL  , ONLY : DEPTH    ,CGROUP
+      USE YOWSHAL  , ONLY : DEPTH    ,WAVNUM      ,CINV        ,CGROUP
       USE YOWSTAT  , ONLY : NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -72,9 +72,10 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
       DO JKGLO = IJSLOC, IJLLOC, NPROMA
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
-        CALL OUTBLOCK(IJS, IJL, KIJS, KIJL, MIJ(KIJS),             &
-     &                FL1(IJS,1,1), XLLWS(IJS,1,1), CGROUP(IJS,1), &
-     &                DEPTH(KIJS),                                 &
+        CALL OUTBLOCK(IJS, IJL, KIJS, KIJL, MIJ(KIJS),                          &
+     &                FL1(IJS,1,1), XLLWS(IJS,1,1),                             &
+     &                WAVNUM(IJ,1), CINV(IJS,1), CGROUP(IJS,1),                 &
+     &                DEPTH(KIJS),                                              &
      &                BOUT(IJS,1))
       ENDDO
 !$OMP END PARALLEL DO

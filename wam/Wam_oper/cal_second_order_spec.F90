@@ -1,4 +1,4 @@
-SUBROUTINE CAL_SECOND_ORDER_SPEC(F1,KIJS,KIJL,DEPTH,SIG)
+SUBROUTINE CAL_SECOND_ORDER_SPEC(F1, WAVNUM, KIJS, KIJL, DEPTH, SIG)
  
 !***  *CAL_SEC_ORDER_SPEC*   DETERMINES SECOND_ORDER SPECTRUM
  
@@ -11,16 +11,17 @@ SUBROUTINE CAL_SECOND_ORDER_SPEC(F1,KIJS,KIJL,DEPTH,SIG)
  
 !     INTERFACE.
 !     ----------
-!              *CALL*  *CAL_SEC_ORDER_SPEC(F1,KIJS,KIJL,DEPTH,SIG)*
+!              *CALL*  *CAL_SEC_ORDER_SPEC(F1,WAVNUM,KIJS,KIJL,DEPTH,SIG)*
  
 !                       INPUT:
-!                            *F1*    - 2-D FREE WAVE SPECTRUM (at input)
+!                            *F1*     - 2-D FREE WAVE SPECTRUM (at input)
+!                            *WAVNUM* - WAVE NUMBER
 !                            *KIJS*   - FIRST GRIDPOINT              
 !                            *KIJL*   - LAST GRIDPOINT 
-!                            *DEPTH* - DEPTH ARRAY (FROM KIJS:KIJL)
-!                            *SIG*   - DIRECTION OF MAPPING:
-!                                      FORWARD: SIG = +1
-!                                      INVERSE: SIG = -1
+!                            *DEPTH*  - DEPTH ARRAY (FROM KIJS:KIJL)
+!                            *SIG*    - DIRECTION OF MAPPING:
+!                                       FORWARD: SIG = +1
+!                                       INVERSE: SIG = -1
  
 !                       OUTPUT: 
 !                            *F1*    - 2-D SPECTRUM INCLUDING SECOND-ORDER
@@ -55,6 +56,7 @@ SUBROUTINE CAL_SECOND_ORDER_SPEC(F1,KIJS,KIJL,DEPTH,SIG)
 #include "secspom.intfb.h"
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: F1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
       REAL(KIND=JWRB), INTENT(IN) :: SIG
@@ -81,7 +83,8 @@ SUBROUTINE CAL_SECOND_ORDER_SPEC(F1,KIJS,KIJL,DEPTH,SIG)
       FRAC = FRATIO-1.0_JWRB
       OMSTART = ZPI*FR(1)
 
-      CALL FKMEAN(F1,KIJS,KIJL,KIJS,KIJL,EMEANALL,FMEANALL,F1MEAN,AKMEAN,XKMEAN)
+      CALL FKMEAN(KIJS, KIJL, KIJS, KIJL, F1, WAVNUM,         &
+     &            EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
  
 !***  1.1 INTERPOLATION OR NOT.
 !     ------------------------

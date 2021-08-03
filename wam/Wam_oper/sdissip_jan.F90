@@ -1,4 +1,5 @@
       SUBROUTINE SDISSIP_JAN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL,  &
+     &                        WAVNUM,                              &
      &                        EMEAN, F1MEAN, XKMEAN)
 
 ! ----------------------------------------------------------------------
@@ -23,14 +24,16 @@
 !     ----------
 
 !       *CALL* *SDISSIP_JAN (GFL, FLD, IJS, IJL, KIJS, KIJL, SL,
+!                            WAVNUM,
 !                            EMEAN,F1MEAN, XKMEAN,)*
-!          *GFL*   - SPECTRUM.
-!          *FLD*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
-!          *SL*  - TOTAL SOURCE FUNCTION ARRAY
-!          IJS:IJL - 1st DIMENSION OF GFL
-!          *KIJS* - INDEX OF FIRST GRIDPOINT
-!          *KIJL* - INDEX OF LAST GRIDPOINT
-!          *EMEAN* - MEAN ENERGU DENSITY 
+!          *GFL*    - SPECTRUM.
+!          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
+!          *SL*     - TOTAL SOURCE FUNCTION ARRAY
+!          IJS:IJL  - 1st DIMENSION OF GFL
+!          *KIJS*   - INDEX OF FIRST GRIDPOINT
+!          *KIJL*   - INDEX OF LAST GRIDPOINT
+!          *WAVNUM* - WAVE NUMBER
+!          *EMEAN*  - MEAN ENERGY DENSITY 
 !          *F1MEAN* - MEAN FREQUENCY BASED ON 1st MOMENT.
 !          *XKMEAN* - MEAN WAVE NUMBER BASED ON 1st MOMENT.
 
@@ -59,8 +62,6 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ZPI4GM2
       USE YOWPHYS  , ONLY : CDIS     ,DELTA_SDIS, RNU    ,CDISVIS
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP
-      USE YOWSTAT  , ONLY : ISHALLO
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
       USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK
@@ -75,7 +76,10 @@
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT):: FLD, SL
 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM 
+
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN):: EMEAN, F1MEAN, XKMEAN
+
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
@@ -94,39 +98,16 @@
 
       DELTA_SDISM1=1.0_JWRB-DELTA_SDIS
 
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. SDISSIP_JAN: START DO-LOOP (ISHALLO=0)'
-          CALL FLUSH (IU06)
-        ENDIF
-
-      IF (ISHALLO.EQ.1) THEN
-!       DEEP
-        CONSD = CDIS*ZPI**9/G**4
-        DO IJ=KIJS,KIJL
-          SDS(IJ)=CONSD*F1MEAN(IJ)*EMEAN(IJ)**2*F1MEAN(IJ)**8
-        ENDDO
-      ELSE
-!       SHALLOW
-        CONSS = CDIS*ZPI
-       DO IJ=KIJS,KIJL
-          SDS(IJ)=CONSS*F1MEAN(IJ)*EMEAN(IJ)**2*XKMEAN(IJ)**4
-        ENDDO
-      ENDIF
+      CONSS = CDIS*ZPI
+      DO IJ=KIJS,KIJL
+        SDS(IJ)=CONSS*F1MEAN(IJ)*EMEAN(IJ)**2*XKMEAN(IJ)**4
+      ENDDO
 
       DO M=1,NFRE
-!       DEEP
-        IF (ISHALLO.EQ.1) THEN
-          DO IJ=KIJS,KIJL
-            X(IJ) = (FR(M)/F1MEAN(IJ))**2
-            XK2(IJ) = ZPI4GM2 * FR(M)**4 
-          ENDDO
-        ELSE
-!         SHALLOW
-          DO IJ=KIJS,KIJL
-            X(IJ) = TFAK(INDEP(IJ),M)/XKMEAN(IJ)
-            XK2(IJ) = TFAK(INDEP(IJ),M)**2
-          ENDDO
-        ENDIF
+        DO IJ=KIJS,KIJL
+          X(IJ) = WAVNUM(IJ,M)/XKMEAN(IJ)
+          XK2(IJ) = WAVNUM(IJ,M)**2
+        ENDDO
 
         CVIS=RNU*CDISVIS
         DO IJ=KIJS,KIJL

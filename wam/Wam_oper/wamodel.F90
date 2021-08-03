@@ -302,7 +302,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSMIN
-      USE YOWSHAl  , ONLY : DEPTH    ,EMAXDPT  ,WAVNUM   ,CINV     ,CGROUP
+      USE YOWSHAl  , ONLY : DEPTH    ,EMAXDPT  ,WAVNUM   ,CINV     ,    &
+     &            CGROUP   ,STOKFAC
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDATER   ,CDATES   ,CDTINTT  ,IDELPRO  ,IDELT    ,    &
      &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &
@@ -473,9 +474,10 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL)
             CALL WDFLUXES (KIJS, KIJL, KIJS, KIJL,                        &
-     &                     MIJ(KIJS),                                   &
-     &                     FL1(KIJS:KIJL,:,:), GXLLWS(KIJS:KIJL,:,:),               &
-     &                     WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:), CGROUP(KIJS:KIJL,:),   &
+     &                     MIJ(KIJS),                                     &
+     &                     FL1(KIJS:KIJL,:,:), GXLLWS(KIJS:KIJL,:,:),        &
+     &                     WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:),           &
+     &                     CGROUP(KIJS:KIJL,:), STOKFAC(KIJS:KIJL,:),        &
      &                     DEPTH(KIJS),                                 &
      &                     CICOVER(KIJS),                               &
      &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),     &
@@ -716,7 +718,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL)
                 CALL IMPLSCH (KIJS, KIJL, KIJS, KIJL, FL1(KIJS:KIJL,:,:),       &
-     &                        WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:), CGROUP(KIJS:KIJL,:),&
+     &                        WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:),           &
+     &                        CGROUP(KIJS:KIJL,:), STOKFAC(KIJS:KIJL,:),        &
      &                        DEPTH(KIJS), EMAXDPT(KIJS),               &
      &                        THWOLD(KIJS), USOLD(KIJS),                &
      &                        TAUW(KIJS), TAUWDIR(KIJS),                &

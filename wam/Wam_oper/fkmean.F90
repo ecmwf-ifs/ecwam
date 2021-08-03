@@ -1,4 +1,5 @@
-      SUBROUTINE FKMEAN (GFL, IJS, IJL, KIJS, KIJL, EM, FM1, F1, AK, XK)
+      SUBROUTINE FKMEAN (IJS, IJL, KIJS, KIJL, GFL, WAVNUM,   &
+     &                   EM, FM1, F1, AK, XK)
 
 ! ----------------------------------------------------------------------
 
@@ -16,20 +17,21 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FKMEAN (GFL, IJS, IJL, KIJS, KIJL, EM, FM1, F1, AK, XK)*
-!              *GFL*  - SPECTRUM.
-!              *IJS:IJL* - 1st DIMENSION of GFL
-!              *KIJS*- LOCAL INDEX OF FIRST GRIDPOINT
-!              *KIJL*- LOCAL INDEX OF LAST GRIDPOINT
-!              *EM*  - MEAN WAVE ENERGY
-!              *FM1* - MEAN WAVE FREQUENCY BASED ON (1/f)*GFL INTEGRATION
-!              *F1*  - MEAN WAVE FREQUENCY BASED ON f*GFL INTEGRATION
-!              *AK*  - MEAN WAVE NUMBER  BASED ON sqrt(1/k)*GFL INTGRATION
-!                      ONLY FOR SHALLOW WATER RUNS.
-!!!                    AK IS STILL NEEDED IN SNONLIN !!!!
-!!!                    IF THE OLD FORMULATION IS USED.
-!              *XK*  - MEAN WAVE NUMBER  BASED ON sqrt(k)*GFL INTEGRATION
-!                      ONLY FOR SHALLOW WATER RUNS.
+!       *CALL* *FKMEAN (IJS, IJL, KIJS, KIJL, GFL, WAVNUM, EM, FM1, F1, AK, XK)*
+!              *IJS:IJL* - 1st DIMENSION of GFL and WAVNUM
+!              *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
+!              *KIJL*    - LOCAL INDEX OF LAST GRIDPOINT
+!              *GFL*     - SPECTRUM.
+!              *WAVNUM*  - WAVE NUMBER.
+!              *EM*      - MEAN WAVE ENERGY
+!              *FM1*     - MEAN WAVE FREQUENCY BASED ON (1/f)*GFL INTEGRATION
+!              *F1*      - MEAN WAVE FREQUENCY BASED ON f*GFL INTEGRATION
+!              *AK*      - MEAN WAVE NUMBER  BASED ON sqrt(1/k)*GFL INTGRATION
+!                          ONLY FOR SHALLOW WATER RUNS.
+!!!                        AK IS STILL NEEDED IN SNONLIN !!!!
+!!!                        IF THE OLD FORMULATION IS USED.
+!              *XK*      - MEAN WAVE NUMBER  BASED ON sqrt(k)*GFL INTEGRATION
+!                          ONLY FOR SHALLOW WATER RUNS.
 
 !     METHOD.
 !     -------
@@ -56,14 +58,16 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWSTAT  , ONLY : ISHALLO
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM 
+
       REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(OUT) :: EM, FM1, F1, AK, XK
 
       INTEGER(KIND=JWIM) :: IJ, M, K
@@ -135,7 +139,7 @@
 
         DO M=1,NFRE
           DO IJ=KIJS,KIJL
-            SQRTK=SQRT(TFAK(INDEP(IJ),M))
+            SQRTK=SQRT(WAVNUM(IJ,M))
             TEMPA(IJ) = DFIM(M)/SQRTK
             TEMPX(IJ) = SQRTK*DFIM(M)
           ENDDO

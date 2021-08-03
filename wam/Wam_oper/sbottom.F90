@@ -1,4 +1,4 @@
-      SUBROUTINE SBOTTOM (IJS, IJL, KIJS, KIJL, GFL, FLD, SL, DEPTH)
+      SUBROUTINE SBOTTOM (IJS, IJL, KIJS, KIJL, GFL, FLD, SL, WAVNUM, DEPTH)
 
 !SHALLOW
 ! ----------------------------------------------------------------------
@@ -18,12 +18,13 @@
 !     ----------
 
 !       *CALL* *SBOTTOM (IJS, IJL, KIJS, KIJL, GFL, FLD, SL, DEPTH)
-!          *IJS:IJL* - 1st DIMENSION OF GFL
+!          *IJS:IJL* - 1st DIMENSION OF GFL WAVNUM
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT
 !          *KIJL*    - INDEX OF LAST GRIDPOINT
 !          *GFL*     - SPECTRUM.
 !          *FLD*     - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*      - TOTAL SOURCE FUNCTION ARRAY
+!          *WAVNUM*  - WAVE NUMBER
 !          *DEPTH*   - WATER DEPTH
 
 !     METHOD.
@@ -41,11 +42,11 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : GM1
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP   ,BATHYMAX
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOWSHAL  , ONLY : BATHYMAX
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -56,7 +57,11 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
+
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM 
+
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
+
 
       INTEGER(KIND=JWIM):: IJ, K, M
       REAL(KIND=JWRB) :: CONST, ARG
@@ -71,9 +76,9 @@
       DO M=1,NFRE
         DO IJ=KIJS,KIJL
           IF(DEPTH(IJ).LT.BATHYMAX) THEN
-            ARG = 2.0_JWRB* DEPTH(IJ)*TFAK(INDEP(IJ),M)
+            ARG = 2.0_JWRB* DEPTH(IJ)*WAVNUM(IJ,M)
             ARG = MIN(ARG,50.0_JWRB)
-            SBO(IJ,M) = CONST*TFAK(INDEP(IJ),M)/SINH(ARG)
+            SBO(IJ,M) = CONST*WAVNUM(IJ,M)/SINH(ARG)
           ELSE
             SBO(IJ,M) = 0.0_JWRB
           ENDIF

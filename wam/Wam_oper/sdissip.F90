@@ -1,4 +1,5 @@
       SUBROUTINE SDISSIP (GFL, FLD, SL, IJS, IJL, KIJS, KIJL,   &
+     &                    WAVNUM, CGROUP,                       &
      &                    EMEAN, F1MEAN, XKMEAN,                &
      &                    USNEW, THWNEW, ROAIRN)
 ! ----------------------------------------------------------------------
@@ -16,6 +17,7 @@
 !     ----------
 
 !       *CALL* *SDISSIP (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, *
+!                        WAVNUM, CGROUP,  
 !                        EMEAN, F1MEAN, XKMEAN,*
 !                        USNEW, THWNEW, ROAIRN)*
 !        *GFL*   - SPECTRUM.
@@ -24,6 +26,8 @@
 !        *IJS:IJL- 1st DIMENSION OF GFL
 !         *KIJS* - INDEX OF FIRST GRIDPOINT
 !         *KIJL* - INDEX OF LAST GRIDPOINT
+!       *WAVNUM* - WAVE NUMBER
+!       *CGROUP* - GROUP SPEED
 !        *EMEAN* - MEAN ENERGY DENSITY 
 !       *F1MEAN* - MEAN FREQUENCY BASED ON 1st MOMENT.
 !       *XKMEAN* - MEAN WAVE NUMBER BASED ON 1st MOMENT.
@@ -65,8 +69,11 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL 
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
+
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
+
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EMEAN, F1MEAN, XKMEAN
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USNEW, THWNEW, ROAIRN 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USNEW, THWNEW, ROAIRN
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
@@ -74,14 +81,15 @@
 
       IF (LHOOK) CALL DR_HOOK('SDISSIP',0,ZHOOK_HANDLE)
 
-
       SELECT CASE (IPHYS)
       CASE(0)
          CALL SDISSIP_JAN (GFL ,FLD, SL, IJS, IJL, KIJS, KIJL,  &
+     &                     WAVNUM,                              &
      &                     EMEAN, F1MEAN, XKMEAN)
 
       CASE(1) 
          CALL SDISSIP_ARD (GFL ,FLD, SL, IJS, IJL, KIJS, KIJL,  &
+     &                     WAVNUM, CGROUP,                      &
      &                     USNEW, THWNEW, ROAIRN)
       END SELECT 
 

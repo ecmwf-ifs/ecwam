@@ -1,4 +1,4 @@
-      SUBROUTINE STOKESDRIFT(IJS, IJL, KIJS, KIJL, GFL, U10, THW, CICVR, USTOKES, VSTOKES)
+      SUBROUTINE STOKESDRIFT(IJS, IJL, KIJS, KIJL, GFL, STOKFAC, U10, THW, CICVR, USTOKES, VSTOKES)
  
 !
 !***  *STOKESDRIFT*   DETERMINES THE STOKES DRIFT
@@ -12,13 +12,14 @@
 !
 !     INTERFACE.
 !     ----------
-!              *CALL*  *STOKESDRIFT(IJS, IJL, KIJS, KIJL, GFL, U10,THW,CICVR,USTOKES,VSTOKES)*
+!              *CALL*  *STOKESDRIFT(IJS, IJL, KIJS, KIJL, GFL, STOKFAC, U10,THW,CICVR,USTOKES,VSTOKES)*
 !
 !                       INPUT:
 !                            *IJS:IJL*- 1st DIMENSION OF GFL.
 !                            *KIJS*   - FIRST GRIDPOINT
 !                            *KIJL*   - LAST GRIDPOINT
 !                            *GFL*    - 2-D SPECTRUM
+!                            *STOKFAC*- FACTOR TO COMPUTE THE STOKES DRIFT
 !                            Auxilliary fields to specify Stokes when model sea ice cover the blocking threshold
 !                            as 0.016*U10, aligned in the wind direction
 !                            *U10*    - WIND SPEED IN M/S.
@@ -48,7 +49,6 @@
      &                      DFIM_SIM ,FRATIO   ,COSTH    ,SINTH
       USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
-      USE YOWSHAL  , ONLY : TFAC_ST  ,INDEP
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
        
@@ -58,6 +58,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: STOKFAC 
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: U10, THW, CICVR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: USTOKES, VSTOKES
@@ -90,7 +91,7 @@
 
       DO M=1,NFRE_ODD
          DO IJ = KIJS,KIJL
-           STFAC(IJ) = TFAC_ST(INDEP(IJ),M)*DFIM_SIM(M)
+           STFAC(IJ) = STOKFAC(IJ,M)*DFIM_SIM(M)
          ENDDO
          DO K=1,NANG
             DO IJ = KIJS,KIJL

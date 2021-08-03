@@ -1,4 +1,4 @@
-      SUBROUTINE IMPHFTAIL (IJS, IJL, KIJS, KIJL, MIJ, FLM, GFL) 
+      SUBROUTINE IMPHFTAIL (IJS, IJL, KIJS, KIJL, MIJ, FLM, WAVNUM, CGROUP, GFL) 
 ! ----------------------------------------------------------------------
 
 !**** *IMPHFTAIL* - IMPOSE A HIGH FREQUENCY TAIL TO THE SPECTRUM
@@ -13,12 +13,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *IMPHFTAIL (IJS, IJL, KIJS, KIJL, MIJ, FLM, GFL)
-!          *IJS:IJL* - 1st DIMENSION OF GFL
+!       *CALL* *IMPHFTAIL (IJS, IJL, KIJS, KIJL, MIJ, FLM, WAVNUM, CGROUP, GFL)
+!          *IJS:IJL* - 1st DIMENSION OF GFL WAVNUM, CGROUP
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT
 !          *KIJL*    - INDEX OF LAST GRIDPOINT
 !          *MIJ*     - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !          *FLM*     - SPECTAL DENSITY MINIMUM VALUE
+!          *WAVNUM*  - WAVENUMBER
+!          *CGROUP*  - GROUP SPEED
 !          *GFL*     - SPECTRUM (INPUT AND OUTPUT).
 
 !     METHOD.
@@ -36,8 +38,6 @@
       USE YOWFRED  , ONLY : FRM5 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSHAL  , ONLY : TCGOND   ,TFAK     ,INDEP
-      USE YOWSTAT  , ONLY : ISHALLO
 
 ! ----------------------------------------------------------------------
 
@@ -46,6 +46,8 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: MIJ
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG), INTENT(IN) :: FLM 
+
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: GFL
 
@@ -63,20 +65,12 @@
 !*    DIAGNOSTIC TAIL.
 !     ----------------
 
-      IF(ISHALLO.EQ.1) THEN
-        DO IJ=KIJS,KIJL
-          DO M=MIJ(IJ),NFRE
-            TEMP2(IJ,M) = FRM5(M)
-          ENDDO
+      DO IJ=KIJS,KIJL
+        DO M=MIJ(IJ),NFRE
+          AKM1 = 1._JWRB/WAVNUM(IJ,M)
+          TEMP2(IJ,M) = AKM1**3/CGROUP(IJ,M)
         ENDDO
-      ELSE
-        DO IJ=KIJS,KIJL
-          DO M=MIJ(IJ),NFRE
-            AKM1 = 1._JWRB/TFAK(INDEP(IJ),M)
-            TEMP2(IJ,M) = AKM1**3/TCGOND(INDEP(IJ),M)
-          ENDDO
-        ENDDO
-      ENDIF
+      ENDDO
 
       DO IJ=KIJS,KIJL
         DO M=MIJ(IJ)+1,NFRE

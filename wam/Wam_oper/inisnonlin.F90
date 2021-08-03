@@ -42,10 +42,11 @@
      &            K1W      ,K2W      ,K11W     ,K21W     ,AF11     ,    &
      &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,    &
      &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,    &
-     &            FRH      ,FTRF     ,ENH      ,MFRSTLW  ,MLSTHG   ,    &
+     &            FRH      ,FTRF     ,MFRSTLW  ,MLSTHG   ,              &
      &            KFRH     ,NINL     ,NRNL     ,INLCOEF  ,RNLCOEF
       USE YOWTEST  , ONLY : IU06
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE

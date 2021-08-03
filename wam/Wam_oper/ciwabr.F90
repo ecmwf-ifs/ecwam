@@ -1,4 +1,4 @@
-      SUBROUTINE CIWABR (IJS, IJL, KIJS, KIJL, CICOVER, GFL, CIWAB)
+      SUBROUTINE CIWABR (IJS, IJL, KIJS, KIJL, CICOVER, GFL, WAVNUM, CGROUP, CIWAB)
 
 ! ----------------------------------------------------------------------
 
@@ -44,18 +44,20 @@
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE , CDICWA
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ZPI4GM2    ,EPSMIN
-      USE YOWSHAL  , ONLY : TCGOND  ,TFAK      ,INDEP
       USE YOWSTAT  , ONLY : IDELT   ,ISHALLO 
       USE YOWTEST  , ONLY : IU06    ,ITEST
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL 
       REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER
+
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP 
+
       REAL(KIND=JWRB),DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: CIWAB
 
       INTEGER(KIND=JWIM) :: K, M, IJ
@@ -85,9 +87,9 @@
             DO K=1,NANG
               DO IJ=KIJS,KIJL
                 EWH=4.0_JWRB*SQRT(MAX(EPSMIN,GFL(IJ,K,M)*DFIM(M)))
-                XK2(M)=TFAK(INDEP(IJ),M)**2
+                XK2(M)=WAVNUM(IJ,M)**2
                 ALP=CDICWA*XK2(M)*EWH
-                X=ALP*TCGOND(INDEP(IJ),M)*IDELT
+                X=ALP*CGROUP(IJ,M)*IDELT
                 CIWAB(IJ,K,M)=1.0_JWRB-CICOVER(IJ)*(1.0_JWRB-EXP(-MIN(X,50.0_JWRB)))
               ENDDO
             ENDDO

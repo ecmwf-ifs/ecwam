@@ -248,7 +248,6 @@
       USE YOWGRIBHD, ONLY : LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IJS     ,IJL      ,COSPH
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
-      USE YOWINDN  , ONLY : MLSTHG   ,ENH
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,    &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            KMNOP    ,KMSOP    ,IPER
@@ -360,10 +359,7 @@
       REAL(KIND=JWRB) :: D, OM, XK
       REAL(KIND=JWRB) :: XLOGFRATIO
       REAL(KIND=JWRB) :: GAM
-      REAL(KIND=JWRB), PARAMETER :: ENH_MAX=10.0_JWRB
-      REAL(KIND=JWRB), PARAMETER :: ENH_MIN=0.1_JWRB   ! to prevent ENH to become too small
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: AKI, TRANSF
 
       REAL(KIND=JWRB) :: XLA, XLO 
 
@@ -1158,41 +1154,6 @@
 
       CALL INISNONLIN
 
-
-!     9.2 COMPUTE THE NONLINEAR TRANSFER FUNCTION COEFFIxCIENTS FOR SNL
-!         VALID FOR THE NEW FORMULATION AND OTHER STUFFS
-!         ------------------------------------------------------------ 
-
-      IF (.NOT.ALLOCATED(ENH)) ALLOCATE(ENH(IJS:IJL,MLSTHG))
-
-      IF (ISNONLIN.EQ.1) THEN
-        IF (ISHALLO.NE.1) THEN
-            DO M=1,NFRE
-               DO IJ = IJS, IJL 
-                 D = DEPTH(IJ)
-                 OM = ZPI*FR(M)
-                 XK = AKI(OM,D)
-                 ENH(IJ,M) = MAX(MIN(ENH_MAX,TRANSF(XK,D)),ENH_MIN)
-               ENDDO
-            ENDDO
-            DO M=NFRE+1,MLSTHG
-               DO IJ = IJS, IJL 
-                 D = DEPTH(IJ)
-                 OM = ZPI*FR(NFRE)*FRATIO**(M-NFRE)
-!                NOTE THAT TFAK IS NOT DEFINED BEYOND M=NFRE
-!                HENCE THE USE OF FUNCTIOn AKI.
-                 XK = AKI(OM,D)
-                 ENH(IJ,M) = MAX(MIN(ENH_MAX,TRANSF(XK,D)),ENH_MIN)
-               ENDDO
-            ENDDO
-        ELSE
-          DO M=1,MLSTHG
-             DO IJ = IJS, IJL 
-               ENH(IJ,M) = 1.0_JWRB
-             ENDDO
-          ENDDO
-        ENDIF
-      ENDIF
 
 !     9.3 DETERMINE WHETHER A GRID POINT IS SURROUNDED BY
 !         POINTS WITH THE SAME DEPTH INDEX (EXCLUDING LAND POINTS).

@@ -27,6 +27,7 @@ SUBROUTINE FLMINTAIL(IJS, IJL, KIJS, KIJL, U10, UDIR, USTAR, FMEANWS, GFL)
       USE YOWFRED  , ONLY : TH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPHYS  , ONLY : FLMINFAC 
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------

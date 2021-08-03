@@ -1,7 +1,7 @@
       SUBROUTINE WDFLUXES (IJS, IJL, KIJS, KIJL,                        &
      &                     MIJ,                                         &
      &                     GFL, GXLLWS,                                 &
-     &                     WAVNUM, CINV, CGROUP,                        &
+     &                     WAVNUM, CINV, CGROUP, STOKFAC,               &
      &                     DEPTH,                                       &
      &                     CICVR,                                       &
      &                     U10NEW, THWNEW, USNEW,                       &
@@ -26,7 +26,7 @@
 !       *CALL* *WDFLUXES (IJS, IJL, KIJS, KIJL,
 !    &                    MIJ,
 !    &                    GFL, GXLLWS,
-!    &                    WAVNUM, CINV, CGROUP,
+!    &                    WAVNUM, CINV, CGROUP, STOKFAC,
 !    &                    CICVR,
 !    &                    THWNEW,USNEW,Z0NEW,Z0B,ROAIRN,WSTAR,
 !    &                    WSEMEAN, WSFMEAN,
@@ -40,6 +40,7 @@
 !          *WAVNUM* - WAVE NUMBER.
 !          *CINV*   - INVERSE PHASE VELOCITY.
 !          *CGROUP* - GROUP SPPED.
+!          *STOKFAC* - STOKES DRIFT FACTOR.
 !          *DEPTH*  - WATER DEPTH.
 !          *U10NEW* - WIND SPEED.
 !          *THWNEW* - WIND DIRECTION IN RADIANS.
@@ -90,7 +91,7 @@
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(KIJS:KIJL)
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: GFL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP, STOKFAC
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICVR
@@ -134,8 +135,8 @@
 !*    1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
 !         -----------------------------------------
 
-      CALL FKMEAN(GFL, IJS, IJL, KIJS, KIJL, EMEAN, FMEAN,        &
-     &            F1MEAN, AKMEAN, XKMEAN)
+      CALL FKMEAN(IJS, IJL, KIJS, KIJL, GFL, WAVNUM,     &
+     &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
       TAUW_LOC(:) = 0.0_JWRB
       TAUWDIR_LOC(:) = THWNEW(:)
@@ -164,6 +165,7 @@
       IF(LCFLX) THEN
 
         CALL SDISSIP (GFL ,FLD, SL, IJS, IJL, KIJS, KIJL,   &
+     &                WAVNUM, CGROUP,                       &
      &                EMEAN, F1MEAN, XKMEAN,                &
      &                USNEW, THWNEW, ROAIRN)
         IF (ITEST.GE.2) THEN
@@ -180,7 +182,7 @@
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
-        CALL SNONLIN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, DEPTH, AKMEAN)
+        CALL SNONLIN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, WAVNUM, DEPTH, AKMEAN)
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. WDFLUXES: SNONLIN CALLED'
           CALL FLUSH (IU06)
@@ -209,9 +211,9 @@
           ENDDO
         ENDIF
 
-        CALL STOKESDRIFT(IJS, IJL, KIJS, KIJL, GFL, U10NEW, THWNEW, CICVR, USTOKES, VSTOKES)
+        CALL STOKESDRIFT(IJS, IJL, KIJS, KIJL, GFL, STOKFAC, U10NEW, THWNEW, CICVR, USTOKES, VSTOKES)
 
-        IF(LWNEMOCOUSTRN) CALL CIMSSTRN(IJS, IJL, KIJS, KIJL, GFL, DEPTH, STRNMS)
+        IF(LWNEMOCOUSTRN) CALL CIMSSTRN(IJS, IJL, KIJS, KIJL, GFL, WAVNUM, DEPTH, STRNMS)
 
       ENDIF
 ! ----------------------------------------------------------------------

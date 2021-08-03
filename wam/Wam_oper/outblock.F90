@@ -1,5 +1,6 @@
       SUBROUTINE OUTBLOCK (IJS, IJL, KIJS, KIJL, MIJ,                 &
-     &                     GFL, GXLLWS, GVG,                          &
+     &                     GFL, GXLLWS,                               & 
+     &                     WAVNUM, CINV, CGROUP,                      &
      &                     DEPTH,                                     &
      &                     GBOUT)
 ! ----------------------------------------------------------------------
@@ -16,16 +17,18 @@
 !**   INTERFACE.
 !     ----------
 !      *CALL*OUTBLOCK (IJS, IJL, KIJS, KIJL, MIJ,
-!     &                GFL, GXLLWS, GVG,
+!     &                GFL, GXLLWS, WAVENUM, CINV, CGROUP,
 !     &                DEPTH,
 !     &                GBOUT)
-!      *IJS:IJL*- 1st DIMEMSION of GFL, GXLLWS, GVG, GBOUT
+!      *IJS:IJL*- 1st DIMEMSION of GFL, GXLLWS, WAVNUM, CINV, CGROUP, GBOUT
 !      *KIJS*   - INDEX OF FIRST LOCAL GRIDPOINT
 !      *KIJL*   - INDEX OF LAST LOCAL GRIDPOINT
 !      *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !      *GFL*    - INPUT SPECTRUM.
 !      *GXLLWS* - WINDSEA MASK FROM INPUT SOURCE TERM
-!      *GVG*    - GROUP SPEED
+!      *WAVNUM* - WAVE NUMBER
+!      *CINV*   - INVERSE PHASE SPEED
+!      *CGROUP* - GROUP SPEED
 !      *DEPTH*  - DEPTH
 !      *GBOUT*  - OUTPUT PARAMETER BUFFER
 
@@ -47,7 +50,6 @@
 !       *KURTOSIS*  - COMPUTATION OF THE SURFACE ELEVATION KURTOSIS, 
 !                     THE BEJAMIN-FEIR INDEX, THE SPECTRAL PEAKEDNESS 
 !                     FACTOR AND THE MAXIMUM WAVE HEIGHT.
-!       *STOKESDRIFT*  - COMPUTATION OF THE STOKES DRIFT VECTOR. 
 !   
 !     METHOD.
 !     -------
@@ -110,7 +112,7 @@
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: MIJ
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL, GXLLWS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: GVG
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
 
@@ -167,7 +169,7 @@
       ELSE
         FL2ND(KIJS:KIJL,:,:) = GFL(KIJS:KIJL,:,:)
       ENDIF
-      IF(LSECONDORDER) CALL CAL_SECOND_ORDER_SPEC(FL2ND,KIJS,KIJL,DEPTH,SIG)
+      IF(LSECONDORDER) CALL CAL_SECOND_ORDER_SPEC(FL2ND,WAVNUM(KIJS:KIJS,:),KIJS,KIJL,DEPTH,SIG)
 
 
 !     COMPUTE MEAN PARAMETERS
@@ -181,7 +183,7 @@
      &              ETA_M, R, XNSLC, SIG_TH, EPS)
 
 !     WIND/SWELL PARAMETERS
-      CALL SEPWISW (IJS, IJL, KIJS, KIJL, MIJ, GFL, GXLLWS,               &
+      CALL SEPWISW (IJS, IJL, KIJS, KIJL, MIJ, GFL, GXLLWS, CINV,         &
      &              USNEW(KIJS), U10NEW(KIJS), THWNEW(KIJS),              &
      &              ESWELL, FSWELL, THSWELL, P1SWELL, P2SWELL, SPRDSWELL, &
      &              ESEA, FSEA, THWISEA, P1SEA, P2SEA, SPRDSEA,           &
@@ -482,7 +484,7 @@
         IF(LWNEMOCOUSTRN) THEN
           GBOUT(KIJS:KIJL,ITOBOUT(IR))=STRNMS(KIJS:KIJL)
         ELSE
-          CALL CIMSSTRN (IJS, IJL, KIJS, KIJL, GFL, DEPTH, GBOUT(KIJS,ITOBOUT(IR)))
+          CALL CIMSSTRN (IJS, IJL, KIJS, KIJL, GFL, WAVNUM, DEPTH, GBOUT(KIJS,ITOBOUT(IR)))
         ENDIF
       ENDIF
 
@@ -568,7 +570,7 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0 .OR. IPFGTBL(IR+1).NE.0) THEN
-           CALL WEFLUX (GFL, GVG, IJS, IJL, KIJS, KIJL,              &
+           CALL WEFLUX (GFL, CGROUP, IJS, IJL, KIJS, KIJL,           &
      &                  NFRE, NANG, DFIM, DELTH,                     &
      &                  COSTH, SINTH,                                &
      &                  FLD1, FLD2)

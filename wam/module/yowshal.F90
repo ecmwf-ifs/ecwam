@@ -33,6 +33,7 @@
       REAL(KIND=JWRB), ALLOCATABLE :: WAVNUM(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: CINV(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: CGROUP(:,:)
+      REAL(KIND=JWRB), ALLOCATABLE :: STOKFAC(:,:)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -63,6 +64,7 @@
 !      *WAVNUM*    REAL      WAVE NUMBER
 !      *CINV*      REAL      RECIPROCAL OF THE PHASE VELOCITY (1/c)
 !      *CGROUP*    REAL      GROUP SPEED
+!      *STOKFAC*   REAL      FACTOR TO COMPUTE SURFACE STOKES DRIFT FROM SPECTRUM 2*G*K**2/(OMEGA*TANH(2KD))
 
 ! ----------------------------------------------------------------------
       END MODULE YOWSHAL

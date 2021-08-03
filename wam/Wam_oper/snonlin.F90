@@ -1,4 +1,4 @@
-      SUBROUTINE SNONLIN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, DEPTH, AKMEAN)
+      SUBROUTINE SNONLIN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, WAVNUM, DEPTH, AKMEAN)
 
 ! ----------------------------------------------------------------------
 
@@ -31,14 +31,15 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SNONLIN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, DEPTH, AKMEAN)*
+!       *CALL* *SNONLIN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, WAVNUM, DEPTH, AKMEAN)*
 !          *GFL*    - SPECTRUM.
 !          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY.
-!          *IJS:IJL*- !1st DIMENSION OF GFL.
+!          *IJS:IJL*- !1st DIMENSION OF GFL, WAVNUM.
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
-!          *DEPTH*  - WATER DEPTH
+!          *WAVNUM* - WAVE NUMBER.
+!          *DEPTH*  - WATER DEPTH.
 !          *AKMEAN* - MEAN WAVE NUMBER  BASED ON sqrt(1/k)*F INTGRATION
 
 !     METHOD.
@@ -59,16 +60,18 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWFRED  , ONLY : FR       ,FRATIO   ,ZPIFR
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWINDN  , ONLY : IKP      ,IKP1     ,IKM      ,IKM1     ,    &
      &            K1W      ,K2W      ,K11W     ,K21W     ,AF11     ,    &
      &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,    &
      &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,    &
-     &            FRH      ,FTRF     ,ENH      ,MFRSTLW  ,MLSTHG   ,    &
+     &            FRH      ,MFRSTLW  ,MLSTHG   ,                        &
      &            KFRH     ,INLCOEF  ,RNLCOEF
-      USE YOWSHAL  , ONLY : TFAK,    INDEP 
-      USE YOWSTAT  , ONLY : ISHALLO  ,ISNONLIN
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOWSTAT  , ONLY : ISNONLIN
+      USE YOWPCONS , ONLY : GM1
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -78,12 +81,21 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT):: FLD, SL
+
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM 
+
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH, AKMEAN
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, MC, KH, K1, K2, K11, K21
       INTEGER(KIND=JWIM) :: MP, MP1, MM, MM1, IC, IP, IP1, IM, IM1
       INTEGER(KIND=JWIM) :: MFR1STFR, MFRLSTFR
+
+      REAL(KIND=JWRB), PARAMETER :: ENH_MAX=10.0_JWRB
+      REAL(KIND=JWRB), PARAMETER :: ENH_MIN=0.1_JWRB   ! to prevent ENH to become too small
+      REAL(KIND=JWRB) :: TRANSF
+      REAL(KIND=JWRB) :: XK 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,MLSTHG) :: ENH
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: FTAIL, FKLAMP, GW1, GW2, GW3, GW4
@@ -92,32 +104,43 @@
       REAL(KIND=JWRB) :: GW5, GW6, GW7, GW8, FKLAMMA, FKLAMMB, FKLAMM2
       REAL(KIND=JWRB) :: FKLAMA2, FKLAMB2, FKLAM12, FKLAM22
       REAL(KIND=JWRB) :: SAP, SAM, FIJ, FAD1, FAD2, FCEN
-      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL) :: FTEMP, AD, DELAD, DELAP, DELAM, ENHFR
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FTEMP, AD, DELAD, DELAP, DELAM, ENHFR
+
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('SNONLIN',0,ZHOOK_HANDLE)
 
 
-!*    1. SHALLOW WATER INITIALISATION (ONLY FOR THE OLD FORMULATION).
-!        ----------------------------- SEE INITMDL FOR THE NEW ONE
+!*    1. SHALLOW WATER SCALING 
+!        ---------------------
 
-      IF (ISHALLO.NE.1) THEN
-        IF (ISNONLIN.EQ.0) THEN
+      SELECT CASE (ISNONLIN)
+      CASE(0)      
+        DO IJ=KIJS,KIJL
+          ENHFR(IJ) = MAX(0.75_JWRB*DEPTH(IJ)*AKMEAN(IJ), 0.5_JWRB)
+          ENHFR(IJ) = 1.0_JWRB+(5.5_JWRB/ENHFR(IJ)) * (1.0_JWRB-.833_JWRB*ENHFR(IJ)) * EXP(-1.25_JWRB*ENHFR(IJ))
+        ENDDO
+        DO MC=1,MLSTHG
           DO IJ=KIJS,KIJL
-            ENHFR(IJ) = 0.75_JWRB*DEPTH(IJ)*AKMEAN(IJ)
-            ENHFR(IJ) = MAX(ENHFR(IJ),0.5_JWRB)
-            ENHFR(IJ) = 1.0_JWRB+(5.5_JWRB/ENHFR(IJ)) *                 &
-     &                  (1.0_JWRB-.833_JWRB*ENHFR(IJ)) *                &
-     &                      EXP(-1.25_JWRB*ENHFR(IJ))
+            ENH(IJ,MC) = ENHFR(IJ)
           ENDDO
-          DO MC=1,MLSTHG
-            DO IJ=KIJS,KIJL
-              ENH(IJ,MC) = ENHFR(IJ) 
-            ENDDO
+        ENDDO
+
+      CASE(1)      
+        DO MC=1,NFRE
+          DO IJ = KIJS, KIJL 
+            ENH(IJ,MC) = MAX(MIN(ENH_MAX,TRANSF(WAVNUM(IJ,MC),DEPTH(IJ))),ENH_MIN)
           ENDDO
-        ENDIF
-      ENDIF
+        ENDDO
+        DO MC=NFRE+1,MLSTHG
+           XK = GM1*(ZPIFR(NFRE)*FRATIO**(MC-NFRE))**2
+           DO IJ = KIJS, KIJL 
+             ENH(IJ,MC) = MAX(MIN(ENH_MAX,TRANSF(XK,DEPTH(IJ))),ENH_MIN)
+           ENDDO
+        ENDDO
+      END SELECT
 
 
 !*    2. FREQUENCY LOOP.
@@ -169,15 +192,9 @@
         FKLAM12 = RNLCOEF(24,MC) 
         FKLAM22 = RNLCOEF(25,MC) 
 
-        IF (ISHALLO.EQ.1) THEN
-          DO IJ=KIJS,KIJL
-            FTEMP(IJ) = AF11(MC)
-          ENDDO
-        ELSE
-          DO IJ=KIJS,KIJL
-            FTEMP(IJ) = AF11(MC)*ENH(IJ,MC)
-          ENDDO
-        ENDIF
+        DO IJ=KIJS,KIJL
+          FTEMP(IJ) = AF11(MC)*ENH(IJ,MC)
+        ENDDO
 
 
         IF (MC.GT.MFR1STFR .AND. MC.LT.MFRLSTFR ) THEN
@@ -276,9 +293,9 @@
               K21 = K21W(K,KH)
 
               DO IJ=KIJS,KIJL
-                SAP = GW1*GFL(IJ,K1 ,IP ) + GW2*GFL(IJ,K11,IP )             &
+                SAP = GW1*GFL(IJ,K1 ,IP ) + GW2*GFL(IJ,K11,IP )         &
      &              + GW3*GFL(IJ,K1 ,IP1) + GW4*GFL(IJ,K11,IP1)
-                SAM = GW5*GFL(IJ,K2 ,IM ) + GW6*GFL(IJ,K21,IM )             &
+                SAM = GW5*GFL(IJ,K2 ,IM ) + GW6*GFL(IJ,K21,IM )         &
      &              + GW7*GFL(IJ,K2 ,IM1) + GW8*GFL(IJ,K21,IM1)
                 FIJ = GFL(IJ,K  ,IC )*FTAIL
                 FAD1 = FIJ*(SAP+SAM)
@@ -331,14 +348,14 @@
                       SL(IJ,K1 ,MP ) = SL(IJ,K1 ,MP ) + AD(IJ)*FKLAMP1
                     ENDDO
                     DO IJ=KIJS,KIJL
-                      FLD(IJ,K1 ,MP ) = FLD(IJ,K1 ,MP )                   &
+                      FLD(IJ,K1 ,MP ) = FLD(IJ,K1 ,MP )                 &
      &                               + DELAP(IJ)*FKLAP12
                     ENDDO
                     DO IJ=KIJS,KIJL
                       SL(IJ,K11,MP ) = SL(IJ,K11,MP ) + AD(IJ)*FKLAMP2
                     ENDDO
                     DO IJ=KIJS,KIJL
-                      FLD(IJ,K11,MP ) = FLD(IJ,K11,MP )                   &
+                      FLD(IJ,K11,MP ) = FLD(IJ,K11,MP )                 &
      &                               + DELAP(IJ)*FKLAP22
                     ENDDO
 
@@ -348,7 +365,7 @@
      &                                 + AD(IJ)*FKLAMPA
                       ENDDO
                       DO IJ=KIJS,KIJL
-                        FLD(IJ,K1 ,MP1) = FLD(IJ,K1 ,MP1)                 &
+                        FLD(IJ,K1 ,MP1) = FLD(IJ,K1 ,MP1)               &
      &                                 + DELAP(IJ)*FKLAPA2
                       ENDDO
                       DO IJ=KIJS,KIJL
@@ -356,7 +373,7 @@
      &                                 + AD(IJ)*FKLAMPB
                       ENDDO
                       DO IJ=KIJS,KIJL
-                        FLD(IJ,K11,MP1) = FLD(IJ,K11,MP1)                 &
+                        FLD(IJ,K11,MP1) = FLD(IJ,K11,MP1)               &
      &                                 + DELAP(IJ)*FKLAPB2
                       ENDDO
                     ENDIF

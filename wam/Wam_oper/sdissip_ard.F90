@@ -1,4 +1,5 @@
       SUBROUTINE SDISSIP_ARD (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, &
+     &                        WAVNUM, CGROUP,                     &
      &                        USNEW, THWNEW, ROAIRN)
 ! ----------------------------------------------------------------------
 
@@ -18,13 +19,16 @@
 !     ----------
 
 !       *CALL* *SDISSIP_ARD (GFL, FLD, IJS, IJL, KIJS, KIJL, SL,*
+!                            WAVNUM, CGROUP,
 !                            USNEW, THWNEW,ROAIRN)*
 !          *GFL*    - SPECTRUM.
 !          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
-!          *IJS:IJL - 1st DIMENSION of GFL
+!          *IJS:IJL - 1st DIMENSION of GFL WAVNUM, CGROUP
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY
+!          *WAVNUM* - WAVE NUMBER
+!          *CGROUP* - GROUP SPEED
 !          *USNEW*  - NEW FRICTION VELOCITY IN M/S.
 !          *ROAIRN* - AIR DENSITY IN KG/M3
 !          *THWNEW* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC.
@@ -56,8 +60,7 @@
 &                  SSDSC2  , SSDSC4, SSDSC6,  MICHE, SSDSC3, SSDSBRF1, &
 &                  BRKPBCOEF ,SSDSC5, NSDSNTH, NDIKCUMUL,              &
 &                  INDICESSAT, SATWEIGHTS, CUMULW
-      USE YOWSHAL  , ONLY : TFAK    ,INDEP, TCGOND
-      USE YOWSTAT  , ONLY : ISHALLO
+      USE YOWSHAL  , ONLY : INDEP
 
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK
 
@@ -70,6 +73,9 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
+
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP 
+
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USNEW, THWNEW, ROAIRN 
 
 
@@ -82,7 +88,6 @@
 
       REAL(KIND=JWRB), DIMENSION(NFRE) :: SIG, SSDSC2_SIG 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FACTURB
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: XK
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: FACSAT, FACWTRB, TEMP1 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: BTH0 !saturation spectrum
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: BTH !saturation spectrum 
@@ -122,22 +127,11 @@
         SSDSC2_SIG(M)=SSDSC2*SIG(M)
       END DO
 
-      IF (ISHALLO.EQ.0) THEN
-        DO M=1, NFRE
-          DO IJ=KIJS,KIJL
-            XK(IJ,M) = TFAK(INDEP(IJ),M)
-            FACSAT(IJ,M) = XK(IJ,M)**3*TPIINV*TCGOND(INDEP(IJ),M)
-          ENDDO
+      DO M=1, NFRE
+        DO IJ=KIJS,KIJL
+          FACSAT(IJ,M) = WAVNUM(IJ,M)**3*TPIINV*CGROUP(IJ,M)
         ENDDO
-      ELSE
-        DO M=1, NFRE
-          DO IJ=KIJS,KIJL
-            XK(IJ,M) = (SIG(M)**2)/G
-            FACSAT(IJ,M) = XK(IJ,M)**3*TPIINVH*G/SIG(M)
-          ENDDO
-        ENDDO
-      ENDIF
-
+      ENDDO
 
       ! COMPUTE SATURATION SPECTRUM
       DO M=1,NFRE
@@ -264,7 +258,7 @@
         ENDDO
         DO M=1, NFRE
           DO IJ=KIJS,KIJL
-            FACWTRB(IJ,M) = SIG(M)*XK(IJ,M)*FACTURB(IJ)
+            FACWTRB(IJ,M) = SIG(M)*WAVNUM(IJ,M)*FACTURB(IJ)
           ENDDO
           DO K=1,NANG
             DO IJ=KIJS,KIJL
