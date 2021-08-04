@@ -1,4 +1,4 @@
-      SUBROUTINE MWP1 (F, IJS, IJL, KIJS, KIJL, MEANWP1)
+      SUBROUTINE MWP1 (KIJS, KIJL, F, MEANWP1)
 
 ! ----------------------------------------------------------------------
 
@@ -15,11 +15,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MWP1 (F, IJS, IJL, KIJS, KIJL, MEANWP1)*
-!              *F*       - SPECTRUM.
-!              *IJS:IJL* - 1st DIMENSION of F
+!       *CALL* *MWP1 (KIJS, KIJL, F, MEANWP1)*
 !              *KIJS*    - INDEX OF FIRST GRIDPOINT
 !              *KIJL*    - INDEX OF LAST GRIDPOINT
+!              *F*       - SPECTRUM.
 !              *MEANWP1* - MEAN PERIOD BASED ON THE FIRST MOMENT.
 
 !     METHOD.
@@ -50,10 +49,8 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
-
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), INTENT(IN) :: F(KIJS:KIJL,NANG,NFRE)
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: MEANWP1
 
 
@@ -96,7 +93,7 @@
       DO IJ=KIJS,KIJL
         EM(IJ) = EM(IJ)+DELT25*TEMP(IJ)
         MEANWP1(IJ) = MEANWP1(IJ)+COEF_FR*TEMP(IJ)
-        IF(EM(IJ).GT.0.0_JWRB .AND. MEANWP1(IJ).GT.EPSMIN ) THEN
+        IF(EM(IJ) > 0.0_JWRB .AND. MEANWP1(IJ) > EPSMIN ) THEN
           MEANWP1(IJ) = EM(IJ)/MEANWP1(IJ)
           MEANWP1(IJ) = MIN(MEANWP1(IJ),FR1M1)
         ELSE

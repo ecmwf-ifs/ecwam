@@ -1,4 +1,4 @@
-      SUBROUTINE FEMEAN (F, IJS, IJL, KIJS, KIJL, EM, FM)
+      SUBROUTINE FEMEAN (KIJS, KIJL, F, EM, FM)
 
 ! ----------------------------------------------------------------------
 
@@ -17,11 +17,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FEMEAN (F, IJS, IJL, KIJS, KIJL, EM, FM)*
-!              *F*       - SPECTRUM.
-!              *IJS:IJL* - 1st DIMENSION of F
+!       *CALL* *FEMEAN (KIJS, KIJL, F, EM, FM)*
 !              *KIJS*    - INDEX OF FIRST GRIDPOINT
 !              *KIJL*    - INDEX OF LAST GRIDPOINT
+!              *F*       - SPECTRUM.
 !              *EM*      - MEAN WAVE ENERGY (OUTPUT)
 !              *FM*      - MEAN WAVE FREQUENCY (OUTPUT)
 
@@ -55,9 +54,9 @@
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: F
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: EM, FM
 
 

@@ -1,5 +1,5 @@
-       SUBROUTINE TAU_PHI_HF(IJS, IJL, KIJS, KIJL, LTAUWSHELTER, USTAR, Z0, &
-     &                      GFL, THWNEW, ROAIRN, RNFAC,                     &
+       SUBROUTINE TAU_PHI_HF(KIJS, KIJL, LTAUWSHELTER, USTAR, Z0, &
+     &                      FL1, THWNEW, ROAIRN, RNFAC,           &
      &                      UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
@@ -18,14 +18,13 @@
 !**   INTERFACE.
 !     ---------
 
-!       *CALL* *TAU_PHI_HF(IJS, IJL, KIJS, KIJL, LTAUWSHELTER, USTAR, UST, Z0,
-!                          GFL, THWNEW, ROAIRN, RNFAC, &
+!       *CALL* *TAU_PHI_HF(KIJS, KIJL, LTAUWSHELTER, USTAR, UST, Z0,
+!                          FL1, THWNEW, ROAIRN, RNFAC, &
 !                          UST, TAUHF, PHIHF, LLPHIHF)
-!          *IJS:IJL       - 1st DIMENSION OF GFL
 !          *KIJS*         - INDEX OF FIRST GRIDPOINT
 !          *KIJL*         - INDEX OF LAST GRIDPOINT
 !          *LTAUWSHELTER* - if true then TAUWSHELTER 
-!          *GFL*          - WAVE SPECTRUM.
+!          *FL1*          - WAVE SPECTRUM.
 !          *THWNEW*       - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !          *ROAIRN*       - AIR DENSITY IN KG/M**3.
 !          *RNFAC*        - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
@@ -72,12 +71,12 @@
 
 #include "omegagc.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       LOGICAL, INTENT(IN) :: LTAUWSHELTER
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USTAR, Z0
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, ROAIRN, RNFAC
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: UST
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: TAUHF, PHIHF
@@ -131,20 +130,20 @@
       K=1
       DO IJ=KIJS,KIJL
         COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-        FCOSW2   = GFL(IJ,K,NFRE)*COSW**2
+        FCOSW2   = FL1(IJ,K,NFRE)*COSW**2
         F1DCOS3(IJ) = FCOSW2*COSW
         F1DCOS2(IJ) = FCOSW2
-        F1DSIN2(IJ) = GFL(IJ,K,NFRE)*SIN(TH(K)-THWNEW(IJ))**2
-        F1D(IJ) = GFL(IJ,K,NFRE)
+        F1DSIN2(IJ) = FL1(IJ,K,NFRE)*SIN(TH(K)-THWNEW(IJ))**2
+        F1D(IJ) = FL1(IJ,K,NFRE)
       ENDDO
       DO K=2,NANG
         DO IJ=KIJS,KIJL
           COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-          FCOSW2   = GFL(IJ,K,NFRE)*COSW**2
+          FCOSW2   = FL1(IJ,K,NFRE)*COSW**2
           F1DCOS3(IJ) = F1DCOS3(IJ) + FCOSW2*COSW
           F1DCOS2(IJ) = F1DCOS2(IJ) + FCOSW2 
-          F1DSIN2(IJ) = F1DSIN2(IJ) + GFL(IJ,K,NFRE)*SIN(TH(K)-THWNEW(IJ))**2
-          F1D(IJ) = F1D(IJ) + GFL(IJ,K,NFRE)
+          F1DSIN2(IJ) = F1DSIN2(IJ) + FL1(IJ,K,NFRE)*SIN(TH(K)-THWNEW(IJ))**2
+          F1D(IJ) = F1D(IJ) + FL1(IJ,K,NFRE)
         ENDDO
       ENDDO
       DO IJ=KIJS,KIJL

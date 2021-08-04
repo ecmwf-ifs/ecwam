@@ -1,4 +1,4 @@
-      SUBROUTINE PEAKFRI (F, IJS, IJL, KIJS, KIJL, IPEAKF, EPEAKF, F1D)
+      SUBROUTINE PEAKFRI (KIJS, KIJL, F, IPEAKF, EPEAKF, F1D)
 
 ! ----------------------------------------------------------------------
 
@@ -18,11 +18,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PEAKFRI (F, IJS, IJL, KIJS, KIJL, IPEAKF, EPEAKF, F1D)*
-!          *F*       - SPECTRUM.
-!          *IJS:IJL* - 1st DIMENSION of F
+!       *CALL* *PEAKFRI (KIJS, KIJL, F, IPEAKF, EPEAKF, F1D)*
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT
 !          *KIJL*    - INDEX OF LAST GRIDPOINT
+!          *F*       - SPECTRUM.
 !          *IPEAKF   - INDEX OF PEAK FREQUENCY 
 !          *EPEAKF*  - 1-D SPECTRUM AT PEAK FREQUENCY
 !          *F1D*     - 1D FREQUENCY SPECTRUM
@@ -48,15 +47,15 @@
 
       USE YOWFRED  , ONLY : DELTH    ,FR
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
-
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), INTENT(IN) :: F(KIJS:KIJL,NANG,NFRE)
       INTEGER(KIND=JWIM), INTENT(OUT) :: IPEAKF(KIJS:KIJL) 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: EPEAKF
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(OUT) :: F1D
@@ -97,7 +96,7 @@
 !         ---------------------
 
         DO IJ = KIJS,KIJL
-          IF (EPEAKF(IJ).LT.F1D(IJ,M)) THEN
+          IF (EPEAKF(IJ) < F1D(IJ,M)) THEN
             EPEAKF(IJ) = F1D(IJ,M)
             IPEAKF(IJ) = M 
           ENDIF

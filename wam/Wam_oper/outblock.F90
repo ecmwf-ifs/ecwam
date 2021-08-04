@@ -1,7 +1,7 @@
-      SUBROUTINE OUTBLOCK (IJS, IJL, KIJS, KIJL, MIJ,                 &
-     &                     GFL, GXLLWS,                               & 
-     &                     WAVNUM, CINV, CGROUP,                      &
-     &                     DEPTH,                                     &
+      SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
+     &                     GFL, XLLWS,                            & 
+     &                     WAVNUM, CINV, CGROUP,                  &
+     &                     DEPTH,                                 &
      &                     GBOUT)
 ! ----------------------------------------------------------------------
 
@@ -16,16 +16,16 @@
 
 !**   INTERFACE.
 !     ----------
-!      *CALL*OUTBLOCK (IJS, IJL, KIJS, KIJL, MIJ,
-!     &                GFL, GXLLWS, WAVENUM, CINV, CGROUP,
+!      *CALL*OUTBLOCK (KIJS, KIJL, MIJ,
+!     &                GFL, XLLWS,
+!     &                WAVENUM, CINV, CGROUP,
 !     &                DEPTH,
 !     &                GBOUT)
-!      *IJS:IJL*- 1st DIMEMSION of GFL, GXLLWS, WAVNUM, CINV, CGROUP, GBOUT
 !      *KIJS*   - INDEX OF FIRST LOCAL GRIDPOINT
 !      *KIJL*   - INDEX OF LAST LOCAL GRIDPOINT
 !      *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !      *GFL*    - INPUT SPECTRUM.
-!      *GXLLWS* - WINDSEA MASK FROM INPUT SOURCE TERM
+!      *XLLWS* - WINDSEA MASK FROM INPUT SOURCE TERM
 !      *WAVNUM* - WAVE NUMBER
 !      *CINV*   - INVERSE PHASE SPEED
 !      *CGROUP* - GROUP SPEED
@@ -108,11 +108,10 @@
 #include "halphap.intfb.h"
 #include "alphap_tail.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: MIJ
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL, GXLLWS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: GFL, XLLWS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
 
@@ -165,25 +164,25 @@
       GOZPI=G/ZPI
 
       IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
-        CALL INTPOL (GFL, FL2ND, IJS, IJL, KIJS, KIJL, IRA)
+        CALL INTPOL (KIJS, KIJL, GFL, FL2ND, WAVNUM, IRA)
       ELSE
         FL2ND(KIJS:KIJL,:,:) = GFL(KIJS:KIJL,:,:)
       ENDIF
-      IF(LSECONDORDER) CALL CAL_SECOND_ORDER_SPEC(FL2ND,WAVNUM(KIJS:KIJL,:),KIJS,KIJL,DEPTH,SIG)
+      IF(LSECONDORDER) CALL CAL_SECOND_ORDER_SPEC(KIJS, KIJL, FL2ND, WAVNUM, DEPTH, SIG)
 
 
 !     COMPUTE MEAN PARAMETERS
-      CALL FEMEAN (FL2ND, KIJS, KIJL, KIJS, KIJL, EM, FM)
+      CALL FEMEAN (KIJS, KIJL, FL2ND, EM, FM)
 
-      CALL DOMINANT_PERIOD (GFL, IJS, IJL, KIJS, KIJL, DP)
+      CALL DOMINANT_PERIOD (KIJS, KIJL, GFL, DP)
 
-      CALL KURTOSIS(GFL, IJS, IJL, KIJS, KIJL,                          &
-     &              DEPTH,                                              &
-     &              C3, C4, BF, QP, HMAX, TMAX,                         &
+      CALL KURTOSIS(KIJS, KIJL, GFL,                          &
+     &              DEPTH,                                    &
+     &              C3, C4, BF, QP, HMAX, TMAX,               &
      &              ETA_M, R, XNSLC, SIG_TH, EPS)
 
 !     WIND/SWELL PARAMETERS
-      CALL SEPWISW (IJS, IJL, KIJS, KIJL, MIJ, GFL, GXLLWS, CINV,         &
+      CALL SEPWISW (KIJS, KIJL, MIJ, GFL, XLLWS, CINV,                    &
      &              USNEW(KIJS), U10NEW(KIJS), THWNEW(KIJS),              &
      &              ESWELL, FSWELL, THSWELL, P1SWELL, P2SWELL, SPRDSWELL, &
      &              ESEA, FSEA, THWISEA, P1SEA, P2SEA, SPRDSEA,           &
@@ -202,7 +201,7 @@
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
         ITG=ITOBOUT(IR)
-        CALL STHQ (FL2ND, KIJS, KIJL, KIJS, KIJL, GBOUT(KIJS,ITG))
+        CALL STHQ (KIJS, KIJL, FL2ND, GBOUT(KIJS,ITG))
 !       CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
         GBOUT(KIJS:KIJL,ITG)=MOD(DEG*GBOUT(KIJS:KIJL,ITG)+180._JWRB,360._JWRB)
       ENDIF
@@ -257,7 +256,7 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL MEANSQS (XKMSS_CUTOFF, IJS, IJL, KIJS, KIJL, GFL, U10NEW(KIJS), USNEW(KIJS), THWNEW(KIJS), GBOUT(KIJS,ITOBOUT(IR)))
+        CALL MEANSQS (XKMSS_CUTOFF, KIJS, KIJL, GFL, WAVNUM, U10NEW(KIJS), USNEW(KIJS), THWNEW(KIJS), GBOUT(KIJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
@@ -346,17 +345,17 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL MWP1 (FL2ND, KIJS, KIJL, KIJS, KIJL, GBOUT(KIJS,ITOBOUT(IR)))
+        CALL MWP1 (FL2ND, KIJS, KIJL, GBOUT(KIJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL MWP2 (FL2ND, KIJS, KIJL, KIJS, KIJL, GBOUT(KIJS,ITOBOUT(IR)))
+        CALL MWP2 (FL2ND, KIJS, KIJL, GBOUT(KIJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL WDIRSPREAD (FL2ND, KIJS, KIJL, KIJS, KIJL, EM, LLPEAKF, GBOUT(KIJS,ITOBOUT(IR)))
+        CALL WDIRSPREAD (FL2ND, KIJS, KIJL, EM, LLPEAKF, GBOUT(KIJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
@@ -490,7 +489,7 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL SE10MEAN (FL2ND, KIJS, KIJL, KIJS, KIJL, FLD1)
+        CALL SE10MEAN (KIJS, KIJL, FL2ND, FLD1)
         GBOUT(KIJS:KIJL,ITOBOUT(IR))=4._JWRB*SQRT(MAX(FLD1(KIJS:KIJL),0._JWRB))
       ENDIF
 
@@ -570,9 +569,9 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0 .OR. IPFGTBL(IR+1).NE.0) THEN
-           CALL WEFLUX (GFL, CGROUP, IJS, IJL, KIJS, KIJL,           &
-     &                  NFRE, NANG, DFIM, DELTH,                     &
-     &                  COSTH, SINTH,                                &
+           CALL WEFLUX (KIJS, KIJL, GFL, CGROUP,           &
+     &                  NFRE, NANG, DFIM, DELTH,           &
+     &                  COSTH, SINTH,                      &
      &                  FLD1, FLD2)
       ENDIF
       IF(IPFGTBL(IR).NE.0) THEN
@@ -588,7 +587,7 @@
       DO IH=1,NTEWH
         IR=IR+1
         IF(IPFGTBL(IR).NE.0) THEN
-          CALL SEBTMEAN (FL2ND, KIJS, KIJL, KIJS, KIJL, TEWH(IH-1), TEWH(IH), GBOUT(KIJS,ITOBOUT(IR)))
+          CALL SEBTMEAN (KIJS, KIJL, FL2ND, TEWH(IH-1), TEWH(IH), GBOUT(KIJS,ITOBOUT(IR)))
 !         SIGNIFICANT WAVE HEIGHT CONVERSION
           GBOUT(KIJS:KIJL,ITOBOUT(IR))=4._JWRB*SQRT(MAX(GBOUT(KIJS:KIJL,ITOBOUT(IR)),0._JWRB))
         ENDIF
@@ -642,7 +641,7 @@
       IF(IPFGTBL(IR).NE.0) THEN
 
 !!!for testing
-        CALL HALPHAP(IJS, IJL, KIJS, KIJL, USNEW(KIJS), THWNEW(KIJS), GFL, HALP)
+        CALL HALPHAP(KIJS, KIJL, USNEW(KIJS), THWNEW(KIJS), GFL, HALP)
         GBOUT(KIJS:KIJL,ITOBOUT(IR))=2.0_JWRB*HALP(KIJS:KIJL)
 
       ENDIF
@@ -656,12 +655,12 @@
       IF(IPFGTBL(IR).NE.0) THEN
 !!!for testing
         XMODEL_CUTOFF = (ZPI*FR(NFRE))**2/G
-        CALL MEANSQS (XMODEL_CUTOFF, IJS, IJL, KIJS, KIJL, GFL, U10NEW(KIJS), USNEW(KIJS), THWNEW(KIJS), GBOUT(KIJS,ITOBOUT(IR)))
+        CALL MEANSQS (XMODEL_CUTOFF, KIJS, KIJL, GFL, WAVNUM, U10NEW(KIJS), USNEW(KIJS), THWNEW(KIJS), GBOUT(KIJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL ALPHAP_TAIL(IJS, IJL, KIJS, KIJL, GFL, GBOUT(KIJS,ITOBOUT(IR)))
+        CALL ALPHAP_TAIL(KIJS, KIJL, GFL, GBOUT(KIJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1

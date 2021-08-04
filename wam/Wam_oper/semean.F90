@@ -1,4 +1,4 @@
-      SUBROUTINE SEMEAN (F3, IJS, IJL, KIJS, KIJL, EM, LLEPSMIN)
+      SUBROUTINE SEMEAN (F3, KIJS, KIJL, EM, LLEPSMIN)
 
 ! ----------------------------------------------------------------------
 
@@ -15,13 +15,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEMEAN(F3, IJS, IJL, KIJS, KIJL, EM, LLEPSMIN)*
-!          *F3*  - SPECTRUM.
-!          *IJS*     - GLOBAL INDEX OF FIRST GRIDPOINT
-!          *IJL*     - GLOBAL INDEX OF LAST GRIDPOINT
-!          *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
-!          *KIJL*    - LOCAL  INDEX OF LAST GRIDPOIN
-!          *EM*  - MEAN ENERGY
+!       *CALL* *SEMEAN(F3, KIJS, KIJL, EM, LLEPSMIN)*
+!          *F3*   - SPECTRUM.
+!          *KIJS* - LOCAL INDEX OF FIRST GRIDPOINT
+!          *KIJL* - LOCAL  INDEX OF LAST GRIDPOIN
+!          *EM*   - MEAN VARIANCE 
 !          *LLEPSMIN* - TRUE IF THE WAVE ENERGY IS AT LEAST = EPSMIN
 
 !     METHOD.
@@ -46,14 +44,15 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,WETAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: F3
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: EM
       LOGICAL, INTENT(IN) :: LLEPSMIN
 

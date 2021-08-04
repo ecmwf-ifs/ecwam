@@ -1,4 +1,4 @@
-      SUBROUTINE STHQ (GFL, IJS, IJL, KIJS, KIJL, THQ)
+      SUBROUTINE STHQ (KIJS, KIJL, FL1, THQ)
 
 ! ----------------------------------------------------------------------
 
@@ -15,11 +15,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *STHQ (GFL, IJS, IJL, KIJS, KIJL, THQ)*
-!          *GFL*    - SPECTRUM.
-!          *IJS:IJL*- 1st DIMENSION of GFL
+!       *CALL* *STHQ (KIJS, KIJL, FL1, THQ)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
+!          *FL1*    - SPECTRUM.
 !          *THQ*    - MEAN WAVE DIRECTION
 
 !     METHOD.
@@ -51,10 +50,8 @@
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
-
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: THQ
 
       INTEGER(KIND=JWIM) :: IJ, M, K
@@ -84,7 +81,7 @@
         ENDDO
         DO M=1,NFRE
           DO IJ=KIJS,KIJL
-            TEMP(IJ) = TEMP(IJ)+GFL(IJ,K,M)*DFIM(M)
+            TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,M)*DFIM(M)
           ENDDO
         ENDDO
         DO IJ=KIJS,KIJL
@@ -99,13 +96,13 @@
 !        -----------------------
 
       DO IJ=KIJS,KIJL
-        IF (CI(IJ).EQ.0.0_JWRB) CI(IJ) = EPSMIN
+        IF (CI(IJ) == 0.0_JWRB) CI(IJ) = EPSMIN
       ENDDO
       DO IJ=KIJS,KIJL
         THQ(IJ) = ATAN2(SI(IJ),CI(IJ))
       ENDDO
       DO IJ=KIJS,KIJL
-        IF (THQ(IJ).LT.0.0_JWRB) THQ(IJ) = THQ(IJ) + ZPI
+        IF (THQ(IJ) < 0.0_JWRB) THQ(IJ) = THQ(IJ) + ZPI
       ENDDO
 
       IF (LHOOK) CALL DR_HOOK('STHQ',1,ZHOOK_HANDLE)

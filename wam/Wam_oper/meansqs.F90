@@ -1,4 +1,4 @@
-      SUBROUTINE MEANSQS(XKMSS, IJS, IJL, KIJS, KIJL, F, U10, USTAR, UDIR, XMSS)
+      SUBROUTINE MEANSQS(XKMSS, KIJS, KIJL, F, WAVNUM, U10, USTAR, UDIR, XMSS)
 
 ! ----------------------------------------------------------------------
 
@@ -12,12 +12,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MEANSQS (XKMSS, IJS, IJL, KIJS, KIJL, F, U10, USTAR, UDIR, XMSS)*
+!       *CALL* *MEANSQS (XKMSS, KIJS, KIJL, F, WAVNUM, U10, USTAR, UDIR, XMSS)*
 !              *XKMSS*   - WAVE NUMBER CUT OFF
-!              *IJS:IJL* - 1st DIMENSION of F
 !              *KIJS*    - INDEX OF FIRST GRIDPOINT
 !              *KIJL*    - INDEX OF LAST GRIDPOINT
 !              *F*       - SPECTRUM.
+!              *WAVNUM*  - WAVE NUMBER.
 !              *U10*     - 10m wind speed
 !              *USTAR*   - NEW FRICTION VELOCITY IN M/S (INPUT).
 !              *UDIR*    - WIND SPEED DIRECTION
@@ -45,7 +45,7 @@
       USE YOWPCONS , ONLY : G        ,GM1      ,ZPI
       USE YOWFRED  , ONLY : FR       ,ZPIFR    ,FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -53,15 +53,15 @@
 #include "meansqs_gc.intfb.h"
 #include "meansqs_lf.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-
       REAL(KIND=JWRB), INTENT(IN) :: XKMSS 
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: U10
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USTAR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UDIR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: XMSS 
+
 
       INTEGER(KIND=JWIM) :: IJ, NFRE_MSS, NFRE_EFF
 
@@ -79,7 +79,7 @@
 !        -------------------------------------------------
 
 !     COMPUTE THE PHILLIPS PARAMETER
-      CALL HALPHAP(IJS, IJL, KIJS, KIJL, USTAR, UDIR, F, HALP)
+      CALL HALPHAP(KIJS, KIJL, USTAR, UDIR, F, HALP)
 
 !     GRAVITY-CAPILLARY CONTRIBUTION TO MSS
       CALL MEANSQS_GC(XKMSS, KIJS, KIJL, HALP, U10, USTAR, XMSS, FRGC)
@@ -89,7 +89,7 @@
       NFRE_MSS = INT(LOG(FCUT/FR(1))/LOG(FRATIO))+1 
       NFRE_EFF = MIN(NFRE,NFRE_MSS)
 
-      CALL MEANSQS_LF (NFRE_EFF, IJS, IJL, KIJS, KIJL, F, XMSSLF)
+      CALL MEANSQS_LF (NFRE_EFF, KIJS, KIJL, F, WAVNUM, XMSSLF)
       XMSS(:) = XMSS(:) + XMSSLF(:)
 
 !     ADD TAIL CORRECTION TO MEAN SQUARE SLOPE (between FR(NFRE_EFF) and FRGC).

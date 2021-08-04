@@ -1,6 +1,6 @@
-      SUBROUTINE WEFLUX (GFL, GVG, IJS, IJL, KIJS, KIJL,         &
-     &                   NFRE, NANG, DFIM, DELTH,                &
-     &                   COSTH, SINTH,                           &
+      SUBROUTINE WEFLUX (KIJS, KIJL, FL1, CGROUP,         &
+     &                   NFRE, NANG, DFIM, DELTH,         &
+     &                   COSTH, SINTH,                    &
      &                   WEFMAG, WEFDIR)
 !
 ! ----------------------------------------------------------------------
@@ -16,15 +16,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *WEFLUX* (GFL, GVG, IJS, IJL, KIJS, KIJL,
+!       *CALL* *WEFLUX* (KIJS, KIJL, FL1, CGROUP,
 !                        NFRE, NANG, DFIM, DELTH,
 !                        COSTH, SINTH,
 !                        WEFMAG, WEFDIR)
-!              *GFL*     - SPECTRUM.
-!              *GVG*     - GROUP VELOCITIES
-!              *IJS:IJL* - 1st DIMENSION of F
 !              *KIJS*    - INDEX OF FIRST GRIDPOINT
 !              *KIJL*    - INDEX OF LAST GRIDPOINT
+!              *FL1*     - SPECTRUM.
+!              *CGROUP*  - GROUP VELOCITIES
 !              *NFRE*    - NUMBER OF FREQUENCIES
 !              *NANG*    - NUMBER OF DIRECTIONS
 !              *DFIM*    - FREQUENCY-DIRECTION INCREMENT
@@ -63,16 +62,13 @@
  
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: GVG
-
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CGROUP
       INTEGER(KIND=JWIM), INTENT(IN) :: NFRE, NANG
-
       REAL(KIND=JWRB), INTENT(IN) :: DELTH
       REAL(KIND=JWRB), DIMENSION(NFRE), INTENT(IN) :: DFIM
       REAL(KIND=JWRB), DIMENSION(NANG), INTENT(IN) :: COSTH, SINTH
-
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: WEFMAG, WEFDIR
 
 
@@ -105,14 +101,14 @@
       DO M=1,NFRE
          K=1
          DO IJ=KIJS,KIJL
-           FCG = GFL(IJ,K,M)*GVG(IJ,M)
+           FCG = FL1(IJ,K,M)*CGROUP(IJ,M)
            TEMP(IJ) = FCG
            TEMPX(IJ) = FCG*SINTH(K) 
            TEMPY(IJ) = FCG*COSTH(K) 
          ENDDO
          DO K=2,NANG
             DO IJ=KIJS,KIJL
-              FCG = GFL(IJ,K,M)*GVG(IJ,M)
+              FCG = FL1(IJ,K,M)*CGROUP(IJ,M)
               TEMP(IJ) = TEMP(IJ)+FCG
               TEMPX(IJ) = TEMPX(IJ)+FCG*SINTH(K)
               TEMPY(IJ) = TEMPY(IJ)+FCG*COSTH(K)
@@ -131,14 +127,14 @@
 
        K=1
        DO IJ=KIJS,KIJL
-         FCG = GFL(IJ,K,NFRE)
+         FCG = FL1(IJ,K,NFRE)
          TEMP(IJ) = FCG
          TEMPX(IJ) = FCG*SINTH(K) 
          TEMPY(IJ) = FCG*COSTH(K) 
        ENDDO
        DO K=2,NANG
           DO IJ=KIJS,KIJL
-            FCG = GFL(IJ,K,NFRE)
+            FCG = FL1(IJ,K,NFRE)
             TEMP(IJ) = TEMP(IJ)+FCG
             TEMPX(IJ) = TEMPX(IJ)+FCG*SINTH(K)
             TEMPY(IJ) = TEMPY(IJ)+FCG*COSTH(K)

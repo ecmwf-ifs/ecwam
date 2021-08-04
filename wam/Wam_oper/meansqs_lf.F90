@@ -1,4 +1,4 @@
-      SUBROUTINE MEANSQS_LF(NFRE_EFF, IJS, IJL, KIJS, KIJL, F, XMSS)
+      SUBROUTINE MEANSQS_LF(NFRE_EFF, KIJS, KIJL, F, WAVNUM, XMSS)
 
 ! ----------------------------------------------------------------------
 
@@ -13,12 +13,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MEANSQS_LF (NFRE_EFF, IJS, IJL, KIJS, KIJL, F, XMSS)*
+!       *CALL* *MEANSQS_LF (NFRE_EFF, KIJS, KIJL, F, WAVNUM, XMSS)*
 !              *XKMSS*   - WAVE NUMBER CUT OFF
-!              *IJS:IJL* - 1st DIMENSION of F
 !              *KIJS*    - INDEX OF FIRST GRIDPOINT
 !              *KIJL*    - INDEX OF LAST GRIDPOINT
 !              *F*       - SPECTRUM.
+!              *WAVNUM*  - WAVE NUMBER.
 !              *XMSS*    - MEAN SQUARE SLOPE (OUTPUT).
 
 !     METHOD.
@@ -43,8 +43,6 @@
       USE YOWPCONS , ONLY : G        ,GM1      ,ZPI
       USE YOWFRED  , ONLY : FR       ,ZPIFR    ,DFIM
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP
-      USE YOWSTAT  , ONLY : ISHALLO
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -52,10 +50,9 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NFRE_EFF
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: XMSS 
 
 
@@ -75,37 +72,12 @@
 
       XMSS(:) = 0.0_JWRB
 
-      IF (ISHALLO.EQ.1) THEN
-
-!*    2.1 DEEP WATER INTEGRATION.
-!         -----------------------
-
-        DO M = 1, KFRE
-          FD(M) = DFIM(M)*(ZPIFR(M))**4*GM1**2
-        ENDDO
-
-        DO M = 1, KFRE
-          DO IJ = KIJS, KIJL
-            TEMP2(IJ) = 0.0_JWRB
-          ENDDO
-          DO K = 1, NANG
-            DO IJ = KIJS, KIJL
-              TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
-            ENDDO
-          ENDDO
-          DO IJ = KIJS, KIJL
-            XMSS(IJ) = XMSS(IJ)+FD(M)*TEMP2(IJ)
-          ENDDO
-        ENDDO
-!SHALLOW
-      ELSE
-
 !*    2.2 SHALLOW WATER INTEGRATION.
 !         --------------------------
 
         DO M = 1, KFRE
           DO IJ = KIJS, KIJL
-            TEMP1(IJ) = DFIM(M)*TFAK(INDEP(IJ),M)**2
+            TEMP1(IJ) = DFIM(M)*WAVNUM(IJ,M)**2
             TEMP2(IJ) = 0.0_JWRB
           ENDDO
           DO K = 1, NANG
@@ -117,8 +89,6 @@
             XMSS(IJ) = XMSS(IJ)+TEMP1(IJ)*TEMP2(IJ)
           ENDDO
         ENDDO
-      ENDIF
-!SHALLOW
 
       IF (LHOOK) CALL DR_HOOK('MEANSQS_LF',1,ZHOOK_HANDLE)
 

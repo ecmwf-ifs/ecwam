@@ -1,4 +1,4 @@
-      SUBROUTINE SDIWBK (IJS, IJL, KIJS, KIJL, GFL, FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)
+      SUBROUTINE SDIWBK (KIJS, KIJL, FL1, FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)
 
 ! ----------------------------------------------------------------------
 
@@ -14,11 +14,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDIWBK (IJS, IJL, KIJS, KIJL, GFL, FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)*
-!          *IJS:IJL* - 1st DIMENSION OF GFL
+!       *CALL* *SDIWBK (KIJS, KIJL, FL1, FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)*
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT
 !          *KIJL*    - INDEX OF LAST GRIDPOINT
-!          *GFL*     - SPECTRUM.
+!          *FL1*     - SPECTRUM.
 !          *FLD*     - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*      - TOTAL SOURCE FUNCTION ARRAY
 !          *DEPTH*   - WATER DEPTH
@@ -52,10 +51,8 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: GFL
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(INOUT) :: FLD, SL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL),INTENT(IN):: DEPTH, EMAXDPT, EMEAN, F1MEAN
 
@@ -80,7 +77,7 @@
       IF (LBIWBK) THEN
 !       (FOLLOWING BATTJES-JANSSEN AND BEJI)
         DO IJ=KIJS,KIJL
-           IF(DEPTH(IJ).LT.DEPTHTRS) THEN
+           IF(DEPTH(IJ) < DEPTHTRS) THEN
              ALPH = 2.0_JWRB*EMAXDPT(IJ)/EMEAN(IJ)
              ARG  = MIN(ALPH,50.0_JWRB)
              Q_OLD = EXP(-ARG)
@@ -100,8 +97,8 @@
         DO M=1,NFRE
            DO K=1,NANG
               DO IJ=KIJS,KIJL
-                IF(DEPTH(IJ).LT.DEPTHTRS) THEN
-                  SL(IJ,K,M) = SL(IJ,K,M)-SDS(IJ)*GFL(IJ,K,M)
+                IF(DEPTH(IJ) < DEPTHTRS) THEN
+                  SL(IJ,K,M) = SL(IJ,K,M)-SDS(IJ)*FL1(IJ,K,M)
                   FLD(IJ,K,M) = FLD(IJ,K,M)-SDS(IJ)
                 ENDIF
               ENDDO

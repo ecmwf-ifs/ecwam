@@ -76,10 +76,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM, ONLY : CLDOMAIN
-      USE YOWPCONS, ONLY : G, PI, ZPI
       USE YOMHOOK , ONLY : LHOOK,   DR_HOOK
-      USE YOWTEST , ONLY : IU06
 
 ! ----------------------------------------------------------------------
    
@@ -93,8 +90,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH, AKMEAN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: F1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: F3
-      REAL(KIND=JWRB), DIMENSION(NDEPTH,NANG,NFRE,NFRE), INTENT(IN) ::  &
-     &                                  TA,TB,TC_QL,TT_4M,TT_4P
+      REAL(KIND=JWRB), DIMENSION(NDEPTH,NANG,NFRE,NFRE), INTENT(IN) :: TA,TB,TC_QL,TT_4M,TT_4P
 
       INTEGER(KIND=JWIM):: IJ, M, K, M1, K1, M2_M, M2_P, K2, MP, MM,L,ID
       INTEGER(KIND=JWIM), DIMENSION(NANG,NANG) :: LL
@@ -158,8 +154,8 @@
       DO K=1,NANG
         DO K1=1,NANG
           L = K-K1
-          IF (L.GT.NANG) L=L-NANG
-          IF (L.LT.1) L=L+NANG
+          IF (L > NANG) L=L-NANG
+          IF (L < 1) L=L+NANG
           LL(K1,K)=L
         ENDDO
       ENDDO
@@ -195,7 +191,7 @@
 !*                  2.1 OM0-OM1 CASE: SECOND HARMONICS
 !                   ---------------------------------- 
 !                   OM2 = OM0-OM1
-                    IF (ABS(OM1).LT.OM0H) THEN
+                    IF (ABS(OM1) < OM0H) THEN
 !DIR$ PREFERVECTOR
                       DO IJ=KIJS,KIJL
                         PSUM(IJ)= PSUM(IJ)+TA(ID,L,M1,M)*               &
@@ -233,7 +229,7 @@
 !*                  2.1 OM0-OM1 CASE: SECOND HARMONICS
 !                   ---------------------------------- 
 !                   OM2 = OM0-OM1
-                    IF (ABS(OM1).LT.OM0H) THEN
+                    IF (ABS(OM1) < OM0H) THEN
 !DIR$ PREFERVECTOR
                       DO IJ=KIJS,KIJL
                         PSUM(IJ)= PSUM(IJ)+TA(JD(IJ),L,M1,M)*           &

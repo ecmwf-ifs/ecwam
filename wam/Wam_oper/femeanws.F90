@@ -1,26 +1,25 @@
-      SUBROUTINE FEMEANWS (GFL, GXLLWS, IJS, IJL, KIJS, KIJL, EM, FM)
+      SUBROUTINE FEMEANWS (KIJS, KIJL, FL1, XLLWS, EM, FM)
 
 ! ----------------------------------------------------------------------
 
 !**** *FEMEANWS* - COMPUTATION OF MEAN ENERGY, MEAN FREQUENCY 
 !                  FOR WINDSEA PART OF THE SPECTRUM AS DETERMINED
-!                  BY GXLLWS
+!                  BY XLLWS
 
 !*    PURPOSE.
 !     --------
 
 !       COMPUTE MEAN FREQUENCY AT EACH GRID POINT FOR PART OF THE
-!       SPECTRUM WHERE GXLLWS IS NON ZERO.
+!       SPECTRUM WHERE XLLWS IS NON ZERO.
 
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FEMEANWS (GFL, GXLLWS, IJS, IJL, KIJS, KIJL, EM, FM)*
-!              *GFL*    - SPECTRUM.
-!              *GXLLWS* - TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
-!              *IJS:IJL - 1st DIMENSION OF GFL and GXLLWS
+!       *CALL* *FEMEANWS (KIJS, KIJL, FL1, XLLWS, EM, FM)*
 !              *KIJS*   - INDEX OF FIRST GRIDPOINT
 !              *KIJL*   - INDEX OF LAST GRIDPOINT
+!              *FL1*    - SPECTRUM.
+!              *XLLWS* - TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
 !              *EM*     - MEAN WAVE ENERGY (OUTPUT)
 !              *FM*     - MEAN WAVE FREQUENCY (OUTPUT)
 
@@ -54,10 +53,8 @@
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL, GXLLWS
-
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(kIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1, XLLWS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: EM, FM
 
 
@@ -89,11 +86,11 @@
       DO M=1,NFRE
         K = 1
         DO IJ =KIJS,KIJL
-           TEMP2(IJ) = GXLLWS(IJ,K,M)*GFL(IJ,K,M)
+           TEMP2(IJ) = XLLWS(IJ,K,M)*FL1(IJ,K,M)
         ENDDO
         DO K=2,NANG
           DO IJ=KIJS,KIJL
-            TEMP2(IJ) = TEMP2(IJ)+GXLLWS(IJ,K,M)*GFL(IJ,K,M)
+            TEMP2(IJ) = TEMP2(IJ)+XLLWS(IJ,K,M)*FL1(IJ,K,M)
           ENDDO
         ENDDO
         DO IJ=KIJS,KIJL

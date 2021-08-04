@@ -1,4 +1,4 @@
-      SUBROUTINE SE10MEAN (GFL, IJS, IJL, KIJS, KIJL, E10)
+      SUBROUTINE SE10MEAN (KIJS, KIJL, FL1, E10)
 
 ! ----------------------------------------------------------------------
 
@@ -13,11 +13,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SE10MEAN(GFL, IJS, IJL, KIJS, KIJL, E10)*
-!          *GFL      - SPECTRUM.
-!          *IJS:IJL* - 1s DIMENSION of GFL
+!       *CALL* *SE10MEAN(KIJS, KIJL, FL1, E10)*
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT
 !          *KIJL*    - INDEX OF LAST GRIDPOINT
+!          *FL1      - SPECTRUM.
 !          *E10*     - MEAN ENERGY
 
 !     METHOD.
@@ -49,10 +48,9 @@
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: GFL
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: E10
 
 
@@ -91,11 +89,11 @@
       DO M=1,MCUT
         K=1
         DO IJ=KIJS,KIJL
-          TEMP(IJ) = GFL(IJ,K,M)
+          TEMP(IJ) = FL1(IJ,K,M)
         ENDDO
         DO K=2,NANG
           DO IJ=KIJS,KIJL
-            TEMP(IJ) = TEMP(IJ)+GFL(IJ,K,M)
+            TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,M)
           ENDDO
         ENDDO
         DO IJ=KIJS,KIJL

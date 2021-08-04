@@ -1,4 +1,4 @@
-      SUBROUTINE PEAK_ANG(GFL, IJS, IJL, KIJS, KIJL, XNU, SIG_TH)
+      SUBROUTINE PEAK_ANG(KIJS, KIJL, FL1, XNU, SIG_TH)
 
 !***  *PEAK_ANG*   DETERMINES ANGULAR WIDTH NEAR PEAK OF SPECTRUM
 
@@ -11,12 +11,12 @@
 
 !     INTERFACE.
 !     ----------
-!              *CALL*  *PEAK_ANG(GFL,IJS,IJL,KIJS,KIJL,XNU,SIG_TH)*
+!              *CALL*  *PEAK_ANG(KIJS,KIJL,FL1,XNU,SIG_TH)*
 
 !               INPUT:
-!                  *GFL*    - FREQUENCY SPECTRUM
 !                  *KIJS*   - FIRST GRIDPOINT              
 !                  *KIJL*   - LAST GRIDPOINT              
+!                  *FL1*    - SPECTRUM
 !               OUTPUT:
 !                  *XNU*    - RELATIVE SPECTRAL WIDTH
 !                  *SIG_TH* - RELATIVE WIDTH IN DIRECTION
@@ -43,10 +43,8 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: XNU, SIG_TH
 
 
@@ -81,11 +79,11 @@
       DO M=1,NFRE
         K=1
         DO IJ=KIJS,KIJL
-          TEMP(IJ) = GFL(IJ,K,M)
+          TEMP(IJ) = FL1(IJ,K,M)
         ENDDO
         DO K=2,NANG
           DO IJ=KIJS,KIJL
-            TEMP(IJ) = TEMP(IJ)+GFL(IJ,K,M)
+            TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,M)
           ENDDO
         ENDDO
         DO IJ=KIJS,KIJL
@@ -106,7 +104,7 @@
       ENDDO
 
       DO IJ=KIJS,KIJL
-        IF (SUM0(IJ).GT.ZEPSILON) THEN
+        IF (SUM0(IJ) > ZEPSILON) THEN
           XNU(IJ) = SQRT(MAX(ZEPSILON,SUM2(IJ)*SUM0(IJ)/SUM1(IJ)**2-1._JWRB))
         ELSE
           XNU(IJ) = ZEPSILON 
@@ -125,9 +123,9 @@
       DO M=2,NFRE-1
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            IF (GFL(IJ,K,M).GT.XMAX(IJ)) THEN
+            IF (FL1(IJ,K,M) > XMAX(IJ)) THEN
               MMAX(IJ) = M
-              XMAX(IJ) = GFL(IJ,K,M)
+              XMAX(IJ) = FL1(IJ,K,M)
             ENDIF
           ENDDO
         ENDDO
@@ -148,8 +146,8 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            SUM_S(IJ,M) = SUM_S(IJ,M) +SINTH(K)*GFL(IJ,K,M)
-            SUM_C(IJ,M) = SUM_C(IJ,M) +COSTH(K)*GFL(IJ,K,M)
+            SUM_S(IJ,M) = SUM_S(IJ,M) +SINTH(K)*FL1(IJ,K,M)
+            SUM_C(IJ,M) = SUM_C(IJ,M) +COSTH(K)*FL1(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO
@@ -168,14 +166,14 @@
       DO IJ=KIJS,KIJL
         DO M=MMSTART(IJ),MMSTOP(IJ)
           DO K=1,NANG
-            SUM1(IJ) = SUM1(IJ) +GFL(IJ,K,M)*DFIM(M)
-            SUM2(IJ) = SUM2(IJ) +COS(TH(K)-THMEAN(IJ,M))*GFL(IJ,K,M)*DFIM(M)
+            SUM1(IJ) = SUM1(IJ) +FL1(IJ,K,M)*DFIM(M)
+            SUM2(IJ) = SUM2(IJ) +COS(TH(K)-THMEAN(IJ,M))*FL1(IJ,K,M)*DFIM(M)
           ENDDO
         ENDDO
       ENDDO
 
       DO IJ=KIJS,KIJL
-        IF (SUM1(IJ).GT.ZEPSILON) THEN
+        IF (SUM1(IJ) > ZEPSILON) THEN
           R1 = SUM2(IJ)/SUM1(IJ)
           SIG_TH(IJ) = CONST_SIG*SQRT(2._JWRB*(1._JWRB-R1))
         ELSE

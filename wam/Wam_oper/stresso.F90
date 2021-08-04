@@ -1,6 +1,6 @@
-      SUBROUTINE STRESSO (IJS, IJL, KIJS, KIJL, GFL, SL, SPOS,          &
-     &                    CINV,                                         &
-     &                    THWNEW, USNEW, Z0NEW, ROAIRN, RNFAC,          &
+      SUBROUTINE STRESSO (KIJS, KIJL, FL1, SL, SPOS,              &
+     &                    CINV,                                   &
+     &                    THWNEW, USNEW, Z0NEW, ROAIRN, RNFAC,    &
      &                    TAUW, TAUWDIR, PHIWA, LLPHIWA)
 
 ! ----------------------------------------------------------------------
@@ -22,14 +22,13 @@
 !**   INTERFACE.
 !     ----------
 
-!        *CALL* *STRESSO (IJS, IJL, KIJS, KIJL, GFL, SL, SPOS,
+!        *CALL* *STRESSO (KIJS, KIJL, FL1, SL, SPOS,
 !    &                    CINV,
 !    &                    THWNEW, USNEW, Z0NEW, ROAIRN, RNFAC,
 !    &                    TAUW, TAUWDIR, PHIWA)*
-!         *IJS:IJL*     - 1st DIMENSION of GFL
 !         *KIJS*        - INDEX OF FIRST GRIDPOINT.
 !         *KIJL*        - INDEX OF LAST GRIDPOINT.
-!         *GFL*         - WAVE SPECTRUM.
+!         *FL1*         - WAVE SPECTRUM.
 !         *SL*          - WIND INPUT SOURCE FUNCTION ARRAY (positive and negative contributions).
 !         *SPOS*        - POSITIVE WIND INPUT SOURCE FUNCTION ARRAY.
 !         *CINV*        - INVERSE PHASE VELOCITY.
@@ -84,12 +83,9 @@
       IMPLICIT NONE
 #include "tau_phi_hf.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CINV
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CINV
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: TAUW, TAUWDIR, PHIWA
@@ -204,8 +200,8 @@
         ENDDO
       ENDIF
 
-      CALL TAU_PHI_HF(IJS, IJL, KIJS, KIJL, LTAUWSHELTER, USNEW, Z0NEW, &
-     &                GFL, THWNEW, ROAIRN, RNFAC,                       &
+      CALL TAU_PHI_HF(KIJS, KIJL, LTAUWSHELTER, USNEW, Z0NEW, &
+     &                FL1, THWNEW, ROAIRN, RNFAC,             &
      &                UST, TAUHF, PHIHF, LLPHIWA)
 
       DO IJ=KIJS,KIJL

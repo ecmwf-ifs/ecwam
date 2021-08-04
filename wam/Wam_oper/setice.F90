@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
 
-      SUBROUTINE SETICE (IJS, IJL, KIJS, KIJL, GFL, CICVR, U10NEW, THWNEW)
+      SUBROUTINE SETICE (KIJS, KIJL, FL1, CICVR, U10NEW, THWNEW)
 
 !-----------------------------------------------------------------------
 
@@ -12,7 +12,7 @@
 !     PURPOSE.
 !     -------
 
-!          *SETICE* SET ICE SPECTRA (GFL) TO NOISE LEVEL 
+!          *SETICE* SET ICE SPECTRA (FL1) TO NOISE LEVEL 
 
 !**   INTERFACE.
 !     ----------
@@ -49,10 +49,8 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: GFL
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(INOUT) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICVR, U10NEW, THWNEW
 
 
@@ -75,7 +73,7 @@
       ENDDO
 
       DO IJ = KIJS,KIJL
-        IF(CICVR(IJ).GT.CITHRSH) THEN
+        IF(CICVR(IJ) > CITHRSH) THEN
           CIREDUC(IJ)=MAX(EPSMIN,(1.0_JWRB-CICVR(IJ)))
           ICEFREE(IJ)=0.0_JWRB
         ELSE
@@ -90,7 +88,7 @@
       DO M = 1, NFRE
         DO K = 1, NANG
           DO IJ = KIJS,KIJL
-            GFL(IJ,K,M)=GFL(IJ,K,M)*ICEFREE(IJ)+TEMP(IJ)*SPRD(IJ,K)
+            FL1(IJ,K,M)=FL1(IJ,K,M)*ICEFREE(IJ)+TEMP(IJ)*SPRD(IJ,K)
           ENDDO
         ENDDO
       ENDDO

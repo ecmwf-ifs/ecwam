@@ -1,4 +1,4 @@
-SUBROUTINE ALPHAP_TAIL(IJS, IJL, KIJS, KIJL, GFL, ALPHAP)
+SUBROUTINE ALPHAP_TAIL(KIJS, KIJL, FL1, ALPHAP)
 
 ! ----------------------------------------------------------------------
 
@@ -8,11 +8,10 @@ SUBROUTINE ALPHAP_TAIL(IJS, IJL, KIJS, KIJL, GFL, ALPHAP)
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *ALPHAP_TAIL(IJS, IJL, KIJS, KIJL, GFL, ALPHAP)
-!          *IJS:IJL* - 1st DIMENSION of GFL
+!       *CALL* *ALPHAP_TAIL(KIJS, KIJL, FL1, ALPHAP)
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT
 !          *KIJL*    - INDEX OF LAST GRIDPOINT
-!          *GFL*     - SPECTRA
+!          *FL1*     - SPECTRA
 !          *ALPHAP*  - PHILLIPS PARAMETER 
 
 !     METHOD.
@@ -25,16 +24,15 @@ SUBROUTINE ALPHAP_TAIL(IJS, IJL, KIJS, KIJL, GFL, ALPHAP)
       USE YOWFRED  , ONLY : TH       ,FR5      ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ZPI4GM2
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: ALPHAP
 
       INTEGER(KIND=JWIM) :: IJ, K
@@ -51,7 +49,7 @@ IF (LHOOK) CALL DR_HOOK('ALPHAP_TAIL',0,ZHOOK_HANDLE)
       ALPHAP(:) = 0.0_JWRB
       DO K = 1, NANG
         DO IJ = KIJS, KIJL
-          ALPHAP(IJ) = ALPHAP(IJ) + CONST*GFL(IJ,K,NFRE)
+          ALPHAP(IJ) = ALPHAP(IJ) + CONST*FL1(IJ,K,NFRE)
         ENDDO
       ENDDO
 

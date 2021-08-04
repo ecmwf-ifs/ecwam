@@ -1,4 +1,4 @@
-      SUBROUTINE DOMINANT_PERIOD (GFL, IJS, IJL, KIJS, KIJL, DP)
+      SUBROUTINE DOMINANT_PERIOD (KIJS, KIJL, FL1, DP)
 
 ! ----------------------------------------------------------------------
 
@@ -12,11 +12,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *DOMINANT_PERIOD (GFL, IJS, IJL, KIJS, KIJL, DP)*
-!              *GFL*     - 2D-SPECTRUM.
-!              *IJS:IJL* - 1st DIMENION of GFL
+!       *CALL* *DOMINANT_PERIOD (KIJS, KIJL, FL1, DP)*
 !              *KIJS*    - INDEX OF FIRST GRIDPOINT
 !              *KIJL*    - INDEX OF LAST GRIDPOINT
+!              *FL1*     - 2D-SPECTRUM.
 !              *DP*      - DOMINANT PERIOD
 
 !     METHOD.
@@ -47,9 +46,9 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: DP
 
       REAL(KIND=JWRB), PARAMETER :: FLTHRS = 0.1_JWRB
@@ -71,8 +70,8 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            IF( GFL(IJ,K,M) > FCROP(IJ) ) THEN
-               FCROP(IJ) = GFL(IJ,K,M)
+            IF( FL1(IJ,K,M) > FCROP(IJ) ) THEN
+               FCROP(IJ) = FL1(IJ,K,M)
             ENDIF
           ENDDO
         ENDDO
@@ -82,7 +81,7 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            IF(GFL(IJ,K,M) > FCROP(IJ)) F1D4(IJ,M) = F1D4(IJ,M)+GFL(IJ,K,M)*DELTH
+            IF(FL1(IJ,K,M) > FCROP(IJ)) F1D4(IJ,M) = F1D4(IJ,M)+FL1(IJ,K,M)*DELTH
           ENDDO
         ENDDO
       ENDDO

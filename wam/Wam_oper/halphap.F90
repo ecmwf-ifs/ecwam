@@ -1,4 +1,4 @@
-SUBROUTINE HALPHAP(IJS, IJL, KIJS, KIJL, USTAR, UDIR, GFL, HALP)
+SUBROUTINE HALPHAP(KIJS, KIJL, USTAR, UDIR, FL1, HALP)
 
 ! ----------------------------------------------------------------------
 
@@ -8,13 +8,12 @@ SUBROUTINE HALPHAP(IJS, IJL, KIJS, KIJL, USTAR, UDIR, GFL, HALP)
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *HALPHAP(KIJS, KIJL, UDIR, GFL, HALP)
-!          *IJS:IJL* 1st DIMENSION OF GFL
+!       *CALL* *HALPHAP(KIJS, KIJL, UDIR, FL1, HALP)
 !          *KIJS* - INDEX OF FIRST GRIDPOINT
 !          *KIJL* - INDEX OF LAST GRIDPOINT
 !          *UDIR* - WIND SPEED DIRECTION
 !          *USTAR* - FRICTION VELOCITY
-!          *GFL*  - SPECTRA
+!          *FL1*  - SPECTRA
 !          *HALP*   - 1/2 PHILLIPS PARAMETER 
 
 !     METHOD.
@@ -36,9 +35,9 @@ SUBROUTINE HALPHAP(IJS, IJL, KIJS, KIJL, USTAR, UDIR, GFL, HALP)
       IMPLICIT NONE
 #include "peakfri.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USTAR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UDIR
@@ -98,13 +97,13 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
           DO IJ = KIJS, KIJL
             CHECKTA=XINVWVAGE(IJ,M)*DIRCOEF(IJ,K)
             WS = 0.5_JWRB + SIGN(0.5_JWRB, (CHECKTA-1.0_JWRB) )
-            FLWS(IJ,K,M) = WS*GFL(IJ,K,M)
+            FLWS(IJ,K,M) = WS*FL1(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO
 
       ! Find peak of windsea 1d spectrum
-      CALL PEAKFRI (FLWS, KIJS, KIJL, KIJS, KIJL, MMAX, F1DMAX, F1DWS)
+      CALL PEAKFRI (KIJS, KIJL, FLWS, MMAX, F1DMAX, F1DWS)
 
       ! Find the Phillips parameter by weighting averaging its value over the Phillips range (see above)
       DO IJ = KIJS, KIJL

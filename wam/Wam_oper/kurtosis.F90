@@ -1,6 +1,6 @@
-      SUBROUTINE KURTOSIS(GFL, IJS, IJL, KIJS, KIJL,                    &
-     &                    DEPTH,                                        &
-     &                    C3, C4, BF2, QP, HMAX, TMAX,                  &
+      SUBROUTINE KURTOSIS(KIJS, KIJL, FL1,                        &
+     &                    DEPTH,                                  &
+     &                    C3, C4, BF2, QP, HMAX, TMAX,            &
      &                    ETA_M, R, XNSLC, SIG_TH, EPS)
  
 !***  *KURTOSIS*   DETERMINES SKEWNESS C3, KURTOSIS C4, THE SQUARE OF THE
@@ -25,13 +25,12 @@
 !                              HMAXN AND TMAX
 !     INTERFACE.
 !     ----------
-!           *CALL*  *KURTOSIS(GFL, IJS, IJL, KIJS, KIJL,
+!           *CALL*  *KURTOSIS(FL1, KIJS, KIJL,
 !                             DEPTH,
 !                             C3, C4, BF2, QP, HMAX, TMAX,
 !                             ETA_M, R, XNSLC)
 !                      INPUT:
-!                           *GFL*    - 2-DIMENSIONAL SPECTRUM
-!                           *IJS:IJL*- 1st DIMENSION of GFL
+!                           *FL1*    - 2-DIMENSIONAL SPECTRUM
 !                           *KIJS*   - STARTING INDEX
 !                           *KIJL*   - LAST INDEX
 !                           *DEPTH*  - WATER DEPTH
@@ -189,9 +188,9 @@
 #include "stat_nl.intfb.h"
 #include "h_max.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: C3, C4, BF2, QP, HMAX, TMAX
@@ -239,18 +238,18 @@
 !***  2. DETERMINE ANGULAR WIDTH PARAMETER SIG_TH.
 !     -------------------------------------------
  
-      CALL PEAK_ANG(GFL, IJS, IJL, KIJS, KIJL, XNU, SIG_TH)
+      CALL PEAK_ANG(KIJS, KIJL, FL1, XNU, SIG_TH)
 
 !     COMPUTES THE DIFFERENT MOMENTS 
 
       DO M=1,NFRE
         K=1
         DO IJ=KIJS,KIJL
-          FF(IJ,M) = GFL(IJ,K,M)
+          FF(IJ,M) = FL1(IJ,K,M)
         ENDDO   
         DO K=2,NANG
           DO IJ=KIJS,KIJL
-            FF(IJ,M) = FF(IJ,M)+GFL(IJ,K,M)
+            FF(IJ,M) = FF(IJ,M)+FL1(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO 
@@ -302,7 +301,7 @@
       ENDDO
       DO M=1,NFRE
         DO IJ=KIJS,KIJL
-          IF(FF(IJ,M).GT.FFMAX(IJ)) THEN
+          IF(FF(IJ,M) > FFMAX(IJ)) THEN
             SUM40(IJ)= SUM40(IJ)+FF(IJ,M)*DFIM(M)
             SUM4(IJ) = SUM4(IJ)+FF(IJ,M)**2*FAC4(M)
           ENDIF
@@ -312,7 +311,7 @@
 !***  3. DETERMINE EPS AND BFI^2.
 !     --------------------------
       DO IJ=KIJS,KIJL
-        IF (SUM1(IJ).GT.ZSQREPSILON .AND. SUM0(IJ).GT.ZEPSILON) THEN
+        IF (SUM1(IJ) > ZSQREPSILON .AND. SUM0(IJ) > ZEPSILON) THEN
 
           F_M(IJ) = MAX(MIN(SUM1(IJ)/SUM0(IJ),FRMAX),FRMIN)
           QP(IJ) = MAX(MIN(SUM4(IJ)/SUM40(IJ)**2,QPMAX),QPMIN)
@@ -355,7 +354,7 @@
 
       ZFAC = 2._JWRB*ZPI/ZPISQRT
       DO IJ=KIJS,KIJL
-        IF (F_M(IJ).GT.0._JWRB) THEN
+        IF (F_M(IJ) > 0._JWRB) THEN
           OM_UP(IJ) = ZFAC*XNU(IJ)*F_M(IJ)
 
           XNSLC(IJ) = REAL(NINT(DUR*OM_UP(IJ)),JWRB)
@@ -367,7 +366,7 @@
       CALL H_MAX(C3,C4,XNSLC,KIJS,KIJL,AA,BB,HMAXN,SIG_HM)
 
       DO IJ=KIJS,KIJL
-        IF (SUM1(IJ).GT.ZEPSILON .AND. HMAXN(IJ).GT.ZEPSILON) THEN
+        IF (SUM1(IJ) > ZEPSILON .AND. HMAXN(IJ) > ZEPSILON) THEN
           ZEPS = XNU(IJ)/(SQRT2*HMAXN(IJ))
           TMAX(IJ) = 1._JWRB+0.5_JWRB*ZEPS**2+0.75_JWRB*ZEPS**4
           TAU = SUM0(IJ)/SUM1(IJ)
@@ -378,7 +377,7 @@
       ENDDO
 
       DO IJ=KIJS,KIJL
-        IF (SUM0(IJ).GT.0._JWRB) THEN
+        IF (SUM0(IJ) > 0._JWRB) THEN
           HS = 4._JWRB*SQRT(SUM0(IJ))
           HMAX(IJ) = HMAXN(IJ)*HS
         ELSE

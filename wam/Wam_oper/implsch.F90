@@ -248,13 +248,13 @@
 
 !     REDUCE WAVE ENERGY IF LARGER THAN DEPTH LIMITED WAVE HEIGHT
       IF(LBIWBK) THEN
-         CALL SDEPTHLIM(IJS, IJL, KIJS, KIJL, EMAXDPT, GFL)
+         CALL SDEPTHLIM(KIJS, KIJL, EMAXDPT, GFL)
       ENDIF
 
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
-      CALL FKMEAN(IJS, IJL, KIJS, KIJL, GFL, WAVNUM,           &
+      CALL FKMEAN(KIJS, KIJL, GFL, WAVNUM,                    &
      &            EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
 
       DO K=1,NANG
@@ -356,9 +356,9 @@
       ENDIF
 
 
-      CALL SDIWBK(IJS, IJL, KIJS, KIJL, GFL ,FLD, SL, DEPTH, EMAXDPT, EMEANALL, F1MEAN)
+      CALL SDIWBK(KIJS, KIJL, GFL ,FLD, SL, DEPTH, EMAXDPT, EMEANALL, F1MEAN)
 
-      CALL SBOTTOM (IJS, IJL, KIJS, KIJL, GFL, FLD, SL, WAVNUM, DEPTH)
+      CALL SBOTTOM (KIJS, KIJL, GFL, FLD, SL, WAVNUM, DEPTH)
 
 ! ----------------------------------------------------------------------
 
@@ -416,6 +416,7 @@
       IF(LCFLX) THEN
         CALL WNFLUXES (KIJS, KIJL,                              &
      &                 MIJ, RHOWGDFTH,                          &
+     &                 CINV,                                    &
      &                 SSOURCE, CICVR,                          &
      &                 PHIWA,                                   &
      &                 EMEANALL, F1MEAN, U10NEW, THWNEW,        &
@@ -426,11 +427,11 @@
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
 
-      CALL FKMEAN(IJS, IJL, KIJS, KIJL, GFL, WAVNUM,           &
+      CALL FKMEAN(KIJS, KIJL, GFL, WAVNUM,                      &
      &            EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(GFL, GXLLWS, IJS, IJL, KIJS, KIJL, EMEANWS, FMEANWS)
+      CALL FEMEANWS(KIJS, KIJL, GFL, GXLLWS, EMEANWS, FMEANWS)
 
       CALL IMPHFTAIL(IJS, IJL, KIJS, KIJL, MIJ, FLM, WAVNUM, CGROUP, GFL)
 
@@ -460,7 +461,7 @@
           WRITE(IU06,*) '   SUB. IMPLSCH: SPECTRUM = 0 AT ICE POINTS'
            CALL FLUSH(IU06)
         ENDIF
-        CALL SETICE(IJS, IJL, KIJS, KIJL, GFL, CICVR, U10NEW, THWNEW)
+        CALL SETICE(KIJS, KIJL, GFL, CICVR, U10NEW, THWNEW)
       ENDIF
 
 

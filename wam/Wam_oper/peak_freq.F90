@@ -1,4 +1,4 @@
-      SUBROUTINE PEAK_FREQ(GFL, IJS, IJL, KIJS, KIJL, FP)
+      SUBROUTINE PEAK_FREQ(KIJS, KIJL, FL1, FP)
  
 !***  *PEAK*   DETERMINES THE PEAK FREQUENCY OF THE SPECTRUM
  
@@ -11,11 +11,10 @@
  
 !     INTERFACE.
 !     ----------
-!              *CALL*  *PEAK_FREQ(GFL,IJS,IJL,KIJS,KIJL,FP)*
+!              *CALL*  *PEAK_FREQ(FL1,KIJS,KIJL,FP)*
  
 !                       INPUT:
-!                            *GFL*    -  2D-SPECTRUM
-!                            *IJS:IJL -  1st DIMENSION of GFL
+!                            *FL1*    -  2D-SPECTRUM
 !                            *KIJS*   - FIRST GRIDPOINT              
 !                            *KIJL*   - LAST GRIDPOINT  
  
@@ -45,10 +44,8 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
-      REAL(KIND=JWRB), INTENT(IN) :: GFL(IJS:IJL,NANG,NFRE)
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), INTENT(IN) :: FL1(KIJS:KIJL,NANG,NFRE)
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: FP
 
 
@@ -75,11 +72,11 @@
       DO M=1,NFRE
         K=1
         DO IJ=KIJS,KIJL
-          F1D(IJ,M) = GFL(IJ,K,M)*DELTH
+          F1D(IJ,M) = FL1(IJ,K,M)*DELTH
         ENDDO
         DO K=2,NANG
           DO IJ=KIJS,KIJL
-            F1D(IJ,M) = F1D(IJ,M)+GFL(IJ,K,M)*DELTH
+            F1D(IJ,M) = F1D(IJ,M)+FL1(IJ,K,M)*DELTH
           ENDDO
         ENDDO
       ENDDO
@@ -113,7 +110,7 @@
 
       DO M=1,NFRE
         DO IJ=KIJS,KIJL
-          IF (F1DSM(IJ,M).GE.XMAX(IJ)) THEN
+          IF (F1DSM(IJ,M) >= XMAX(IJ)) THEN
             MMAX(IJ) = M
             XMAX(IJ) = F1DSM(IJ,M)
           ENDIF
@@ -126,7 +123,7 @@
 
 !     DETERMINE QUADRATIC FIT.
       DO IJ=KIJS,KIJL
-        IF (XMAX(IJ).GT.XMAX_MIN .AND. MMAX(IJ).GT.1 .AND. MMAX(IJ).LT.NFRE ) THEN
+        IF (XMAX(IJ) > XMAX_MIN .AND. MMAX(IJ) > 1 .AND. MMAX(IJ) < NFRE ) THEN
           XP1 = FR(MMAX(IJ)+1)-FR(MMAX(IJ))
           XM1 = FR(MMAX(IJ)-1)-FR(MMAX(IJ))
           F10  = F1DSM(IJ,MMAX(IJ))
@@ -137,7 +134,7 @@
           B = (XM1*F1P1-XP1*F1M1)/(XM1-XP1)
           C = (F1M1-F1P1)/(XM1-XP1)
         
-          IF (C.LT.0._JWRB) THEN
+          IF (C < 0._JWRB) THEN
             FP(IJ) = FR(MMAX(IJ))-B/(2._JWRB*C)
 !!!            XMAX(IJ) = A-B**2/(4._JWRB*C)
           ENDIF

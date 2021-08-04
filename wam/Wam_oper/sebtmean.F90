@@ -1,4 +1,4 @@
-      SUBROUTINE SEBTMEAN (GFL, IJS, IJL, KIJS, KIJL, TB, TT, EBT)
+      SUBROUTINE SEBTMEAN (KIJS, KIJL, FL1, TB, TT, EBT)
 
 ! ----------------------------------------------------------------------
 
@@ -14,11 +14,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEBTMEAN(GFL, IJS, IJL, KIJS, KIJL, TB, TT, EBT)*
-!          *GFL*     - SPECTRUM.
-!          *IJS:IJL* - 1st DIMENSION of GFL
+!       *CALL* *SEBTMEAN(KIJS, KIJL, FL1, TB, TT, EBT)*
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT
 !          *KIJL*    - INDEX OF LAST GRIDPOINT
+!          *FL1*     - SPECTRUM.
 !          *TB*      - BOTTOM PERIOD
 !          *TT*      - TOP PERIOD
 !          *EBT*     - MEAN VARIANCE
@@ -52,10 +51,8 @@
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: GFL
-
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), INTENT(IN) :: TB, TT
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: EBT
 
@@ -104,11 +101,11 @@
       DO M=MCUTB,MCUTT
         K=1
         DO IJ=KIJS,KIJL
-          TEMP(IJ) = GFL(IJ,K,M)
+          TEMP(IJ) = FL1(IJ,K,M)
         ENDDO
         DO K=2,NANG
           DO IJ=KIJS,KIJL
-            TEMP(IJ) = TEMP(IJ)+GFL(IJ,K,M)
+            TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,M)
           ENDDO
         ENDDO
         DO IJ=KIJS,KIJL

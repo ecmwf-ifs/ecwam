@@ -135,7 +135,7 @@
 !*    1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
 !         -----------------------------------------
 
-      CALL FKMEAN(IJS, IJL, KIJS, KIJL, GFL, WAVNUM,     &
+      CALL FKMEAN(KIJS, KIJL, GFL, WAVNUM,                         &
      &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
       TAUW_LOC(:) = 0.0_JWRB
@@ -176,6 +176,7 @@
         IF(.NOT. LWVFLX_SNL) THEN
           CALL WNFLUXES (KIJS, KIJL,                        &
      &                   MIJ, RHOWGDFTH,                    &
+     &                   CINV,                              &
      &                   SL, CICVR,                         &
      &                   PHIWA,                             &
      &                   EMEAN, F1MEAN, U10NEW, THWNEW,     &
@@ -198,7 +199,7 @@
         ENDIF
 
         IF(LWFLUX) THEN
-         CALL FEMEANWS(GFL, GXLLWS, IJS, IJL, KIJS, KIJL, EMEANWS, FMEANWS)
+         CALL FEMEANWS(KIJS, KIJL, GFL, GXLLWS, EMEANWS, FMEANWS)
 
           DO IJ=KIJS,KIJL
             IF(EMEANWS(IJ) < WSEMEAN_MIN) THEN

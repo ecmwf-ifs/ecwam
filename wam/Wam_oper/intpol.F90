@@ -1,4 +1,4 @@
-      SUBROUTINE INTPOL (GFL, FLA, IJS, IJL, KIJS, KIJL, IRA)
+      SUBROUTINE INTPOL (KIJS, KIJL, FLR, FLA, WAVNUM, IRA)
 
 ! ----------------------------------------------------------------------
 
@@ -16,11 +16,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *INTPOL (GFL, FLA, IJS, IJL, KIJS, KIJL, IRA)*
-!         *GFL*   - SPECTRA (INPUT) (1st dimension IJS:IJL).
-!         *FLA*   - SPECTRA (OUTPUT) (1st DIMENSION KIJS:KIJL).
+!       *CALL* *INTPOL (KIJS, KIJL, FLR, FLA, WAVNUM, IRA)*
 !         *KIJS*  - INDEX OF FIRST GRIDPOINT.
 !         *KIJL*  - INDEX OF LAST GRIDPOINT.
+!         *FLR*   - SPECTRA (INPUT)
+!         *FLA*   - SPECTRA (OUTPUT)
+!         *WAVNUM*- WAVE NUMBER.
 !         *IRA*   - = 1 TRANSFORMATION FROM MOVING TO ABSOLUTE COORD.
 !                   =-1 TRANSFORMATION FROM ABSOLUTE TO MOVING COORD.
 
@@ -48,8 +49,6 @@
      &              DELTH  ,FRATIO   ,FLOGSPRDM1
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP
-      USE YOWSTAT  , ONLY : ISHALLO
       USE YOWTEST  , ONLY : IU06
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -58,11 +57,11 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL, IRA
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FLR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLA
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM 
+      INTEGER(KIND=JWIM), INTENT(IN) :: IRA
 
 
       INTEGER(KIND=JWIM) :: IJ, M, K
@@ -72,11 +71,11 @@
       REAL(KIND=JWRB) :: PI2G, FRE0, CDF 
       REAL(KIND=JWRB) :: FNEW, GWH
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: DFTH(NFRE)
+      REAL(KIND=JWRB), DIMENSION(NFRE) :: DFTH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: OLDFL 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FNEF, GWP, GWM, WAVN
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FNEF, GWP, GWM
 
-      LOGICAL :: LICE2SEA(KIJS:KIJL)
+      LOGICAL, DIMENSION(KIJS:KIJL) :: LICE2SEA
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('INTPOL',0,ZHOOK_HANDLE)
@@ -97,7 +96,7 @@
         DFTH(M)= FR(M)*CDF
       ENDDO
 
-      IF (ABS(IRA).NE.1) THEN
+      IF (ABS(IRA) /= 1) THEN
         WRITE (IU06,*) '**************************************'
         WRITE (IU06,*) '* SUBROUTINE INTPOL:                  '
         WRITE (IU06,*) '* IRA MUST BE = 1 OR -1               '
@@ -116,7 +115,7 @@
       DO K=1,NANG
         DO M=1,NFRE
           DO IJ = KIJS, KIJL
-             IF (GFL(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
+             IF (FLR(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
           ENDDO
         ENDDO
       ENDDO
@@ -134,15 +133,6 @@
 !        ----------------------
 
       DO M = 1, NFRE
-        IF (ISHALLO.NE.1) THEN
-          DO IJ = KIJS, KIJL
-            WAVN(IJ) = TFAK(INDEP(IJ),M)/ZPI
-          ENDDO
-        ELSE
-          DO IJ = KIJS, KIJL
-            WAVN(IJ) = PI2G*FR(M)*FR(M)
-          ENDDO
-        ENDIF
 
 !*    1.3 LOOP OVER DIRECTONS.
 !         --------------------
@@ -153,8 +143,8 @@
 !           ----------------------------------------------
 
           DO IJ = KIJS, KIJL
-            FNEF(IJ) = FR(M) + IRA*WAVN(IJ)*(COSTH(K)*V(IJ) + SINTH(K)*U(IJ))
-            IF (FNEF(IJ).GT.0.0_JWRB) THEN
+            FNEF(IJ) = FR(M) + IRA*WAVNUM(IJ,M)*(COSTH(K)*V(IJ) + SINTH(K)*U(IJ))
+            IF (FNEF(IJ) > 0.0_JWRB) THEN
               KNEW(IJ) = K
             ELSE
               KNEW(IJ) = MOD(K+NANG/2-1,NANG) + 1
@@ -166,7 +156,7 @@
 !           -------------------------------------------
 
           DO IJ = KIJS, KIJL
-            IF (FNEF(IJ).LE.FR(1)/FRATIO) THEN
+            IF (FNEF(IJ) <= FR(1)/FRATIO) THEN
               NEWF(IJ)= -1
             ELSE
               NEWF(IJ)=FLOOR(LOG10(FNEF(IJ)/FR(1))*FLOGSPRDM1)+1
@@ -179,25 +169,25 @@
             IF (LICE2SEA(IJ)) THEN
               OLDFL(IJ)=0.0_JWRB
             ELSE
-              OLDFL(IJ)=GFL(IJ,K,M)
+              OLDFL(IJ)=FLR(IJ,K,M)
             ENDIF
           ENDDO
 
           DO IJ = KIJS, KIJL
             FNEW = FNEF(IJ)
             NEWM = NEWF(IJ)
-            IF (NEWM.LT.NFRE.AND.NEWM.GE.1) THEN
+            IF (NEWM < NFRE .AND. NEWM >= 1) THEN
               NEWM1 = NEWM + 1
               GWH = DFTH(M)/(FR(NEWM1)-FR(NEWM)) *OLDFL(IJ)
               GWM(IJ) = GWH*(FR(NEWM1)-FNEW)/DFTH(NEWM)
               GWP(IJ) = GWH*(FNEW-FR(NEWM))/DFTH(NEWM1)
               NEWFLA(IJ) = NEWM1
-            ELSEIF (NEWM.EQ.0) THEN
+            ELSEIF (NEWM == 0) THEN
               GWH = FRATIO*DFTH(M)/(FRE0*FR(1)) * OLDFL(IJ)
               GWP(IJ) = GWH*(FNEW-FR(1)/FRATIO)/DFTH(1)
               NEWF (IJ) = -1
               NEWFLA(IJ) = 1
-            ELSEIF (NEWM.EQ.NFRE) THEN
+            ELSEIF (NEWM == NFRE) THEN
               GWH = DFTH(M)/(FRE0*FR(NFRE)) * OLDFL(IJ)
               GWM(IJ) = GWH*(FRATIO*FR(NFRE)-FNEW)/DFTH(NFRE)
               NEWFLA(IJ) = -1
@@ -214,10 +204,8 @@
             NEWM  = NEWF (IJ)
             NEWM1 = NEWFLA(IJ)
             KH = KNEW(IJ)
-            IF (NEWM .NE.-1)                                            &
-     &       FLA(IJ,KH,NEWM ) = FLA(IJ,KH,NEWM ) + GWM(IJ)
-            IF (NEWM1.NE.-1)                                            &
-     &       FLA(IJ,KH,NEWM1) = FLA(IJ,KH,NEWM1) + GWP(IJ)
+            IF (NEWM /= -1) FLA(IJ,KH,NEWM ) = FLA(IJ,KH,NEWM ) + GWM(IJ)
+            IF (NEWM1 /= -1)FLA(IJ,KH,NEWM1) = FLA(IJ,KH,NEWM1) + GWP(IJ)
           ENDDO
 
 !*    BRANCH BACK TO 1.3 FOR NEXT DIRECTION.

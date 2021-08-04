@@ -1,4 +1,4 @@
-      SUBROUTINE AIRSEA (IJS, IJL, KIJS, KIJL, GFL,                 &
+      SUBROUTINE AIRSEA (KIJS, KIJL, FL1,                           &
 &                        U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, &
 &                        US, Z0, Z0B, ICODE_WND, IUSFG)
 
@@ -20,13 +20,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *AIRSEA (IJS, IJL, KIJS, KIJL, GFL, U10,
+!       *CALL* *AIRSEA (KIJS, KIJL, FL1, U10,
 !                       U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC,
 !                       US, Z0, Z0B, ICODE_WND, IUSFG)*
-!          *IJS:IJL 1st DIMENSION of GFL.
 !          *KIJS*  - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*  - INDEX OF LAST GRIDPOINT.
-!          *GFL*  - SPECTRA
+!          *FL1*  - SPECTRA
 !          *U10*  - INPUT OR OUTPUT BLOCK OF WINDSPEED U10.
 !          *U10DIR*  - INPUT OR OUTPUT BLOCK OF WINDSPEED DIRECTION.
 !          *ROAIRN* - AIR DENSITY IN KG/M3
@@ -67,6 +66,7 @@
       USE YOWPHYS,  ONLY : XKAPPA, XNLEV
       USE YOWTEST,  ONLY : IU06
       USE YOWWIND,  ONLY : WSPMIN
+
       USE YOMHOOK,  ONLY : LHOOK, DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -75,10 +75,8 @@
 #include "taut_z0.intfb.h"
 #include "z0wave.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT (IN) :: IJS, IJL, KIJS, KIJL, ICODE_WND, IUSFG
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
-
+      INTEGER(KIND=JWIM), INTENT (IN) :: KIJS, KIJL, ICODE_WND, IUSFG
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT (IN) :: U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT (INOUT) :: U10, US
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT (OUT) :: Z0, Z0B
@@ -97,7 +95,7 @@
 !        ----------------------------------
 
       IF (ICODE_WND == 3) THEN
-        CALL TAUT_Z0 (IJS, IJL, KIJS, KIJL, IUSFG, GFL, U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, US, Z0, Z0B)
+        CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, US, Z0, Z0B)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
 
