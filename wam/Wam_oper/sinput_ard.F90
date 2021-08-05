@@ -1,8 +1,8 @@
-      SUBROUTINE SINPUT_ARD (NGST, IJS, IJL, KIJS, KIJL, GFL, &
+      SUBROUTINE SINPUT_ARD (NGST, KIJS, KIJL, FL1,           &
      &                       WAVNUM, CINV, CGROUP,            &
      &                       THWNEW, U10NEW, USNEW, Z0NEW,    &
      &                       ROAIRN, WSTAR, RNFAC,            &
-     &                       FLD, SL, SPOS, GXLLWS)
+     &                       FLD, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT_ARD* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -31,17 +31,16 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT_ARD (NGST, IJS, IJL, KIJS, KIJL, GFL,
+!     *CALL* *SINPUT_ARD (NGST, KIJS, KIJL, FL1,
 !    &                    WAVNUM, CINV, CGROUP,
 !    &                    U10NEW, THWNEW, USNEW, Z0NEW,
 !    &                    ROAIRN, WSTAR, RNFAC,
-!    &                    FLD, SL, SPOS, GXLLWS)
+!    &                    FLD, SL, SPOS, XLLWS)
 !         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
 !                - IF = 2 THEN GUSTINESS PARAMETERISATION
-!         *IJS:IJL* 1st DIMEMSION OF GFL GXLLWS, WAVNUM, CINV, CGROUP
 !         *KIJS* - INDEX OF FIRST GRIDPOINT.
 !         *KIJL* - INDEX OF LAST GRIDPOINT.
-!          *GFL* - SPECTRUM.
+!          *FL1* - SPECTRUM.
 !       *WAVNUM* - WAVE NUMBER.
 !         *CINV* - INVERSE PHASE VELOCITY.
 !       *CGROUP* - GROUP SPPED.
@@ -56,7 +55,7 @@
 !          *FLD* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !           *SL* - TOTAL SOURCE FUNCTION ARRAY.
 !         *SPOS* - POSITIVE SOURCE FUNCTION ARRAY.
-!       *GXLLWS*- 1 WHERE SINPUT IS POSITIVE
+!       *XLLWS*  - = 1 WHERE SINPUT IS POSITIVE
 
 !     METHOD.
 !     -------
@@ -97,31 +96,28 @@
 #include "wsigstar.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NGST
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, U10NEW, USNEW, Z0NEW
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: ROAIRN, WSTAR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: GXLLWS
 
-
-      INTEGER(KIND=JWIM) :: IJ,K,M,IND,IGST
+      INTEGER(KIND=JWIM) :: IJ, K, M, IND, IGST
 
       REAL(KIND=JWRB) :: ROG
       REAL(KIND=JWRB) :: CONSTN 
       REAL(KIND=JWRB) :: AVG_GST, ABS_TAUWSHELTER 
       REAL(KIND=JWRB) :: CONST1
       REAL(KIND=JWRB) :: ZN1, ZN2 
-      REAL(KIND=JWRB) :: X1,X2,ZLOG,ZLOG1,ZLOG2,ZLOG2X,XV1,XV2,ZBETA1,ZBETA2
-      REAL(KIND=JWRB) :: XI,X,DELI1,DELI2
-      REAL(KIND=JWRB) :: FU,FUD,NU_AIR,SMOOTH, HFTSWELLF6,Z0TUB
-      REAL(KIND=JWRB) :: FAC_NU_AIR,FACM1_NU_AIR
+      REAL(KIND=JWRB) :: X1, X2, ZLOG, ZLOG1, ZLOG2, ZLOG2X, XV1, XV2, ZBETA1, ZBETA2
+      REAL(KIND=JWRB) :: XI, X, DELI1, DELI2
+      REAL(KIND=JWRB) :: FU,FUD, NU_AIR,SMOOTH, HFTSWELLF6,Z0TUB
+      REAL(KIND=JWRB) :: FAC_NU_AIR, FACM1_NU_AIR
       REAL(KIND=JWRB) :: ARG, DELABM1
-      REAL(KIND=JWRB) :: TAUPX,TAUPY
+      REAL(KIND=JWRB) :: TAUPX, TAUPY
       REAL(KIND=JWRB) :: DSTAB2
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE) :: CONST, SIG, SIGM1, SIG2, COEF, COEF5, DFIM_SIG2
@@ -161,7 +157,7 @@
       DELABM1= REAL(IAB)/(ABMAX-ABMIN)
 
       ABS_TAUWSHELTER=ABS(TAUWSHELTER)
-      IF(ABS_TAUWSHELTER .EQ. 0.0_JWRB ) THEN
+      IF(ABS_TAUWSHELTER == 0.0_JWRB ) THEN
         LTAUWSHELTER = .FALSE.
       ELSE
         LTAUWSHELTER = .TRUE.
@@ -191,7 +187,7 @@
 
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
-      IF(NGST.GT.1) CALL WSIGSTAR (KIJS, KIJL, U10NEW, USNEW, Z0NEW, WSTAR, SIG_N)
+      IF (NGST > 1) CALL WSIGSTAR (KIJS, KIJL, U10NEW, USNEW, Z0NEW, WSTAR, SIG_N)
 
 ! ----------------------------------------------------------------------
 ! computation of Uorb and Aorb
@@ -212,11 +208,11 @@
 
         K=1
         DO IJ=KIJS,KIJL
-          TEMP(IJ) = GFL(IJ,K,M)
+          TEMP(IJ) = FL1(IJ,K,M)
         ENDDO
         DO K=2,NANG
           DO IJ=KIJS,KIJL
-            TEMP(IJ) = TEMP(IJ)+GFL(IJ,K,M)
+            TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,M)
           ENDDO
         ENDDO
         DO IJ=KIJS,KIJL
@@ -244,7 +240,7 @@
       ENDDO
 
 ! Define the critical Reynolds number
-      IF( SWELLF6 .EQ. 1.0_JWRB) THEN
+      IF( SWELLF6 == 1.0_JWRB) THEN
         DO IJ=KIJS,KIJL
           RE_C(IJ) = SWELLF4
         ENDDO
@@ -256,7 +252,7 @@
       ENDIF
 
 ! Swell damping weight between viscous and turbulent boundary layer
-      IF (SWELLF7.GT.0.0_JWRB) THEN
+      IF (SWELLF7 > 0.0_JWRB) THEN
         DO IJ=KIJS,KIJL
           SMOOTH=0.5_JWRB*TANH((RE(IJ)-RE_C(IJ))/SWELLF7)
           PTURB(IJ)=0.5_JWRB+SMOOTH
@@ -264,7 +260,7 @@
         ENDDO
       ELSE
         DO IJ=KIJS,KIJL
-          IF (RE(IJ).LE.RE_C(IJ)) THEN
+          IF (RE(IJ) <= RE_C(IJ)) THEN
             PTURB(IJ)=0.0_JWRB
             PVISC(IJ)=0.5_JWRB
           ELSE
@@ -277,11 +273,11 @@
 
 ! Initialisation
 
-      IF(NGST.EQ.1) THEN
+      IF(NGST == 1) THEN
         DO IJ=KIJS,KIJL
           USTP(IJ,1) = USNEW(IJ)
         ENDDO
-      ELSE IF (NGST.EQ.2) THEN
+      ELSE IF (NGST == 2) THEN
         DO IJ=KIJS,KIJL
           USTP(IJ,1) = USNEW(IJ)*(1.0_JWRB+SIG_N(IJ))
           USTP(IJ,2) = USNEW(IJ)*(1.0_JWRB-SIG_N(IJ))
@@ -384,20 +380,20 @@
 
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            GXLLWS(IJ,K,M)=0.0_JWRB
+            XLLWS(IJ,K,M)=0.0_JWRB
           ENDDO
         ENDDO
 
         DO IGST=1,NGST
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              IF (COSLP(IJ,K,IGST).GT.0.01_JWRB) THEN
+              IF (COSLP(IJ,K,IGST) > 0.01_JWRB) THEN
                 X    = COSLP(IJ,K,IGST)*UCN(IJ,IGST)
                 ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)/COSLP(IJ,K,IGST)
-                IF (ZLOG.LT.0.0_JWRB) THEN
+                IF (ZLOG < 0.0_JWRB) THEN
                   ZLOG2X=ZLOG*ZLOG*X
                   GAM0(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X * CNSN(IJ)
-                  GXLLWS(IJ,K,M) = 1.0_JWRB
+                  XLLWS(IJ,K,M) = 1.0_JWRB
                 ELSE
                   GAM0(IJ,K,IGST) = 0.0_JWRB
                 ENDIF
@@ -417,8 +413,8 @@
           SUMFSIN2(:) = 0.0_JWRB
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*GFL(IJ,K,M)
-              SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*GFL(IJ,K,M)*SIN2(IJ,K)
+              SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)
+              SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SIN2(IJ,K)
             ENDDO
           ENDDO
 
@@ -468,7 +464,7 @@
 
           DO IGST=1,NGST
             DO IJ=KIJS,KIJL
-              SLP(IJ,IGST) = SLP(IJ,IGST)*GFL(IJ,K,M)
+              SLP(IJ,IGST) = SLP(IJ,IGST)*FL1(IJ,K,M)
             ENDDO
           ENDDO
 
@@ -503,7 +499,7 @@
 
           DO IJ=KIJS,KIJL
             FLD(IJ,K,M) = AVG_GST*FLP_AVG(IJ)
-            SL(IJ,K,M) = FLD(IJ,K,M)*GFL(IJ,K,M)
+            SL(IJ,K,M) = FLD(IJ,K,M)*FL1(IJ,K,M)
           ENDDO
 
         ENDDO

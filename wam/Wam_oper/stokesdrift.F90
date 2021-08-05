@@ -1,4 +1,4 @@
-      SUBROUTINE STOKESDRIFT(IJS, IJL, KIJS, KIJL, GFL, STOKFAC, U10, THW, CICVR, USTOKES, VSTOKES)
+      SUBROUTINE STOKESDRIFT(KIJS, KIJL, FL1, STOKFAC, U10, THW, CICVR, USTOKES, VSTOKES)
  
 !
 !***  *STOKESDRIFT*   DETERMINES THE STOKES DRIFT
@@ -12,13 +12,12 @@
 !
 !     INTERFACE.
 !     ----------
-!              *CALL*  *STOKESDRIFT(IJS, IJL, KIJS, KIJL, GFL, STOKFAC, U10,THW,CICVR,USTOKES,VSTOKES)*
+!              *CALL*  *STOKESDRIFT(KIJS, KIJL, FL1, STOKFAC, U10,THW,CICVR,USTOKES,VSTOKES)*
 !
 !                       INPUT:
-!                            *IJS:IJL*- 1st DIMENSION OF GFL.
 !                            *KIJS*   - FIRST GRIDPOINT
 !                            *KIJL*   - LAST GRIDPOINT
-!                            *GFL*    - 2-D SPECTRUM
+!                            *FL1*    - 2-D SPECTRUM
 !                            *STOKFAC*- FACTOR TO COMPUTE THE STOKES DRIFT
 !                            Auxilliary fields to specify Stokes when model sea ice cover the blocking threshold
 !                            as 0.016*U10, aligned in the wind direction
@@ -55,11 +54,10 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: STOKFAC 
-
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: STOKFAC 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: U10, THW, CICVR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: USTOKES, VSTOKES
 
@@ -95,7 +93,7 @@
          ENDDO
          DO K=1,NANG
             DO IJ = KIJS,KIJL
-               FAC3 = STFAC(IJ)*GFL(IJ,K,M)
+               FAC3 = STFAC(IJ)*FL1(IJ,K,M)
                USTOKES(IJ) = USTOKES(IJ)+FAC3*SINTH(K)
                VSTOKES(IJ) = VSTOKES(IJ)+FAC3*COSTH(K)
             ENDDO
@@ -109,8 +107,8 @@
          FAC1 = CONST*SINTH(K)
          FAC2 = CONST*COSTH(K)
          DO IJ = KIJS,KIJL
-            USTOKES(IJ) = USTOKES(IJ)+FAC1*GFL(IJ,K,NFRE_ODD)
-            VSTOKES(IJ) = VSTOKES(IJ)+FAC2*GFL(IJ,K,NFRE_ODD)
+            USTOKES(IJ) = USTOKES(IJ)+FAC1*FL1(IJ,K,NFRE_ODD)
+            VSTOKES(IJ) = VSTOKES(IJ)+FAC2*FL1(IJ,K,NFRE_ODD)
          ENDDO
       ENDDO
 
@@ -119,7 +117,7 @@
 !     ---------------------
       IF (LICERUN .AND. LWAMRSETCI) THEN
        DO IJ=KIJS,KIJL
-         IF(CICVR(IJ) .GT. CITHRSH) THEN
+         IF (CICVR(IJ) > CITHRSH) THEN
            USTOKES(IJ) = 0.016_JWRB*U10(IJ)*SIN(THW(IJ))*(1.0_JWRB - CICVR(IJ))
            VSTOKES(IJ) = 0.016_JWRB*U10(IJ)*COS(THW(IJ))*(1.0_JWRB - CICVR(IJ))
          ENDIF

@@ -265,8 +265,8 @@
 
 !     COMPUTE DAMPING COEFFICIENT DUE TO FRICTION ON BOTTOM OF THE SEA ICE.
 !!! testing sea ice attenuation (might need to restrict usage when needed)
-      IF(LCIWABR) THEN
-        CALL CIWABR(IJS, IJL, KIJS, KIJL, CICVR, GFL, WAVNUM, CGROUP, CIREDUC)
+      IF (LCIWABR) THEN
+        CALL CIWABR(KIJS, KIJL, CICVR, GFL, WAVNUM, CGROUP, CIREDUC)
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=KIJS,KIJL
@@ -295,7 +295,7 @@
       LUPDTUS = .TRUE.
       NCALL = 2
       DO ICALL = 1, NCALL 
-        CALL SINFLX (ICALL, NCALL, IJS, IJL, KIJS, KIJL,       &
+        CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                 &
      &               LUPDTUS,                                  &
      &               GFL,                                      &
      &               WAVNUM, CINV, CGROUP,                     &
@@ -315,9 +315,9 @@
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
 
-      CALL SDISSIP (GFL ,FLD, SL, IJS, IJL, KIJS, KIJL,       &
-     &              WAVNUM, CGROUP,                           &
-     &              EMEANALL, F1MEAN, XKMEAN,                 &
+      CALL SDISSIP (KIJS, KIJL, GFL ,FLD, SL,     &
+     &              WAVNUM, CGROUP,               &
+     &              EMEANALL, F1MEAN, XKMEAN,     &
      &              USNEW, THWNEW, ROAIRN)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
@@ -335,7 +335,7 @@
         ENDDO
       ENDIF
 
-      CALL SNONLIN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, WAVNUM, DEPTH, AKMEAN)
+      CALL SNONLIN (KIJS, KIJL, GFL, FLD, SL, WAVNUM, DEPTH, AKMEAN)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
         CALL FLUSH (IU06)
@@ -433,9 +433,9 @@
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
       CALL FEMEANWS(KIJS, KIJL, GFL, GXLLWS, EMEANWS, FMEANWS)
 
-      CALL IMPHFTAIL(IJS, IJL, KIJS, KIJL, MIJ, FLM, WAVNUM, CGROUP, GFL)
+      CALL IMPHFTAIL(KIJS, KIJL, MIJ, FLM, WAVNUM, CGROUP, GFL)
 
-      CALL FLMINTAIL(IJS, IJL, KIJS, KIJL, U10NEW, THWNEW, USNEW, FMEANWS, GFL)
+      CALL FLMINTAIL(KIJS, KIJL, U10NEW, THWNEW, USNEW, FMEANWS, GFL)
 
 
 !     UPDATE WINDSEA VARIANCE AND MEAN FREQUENCY IF PASSED TO ATMOSPHERE

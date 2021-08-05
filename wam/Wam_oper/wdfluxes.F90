@@ -1,12 +1,12 @@
-      SUBROUTINE WDFLUXES (IJS, IJL, KIJS, KIJL,                        &
-     &                     MIJ,                                         &
-     &                     GFL, GXLLWS,                                 &
-     &                     WAVNUM, CINV, CGROUP, STOKFAC,               &
-     &                     DEPTH,                                       &
-     &                     CICVR,                                       &
-     &                     U10NEW, THWNEW, USNEW,                       &
-     &                     Z0NEW, Z0B, ROAIRN, WSTAR,                   &
-     &                     WSEMEAN, WSFMEAN,                            &
+      SUBROUTINE WDFLUXES (KIJS, KIJL,                        &
+     &                     MIJ,                               &
+     &                     FL1, XLLWS,                        &
+     &                     WAVNUM, CINV, CGROUP, STOKFAC,     &
+     &                     DEPTH,                             &
+     &                     CICVR,                             &
+     &                     U10NEW, THWNEW, USNEW,             &
+     &                     Z0NEW, Z0B, ROAIRN, WSTAR,         &
+     &                     WSEMEAN, WSFMEAN,                  &
      &                     USTOKES, VSTOKES, STRNMS )
 
 ! ----------------------------------------------------------------------
@@ -23,20 +23,19 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *WDFLUXES (IJS, IJL, KIJS, KIJL,
+!       *CALL* *WDFLUXES (KIJS, KIJL,
 !    &                    MIJ,
-!    &                    GFL, GXLLWS,
+!    &                    FL1, XLLWS,
 !    &                    WAVNUM, CINV, CGROUP, STOKFAC,
 !    &                    CICVR,
 !    &                    THWNEW,USNEW,Z0NEW,Z0B,ROAIRN,WSTAR,
 !    &                    WSEMEAN, WSFMEAN,
 !    &                    USTOKES, VSTOKES, STRNMS)
 
-!          *IJS:IJL*- GLOBAL INDEX FIRST DIMENSION
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*   - INDEX OF LAST GRIDPOINT.
-!          *GFL*    - SPECTRUM(INPUT).
-!          *GXLLWS* - TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
+!          *FL1*    - SPECTRUM(INPUT).
+!          *XLLWS* - TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
 !          *WAVNUM* - WAVE NUMBER.
 !          *CINV*   - INVERSE PHASE VELOCITY.
 !          *CGROUP* - GROUP SPPED.
@@ -69,10 +68,13 @@
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
+
       USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC
+!                        !!!!!!!!!!!!!!!!!!!!!!!!!
+
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : WSEMEAN_MIN
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -87,20 +89,18 @@
 #include "stokesdrift.intfb.h"
 #include "wnfluxes.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-      INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(KIJS:KIJL)
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      INTEGER(KIND=JWIM),  DIMENSION(KIJS:KIJL), INTENT(OUT) :: MIJ
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: GFL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP, STOKFAC
-
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP, STOKFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICVR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, ROAIRN, WSTAR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: U10NEW, USNEW, Z0NEW, Z0B
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: WSEMEAN, WSFMEAN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: GXLLWS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M
@@ -135,7 +135,7 @@
 !*    1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
 !         -----------------------------------------
 
-      CALL FKMEAN(KIJS, KIJL, GFL, WAVNUM,                         &
+      CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                         &
      &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
       TAUW_LOC(:) = 0.0_JWRB
@@ -146,34 +146,25 @@
       FLM(:,:) = 0.0_JWRB
       NCALL = 1
       ICALL = 1
-      CALL SINFLX (ICALL, NCALL, IJS, IJL, KIJS, KIJL,              &
+      CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                        &
      &             LUPDTUS,                                         &
-     &             GFL,                                             &
+     &             FL1,                                             &
      &             WAVNUM, CINV, CGROUP,                            &
      &             U10NEW, THWNEW, ROAIRN, WSTAR, CICVR,            &
      &             FMEAN, FMEANWS,                                  &
      &             FLM,                                             &
      &             USNEW, TAUW_LOC, TAUWDIR_LOC, Z0NEW, Z0B, PHIWA, &
      &             FLD, SL, SPOS,                                   &
-     &             MIJ, RHOWGDFTH, GXLLWS)
+     &             MIJ, RHOWGDFTH, XLLWS)
 
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. WDFLUXES: SINFLX CALLED ', ICALL
-        CALL FLUSH (IU06)
-      ENDIF
+      IF (LCFLX) THEN
 
-      IF(LCFLX) THEN
-
-        CALL SDISSIP (GFL ,FLD, SL, IJS, IJL, KIJS, KIJL,   &
-     &                WAVNUM, CGROUP,                       &
-     &                EMEAN, F1MEAN, XKMEAN,                &
+        CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,    &
+     &                WAVNUM, CGROUP,              &
+     &                EMEAN, F1MEAN, XKMEAN,       &
      &                USNEW, THWNEW, ROAIRN)
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. WDFLUXES: SDISSIP CALLED'
-          CALL FLUSH (IU06)
-        ENDIF
 
-        IF(.NOT. LWVFLX_SNL) THEN
+        IF (.NOT. LWVFLX_SNL) THEN
           CALL WNFLUXES (KIJS, KIJL,                        &
      &                   MIJ, RHOWGDFTH,                    &
      &                   CINV,                              &
@@ -183,13 +174,9 @@
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
-        CALL SNONLIN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, WAVNUM, DEPTH, AKMEAN)
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. WDFLUXES: SNONLIN CALLED'
-          CALL FLUSH (IU06)
-        ENDIF
+        CALL SNONLIN (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH, AKMEAN)
 
-        IF(LWVFLX_SNL) THEN
+        IF (LWVFLX_SNL) THEN
           CALL WNFLUXES (KIJS, KIJL,                       &
      &                   MIJ, RHOWGDFTH,                   &
      &                   SL, CICVR,                        &
@@ -198,11 +185,11 @@
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
-        IF(LWFLUX) THEN
-         CALL FEMEANWS(KIJS, KIJL, GFL, GXLLWS, EMEANWS, FMEANWS)
+        IF (LWFLUX) THEN
+         CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, EMEANWS, FMEANWS)
 
           DO IJ=KIJS,KIJL
-            IF(EMEANWS(IJ) < WSEMEAN_MIN) THEN
+            IF (EMEANWS(IJ) < WSEMEAN_MIN) THEN
               WSEMEAN(IJ) = WSEMEAN_MIN 
               WSFMEAN(IJ) = 2._JWRB*FR(NFRE)
             ELSE
@@ -212,9 +199,9 @@
           ENDDO
         ENDIF
 
-        CALL STOKESDRIFT(IJS, IJL, KIJS, KIJL, GFL, STOKFAC, U10NEW, THWNEW, CICVR, USTOKES, VSTOKES)
+        CALL STOKESDRIFT(KIJS, KIJL, FL1, STOKFAC, U10NEW, THWNEW, CICVR, USTOKES, VSTOKES)
 
-        IF(LWNEMOCOUSTRN) CALL CIMSSTRN(IJS, IJL, KIJS, KIJL, GFL, WAVNUM, DEPTH, STRNMS)
+        IF (LWNEMOCOUSTRN) CALL CIMSSTRN(KIJS, KIJL, FL1, WAVNUM, DEPTH, STRNMS)
 
       ENDIF
 ! ----------------------------------------------------------------------

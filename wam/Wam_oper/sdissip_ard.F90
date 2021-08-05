@@ -1,4 +1,4 @@
-      SUBROUTINE SDISSIP_ARD (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, &
+      SUBROUTINE SDISSIP_ARD (KIJS, KIJL, FL1, FLD, SL,           &
      &                        WAVNUM, CGROUP,                     &
      &                        USNEW, THWNEW, ROAIRN)
 ! ----------------------------------------------------------------------
@@ -18,14 +18,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDISSIP_ARD (GFL, FLD, IJS, IJL, KIJS, KIJL, SL,*
+!       *CALL* *SDISSIP_ARD (KIJS, KIJL, FL1, FLD,SL,*
 !                            WAVNUM, CGROUP,
-!                            USNEW, THWNEW,ROAIRN)*
-!          *GFL*    - SPECTRUM.
-!          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
-!          *IJS:IJL - 1st DIMENSION of GFL WAVNUM, CGROUP
+!                            USNEW, THWNEW, ROAIRN)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
+!          *FL1*    - SPECTRUM.
+!          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY
 !          *WAVNUM* - WAVE NUMBER
 !          *CGROUP* - GROUP SPEED
@@ -61,6 +60,7 @@
 &                  BRKPBCOEF ,SSDSC5, NSDSNTH, NDIKCUMUL,              &
 &                  INDICESSAT, SATWEIGHTS, CUMULW
       USE YOWSHAL  , ONLY : INDEP
+!                         !!!!!!!!!!!!!!
 
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK
 
@@ -68,14 +68,11 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
-
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP 
-
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USNEW, THWNEW, ROAIRN 
 
 
@@ -151,7 +148,7 @@
           DO K2=1,NSDSNTH*2+1
             KK=INDICESSAT(K,K2)
             DO IJ=KIJS,KIJL
-              BTH(IJ,K,M) = BTH(IJ,K,M) + SATWEIGHTS(K,K2)*GFL(IJ,KK,M)
+              BTH(IJ,K,M) = BTH(IJ,K,M) + SATWEIGHTS(K,K2)*FL1(IJ,KK,M)
             ENDDO
           ENDDO
           DO IJ=KIJS,KIJL
@@ -183,7 +180,7 @@
 
         DO M2=1,NFRE-NDIKCUMUL
           DO IJ=KIJS,KIJL
-            IF(BTH0(IJ,M2).GT.SDSBR) THEN
+            IF (BTH0(IJ,M2) > SDSBR) THEN
               TEMP1(IJ,M2)=1.0_JWRB
             ELSE
               TEMP1(IJ,M2)=0.0_JWRB
@@ -224,7 +221,7 @@
 
             DO K2=1,NANG
               KKD(K2)=ABS(K2-K)
-              IF(KKD(K2).GT.NANGD) KKD(K2)=KKD(K2)-NANGD
+              IF ( KKD(K2) > NANGD) KKD(K2)=KKD(K2)-NANGD
             ENDDO
 
             DO M2=1,M-NDIKCUMUL
@@ -273,7 +270,7 @@
       DO  M=1, NFRE
         DO K=1, NANG
           DO IJ=KIJS,KIJL
-            SL(IJ,K,M) = SL(IJ,K,M)+D(IJ,K,M)*GFL(IJ,K,M)
+            SL(IJ,K,M) = SL(IJ,K,M)+D(IJ,K,M)*FL1(IJ,K,M)
             FLD(IJ,K,M) = FLD(IJ,K,M)+D(IJ,K,M)
           ENDDO
         ENDDO

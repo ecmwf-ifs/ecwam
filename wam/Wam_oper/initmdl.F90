@@ -1,4 +1,4 @@
-      SUBROUTINE INITMDL (NADV,                                         &
+SUBROUTINE INITMDL (NADV,                                         &
      &                    IREAD,                                        &
      &                    NFIELDS, NGPTOTG, NC, NR,                     &
      &                    FIELDS, LWCUR, MASK_IN, PRPLRADI)
@@ -265,7 +265,7 @@
       USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
-     &            INDEP    ,TCGOND   ,IODP     ,IOBND    ,TOOSHALLOW
+     &            INDEP    ,CGROUP   ,IODP     ,IOBND    ,TOOSHALLOW
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,    &
      &            U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,TAUW     ,    &
      &            Z0B      ,TAUWDIR,  ROAIRO   ,ZIDLOLD  ,              &
@@ -281,7 +281,7 @@
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
      &            FAK      ,FRHF     ,DFIMHF
-      USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
+      USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWWNDG  , ONLY : ICODE
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR     ,              &
@@ -456,11 +456,6 @@
 
       IUVELO = 39
 
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. INITMDL: UNITS DEFINED'
-        CALL FLUSH (IU06)
-      ENDIF
-
       LOUTINT=.FALSE.
 
       LUPDTWGHT=.TRUE.
@@ -473,10 +468,6 @@
 !         ------------------------
 
       CALL USERIN (IFORCA, LWCUR)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '    SUB. INITMDL: USERIN DONE'
-        CALL FLUSH(IU06)
-      ENDIF
 
       IF (LWFLUXOUT) THEN
         IF (.NOT.ALLOCATED(PHIEPS)) THEN 
@@ -492,22 +483,22 @@
           TAUOC(:) = 0.0_JWRB
         ENDIF
 
-        IF(.NOT.ALLOCATED(TAUXD)) ALLOCATE(TAUXD(IJS:IJL))
-        IF(.NOT.ALLOCATED(TAUYD)) ALLOCATE(TAUYD(IJS:IJL))
-        IF(.NOT.ALLOCATED(WSEMEAN)) ALLOCATE(WSEMEAN(IJS:IJL))
-        IF(.NOT.ALLOCATED(WSFMEAN)) ALLOCATE(WSFMEAN(IJS:IJL))
-        IF(.NOT.ALLOCATED(TAUOCXD)) ALLOCATE(TAUOCXD(IJS:IJL))
-        IF(.NOT.ALLOCATED(TAUOCYD)) ALLOCATE(TAUOCYD(IJS:IJL))
-        IF(.NOT.ALLOCATED(PHIOCD)) ALLOCATE(PHIOCD(IJS:IJL))
+        IF (.NOT.ALLOCATED(TAUXD)) ALLOCATE(TAUXD(IJS:IJL))
+        IF (.NOT.ALLOCATED(TAUYD)) ALLOCATE(TAUYD(IJS:IJL))
+        IF (.NOT.ALLOCATED(WSEMEAN)) ALLOCATE(WSEMEAN(IJS:IJL))
+        IF (.NOT.ALLOCATED(WSFMEAN)) ALLOCATE(WSFMEAN(IJS:IJL))
+        IF (.NOT.ALLOCATED(TAUOCXD)) ALLOCATE(TAUOCXD(IJS:IJL))
+        IF (.NOT.ALLOCATED(TAUOCYD)) ALLOCATE(TAUOCYD(IJS:IJL))
+        IF (.NOT.ALLOCATED(PHIOCD)) ALLOCATE(PHIOCD(IJS:IJL))
 
       ENDIF
 
 !     DEFINE COEFFICIENT FOR MEAN PERIODS CALCULATION
       IF (ALLOCATED(DFIMOFR)) DEALLOCATE(DFIMOFR)
       ALLOCATE(DFIMOFR(NFRE))
-      IF(ALLOCATED(DFIMFR)) DEALLOCATE(DFIMFR)
+      IF (ALLOCATED(DFIMFR)) DEALLOCATE(DFIMFR)
       ALLOCATE(DFIMFR(NFRE))
-      IF(ALLOCATED(DFIMFR2)) DEALLOCATE(DFIMFR2)
+      IF (ALLOCATED(DFIMFR2)) DEALLOCATE(DFIMFR2)
       ALLOCATE(DFIMFR2(NFRE))
 
       DO M=1,NFRE
@@ -562,9 +553,9 @@
       ENDDO
       DFIM_SIM(NFRE_ODD)=DELTH*XLOGFRATIO*FR(NFRE_ODD)/3.0_JWRB
 
-      IF(.NOT.ALLOCATED(DFIMOFR_SIM)) ALLOCATE(DFIMOFR_SIM(NFRE))
-      IF(.NOT.ALLOCATED(DFIMFR_SIM)) ALLOCATE(DFIMFR_SIM(NFRE))
-      IF(.NOT.ALLOCATED(DFIMFR2_SIM)) ALLOCATE(DFIMFR2_SIM(NFRE))
+      IF (.NOT.ALLOCATED(DFIMOFR_SIM)) ALLOCATE(DFIMOFR_SIM(NFRE))
+      IF (.NOT.ALLOCATED(DFIMFR_SIM)) ALLOCATE(DFIMFR_SIM(NFRE))
+      IF (.NOT.ALLOCATED(DFIMFR2_SIM)) ALLOCATE(DFIMFR2_SIM(NFRE))
       DO M=1,NFRE
         DFIMOFR_SIM(M) = DFIM_SIM(M)/FR(M)
         DFIMFR_SIM(M)  = DFIM_SIM(M)*FR(M)
@@ -576,7 +567,7 @@
 
       CALL INIT_X0TAUHF
 
-      IF (IPHYS.EQ.1) CALL INIT_SDISS_ARDH
+      IF (IPHYS == 1) CALL INIT_SDISS_ARDH
 
 
       IF (.NOT. LLUNSTR) THEN
@@ -588,38 +579,23 @@
 !      1.3 OUTPUT MODEL DECOMPOSITION DETAILS 
 !          ----------------------------------
 
-        IF (ITEST.GE.1) THEN
-          WRITE(IU06,*)  ' MODEL DOMAIN DECOMPOSITION  : '
-          WRITE(IU06,*)  ' =========================='
-          DO IP=1,NPROC
-            WRITE(IU06,*)
-            WRITE(IU06,*) ' PROCESS NUMBER : ',IP
-            WRITE(IU06,*) ' NBLKS  : ',NBLKS(IP)
-            WRITE(IU06,*) ' NBLKE  : ',NBLKE(IP)
-            WRITE(IU06,*) ' N      : ',NBLKE(IP)-NBLKS(IP)+1
-            WRITE(IU06,*) ' KLENBOT: ',KLENBOT(IP)
-            WRITE(IU06,*) ' KLENTOP: ',KLENTOP(IP)
-            WRITE(IU06,*) ' ----------------------- '
-          ENDDO
-          CALL FLUSH(IU06)
-        ENDIF
       ENDIF
       ENDIF ! .NOT. LLUNSTR
 !     1.5 DETERMINE LAST OUTPUT DATE
 !         --------------------------
 
-      IF (NOUTT.GT.0) THEN
+      IF (NOUTT > 0) THEN
         COUTLST=COUTT(NOUTT)
       ELSE
         COUTLST=CDATEA
         IF (GFLAG20) THEN
-          DO WHILE (COUTLST.LE.CDATEE.AND.IDELINT.GT.0)
+          DO WHILE (COUTLST <= CDATEE.AND.IDELINT > 0)
             CALL INCDATE (COUTLST,IDELINT)
           ENDDO
           CALL INCDATE (COUTLST,-IDELINT)
         ENDIF
 
-        IF (COUTLST.GT.CDATEE) COUTLST=CDATEE
+        IF (COUTLST > CDATEE) COUTLST=CDATEE
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -636,8 +612,8 @@
 
       IF (.NOT. LLUNSTR) THEN
  
-      IF (IBOUNC.EQ.1 .OR. IBOUNF.EQ.1) THEN
-        IF (IBOUNC.EQ.1) THEN
+      IF (IBOUNC == 1 .OR. IBOUNF == 1) THEN
+        IF (IBOUNC == 1) THEN
 !         READ INFORMATION ABOUT WHERE THE FINE GRID(S) ARE
           FILENAME='wam_nested_grids_info'
           LFILE=0
@@ -663,7 +639,7 @@
           IU09 = 9
         ENDIF
 
-        IF (IBOUNF.EQ.1) THEN
+        IF (IBOUNF == 1) THEN
 !         READ INFORMATION ABOUT WHERE THE BOUNDARY VALUES ARE 
           FILENAME='wam_boundary_grid_info'
           LFILE=0
@@ -693,11 +669,6 @@
 
         CLOSE (UNIT=IU09, STATUS='KEEP')
         CLOSE (UNIT=IU10, STATUS='KEEP')
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*)'    SUB. INITMDL: BOUNDARY POINTS READ ',       &
-     &     ' AND FILES CLOSED '
-          CALL FLUSH (IU06)
-        ENDIF
       ENDIF
 
       ENDIF ! .NOT. LLUNSTR
@@ -708,7 +679,7 @@
 !*    2.2.* SET GRIB HEADERS FOR INPUTS/OUTPUTS
 !          ------------------------------------
       LANAONLY=.FALSE.
-      IF ((CDATEA.EQ.CDATEE).AND.(CDATEA.EQ.CDATEF)) LANAONLY=.TRUE.
+      IF ((CDATEA == CDATEE).AND.(CDATEA == CDATEF)) LANAONLY=.TRUE.
 
       CALL SETMARSTYPE
 
@@ -719,8 +690,7 @@
         CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
       ENDIF
 
-      IF (MARSTYPE.EQ.'cf' .OR. MARSTYPE.EQ.'pf' .OR.                   &
-     &                          MARSTYPE.EQ.'fc'     ) THEN
+      IF (MARSTYPE == 'cf' .OR. MARSTYPE == 'pf' .OR. MARSTYPE == 'fc' ) THEN
         IF (ALLOCATED(FAC0))   DEALLOCATE(FAC0)
         IF (ALLOCATED(FAC1))   DEALLOCATE(FAC1)
         IF (ALLOCATED(FAC2))   DEALLOCATE(FAC2)
@@ -770,23 +740,10 @@
  3003 FORMAT(3x,a,i8,  a)
 
 !NEST
-      IF (IBOUNC .EQ. 1) THEN
+      IF (IBOUNC == 1) THEN
         WRITE(IU06,*)
         WRITE(IU06,*) ' COARSE GRID: BOUNDARY OUTPUT POINTS :'
         WRITE(IU06,*) ' TOTAL NUMBER OF BOUNDARY POINTS IS: ',NBOUNC
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,'(/,4X,''BLOCK NO'',6X,''INDEX NO'',               &
-     &     8X,''LONGITUDE'',6X,''LATITUDE'')')
-          DO I=1,NBOUNC
-            IX  = IXLG(IJARC(I))
-            KX  = KXLT(IJARC(I))
-            XLO = AMOWEP+REAL(IX-1,JWRB)*ZDELLO(KX)
-            XLA = AMOSOP+REAL(KX-1,JWRB)*XDELLA
-
-            WRITE(IU06,'((6X,I3,10X,I5,7X,F10.3,4X,F10.3))')            &
-     &       IGARC(I), IJARC(I), XLO, XLA
-          ENDDO
-        ENDIF
       ENDIF
 !NEST
 
@@ -794,9 +751,9 @@
 !         ------------------------------------
 
 !     BUILD DEPTH POINTER AND RESET DEPTH TO ALL POSITIVE
-      IF(.NOT.ALLOCATED(IODP)) ALLOCATE(IODP(IJS:IJL))
+      IF (.NOT.ALLOCATED(IODP)) ALLOCATE(IODP(IJS:IJL))
       DO IJ=IJS,IJL
-        IF(DEPTH(IJ).LE.TOOSHALLOW) THEN
+        IF (DEPTH(IJ) <= TOOSHALLOW) THEN
           IODP(IJ) = 0
         ELSE
           IODP(IJ) = 1
@@ -808,7 +765,7 @@
          IOBND(:)=1
       ELSE
         DO IJ = IJS, IJL
-          IF (IOBP(IJ) .NE. 0) THEN
+          IF (IOBP(IJ) /= 0) THEN
             IOBND(IJ)=0
           ELSE
             IOBND(IJ)=1
@@ -825,7 +782,7 @@
 
       IF (.NOT.ALLOCATED(INDEP)) ALLOCATE(INDEP(NINF-1:NSUP))
       INDEP(NINF-1)=NDEPTH
-      IF (ISHALLO.NE.1) THEN
+      IF (ISHALLO /= 1) THEN
         DO IJ=NINF,NSUP
           XD = LOG(DEPTH(IJ)/DEPTHA)/LOG(DEPTHD)+1.0_JWRB
           ID = NINT(XD)
@@ -849,51 +806,44 @@
 !        USED). AND READ IN LAST WINDFIELDS FROM RESTARTFILE.
 !        ---------------------------------------------------------------
 
-      IF (ITEST.GE.2)CALL FLUSH(IU06)
-
-      IF ( (LWCOU .AND. LWCUR ) .OR.                                    &
-     &        IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+      IF ( (LWCOU .AND. LWCUR ) .OR. IREFRA == 2 .OR. IREFRA == 3) THEN 
         IF (.NOT.ALLOCATED(U)) ALLOCATE(U(NINF-1:NSUP))
         IF (.NOT.ALLOCATED(V)) ALLOCATE(V(NINF-1:NSUP))
       ENDIF
 
       Z0B(:) = 0.0_JWRB
 
-      CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,            &
-     &               ROAIRO,ZIDLOLD,CICOVER,CITHICK,                    &
-     &               NBLKS,NBLKE,IREAD)
+      CALL GETSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD,       &
+     &               ROAIRO, ZIDLOLD, CICOVER, CITHICK,                 &
+     &               NBLKS, NBLKE, IREAD)
 
       CDA = CDTPRO
 
       IF (LWCOU) LLWSWAVE = .FALSE.
       IF (LWCOU) LLWDWAVE = .FALSE.
 
-      IF (CDTPRO.NE.ZERO .OR. LRESTARTED) THEN
+      IF (CDTPRO == ZERO .OR. LRESTARTED) THEN
 
 !*    4.1 MODEL STARTS FROM FILES OUT OF A PREVIOUS MODEL RUN.
 !         ----------------------------------------------------
 
-        IF (CDTPRO.LT.CDATEA .OR. CDTPRO.GT.CDATEE .OR.                 &
-     &      (IFORCA.EQ.1 .AND. CDTPRO.GT.CDATEF) .OR.                   &
-     &      (IFORCA.NE.1 .AND. CDTPRO.LE.CDATEF)       ) THEN
+        IF (CDTPRO < CDATEA .OR. CDTPRO > CDATEE .OR.                 &
+     &      (IFORCA == 1 .AND. CDTPRO > CDATEF) .OR.                  &
+     &      (IFORCA /= 1 .AND. CDTPRO <= CDATEF)       ) THEN
           WRITE(IU06,*) ' *******************************************'
           WRITE(IU06,*) ' *    FATAL ERROR IN SUB. INITMDL          *'
           WRITE(IU06,*) ' *    ===========================          *'
           WRITE(IU06,*) ' * START DATE FROM RESTART FIELD IS NOT    *'
           WRITE(IU06,*) ' * MODEL PERIOD.                           *'
-          IF (IFORCA.EQ.1) THEN
+          IF (IFORCA == 1) THEN
             WRITE(IU06,*) ' *  IN ANALYSIS PERIOD AS REQUESTED.       *'
           ELSE
             WRITE(IU06,*) ' *  IN FORECAST PERIOD AS REQUESTED.       *'
           ENDIF
-          WRITE(IU06,*) ' * START DATE OF RUN       IS CDATEA = ',      &
-     &     CDATEA
-          WRITE(IU06,*) ' * START DATE OF FORECAST  IS CDATEF = ',      &
-     &     CDATEF
-          WRITE(IU06,*) ' * END   DATE OF RUN       IS CDATEE = ',      &
-     &     CDATEE
-          WRITE(IU06,*) ' * START DATE FROM RESTART IS CDTPRO = ',      &
-     &     CDTPRO
+          WRITE(IU06,*) ' * START DATE OF RUN       IS CDATEA = ', CDATEA
+          WRITE(IU06,*) ' * START DATE OF FORECAST  IS CDATEF = ', CDATEF
+          WRITE(IU06,*) ' * END   DATE OF RUN       IS CDATEE = ', CDATEE
+          WRITE(IU06,*) ' * START DATE FROM RESTART IS CDTPRO = ', CDTPRO
           WRITE(IU06,*) ' *                                         *'
           WRITE(IU06,*) ' * PROGRAM ABORTS     PROGRAM ABORTS       *'
           WRITE(IU06,*) ' *                                         *'
@@ -913,9 +863,9 @@
         IDELWI = KCOUSTEP 
         IDELCUR= KCOUSTEP
       ELSE
-        IF (NDELW_LST.GT.0) THEN
+        IF (NDELW_LST > 0) THEN
           DO IC=1,NDELW_LST
-            IF (CDTPRO.LT.CDTW_LST(IC)) THEN
+            IF (CDTPRO < CDTW_LST(IC)) THEN
               IDELWI=IDELWI_LST(IC)
               IDELWO=IDELWO_LST(IC)
               EXIT
@@ -926,22 +876,11 @@
 
       CDATEWO = CDTPRO
       CDTBC= CDATEA
-      IF (IDELT.LT.IDELWO) CALL INCDATE(CDATEWO,IDELWO/2)
+      IF (IDELT < IDELWO) CALL INCDATE(CDATEWO,IDELWO/2)
       CDAWIFL = CDTPRO
       IDELWH = MAX(IDELWI,IDELPRO)
       CALL INCDATE(CDAWIFL,IDELWH)
       CDATEFL = CDATEWO
-
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '    SUB. INITMDL: WIND FIELD AND ',              &
-     &   ' COUNTER INITIALIZED'
-        WRITE(IU06,*) '      NEXT WINDFIELD WILL BE READ AT     ',      &
-     &   'CDATEWO = ',CDATEWO
-        WRITE(IU06,*) '      NEXT WIND FILE WILL BE ACCESSED AT ',      &
-     &   'CDATEFL = ',CDATEFL
-        WRITE(IU06,*) '      NEXT WIND FILE NAME IS FROM        ',      &
-     &   'CDAWIFL = ',CDAWIFL
-      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -970,10 +909,6 @@
       CDTRES = CBPLTDT
       CDTBC  = CDATEA
       CALL INCDATE(CDTRES, IDELRES)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '    SUB. INITMDL: TIME COUNTER INITIALIZED'
-        CALL FLUSH(IU06)
-      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -983,7 +918,7 @@
 
       GVE = G/(ZPI*FR(1)*2.0_JWRB)
       DPH = DELPHI
-      IF (DPH.EQ.0.0_JWRB) THEN
+      IF (DPH == 0.0_JWRB) THEN
         CFLP= 0.0_JWRB
       ELSE
         CFLP= IDELPRO*GVE/DPH
@@ -995,12 +930,12 @@
         DLH = MIN(DLH_KX,DLH)
       ENDDO
 
-      IF (DLH.EQ.0.0_JWRB) THEN
+      IF (DLH == 0.0_JWRB) THEN
         CFLL= 0.0_JWRB
       ELSE
         CFLL= IDELPRO*GVE/DLH
       ENDIF
-      IF (CFLP.GT.1.0_JWRB .OR. CFLL.GT.1.0_JWRB) THEN
+      IF (CFLP > 1.0_JWRB .OR. CFLL > 1.0_JWRB) THEN
         WRITE(IU06,*) ' **********************************************'
         WRITE(IU06,*) ' *                                            *'
         WRITE(IU06,*) ' *       FATAL ERROR IN SUB. INITMDL          *'
@@ -1037,19 +972,12 @@
         WRITE(IU06,*) ' '
       ENDIF
 
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '    SUB. INITMDL: NUMBER OF PROPAGATION STEPS'
-        WRITE(IU06,*) '                  IN ONE CALL OF SUB WAVEMDL'
-        WRITE(IU06,*) '                  WILL BE NADV = ', NADV
-        CALL FLUSH(IU06)
-      ENDIF
-
 ! ----------------------------------------------------------------------
 
 
 !*    8.2  PRECOMPUTE BOTTOM REFRACTION TERMS.
 !          -----------------------------------
-      IF (IREFRA.NE.0) THEN
+      IF (IREFRA /= 0) THEN
         NIBLD=NIBLO
         NIBLC=NIBLO
       ELSE
@@ -1060,13 +988,13 @@
 !     INITIALISE CDTCUR
       CDTCUR=CDATECURA
       IF (.NOT.LWCOU .AND. .NOT.LRESTARTED) THEN
-        IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+        IF (IREFRA == 2 .OR. IREFRA == 3) THEN
           CALL INCDATE(CDTCUR,-IDELCUR)
         ENDIF
       ENDIF
 
 !     COMPUTE BOTTOM REFRACTION TERMS
-      IF (IREFRA .NE. 0) THEN
+      IF (IREFRA /= 0) THEN
         IF (.NOT. LLUNSTR) THEN
 !         ARRAY TO KEEP DEPTH AND CURRENT REFRACTION FOR THETA DOT
 !         AND SIGMA DOT
@@ -1083,10 +1011,6 @@
           ENDDO
 !$OMP     END PARALLEL DO
 
-          IF (ITEST.GE.2) THEN
-            WRITE(IU06,*) ' SUB. INITMDL: REFRACTION TERMS INITIALIZED '
-            CALL FLUSH(IU06)
-          END IF
         END IF
       ENDIF
 
@@ -1096,7 +1020,7 @@
 
 
       IF (LLUNSTR) THEN
-        IF (OUT_METHOD .eq. 1) THEN
+        IF (OUT_METHOD == 1) THEN
           CALL INITIAL_OUTPUT_INITS
         END IF
       ENDIF
@@ -1125,24 +1049,19 @@
 !    GET SEA ICE DIMENSIONLESS ENERGY ATTENUATION COEFFICIENT
 !!!! might need to restrict call when needed !!!
       CALL CIGETDEAC
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '  SUB. INITMDL:  CIGETDEAC CALLED '
-        WRITE(IU06,*) ''
-      ENDIF
 
 !     DETERMINE THE SEA ICE REDUCTION FACTOR
-      CALL CIREDUCE (CICOVER, CITHICK, CIWA)
+      CALL CIREDUCE (IJS, IJL, CGROUP, CICOVER, CITHICK, CIWA)
 
       WRITE(IU06,*) ' SUB. INITMDL: CIREDUCE DONE'                   
       CALL FLUSH (IU06)
-
 
 ! ----------------------------------------------------------------------
 
 !*    9.1 READ SPECTRA
 !         ------------
 
-      CALL GETSPEC(FL1,IJS,IJL,NBLKS,NBLKE,IREAD)
+      CALL GETSPEC(FL1, IJS, IJL, NBLKS, NBLKE, IREAD)
 
       WRITE(IU06,*) '    SUB. INITMDL: SPECTRA READ IN'
       CALL FLUSH (IU06)
@@ -1160,17 +1079,16 @@
 !         ---------------------------------------------------------
       IF (.NOT. LLUNSTR) THEN
 
-      IF (.NOT.ALLOCATED(LSAMEDEPTH))                                   &
-     &    ALLOCATE(LSAMEDEPTH(IJS:IJL))
+      IF (.NOT.ALLOCATED(LSAMEDEPTH)) ALLOCATE(LSAMEDEPTH(IJS:IJL)) 
 
-      IF (IPROPAGS.EQ.2) THEN
+      IF (IPROPAGS == 2) THEN
          DO IJ = IJS, IJL 
-           IF (INDEP(IJ).EQ.INDEP(KLON(IJ,1))   .AND.                   &
-     &         INDEP(IJ).EQ.INDEP(KLON(IJ,2))   .AND.                   &
-     &         INDEP(IJ).EQ.INDEP(KLAT(IJ,1,1)) .AND.                   &
-     &         INDEP(IJ).EQ.INDEP(KLAT(IJ,2,1)) .AND.                   &
-     &         INDEP(IJ).EQ.INDEP(KLAT(IJ,1,2)) .AND.                   &
-     &         INDEP(IJ).EQ.INDEP(KLAT(IJ,2,2))      ) THEN
+           IF (INDEP(IJ) == INDEP(KLON(IJ,1))   .AND.                   &
+     &         INDEP(IJ) == INDEP(KLON(IJ,2))   .AND.                   &
+     &         INDEP(IJ) == INDEP(KLAT(IJ,1,1)) .AND.                   &
+     &         INDEP(IJ) == INDEP(KLAT(IJ,2,1)) .AND.                   &
+     &         INDEP(IJ) == INDEP(KLAT(IJ,1,2)) .AND.                   &
+     &         INDEP(IJ) == INDEP(KLAT(IJ,2,2))      ) THEN
              LSAMEDEPTH(IJ) = .TRUE.
            ELSE
              LSAMEDEPTH(IJ) = .FALSE.
@@ -1178,7 +1096,7 @@
            IF (LSAMEDEPTH(IJ)) THEN
              OUTER : DO IC=1,2
                DO ICR=1,4
-                 IF (INDEP(IJ).NE.INDEP(KCOR(IJ,ICR,IC))) THEN
+                 IF (INDEP(IJ) /= INDEP(KCOR(IJ,ICR,IC))) THEN
                    LSAMEDEPTH(IJ) = .FALSE.
                    EXIT OUTER
                  ENDIF 
@@ -1187,22 +1105,22 @@
            ENDIF
 
          ENDDO
-      ELSEIF (IPROPAGS.EQ.1) THEN
+      ELSEIF (IPROPAGS == 1) THEN
          DO IJ = IJS, IJL 
-           IF (INDEP(IJ) .EQ. INDEP(KLON (IJ,1))   .AND.                &
-     &         INDEP(IJ) .EQ. INDEP(KLON (IJ,2))   .AND.                &
-     &         INDEP(IJ) .EQ. INDEP(KLAT (IJ,1,1)) .AND.                &
-     &         INDEP(IJ) .EQ. INDEP(KLAT (IJ,2,1)) .AND.                &
-     &         INDEP(IJ) .EQ. INDEP(KLAT (IJ,1,2)) .AND.                &
-     &         INDEP(IJ) .EQ. INDEP(KLAT (IJ,2,2)) .AND.                &
-     &         INDEP(IJ) .EQ. INDEP(KRLON(IJ,1,1)) .AND.                &
-     &         INDEP(IJ) .EQ. INDEP(KRLON(IJ,2,1)) .AND.                &
-     &         INDEP(IJ) .EQ. INDEP(KRLAT(IJ,1,1)) .AND.                &
-     &         INDEP(IJ) .EQ. INDEP(KRLAT(IJ,2,1)) .AND.                &
-     &         INDEP(IJ) .EQ. INDEP(KRLAT(IJ,1,2)) .AND.                &
-     &         INDEP(IJ) .EQ. INDEP(KRLAT(IJ,2,2)) .AND.                &
-     &         INDEP(IJ) .EQ. INDEP(KRLON(IJ,1,2)) .AND.                &
-     &         INDEP(IJ) .EQ. INDEP(KRLON(IJ,2,2))      ) THEN
+           IF (INDEP(IJ) == INDEP(KLON (IJ,1))   .AND.                &
+     &         INDEP(IJ) == INDEP(KLON (IJ,2))   .AND.                &
+     &         INDEP(IJ) == INDEP(KLAT (IJ,1,1)) .AND.                &
+     &         INDEP(IJ) == INDEP(KLAT (IJ,2,1)) .AND.                &
+     &         INDEP(IJ) == INDEP(KLAT (IJ,1,2)) .AND.                &
+     &         INDEP(IJ) == INDEP(KLAT (IJ,2,2)) .AND.                &
+     &         INDEP(IJ) == INDEP(KRLON(IJ,1,1)) .AND.                &
+     &         INDEP(IJ) == INDEP(KRLON(IJ,2,1)) .AND.                &
+     &         INDEP(IJ) == INDEP(KRLAT(IJ,1,1)) .AND.                &
+     &         INDEP(IJ) == INDEP(KRLAT(IJ,2,1)) .AND.                &
+     &         INDEP(IJ) == INDEP(KRLAT(IJ,1,2)) .AND.                &
+     &         INDEP(IJ) == INDEP(KRLAT(IJ,2,2)) .AND.                &
+     &         INDEP(IJ) == INDEP(KRLON(IJ,1,2)) .AND.                &
+     &         INDEP(IJ) == INDEP(KRLON(IJ,2,2))      ) THEN
              LSAMEDEPTH(IJ) = .TRUE.
            ELSE
              LSAMEDEPTH(IJ) = .FALSE.
@@ -1210,12 +1128,12 @@
          ENDDO
       ELSE
          DO IJ = IJS, IJL 
-           IF (INDEP(IJ) .EQ. INDEP(KLON(IJ,1))   .AND.                 &
-     &         INDEP(IJ) .EQ. INDEP(KLON(IJ,2))   .AND.                 &
-     &         INDEP(IJ) .EQ. INDEP(KLAT(IJ,1,1)) .AND.                 &
-     &         INDEP(IJ) .EQ. INDEP(KLAT(IJ,2,1)) .AND.                 &
-     &         INDEP(IJ) .EQ. INDEP(KLAT(IJ,1,2)) .AND.                 &
-     &         INDEP(IJ) .EQ. INDEP(KLAT(IJ,2,2))      ) THEN
+           IF (INDEP(IJ) == INDEP(KLON(IJ,1))   .AND.                 &
+     &         INDEP(IJ) == INDEP(KLON(IJ,2))   .AND.                 &
+     &         INDEP(IJ) == INDEP(KLAT(IJ,1,1)) .AND.                 &
+     &         INDEP(IJ) == INDEP(KLAT(IJ,2,1)) .AND.                 &
+     &         INDEP(IJ) == INDEP(KLAT(IJ,1,2)) .AND.                 &
+     &         INDEP(IJ) == INDEP(KLAT(IJ,2,2))      ) THEN
              LSAMEDEPTH(IJ) = .TRUE.
            ELSE
              LSAMEDEPTH(IJ) = .FALSE.
@@ -1225,7 +1143,7 @@
 
 !     9.4 DEFINE JXO, JYO, KCR IF NEEDED
 !         ------------------------------
-      IF (IPROPAGS.EQ.2) THEN
+      IF (IPROPAGS == 2) THEN
 
         IF (.NOT. ALLOCATED(MPM)) ALLOCATE(MPM(NFRE,-1:1))
         DO M=1,NFRE
@@ -1242,20 +1160,20 @@
         DO K=1,NANG
 
           KM1 = K-1
-          IF (KM1.LT.1) KM1 = NANG
+          IF (KM1 < 1) KM1 = NANG
           KPM(K,-1)=KM1
 
           KPM(K,0)=K
 
           KP1 = K+1
-          IF (KP1.GT.NANG) KP1 = 1
+          IF (KP1 > NANG) KP1 = 1
           KPM(K,1)=KP1
 
 
-          IF (COSTH(K).GE.0.0_JWRB) THEN
+          IF (COSTH(K) >= 0.0_JWRB) THEN
             JYO(K,1)=1
             JYO(K,2)=2
-            IF (SINTH(K).GE.0.0_JWRB) THEN
+            IF (SINTH(K) >= 0.0_JWRB) THEN
               JXO(K,1)=1
               JXO(K,2)=2
               KCR(K,1)=3
@@ -1273,7 +1191,7 @@
           ELSE
             JYO(K,1)=2
             JYO(K,2)=1
-            IF (SINTH(K).GE.0.0_JWRB) THEN
+            IF (SINTH(K) >= 0.0_JWRB) THEN
               JXO(K,1)=1
               JXO(K,2)=2
               KCR(K,1)=4
@@ -1292,17 +1210,12 @@
         ENDDO
       ENDIF
 
-      IF (ITEST.GE.2)                                                   &
-     &   WRITE(IU06,*) '    SUB. INITMDL: MODULE YOWUBUF ',             &
-     &   'READ AND INITIALIZED '
-
-
 ! ----------------------------------------------------------------------
 !NEST
 !     10. WRITE BOUNDARY VALUE FILE HEADER.
 !         ------------------------------
-      IF (IBOUNC.EQ.1) THEN
-        IF ((LMESSPASS.AND.IRANK.EQ.1).OR..NOT.LMESSPASS) THEN
+      IF (IBOUNC == 1) THEN
+        IF ((LMESSPASS .AND. IRANK == 1).OR..NOT.LMESSPASS) THEN
           DO II=1,GBOUNC
             IU19(II)=IWAM_GET_UNIT(IU06, CBCPREF(II), 'w', 'u', 0)
 !           make the unit available for a silly fort.unit output
@@ -1311,10 +1224,6 @@
             CLOSE(IU19(II))
             CALL HEADBC (IPOGBO(II)-IPOGBO(II-1),IDELPRO,TH(1),FR(1),   &
      &                   IU19(II), IU06)
-            IF (ITEST.GE.2)                                             &
-     &       WRITE(IU06,'(''    SUB. INITMDL: HEADER FOR  '',           &
-     &       ''COARSE GRID WAS WRITTEN OF UNIT = '',I4)')               &
-     &        IU19(II)
           ENDDO
         ENDIF
       ENDIF
@@ -1322,10 +1231,6 @@
 
       ENDIF ! .NOT. LLUNSTR
 
-      IF (ITEST.GE.2)                                                   &
-     &   WRITE(IU06,*) '   SUB. INITMDL: DEFAULT  GRIB HEADERS SET'
-
-
       IF (LHOOK) CALL DR_HOOK('INITMDL',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE INITMDL
+END SUBROUTINE INITMDL

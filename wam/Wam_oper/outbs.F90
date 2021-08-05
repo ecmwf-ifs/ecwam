@@ -40,7 +40,7 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : DEPTH    ,WAVNUM      ,CINV        ,CGROUP
       USE YOWSTAT  , ONLY : NPROMA_WAM
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -58,6 +58,7 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
+
       IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
 
 !*    1. COMPUTE MEAN PARAMETERS.
@@ -72,18 +73,14 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
       DO JKGLO = IJSLOC, IJLLOC, NPROMA
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
-        CALL OUTBLOCK(IJS, IJL, KIJS, KIJL, MIJ(KIJS),                          &
-     &                FL1(IJS,1,1), XLLWS(IJS,1,1),                             &
-     &                WAVNUM(IJS,1), CINV(IJS,1), CGROUP(IJS,1),                &
-     &                DEPTH(KIJS),                                              &
-     &                BOUT(IJS,1))
+        CALL OUTBLOCK(KIJS, KIJL, MIJ(KIJS),                                       &
+     &                FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),                    &
+     &                WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:), CGROUP(KIJS:KIJL,:), &
+     &                DEPTH(KIJS),                                                 &
+     &                BOUT(KIJS:KIJL,:))
       ENDDO
 !$OMP END PARALLEL DO
       CALL GSTATS(1502,1)
-
-      IF (ITEST.GE.3) THEN
-          WRITE(IU06,*) '      SUB. OUTBS: INTEGRATED PARAMETERS COMPUTED FOR OUTPUT'
-      ENDIF
 
       IF (LHOOK) CALL DR_HOOK('OUTBS',1,ZHOOK_HANDLE)
 

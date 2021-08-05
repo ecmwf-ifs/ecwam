@@ -1,6 +1,6 @@
-      SUBROUTINE SDISSIP (GFL, FLD, SL, IJS, IJL, KIJS, KIJL,   &
-     &                    WAVNUM, CGROUP,                       &
-     &                    EMEAN, F1MEAN, XKMEAN,                &
+      SUBROUTINE SDISSIP (KIJS, KIJL, FL1, FLD, SL  &
+     &                    WAVNUM, CGROUP,           &
+     &                    EMEAN, F1MEAN, XKMEAN,    &
      &                    USNEW, THWNEW, ROAIRN)
 ! ----------------------------------------------------------------------
 
@@ -16,16 +16,15 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDISSIP (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, *
+!       *CALL* *SDISSIP (KIJS, KIJL, FL1, FLD, SL, *
 !                        WAVNUM, CGROUP,  
 !                        EMEAN, F1MEAN, XKMEAN,*
 !                        USNEW, THWNEW, ROAIRN)*
-!        *GFL*   - SPECTRUM.
-!         *FLD*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
-!          *SL*  - TOTAL SOURCE FUNCTION ARRAY
-!        *IJS:IJL- 1st DIMENSION OF GFL
 !         *KIJS* - INDEX OF FIRST GRIDPOINT
 !         *KIJL* - INDEX OF LAST GRIDPOINT
+!         *FL1*  - SPECTRUM.
+!         *FLD*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
+!          *SL*  - TOTAL SOURCE FUNCTION ARRAY
 !       *WAVNUM* - WAVE NUMBER
 !       *CGROUP* - GROUP SPEED
 !        *EMEAN* - MEAN ENERGY DENSITY 
@@ -64,14 +63,10 @@
 #include "sdissip_ard.intfb.h"
 #include "sdissip_jan.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL 
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
-
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EMEAN, F1MEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USNEW, THWNEW, ROAIRN
 
@@ -83,13 +78,13 @@
 
       SELECT CASE (IPHYS)
       CASE(0)
-         CALL SDISSIP_JAN (GFL ,FLD, SL, IJS, IJL, KIJS, KIJL,  &
-     &                     WAVNUM,                              &
+         CALL SDISSIP_JAN (KIJS, KIJL, FL1 ,FLD, SL,  &
+     &                     WAVNUM,                    &
      &                     EMEAN, F1MEAN, XKMEAN)
 
       CASE(1) 
-         CALL SDISSIP_ARD (GFL ,FLD, SL, IJS, IJL, KIJS, KIJL,  &
-     &                     WAVNUM, CGROUP,                      &
+         CALL SDISSIP_ARD (KIJS, KIJL, FL1 ,FLD, SL,   &
+     &                     WAVNUM, CGROUP,             &
      &                     USNEW, THWNEW, ROAIRN)
       END SELECT 
 

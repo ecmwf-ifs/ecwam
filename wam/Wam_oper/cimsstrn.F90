@@ -1,4 +1,4 @@
-      SUBROUTINE CIMSSTRN(IJS, IJL, KIJS, KIJL, GFL, WAVNUM, DEPTH, STRN)
+      SUBROUTINE CIMSSTRN(KIJS, KIJL, FL1, WAVNUM, DEPTH, STRN)
 
 ! ----------------------------------------------------------------------
 
@@ -14,11 +14,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *CIMSSTRN (IJS, IJL, KIJS, KIJL, GFL, WAVNUM, DEPTH, STRN)*
-!              *IJS:IJL* - 1st DIMENSION OF GFL
+!       *CALL* *CIMSSTRN (KIJS, KIJL, FL1, WAVNUM, DEPTH, STRN)*
 !              *KIJS*    - INDEX OF FIRST GRIDPOINT
 !              *KIJL*    - INDEX OF LAST GRIDPOINT
-!              *GFL*     - SPECTRUM.
+!              *FL1*     - SPECTRUM.
 !              *WAVNUM*  - OPEN WATER WAVE NUMBER
 !              *DEPTH*   - WATER DEPTH
 !              *STRN*    - MEAN SQUARE WAVE STRAIN IN ICE (OUTPUT).
@@ -56,16 +55,14 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: STRN
 
 
-      INTEGER(KIND=JWIM) :: IJ,M,K,JD
+      INTEGER(KIND=JWIM) :: IJ, M, K
       REAL(KIND=JWRB) :: AKI_ICE
       REAL(KIND=JWRB) :: F1LIM 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XKI, E, SUME 
@@ -100,12 +97,12 @@
         ENDDO
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            SUME(IJ) = SUME(IJ)+GFL(IJ,K,M)
+            SUME(IJ) = SUME(IJ)+FL1(IJ,K,M)
           ENDDO
         ENDDO
 
         DO IJ=KIJS,KIJL
-          IF(SUME(IJ).GT.F1LIM) THEN
+          IF (SUME(IJ) > F1LIM) THEN
             STRN(IJ) = STRN(IJ)+E(IJ)**2*SUME(IJ)*DFIM(M)
           ENDIF
         ENDDO

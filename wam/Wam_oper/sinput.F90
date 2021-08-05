@@ -1,8 +1,8 @@
-      SUBROUTINE SINPUT (NGST, IJS, IJL, KIJS, KIJL, GFL, & 
+      SUBROUTINE SINPUT (NGST, KIJS, KIJL, FL1,           & 
      &                   WAVNUM, CINV, CGROUP,            &
      &                   THWNEW, U10NEW, USNEW, Z0NEW,    &
      &                   ROAIRN, WSTAR, RNFAC,            &
-     &                   FLD, SL, SPOS, GXLLWS)
+     &                   FLD, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -11,16 +11,15 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT (NGST, IJS, IJL, KIJS, KIJL, GFL,
+!     *CALL* *SINPUT (NGST, KIJS, KIJL, FL1,
 !    &                WAVNUM, CINV, CGROUP,
 !    &                THWNEW, USNEW, Z0NEW,
-!    &                ROAIRN, WSTAR, FLD, SL, SPOS, GXLLWS)
-!            *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
-!                   - IF = 2 THEN GUSTINESS PARAMETERISATION
-!       *IJS:IJL - 1st diemension of GFL, GXLLWS WAVNUM, CINV, CGROUP
+!    &                ROAIRN, WSTAR, FLD, SL, SPOS, XLLWS)
+!         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
+!                - IF = 2 THEN GUSTINESS PARAMETERISATION
 !         *KIJS* - INDEX OF FIRST GRIDPOINT.
 !         *KIJL* - INDEX OF LAST GRIDPOINT.
-!          *GFL* - SPECTRUM.
+!          *FL1* - SPECTRUM.
 !       *WAVNUM* - WAVE NUMBER.
 !         *CINV* - INVERSE PHASE VELOCITY.
 !       *CGROUP* - GROUP SPPED.
@@ -35,7 +34,7 @@
 !          *FLD* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !           *SL* - TOTAL SOURCE FUNCTION ARRAY.
 !         *SPOS* - POSITIVE SOURCE FUNCTION ARRAY.
-!         *GXLLWS*- 1 WHERE SINPUT IS POSITIVE
+!        *XLLWS* - = 1 WHERE SINPUT IS POSITIVE
 
 !     METHOD.
 !     -------
@@ -57,7 +56,8 @@
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : IPHYS
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -66,17 +66,17 @@
 #include "sinput_jan.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NGST
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, U10NEW, USNEW, Z0NEW
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: ROAIRN, WSTAR, RNFAC
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: GXLLWS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
@@ -86,17 +86,17 @@
 
       SELECT CASE (IPHYS)
       CASE(0)
-        CALL SINPUT_JAN (NGST, IJS, IJL, KIJS, KIJL, GFL, &
+        CALL SINPUT_JAN (NGST, KIJS, KIJL, FL1,           &
      &                   WAVNUM, CINV, CGROUP,            &
      &                   THWNEW, U10NEW, USNEW, Z0NEW,    &
      &                   ROAIRN, WSTAR, RNFAC,            &
-     &                   FLD, SL, SPOS, GXLLWS)
+     &                   FLD, SL, SPOS, XLLWS)
       CASE(1) 
-        CALL SINPUT_ARD (NGST, IJS, IJL, KIJS, KIJL, GFL, &
+        CALL SINPUT_ARD (NGST, KIJS, KIJL, FL1,           &
      &                   WAVNUM, CINV, CGROUP,            &
      &                   THWNEW, U10NEW, USNEW, Z0NEW,    &
      &                   ROAIRN, WSTAR, RNFAC,            &
-     &                   FLD, SL, SPOS, GXLLWS)
+     &                   FLD, SL, SPOS, XLLWS)
       END SELECT 
 
       IF (LHOOK) CALL DR_HOOK('SINPUT',1,ZHOOK_HANDLE)

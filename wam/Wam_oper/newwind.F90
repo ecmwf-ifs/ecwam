@@ -3,7 +3,7 @@
      &                    U10OLD, THWOLD, U10NEW, THWNEW,               &
      &                    USOLD, USNEW,                                 &
      &                    ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,             &
-     &                    CICOVER, CITHICK, CIWA,                       &
+     &                    CGROUP, CICOVER, CITHICK, CIWA,               &
      &                    TAUW, BETAOLD)
 ! ----------------------------------------------------------------------
 
@@ -105,6 +105,7 @@
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: U10NEW, THWNEW
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: USNEW
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: ROAIRN, ZIDLNEW
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CGROUP
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: CICOVER, CITHICK 
 
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(INOUT) :: CIWA
@@ -222,7 +223,7 @@
         NEWREAD = .TRUE.   
 
 !       UPDATE THE SEA ICE REDUCTION FACTOR
-        CALL CIREDUCE (CICOVER, CITHICK, CIWA)
+        CALL CIREDUCE (IJS, IJL, CGROUP, CICOVER, CITHICK, CIWA)
 
       ENDIF
 

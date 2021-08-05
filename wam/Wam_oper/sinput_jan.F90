@@ -1,8 +1,8 @@
-      SUBROUTINE SINPUT_JAN (NGST, IJS, IJL, KIJS, KIJL, GFL , &
+      SUBROUTINE SINPUT_JAN (NGST, KIJS, KIJL, FL1 ,           &
      &                       WAVNUM, CINV, CGROUP,             &
      &                       THWNEW, U10NEW, USNEW, Z0NEW,     &
      &                       ROAIRN, WSTAR, RNFAC,             &
-                             FLD, SL, SPOS, GXLLWS)
+                             FLD, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT_JAN* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -46,16 +46,16 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT_JAN (NGST, IJS, IJL, KIJS, KIJL, GFL,
+!     *CALL* *SINPUT_JAN (NGST, KIJS, KIJL, FL1,
 !    &                    WAVNUM, CINV, CGROUP,
 !    &                    THWNEW, U10NEW, USNEW, Z0NEW,
 !    &                    ROAIRN, WSTAR, RNFAC,
-!    &                    FLD, SL, SPOS, GXLLWS)
+!    &                    FLD, SL, SPOS, XLLWS)
 !         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
 !                - IF = 2 THEN GUSTINESS PARAMETERISATION
 !         *KIJS* - INDEX OF FIRST GRIDPOINT.
 !         *KIJL* - INDEX OF LAST GRIDPOINT.
-!          *GFL* - SPECTRUM.
+!          *FL1* - SPECTRUM.
 !       *WAVNUM* - WAVE NUMBER.
 !         *CINV* - INVERSE PHASE VELOCITY.
 !       *CGROUP* - GROUP SPPED.
@@ -70,7 +70,7 @@
 !          *FLD* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !           *SL* - TOTAL SOURCE FUNCTION ARRAY.
 !         *SPOS* - ONLY POSITIVE PART OF INPUT SOURCE FUNCTION ARRAY.
-!        *GXLLWS* - 1 WHERE SINPUT IS POSITIVE.
+!        *XLLWS* - 1 WHERE SINPUT IS POSITIVE.
 
 
 !     METHOD.
@@ -108,7 +108,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,GM1      ,ZPI  ,ROWATER   ,YEPS,  EPSUS
       USE YOWPHYS  , ONLY : ZALP     ,XKAPPA, BETAMAXOXKAPPA2
-      USE YOWSTAT  , ONLY : ISHALLO  ,IDAMPING
+      USE YOWSTAT  , ONLY : IDAMPING
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -119,16 +119,13 @@
 #include "wsigstar.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NGST 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, U10NEW, USNEW, Z0NEW
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: ROAIRN, WSTAR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: GXLLWS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
 
       INTEGER(KIND=JWIM) :: IJ, IG, K, M
@@ -142,7 +139,7 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NGST) :: WSIN
       REAL(KIND=JWRB), DIMENSION(NFRE) :: CONST
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SH
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ZTANHKD 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SIG_N
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CNSN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EPSIL
@@ -184,7 +181,7 @@
       DO K=1,NANG
         DO IJ=KIJS,KIJL
           COSD(IJ,K) = COS(TH(K)-THWNEW(IJ))
-          IF(COSD(IJ,K) .GT. 0.01_JWRB) THEN
+          IF(COSD(IJ,K) > 0.01_JWRB) THEN
             LZ(IJ,K) = .TRUE.
             TEMPD(IJ,K) = XKAPPA/COSD(IJ,K)
           ELSE
@@ -214,18 +211,18 @@
 
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
-      IF(NGST.GT.1) CALL WSIGSTAR (KIJS, KIJL, U10NEW, USNEW, Z0NEW, WSTAR, SIG_N)
+      IF(NGST > 1) CALL WSIGSTAR (KIJS, KIJL, U10NEW, USNEW, Z0NEW, WSTAR, SIG_N)
 
 
 !     DEFINE WHERE SINPUT WILL BE EVALUATED IN RELATIVE TERM WRT USTAR
 !     DEFINE ALSO THE RELATIVE WEIGHT OF EACH.
 
-      IF(NGST.EQ.1) THEN
+      IF(NGST == 1) THEN
         WSIN(1) = 1.0_JWRB 
         DO IJ=KIJS,KIJL
           SIGDEV(IJ,1) = 1.0_JWRB
         ENDDO
-      ELSE IF (NGST.EQ.2) THEN
+      ELSE IF (NGST == 2) THEN
         WSIN(1) = 0.5_JWRB 
         WSIN(2) = 0.5_JWRB 
         DO IJ=KIJS,KIJL
@@ -245,7 +242,7 @@
       ENDIF
 
 
-      IF(NGST.EQ.1) THEN
+      IF(NGST == 1) THEN
         DO IJ=KIJS,KIJL
           US(IJ,1) = USNEW(IJ)
           Z0(IJ,1) = Z0NEW(IJ)
@@ -281,18 +278,12 @@
 !*      PRECALCULATE FREQUENCY DEPENDENCE.
 !       ----------------------------------
 
-        IF (ISHALLO.EQ.1) THEN
-          DO IJ=KIJS,KIJL
-            SH(IJ) = 1.0_JWRB
-          ENDDO
-        ELSE
-          DO IJ=KIJS,KIJL
-            SH(IJ) = ZPIFR(M)**2/(G*WAVNUM(IJ,M)) 
-          ENDDO
-        ENDIF
+        DO IJ=KIJS,KIJL
+          ZTANHKD(IJ) = ZPIFR(M)**2/(G*WAVNUM(IJ,M)) 
+        ENDDO
 
         DO IJ=KIJS,KIJL
-          CNSN(IJ) = CONST(M)*SH(IJ)*EPSIL(IJ)
+          CNSN(IJ) = CONST(M)*ZTANHKD(IJ)*EPSIL(IJ)
         ENDDO
 
         DO IGST=1,NGST
@@ -313,18 +304,18 @@
         DO K=1,NANG
 
           DO IJ=KIJS,KIJL
-            GXLLWS(IJ,K,M)= 0.0_JWRB
+            XLLWS(IJ,K,M)= 0.0_JWRB
           ENDDO
 
           DO IGST=1,NGST
             DO IJ=KIJS,KIJL
               IF (LZ(IJ,K)) THEN
                 ZLOG = ZCN(IJ,IGST) + TEMPD(IJ,K)*UCND(IJ,IGST)
-                IF (ZLOG.LT.0.0_JWRB) THEN
+                IF (ZLOG < 0.0_JWRB) THEN
                   X=COSD(IJ,K)*UCN(IJ,IGST)
                   ZLOG2X=ZLOG*ZLOG*X
                   GAM0(IJ,K,IGST) = ZLOG2X*ZLOG2X*EXP(ZLOG) * CNSN(IJ)
-                  GXLLWS(IJ,K,M)= 1.0_JWRB
+                  XLLWS(IJ,K,M)= 1.0_JWRB
                 ELSE
                   GAM0(IJ,K,IGST) = 0.0_JWRB
                 ENDIF
@@ -345,8 +336,8 @@
             SUMFSIN2(:) = 0.0_JWRB
             DO K=1,NANG
               DO IJ=KIJS,KIJL
-                SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*GFL(IJ,K,M)
-                SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*GFL(IJ,K,M)*SIN2(IJ,K)
+                SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)
+                SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SIN2(IJ,K)
               ENDDO
             ENDDO
 
@@ -395,8 +386,8 @@
         DO K=1,NANG
           DO IJ=KIJS,KIJL
             FLD(IJ,K,M) = UFAC1(IJ,K) + CNSN(IJ)*UFAC2(IJ,K)
-            SPOS(IJ,K,M) = UFAC1(IJ,K)*GFL(IJ,K,M)
-            SL(IJ,K,M) = FLD(IJ,K,M)*GFL(IJ,K,M)
+            SPOS(IJ,K,M) = UFAC1(IJ,K)*FL1(IJ,K,M)
+            SL(IJ,K,M) = FLD(IJ,K,M)*FL1(IJ,K,M)
           ENDDO
         ENDDO
 

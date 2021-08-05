@@ -1,5 +1,5 @@
-      SUBROUTINE SDISSIP_JAN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL,  &
-     &                        WAVNUM,                              &
+      SUBROUTINE SDISSIP_JAN (KIJS, KIJL, FL1, FLD, SL,   &
+     &                        WAVNUM,                     &
      &                        EMEAN, F1MEAN, XKMEAN)
 
 ! ----------------------------------------------------------------------
@@ -23,13 +23,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDISSIP_JAN (GFL, FLD, IJS, IJL, KIJS, KIJL, SL,
+!       *CALL* *SDISSIP_JAN (KIJS, KIJ, FL1, FLD, SL,
 !                            WAVNUM,
 !                            EMEAN,F1MEAN, XKMEAN,)*
-!          *GFL*    - SPECTRUM.
+!          *FL1*    - SPECTRUM.
 !          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY
-!          IJS:IJL  - 1st DIMENSION OF GFL
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *WAVNUM* - WAVE NUMBER
@@ -62,7 +61,6 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ZPI4GM2
       USE YOWPHYS  , ONLY : CDIS     ,DELTA_SDIS, RNU    ,CDISVIS
-      USE YOWTEST  , ONLY : IU06     ,ITEST
 
       USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK
 
@@ -70,14 +68,11 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
-
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT):: FLD, SL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WAVNUM 
-
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN):: EMEAN, F1MEAN, XKMEAN
 
 
@@ -117,7 +112,7 @@
         DO K=1,NANG
           DO IJ=KIJS,KIJL
             FLD(IJ,K,M) = FLD(IJ,K,M) + TEMP1(IJ)
-            SL(IJ,K,M) = SL(IJ,K,M) + TEMP1(IJ)*GFL(IJ,K,M)
+            SL(IJ,K,M) = SL(IJ,K,M) + TEMP1(IJ)*FL1(IJ,K,M)
           ENDDO
         ENDDO
 

@@ -1,7 +1,7 @@
-      SUBROUTINE UNSETICE(IJS, IJL, KIJS, KIJL,    &
+      SUBROUTINE UNSETICE(KIJS, KIJL,              &
      &                    DEPTH, EMAXDPT,          &
      &                    CICOVER, U10OLD, THWOLD, &
-     &                    GFL)
+     &                    FL1)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      AUGUST 2006 
 
@@ -13,12 +13,10 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *UNSETICE(IJS, IJL, KIJS, KIJL,    &
+!     *CALL* *UNSETICE(KIJS, KIJL,              &
 !    &                 DEPTH, EMAXDPT,          &
 !    &                 CICOVER, U10OLD, THWOLD, &
-!    &                 GFL)
-!     *IJS*     - GLOBAL INDEX OF FIRST GRIDPOINT
-!     *IJL*     - GLOBAL INDEX OF LAST GRIDPOINT
+!    &                 FL1)
 !     *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
 !     *KIJL*    - LOCAL  INDEX OF LAST GRIDPOINT
 !     *DEPTH*   - WATER DEPTH
@@ -27,7 +25,7 @@
 !     *U10OLD*  - WIND SPEED. (used with fetch law to fill empty 
 !                 sea points)
 !     *THWOLD*  - WIND DIRECTION (RADIANS).
-!     *GFL*     - SPECTRA
+!     *FL1*     - SPECTRA
 
 
 !     METHOD.
@@ -51,7 +49,6 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
       USE YOWPCONS , ONLY : PI       ,G        ,R        ,EPSMIN
       USE YOWSTAT  , ONLY : LBIWBK
-      USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : LRESTARTED
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -62,12 +59,10 @@
 #include "sdepthlim.intfb.h"
 #include "jonswap.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH, EMAXDPT 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER, U10OLD, THWOLD 
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: GFL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M
@@ -87,7 +82,7 @@
 
       IF (LHOOK) CALL DR_HOOK('UNSETICE',0,ZHOOK_HANDLE)
 
-      IF(.NOT.LRESTARTED .AND. CLDOMAIN.NE.'s') THEN
+      IF (.NOT.LRESTARTED .AND. CLDOMAIN /= 's') THEN
 
         ZDP=2.0_JWRB/PI
         DO K=1,NANG
@@ -97,7 +92,7 @@
           ENDDO
         ENDDO
 
-        IF(LICERUN .AND. LMASKICE) THEN
+        IF (LICERUN .AND. LMASKICE) THEN
           CILIMIT=CITHRSH
         ELSE
 !         WHEN WE ARE NOT IMPOSING A FIXED ICE BOUNDARY THEN
@@ -115,7 +110,7 @@
         DO K=1,NANG
           DO M=1,NFRE
             DO IJ=KIJS,KIJL
-               IF(GFL(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
+               IF (FL1(IJ,K,M) > EPSMIN) LICE2SEA(IJ) = .FALSE. 
             ENDDO
           ENDDO
         ENDDO
@@ -126,14 +121,14 @@
         FPMAX=FR(NFRE-1)
 
         DO IJ=KIJS,KIJL
-          IF(LICE2SEA(IJ) .AND. CICOVER(IJ).LE.CILIMIT) THEN
-            IF(DEPTH(IJ).LE.10.0_JWRB) THEN
+          IF (LICE2SEA(IJ) .AND. CICOVER(IJ) <= CILIMIT) THEN
+            IF (DEPTH(IJ) <= 10.0_JWRB) THEN
               FETCH=MIN(0.5_JWRB*DELPHI,10000.0_JWRB)
-            ELSEIF(DEPTH(IJ).LE.50.0_JWRB) THEN
+            ELSEIF (DEPTH(IJ) <= 50.0_JWRB) THEN
               FETCH=MIN(DELPHI,50000.0_JWRB)
-            ELSEIF(DEPTH(IJ).LE.150.0_JWRB) THEN
+            ELSEIF (DEPTH(IJ) <= 150.0_JWRB) THEN
               FETCH=MIN(2*DELPHI,100000.0_JWRB)
-            ELSEIF(DEPTH(IJ).LE.250.0_JWRB) THEN
+            ELSEIF (DEPTH(IJ) <= 250.0_JWRB) THEN
               FETCH=MIN(3*DELPHI,200000.0_JWRB)
             ELSE
               FETCH=MIN(5*DELPHI,250000.0_JWRB)
@@ -141,7 +136,7 @@
 
 !           FIND PEAK PERIOD AND ENERGY LEVEL FROM FETCH LAW
 !           THE SAME FORMULATION AS IN SUBROUTINE PEAK IS USED.
-            IF (U10OLD(IJ) .GT. 0.1E-08_JWRb ) THEN
+            IF (U10OLD(IJ) > 0.1E-08_JWRB ) THEN
               GX = G * FETCH
               U10 = U10OLD(IJ)
               GXU = GX/(U10*U10)
@@ -167,23 +162,15 @@
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              GFL(IJ,K,M) = MAX(GFL(IJ,K,M),ET(IJ,M)*SPRD(IJ,K))
+              FL1(IJ,K,M) = MAX(FL1(IJ,K,M),ET(IJ,M)*SPRD(IJ,K))
               FLLOWEST = FLMIN*COS2NOISE(IJ,K)
-              GFL(IJ,K,M) = MAX(GFL(IJ,K,M),FLLOWEST)
+              FL1(IJ,K,M) = MAX(FL1(IJ,K,M),FLLOWEST)
             ENDDO
           ENDDO
         ENDDO
 
-        IF(LBIWBK) THEN
-          CALL SDEPTHLIM(KIJS, KIJL, EMAXDPT, GFL)
-        ENDIF
-
-        IF (ITEST.GE.2) THEN
-         IF(LICERUN) THEN
-         WRITE(IU06,*) ' UNSETICE: SPECTRA INITIALISED OVER OLD SEA ICE'
-         ENDIF
-         WRITE(IU06,*) ' UNSETICE: NOISE LEVEL REIMPOSED'
-         WRITE(IU06,*) ' '
+        IF (LBIWBK) THEN
+          CALL SDEPTHLIM(KIJS, KIJL, EMAXDPT, FL1)
         ENDIF
 
       ENDIF
