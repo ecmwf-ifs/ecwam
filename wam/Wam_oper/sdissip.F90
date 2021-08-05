@@ -1,6 +1,6 @@
-      SUBROUTINE SDISSIP (KIJS, KIJL, FL1, FLD, SL  &
-     &                    WAVNUM, CGROUP,           &
-     &                    EMEAN, F1MEAN, XKMEAN,    &
+      SUBROUTINE SDISSIP (KIJS, KIJL, FL1, FLD, SL,  &
+     &                    WAVNUM, CGROUP,            &
+     &                    EMEAN, F1MEAN, XKMEAN,     &
      &                    USNEW, THWNEW, ROAIRN)
 ! ----------------------------------------------------------------------
 
