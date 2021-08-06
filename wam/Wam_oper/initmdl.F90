@@ -822,7 +822,7 @@ SUBROUTINE INITMDL (NADV,                                         &
       IF (LWCOU) LLWSWAVE = .FALSE.
       IF (LWCOU) LLWDWAVE = .FALSE.
 
-      IF (CDTPRO == ZERO .OR. LRESTARTED) THEN
+      IF (CDTPRO /= ZERO .OR. LRESTARTED) THEN
 
 !*    4.1 MODEL STARTS FROM FILES OUT OF A PREVIOUS MODEL RUN.
 !         ----------------------------------------------------
