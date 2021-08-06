@@ -1,4 +1,4 @@
-      SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
+SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
 
 ! ----------------------------------------------------------------------
 
@@ -49,8 +49,7 @@
       USE YOWFPBO  , ONLY : NBOUNF   ,IJARF    ,IBFL     ,              &
      &            IBFR     ,BFW
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
-     &            KTAG
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTBC   ,IDELBC    ,    &
      &            IDELPRO
@@ -149,8 +148,7 @@
           READ (IU02, ERR=5000, END=5000) (ZCOMBUFS(IC), IC=1,NZCOMBUF)
         ENDIF
 
-        CALL MPL_BROADCAST(ZCOMBUFS,KROOT=ISEND,KTAG=KTAG,              &
-     &       CDSTRING='BOUINPT:')
+        CALL MPL_BROADCAST(ZCOMBUFS,KROOT=ISEND,KTAG=KTAG,CDSTRING='BOUINPT:')
         KTAG=KTAG+1
 
         XANG=ZCOMBUFS(1)
@@ -496,4 +494,4 @@
 
       IF (LHOOK) CALL DR_HOOK('BOUINPT',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE BOUINPT
+END SUBROUTINE BOUINPT

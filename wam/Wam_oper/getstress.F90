@@ -50,19 +50,25 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : NREAL    ,LRSTPARALR
+
       USE YOWCURR  , ONLY : U        ,V
+!!!                !!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMESPAS, ONLY : LGRIBIN  ,LWAVEWIND
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,KTAG
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NSUP     ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NIBLO
+
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
+
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,IREFRA   ,    &
      &            NPROMA_WAM,LNSESTART
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
@@ -80,8 +86,9 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       INTEGER(KIND=JWIM),DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
 
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: ROAIRO, ZIDLOLD, CICOVER, CITHICK
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: ROAIRO, ZIDLOLD, CICOVER, CITHICK
+
 
       INTEGER(KIND=JWIM) :: IBUFLENGTH
       INTEGER(KIND=JWIM) :: IFLD, IJ, KCOUNT, IC
@@ -103,19 +110,9 @@
       ZERO = ' '
       NPROMA=NPROMA_WAM
 
-      IF (ITEST > 3) THEN
-        WRITE(IU06,*) ' SUB: GETSTRESS. '
-        WRITE(IU06,*) ' ABOUT TO READ WIND AND STRESS FILE '
-        WRITE(IU06,*) ' CDTPRO    =', CDTPRO
-        WRITE(IU06,*) ' LGRIBIN   =', LGRIBIN
-        WRITE(IU06,*) ' LRESTARTED=', LRESTARTED
-        CALL FLUSH (IU06)
-      ENDIF
-
-
 !     READ RESTART FILE FROM PE IREAD
 
-      IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
+      IF (LGRIBIN .AND. .NOT.LRESTARTED) THEN
 !       GRIB RESTART
 !       CREATES WIND AND STRESS FIELDS FROM GRIB WINDS AND DRAG COEFFICIENT.
         CALL BUILDSTRESS(IJS, IJL,                                      &
@@ -125,14 +122,15 @@
      &                   ROAIRO(IJS), ZIDLOLD(IJS),                     &
      &                   CICOVER(IJS), CITHICK(IJS),                    &
      &                   IREAD)
-        IF(ITEST.GE.1) WRITE(IU06,*)'SUB. GETSTRESS: BUILDSTRESS CALLED'
+
+
       ELSE
 
 !       BINARY RESTART
 
-        IF(LRSTPARALR) THEN
-          IJINF=NINF
-          IJSUP=NSUP
+        IF (LRSTPARALR) THEN
+          IJINF=IJS
+          IJSUP=IJL
         ELSE
           IJINF=1
           IJSUP=NIBLO
@@ -141,14 +139,14 @@
         ALLOCATE(RFIELD(IJINF:IJSUP,NREAL))
 
         CALL GRSTNAME(CDATEA,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
-        IF(LRSTPARALR) THEN
+        IF (LRSTPARALR) THEN
 !          RESTART FILES FROM ALL PE's
            LNAME = LEN_TRIM(FILENAME)
            FILENAME=FILENAME(1:LNAME)//'.%p_%n'
            CALL EXPAND_STRING(IRANK, NPROC, 0, 0, FILENAME, 1)
         ENDIF
 
-        IF (LRSTPARALR .OR. IRANK.EQ.IREAD) THEN
+        IF (LRSTPARALR .OR. IRANK == IREAD) THEN
           CALL READSTRESS(IJINF, IJSUP, NREAL, RFIELD, FILENAME, LRSTPARALR)
         ENDIF
 
@@ -158,12 +156,6 @@
             CALL MPDISTRIBSCFLD(IREAD, KTAG, NBLKS, NBLKE,RFIELD(:,IFLD))
             KTAG=KTAG+1
           ENDDO
-
-          IF (ITEST.GE.2)                                               &
-     &     WRITE(IU06,*)                                                &
-     &     ' SUB. GETSTRESS: RESTART WIND AND STRESS COLLECTED'
-        ENDIF
-
 
 !       KEEP CORRESPONDING CONTRIBUTION 
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
@@ -197,8 +189,8 @@
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
-          U(NINF-1)=0.0_JWRB
-          V(NINF-1)=0.0_JWRB
+          U(NSUP+1)=0.0_JWRB
+          V(NSUP+1)=0.0_JWRB
 
 !!!       U AND V MUST ALSO BE DEFINED OVER THE HALO
           CALL MPEXCHNG(U, 1, 1)
@@ -232,11 +224,11 @@
 
 !     BROADCAST THE 4 DATES FROM RESTART FILE TO THE OTHER PE'S
 !     AS WELL AS LWAVEWIND
-      IF(.NOT. (IREAD.EQ.0 .OR. NPROC.EQ.1)) THEN
+      IF (.NOT. (IREAD == 0 .OR. NPROC == 1)) THEN
         IBUFLENGTH=57+1
         ALLOCATE(IBUF(IBUFLENGTH))
-        IF(IRANK.EQ.IREAD) THEN
-          IF(LWAVEWIND) THEN
+        IF (IRANK == IREAD) THEN
+          IF (LWAVEWIND) THEN
             IBUF(1)=1
           ELSE
             IBUF(1)=0
@@ -257,7 +249,7 @@
           DO IC=1,14
             KCOUNT=KCOUNT+1
             READ(CDATEFL(IC:IC),'(I1)') IBUF(KCOUNT)
-            IF(KCOUNT.GT.IBUFLENGTH) THEN
+            IF (KCOUNT > IBUFLENGTH) THEN
               WRITE (IU06,*) ' '
               WRITE (IU06,*) ' **************************************'
               WRITE (IU06,*) ' *                                    *'
@@ -280,8 +272,8 @@
 
         KTAG=KTAG+1
 
-        IF(IRANK.NE.IREAD) THEN
-          IF(IBUF(1).EQ.1) THEN
+        IF (IRANK /= IREAD) THEN
+          IF (IBUF(1) == 1) THEN
             LWAVEWIND=.TRUE. 
           ELSE
             LWAVEWIND=.FALSE. 
@@ -302,7 +294,7 @@
           DO IC=1,14
             KCOUNT=KCOUNT+1
             WRITE(CDATEFL(IC:IC),'(I1)') IBUF(KCOUNT)
-            IF(KCOUNT.GT.IBUFLENGTH) THEN
+            IF (KCOUNT > IBUFLENGTH) THEN
               WRITE (IU06,*) ' '
               WRITE (IU06,*) ' **************************************'
               WRITE (IU06,*) ' *                                    *'
@@ -322,13 +314,13 @@
 
       ENDIF
 
-      IF(CDTPRO.EQ.'00000000000000') CDTPRO = ZERO
-      IF(CDATEWO.EQ.'00000000000000')CDATEWO = ZERO
-      IF(CDAWIFL.EQ.'00000000000000')CDAWIFL = ZERO
-      IF(CDATEFL.EQ.'00000000000000') CDATEFL= ZERO
+      IF (CDTPRO == '00000000000000') CDTPRO = ZERO
+      IF (CDATEWO == '00000000000000')CDATEWO = ZERO
+      IF (CDAWIFL == '00000000000000')CDAWIFL = ZERO
+      IF (CDATEFL == '00000000000000') CDATEFL= ZERO
 
 
-      IF(LNSESTART .AND. .NOT.LRESTARTED) THEN
+      IF (LNSESTART .AND. .NOT.LRESTARTED) THEN
 !       WHEN INITAL SPECTRA SET TO NOISE LEVEL,
 !       RESET WAVE INDUCED STRESS TO ZERO 
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
@@ -344,8 +336,7 @@
 
 
       WRITE(IU06,*) ''
-      WRITE(IU06,*) ' WIND AND STRESS FILES READ IN.......',            &
-     &              ' CDTPRO  = ', CDTPRO
+      WRITE(IU06,*) ' WIND AND STRESS FILES READ IN....... CDTPRO  = ', CDTPRO
       CALL FLUSH (IU06)
 
       IF (LHOOK) CALL DR_HOOK('GETSTRESS',1,ZHOOK_HANDLE)

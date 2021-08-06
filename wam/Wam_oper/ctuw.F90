@@ -43,16 +43,15 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
       USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,FRATIO   ,    &
      &            COSTH    ,SINTH
       USE YOWGRID  , ONLY : SINPH    ,COSPH    ,COSPHM1
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWMAP   , ONLY : IXLG     , KXLT     ,IRGG    ,IPER     ,    &
      &            XDELLA   ,ZDELLO   ,AMOWEP   ,AMOSOP 
-      USE YOWMPP   , ONLY : NINF
+      USE YOWMPP   , ONLY : NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NGX      ,NGY
       USE YOWPCONS , ONLY : PI       ,ZPI      ,R        ,CIRC
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSHAL  , ONLY : NDEPTH   ,TCGOND   ,INDEP    ,DEPTH   ,     &
      &               TSIHKD
-      USE YOWSTAT  , ONLY : IDELPRO  ,ICASE    ,ISHALLO  ,IREFRA
+      USE YOWSTAT  , ONLY : IDELPRO  ,ICASE    ,IREFRA
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT     ,              &
      &            KCOR     ,WCOR     ,                                  &
@@ -61,6 +60,8 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
      &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN  ,    &
      &            JXO      ,JYO      ,KCR      ,                        &
      &            LSAMEDEPTH
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -114,13 +115,13 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
       DELPRO = REAL(IDELPRO,JWRB)   
       CMTODEG = 360.0_JWRB/CIRC
 
-      IF(ICALL.EQ.1) THEN
+      IF (ICALL == 1) THEN
         LCFLFAIL(:) = .FALSE.
         CURMASK(:) = 1.0_JWRB
       ELSE
 !       determine mask to turn off current refraction where it had failed before
         DO IJ=MIJS,MIJL
-          IF(LCFLFAIL(IJ)) THEN
+          IF (LCFLFAIL(IJ)) THEN
             CURMASK(IJ) = 0.0_JWRB
           ELSE
             CURMASK(IJ) = 1.0_JWRB
@@ -130,35 +131,26 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
         LCFLFAIL(:) = .FALSE.
       ENDIF
 
-      IF (ISHALLO.NE.1) THEN
-        DO M=1,NFRE_RED
-          DO IJ=MIJS,MIJL
-            CGR(IJ,M)=TCGOND(INDEP(IJ),M)
-          ENDDO
+      DO M=1,NFRE_RED
+        DO IJ=MIJS,MIJL
+          CGR(IJ,M)=TCGOND(INDEP(IJ),M)
         ENDDO
-      ELSE
-        DO M=1,NFRE_RED
-          DO IJ=MIJS,MIJL
-            CGR(IJ,M)=GOM(M)
-          ENDDO
-        ENDDO
-      ENDIF
+      ENDDO
 
       DO IC=1,2
         DO IJ = MIJS,MIJL
-          IF (KLAT(IJ,IC,1).GT. NINF-1 .AND.                            &
-     &        KLAT(IJ,IC,2).GT. NINF-1) THEN
+          IF (KLAT(IJ,IC,1) > NSUP+1 .AND. KLAT(IJ,IC,2) > NSUP+1) THEN
 !           BOTH CLOSEST AND SECOND CLOSEST POINTS ARE OVER THE OCEAN
             WLATM1(IJ,IC) = 1.0_JWRB - WLAT(IJ,IC)
-          ELSE IF (KLAT(IJ,IC,1).EQ. NINF-1) THEN
+          ELSE IF (KLAT(IJ,IC,1) == NSUP+1) THEN
 !           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
 !           CLOSEST POINT IS OVER LAND
-            IF(WLAT(IJ,IC).LE.0.75_JWRB) WLAT(IJ,IC)=0.0_JWRB
+            IF (WLAT(IJ,IC) <= 0.75_JWRB) WLAT(IJ,IC)=0.0_JWRB
             WLATM1(IJ,IC) = 1.0_JWRB - WLAT(IJ,IC)
           ELSE
 !           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
 !           SECOND CLOSEST POINT IS OVER LAND
-            IF(WLAT(IJ,IC).GE.0.5_JWRB) WLAT(IJ,IC)=1.0_JWRB
+            IF (WLAT(IJ,IC) >= 0.5_JWRB) WLAT(IJ,IC)=1.0_JWRB
             WLATM1(IJ,IC) = 1.0_JWRB - WLAT(IJ,IC)
           ENDIF
         ENDDO
@@ -166,19 +158,18 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 
       DO ICR=1,4
         DO IJ = MIJS,MIJL
-          IF(KCOR(IJ,ICR,1).GT.NINF-1 .AND.                             &
-     &       KCOR(IJ,ICR,2).GT.NINF-1) THEN
+          IF (KCOR(IJ,ICR,1) > NSUP+1 .AND. KCOR(IJ,ICR,2) > NSUP+1) THEN
 !           BOTH CLOSEST AND SECOND CLOSEST CORNER POINTS ARE OVER THE OCEAN
             WCORM1(IJ,ICR) = 1.0_JWRB - WCOR(IJ,ICR)
-          ELSE IF(KCOR(IJ,ICR,1).EQ.NINF-1) THEN
+          ELSE IF (KCOR(IJ,ICR,1) == NSUP+1) THEN
 !           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
 !           CLOSEST CORNER POINT IS OVER LAND
-            IF(WCOR(IJ,ICR).LE.0.75_JWRB) WCOR(IJ,ICR)=0.0_JWRB
+            IF (WCOR(IJ,ICR) <= 0.75_JWRB) WCOR(IJ,ICR)=0.0_JWRB
             WCORM1(IJ,ICR) = 1.0_JWRB - WCOR(IJ,ICR)
           ELSE
 !           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
 !           SECOND CLOSEST CORNER POINT IS OVER LAND
-            IF(WCOR(IJ,ICR).GT.0.5_JWRB) WCOR(IJ,ICR)=1.0_JWRB 
+            IF (WCOR(IJ,ICR) > 0.5_JWRB) WCOR(IJ,ICR)=1.0_JWRB 
             WCORM1(IJ,ICR) = 1.0_JWRB - WCOR(IJ,ICR)
           ENDIF
         ENDDO
@@ -223,7 +214,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 
 !*    SPHERICAL OR CARTESIAN GRID?
 !     ----------------------------
-      IF (ICASE.EQ.1) THEN
+      IF (ICASE == 1) THEN
 
 !*      SPHERICAL GRID.
 !       ---------------
@@ -253,11 +244,9 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 
 !             FIND MEAN GROUP VELOCITY COMPONENTS FOR DIRECTION TH(K)+180
 !             -----------------------------------------------------------
-              IF (ISHALLO.NE.1) THEN
-!             SHALLOW WATER
                 DO IC=1,2
                   DO IJ=MIJS,MIJL
-                    IF(LSAMEDEPTH(IJ)) THEN
+                    IF (LSAMEDEPTH(IJ)) THEN
                       CGX(IJ,IC)=CGR(IJ,M)*SINTH(K)*COSPHM1(IJ)
                       CGY(IJ,IC)=0.5_JWRB*CGR(IJ,M)*COSTH(K)*(1.+DP(IJ,IC))
                     ELSE
@@ -265,7 +254,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
      &                   0.5_JWRB*(CGR(IJ,M)+TCGOND(INDEP(KLON(IJ,IC)),M)) &
      &                      *SINTH(K)*COSPHM1(IJ)
 !                     IRREGULAR GRID
-                      IF(IRGG.EQ.1) THEN
+                      IF (IRGG == 1) THEN
                         CGYP=WLAT(IJ,IC)*TCGOND(INDEP(KLAT(IJ,IC,1)),M)+       &
      &                   (1.0_JWRB-WLAT(IJ,IC))*TCGOND(INDEP(KLAT(IJ,IC,2)),M)
                       ELSE
@@ -276,15 +265,6 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
                     ENDIF
                   ENDDO
                 ENDDO
-              ELSE
-!             DEEP WATER
-                DO IC=1,2
-                  DO IJ=MIJS,MIJL
-                    CGX(IJ,IC)=GOM(M)*SINTH(K)*COSPHM1(IJ)
-                    CGY(IJ,IC)=0.5_JWRB*GOM(M)*COSTH(K)*(1.0_JWRB+DP(IJ,IC))
-                  ENDDO
-                ENDDO
-              ENDIF
 
 
 !             LOOP OVER GRID POINTS
@@ -297,7 +277,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 
                 DO IC=1,2
 
-                  IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
+                  IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
                     UU=U(IJ)*COSPHM1(IJ)
                     UREL=CGX(IJ,IC)+UU
                     ISSU(IC)=ISAMESIGN(UREL,CGX(IJ,IC))
@@ -318,7 +298,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 
 !                 BASIC CFL CHECKS (IN EACH DIRECTION)
 !                 ----------------
-                  IF(ADXP(IC).GT.ZDELLO(KY))THEN
+                  IF (ADXP(IC) > ZDELLO(KY))THEN
                     WRITE (IU06,*) '********************************'
                     WRITE (IU06,*) '* CTUW:                        *'
                     WRITE (IU06,*) '* CFL VIOLATED IN X DIRECTION. *'
@@ -332,7 +312,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
                     WRITE (IU06,*) '********************************'
                     LCFLFAIL(IJ)=.TRUE.
                   ENDIF
-                  IF(ADYP(IC).GT.XDELLA)THEN
+                  IF (ADYP(IC) > XDELLA)THEN
                     XLON=AMOWEP+(IX-1)*ZDELLO(KY)
                     XLAT=AMOSOP+(KY-1)*XDELLA
                     DTNEW=XDELLA*DELPRO/ADYP(IC)
@@ -409,7 +389,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
       ELSE
 !*    CARTESIAN GRID.
 !     ---------------
-        IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
+        IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
           WRITE (IU06,*) '******************************************'
@@ -448,7 +428,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 
 !*    GET SCATTER SIGMA/ SINH (2*K*D) TABLE 
 !     -------------------------------------
-      IF (IREFRA.NE.0 .AND. ISHALLO.NE.1 ) THEN
+      IF (IREFRA /= 0) THEN
         ALLOCATE(SIGSI(MIJS:MIJL,NFRE_RED))
         DO M=1,NFRE_RED
           DO IJ=MIJS,MIJL
@@ -462,9 +442,9 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 
       DO K=1,NANG
         KP1 = K+1
-        IF (KP1.GT.NANG) KP1 = 1
+        IF (KP1 > NANG) KP1 = 1
         KM1 = K-1
-        IF (KM1.LT.1) KM1 = NANG
+        IF (KM1 < 1) KM1 = NANG
 
 !*      COMPUTE GRID REFRACTION.
 !       ------------------------
@@ -480,7 +460,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 
 !*      COMPUTE DEPTH REFRACTION.
 !       -------------------------
-        IF (IREFRA.EQ.1 .AND. ISHALLO.NE.1) THEN
+        IF (IREFRA == 1) THEN
           DO IJ = MIJS,MIJL
             DRDP(IJ) = (THDD(IJ,K) + THDD(IJ,KP1))*DELTH0
             DRDM(IJ) = (THDD(IJ,K) + THDD(IJ,KM1))*DELTH0
@@ -495,7 +475,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 !*      COMPUTE CURRENT REFRACTION.
 !       ---------------------------
 
-        IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
+        IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
           DO IJ = MIJS,MIJL
             DRCP(IJ) = CURMASK(IJ)*(THDC(IJ,K) + THDC(IJ,KP1))*DELTH0
             DRCM(IJ) = CURMASK(IJ)*(THDC(IJ,K) + THDC(IJ,KM1))*DELTH0
@@ -511,10 +491,9 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 !*      REFRACTION WEIGHTS IN INTEGRATION SCHEME.
 !       -----------------------------------------
 
-!*      DEEP WATER OR
-!*      SHALLOW WATER (NO DEPTH REFRACTION).
-!       ------------------------------------
-        IF (ISHALLO.EQ.1 .OR. IREFRA.EQ.0) THEN
+!*      NO DEPTH REFRACTION.
+!       -------------------
+        IF (IREFRA == 0) THEN
           DO M=1,NFRE_RED
             DO IJ=MIJS,MIJL
               DTHP = DRGP(IJ)*CGR(IJ,M) + DRCP(IJ)
@@ -541,25 +520,10 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 !*      COMPUTE FREQUENCY SHIFTING DUE TO CURRENTS.
 !       -------------------------------------------
 
-        IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
+        IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
 
           DELFR0 = 0.25_JWRB*DELPRO/((FRATIO-1)*ZPI)
 
-!*        DEEP WATER 
-!         ----------
-          IF (ISHALLO.EQ.1) THEN
-            DO M=1,NFRE_RED
-              DFP = PI*(1.+FRATIO)*DELFR0
-              DO IJ=MIJS,MIJL
-                DTHP = CURMASK(IJ) * SDOT(IJ,K,NFRE_RED) * DFP
-                WMPMN(IJ,K,M,0) =2.0_JWRB* ABS(DTHP)
-                WMPMN(IJ,K,M,1) =(-DTHP+ABS(DTHP))/FRATIO
-                WMPMN(IJ,K,M,-1)=( DTHP+ABS(DTHP))*FRATIO
-              ENDDO
-            ENDDO
-          ELSE
-!*        SHALLOW WATER
-!         -------------
             DO M=1,NFRE_RED
               MP1 = MIN(NFRE_RED,M+1)
               MM1 = MAX(1,M-1)
@@ -574,13 +538,11 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
                 WMPMN(IJ,K,M,-1)=(DTHM+ABS(DTHM))*FRATIO
               ENDDO
             ENDDO
-          ENDIF
-
         ENDIF
 
       ENDDO  ! END LOOP ON DIRECTIONS
 
-      IF (IREFRA.NE.0 .AND. ISHALLO.NE.1 ) DEALLOCATE(SIGSI)
+      IF (IREFRA /= 0) DEALLOCATE(SIGSI)
  
 
 !     CHECK THAT WEIGHTS ARE LESS THAN 1
@@ -592,8 +554,8 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
           DO IJ=MIJS,MIJL
             DO IC=1,2
               DO ICL=1,2
-              IF(WLATN(IJ,K,M,IC,ICL).GT.1.0_JWRB .OR.                       &
-     &           WLATN(IJ,K,M,IC,ICL).LT.0.0_JWRB     ) THEN
+              IF (WLATN(IJ,K,M,IC,ICL) > 1.0_JWRB .OR.                       &
+     &            WLATN(IJ,K,M,IC,ICL) < 0.0_JWRB     ) THEN
                 WRITE(IU06,*) '***********************************'
                 WRITE(IU06,*) '* CTUW:                           *'
                 WRITE(IU06,*) '* CFL VIOLATED IN Y DIRECTION     *'
@@ -610,8 +572,8 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
             ENDDO
 
             DO IC=1,2
-              IF(WLONN(IJ,K,M,IC).GT.1.0_JWRB .OR.                           &
-     &           WLONN(IJ,K,M,IC).LT.0.0_JWRB      ) THEN
+              IF (WLONN(IJ,K,M,IC) > 1.0_JWRB .OR.                           &
+     &            WLONN(IJ,K,M,IC) < 0.0_JWRB      ) THEN
                 WRITE (IU06,*) '***********************************'
                 WRITE (IU06,*) '* CTUW:                           *'
                 WRITE (IU06,*) '* CFL VIOLATED IN X DIRECTION     *'
@@ -627,8 +589,8 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 
             DO ICR=1,4
               DO ICL=1,2
-              IF(WCORN(IJ,K,M,ICR,ICL).GT.1.0_JWRB .OR.                      &
-     &           WCORN(IJ,K,M,ICR,ICL).LT.0.0_JWRB     ) THEN
+              IF (WCORN(IJ,K,M,ICR,ICL) > 1.0_JWRB .OR.                      &
+     &            WCORN(IJ,K,M,ICR,ICL) < 0.0_JWRB     ) THEN
                 WRITE (IU06,*) '***********************************'
                 WRITE (IU06,*) '* CTUW:                           *'
                 WRITE (IU06,*) '* CFL VIOLATED IN CORNER DIRECTION*'
@@ -644,8 +606,8 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
             ENDDO
 
             DO IC=-1,1
-              IF(WKPMN(IJ,K,M,IC).GT.1.0_JWRB .OR.                           &
-     &           WKPMN(IJ,K,M,IC).LT.0.0_JWRB      ) THEN
+              IF (WKPMN(IJ,K,M,IC) > 1.0_JWRB .OR.                           &
+     &            WKPMN(IJ,K,M,IC) < 0.0_JWRB      ) THEN
                 WRITE (IU06,*) '***********************************'
                 WRITE (IU06,*) '* CTUW:                           *'
                 WRITE (IU06,*) '* CFL VIOLATED IN DIRECTION SPACE *'
@@ -662,11 +624,11 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
             SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
 
 
-            IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
+            IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
 
               DO IC=-1,1
-                IF(WMPMN(IJ,K,M,IC).GT.1.0_JWRB .OR.                         &
-     &             WMPMN(IJ,K,M,IC).LT.0.0_JWRB      ) THEN
+                IF (WMPMN(IJ,K,M,IC) > 1.0_JWRB .OR.                         &
+     &              WMPMN(IJ,K,M,IC).LT.0.0_JWRB      ) THEN
                   WRITE(IU06,*) '***********************************'
                   WRITE(IU06,*) '* CTUW:                           *'
                   WRITE(IU06,*) '* CFL VIOLATED IN FREQUENCY SPACE *'
@@ -688,7 +650,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
             ENDIF
 
 !           SUM < 1  ?
-            IF(SUMWN(IJ,K,M).GT.1.0_JWRB .OR. SUMWN(IJ,K,M).LT.0.0_JWRB) THEN
+            IF (SUMWN(IJ,K,M) > 1.0_JWRB .OR. SUMWN(IJ,K,M) < 0.0_JWRB) THEN
               IX=IXLG(IJ)
               KY=KXLT(IJ)
               XLON=AMOWEP+(IX-1)*ZDELLO(KY)
@@ -707,7 +669,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
               DO IP=1,2
               DO IC=1,2
                 IJP = KLAT(IJ,IC,IP)
-                IF(IJP.NE.NINF-1) THEN
+                IF (IJP /= NSUP+1) THEN
                   WRITE(IU06,*) '* DEPTH= ',IJP,IP,IC,DEPTH(IJP)
                   WRITE(IU06,*) '*     U= ',U(IJP)
                   WRITE(IU06,*) '*     V= ',V(IJP)
@@ -718,7 +680,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
               ENDDO
               DO IC=1,2
                 IJP = KLON(IJ,IC)
-                IF(IJP.NE.NINF-1) THEN
+                IF (IJP /= NSUP+1) THEN
                   WRITE(IU06,*) '* DEPTH= ',IJP,IC,DEPTH(IJP)
                   WRITE(IU06,*) '*     U= ',U(IJP)
                   WRITE(IU06,*) '*     V= ',V(IJP)
@@ -727,7 +689,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
                 ENDIF
               ENDDO
 
-              IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
+              IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
               WRITE(IU06,*) '* U = ',U(IJ),' V = ',V(IJ)
               ENDIF
               WRITE(IU06,*) '*                                 *'
@@ -742,7 +704,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
       ENDDO  ! END LOOP OVER DIRECTIONS
 
       DO IJ=MIJS,MIJL
-        IF(LCFLFAIL(IJ)) THEN
+        IF (LCFLFAIL(IJ)) THEN
           IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
           RETURN
         ENDIF
@@ -793,7 +755,7 @@ END SUBROUTINE CTUW
 
         IMPLICIT NONE
         REAL(KIND=JWRB) :: A,B
-        IF(SIGN(1.0_JWRB,A).EQ.SIGN(1.0_JWRB,B)) THEN
+        IF (SIGN(1.0_JWRB,A) == SIGN(1.0_JWRB,B)) THEN
           ISAMESIGN=1
         ELSE
           ISAMESIGN=0

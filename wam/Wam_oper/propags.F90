@@ -143,7 +143,7 @@
 !         -------------------------------------
 
       IF (IREFRA.NE.0) THEN
-        CALL DOTDC (MIJS, MIJL, ISHALLO, SHLFAC)
+        CALL DOTDC (MIJS, MIJL, SHLFAC)
       ENDIF
 
 !*    0.2 SPHERICAL OR CARTESIAN GRID?

@@ -62,7 +62,8 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE YOWWIND  , ONLY : FIELDG   ,LLNEWCURR 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! --------------------------------------------------------------------
 
@@ -81,7 +82,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, IJ, IX, IY
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP) :: OLDU, OLDV
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1) :: OLDU, OLDV
 
       CHARACTER(LEN=14) :: CDATEIN, CDTNEWCUR
       CHARACTER(LEN=24) :: FILNM
@@ -100,24 +101,23 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 
 
       IF (LLNEWCURR) THEN
-        IF ( (LWCOU .AND. LWCUR ) .OR. LWNEMOCOUCUR .OR.                &
-     &        IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+        IF ( (LWCOU .AND. LWCUR ) .OR. LWNEMOCOUCUR .OR. IREFRA == 2 .OR. IREFRA == 3) THEN
 
-          IF(.NOT.ALLOCATED(U)) THEN 
-            ALLOCATE(U(NINF-1:NSUP))
+          IF (.NOT.ALLOCATED(U)) THEN 
+            ALLOCATE(U(NINF:NSUP+1))
             U(:)=0.0_JWRB
           ENDIF
 
-          IF(.NOT.ALLOCATED(V)) THEN
-            ALLOCATE(V(NINF-1:NSUP))
+          IF (.NOT.ALLOCATED(V)) THEN
+            ALLOCATE(V(NINF:NSUP+1))
             V(:)=0.0_JWRB
           ENDIF
 
           CDTNEWCUR=CDTCUR
 
-          IF(.NOT.LWCOU) CALL INCDATE(CDTNEWCUR,IDELCUR/2)
+          IF (.NOT.LWCOU) CALL INCDATE(CDTNEWCUR,IDELCUR/2)
 
-          IF(CDTPRO.GE.CDTNEWCUR) THEN
+          IF (CDTPRO >= CDTNEWCUR) THEN
 
             OLDU(:)=U(:)
             OLDV(:)=V(:)
@@ -126,10 +126,10 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 
             CALL INCDATE(CDTCUR,IDELCUR)
 
-            IF(LWCOU) THEN
+            IF (LWCOU) THEN
 !             CURRENTS FROM COUPLING INTERFACE 
 !             --------------------------------
-              IF(LWCUR.AND..NOT.LWNEMOCOUCUR) THEN
+              IF (LWCUR .AND. .NOT.LWNEMOCOUCUR) THEN
 
 ! Mod for OPENMP
                   CALL GSTATS(1444,0)
@@ -142,22 +142,16 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
                   ENDDO
 !$OMP           END PARALLEL DO
                   CALL GSTATS(1444,1)
-                  U(NINF-1)=0.0_JWRB
-                  V(NINF-1)=0.0_JWRB
+                  U(NSUP+1)=0.0_JWRB
+                  V(NSUP+1)=0.0_JWRB
 
 !!!               The halo has to be included for the calculation of the gradients !!!
                   CALL MPEXCHNG(U,1,1)
                   CALL MPEXCHNG(V,1,1)
 
-                IF (ITEST.GE.1) THEN
-                   WRITE (IU06,*) ' '
-                   WRITE (IU06,*) '  SUB. GETCURR:',                    &
-     &             ' INPUT CURRENTS FIELDS CONVERTED TO BLOCKS'
-                   CALL FLUSH(IU06)
-                ENDIF
 !             CURRENTS FROM NEMO
 !             ------------------
-              ELSEIF(LWNEMOCOUCUR) THEN
+              ELSEIF (LWNEMOCOUCUR) THEN
                 WRITE(IU06,*)' NEMO CURRENTS OBTAINED'!
                 CALL GSTATS(1444,0)
                 NPROMA=NPROMA_WAM
@@ -168,7 +162,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
                   DO IJ=KIJS,KIJL
                     IX = IFROMIJ(IJ)
                     IY = JFROMIJ(IJ)
-                    IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
+                    IF (FIELDG(IX,IY)%LKFR <=  0.0_JWRB ) THEN
 !                     if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
                       U(IJ) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
                       V(IJ) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
@@ -182,8 +176,8 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 !$OMP           END PARALLEL DO
                 CALL GSTATS(1444,1)
 
-                U(NINF-1)=0.0_JWRB
-                V(NINF-1)=0.0_JWRB
+                U(NSUP+1)=0.0_JWRB
+                V(NSUP+1)=0.0_JWRB
 
 !!!             The halo has to be included for the calculation of the gradients !!!
                 CALL MPEXCHNG(U,1,1)
@@ -217,7 +211,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
                 CALL CURRENT2WAM (FILNM,IREAD,CDATEIN)
                 
 
-                IF(CDATEIN.NE.CDTCUR) THEN
+                IF (CDATEIN /= CDTCUR) THEN
                 WRITE (IU06,*) ' **************************************'
                 WRITE (IU06,*) ' *                                    *'
                 WRITE (IU06,*) ' * PROBLEM IN GETCURR :               *'
@@ -249,14 +243,14 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 !           CHECK IF UPDATE IS NEEDED
             LLUPDATE=.FALSE.
             DO IJ = NINF, NSUP
-              IF( U(IJ) /= OLDU(IJ) .OR. V(IJ) /= OLDV(IJ) ) THEN
+              IF ( U(IJ) /= OLDU(IJ) .OR. V(IJ) /= OLDV(IJ) ) THEN
                 LLUPDATE=.TRUE.
                 EXIT
               ENDIF 
             ENDDO
 
-            IF(LLUPDATE) THEN
-              IF (IREFRA .NE. 0) THEN
+            IF (LLUPDATE) THEN
+              IF (IREFRA /= 0) THEN
                 IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS:IJL,NANG))
                 IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS:IJL,NANG))
                 IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS:IJL,NANG,NFRE_RED))

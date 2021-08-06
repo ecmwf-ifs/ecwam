@@ -1,4 +1,4 @@
-      SUBROUTINE CURRENT2WAM (FILNM,IREAD,CDATEIN)
+      SUBROUTINE CURRENT2WAM (FILNM, IREAD, CDATEIN)
 
 !--------------------------------------------------------------------
 
@@ -38,7 +38,6 @@
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            IFROMIJ  ,JFROMIJ
-      USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            NPRECI
       USE YOWPCONS , ONLY : ZMISS    ,EPSMIN
@@ -95,7 +94,7 @@
 
       IF (LHOOK) CALL DR_HOOK('CURRENT2WAM',0,ZHOOK_HANDLE)
 
-      IF(LLUNSTR) THEN
+      IF (LLUNSTR) THEN
         NLONRGG_LOC(:)=MNP
       ELSE
         NLONRGG_LOC(:)=NLONRGG(:)
@@ -105,7 +104,7 @@
       ZDUM1 = 0._JWRB
       ZDUM2 = 0._JWRB
 
-      IF ((LMESSPASS .AND. (IRANK.EQ.IREAD)) .OR. .NOT.LMESSPASS) THEN
+      IF (IRANK == IREAD) THEN
 
         IF (FRSTIME) THEN
           KFILE_HANDLE1=-99
@@ -119,24 +118,23 @@
 
       READCURRENT: DO IVAR=1,2
 
-        IF ((LMESSPASS .AND. (IRANK.EQ.IREAD)) .OR.                     &
-     &      .NOT.LMESSPASS) THEN
+        IF (IRANK == IREAD) THEN
 1021        ISIZE=NBIT
             KBYTES=ISIZE*NPRECI
-            IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
+            IF (.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
             CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE1,INGRIB,KBYTES,IRET)
-            IF(IRET.EQ.JPGRIB_BUFFER_TOO_SMALL) THEN
+            IF (IRET == JPGRIB_BUFFER_TOO_SMALL) THEN
 !!!           *IGRIB_READ_FROM_FILE* does not read through the file if
 !!!            the size is too small, so figure out the size and read again.
               CALL KGRIBSIZE(IU06, KBYTES, NBIT, 'CURRENT2WAM')
               DEALLOCATE(INGRIB)
               GOTO 1021
-            ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
+            ELSEIF (IRET == JPGRIB_END_OF_FILE) THEN
               WRITE(IU06,*) '**************************************'
               WRITE(IU06,*) '* CURRENT2WAM: END OF FILE ENCOUNTED *'
               WRITE(IU06,*) '**************************************'
               CALL ABORT1
-            ELSEIF(IRET.NE.JPGRIB_SUCCESS) THEN
+            ELSEIF (IRET /= JPGRIB_SUCCESS) THEN
                WRITE(IU06,*) '************************************'
                WRITE(IU06,*) '* CURRENT2WAM: FILE HANDLING ERROR *'
                WRITE(IU06,*) '************************************'
@@ -150,17 +148,17 @@
 
 !       BROADCAST GRIB DATA TO OTHER PE'S
         CALL GSTATS(622,0)
-        IF(LMESSPASS .AND. NPROC.GT.1) THEN
+        IF (NPROC > 1) THEN
 
           CALL MPL_BARRIER(CDSTRING='CURRENT2WAM: INGRIB ')
 
-          IF(IRANK.EQ.IREAD) THEN
+          IF (IRANK == IREAD) THEN
             IBUF(1)=ISIZE
             IBUF(2)=KLEN
           ENDIF
           CALL MPL_BROADCAST(IBUF(1:2),KROOT=IREAD,KTAG=IVAR,           &
      &                       CDSTRING='CURRENT2WAM IBUF:')
-          IF(IRANK.NE.IREAD) THEN
+          IF (IRANK /= IREAD) THEN
             ISIZE=IBUF(1)
             KLEN=IBUF(2)
             ALLOCATE(INGRIB(ISIZE))
@@ -191,7 +189,7 @@
 
         CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
-        IF(IVAR.EQ.2 .AND. CDATEIN.NE.CDATEIN_OLD) THEN
+        IF (IVAR == 2 .AND. CDATEIN /= CDATEIN_OLD) THEN
           WRITE(IU06,*) ' *****************************************'
           WRITE(IU06,*) ' *                                       *'
           WRITE(IU06,*) ' *    FATAL ERROR IN SUB. CURRENT2WAM    *'
@@ -210,7 +208,7 @@
        CDATEIN_OLD=CDATEIN
 
 
-        IF(IPARAM.EQ.131) THEN
+        IF (IPARAM == 131) THEN
              DO IJ =  NINF, NSUP
 !!!            VALUES FOR THE HALO ARE ALSO NEEDED !!!
 !!!            HENCE NINF TO NSUP.
@@ -220,12 +218,12 @@
 !              SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
 !              OCEAN MODEL. THEY ARE SET TO 0.
 !              0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
-               IF(ABS(U(IJ)).LE.WLOWEST) U(IJ)=0.0_JWRB
-               IF(U(IJ).LE.ZMISS) U(IJ)=0.0_JWRB
+               IF (ABS(U(IJ)) <= WLOWEST) U(IJ)=0.0_JWRB
+               IF (U(IJ) <= ZMISS) U(IJ)=0.0_JWRB
                U(IJ)=SIGN(MIN(ABS(U(IJ)),CURRENT_MAX),U(IJ))
              ENDDO
-             U(NINF-1)=0.0_JWRB
-        ELSEIF(IPARAM.EQ.132) THEN
+             U(NSUP+1)=0.0_JWRB
+        ELSEIF (IPARAM == 132) THEN
              DO IJ =  NINF, NSUP
 !!!            VALUES FOR THE HALO ARE ALSO NEEDED !!!
 !!!            HENCE NINF TO NSUP.
@@ -235,11 +233,11 @@
 !              SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
 !              OCEAN MODEL. THEY ARE SET TO 0.
 !              0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
-               IF(ABS(V(IJ)).LE.WLOWEST) V(IJ)=0.0_JWRB
-               IF(V(IJ).LE.ZMISS) V(IJ)=0.0_JWRB
+               IF (ABS(V(IJ)) <= WLOWEST) V(IJ)=0.0_JWRB
+               IF (V(IJ) <= ZMISS) V(IJ)=0.0_JWRB
                V(IJ)=SIGN(MIN(ABS(V(IJ)),CURRENT_MAX),V(IJ))
              ENDDO
-             V(NINF-1)=0.0_JWRB
+             V(NSUP+1)=0.0_JWRB
         ELSE
           WRITE(IU06,*) ' *****************************************'
           WRITE(IU06,*) ' *                                       *'
