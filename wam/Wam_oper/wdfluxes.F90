@@ -177,11 +177,12 @@
         CALL SNONLIN (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH, AKMEAN)
 
         IF (LWVFLX_SNL) THEN
-          CALL WNFLUXES (KIJS, KIJL,                       &
-     &                   MIJ, RHOWGDFTH,                   &
-     &                   SL, CICVR,                        &
-     &                   PHIWA,                            &
-     &                   EMEAN, F1MEAN, U10NEW, THWNEW,    &
+          CALL WNFLUXES (KIJS, KIJL,                        &
+     &                   MIJ, RHOWGDFTH,                    &
+     &                   CINV,                              &
+     &                   SL, CICVR,                         &
+     &                   PHIWA,                             &
+     &                   EMEAN, F1MEAN, U10NEW, THWNEW,     &
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 

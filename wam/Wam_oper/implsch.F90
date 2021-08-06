@@ -309,7 +309,6 @@
      &              WAVNUM, CGROUP,               &
      &              EMEANALL, F1MEAN, XKMEAN,     &
      &              USNEW, THWNEW, ROAIRN)
-      ENDIF
 
 !     Save source term contributions relevant for the calculation of ocean fluxes
       IF (LCFLX .AND. .NOT.LWVFLX_SNL) THEN

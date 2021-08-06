@@ -657,11 +657,13 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 !*        RETRIEVING NEW FORCING FIELDS FROM TEMPORARY STORAGE IF NEEDED.
 !         ---------------------------------------------------------------
-          CALL NEWWIND(IJS,IJL,CDTIMP,CDATEWH,                          &
-     &                 NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW,     &
-     &                 USOLD, USNEW,                                    &
-     &                 ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,                &
-     &                 CICOVER, CITHICK, CIWA,                          &
+          CALL NEWWIND(IJS, IJL, CDTIMP, CDATEWH,               &
+     &                 NEWREAD, NEWFILE,                        &
+     &                 U10OLD, THWOLD, U10NEW, THWNEW,          &
+     &                 USOLD, USNEW,                            &
+     &                 ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,        &
+     &                 CGROUP,                                  &
+     &                 CICOVER, CITHICK, CIWA,                  &
      &                 TAUW, BETAOLD)
 
 !         IT IS TIME TO INTEGRATE THE SOURCE TERMS

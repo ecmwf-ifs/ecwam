@@ -34,10 +34,10 @@
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NIBLO
       USE YOWSTAT  , ONLY : IPROPAGS ,NPROMA_WAM
-      USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE UNWAM    , ONLY : PROPAG_UNWAM
       USE YOWUNPOOL ,ONLY : LLUNSTR
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -72,7 +72,7 @@
       IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 
-      IF(NIBLO.GT.1) THEN
+      IF (NIBLO > 1) THEN
 
         NPROMA=NPROMA_WAM
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,K,M,IJ) 
@@ -100,19 +100,19 @@
            FLEXT(NINF-1,:,:) = 0.0_JWRB 
 
 !          OBTAIN INFORMATION AT NEIGHBORING GRID POINTS (HALLO)
+!          -----------------------------------------------------
            CALL MPEXCHNG(FLEXT,NANG,NFRE_RED)
-           IF (ITEST.GE.2) THEN
-             WRITE(IU06,*) '   SUB. PROPAG_WAM: MPEXCHNG CALLED' 
-             CALL FLUSH (IU06)
-           ENDIF
 
 
            CALL GSTATS(1430,0)
 
-!          IPROPAGS is the default option (the other options are kept but usually not used)
-           IF(IPROPAGS.EQ.2) THEN
+!          IPROPAGS = 2 is the default option (the other options are kept but usually not used)
+!          -----------------------------------------------------------------------------------
+           SELECT CASE (IPROPAGS)
 
-             IF(LUPDTWGHT) THEN
+           CASE(2)
+
+             IF (LUPDTWGHT) THEN
                CALL CTUWUPDT(IJS, IJL)
                LUPDTWGHT=.FALSE.
              ENDIF
@@ -128,13 +128,9 @@
              ENDDO
 !$OMP        END PARALLEL DO
 
-             IF (ITEST.GE.2) THEN
-               WRITE(IU06,*) '   SUB. PROPAG_WAM: PROPAGS2 CALLED'
-               CALL FLUSH (IU06)
-             ENDIF
 
-           ELSE IF(IPROPAGS.EQ.1) THEN
-             IF(L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
+           CASE(1)
+             IF (L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
              NPROMA=NPROMA_WAM
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
              DO JKGLO=IJS,IJL,NPROMA
@@ -143,13 +139,9 @@
                CALL PROPAGS1(FLEXT, FL1, IJS, IJL, KIJS, KIJL, L1STCALL)
              ENDDO
 !$OMP       END PARALLEL DO
-             IF (ITEST.GE.2) THEN
-               WRITE(IU06,*) '   SUB. PROPAG_WAM: PROPAGS1 CALLED'
-               CALL FLUSH (IU06)
-             ENDIF
 
-           ELSE
-             IF(L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
+           CASE(0)
+             IF (L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
              NPROMA=NPROMA_WAM
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
              DO JKGLO=IJS,IJL,NPROMA
@@ -158,11 +150,8 @@
                CALL PROPAGS(FLEXT, FL1, IJS, IJL, KIJS, KIJL, L1STCALL)
              ENDDO
 !$OMP        END PARALLEL DO
-             IF (ITEST.GE.2) THEN
-               WRITE(IU06,*) '   SUB. PROPAG_WAM: PROPAGS CALLED'
-               CALL FLUSH (IU06)
-             ENDIF
-           ENDIF
+           END SELECT 
+
 
            CALL GSTATS(1430,1)
 
