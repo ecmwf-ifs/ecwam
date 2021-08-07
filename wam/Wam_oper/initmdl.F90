@@ -780,8 +780,8 @@ SUBROUTINE INITMDL (NADV,                                         &
         DEPTH(IJ) = MAX(DEPTH(IJ),DEPTHA)
       ENDDO
 
-      IF (.NOT.ALLOCATED(INDEP)) ALLOCATE(INDEP(NINF-1:NSUP))
-      INDEP(NINF-1)=NDEPTH
+      IF (.NOT.ALLOCATED(INDEP)) ALLOCATE(INDEP(NINF:NSUP+1))
+      INDEP(NSUP+1)=NDEPTH
       IF (ISHALLO /= 1) THEN
         DO IJ=NINF,NSUP
           XD = LOG(DEPTH(IJ)/DEPTHA)/LOG(DEPTHD)+1.0_JWRB
@@ -807,8 +807,8 @@ SUBROUTINE INITMDL (NADV,                                         &
 !        ---------------------------------------------------------------
 
       IF ( (LWCOU .AND. LWCUR ) .OR. IREFRA == 2 .OR. IREFRA == 3) THEN 
-        IF (.NOT.ALLOCATED(U)) ALLOCATE(U(NINF-1:NSUP))
-        IF (.NOT.ALLOCATED(V)) ALLOCATE(V(NINF-1:NSUP))
+        IF (.NOT.ALLOCATED(U)) ALLOCATE(U(NINF:NSUP+1))
+        IF (.NOT.ALLOCATED(V)) ALLOCATE(V(NINF:NSUP+1))
       ENDIF
 
       Z0B(:) = 0.0_JWRB

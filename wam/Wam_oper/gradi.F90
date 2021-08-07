@@ -48,13 +48,15 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCURR  , ONLY : U        ,V        ,CURRENT_GRADIENT_MAX
+!                       !!! debile
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,COSPH
       USE YOWMAP   , ONLY : KXLT
-      USE YOWMPP   , ONLY : NINF
+      USE YOWMPP   , ONLY : NSUP 
       USE YOWSHAL  , ONLY : DEPTH
+!                      !!!!!!!!!debile
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -84,7 +86,7 @@
 !*    1. INITIALISE.
 !        -----------
 
-      NLAND=NINF-1
+      NLAND=NSUP+1
       ONEO2DELPHI = 0.5_JWRB/DELPHI
 
 ! ----------------------------------------------------------------------
@@ -92,22 +94,22 @@
 !*    2. CALCULATE DEPTH GRADIENTS.
 !        --------------------------
 
-      IF (IREFRA.EQ.1 .OR. IREFRA.EQ.3) THEN
+      IF (IREFRA == 1 .OR. IREFRA == 3) THEN
         DO IJ=MIJS,MIJL
           IPP = KLAT(IJ,2,1)
           IPM = KLAT(IJ,1,1)
           IPP2 = KLAT(IJ,2,2)
           IPM2 = KLAT(IJ,1,2)
-          IF (IPP.NE.NLAND  .AND. IPM.NE.NLAND .AND.                    &
-     &        IPP2.NE.NLAND .AND. IPM2.NE.NLAND      ) THEN
+          IF (IPP /= NLAND  .AND. IPM /= NLAND .AND.                    &
+     &        IPP2 /= NLAND .AND. IPM2 /= NLAND ) THEN
             DPTP=WLAT(IJ,2)*DEPTH(IPP)+(1.0_JWRB-WLAT(IJ,2))*DEPTH(IPP2)
             DPTM=WLAT(IJ,1)*DEPTH(IPM)+(1.0_JWRB-WLAT(IJ,1))*DEPTH(IPM2)
             DDPHI(IJ) = (DPTP-DPTM)*ONEO2DELPHI
-          ELSEIF (IPP.NE.NLAND .AND. IPM.NE.NLAND) THEN
+          ELSEIF (IPP /= NLAND .AND. IPM /= NLAND) THEN
             DPTP=DEPTH(IPP)
             DPTM=DEPTH(IPM)
             DDPHI(IJ) = (DPTP-DPTM)*ONEO2DELPHI
-          ELSEIF (IPP2.NE.NLAND .AND. IPM2.NE.NLAND) THEN
+          ELSEIF (IPP2 /= NLAND .AND. IPM2 /= NLAND) THEN
             DPTP=DEPTH(IPP2)
             DPTM=DEPTH(IPM2)
             DDPHI(IJ) = (DPTP-DPTM)*ONEO2DELPHI
@@ -117,7 +119,7 @@
           ILP = KLON(IJ,2)
           ILM = KLON(IJ,1)
           KX  = KXLT(IJ)
-          IF (ILP.NE.NLAND .AND. ILM.NE.NLAND) THEN
+          IF (ILP /= NLAND .AND. ILM /= NLAND) THEN
             DDLAM(IJ)=(DEPTH(ILP)-DEPTH(ILM))/(2._JWRB*DELLAM(KX))
           ELSE
             DDLAM(IJ) = 0.0_JWRB 
@@ -135,28 +137,28 @@
 !*    3. CALCULATE CURRENT VELOCITY GRADIENTS.
 !        -------------------------------------
 
-      IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+      IF (IREFRA == 2 .OR. IREFRA == 3) THEN
         DO IJ=MIJS,MIJL
           IPP = KLAT(IJ,2,1)
 !         exact 0 means that the current field was not defined, hence
 !         no gradient should be extrapolated
-          IF (U(IPP).EQ.0.0_JWRB .AND. V(IPP).EQ.0.0_JWRB) IPP = NLAND
+          IF (U(IPP) == 0.0_JWRB .AND. V(IPP) == 0.0_JWRB) IPP = NLAND
           IPM = KLAT(IJ,1,1)
-          IF (U(IPM).EQ.0.0_JWRB .AND. V(IPM).EQ.0.0_JWRB) IPM = NLAND
+          IF (U(IPM) == 0.0_JWRB .AND. V(IPM) == 0.0_JWRB) IPM = NLAND
           IPP2 = KLAT(IJ,2,2)
-          IF (U(IPP2).EQ.0.0_JWRB .AND. V(IPP2).EQ.0.0_JWRB) IPP2 = NLAND
+          IF (U(IPP2) == 0.0_JWRB .AND. V(IPP2) == 0.0_JWRB) IPP2 = NLAND
           IPM2 = KLAT(IJ,1,2)
-          IF (U(IPM2).EQ.0.0_JWRB .AND. V(IPM2).EQ.0.0_JWRB) IPM2 = NLAND
+          IF (U(IPM2) == 0.0_JWRB .AND. V(IPM2) == 0.0_JWRB) IPM2 = NLAND
 
-          IF (IPP.NE.NLAND .AND. IPM.NE.NLAND .AND.                     &
-     &        IPP2.NE.NLAND .AND. IPM2.NE.NLAND) THEN
+          IF (IPP /= NLAND .AND. IPM /= NLAND .AND.                     &
+     &        IPP2 /= NLAND .AND. IPM2 /= NLAND) THEN
             UP = WLAT(IJ,2)*U(IPP)+(1.0_JWRB-WLAT(IJ,2))*U(IPP2)
             VP = WLAT(IJ,2)*V(IPP)+(1.0_JWRB-WLAT(IJ,2))*V(IPP2)
             UM = WLAT(IJ,1)*U(IPM)+(1.0_JWRB-WLAT(IJ,1))*U(IPM2)
             VM = WLAT(IJ,1)*V(IPM)+(1.0_JWRB-WLAT(IJ,1))*V(IPM2)
             DUPHI(IJ) = (UP-UM)*ONEO2DELPHI
             DVPHI(IJ) = (VP-VM)*ONEO2DELPHI
-          ELSEIF (IPP.NE.NLAND .AND. IPM.NE.NLAND) THEN
+          ELSEIF (IPP /= NLAND .AND. IPM /= NLAND) THEN
             UP = U(IPP)
             VP = V(IPP)
             UM = U(IPM)
@@ -171,11 +173,11 @@
           ILP = KLON(IJ,2)
 !         exact 0 means that the current field was not defined, hence
 !         no gradient should be extrapolated
-          IF (U(ILP).EQ.0.0_JWRB .AND. V(ILP).EQ.0.0_JWRB) ILP=NLAND
+          IF (U(ILP) == 0.0_JWRB .AND. V(ILP) == 0.0_JWRB) ILP=NLAND
           ILM = KLON(IJ,1)
-          IF (U(ILM).EQ.0.0_JWRB .AND. V(ILM).EQ.0.0_JWRB) ILM=NLAND
+          IF (U(ILM) == 0.0_JWRB .AND. V(ILM) == 0.0_JWRB) ILM=NLAND
           KX  = KXLT(IJ)
-          IF (ILP.NE.NLAND .AND. ILM.NE.NLAND) THEN
+          IF (ILP /= NLAND .AND. ILM /= NLAND) THEN
             DULAM(IJ) = (U(ILP)-U(ILM))/(2.0_JWRB*DELLAM(KX))
             DVLAM(IJ) = (V(ILP)-V(ILM))/(2.0_JWRB*DELLAM(KX))
           ELSE

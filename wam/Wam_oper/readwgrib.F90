@@ -68,12 +68,12 @@
 
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : NPROMA_WAM 
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !-----------------------------------------------------------------------
 
@@ -116,7 +116,7 @@
 !*    SIMPLE CHECKS ON THE RETRIEVED DATA 
 !     -----------------------------------
 
-      IF (KPARAM.NE.IPARAM) THEN
+      IF (KPARAM /= IPARAM) THEN
         WRITE(IU06,*)'********************************'
         WRITE(IU06,*)'*                              *'
         WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB *'
@@ -129,7 +129,7 @@
         WRITE(IU06,*)'********************************'
         CALL ABORT1
       ENDIF
-      IF (CCDDATE.NE.CDATE) THEN
+      IF (CCDDATE /= CDATE) THEN
         WRITE(IU06,*)'**********************************'
         WRITE(IU06,*)'*                                *'
         WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB   *'
@@ -150,7 +150,7 @@
 
           NPROMA=NPROMA_WAM
 
-          IF(LLONLYPOS) THEN
+          IF (LLONLYPOS) THEN
             CALL GSTATS(1444,0)
 !$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
             DO JKGLO=MIJS,MIJL,NPROMA
@@ -159,7 +159,7 @@
               DO IJ = KIJS, KIJL
                 IX = IFROMIJ(IJ)
                 JY = JFROMIJ(IJ)
-                IF(WORK(IX,JY).NE.ZMISS .AND. WORK(IX,JY).GT.0.0_JWRB) FIELD(IJ)=WORK(IX,JY)
+                IF (WORK(IX,JY) /= ZMISS .AND. WORK(IX,JY) > 0.0_JWRB) FIELD(IJ)=WORK(IX,JY)
               ENDDO
             ENDDO
 !$OMP       END PARALLEL DO
@@ -174,7 +174,7 @@
               DO IJ = KIJS, KIJL
                 IX = IFROMIJ(IJ)
                 JY = JFROMIJ(IJ)
-                IF(WORK(IX,JY).NE.ZMISS) FIELD(IJ)=WORK(IX,JY)
+                IF (WORK(IX,JY) /= ZMISS) FIELD(IJ)=WORK(IX,JY)
               ENDDO
             ENDDO
 !$OMP       END PARALLEL DO
