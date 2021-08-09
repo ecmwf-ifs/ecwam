@@ -29,7 +29,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCPBO  , ONLY : NBOUNC   ,IJARC
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LL1D
       USE YOWSPEC  , ONLY : IJ2NEWIJ ,NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06
@@ -59,7 +59,7 @@
 
 !     1.0 DEFAULT ACTION IF NO FIELD GATHERING 
 !         ------------------------------------
-      IF (IRECV.EQ.0 .OR. NPROC.EQ.1) THEN
+      IF (IRECV == 0 .OR. NPROC == 1) THEN
         DO NGOU=1,NBOUNC
           IJ=IJARC(NGOU)
           EMPTS(NGOU)=EMEAN(IJ)
@@ -87,15 +87,15 @@
             ELSE
               IJ = IJ2NEWIJ(IJARC(NGOU))
             ENDIF
-            IF (IJ.GE.NSTART(IP) .AND. IJ.LE.NEND(IP)) THEN
+            IF (IJ >= NSTART(IP) .AND. IJ <= NEND(IP)) THEN
               NPTS(IP)=NPTS(IP)+1
               KCOUNT=KCOUNT+1
               IJBC(KCOUNT)=IJ
               NGOUG(KCOUNT)=NGOU
             ENDIF
-            IF (NPTS(IP).EQ.1) IBS(IP)=KCOUNT
+            IF (NPTS(IP) == 1) IBS(IP)=KCOUNT
           ENDDO
-          IF (NPTS(IP).GT.0) THEN
+          IF (NPTS(IP) > 0) THEN
             IBL(IP)=IBS(IP)+NPTS(IP)-1
           ENDIF
         ENDDO
@@ -107,7 +107,7 @@
 !     1.1 SEND TO THE PROCESS THAT GATHERS THE WHOLE FIELD
 !         ------------------------------------------------
 
-        IF (NPTS(IRANK).GT.0) THEN
+        IF (NPTS(IRANK) > 0) THEN
           KCOUNT=MESLENGTH*(IBS(IRANK)-1)
           IST=MESLENGTH*(IBS(IRANK)-1)+1
           IND=IST+NPTS(IRANK)*MESLENGTH-1
@@ -126,7 +126,7 @@
               ENDDO
             ENDDO
           ENDDO
-          IF (KCOUNT.NE.IND) THEN
+          IF (KCOUNT /= IND) THEN
             WRITE (IU06,*) ' ******************************************'
             WRITE (IU06,*) ' *                                        *'
             WRITE (IU06,*) ' *      FATAL ERROR SUB. MPGATHERBC       *'
@@ -151,11 +151,11 @@
 
 !       RECEIVE CONTRIBUTIONS
 !       ---------------------
-        IF (IRANK.EQ.IRECV) THEN
+        IF (IRANK == IRECV) THEN
           ALLOCATE(ZCOMBUFR(MAXLENGTH))
           CALL GSTATS(673,0)
           DO IP=1,NPROC
-            IF (NPTS(IP).GT.0) THEN
+            IF (NPTS(IP) > 0) THEN
               IST=MESLENGTH*(IBS(IP)-1)+1
               IND=IST+NPTS(IP)*MESLENGTH-1
               KCOUNT=IND-IST+1
@@ -164,9 +164,9 @@
      &                      KOUNT=KRCOUNT, KRECVTAG=KRTAG,              &
      &                      KMP_TYPE=JP_BLOCKING_STANDARD,              &
      &                      CDSTRING='MPGATHERBC:')
-              IF (KRTAG.NE.ITAG) CALL MPL_ABORT                         &
+              IF (KRTAG /= ITAG) CALL MPL_ABORT                         &
      &            ('MPL_RECV ERROR in MPGATHERBC:  MISMATCHED TAGS' )
-              IF (KRCOUNT.NE.KCOUNT) CALL MPL_ABORT                     &
+              IF (KRCOUNT /= KCOUNT) CALL MPL_ABORT                     &
      &            ('MPL_RECV ERROR in MPGATHERBC: WRONG MESSAGE LENGTH')
             ENDIF
           ENDDO
@@ -192,7 +192,7 @@
           DEALLOCATE(ZCOMBUFR)
         ENDIF
 
-        IF (NPTS(IRANK).GT.0) THEN
+        IF (NPTS(IRANK) > 0) THEN
           CALL GSTATS(673,0)
           CALL MPL_WAIT(KREQUEST=ISENDREQ, CDSTRING='MPGATHERBC:')
           CALL GSTATS(673,1)

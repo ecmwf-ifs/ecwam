@@ -48,13 +48,12 @@
       USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL  ,KDEL    ,MDEL      ,    &
      &           LRSTPARALW
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
-     &            NPRECR
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
-      USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -65,9 +64,10 @@
 #include "writefl.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL
+      INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO, CDATEF, CDATER
+
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: IUNIT
@@ -89,7 +89,7 @@
 
       CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
 
-      IF(LRSTPARALW) THEN
+      IF (LRSTPARALW) THEN
 !        RESTART FILES FROM ALL PS's
          LNAME = LEN_TRIM(FILENAME)
          FILENAME=FILENAME(1:LNAME)//'.%p_%n'
@@ -112,7 +112,7 @@
             KSUP=MIN(KLOOP+KDEL-1,NANG)
 
             LOUNIT = .FALSE.
-            IF(MINF.EQ.1 .AND. KINF.EQ.1) LOUNIT = .TRUE.
+            IF (MINF == 1 .AND. KINF == 1) LOUNIT = .TRUE.
 
             ALLOCATE(RFL(NIBLO,KINF:KSUP,MINF:MSUP))
             DO M=MINF,MSUP
@@ -125,11 +125,8 @@
 
             CALL MPGATHERFL(IRECV,NBLKS,NBLKE,KINF,KSUP,MINF,MSUP,RFL)
 
-            IF (ITEST.GE.2)                                             &
-     &       WRITE(IU06,*)                                              &
-     &       'SUB. SAVSPEC: RESTART SPECTRUM COLLECTED, :',MLOOP,KLOOP
 
-            IF (IRANK.EQ.IPFGTBL(JPPFLAG+1) .OR. NPROC.EQ.1) THEN
+            IF (IRANK == IPFGTBL(JPPFLAG+1) .OR. NPROC == 1) THEN
               CALL WRITEFL(RFL, 1, NIBLO, KINF, KSUP, MINF, MSUP,       &
      &                     FILENAME, IUNIT, LOUNIT, LRSTPARALW)
             ENDIF

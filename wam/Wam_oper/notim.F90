@@ -1,7 +1,7 @@
-      SUBROUTINE NOTIM (CDTWIS, CDTWIE,                                 &
-     &                  MIJS, MIJL,                                     &
-     &                  U10OLD, THWOLD, USOLD, Z0OLD,                   &
-     &                  ROAIRO, ZIDLOLD, CICOVER, CITHICK,              &
+      SUBROUTINE NOTIM (CDTWIS, CDTWIE,                       &
+     &                  IJS, IJL,                             &
+     &                  U10OLD, THWOLD, USOLD, Z0OLD,         &
+     &                  ROAIRO, ZIDLOLD, CICOVER, CITHICK,    &
      &                  IREAD, LWCUR)
 
 ! ----------------------------------------------------------------------
@@ -21,13 +21,16 @@
 !       NOTIM NO TIME INTERPOLATION: PROCESS WINDFIELDS.
 
 !**   INTERFACE.
-!     ----------
+!     ----------  
 
-!       *CALL* *NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,Z0OLD,
+!       *CALL* *NOTIM (CDTWIS, CDTWIE,
+!    &                 IJS, IJL,
+!    &                 U10OLD,THWOLD,USOLD,Z0OLD,
 !    &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK,
 !                      IREAD, LWCUR)
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST FIRST WIND FIELD.
+!          *IJS:IJL - ARRAYS DIMENSION
 !          *U10OLD* - WIND SPEED.
 !          *THWOLD* - WIND DIRECTION (RADIANS).
 !          *USOLD*  - FRICTION VELOCITY.
@@ -67,12 +70,12 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO   ,NPROMA_WAM
       USE YOWPHYS  , ONLY : XNLEV
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,FF_NEXT
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -82,11 +85,11 @@
 #include "getwnd.intfb.h"
 #include "incdate.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(INOUT) ::            &
-     &               U10OLD, THWOLD, USOLD, Z0OLD,                      &
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) ::            &
+     &               U10OLD, THWOLD, USOLD, Z0OLD,                    &
      &               ROAIRO, ZIDLOLD, CICOVER, CITHICK
 
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
@@ -99,8 +102,7 @@
       INTEGER(KIND=JWIM) :: ICODE_WND
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: U10, US, THW, ADS, ZIDL,  &
-     &                                        CICR, CITH, CD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: U10, US, THW, ADS, ZIDL, CICR, CITH, CD
 
       CHARACTER(LEN=14) :: CDTWIH, CDT, ZERO
 
@@ -126,37 +128,33 @@
         LWNDFILE=.TRUE.
       ENDIF
 
-      IF (CDA.EQ.ZERO) THEN
+      IF (CDA == ZERO) THEN
         CDA = CDTWIS
-        CALL GETWND (MIJS, MIJL,                                        &
-     &               U10OLD(MIJS), USOLD(MIJS),                         &
-     &               THWOLD(MIJS),                                      &
-     &               ROAIRO(MIJS), ZIDLOLD(MIJS),                       &
-     &               CICOVER(MIJS), CITHICK(MIJS),                      &
-     &               CDA, LWNDFILE, LCLOSEWND, IREAD,                   &
+        CALL GETWND (IJS, IJL,                          &
+     &               U10OLD, USOLD,                     &
+     &               THWOLD,                            &
+     &               ROAIRO, ZIDLOLD,                   &
+     &               CICOVER, CITHICK,                  &
+     &               CDA, LWNDFILE, LCLOSEWND, IREAD,   &
      &               LWCUR, ICODE_WND)
+
 
           CALL GSTATS(1493,0)
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-          DO JKGLO=MIJS,MIJL,NPROMA
+          DO JKGLO=IJS,IJL,NPROMA
             KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,MIJL)
+            KIJL=MIN(KIJS+NPROMA-1,IJL)
             CALL CDUSTARZ0 (KIJS, KIJL, U10OLD(KIJS), XNLEV,            &
      &                      CD(KIJS), USOLD(KIJS), Z0OLD(KIJS))
           ENDDO
 !$OMP     END PARALLEL DO
           CALL GSTATS(1493,1)
 
-        IF (ITEST.GE.3) THEN
-          WRITE(IU06,'(''       SUB. NOTIM: FIRST WIND FIELD '',        &
-     &     ''SAVED IN COMMON WIND'')')
-        ENDIF
-
-        IF (CDA.EQ.CDTWIE) THEN
+        IF (CDA == CDTWIE) THEN
           IF (LHOOK) CALL DR_HOOK('NOTIM',1,ZHOOK_HANDLE)
           RETURN
         ENDIF
-        CALL INCDATE (CDTWIH,IDELWO)
+        CALL INCDATE (CDTWIH, IDELWO)
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -170,7 +168,7 @@
 !*    3.2 SAVE BLOCKED WIND FIELD.
 !         ------------------------
 
-      IF (IDELPRO.GT.IDELWO) THEN
+      IF (IDELPRO > IDELWO) THEN
 !*      WIND FIELD IS NOT CONSTANT FOR ONE PROPAGATION TIME STEP:
 !       THIS OPTION IS NO LONGER AVAILABLE !!!
         WRITE (IU06,*) ' '
@@ -192,43 +190,35 @@
 
         IF (.NOT.ALLOCATED(CDTNEXT)) ALLOCATE(CDTNEXT(NSTORE))
 
-        IF (.NOT.ALLOCATED(FF_NEXT))                                    &
-     &          ALLOCATE(FF_NEXT(MIJS:MIJL,NSTORE))
+        IF (.NOT.ALLOCATED(FF_NEXT)) ALLOCATE(FF_NEXT(IJS:IJL,NSTORE))
 
         CDTNEXT(1)=CDTWIH
 
-        CALL GETWND (MIJS, MIJL,                                        &
-     &               U10(MIJS), US(MIJS),                               &
-     &               THW(MIJS),                                         &
-     &               ADS(MIJS), ZIDL(MIJS),                             &
-     &               CICR(MIJS), CITH(MIJS),                            &
-     &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,                &
+        CALL GETWND (IJS, IJL,                              &
+     &               U10, US,                               &
+     &               THW,                                   &
+     &               ADS, ZIDL,                             &
+     &               CICR, CITH,                            &
+     &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,    &
      &               LWCUR, ICODE_WND)
 
         IF (ICODE_WND == 3 ) THEN
-          FF_NEXT(MIJS:MIJL,1)%WSWAVE = U10(MIJS:MIJL)
+          FF_NEXT(IJS:IJL,1)%WSWAVE = U10(IJS:IJL)
         ELSE
-          FF_NEXT(MIJS:MIJL,1)%USTAR  = US(MIJS:MIJL)
+          FF_NEXT(IJS:IJL,1)%USTAR  = US(IJS:IJL)
         ENDIF
-        FF_NEXT(MIJS:MIJL,1)%WDWAVE = THW(MIJS:MIJL)
-        FF_NEXT(MIJS:MIJL,1)%AIRD   = ADS(MIJS:MIJL)
-        FF_NEXT(MIJS:MIJL,1)%ZIDL   = ZIDL(MIJS:MIJL)
-        FF_NEXT(MIJS:MIJL,1)%CIFR   = CICR(MIJS:MIJL)
-        FF_NEXT(MIJS:MIJL,1)%CITH   = CITH(MIJS:MIJL)
+        FF_NEXT(IJS:IJL,1)%WDWAVE = THW(IJS:IJL)
+        FF_NEXT(IJS:IJL,1)%AIRD   = ADS(IJS:IJL)
+        FF_NEXT(IJS:IJL,1)%ZIDL   = ZIDL(IJS:IJL)
+        FF_NEXT(IJS:IJL,1)%CIFR   = CICR(IJS:IJL)
+        FF_NEXT(IJS:IJL,1)%CITH   = CITH(IJS:IJL)
 
-!        CALL GETWND (MIJS,MIJL, &
-!     &               FF_NEXT(MIJS,1)%WSWAVE, FF_NEXT(MIJS,1)%USTAR, &
-!     &               FF_NEXT(MIJS,1)%WDWAVE, &
-!     &               FF_NEXT(MIJS,1)%AIRD  , FF_NEXT(MIJS,1)%ZIDL, &
-!     &               FF_NEXT(MIJS,1)%CIFR  , FF_NEXT(MIJS,1)%CITH, &
-!     &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD, &
-!     &               LWCUR, ICODE_WND)
 
 !*      UPDATE WIND FIELD REQUEST TIME.
         CALL INCDATE (CDTWIH,IDELWO)
 
 !*      IF TIME LEFT BRANCH NOT ALLOWED TO LOOP ANYMORE 
-        IF (CDTWIH.LE.CDTWIE) THEN
+        IF (CDTWIH <= CDTWIE) THEN
           WRITE (IU06,*) ' '
           WRITE (IU06,*) ' ********************************************'
           WRITE (IU06,*) ' *                                          *'
@@ -244,9 +234,6 @@
           CALL ABORT1
         ENDIF
 
-        IF (ITEST.GE.3) THEN
-          WRITE(IU06,*) '      SUB. NOTIM: NEW FORCING FIELDS GENERATED'
-        ENDIF
         IF (LHOOK) CALL DR_HOOK('NOTIM',1,ZHOOK_HANDLE)
         RETURN
 

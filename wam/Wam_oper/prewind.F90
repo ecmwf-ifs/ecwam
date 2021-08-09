@@ -1,9 +1,9 @@
-      SUBROUTINE PREWIND (U10OLD, THWOLD, USOLD, Z0OLD,                 &
-     &                    ROAIRO, ZIDLOLD,                              &
-     &                    CICOVER, CITHICK,                             &
-     &                    LLINIT, LLALLOC_FIELDG_ONLY,                  &
-     &                    IREAD,                                        &
-     &                    NFIELDS, NGPTOTG, NC, NR,                     &
+      SUBROUTINE PREWIND (U10OLD, THWOLD, USOLD, Z0OLD,                &
+     &                    ROAIRO, ZIDLOLD,                             &
+     &                    CICOVER, CITHICK,                            &
+     &                    LLINIT, LLALLOC_FIELDG_ONLY,                 &
+     &                    IREAD,                                       &
+     &                    NFIELDS, NGPTOTG, NC, NR,                    &
      &                    FIELDS, LWCUR, MASK_IN)
 
 ! ----------------------------------------------------------------------
@@ -126,16 +126,14 @@
 
       USE YOWCOUP  , ONLY : LWNEMOCOU,LWNEMOCOURECV
       USE YOWGRID  , ONLY : IJS      ,IJL
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NFRE
+      USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,    &
      &            IDELWO   ,LANAONLY, IDELT
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE YOWUNPOOL ,ONLY : LLUNSTR
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,FIELDG
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -159,14 +157,14 @@
       LOGICAL, INTENT(IN) :: LLALLOC_FIELDG_ONLY
       INTEGER(KIND=JWIM),DIMENSION(NGPTOTG), INTENT(INOUT)  :: MASK_IN
       REAL(KIND=JWRB),DIMENSION(NGPTOTG,NFIELDS), INTENT(IN) :: FIELDS
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: U10OLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: THWOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: USOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: Z0OLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: ROAIRO
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: ZIDLOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: CICOVER
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: CITHICK
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: U10OLD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: THWOLD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: USOLD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: Z0OLD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: ROAIRO
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: ZIDLOLD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: CICOVER
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: CITHICK
 
 
       INTEGER(KIND=JWIM) :: IDELWH
@@ -190,14 +188,8 @@
 
       ZERO = ' '
 
-      IF (CDA.EQ.ZERO.OR.LANAONLY) THEN
-
-!        IF START FROM PRESET FIELDS DO FIRST FIELD IN ADDITION.
-
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) "  PREWIND AT CDATEA = ", CDATEA 
-          FLUSH (IU06)
-        ENDIF
+      IF (CDA == ZERO .OR. LANAONLY) THEN
+!       IF START FROM PRESET FIELDS DO FIRST FIELD IN ADDITION.
         CDTWIS = CDATEA
       ELSE
         CDTWIS = CDAWIFL
@@ -205,7 +197,7 @@
         CALL INCDATE (CDTWIS,IDELWH)
       ENDIF
 
-      IF(CDAWIFL.LT.CDATEE) THEN
+      IF (CDAWIFL < CDATEE) THEN
         CDTWIE = CDAWIFL
       ELSE
         CDTWIE = CDATEE
@@ -230,7 +222,7 @@
 !     2.1.1 GET DATA FROM NEMO (OR BINARY RESTART).
 !           -------------------------------------
  
-      IF(LWNEMOCOU.AND.LWNEMOCOURECV) THEN
+      IF (LWNEMOCOU .AND. LWNEMOCOURECV) THEN
         CALL RECVNEMOFIELDS(LLFRSTNEMO.AND.LRESTARTED,                  &
      &                      LLFRSTNEMO.AND..NOT.LRESTARTED)
         LLFRSTNEMO=.FALSE.
@@ -239,7 +231,7 @@
 !!!   WHEN COUPLED, IT IS ALSO NEEDED TO INITIALISE THE AIR DENSITY AND
 !!!   THE CONVECTIVE VELOCITY SCALE ARRAYS SINCE THESE ARE NOT (YET) PROVIDED
 !!!   AS PART OF THE GRIB RESTART FILES.
-      IF (LLINIT) CALL WAMADSZIDL(ROAIRO,ZIDLOLD)
+      IF (LLINIT) CALL WAMADSZIDL(IJS, IJL, ROAIRO,ZIDLOLD)
 
 !     2.2 GET SURFACE CURRENTS TO WAM BLOCK STRUCTURE (if needed) 
 !         -------------------------------------------
@@ -248,26 +240,15 @@
 
 !*    PROCESS THE OTHER FORCING FIELDS.
 !     ---------------------------------
-      IF (IDELWO.GE.IDELWI) THEN
+      IF (IDELWO >= IDELWI) THEN
 
 !*      2.2 NO TIME INTERPOLATION.
 !       ----------------------
 
-        IF (ITEST.GE.2) THEN
-          WRITE (IU06,*) '   SUB. PREWIND: WIND REQUEST'
-          WRITE (IU06,*) '     NO TIME INTERPOLATION'
-          WRITE (IU06,*) '     START OF PERIOD IS    CDTWIS = ',CDTWIS
-          WRITE (IU06,*) '     END   OF PERIOD IS    CDTWIE = ',CDTWIE
-          WRITE (IU06,*) '     WIND INPUT TIME STEP  IDELWI = ',IDELWI
-          WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
-          FLUSH (IU06)
-        ENDIF
-        CALL NOTIM (CDTWIS, CDTWIE,                                     &
-     &              IJS, IJL,                                           &
-     &              U10OLD(IJS), THWOLD(IJS),                           &
-     &              USOLD(IJS), Z0OLD(IJS),                             &
-     &              ROAIRO(IJS), ZIDLOLD(IJS),                          &
-     &              CICOVER(IJS), CITHICK(IJS),                         &
+        CALL NOTIM (CDTWIS, CDTWIE,                       &
+     &              IJS, IJL,                             &
+     &              U10OLD, THWOLD, USOLD, Z0OLD,         &
+     &              ROAIRO, ZIDLOLD, CICOVER, CITHICK,    &
      &              IREAD, LWCUR)
 
       ELSE
@@ -275,21 +256,12 @@
 !*      2.3 TIME INTERPOLATION.
 !       -------------------
 
-        IF (ITEST.GE.2) THEN
-          WRITE (IU06,*) '   SUB. PREWIND: WIND REQUEST'
-          WRITE (IU06,*) '     TIME INTERPOLATION'
-          WRITE (IU06,*) '     START OF PERIOD IS    CDTWIS = ',CDTWIS
-          WRITE (IU06,*) '     END   OF PERIOD IS    CDTWIE = ',CDTWIE
-          WRITE (IU06,*) '     WIND INPUT TIME STEP  IDELWI = ',IDELWI
-          WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
-          FLUSH (IU06)
-        ENDIF
-        CALL TIMIN (CDTWIS, CDTWIE,                                     &
-     &              IJS, IJL,                                           &
-     &              U10OLD(IJS), THWOLD(IJS),                           &
-     &              USOLD(IJS), Z0OLD(IJS),                             &
-     &              ROAIRO(IJS), ZIDLOLD(IJS),                          &
-     &              CICOVER(IJS), CITHICK(IJS),                         &
+        CALL TIMIN (CDTWIS, CDTWIE,                        &
+     &              IJS, IJL,                              &
+     &              U10OLD, THWOLD,                        &
+     &              USOLD, Z0OLD,                          &
+     &              ROAIRO, ZIDLOLD,                       &
+     &              CICOVER, CITHICK,                      &
      &              IREAD, LWCUR)
 
       ENDIF

@@ -61,7 +61,7 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 !     Spectra extended with the halo exchange for the propagation
 !     But limited to NFRE_RED frequencies
-      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE_RED) :: FLEXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1,NANG,NFRE_RED) :: FLEXT
 
       LOGICAL :: L1STCALL
 
@@ -97,7 +97,7 @@
         ELSE
 
 !          SET THE DUMMY LAND POINTS TO 0.
-           FLEXT(NINF-1,:,:) = 0.0_JWRB 
+           FLEXT(NSUP+1,:,:) = 0.0_JWRB 
 
 !          OBTAIN INFORMATION AT NEIGHBORING GRID POINTS (HALLO)
 !          -----------------------------------------------------
