@@ -1,10 +1,10 @@
-      SUBROUTINE WAMCUR (U, V, IJS, IJL)
+      SUBROUTINE WAMCUR (U, V, KIJS, KIJL)
 
 ! ----------------------------------------------------------------------
 
 !**** *WAMCUR* - TRANSFORMS INPUT CURRENTS TO BLOCKED WAM POINTS.
 
-!     J. BIDLOR  AUGUST 2008 :: REDEFINE WAMCUR TO BLOCk TRANSFORM.
+!     J. BIDLOT  AUGUST 2008 :: REDEFINE WAMCUR TO BLOCk TRANSFORM.
 
 !*    PURPOSE.
 !     --------
@@ -16,11 +16,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL WAMCUR (U, V, IJS, IJL)*
-!          *U*   - INTERPOLATED U CURRENT AT ALL POINTS AND BLOCKS.
-!          *V*   - INTERPOLATED V CURRENT AT ALL POINTS.
-!          *IJS*    - INDEX OF FIRST GRIDPOINT
-!          *IJL*    - INDEX OF LAST GRIDPOINT
+!       *CALL WAMCUR (U, V, KIJS, KIJL)*
+!          *U*    - INTERPOLATED U CURRENT AT ALL POINTS AND BLOCKS.
+!          *V*    - INTERPOLATED V CURRENT AT ALL POINTS.
+!          *KIJS* - INDEX OF FIRST GRIDPOINT
+!          *KIJL* - INDEX OF LAST GRIDPOINT
 
 !     METHOD.
 !     -------
@@ -35,17 +35,16 @@
 
       USE YOWCURR  , ONLY : CURRENT_MAX
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
-      USE YOWPARAM , ONLY : NGY
-      USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : FIELDG
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: U, V
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(OUT) :: U, V
 
       INTEGER (KIND=JWIM):: IJ, IX, JY
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -57,7 +56,7 @@
 
       IF (LHOOK) CALL DR_HOOK('WAMCUR',0,ZHOOK_HANDLE)
 
-      DO IJ = IJS,IJL
+      DO IJ = KIJS,KIJL
         IX = IFROMIJ(IJ)
         JY = JFROMIJ(IJ)
         U(IJ) = FIELDG(IX,JY)%UCUR

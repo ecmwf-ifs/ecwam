@@ -75,13 +75,12 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
       USE YOWPCONS , ONLY : PI       ,ZPI      ,R
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
-      USE YOWSHAL  , ONLY : NDEPTH   ,TCGOND   ,INDEP    ,DEPTH
+      USE YOWSHAL  , ONLY : NDEPTH   ,TCGOND   ,INDEP
       USE YOWSTAT  , ONLY : IDELPRO  ,ICASE    ,ISHALLO  ,IREFRA
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KRLAT     ,             &
      &            KRLON    ,WLAT     ,WRLAT     ,                       &
-     &            WRLON    ,OBSLAT   ,OBSLON   ,OBSRLAT  ,OBSRLON   ,   &
-     &            LSAMEDEPTH
+     &            WRLON    ,OBSLAT   ,OBSLON   ,OBSRLAT  ,OBSRLON
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -704,14 +703,10 @@
         DO IC=1,2
           DO M=1,NFRE_RED
             DO IJ=MIJS,MIJL
-              IF(LSAMEDEPTH(IJ)) THEN
-                CGKLON(IJ,M,IC) = 2.0_JWRB*CGOND(IJ,M)
+              IF(KLON(IJ,IC).NE.NLAND) THEN
+                CGKLON(IJ,M,IC) = CGOND(KLON(IJ,IC),M) + CGOND(IJ,M)
               ELSE
-                IF(KLON(IJ,IC).NE.NLAND) THEN
-                  CGKLON(IJ,M,IC) = CGOND(KLON(IJ,IC),M) + CGOND(IJ,M)
-                ELSE
-                  CGKLON(IJ,M,IC) = 2.0_JWRB*CGOND(IJ,M)
-                ENDIF
+                CGKLON(IJ,M,IC) = 2.0_JWRB*CGOND(IJ,M)
               ENDIF
             ENDDO
           ENDDO
@@ -719,50 +714,42 @@
         IC=1
           DO M=1,NFRE_RED
             DO IJ=MIJS,MIJL
-              IF(LSAMEDEPTH(IJ)) THEN
+              IF(KLAT(IJ,IC,1).EQ.NLAND .AND.                          &
+     &           KLAT(IJ,IC,2).EQ.NLAND) THEN
                 CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP1(IJ)+1.0_JWRB)
+              ELSE IF(KLAT(IJ,IC,1).EQ.NLAND) THEN
+                CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP1(IJ)*               &
+     &                          (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,2),M) +  &
+     &                           WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
+              ELSE IF(KLAT(IJ,IC,2).EQ.NLAND) THEN
+                CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP1(IJ)*               &
+     &                          (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +  &
+     &                           WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,1),M))
               ELSE
-                IF(KLAT(IJ,IC,1).EQ.NLAND .AND.                          &
-     &             KLAT(IJ,IC,2).EQ.NLAND) THEN
-                  CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP1(IJ)+1.0_JWRB)
-                ELSE IF(KLAT(IJ,IC,1).EQ.NLAND) THEN
-                  CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP1(IJ)*               &
-     &                            (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,2),M) +  &
-     &                             WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
-                ELSE IF(KLAT(IJ,IC,2).EQ.NLAND) THEN
-                  CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP1(IJ)*               &
-     &                            (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +  &
-     &                             WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,1),M))
-                ELSE
-                  CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP1(IJ)*               &
-     &                            (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +  &
-     &                             WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
-                ENDIF
+                CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP1(IJ)*               &
+     &                          (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +  &
+     &                           WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
               ENDIF
             ENDDO
           ENDDO
         IC=2
           DO M=1,NFRE_RED
             DO IJ=MIJS,MIJL
-              IF(LSAMEDEPTH(IJ)) THEN
+              IF(KLAT(IJ,IC,1).EQ.NLAND .AND.                          &
+     &           KLAT(IJ,IC,2).EQ.NLAND) THEN
                 CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP2(IJ)+1.0_JWRB)
+              ELSE IF(KLAT(IJ,IC,1).EQ.NLAND) THEN
+                CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP2(IJ)*               &
+     &                          (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,2),M) +  &
+     &                           WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
+              ELSE IF(KLAT(IJ,IC,2).EQ.NLAND) THEN
+                CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP2(IJ)*               &
+     &                          (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +  &
+     &                           WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,1),M))
               ELSE
-                IF(KLAT(IJ,IC,1).EQ.NLAND .AND.                          &
-     &             KLAT(IJ,IC,2).EQ.NLAND) THEN
-                  CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP2(IJ)+1.0_JWRB)
-                ELSE IF(KLAT(IJ,IC,1).EQ.NLAND) THEN
-                  CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP2(IJ)*               &
-     &                            (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,2),M) +  &
-     &                             WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
-                ELSE IF(KLAT(IJ,IC,2).EQ.NLAND) THEN
-                  CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP2(IJ)*               &
-     &                            (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +  &
-     &                             WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,1),M))
-                ELSE
-                  CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP2(IJ)*               &
-     &                           (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +   &
-     &                            WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
-                ENDIF
+                CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP2(IJ)*               &
+     &                         (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +   &
+     &                          WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
               ENDIF
             ENDDO
           ENDDO
@@ -1071,24 +1058,12 @@
                 ELSE
                   KRLO2=IJ
                 ENDIF
-                IF(LSAMEDEPTH(IJ)) THEN
-                  ACGKRLAT(IJ,IC) = CDR(IJ,K) +                         &
-     &                         (WRLAT(IJ,IC)*CDR(KRLA,K) +              &
-     &                          WRLATM1(IJ,IC)*CDR(KRLA2,K))
-                  ACGKRLAT(IJ,IC) = CGOND(IJ,M)*ACGKRLAT(IJ,IC) 
-
-                  ACGKRLON(IJ,IC) = SDR(IJ,K) +                         &
-     &                         (WRLON(IJ,IC)*SDR(KRLO,K) +              &
-     &                          WRLONM1(IJ,IC)*SDR(KRLO2,K))
-                  ACGKRLON(IJ,IC) = CGOND(IJ,M)*ACGKRLON(IJ,IC) 
-                ELSE
-                  ACGKRLAT(IJ,IC) = CGOND(IJ,M)*CDR(IJ,K) +             &
-     &               WRLAT(IJ,IC)*CGOND(KRLA,M)*CDR(KRLA,K) +           &
-     &               WRLATM1(IJ,IC)*CGOND(KRLA2,M)*CDR(KRLA2,K)
-                  ACGKRLON(IJ,IC) =  CGOND(IJ,M)*SDR(IJ,K) +            &
-     &               WRLON(IJ,IC)*CGOND(KRLO,M)*SDR(KRLO,K) +           &
-     &               WRLONM1(IJ,IC)*CGOND(KRLO2,M)*SDR(KRLO2,K)
-                ENDIF
+                ACGKRLAT(IJ,IC) = CGOND(IJ,M)*CDR(IJ,K) +             &
+     &             WRLAT(IJ,IC)*CGOND(KRLA,M)*CDR(KRLA,K) +           &
+     &             WRLATM1(IJ,IC)*CGOND(KRLA2,M)*CDR(KRLA2,K)
+                ACGKRLON(IJ,IC) =  CGOND(IJ,M)*SDR(IJ,K) +            &
+     &             WRLON(IJ,IC)*CGOND(KRLO,M)*SDR(KRLO,K) +           &
+     &             WRLONM1(IJ,IC)*CGOND(KRLO2,M)*SDR(KRLO2,K)
                 ACGKRLAT(IJ,IC) = ABS(ACGKRLAT(IJ,IC)) 
                 ACGKRLON(IJ,IC) = ABS(ACGKRLON(IJ,IC))
               ENDDO

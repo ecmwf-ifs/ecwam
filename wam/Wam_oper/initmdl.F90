@@ -1,7 +1,7 @@
 SUBROUTINE INITMDL (NADV,                                         &
-     &                    IREAD,                                        &
-     &                    NFIELDS, NGPTOTG, NC, NR,                     &
-     &                    FIELDS, LWCUR, MASK_IN, PRPLRADI)
+     &              IREAD,                                        &
+     &              NFIELDS, NGPTOTG, NC, NR,                     &
+     &              FIELDS, LWCUR, MASK_IN, PRPLRADI)
 
 ! ----------------------------------------------------------------------
 
@@ -207,9 +207,6 @@ SUBROUTINE INITMDL (NADV,                                         &
 !       *INCDATE*   - UPDATE DATE TIME GROUP.
 !       *INIWCST*   - SETS GLOBAL CONSTANTS.
 !       *PREWIND*   - REFORMAT FORCING FIELDS.
-!REFRA
-!       *PROPDOT*   - PRECOMPUTE REFRACTION.
-!REFRA
 !NEST
 !       *READBOU*   - READS PREPROC BOUNDARY FILES.
 !NEST
@@ -234,14 +231,13 @@ SUBROUTINE INITMDL (NADV,                                         &
      &            FFLAG20  ,GFLAG20  ,                                  &
      &            NGOUT    ,IJAR     ,NOUTT    ,LOUTINT  ,              &
      &            LWFLUXOUT
-      USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA,U        ,    &
-     &            V
+      USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWFRED  , ONLY : FR       ,TH       ,DELTH   ,FR5      ,     &
      &            ZPIFR    ,                                            &
      &            FRM5     ,COFRM4   ,COEF4    ,FRATIO  ,FLOGSPRDM1,    &
-     &            COSTH    ,SINTH    ,FLMAX    ,RHOWG_DFIM,             &
+     &            FLMAX    ,RHOWG_DFIM,                                 &
      &            DFIM     ,DFIMOFR  ,DFIMFR  ,DFIMFR2   ,              &
      &            DFIM_SIM ,DFIMOFR_SIM ,DFIMFR_SIM ,DFIMFR2_SIM ,      &
      &            DFIM_END_L, DFIM_END_U
@@ -255,16 +251,18 @@ SUBROUTINE INITMDL (NADV,                                         &
      &                      TAUXD    ,TAUYD    ,WSEMEAN  ,WSFMEAN  ,    &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
-     &            KTAG
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
      &            NGX      ,NGY      ,                                  &
      &            NIBLO    ,NIBLD    ,NIBLC
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
      &            RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
       USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
-      USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
+      USE YOWREFD  , ONLY : LLUPDTTD
+
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
+!                                   !!!!!!!!!!
+
      &            INDEP    ,CGROUP   ,IODP     ,IOBND    ,TOOSHALLOW
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,    &
      &            U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,TAUW     ,    &
@@ -284,10 +282,7 @@ SUBROUTINE INITMDL (NADV,                                         &
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWWNDG  , ONLY : ICODE
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR     ,              &
-     &            KRLAT    ,KRLON    ,LUPDTWGHT,                        &
-     &            JXO      ,JYO      ,KCR      ,KPM      ,MPM      ,    &
-     &            LSAMEDEPTH
+      USE YOWUBUF  , ONLY : LUPDTWGHT
       USE YOWUNIT  , ONLY : IU02     ,IU11     ,IU12     ,              &
      &            IU13     ,IU14     ,IU15     ,IU16     ,IU17     ,    &
      &            IU18     ,IU19     ,IU20     ,IU22     ,              &
@@ -322,7 +317,6 @@ SUBROUTINE INITMDL (NADV,                                         &
 #include "iniwcst.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 #include "prewind.intfb.h"
-#include "propdot.intfb.h"
 #include "readbou.intfb.h"
 #include "setmarstype.intfb.h"
 #include "tabu_swellft.intfb.h"
@@ -343,7 +337,6 @@ SUBROUTINE INITMDL (NADV,                                         &
       INTEGER(KIND=JWIM) :: IFORCA
       INTEGER(KIND=JWIM) :: IJ, I, II, K, M, IP, LFILE, IX, IY, KX, ID
       INTEGER(KIND=JWIM) :: IC, ICR
-      INTEGER(KIND=JWIM) :: KM1, KP1
       INTEGER(KIND=JWIM) :: JD
       INTEGER(KIND=JWIM) :: IDELWH
       INTEGER(KIND=JWIM) :: IU05, IU09, IU10
@@ -773,27 +766,19 @@ SUBROUTINE INITMDL (NADV,                                         &
         ENDDO
       ENDIF
 
-!     COMPUTE SHALLOW WATER TABLE INDICES AND THE RECIPROCAL PHASE VELOCITY.
-!     INDEP must contain the halo points.
-
-      DO IJ=NINF,NSUP
+!     SET DEPTH MINIMUM
+      DO IJ = IJS, IJL
         DEPTH(IJ) = MAX(DEPTH(IJ),DEPTHA)
       ENDDO
 
-      IF (.NOT.ALLOCATED(INDEP)) ALLOCATE(INDEP(NINF:NSUP+1))
-      INDEP(NSUP+1)=NDEPTH
-      IF (ISHALLO /= 1) THEN
-        DO IJ=NINF,NSUP
-          XD = LOG(DEPTH(IJ)/DEPTHA)/LOG(DEPTHD)+1.0_JWRB
-          ID = NINT(XD)
-          ID = MAX(ID,1)
-          INDEP(IJ) = MIN(ID,NDEPTH)
-        ENDDO
-      ELSE
-        DO IJ=NINF,NSUP
-          INDEP(IJ) = NDEPTH
-        ENDDO
-      ENDIF
+!     COMPUTE INDEP
+      IF (.NOT.ALLOCATED(INDEP)) ALLOCATE(INDEP(IJS:IJL))
+      DO IJ=IJS,IJL
+        XD = LOG(DEPTH(IJ)/DEPTHA)/LOG(DEPTHD)+1.0_JWRB
+        ID = NINT(XD)
+        ID = MAX(ID,1)
+        INDEP(IJ) = MIN(ID,NDEPTH)
+      ENDDO
 
 
 !     INITIALISE GRID POINT FIELDS DEPENDENT ON WATER DEPTH AND FREQUENCY
@@ -805,11 +790,6 @@ SUBROUTINE INITMDL (NADV,                                         &
 !*    4. CONNECT RESTART FIELDS TO OUTPUT UNITS (IF PBIO SOFTWARE NOT
 !        USED). AND READ IN LAST WINDFIELDS FROM RESTARTFILE.
 !        ---------------------------------------------------------------
-
-      IF ( (LWCOU .AND. LWCUR ) .OR. IREFRA == 2 .OR. IREFRA == 3) THEN 
-        IF (.NOT.ALLOCATED(U)) ALLOCATE(U(NINF:NSUP+1))
-        IF (.NOT.ALLOCATED(V)) ALLOCATE(V(NINF:NSUP+1))
-      ENDIF
 
       Z0B(:) = 0.0_JWRB
 
@@ -993,27 +973,12 @@ SUBROUTINE INITMDL (NADV,                                         &
         ENDIF
       ENDIF
 
-!     COMPUTE BOTTOM REFRACTION TERMS
+!     COMPUTE BOTTOM REFRACTION TERMS (SEE *PROPAGS_WAM*)
       IF (IREFRA /= 0) THEN
-        IF (.NOT. LLUNSTR) THEN
-!         ARRAY TO KEEP DEPTH AND CURRENT REFRACTION FOR THETA DOT
-!         AND SIGMA DOT
-          IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS:IJL,NANG))
-          IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS:IJL,NANG))
-          IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS:IJL,NANG,NFRE))
-
-          NPROMA=NPROMA_WAM
-!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-          DO JKGLO = IJS, IJL, NPROMA
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL)
-            CALL PROPDOT(KIJS, KIJL, THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
-          ENDDO
-!$OMP     END PARALLEL DO
-
-        END IF
+        LLUPDTTD = .TRUE.
+      ELSE
+        LLUPDTTD = .FALSE.
       ENDIF
-
 
 !     INITIALIZE THE NEMO COUPLING
       IF (LWNEMOCOU) CALL INITNEMOCPL(LWNEMOCOURECV)
@@ -1073,148 +1038,11 @@ SUBROUTINE INITMDL (NADV,                                         &
 
       CALL INISNONLIN
 
-
-!     9.3 DETERMINE WHETHER A GRID POINT IS SURROUNDED BY
-!         POINTS WITH THE SAME DEPTH INDEX (EXCLUDING LAND POINTS).
-!         ---------------------------------------------------------
-      IF (.NOT. LLUNSTR) THEN
-
-      IF (.NOT.ALLOCATED(LSAMEDEPTH)) ALLOCATE(LSAMEDEPTH(IJS:IJL)) 
-
-      IF (IPROPAGS == 2) THEN
-         DO IJ = IJS, IJL 
-           IF (INDEP(IJ) == INDEP(KLON(IJ,1))   .AND.                   &
-     &         INDEP(IJ) == INDEP(KLON(IJ,2))   .AND.                   &
-     &         INDEP(IJ) == INDEP(KLAT(IJ,1,1)) .AND.                   &
-     &         INDEP(IJ) == INDEP(KLAT(IJ,2,1)) .AND.                   &
-     &         INDEP(IJ) == INDEP(KLAT(IJ,1,2)) .AND.                   &
-     &         INDEP(IJ) == INDEP(KLAT(IJ,2,2))      ) THEN
-             LSAMEDEPTH(IJ) = .TRUE.
-           ELSE
-             LSAMEDEPTH(IJ) = .FALSE.
-           ENDIF
-           IF (LSAMEDEPTH(IJ)) THEN
-             OUTER : DO IC=1,2
-               DO ICR=1,4
-                 IF (INDEP(IJ) /= INDEP(KCOR(IJ,ICR,IC))) THEN
-                   LSAMEDEPTH(IJ) = .FALSE.
-                   EXIT OUTER
-                 ENDIF 
-               ENDDO
-             ENDDO OUTER
-           ENDIF
-
-         ENDDO
-      ELSEIF (IPROPAGS == 1) THEN
-         DO IJ = IJS, IJL 
-           IF (INDEP(IJ) == INDEP(KLON (IJ,1))   .AND.                &
-     &         INDEP(IJ) == INDEP(KLON (IJ,2))   .AND.                &
-     &         INDEP(IJ) == INDEP(KLAT (IJ,1,1)) .AND.                &
-     &         INDEP(IJ) == INDEP(KLAT (IJ,2,1)) .AND.                &
-     &         INDEP(IJ) == INDEP(KLAT (IJ,1,2)) .AND.                &
-     &         INDEP(IJ) == INDEP(KLAT (IJ,2,2)) .AND.                &
-     &         INDEP(IJ) == INDEP(KRLON(IJ,1,1)) .AND.                &
-     &         INDEP(IJ) == INDEP(KRLON(IJ,2,1)) .AND.                &
-     &         INDEP(IJ) == INDEP(KRLAT(IJ,1,1)) .AND.                &
-     &         INDEP(IJ) == INDEP(KRLAT(IJ,2,1)) .AND.                &
-     &         INDEP(IJ) == INDEP(KRLAT(IJ,1,2)) .AND.                &
-     &         INDEP(IJ) == INDEP(KRLAT(IJ,2,2)) .AND.                &
-     &         INDEP(IJ) == INDEP(KRLON(IJ,1,2)) .AND.                &
-     &         INDEP(IJ) == INDEP(KRLON(IJ,2,2))      ) THEN
-             LSAMEDEPTH(IJ) = .TRUE.
-           ELSE
-             LSAMEDEPTH(IJ) = .FALSE.
-           ENDIF
-         ENDDO
-      ELSE
-         DO IJ = IJS, IJL 
-           IF (INDEP(IJ) == INDEP(KLON(IJ,1))   .AND.                 &
-     &         INDEP(IJ) == INDEP(KLON(IJ,2))   .AND.                 &
-     &         INDEP(IJ) == INDEP(KLAT(IJ,1,1)) .AND.                 &
-     &         INDEP(IJ) == INDEP(KLAT(IJ,2,1)) .AND.                 &
-     &         INDEP(IJ) == INDEP(KLAT(IJ,1,2)) .AND.                 &
-     &         INDEP(IJ) == INDEP(KLAT(IJ,2,2))      ) THEN
-             LSAMEDEPTH(IJ) = .TRUE.
-           ELSE
-             LSAMEDEPTH(IJ) = .FALSE.
-           ENDIF
-         ENDDO
-      ENDIF
-
-!     9.4 DEFINE JXO, JYO, KCR IF NEEDED
-!         ------------------------------
-      IF (IPROPAGS == 2) THEN
-
-        IF (.NOT. ALLOCATED(MPM)) ALLOCATE(MPM(NFRE,-1:1))
-        DO M=1,NFRE
-          MPM(M,-1)= MAX(1,M-1)
-          MPM(M,0) = M
-          MPM(M,1) = MIN(NFRE,M+1)
-        ENDDO
-
-        IF (.NOT. ALLOCATED(KPM)) ALLOCATE(KPM(NANG,-1:1))
-
-        IF (.NOT. ALLOCATED(JXO)) ALLOCATE(JXO(NANG,2))
-        IF (.NOT. ALLOCATED(JYO)) ALLOCATE(JYO(NANG,2))
-        IF (.NOT. ALLOCATED(KCR)) ALLOCATE(KCR(NANG,4))
-        DO K=1,NANG
-
-          KM1 = K-1
-          IF (KM1 < 1) KM1 = NANG
-          KPM(K,-1)=KM1
-
-          KPM(K,0)=K
-
-          KP1 = K+1
-          IF (KP1 > NANG) KP1 = 1
-          KPM(K,1)=KP1
-
-
-          IF (COSTH(K) >= 0.0_JWRB) THEN
-            JYO(K,1)=1
-            JYO(K,2)=2
-            IF (SINTH(K) >= 0.0_JWRB) THEN
-              JXO(K,1)=1
-              JXO(K,2)=2
-              KCR(K,1)=3
-              KCR(K,2)=2
-              KCR(K,3)=4
-              KCR(K,4)=1
-            ELSE
-              JXO(K,1)=2
-              JXO(K,2)=1
-              KCR(K,1)=2
-              KCR(K,2)=3
-              KCR(K,3)=1
-              KCR(K,4)=4
-            ENDIF
-          ELSE
-            JYO(K,1)=2
-            JYO(K,2)=1
-            IF (SINTH(K) >= 0.0_JWRB) THEN
-              JXO(K,1)=1
-              JXO(K,2)=2
-              KCR(K,1)=4
-              KCR(K,2)=1
-              KCR(K,3)=3
-              KCR(K,4)=2
-            ELSE
-              JXO(K,1)=2
-              JXO(K,2)=1
-              KCR(K,1)=1
-              KCR(K,2)=4
-              KCR(K,3)=2
-              KCR(K,4)=3
-            ENDIF
-          ENDIF
-        ENDDO
-      ENDIF
-
 ! ----------------------------------------------------------------------
 !NEST
 !     10. WRITE BOUNDARY VALUE FILE HEADER.
 !         ------------------------------
-      IF (IBOUNC == 1) THEN
+      IF (IBOUNC == 1 .AND. .NOT. LLUNSTR) THEN
         IF ((LMESSPASS .AND. IRANK == 1).OR..NOT.LMESSPASS) THEN
           DO II=1,GBOUNC
             IU19(II)=IWAM_GET_UNIT(IU06, CBCPREF(II), 'w', 'u', 0)
@@ -1229,7 +1057,6 @@ SUBROUTINE INITMDL (NADV,                                         &
       ENDIF
 !NEST
 
-      ENDIF ! .NOT. LLUNSTR
 
       IF (LHOOK) CALL DR_HOOK('INITMDL',1,ZHOOK_HANDLE)
 

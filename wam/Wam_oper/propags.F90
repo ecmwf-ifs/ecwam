@@ -64,11 +64,11 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
       USE YOWPCONS , ONLY : PI       ,ZPI      ,R
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
-      USE YOWSHAL  , ONLY : NDEPTH   ,TCGOND   ,INDEP    ,DEPTH
+      USE YOWSHAL  , ONLY : NDEPTH   ,TCGOND   ,INDEP
       USE YOWSTAT  , ONLY : IDELPRO  ,ICASE    ,ISHALLO  ,IREFRA
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT     ,              &
-     &            OBSLAT   ,OBSLON   ,LSAMEDEPTH
+     &            OBSLAT   ,OBSLON
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -634,36 +634,24 @@
         DO IC=1,2
           DO M=1,NFRE_RED
             DO IJ=MIJS,MIJL
-              IF(LSAMEDEPTH(IJ)) THEN
-                CGKLON(IJ,M,IC) = 2*CGOND(IJ,M)
-              ELSE
-                CGKLON(IJ,M,IC) = CGOND(KLON(IJ,IC),M) + CGOND(IJ,M)
-              ENDIF
+              CGKLON(IJ,M,IC) = CGOND(KLON(IJ,IC),M) + CGOND(IJ,M)
             ENDDO
           ENDDO
         ENDDO
         IC=1
           DO M=1,NFRE_RED
             DO IJ=MIJS,MIJL
-              IF(LSAMEDEPTH(IJ)) THEN
-                CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP1(IJ)+1.0_JWRB)
-              ELSE
-                CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP1(IJ)*                &
-     &                           (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +  &
-     &                            WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
-              ENDIF
+              CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP1(IJ)*                &
+     &                         (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +  &
+     &                          WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
             ENDDO
           ENDDO
         IC=2
           DO M=1,NFRE_RED
             DO IJ=MIJS,MIJL
-              IF(LSAMEDEPTH(IJ)) THEN
-                CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP2(IJ)+1.0_JWRB)
-              ELSE
-                CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP2(IJ)*                &
-     &                           (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +  &
-     &                            WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
-              ENDIF
+              CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP2(IJ)*                &
+     &                         (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +  &
+     &                          WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
             ENDDO
           ENDDO
 

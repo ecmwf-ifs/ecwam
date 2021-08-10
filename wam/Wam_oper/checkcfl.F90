@@ -39,7 +39,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMPP   , ONLY : NSUP 
-      USE YOWSHAL  , ONLY : INDEP    ,DEPTH
+      USE YOWSHAL  , ONLY : DEPTH
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON
 
@@ -147,16 +147,16 @@
           WRITE(IU06,*) ' * FOR POSITIVE DIRECTIONS      *'
           WRITE(IU06,*) ' * CFLTP = ',CFLTP(IJ)
           WRITE(IU06,*) ' * REDUCE IDELPRO ACCORDINGLY   *'
-          WRITE(IU06,*) ' * IJ = ',IJ, INDEP(IJ),DEPTH(IJ)
+          WRITE(IU06,*) ' * IJ = ',IJ, DEPTH(IJ)
           DO ICL=1,2
             DO IC=1,2
               ICP=KLAT(IJ,IC,ICL)
-              IF (ICP /= NSUP+1) WRITE(IU06,*)' * KLAT_',IC,ICL, INDEP(ICP),DEPTH(ICP)
+              IF (ICP /= NSUP+1) WRITE(IU06,*)' * KLAT_',IC,ICL, DEPTH(ICP)
             ENDDO
           ENDDO
           DO IC=1,2
             ICP=KLON(IJ,IC)
-            IF (ICP /= NSUP+1) WRITE(IU06,*)' * KLON_',IC, INDEP(ICP),DEPTH(ICP)
+            IF (ICP /= NSUP+1) WRITE(IU06,*)' * KLON_',IC, DEPTH(ICP)
           ENDDO
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' ********************************'
@@ -171,16 +171,16 @@
           WRITE(IU06,*) ' * FOR NEGATIVE DIRECTIONS      *'
           WRITE(IU06,*) ' * CFLTM = ',CFLTM(IJ)
           WRITE(IU06,*) ' * REDUCE IDELPRO ACCORDINGLY   *'
-          WRITE(IU06,*) ' * IJ = ',IJ, INDEP(IJ),DEPTH(IJ)
+          WRITE(IU06,*) ' * IJ = ',IJ, DEPTH(IJ)
           DO ICL=1,2
             DO IC=1,2
               ICP=KLAT(IJ,IC,ICL)
-              IF (ICP /= NSUP+1) WRITE(IU06,*)' * KLAT_',IC,ICL, INDEP(ICP),DEPTH(ICP)
+              IF (ICP /= NSUP+1) WRITE(IU06,*)' * KLAT_',IC,ICL, DEPTH(ICP)
             ENDDO
           ENDDO
           DO IC=1,2
             ICP=KLON(IJ,IC)
-            IF (ICP /= NSUP+1) WRITE(IU06,*)' * KLON_',IC, INDEP(ICP),DEPTH(ICP)
+            IF (ICP /= NSUP+1) WRITE(IU06,*)' * KLON_',IC, DEPTH(ICP)
           ENDDO
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' ********************************'

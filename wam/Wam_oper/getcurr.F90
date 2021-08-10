@@ -28,8 +28,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 !     IF COUPLED
 !     GET CURRENTS AS PROCESSED BY *IFSTOWAM*
 !     THEN 
-!     CALL PROPDOT FOR THE CALCULATION OF THE REFRACTION TERMS.
-!     ALSO SET LLCHKCFLA=.TRUE. TO CHECK ON THE CFL CRITERIA.
+!     SET LLCHKCFLA=.TRUE. TO CHECK ON THE CFL CRITERIA.
 
 !     EXTERNALS.
 !     ----------
@@ -37,7 +36,6 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 !       *INCDATE*
 !       *ABORT1*
 !       *CURRENT2WAM*
-!       *PROPDOT*
 
 !     REFERENCES.
 !     ----------- 
@@ -50,16 +48,16 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 
       USE YOWCOUP  , ONLY : LWCOU, LWNEMOCOUCUR
       USE YOWNEMOFLDS,ONLY: NEMOUCUR, NEMOVCUR
+
       USE YOWCURR  , ONLY : U        ,V        ,CDTCUR   ,IDELCUR  ,    &
      &             LLCHKCFLA, CURRENT_MAX
+
       USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
-      USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NIBLO
-      USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED
+      USE YOWREFD  , ONLY : LLUPDTTD
       USE YOWSTAT  , ONLY : CDTPRO   ,IREFRA   ,NPROMA_WAM
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE YOWWIND  , ONLY : FIELDG   ,LLNEWCURR 
 
@@ -71,18 +69,17 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 #include "abort1.intfb.h"
 #include "current2wam.intfb.h"
 #include "incdate.intfb.h"
-#include "mpexchng.intfb.h"
-#include "propdot.intfb.h"
 #include "wamcur.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR
 
+
       INTEGER(KIND=JWIM) :: LIU
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, IJ, IX, IY
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1) :: OLDU, OLDV
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: OLDU, OLDV
 
       CHARACTER(LEN=14) :: CDATEIN, CDTNEWCUR
       CHARACTER(LEN=24) :: FILNM
@@ -104,12 +101,12 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
         IF ( (LWCOU .AND. LWCUR ) .OR. LWNEMOCOUCUR .OR. IREFRA == 2 .OR. IREFRA == 3) THEN
 
           IF (.NOT.ALLOCATED(U)) THEN 
-            ALLOCATE(U(NINF:NSUP+1))
+            ALLOCATE(U(IJS:IJL))
             U(:)=0.0_JWRB
           ENDIF
 
           IF (.NOT.ALLOCATED(V)) THEN
-            ALLOCATE(V(NINF:NSUP+1))
+            ALLOCATE(V(IJS:IJL))
             V(:)=0.0_JWRB
           ENDIF
 
@@ -142,12 +139,6 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
                   ENDDO
 !$OMP           END PARALLEL DO
                   CALL GSTATS(1444,1)
-                  U(NSUP+1)=0.0_JWRB
-                  V(NSUP+1)=0.0_JWRB
-
-!!!               The halo has to be included for the calculation of the gradients !!!
-                  CALL MPEXCHNG(U,1,1)
-                  CALL MPEXCHNG(V,1,1)
 
 !             CURRENTS FROM NEMO
 !             ------------------
@@ -176,12 +167,6 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 !$OMP           END PARALLEL DO
                 CALL GSTATS(1444,1)
 
-                U(NSUP+1)=0.0_JWRB
-                V(NSUP+1)=0.0_JWRB
-
-!!!             The halo has to be included for the calculation of the gradients !!!
-                CALL MPEXCHNG(U,1,1)
-                CALL MPEXCHNG(V,1,1)
               ELSE
                 U(:)=0.0_JWRB
                 V(:)=0.0_JWRB
@@ -242,7 +227,8 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 !           ------------------------
 !           CHECK IF UPDATE IS NEEDED
             LLUPDATE=.FALSE.
-            DO IJ = NINF, NSUP
+            DO IJ =  IJS, IJL
+!!!!debile
               IF ( U(IJ) /= OLDU(IJ) .OR. V(IJ) /= OLDV(IJ) ) THEN
                 LLUPDATE=.TRUE.
                 EXIT
@@ -250,25 +236,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
             ENDDO
 
             IF (LLUPDATE) THEN
-              IF (IREFRA /= 0) THEN
-                IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS:IJL,NANG))
-                IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS:IJL,NANG))
-                IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS:IJL,NANG,NFRE_RED))
-
-                CALL GSTATS(1444,0)
-                NPROMA=NPROMA_WAM
-!$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-                DO JKGLO = IJS, IJL, NPROMA
-                  KIJS=JKGLO
-                  KIJL=MIN(KIJS+NPROMA-1,IJL)
-                  CALL PROPDOT(KIJS, KIJL, THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
-                ENDDO
-!$OMP           END PARALLEL DO
-                CALL GSTATS(1444,1)
-
-                WRITE(IU06,*) ' SUB. GETCURR: REFRACTION TERMS INITIALIZED'
-                CALL FLUSH(IU06)
-              END IF
+              IF (IREFRA /= 0) LLUPDTTD = .TRUE.
 
               LLCHKCFLA=.TRUE.
 

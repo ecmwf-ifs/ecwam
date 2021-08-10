@@ -289,7 +289,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &            CASS     ,NASS     ,LOUTINT  ,                        &
      &            LRSTPARALW, LRSTINFDAT,                               &
      &            LRSTST0  ,LWAMANOUT
-      USE YOWCURR  , ONLY : CDTCUR
+      USE YOWCURR  , ONLY : CDTCUR      ,U     ,V
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : LGRHDIFS 
@@ -303,7 +303,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSMIN
       USE YOWSHAl  , ONLY : DEPTH    ,EMAXDPT  ,WAVNUM   ,CINV     ,    &
-     &            CGROUP   ,STOKFAC
+     &            CGROUP   ,OMOSNH2KD, STOKFAC
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDATER   ,CDATES   ,CDTINTT  ,IDELPRO  ,IDELT    ,    &
      &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &
@@ -356,7 +356,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 #include "outbc.intfb.h"
 #include "outbs.intfb.h"
 #include "outint.intfb.h"
-#include "outunwamtest.intfb.h"
 #include "outwnorm.intfb.h"
 #include "outspec.intfb.h"
 #include "propag_wam.intfb.h"
@@ -651,7 +650,9 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 ! IF CDATE CORRESPONDS TO A PROPAGATION TIME
           IF (CDATE == CDTPRA) THEN
-            CALL PROPAG_WAM(IJS, IJL, FL1)
+            CALL PROPAG_WAM(IJS, IJL, WAVNUM, CGROUP, OMOSNH2KD, &
+      &                     DEPTH, U, V,                         &
+      &                     FL1)
             CDATE=CDTPRO   
           ENDIF
 
@@ -732,10 +733,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
           ENDIF
 
-          IF (LLUNSTR .AND. LLUNBINOUT) THEN
-            CALL OUTUNWAMTEST (FL1(1:MNP,:,:), .FALSE.)
-          ENDIF
-
 !*    1.5.5.4 UPDATE TIME;IF TIME LEFT BRANCH BACK TO 1.5.5 
 !             ---------------------------------------------
           IF (CDTIMPNEXT.LE.CDTPRO) GO TO 1550
@@ -764,8 +761,12 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !*    1.5.10 MODEL OUTPUT INTEGRATED DATA ARE SAVED
 !            --------------------------------------
 
+          IF (ITEST.GE.2) THEN
+              WRITE(IU06,*) '   SUB. WAMODEL: MODEL ', 'OUTPUT CDTINTT=',CDTINTT
+          ENDIF
+
 #ifdef ECMWF
-          IF (.NOT.LWCOU .AND. .NOT. LDSTOP) THEN
+          IF(.NOT.LWCOU .AND. .NOT. LDSTOP) THEN
 !!!!      the call to CHESIG is a signal handeling facility which is
 !!!!      specific to running WAM at ECMWF, it can be ignored when
 !!!!      WAM is not run at ECMWF.
@@ -773,8 +774,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
           ENDIF
 #endif
 
-          LRST=(LDWRRE .AND. KADV.EQ.NADV )
-          IF (LRST) THEN
+          LRST=(LDWRRE .AND. KADV == NADV )
+          IF(LRST) THEN
             WRITE(IU06,*) ' '
             WRITE(IU06,*) '  ******************************************'
             IF (LDSTOP) THEN
@@ -885,7 +886,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 
 !*          UPDATE, WRITE AND SAVE WAMINFO FILE.
-            IF (LRST .AND. IRANK.EQ.1) THEN
+            IF (LRST .AND. IRANK == 1) THEN
               ICH = 7 
               CALL DIFDATE (CDATEF,CDATEE,IFOREPD)
               IF (CDTPRO <= CDATEF) THEN

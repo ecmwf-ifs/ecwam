@@ -177,7 +177,7 @@
 !         -----------------------------------
 
       CALL MPL_INIT(KERROR=KERROR)
-      IF(KERROR.LT.0) THEN 
+      IF (KERROR < 0) THEN 
         IU06=6
         WRITE (IU06,*) ' ******************************************'
         WRITE (IU06,*) ' *                                        *'
@@ -281,13 +281,13 @@
       ! WAM-NEMO COUPLING
 
       IF (LWNEMOCOU) THEN
-        IF(IRANK.EQ.1) WRITE (IU06,*)'CALLING NEMOGCMCOUP_INIT'
+        IF (IRANK == 1) WRITE (IU06,*)'CALLING NEMOGCMCOUP_INIT'
 #ifdef WITH_NEMO
         CALL NEMOGCMCOUP_INIT( MPL_COMM, NEMOINIDATE, NEMOINITIME,      &
      &                         NEMOITINI, NEMOITEND, NEMOTSTEP,         &
      &                         .TRUE., -1, .FALSE. )
 #endif
-        IF(IRANK.EQ.1) THEN
+        IF (IRANK == 1) THEN
           WRITE(IU06,*)'NEMO INITIAL DATE         : ',NEMOINIDATE
           WRITE(IU06,*)'NEMO INITIAL TIME         : ',NEMOINITIME
           WRITE(IU06,*)'NEMO INITIAL STEP         : ',NEMOITINI
@@ -302,13 +302,13 @@
           NEMONSTEP=NINT(NEMOFRCO*IDELPRO/NEMOTSTEP)
           NEMOWSTEP=0
         ENDIF
-        IF ((NEMOFRCO*IDELPRO)/=NINT(NEMOTSTEP*NEMONSTEP)) THEN
+        IF ((NEMOFRCO*IDELPRO) /= NINT(NEMOTSTEP*NEMONSTEP)) THEN
           WRITE(IU06,*)'Inconsistent NEMO and WAM coupling intervals:'
           WRITE(IU06,*)'WAM coupling interval is : ',NEMOFRCO*IDELPRO
           WRITE(IU06,*)'NEMO coupling interval is: ',NEMOTSTEP*NEMONSTEP
           CALL ABORT1
         ELSE
-          IF (IRANK.EQ.1) THEN
+          IF (IRANK == 1) THEN
             WRITE(IU06,*)'NEMONSTEP                 : ',NEMONSTEP
             WRITE(IU06,*)'NEMO coupling interval is : ',                &
      &                   NEMOTSTEP*NEMONSTEP
@@ -318,7 +318,7 @@
 
  20   CONTINUE
 
-      DO WHILE (CDTPRO.LT.CDATEE .OR. CDTPRO.EQ. ZERO)
+      DO WHILE (CDTPRO < CDATEE .OR. CDTPRO == ZERO)
        CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
      &             NFIELDS, NGPTOTG, NC, NR,                            &
      &             IGRIB_HANDLE_DUM, RMISS, ZRCHAR, FIELDS,             &

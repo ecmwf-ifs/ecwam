@@ -103,7 +103,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XINCR, DF2KP, DF2KM, PSUM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NMAX) :: F2
 
-      LOGICAL :: LLSAMEDEPTH
+      LOGICAL :: LLSAMEDPTH
 
 ! ----------------------------------------------------------------------
 
@@ -123,11 +123,11 @@
          ID = MAX(ID,1)
          JD(IJ) = MIN(ID,NDEPTH)
       ENDDO
-      LLSAMEDEPTH=.TRUE.
+      LLSAMEDPTH=.TRUE.
       ID=JD(KIJS)
       DO IJ=KIJS+1,KIJL
-         LLSAMEDEPTH=(LLSAMEDEPTH.AND.(JD(IJ-1).EQ.JD(IJ)))
-         IF(.NOT.LLSAMEDEPTH) EXIT
+         LLSAMEDPTH=(LLSAMEDPTH.AND.(JD(IJ-1).EQ.JD(IJ)))
+         IF (.NOT.LLSAMEDPTH) EXIT
       ENDDO
 
       DO M=1,NFRE
@@ -187,7 +187,7 @@
                DO K1=1,NANG
                   L = LL(K1,K) 
 
-                  IF(LLSAMEDEPTH) THEN 
+                  IF (LLSAMEDPTH) THEN 
 !*                  2.1 OM0-OM1 CASE: SECOND HARMONICS
 !                   ---------------------------------- 
 !                   OM2 = OM0-OM1

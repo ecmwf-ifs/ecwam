@@ -58,8 +58,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
      &            SUMWN    ,WLATN    ,WLONN    ,WCORN    ,              &
      &            WKPMN    ,WMPMN    ,OBSLAT   ,OBSLON   ,OBSCOR   ,    &
      &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN  ,    &
-     &            JXO      ,JYO      ,KCR      ,                        &
-     &            LSAMEDEPTH
+     &            JXO      ,JYO      ,KCR
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -246,23 +245,18 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 !             -----------------------------------------------------------
                 DO IC=1,2
                   DO IJ=MIJS,MIJL
-                    IF (LSAMEDEPTH(IJ)) THEN
-                      CGX(IJ,IC)=CGR(IJ,M)*SINTH(K)*COSPHM1(IJ)
-                      CGY(IJ,IC)=0.5_JWRB*CGR(IJ,M)*COSTH(K)*(1.+DP(IJ,IC))
+                    CGX(IJ,IC)=                                          &
+     &                 0.5_JWRB*(CGR(IJ,M)+TCGOND(INDEP(KLON(IJ,IC)),M)) &
+     &                    *SINTH(K)*COSPHM1(IJ)
+!                   IRREGULAR GRID
+                    IF (IRGG == 1) THEN
+                      CGYP=WLAT(IJ,IC)*TCGOND(INDEP(KLAT(IJ,IC,1)),M)+       &
+     &                 (1.0_JWRB-WLAT(IJ,IC))*TCGOND(INDEP(KLAT(IJ,IC,2)),M)
                     ELSE
-                      CGX(IJ,IC)=                                          &
-     &                   0.5_JWRB*(CGR(IJ,M)+TCGOND(INDEP(KLON(IJ,IC)),M)) &
-     &                      *SINTH(K)*COSPHM1(IJ)
-!                     IRREGULAR GRID
-                      IF (IRGG == 1) THEN
-                        CGYP=WLAT(IJ,IC)*TCGOND(INDEP(KLAT(IJ,IC,1)),M)+       &
-     &                   (1.0_JWRB-WLAT(IJ,IC))*TCGOND(INDEP(KLAT(IJ,IC,2)),M)
-                      ELSE
-!                     REGULAR GRID
-                        CGYP=TCGOND(INDEP(KLAT(IJ,IC,1)),M)
-                      ENDIF
-                      CGY(IJ,IC)=0.5_JWRB*(CGR(IJ,M)+DP(IJ,IC)*CGYP)*COSTH(K)
+!                   REGULAR GRID
+                      CGYP=TCGOND(INDEP(KLAT(IJ,IC,1)),M)
                     ENDIF
+                    CGY(IJ,IC)=0.5_JWRB*(CGR(IJ,M)+DP(IJ,IC)*CGYP)*COSTH(K)
                   ENDDO
                 ENDDO
 

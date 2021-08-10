@@ -58,9 +58,7 @@
       USE YOWMESPAS, ONLY : LGRIBIN  ,LWAVEWIND
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NSUP     ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NIBLO
-
-      USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
-
+      USE YOWREFD  , ONLY : LLUPDTTD
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,IREFRA   ,    &
      &            NPROMA_WAM,LNSESTART
       USE YOWTEST  , ONLY : IU06
@@ -79,8 +77,6 @@
 #include "expand_string.intfb.h"
 #include "grstname.intfb.h"
 #include "mpdistribscfld.intfb.h"
-#include "mpexchng.intfb.h"
-#include "propdot.intfb.h"
 #include "readstress.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
@@ -190,29 +186,8 @@
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
-          U(NSUP+1)=0.0_JWRB
-          V(NSUP+1)=0.0_JWRB
 
-!!!       U AND V MUST ALSO BE DEFINED OVER THE HALO
-          CALL MPEXCHNG(U, 1, 1)
-          CALL MPEXCHNG(V, 1, 1)
-
-          IF (IREFRA .NE. 0) THEN
-!         RE-COMPUTE REFRACTION TERMS
-            IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS:IJL,NANG))
-            IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS:IJL,NANG))
-            IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS:IJL,NANG,NFRE_RED))
-
-            NPROMA=NPROMA_WAM
-!$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-            DO JKGLO = IJS, IJL, NPROMA
-              KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,IJL)
-              CALL PROPDOT(KIJS, KIJL, THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
-            ENDDO
-!$OMP       END PARALLEL DO
-
-          END IF
+          IF (IREFRA /= 0) LLUPDTTD = .TRUE.
   
 !         SET LOGICAL TO RECOMPUTE THE WEIGHTS IN CTUW.
           LUPDTWGHT=.TRUE.

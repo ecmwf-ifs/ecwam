@@ -107,15 +107,13 @@
         STRNMS(:) = 0.0_JWRB
       ENDIF
 
-      IF ( (LWCOU .AND. LWCUR) .OR. IREFRA == 2 .OR. IREFRA == 3 ) THEN
-        IF (.NOT.ALLOCATED(U)) THEN
-          ALLOCATE(U(NINF-1:NSUP))
-          U(:)=0.0_JWRB
-        ENDIF
-        IF (.NOT.ALLOCATED(V)) THEN
-          ALLOCATE(V(NINF-1:NSUP))
-          V(:)=0.0_JWRB
-        ENDIF
+      IF (.NOT.ALLOCATED(U)) THEN
+        ALLOCATE(U(NSTART(IRANK):NEND(IRANK)))
+        U(:) = 0.0_JWRB
+      ENDIF
+      IF (.NOT.ALLOCATED(V)) THEN
+        ALLOCATE(V(NSTART(IRANK):NEND(IRANK)))
+        V(:) = 0.0_JWRB
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('WVALLOC',1,ZHOOK_HANDLE)
