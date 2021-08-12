@@ -1,4 +1,4 @@
-      SUBROUTINE CURRENT2WAM (FILNM, IREAD, CDATEIN)
+      SUBROUTINE CURRENT2WAM (FILNM, IREAD, CDATEIN, IJS, IJL, U, V)
 
 !--------------------------------------------------------------------
 
@@ -15,11 +15,14 @@
 
 !**   INTERFACE
 !     ---------
-!     *CALL* *CURRENT2WAM(FILNM,IREAD,CDATEIN)*
+!     *CALL* *CURRENT2WAM(FILNM, IREAD, CDATEIN, IJS, IJL, U, V)*
 
 !     *FILNM*     DATA INPUT FILENAME.
 !     *IREAD*     RANK OF THE PROCESS WHICH INPUTS THE DATA. 
-!     *CDATEIN*    DATE OF THE DECODED DATA. 
+!     *CDATEIN*   DATE OF THE DECODED DATA. 
+!     *IJS:IJL    SIZE OF U and V
+!     *U*         U-COMPONENT OF SURFACE CURRENT
+!     *V*         V-COMPONENT OF SURFACE CURRENT
 
 
 !     METHOD.
@@ -33,13 +36,13 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCURR  , ONLY : U        ,V        ,CURRENT_MAX
+      USE YOWCURR  , ONLY : CURRENT_MAX
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            IFROMIJ  ,JFROMIJ
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
-     &            NPRECI
+
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
       USE YOWPCONS , ONLY : ZMISS    ,EPSMIN
       USE YOWSTAT  , ONLY : NPROMA_WAM 
       USE YOWSPEC  , ONLY : NSTART   ,NEND
@@ -62,6 +65,9 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       CHARACTER(LEN=24), INTENT(IN) :: FILNM
       CHARACTER(LEN=14), INTENT(INOUT) :: CDATEIN
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: U, V
+
 
       INTEGER(KIND=JWIM) :: NBIT = 1000000
 
@@ -209,9 +215,7 @@
 
 
         IF (IPARAM == 131) THEN
-             DO IJ =  NINF, NSUP
-!!!            VALUES FOR THE HALO ARE ALSO NEEDED !!!
-!!!            HENCE NINF TO NSUP.
+             DO IJ = IJS, IJL
                IX = IFROMIJ(IJ)
                JY = JFROMIJ(IJ)
                U(IJ) = FIELD(IX,JY)
@@ -222,11 +226,8 @@
                IF (U(IJ) <= ZMISS) U(IJ)=0.0_JWRB
                U(IJ)=SIGN(MIN(ABS(U(IJ)),CURRENT_MAX),U(IJ))
              ENDDO
-             U(NSUP+1)=0.0_JWRB
         ELSEIF (IPARAM == 132) THEN
-             DO IJ =  NINF, NSUP
-!!!            VALUES FOR THE HALO ARE ALSO NEEDED !!!
-!!!            HENCE NINF TO NSUP.
+             DO IJ = IJS, IJL 
                IX = IFROMIJ(IJ)
                JY = JFROMIJ(IJ)
                V(IJ) = FIELD(IX,JY)
@@ -237,7 +238,6 @@
                IF (V(IJ) <= ZMISS) V(IJ)=0.0_JWRB
                V(IJ)=SIGN(MIN(ABS(V(IJ)),CURRENT_MAX),V(IJ))
              ENDDO
-             V(NSUP+1)=0.0_JWRB
         ELSE
           WRITE(IU06,*) ' *****************************************'
           WRITE(IU06,*) ' *                                       *'

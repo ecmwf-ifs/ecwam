@@ -1,6 +1,6 @@
-      SUBROUTINE PROPAG_WAM (IJS, IJL, WAVNUM, CGROUP, OMOSNH2KD, &
-     &                       DEPTH, U, V,                         &
-     &                       FL1)
+SUBROUTINE PROPAG_WAM (IJS, IJL, WAVNUM, CGROUP, OMOSNH2KD, &
+&                      DEPTH, U, V,                         &
+&                      FL1)
 
 ! ----------------------------------------------------------------------
 
@@ -43,6 +43,7 @@
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NIBLO
       USE YOWREFD  , ONLY : LLUPDTTD ,THDD     ,THDC     ,SDOT
+      USE YOWSHAL  , ONLY : BATHYMAX ,WAVNUM_LAND, CGROUP_LAND, OMOSNH2KD_LAND
       USE YOWSTAT  , ONLY : IPROPAGS ,NPROMA_WAM
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE UNWAM    , ONLY : PROPAG_UNWAM
@@ -55,12 +56,12 @@
       IMPLICIT NONE
 
 #include "ctuwupdt.intfb.h"
-
 #include "mpexchng.intfb.h"
-#include "propdot.intfb.h"
+#include "proenvhalo.intfb.h"
 #include "propags.intfb.h"
 #include "propags1.intfb.h"
 #include "propags2.intfb.h"
+#include "propdot.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL, NFRE), INTENT(IN) :: WAVNUM, CGROUP, OMOSNH2KD
@@ -73,12 +74,12 @@
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+
 !     Spectra extended with the halo exchange for the propagation
 !     But limited to NFRE_RED frequencies
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1,NANG,NFRE_RED) :: FLEXT
-
-!     Water depth and the surface currents need a halo to compute the gradients
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1) :: DPTHEXT, UEXT, VEXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1,NANG,NFRE_RED) :: FL1_EXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED) :: WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1) :: DEPTH_EXT, U_EXT, V_EXT
 
       LOGICAL :: L1STCALL
 
@@ -99,26 +100,27 @@
           DO M=1,NFRE_RED
             DO K=1,NANG
               DO IJ=KIJS,KIJL
-                FLEXT(IJ,K,M) = FL1(IJ,K,M)
+                FL1_EXT(IJ,K,M) = FL1(IJ,K,M)
               ENDDO
             ENDDO
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
 
+!       SET THE DUMMY LAND POINT TO 0.
+        FL1_EXT(NSUP+1,:,:) = 0.0_JWRB 
+
 
         IF (LLUNSTR) THEN 
 
-           CALL PROPAG_UNWAM(FLEXT, FL1)
+           CALL PROPAG_UNWAM(FL1_EXT, FL1)
 
         ELSE
 
-!          SET THE DUMMY LAND POINTS TO 0.
-           FLEXT(NSUP+1,:,:) = 0.0_JWRB 
 
 !          OBTAIN INFORMATION AT NEIGHBORING GRID POINTS (HALO)
 !          ----------------------------------------------------
-           CALL MPEXCHNG(FLEXT,NANG,NFRE_RED)
+           CALL MPEXCHNG(FL1_EXT,NANG,NFRE_RED)
 
 
            CALL GSTATS(1430,0)
@@ -131,31 +133,28 @@
              IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS:IJL,NANG))
              IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS:IJL,NANG,NFRE_RED))
 
-!            DPTHEXT, UEXT AND VEXT MUST ALSO BE DEFINED OVER THE HALO
-!!               should be combine into one single data exchange.... !!!
-             DPTHEXT(IJS:IJL) = DEPTH(IJS:IJL)
-             CALL MPEXCHNG(DPTHEXT, 1, 1)
-             DPTHEXT(NSUP+1)=0.0_JWRB
+!            NEED HALO VALUES
+             CALL  PROENVHALO (IJS, IJL, NINF, NSUP,      &
+&                  WAVNUM, CGROUP, OMOSNH2KD,             &
+&                  DEPTH, U, V,                           &
+&                  WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+&                  DEPTH_EXT, U_EXT, V_EXT )
 
-             UEXT(IJS:IJL) = U(IJS:IJL)
-             CALL MPEXCHNG(UEXT, 1, 1)
-             UEXT(NSUP+1)=0.0_JWRB
 
-             VEXT(IJS:IJL) = V(IJS:IJL)
-             CALL MPEXCHNG(VEXT, 1, 1)
-             VEXT(NSUP+1)=0.0_JWRB
+!            DOT THETA TERM:
 
              NPROMA=NPROMA_WAM
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
              DO JKGLO = IJS, IJL, NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1,IJL)
-               CALL PROPDOT(KIJS, KIJL, NINF, NSUP,                                           &
-     &                      WAVNUM(KIJS:KIJL,:), CGROUP(KIJS:KIJL,:), OMOSNH2KD(KIJS:KIJL,:), &
-     &                      DPTHEXT, UEXT, VEXT,                                              &
+               CALL PROPDOT(KIJS, KIJL, NINF, NSUP,                                     &
+     &                      WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT,                      &
+     &                      DEPTH_EXT, U_EXT, V_EXT,                                    &
      &                      THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
              ENDDO
 !$OMP        END PARALLEL DO
+
 
              LLUPDTTD = .FALSE.
            ENDIF
@@ -168,7 +167,18 @@
            CASE(2)
 
              IF (LUPDTWGHT) THEN
-               CALL CTUWUPDT(IJS, IJL)
+!              NEED HALO VALUES
+               CALL  PROENVHALO (IJS, IJL, NINF, NSUP,      &
+&                    WAVNUM, CGROUP, OMOSNH2KD,             &
+&                    DEPTH, U, V,                           &
+&                    WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+&                    DEPTH_EXT, U_EXT, V_EXT )
+
+!              COMPUTES ADVECTION WEIGTHS AND CHECK CFL CRITERIA
+               CALL CTUWUPDT(IJS, IJL, NINF, NSUP,       &
+&                            CGROUP_EXT, OMOSNH2KD_EXT,  &
+&                            DEPTH_EXT, U_EXT, V_EXT )
+
                LUPDTWGHT=.FALSE.
              ENDIF
 
@@ -179,30 +189,52 @@
              DO JKGLO=IJS,IJL,NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1,IJL)
-               CALL PROPAGS2(FLEXT, FL1, IJS, IJL, KIJS, KIJL)
+               CALL PROPAGS2(FL1_EXT, FL1, NINF, NSUP, IJS, IJL, KIJS, KIJL)
              ENDDO
 !$OMP        END PARALLEL DO
 
 
            CASE(1)
              IF (L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
+
+!            NEED HALO VALUES
+             CALL  PROENVHALO (IJS, IJL, NINF, NSUP,      &
+&                  WAVNUM, CGROUP, OMOSNH2KD,             &
+&                  DEPTH, U, V,                           &
+&                  WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+&                  DEPTH_EXT, U_EXT, V_EXT )
+
              NPROMA=NPROMA_WAM
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
              DO JKGLO=IJS,IJL,NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1,IJL)
-               CALL PROPAGS1(FLEXT, FL1, IJS, IJL, KIJS, KIJL, L1STCALL)
+               CALL PROPAGS1(FL1_EXT, FL1, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
+&                            CGROUP_EXT, OMOSNH2KD_EXT,                      &
+&                            U_EXT, V_EXT,                                   &
+&                            L1STCALL)
              ENDDO
 !$OMP       END PARALLEL DO
 
            CASE(0)
              IF (L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
+
+!            NEED HALO VALUES
+             CALL  PROENVHALO (IJS, IJL, NINF, NSUP,      &
+&                  WAVNUM, CGROUP, OMOSNH2KD,             &
+&                  DEPTH, U, V,                           &
+&                  WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+&                  DEPTH_EXT, U_EXT, V_EXT )
+
              NPROMA=NPROMA_WAM
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
              DO JKGLO=IJS,IJL,NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1,IJL)
-               CALL PROPAGS(FLEXT, FL1, IJS, IJL, KIJS, KIJL, L1STCALL)
+               CALL PROPAGS(FL1_EXT, FL1, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
+&                           CGROUP_EXT, OMOSNH2KD_EXT,                      &
+&                           U_EXT, V_EXT,                                   &
+&                           L1STCALL)
              ENDDO
 !$OMP        END PARALLEL DO
            END SELECT 
@@ -219,4 +251,4 @@
 
       IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE PROPAG_WAM
+END SUBROUTINE PROPAG_WAM

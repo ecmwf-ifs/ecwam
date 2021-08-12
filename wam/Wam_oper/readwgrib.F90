@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
 
-      SUBROUTINE READWGRIB(IU06, FILNM, IPARAM, CDATE, MIJS, MIJL,      &
+      SUBROUTINE READWGRIB(IU06, FILNM, IPARAM, CDATE, IJS, IJL,      &
      &                     FIELD, KZLEV, LLONLYPOS, IREAD )
 
 !-----------------------------------------------------------------------
@@ -17,7 +17,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *READWGRIB*(IU06, FILNM, IPARAM, CDATE, MIJS, MIJL,
+!       *CALL* *READWGRIB*(IU06, FILNM, IPARAM, CDATE, IJS, IJL,
 !    &                     FIELD, KZLEV, LLONLYPOS, IREAD )
 
 !*     VARIABLE.   TYPE.     PURPOSE.
@@ -26,8 +26,8 @@
 !      *FILNM*     DATA INPUT FILENAME.
 !      *IPARAM*    INTEGER   PARAMETER IDENTIFIER OF FIELD
 !      *CDATE*     CHARACTER DATE OF THE REQUESTED FIELD 
-!      *MIJS*      INDEX OF FIRST GRIDPOINT
-!      *MIJL*      INDEX OF LAST GRIDPOINT
+!      *IJS*       INDEX OF FIRST GRIDPOINT
+!      *IJL*       INDEX OF LAST GRIDPOINT
 !      *FIELD*     REAL      WAVE FIELD IN BLOCK FORMAT 
 !      *KZLEV*     INTEGER   REFERENCE LEVEL IN full METER
 !                           (SHOULD BE 0 EXCEPT FOR 233, 245 AND 249 WHERE IT
@@ -82,10 +82,10 @@
 #include "inwgrib.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, IREAD, IPARAM
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(INOUT) :: KZLEV
 
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(INOUT) :: FIELD 
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: FIELD 
 
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       CHARACTER(LEN=24), INTENT(IN) :: FILNM
@@ -153,9 +153,9 @@
           IF (LLONLYPOS) THEN
             CALL GSTATS(1444,0)
 !$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
-            DO JKGLO=MIJS,MIJL,NPROMA
+            DO JKGLO=IJS,IJL,NPROMA
               KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,MIJL)
+              KIJL=MIN(KIJS+NPROMA-1,IJL)
               DO IJ = KIJS, KIJL
                 IX = IFROMIJ(IJ)
                 JY = JFROMIJ(IJ)
@@ -168,9 +168,9 @@
           ELSE
             CALL GSTATS(1444,0)
 !$OMP       PARALLEL DO SCHEDULE(STATIC)  PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
-            DO JKGLO=MIJS,MIJL,NPROMA
+            DO JKGLO=IJS,IJL,NPROMA
               KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,MIJL)
+              KIJL=MIN(KIJS+NPROMA-1,IJL)
               DO IJ = KIJS, KIJL
                 IX = IFROMIJ(IJ)
                 JY = JFROMIJ(IJ)

@@ -1,6 +1,6 @@
-      SUBROUTINE PROPDOT(KIJS, KIJL, NINF, NSUP,    &
-     &                   WAVNUM, CGROUP, OMOSNH2KD, &
-     &                   DPTHEXT, UEXT, VEXT,       & 
+      SUBROUTINE PROPDOT(KIJS, KIJL, NINF, NSUP,                &
+     &                   WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+     &                   DEPTH_EXT, U_EXT, V_EXT,               & 
      &                   THDC, THDD, SDOT)
 
 ! ----------------------------------------------------------------------
@@ -20,18 +20,18 @@
 !     ----------
 
 !       *CALL* *PROPDOT*(KIJS, KIJL, NINF, NSUP,
-!                        WAVNUM, CGROUP, OMOSNH2KD, &
-!                        DPTHEXT, UEXT, VEXT,       & 
+!                        WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+!                        DEPTH_EXT, U_EXT, V_EXT,       & 
 !                        THDC, THDD, SDOT)
-!          *KIJS*   - STARTING INDEX
-!          *KIJL*   - ENDING INDEX
-!          *NINF:NSUP+1* : DIMENSION OF DPTHEXT, UEXT, VEXT
-!          *WAVNUM*    - WAVE NUMBER.
-!          *CGROUP*    - GROUP SPPED.
-!          *OMOSNH2KD* - OMEGA / SINH(2KD)
-!          *DPTHEXT*   - WATER DEPTH (including the halo points)
-!          *UEXT*      - U-COMPONENT OF SURFACE CURRENT (including the halo points)
-!          *VEXT*      - V-COMPONENT OF SURFACE CURRENT (including the halo points)
+!          *KIJS*        - STARTING INDEX
+!          *KIJL*        - ENDING INDEX
+!          *NINF:NSUP+1* - 1st DIMENSION OF *_EXT ARRAYS 
+!          *WAVNUM_EXT*  - WAVE NUMBER.
+!          *CGROUP_EXT*  - GROUP SPPED.
+!          *OMOSNH2KD_EXT*- OMEGA / SINH(2KD)
+!          *DEPTH_EXT*    - WATER DEPTH (including the halo points)
+!          *U_EXT*        - U-COMPONENT OF SURFACE CURRENT (including the halo points)
+!          *V_EXT*        - V-COMPONENT OF SURFACE CURRENT (including the halo points)
 !         THDC and THDD ARRAYS TO KEEP DEPTH AND CURRENT REFRACTION FOR THETA DOT
 !         AND SDOT FOR SIGMA DOT
 
@@ -57,7 +57,7 @@
       USE YOWFRED  , ONLY : COSTH    ,SINTH
       USE YOWGRID  , ONLY : COSPHM1
 !!!!!!!!!! debile                  ???????
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED
       USE YOWSTAT  , ONLY : ICASE    ,IREFRA
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -69,8 +69,8 @@
 #include "gradi.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, NINF, NSUP
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE) :: WAVNUM, CGROUP, OMOSNH2KD   !!! 2nd dimension is NFRE
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: DPTHEXT, UEXT, VEXT   !!! NINF:NSUP+1   !!!
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: DEPTH_EXT, U_EXT, V_EXT
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(OUT) :: THDC, THDD
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE_RED), INTENT(OUT) :: SDOT
 
@@ -92,7 +92,7 @@
 !         ----------------------------
 
         CALL GRADI (KIJS, KIJL, NINF, NSUP, IREFRA, &
-     &              DPTHEXT, UEXT, VEXT,            & 
+     &              DEPTH_EXT, U_EXT, V_EXT,        & 
      &              DDPHI, DDLAM, DUPHI,            &
      &              DULAM, DVPHI, DVLAM)
 
@@ -115,7 +115,7 @@
 
         IF (IREFRA == 3) THEN
           DO IJ = KIJS,KIJL
-            OMDD(IJ) = VEXT(IJ)*DDPHI(IJ) + UEXT(IJ)*DDLAM(IJ)*DCO(IJ)
+            OMDD(IJ) = V_EXT(IJ)*DDPHI(IJ) + U_EXT(IJ)*DDLAM(IJ)*DCO(IJ)
           ENDDO
         ELSEIF (IREFRA == 2) THEN
           DO IJ = KIJS,KIJL
@@ -164,8 +164,8 @@
 
             DO M=1,NFRE_RED
               DO IJ=KIJS,KIJL
-                SDOT(IJ,K,M) = (SDOT(IJ,K,NFRE_RED)*CGROUP(IJ,M)   &
-     &           + OMDD(IJ)*OMOSNH2KD(IJ,M)) * WAVNUM(IJ,M) 
+                SDOT(IJ,K,M) = (SDOT(IJ,K,NFRE_RED)*CGROUP_EXT(IJ,M)   &
+     &           + OMDD(IJ)*OMOSNH2KD_EXT(IJ,M)) * WAVNUM_EXT(IJ,M) 
               ENDDO
             ENDDO
 

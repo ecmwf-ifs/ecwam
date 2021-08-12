@@ -17,8 +17,7 @@
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD   ,              &
      &                      WSEMEAN  ,WSFMEAN
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,    &
-     &            NINF     ,NSUP     ,MPMAXLENGTH
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,LL1D
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,                          &
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,    &
@@ -28,8 +27,8 @@
      &            FL1
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO
       USE YOWTEST  , ONLY : IU06
-      USE MPL_MODULE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 

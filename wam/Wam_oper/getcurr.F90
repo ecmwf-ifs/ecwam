@@ -54,6 +54,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 
       USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
+      USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE_RED
       USE YOWREFD  , ONLY : LLUPDTTD
       USE YOWSTAT  , ONLY : CDTPRO   ,IREFRA   ,NPROMA_WAM
@@ -62,6 +63,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
       USE YOWWIND  , ONLY : FIELDG   ,LLNEWCURR 
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE MPL_MODULE, ONLY : MPL_ALLREDUCE
 
 ! --------------------------------------------------------------------
 
@@ -77,6 +79,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 
       INTEGER(KIND=JWIM) :: LIU
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, IJ, IX, IY
+      INTEGER(KIND=JWIM) :: KUPDATE
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: OLDU, OLDV
@@ -129,21 +132,22 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
               IF (LWCUR .AND. .NOT.LWNEMOCOUCUR) THEN
 
 ! Mod for OPENMP
-                  CALL GSTATS(1444,0)
-                  NPROMA=NPROMA_WAM
+                CALL GSTATS(1444,0)
+                NPROMA=NPROMA_WAM
 !$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-                  DO JKGLO = IJS, IJL, NPROMA
-                    KIJS=JKGLO
-                    KIJL=MIN(KIJS+NPROMA-1,IJL)
-                    CALL WAMCUR (U(KIJS), V(KIJS), KIJS, KIJL)
-                  ENDDO
+                DO JKGLO = IJS, IJL, NPROMA
+                  KIJS=JKGLO
+                  KIJL=MIN(KIJS+NPROMA-1,IJL)
+                  CALL WAMCUR (U(KIJS), V(KIJS), KIJS, KIJL)
+                ENDDO
 !$OMP           END PARALLEL DO
-                  CALL GSTATS(1444,1)
+                CALL GSTATS(1444,1)
 
 !             CURRENTS FROM NEMO
 !             ------------------
               ELSEIF (LWNEMOCOUCUR) THEN
                 WRITE(IU06,*)' NEMO CURRENTS OBTAINED'!
+
                 CALL GSTATS(1444,0)
                 NPROMA=NPROMA_WAM
 !$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,IX,IY)
@@ -193,7 +197,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
      &                        ' FOR DATE ',CDTCUR
                 CALL FLUSH(IU06)
 
-                CALL CURRENT2WAM (FILNM,IREAD,CDATEIN)
+                CALL CURRENT2WAM (FILNM, IREAD, CDATEIN, IJS, IJL, U, V)
                 
 
                 IF (CDATEIN /= CDTCUR) THEN
@@ -226,14 +230,20 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 !           COMPUTE REFRACTION TERMS
 !           ------------------------
 !           CHECK IF UPDATE IS NEEDED
-            LLUPDATE=.FALSE.
-            DO IJ =  IJS, IJL
-!!!!debile
+            LLUPDATE = .FALSE.
+            KUPDATE = 0
+            DO IJ = IJS, IJL
               IF ( U(IJ) /= OLDU(IJ) .OR. V(IJ) /= OLDV(IJ) ) THEN
                 LLUPDATE=.TRUE.
+                KUPDATE = 1
                 EXIT
               ENDIF 
             ENDDO
+
+            IF (NPROC > 1) THEN
+              CALL MPL_ALLREDUCE(KUPDATE,'MAX',CDSTRING='GETCURR KUPDATE:')
+              IF (KUPDATE > 0 ) LLUPDATE = .TRUE.
+            ENDIF
 
             IF (LLUPDATE) THEN
               IF (IREFRA /= 0) LLUPDTTD = .TRUE.

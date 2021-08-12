@@ -1,10 +1,10 @@
-      SUBROUTINE FLDINTER (IU06, NGPTOTG, NC, NR, NFIELDS,FIELDS,        &
-     &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,      &
-     &                     IFROMIJ, JFROMIJ, IJS, IJL,                   &
-     &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,    &
-     &                     ILONRGG, IJBLOCK, PMISS,                      &
-     &                     LADEN, ROAIR, LGUST, WSTAR0, LLKC, LWCUR,     &
-     &                     LLINTERPOL,                                   &
+      SUBROUTINE FLDINTER (IU06, NGPTOTG, NC, NR, NFIELDS,FIELDS,       &
+     &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,     &
+     &                     IFROMIJ, JFROMIJ, KIJS, KIJL,                &
+     &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,   &
+     &                     ILONRGG, IJBLOCK, PMISS,                     &
+     &                     LADEN, ROAIR, LGUST, WSTAR0, LLKC, LWCUR,    &
+     &                     LLINTERPOL,                                  &
      &                     DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
 ! ----------------------------------------------------------------------    
 
@@ -33,7 +33,7 @@
 
 !      *CALL* *FLDINTER* (IU06, NGPTOTG, NC, NR, FIELDS,
 !    &                    NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
-!    &                    IFROMIJ ,JFROMIJ, IJS, IJL,
+!    &                    IFROMIJ ,JFROMIJ, KIJS, KIJL,
 !    &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
 !    &                    ILONRGG, IJBLOCK, PMISS,
 !    &                    LADEN, ROAIR, LGUST, WSTAR0,LWCUR, LLKC,
@@ -63,8 +63,8 @@
 !        *ZDELLO* - GRID POINT SPACING PER LATITUDES. 
 !        *IFROMIJ*- INTEGER  !!! LOCAL !!! LONG. GRID INDEX.
 !        *JFROMIJ*- INTEGER  !!! LOCAL !!! LAT. GRID INDEX (NORTH-SOUTH).
-!        *IJS*    - SMALLEST WAM GRID POINT INDEX USED BY THE PE.
-!        *IJL*    - LARGEST WAM GRID POINT INDEX USED BY THE PE.
+!        *KIJS*    - SMALLEST WAM GRID POINT INDEX USED BY THE PE.
+!        *KIJL*    - LARGEST WAM GRID POINT INDEX USED BY THE PE.
 !        *AMOWEP* - MOST WESTERN LONGITUDE IN GRID (  1, ? ).           
 !        *AMOSOP* - MOST SOUTHERN LATITUDE IN GRID.( ? ,NGY).           
 !        *AMOEAP* - MOST EASTERN LONGITUDE IN GRID (NGX, ? ).           
@@ -105,11 +105,11 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, NGPTOTG, NC, NR, NFIELDS
-      INTEGER(KIND=JWIM), INTENT(IN) :: NGX, NGY, KRGG, IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: NGX, NGY, KRGG, KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(IN) :: IPERIODIC
       INTEGER(KIND=JWIM), DIMENSION(NGY), INTENT(IN) :: KLONRGG, JJM
       INTEGER(KIND=JWIM), DIMENSION(NR), INTENT(IN) :: ILONRGG
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IFROMIJ, JFROMIJ
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IFROMIJ, JFROMIJ
       INTEGER(KIND=JWIM), DIMENSION(0:NC+1,NR), INTENT(IN) :: IJBLOCK
       INTEGER(KIND=JWIM), DIMENSION(NGX,NGY), INTENT(IN) :: IIM, IIPM
       INTEGER(KIND=JWIM), DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
@@ -159,7 +159,7 @@
 !       REARRANGE DATA FIELD.
 !       --------------------
 
-          DO IJ = IJS,IJL
+          DO IJ = KIJS,KIJL
             I = IFROMIJ(IJ)
             J = JFROMIJ(IJ)
 
@@ -178,14 +178,14 @@
 
           IF (LLNEWCURR) THEN
             IF (LWCUR) THEN
-              DO IJ = IJS,IJL
+              DO IJ = KIJS,KIJL
                 I = IFROMIJ(IJ)
                 J = JFROMIJ(IJ)
                 FIELDG(I,J)%UCUR = FIELDS(IJBLOCK(I,J),7)
                 FIELDG(I,J)%VCUR = FIELDS(IJBLOCK(I,J),8)
               ENDDO
             ELSE
-              DO IJ = IJS,IJL
+              DO IJ = KIJS,KIJL
                 I = IFROMIJ(IJ)
                 J = JFROMIJ(IJ)
                 FIELDG(I,J)%UCUR = 0.0_JWRB
@@ -199,7 +199,7 @@
 !       INTERPOLATE TO WAVE MODEL GRID
 !       ------------------------------
 
-          DO IJ = IJS,IJL 
+          DO IJ = KIJS,KIJL 
             I = IFROMIJ(IJ)
             J = JFROMIJ(IJ)
 

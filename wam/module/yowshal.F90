@@ -36,6 +36,11 @@
       REAL(KIND=JWRB), ALLOCATABLE :: OMOSNH2KD(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: STOKFAC(:,:)
 
+!*   ** FICTIOUS VALUE FOR LAND POINT (NSUP+1)
+      REAL(KIND=JWRB), ALLOCATABLE :: WAVNUM_LAND(:)
+      REAL(KIND=JWRB), ALLOCATABLE :: CGROUP_LAND(:)
+      REAL(KIND=JWRB), ALLOCATABLE :: OMOSNH2KD_LAND(:)
+
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *NDEPTH*    INTEGER   LENGTH OF SHALLOW WATER TABLES (see MTABS).
@@ -67,6 +72,12 @@
 !      *CGROUP*    REAL      GROUP SPEED
 !      *OMOSNH2KD  REAL      OMEGA / SINH(2KD)
 !      *STOKFAC*   REAL      FACTOR TO COMPUTE SURFACE STOKES DRIFT FROM SPECTRUM 2*G*K**2/(OMEGA*TANH(2KD))
+
+!*   ** FICTIOUS VALUE FOR LAND POINT (NSUP+1)
+!      --------------------------------------
+!      *WAVNUM_LAND*    REAL      WAVE NUMBER
+!      *CGROUP_LAND*    REAL      GROUP SPEED
+!      *OMOSNH2KD_LAND  REAL      OMEGA / SINH(2KD)
 
 ! ----------------------------------------------------------------------
       END MODULE YOWSHAL

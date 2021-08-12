@@ -1,8 +1,8 @@
-      SUBROUTINE BUILDSTRESS(MIJS, MIJL,                                &
-     &                       U10OLD, THWOLD,                            &
-     &                       USOLD, TAUW, TAUWDIR, Z0OLD,               &
-     &                       ROAIRO, ZIDLOLD,                           &
-     &                       CICOVER, CITHICK,                          &
+      SUBROUTINE BUILDSTRESS(IJS, IJL,                                &
+     &                       U10OLD, THWOLD,                          &
+     &                       USOLD, TAUW, TAUWDIR, Z0OLD,             &
+     &                       ROAIRO, ZIDLOLD,                         &
+     &                       CICOVER, CITHICK,                        &
      &                       IREAD)
 
 ! ----------------------------------------------------------------------
@@ -20,18 +20,18 @@
 
 !**   INTERFACE.
 !     ----------
-!     CALL *BUILDSTRESS*(MIJS, MIJL,
+!     CALL *BUILDSTRESS*(IJS, IJL,
 !    &                   U10OLD,THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,ROAIRO,
 !    &                   ROAIRO, ZIDLOLD, CICOVER, CITHICK,
 !    &                   IREAD)*
-!     *MIJS*      INDEX OF FIRST GRIDPOINT
-!     *MIJL*      INDEX OF LAST GRIDPOINT
-!     *U10OLD*   WIND SPEED.
-!     *THWOLD*   WIND DIRECTION (RADIANS).
-!     *USOLD*    FRICTION VELOCITY.
-!     *TAUW*     WAVE STRESS MAGNITUDE.
-!     *TAUWDIR*  WAVE STRESS DIRECTION.
-!     *Z0OLD*    ROUGHNESS LENGTH IN M.
+!     *IJS*       INDEX OF FIRST GRIDPOINT
+!     *IJL*       INDEX OF LAST GRIDPOINT
+!     *U10OLD *   WIND SPEED.
+!     *THWOLD *   WIND DIRECTION (RADIANS).
+!     *USOLD*     FRICTION VELOCITY.
+!     *TAUW*      WAVE STRESS MAGNITUDE.
+!     *TAUWDIR*   WAVE STRESS DIRECTION.
+!     *Z0OLD*     ROUGHNESS LENGTH IN M.
 !     *RAD0OLD*   AIR DENSITY IN KG/M3.
 !     *RZIDL0OLD* Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !     *CICOVER*   SEA ICE COVER.
@@ -61,7 +61,7 @@
       USE YOWPCONS , ONLY : G        ,GM1      ,ROAIR    ,EPSUS    ,EPSU10
       USE YOWPHYS  , ONLY : ALPHA    ,XKAPPA   ,XNLEV    ,RNUM
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,NPROMA_WAM
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,FIELDG   ,    &
      &                      NXFF     ,NYFF
       USE YOWNEMOFLDS,ONLY: NEMOCICOVER, NEMOCITHICK
@@ -78,13 +78,14 @@
 #include "init_fieldg.intfb.h"
 #include "readwgrib.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
 
-      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL), INTENT(OUT) :: U10OLD, THWOLD
-      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL), INTENT(OUT) :: USOLD, Z0OLD, TAUW, TAUWDIR
-      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL), INTENT(OUT) :: ROAIRO, ZIDLOLD
-      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL), INTENT(OUT) :: CICOVER,CITHICK
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: U10OLD, THWOLD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USOLD, Z0OLD, TAUW, TAUWDIR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: ROAIRO, ZIDLOLD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: CICOVER,CITHICK
+
 
       INTEGER(KIND=JWIM) :: ICODE_WND
       INTEGER(KIND=JWIM) :: ILEN, LIU, IPARAM, KZLEVUWAVE, KZLEVCD
@@ -96,8 +97,8 @@
       REAL(KIND=JWRB) :: RUSE
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: TEMPXNLEV, CDSQRTINV, Z0TOT, USTAR, CHARNOCKOG
-      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: CD
-      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: ALPHAOG
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAOG
 
       CHARACTER(LEN=24) :: FILNM
 
@@ -129,25 +130,23 @@
       LWNDFILE=.TRUE.
       LCLOSEWND=.TRUE.
 
-      IF(LWNEMOCOUCIC.OR.LWNEMOCOUCIT) THEN
-        ALLOCATE(NEMOCICOVER(MIJS:MIJL),NEMOCITHICK(MIJS:MIJL))
-        NEMOCICOVER(MIJS:MIJL)=0.0_JWRB
-        NEMOCITHICK(MIJS:MIJL)=0.0_JWRB
+      IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT) THEN
+        ALLOCATE(NEMOCICOVER(IJS:IJL),NEMOCITHICK(IJS:IJL))
+        NEMOCICOVER(IJS:IJL)=0.0_JWRB
+        NEMOCITHICK(IJS:IJL)=0.0_JWRB
       ENDIF
 
-      CALL GETWND (MIJS, MIJL,                                          &
-     &             U10OLD(MIJS), USOLD(MIJS),                           &
-     &             THWOLD(MIJS),                                        &
-     &             ROAIRO(MIJS), ZIDLOLD(MIJS),                         &
-     &             CICOVER(MIJS), CITHICK(MIJS),                        &
-     &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,                  &
+      CALL GETWND (IJS, IJL,                                &
+     &             U10OLD, USOLD,                           &
+     &             THWOLD,                                  &
+     &             ROAIRO, ZIDLOLD,                         &
+     &             CICOVER, CITHICK,                        &
+     &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,      &
      &             LCR, ICODE_WND)
 
-      IF(LWNEMOCOUCIC.OR.LWNEMOCOUCIT) THEN
+      IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT) THEN
         DEALLOCATE(NEMOCICOVER,NEMOCITHICK)
       ENDIF
-
-      IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. GETWND DONE'
 
 
 !     1.2 USE DATA FROM A FILE CONTAINING WIND SPEED MODIFIED BY
@@ -160,9 +159,9 @@
       FILNM='uwavein'
       LIU = LEN_TRIM(FILNM)
       FILNM=FILNM(1:LIU)
-      IF(IREAD.EQ.IRANK) THEN
+      IF (IREAD == IRANK) THEN
         INQUIRE(FILE=FILNM,EXIST=LWAVEWIND)
-        IF(LWAVEWIND) THEN
+        IF (LWAVEWIND) THEN
           NWAVEWIND(1)=1
         ELSE
           NWAVEWIND(1)=0
@@ -171,11 +170,11 @@
 
 !     USE MESSAGE PASSING TO SEND FILE STATUS TO THE OTHER PE'S
       CALL GSTATS(696,0)
-      IF(NPROC.GT.1) THEN
+      IF (NPROC > 1) THEN
         CALL MPL_BROADCAST(NWAVEWIND,KROOT=IREAD,KTAG=KTAG,             &
      &    CDSTRING='BUILDSTRESS :')
         KTAG=KTAG+1
-        IF(NWAVEWIND(1).EQ.1) THEN
+        IF (NWAVEWIND(1) == 1) THEN
           LWAVEWIND=.TRUE.
         ELSE
           LWAVEWIND=.FALSE.
@@ -183,12 +182,11 @@
       ENDIF
       CALL GSTATS(696,1)
 
-      IF(LWAVEWIND) THEN
+      IF (LWAVEWIND) THEN
         IPARAM=245
         LLONLYPOS=.FALSE.
-        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, MIJS, MIJL,         &
-     &                 U10OLD(MIJS), KZLEVUWAVE, LLONLYPOS, IREAD)
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
+        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, IJS, IJL,         &
+     &                 U10OLD(IJS), KZLEVUWAVE, LLONLYPOS, IREAD)
 
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' A DATA FILE CONTAINING WIND SPEED INFORMATION'
@@ -198,7 +196,6 @@
         WRITE(IU06,*) ' THE INPUT WINDS AND DRAG COEFFICIENT ARE FOUND'
         WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ',        &
      &                  KZLEVUWAVE,' m'
-        IF (ITEST.GT.0) CALL FLUSH(IU06) 
 
 
       ELSE
@@ -216,7 +213,6 @@
         WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ',        &
      &                  KZLEVUWAVE,' m'
 
-        IF (ITEST.GT.0) CALL FLUSH(IU06) 
       ENDIF
  
 !     TEST WHETHER THE HEIGHT OF THE INPUT WINDS IS THE SAME AS DEFINED
@@ -224,7 +220,7 @@
 !     RECOMPUTE THE TABLE. THE ORIGINAL TABLE WILL BE SWAP BACK AT THE
 !     END OF THE ROUTINE.
 
-      IF (KZLEVUWAVE.NE.NINT(XNLEV)) THEN
+      IF (KZLEVUWAVE /= NINT(XNLEV)) THEN
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' THE REFERENCE HEIGHT TO BE USED IN WAMODEL'
         WRITE(IU06,*) ' ',XNLEV 
@@ -233,7 +229,6 @@
         WRITE(IU06,*) ' THE NECESSARY ADJUSTMENTS WILL BE MADE'
         WRITE(IU06,*) ' TO DETERMINE THE INITIAL FIELDS.'
         WRITE(IU06,*) ' '
-        IF (ITEST.GT.0) CALL FLUSH(IU06) 
 
         TEMPXNLEV=KZLEVUWAVE
       ELSE
@@ -247,9 +242,9 @@
       NPROMA=NPROMA_WAM
       CALL GSTATS(1444,0)
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,IJ) 
-      DO JKGLO=MIJS,MIJL,NPROMA
+      DO JKGLO=IJS,IJL,NPROMA
         KIJS=JKGLO
-        KIJL=MIN(KIJS+NPROMA-1,MIJL)
+        KIJL=MIN(KIJS+NPROMA-1,IJL)
 
         CALL CDUSTARZ0 (KIJS, KIJL, U10OLD(KIJS), TEMPXNLEV, CD(KIJS), USOLD(KIJS), Z0OLD(KIJS))
 
@@ -261,23 +256,21 @@
       ENDDO
 !$OMP END PARALLEL DO
       CALL GSTATS(1444,1)
-      IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. BUILDSTRESS DONE AT 1'
 
 !     1.4  GET DRAG COEFFICIENT
 !          --------------------
-      IF(.NOT.LNOCDIN) THEN
+      IF (.NOT.LNOCDIN) THEN
         IPARAM=233
         LLONLYPOS=.TRUE.
         FILNM='cdwavein'
 !       !!!! CD was initialised above !!!!
-        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, MIJS, MIJL,         &
-     &                 CD(MIJS), KZLEVCD, LLONLYPOS, IREAD)
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
+        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, IJS, IJL,         &
+     &                 CD(IJS), KZLEVCD, LLONLYPOS, IREAD)
 
 !       TEST REFERENCE LEVEL FOR UWAVE AND CD
 
-        IF(KZLEVUWAVE.NE.0.AND.KZLEVCD.NE.0) THEN
-          IF(KZLEVUWAVE.NE.KZLEVCD) THEN
+        IF (KZLEVUWAVE /= 0 .AND. KZLEVCD /= 0) THEN
+          IF (KZLEVUWAVE /= KZLEVCD) THEN
             WRITE(IU06,*)'************************************'
             WRITE(IU06,*)'*                                  *'
             WRITE(IU06,*)'* FATAL ERROR IN SUB BUILDSTRESS   *'
@@ -295,12 +288,12 @@
 !       1.5 COMPUTE TAUW,USOLD AND Z0OLD
 !           ----------------------------
 
-        IF(LLCAPCHNK) THEN
-          DO IJ=MIJS,MIJL
+        IF (LLCAPCHNK) THEN
+          DO IJ=IJS,IJL
             ALPHAOG(IJ)= CHNKMIN(U10OLD(IJ))*GM1
           ENDDO
         ELSE
-          DO IJ=MIJS,MIJL
+          DO IJ=IJS,IJL
             ALPHAOG(IJ)= ALPHA*GM1
           ENDDO
         ENDIF
@@ -316,9 +309,9 @@
           CALL GSTATS(1444,0)
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) & 
 !$OMP&    PRIVATE(JKGLO,KIJS,KIJL,IJ,CDSQRTINV,Z0TOT,USTAR,CHARNOCKOG)
-          DO JKGLO=MIJS,MIJL,NPROMA
+          DO JKGLO=IJS,IJL,NPROMA
             KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,MIJL)
+            KIJL=MIN(KIJS+NPROMA-1,IJL)
             DO IJ=KIJS,KIJL
 !!            USOLD WILL FIRST CONTAIN ITS SQUARE
 !!            THE NUMERICAL RELATION BETWEEN USOLD AND U10OLD SHOULD
