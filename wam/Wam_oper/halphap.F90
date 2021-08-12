@@ -1,8 +1,8 @@
-SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
+SUBROUTINE HALPHAP(IJS, IJL, UDIR, FL1, HALP)
 
 ! ----------------------------------------------------------------------
 
-!**** *HALPHAP* - COMPUTATION OF 1/2 PHILLIPS PARAMETER in the wind direction only
+!**** *HALPHAP* - COMPUTATION OF 1/2 PHILLIPS PARAMETER
 
 
 !**   INTERFACE.
@@ -12,7 +12,6 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
 !          *UDIR* - WIND SPEED DIRECTION
-!          *USTAR* - FRICTION VELOCITY
 !          *FL1*  - SPECTRA
 !          *HALP*   - 1/2 PHILLIPS PARAMETER 
 
@@ -23,103 +22,74 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : TH       , FR       , FR5      ,FRATIO  ,FRIC     ,OLDWSFC
-      USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        , GM1      ,ZPI       ,ZPI4GM2,EPSMIN
+      USE YOWFRED  , ONLY : FR       , TH       , FR5      ,DELTH
+      USE YOWPARAM , ONLY : NANG     , NFRE
+      USE YOWPCONS , ONLY : G        , ZPI      ,ZPI4GM2
       USE YOWPHYS  , ONLY : ALPHAPMAX
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP    ,CINV
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "peakfri.intfb.h"
+#include "femean.intfb.h"
+#include "meansqs_lf.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: UDIR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: HALP
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
-      ! FREQUENCY INDEXES FOR THE PHILLIPS RANGE 
-      INTEGER(KIND=JWIM), PARAMETER :: IPHS = 1 + INT(LOG(1.3_JWRB)/LOG(FRATIO))
-      INTEGER(KIND=JWIM), PARAMETER :: IPHE = 1 + INT(LOG(3.0_JWRB)/LOG(FRATIO))
-
-      INTEGER(KIND=JWIM) :: MS, MM, ME
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MMAX
-
-      REAL(KIND=JWRB) :: RF, WFR
-      REAL(KIND=JWRB) :: COEF, WS, CHECKTA
+      REAL(KIND=JWRB) :: ZLNFRNFRE, F1D
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NFRE+IPHE) :: DFRE, F5DFRE 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1DMAX
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XINVWVAGE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: DIRCOEF
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: F1DWS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FLWS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMSS, EM, FM 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: WD 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FLWD
 
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
-      RF = 0.5_JWRB*(FRATIO - 1.0_JWRB/FRATIO)
-      DO M = 1, NFRE
-         DFRE(M) = FR(M)*RF
-         F5DFRE(M) = FR5(M)*DFRE(M)
-      ENDDO
-      DO M = NFRE+1, NFRE+IPHE
-         DFRE(M) = FR(NFRE)*FRATIO**(M-NFRE)*RF
-         F5DFRE(M) = FR5(NFRE)*DFRE(M)
-      ENDDO
+      ZLNFRNFRE = LOG(FR(NFRE))
 
-!     Find windsea spectrum
-      COEF = OLDWSFC*FRIC
-      DO M = 1, NFRE
-        DO IJ = IJS, IJL
-          XINVWVAGE(IJ,M)=USTAR(IJ)*CINV(INDEP(IJ),M)
-        ENDDO
-      ENDDO
-
+      ! Find spectrum in wind direction
       DO K = 1, NANG
         DO IJ = IJS, IJL
-          DIRCOEF(IJ,K)=COEF*COS(TH(K)-UDIR(IJ))
+           WD(IJ,K) = 0.5_JWRB + 0.5_JWRB * SIGN(1.0_JWRB, COS(TH(K)-UDIR(IJ)) )
         ENDDO
       ENDDO
 
-      MMAX(:) = NFRE
       DO M = 1, NFRE
         DO K = 1, NANG
           DO IJ = IJS, IJL
-            CHECKTA=XINVWVAGE(IJ,M)*DIRCOEF(IJ,K)
-            WS = 0.5_JWRB + SIGN(0.5_JWRB, (CHECKTA-1.0_JWRB) )
-            FLWS(IJ,K,M) = WS*FL1(IJ,K,M)
+             FLWD(IJ,K,M) = FL1(IJ,K,M) * WD(IJ,K) 
           ENDDO
         ENDDO
       ENDDO
 
-      ! Find peak of windsea 1d spectrum
-      CALL PEAKFRI (FLWS, IJS, IJL, MMAX, F1DMAX, F1DWS)
+      CALL MEANSQS_LF(NFRE, IJS, IJL, FLWD, XMSS)
+      CALL FEMEAN (FLWD, IJS, IJL, EM, FM)
 
-      ! Find the Phillips parameter by weighting averaging its value over the Phillips range (see above)
       DO IJ = IJS, IJL
-        ALPHAP(IJ) = 0.0_JWRB
-        MS = MIN(MMAX(IJ) + IPHS, NFRE)
-        MM = MIN(MMAX(IJ) + IPHE, NFRE) 
-        ME = MMAX(IJ) + IPHE 
-        WFR = 0.0_JWRB
-        DO M = MS, MM 
-          WFR = WFR + DFRE(M)
-          ALPHAP(IJ) = ALPHAP(IJ) + F5DFRE(M)*F1DWS(IJ,M)
-        ENDDO
-        ! extension above FR(NFRE) with f**-5 tail
-        DO M = NFRE+1, ME
-          WFR = WFR + DFRE(M)
-          ALPHAP(IJ) = ALPHAP(IJ) + F5DFRE(M)*F1DWS(IJ,NFRE)
-        ENDDO
-        ALPHAP(IJ) = ZPI4GM2*ALPHAP(IJ) / WFR
+        IF(EM(IJ) > 0.0_JWRB .AND. FM(IJ) < FR(NFRE-2) ) THEN
+          ALPHAP(IJ) = XMSS(IJ) /(ZLNFRNFRE - LOG(FM(IJ)))
+          IF ( ALPHAP(IJ) > ALPHAPMAX ) THEN
+            ! some odd cases, revert to tail value
+            F1D = 0.0_JWRB
+            DO K = 1, NANG
+              F1D = F1D + FLWD(IJ,K,NFRE)*DELTH
+            ENDDO
+            ALPHAP(IJ) = ZPI4GM2*FR5(NFRE)*F1D
+          ENDIF
+        ELSE
+          F1D = 0.0_JWRB
+          DO K = 1, NANG
+            F1D = F1D + FLWD(IJ,K,NFRE)*DELTH
+          ENDDO
+          ALPHAP(IJ) = ZPI4GM2*FR5(NFRE)*F1D
+        ENDIF
       ENDDO
 
 !     1/2 ALPHAP:
