@@ -2994,6 +2994,7 @@ END INTERFACE
       USE YOWGRID,  ONLY : DELPHI, IJS, IJL
       USE YOWPCONS, ONLY : PI, ZPI
       USE YOWREFD,  ONLY : THDD, THDC, SDOT
+      USE YOWSHAl,  ONLY : OMOSNH2KD
       USE yowpd, only : np_global
       USE YOWUNPOOL, ONLY : SI
       IMPLICIT NONE
@@ -3004,7 +3005,6 @@ END INTERFACE
       INTEGER(KIND=JWIM) :: IP, IJ, K, M, KM1, KP1, MP1, MM1
       REAL(KIND=JWRU) DFP, DFM
       REAL(KIND=JWRU) DTHP, DTHM
-      REAL SHLFAC(IJS:IJL,NFRE_RED)
       REAL(KIND=JWRU) CASS(0:NFRE+1)
       REAL(KIND=JWRU) CAS(NFRE,NANG)
       REAL(KIND=JWRU) CAD(NANG,NFRE)
@@ -3019,7 +3019,6 @@ END INTERFACE
       DELFR0 = 0.25_JWRU*DELPRO/((FRATIO-1)*ZPI)
       IF (REFRA_METHOD .eq. 1) THEN
         IF (IREFRA.NE.0) THEN
-          CALL DOTDC (IJS, IJL, ISHALLO, SHLFAC)
           DO IP=1,NP_RES
             IJ = IP
             IF (ISHALLO.NE.1) THEN
@@ -3066,8 +3065,8 @@ END INTERFACE
                   DFP = DELFR0/FR(M)
                   DFM = DELFR0/FR(MM1)
                   !
-                  DTHP = REAL(SHLFAC(IJ,M),JWRU)*DRDP(K) + DRCP(K)
-                  DTHM = REAL(SHLFAC(IJ,M),JWRU)*DRDM(K) + DRCM(K)
+                  DTHP = REAL(OMOSNH2KD(IJ,M),JWRU)*DRDP(K) + DRCP(K)
+                  DTHM = REAL(OMOSNH2KD(IJ,M),JWRU)*DRDM(K) + DRCM(K)
                   ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
                   DTP_I(K,M,IJ) = -DTHP+ABS(DTHP)
                   DTM_I(K,M,IJ) =  DTHM+ABS(DTHM)
