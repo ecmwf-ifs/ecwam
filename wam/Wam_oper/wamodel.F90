@@ -299,7 +299,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSMIN
-      USE YOWSHAl  , ONLY : DEPTH    ,EMAXDPT  ,WAVNUM   ,CINV     ,    &
+      USE YOWSHAL  , ONLY : DEPTH    ,EMAXDPT  ,WAVNUM   ,CINV     ,    &
      &            CGROUP   ,OMOSNH2KD, STOKFAC
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDATER   ,CDATES   ,CDTINTT  ,IDELPRO  ,IDELT    ,    &

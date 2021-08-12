@@ -77,7 +77,7 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, WAVNUM, CGROUP, OMOSNH2KD, &
 
 !     Spectra extended with the halo exchange for the propagation
 !     But limited to NFRE_RED frequencies
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1,NANG,NFRE_RED) :: FL1_EXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NANG, NFRE_RED) :: FL1_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED) :: WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1) :: DEPTH_EXT, U_EXT, V_EXT
 
@@ -134,11 +134,11 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, WAVNUM, CGROUP, OMOSNH2KD, &
              IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS:IJL,NANG,NFRE_RED))
 
 !            NEED HALO VALUES
-             CALL  PROENVHALO (IJS, IJL, NINF, NSUP,      &
-&                  WAVNUM, CGROUP, OMOSNH2KD,             &
-&                  DEPTH, U, V,                           &
-&                  WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
-&                  DEPTH_EXT, U_EXT, V_EXT )
+             CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
+&                              WAVNUM, CGROUP, OMOSNH2KD,             &
+&                              DEPTH, U, V,                           &
+&                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+&                              DEPTH_EXT, U_EXT, V_EXT )
 
 
 !            DOT THETA TERM:
@@ -168,11 +168,11 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, WAVNUM, CGROUP, OMOSNH2KD, &
 
              IF (LUPDTWGHT) THEN
 !              NEED HALO VALUES
-               CALL  PROENVHALO (IJS, IJL, NINF, NSUP,      &
-&                    WAVNUM, CGROUP, OMOSNH2KD,             &
-&                    DEPTH, U, V,                           &
-&                    WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
-&                    DEPTH_EXT, U_EXT, V_EXT )
+               CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
+&                                WAVNUM, CGROUP, OMOSNH2KD,             &
+&                                DEPTH, U, V,                           &
+&                                WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+&                                DEPTH_EXT, U_EXT, V_EXT )
 
 !              COMPUTES ADVECTION WEIGTHS AND CHECK CFL CRITERIA
                CALL CTUWUPDT(IJS, IJL, NINF, NSUP,       &

@@ -82,7 +82,7 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
 
 !!    should be combine into one single data exchange, when we start using this option.... !!!
       CALL MPEXCHNG(WAVNUM_EXT, NFRE_RED, 1)
-      WAVNUM_EXT(NSUP+1,1:NFRE_RED) = WAVNUM_LAND(NFRE_RED)
+      WAVNUM_EXT(NSUP+1,1:NFRE_RED) = WAVNUM_LAND(1:NFRE_RED)
 
       CALL MPEXCHNG(CGROUP_EXT, NFRE_RED, 1)
       CGROUP_EXT(NSUP+1,1:NFRE_RED) = CGROUP_LAND(1:NFRE_RED)
