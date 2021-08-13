@@ -148,7 +148,7 @@ SUBROUTINE CAL_SECOND_ORDER_SPEC(KIJS, KIJL, F1, WAVNUM, DEPTH, SIG)
             XM = REAL(M/MR)
 !!!            D1 = REAL(M)/REAL(MR)-XM
             M0 = INT(XM)
-            IF(M0 <= 1) THEN
+            IF(M0 < 1) THEN
               M0 = 1
               MP = M0+1
               D1 = 1._JWRB

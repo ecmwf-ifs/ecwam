@@ -584,7 +584,7 @@ SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
 
               DO IC=-1,1
                 IF (WMPMN(IJ,K,M,IC) > 1.0_JWRB .OR.                         &
-     &              WMPMN(IJ,K,M,IC).LT.0.0_JWRB      ) THEN
+     &              WMPMN(IJ,K,M,IC) < 0.0_JWRB      ) THEN
                   WRITE(IU06,*) '***********************************'
                   WRITE(IU06,*) '* CTUW:                           *'
                   WRITE(IU06,*) '* CFL VIOLATED IN FREQUENCY SPACE *'
