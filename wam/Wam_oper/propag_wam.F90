@@ -168,6 +168,15 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, WAVNUM, CGROUP, OMOSNH2KD, &
 
              IF (LUPDTWGHT) THEN
 !              NEED HALO VALUES
+!!!
+write(*,*) 'debile, before call to PROENVHALO ',IJS, IJL, NINF, NSUP
+write(*,*) 'WAVNUM ',WAVNUM 
+write(*,*) 'CGROUP ',CGROUP
+write(*,*) 'OMOSNH2KD ',OMOSNH2KD
+write(*,*) 'DEPTH ',DEPTH
+write(*,*) 'U ',U
+write(*,*) 'V ',V
+
                CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
 &                                WAVNUM, CGROUP, OMOSNH2KD,             &
 &                                DEPTH, U, V,                           &
