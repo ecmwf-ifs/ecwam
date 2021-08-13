@@ -1,4 +1,4 @@
-      SUBROUTINE WAMADSZIDL(ADS, ZIDL)
+      SUBROUTINE WAMADSZIDL(IJS, IJL, ADS, ZIDL)
 ! ----------------------------------------------------------------------
 
 !*    PURPOSE.
@@ -10,6 +10,7 @@
 !**   INTERFACE.
 !     ----------
 !     *CALL* *WAMADSZIDL*(ADS, ZIDL)
+!      *IJS:IJL - FIRST DIMENSION OF ARRAYS ADS and ZIDL
 !     *ADS*      AIR DENSITY IN KG/M3.
 !     *ZIDL*     CONVECTIVE VELOCITy SCALE 
 
@@ -19,9 +20,7 @@
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWSTAT  , ONLY : NPROMA_WAM
-      USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWWIND  , ONLY : FIELDG
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -29,12 +28,16 @@
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP), INTENT(INOUT):: ADS, ZIDL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT):: ADS, ZIDL
+
 
       INTEGER(KIND=JWIM) :: IJ, IX, JY
       INTEGER(KIND=JWIM):: JKGLO, KIJS, KIJL, NPROMA
 
       REAL(KIND=JWRB):: ZHOOK_HANDLE
+
+! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('WAMADSZIDL',0,ZHOOK_HANDLE)
 
@@ -42,9 +45,9 @@
       IF(LWCOU) THEN
           NPROMA=NPROMA_WAM
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
-          DO JKGLO=NSTART(IRANK),NEND(IRANK),NPROMA
+          DO JKGLO=IJS,IJL,NPROMA
             KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
+            KIJL=MIN(KIJS+NPROMA-1,IJL)
             DO IJ=KIJS,KIJL
               IX = IFROMIJ(IJ)
               JY = JFROMIJ(IJ)

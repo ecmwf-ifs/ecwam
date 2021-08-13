@@ -508,7 +508,7 @@
 !                IS COMPUTED.
 !     LNSESTART : FLAG CONTROLLING WHETHER OR NOT THE INITIAL SPECTRA ARE
 !                 RESET TO NOISE LEVEL.
-!     LSMSSIG_WAM : .T. = send signals to SMS or ECFLOW (ECMWF supervisor)
+!     LSMSSIG_WAM : .T. = send signals to ECFLOW (ECMWF supervisor)
 !     CMETER :  SMS or ECFLOW meter command (ECMWF supervisor)
 !     CEVENT :  SMS or ECFLOW event command (ECMWF supervisor)
 
@@ -802,6 +802,7 @@
         CALL ABORT1
       ENDIF
 
+      ! when coupled to IFS, the control will come from it via calls to wavemdl
       IF (LWCOU) LSMSSIG_WAM=.FALSE.
 
 

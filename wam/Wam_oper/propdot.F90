@@ -1,4 +1,7 @@
-      SUBROUTINE PROPDOT(IJS, IJL, THDC, THDD, SDOT)
+      SUBROUTINE PROPDOT(KIJS, KIJL, NINF, NSUP,                &
+     &                   WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+     &                   DEPTH_EXT, U_EXT, V_EXT,               & 
+     &                   THDC, THDD, SDOT)
 
 ! ----------------------------------------------------------------------
 
@@ -16,7 +19,19 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PROPDOT*(IJS, IJL, THDC, THDD, SDOT)
+!       *CALL* *PROPDOT*(KIJS, KIJL, NINF, NSUP,
+!                        WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+!                        DEPTH_EXT, U_EXT, V_EXT,       & 
+!                        THDC, THDD, SDOT)
+!          *KIJS*        - STARTING INDEX
+!          *KIJL*        - ENDING INDEX
+!          *NINF:NSUP+1* - 1st DIMENSION OF *_EXT ARRAYS 
+!          *WAVNUM_EXT*  - WAVE NUMBER.
+!          *CGROUP_EXT*  - GROUP SPPED.
+!          *OMOSNH2KD_EXT*- OMEGA / SINH(2KD)
+!          *DEPTH_EXT*    - WATER DEPTH (including the halo points)
+!          *U_EXT*        - U-COMPONENT OF SURFACE CURRENT (including the halo points)
+!          *V_EXT*        - V-COMPONENT OF SURFACE CURRENT (including the halo points)
 !         THDC and THDD ARRAYS TO KEEP DEPTH AND CURRENT REFRACTION FOR THETA DOT
 !         AND SDOT FOR SIGMA DOT
 
@@ -39,15 +54,13 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : COSTH    ,SINTH
       USE YOWGRID  , ONLY : COSPHM1
-      USE YOWMESPAS, ONLY : LMESSPASS
+!!!!!!!!!! debile                  ???????
       USE YOWPARAM , ONLY : NANG     ,NFRE_RED
-      USE YOWSHAL  , ONLY : TCGOND   ,TFAK     ,TSIHKD   ,INDEP 
-      USE YOWSTAT  , ONLY : ICASE    ,ISHALLO  ,IREFRA
-      USE YOWTEST  , ONLY : IU06
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOWSTAT  , ONLY : ICASE    ,IREFRA
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -55,9 +68,11 @@
 #include "abort1.intfb.h"
 #include "gradi.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG), INTENT(OUT) :: THDC, THDD
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE_RED), INTENT(OUT) :: SDOT
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, NINF, NSUP
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: DEPTH_EXT, U_EXT, V_EXT
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(OUT) :: THDC, THDD
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE_RED), INTENT(OUT) :: SDOT
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M
@@ -65,8 +80,8 @@
       REAL(KIND=JWRB) :: CD, SD, SS, SC, CC
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DDPHI, DDLAM, DUPHI, DULAM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DVPHI, DVLAM, DCO, OMDD
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DDPHI, DDLAM, DUPHI, DULAM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DVPHI, DVLAM, DCO, OMDD
 
 ! ----------------------------------------------------------------------
 
@@ -76,18 +91,21 @@
 !*    2.2 DEPTH AND CURRENT GRADIENTS.
 !         ----------------------------
 
-        CALL GRADI (IJS, IJL, IREFRA, DDPHI, DDLAM, DUPHI,    &
+        CALL GRADI (KIJS, KIJL, NINF, NSUP, IREFRA, &
+     &              DEPTH_EXT, U_EXT, V_EXT,        & 
+     &              DDPHI, DDLAM, DUPHI,            &
      &              DULAM, DVPHI, DVLAM)
+
 
 !*    2.3 COSINE OF LATITUDES IF SPHERICAL PROPAGATION.
 !         ---------------------------------------------
 
-        IF (ICASE.EQ.1) THEN
-          DO IJ = IJS,IJL
+        IF (ICASE == 1) THEN
+          DO IJ = KIJS,KIJL
             DCO(IJ) = COSPHM1(IJ)
           ENDDO
         ELSE
-          DO IJ = IJS,IJL
+          DO IJ = KIJS,KIJL
             DCO(IJ) = 1.0_JWRB
           ENDDO
         ENDIF
@@ -95,17 +113,16 @@
 !*    2.4 DEPTH GRADIENT PART OF SIGMA DOT.
 !         ---------------------------------
 
-        IF (ISHALLO.NE.1 ) THEN
-          IF (IREFRA.EQ.3) THEN
-            DO IJ = IJS,IJL
-              OMDD(IJ) = V(IJ)*DDPHI(IJ) + U(IJ)*DDLAM(IJ)*DCO(IJ)
-            ENDDO
-          ELSEIF (IREFRA.EQ.2) THEN
-            DO IJ = IJS,IJL
-              OMDD(IJ) = 0.0_JWRB
-            ENDDO
-          ENDIF
+        IF (IREFRA == 3) THEN
+          DO IJ = KIJS,KIJL
+            OMDD(IJ) = V_EXT(IJ)*DDPHI(IJ) + U_EXT(IJ)*DDLAM(IJ)*DCO(IJ)
+          ENDDO
+        ELSEIF (IREFRA == 2) THEN
+          DO IJ = KIJS,KIJL
+            OMDD(IJ) = 0.0_JWRB
+          ENDDO
         ENDIF
+
 
 !*    2.5. LOOP OVER DIRECTIONS.
 !          ---------------------
@@ -117,51 +134,44 @@
 !*    2.5.1. DEPTH GRADIENT OF THETA DOT.
 !            ----------------------------
 
-          IF (ISHALLO.NE.1) THEN
-            IF (IREFRA.EQ.1 .OR. IREFRA.EQ.3) THEN
-              DO IJ = IJS,IJL
-                THDD(IJ,K) = SD*DDPHI(IJ) - CD*DDLAM(IJ)*DCO(IJ)
-              ENDDO
-            ELSE
-              DO IJ = IJS,IJL
-                THDD(IJ,K) = 0.0_JWRB
-              ENDDO
-            ENDIF
+          IF (IREFRA == 1 .OR. IREFRA == 3) THEN
+            DO IJ = KIJS,KIJL
+              THDD(IJ,K) = SD*DDPHI(IJ) - CD*DDLAM(IJ)*DCO(IJ)
+            ENDDO
+          ELSE
+            DO IJ = KIJS,KIJL
+              THDD(IJ,K) = 0.0_JWRB
+            ENDDO
           ENDIF
 
 !*    2.5.2 SIGMA DOT AND THETA DOT PART FROM CURRENT GRADIENT.
 !           ---------------------------------------------------
 
-          IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+          IF (IREFRA == 2 .OR. IREFRA == 3) THEN
+
             SS  = SD**2
             SC  = SD*CD
             CC  = CD**2
-            DO IJ = IJS,IJL
-              SDOT(IJ,K,NFRE_RED) = -SC*DUPHI(IJ) - CC*DVPHI(IJ)            &
+            DO IJ = KIJS,KIJL
+              SDOT(IJ,K,NFRE_RED) = -SC*DUPHI(IJ) - CC*DVPHI(IJ)      &
      &                        - (SS*DULAM(IJ) + SC*DVLAM(IJ))*DCO(IJ)
-              THDC(IJ,K) =  SS*DUPHI(IJ) + SC*DVPHI(IJ)                 &
+              THDC(IJ,K) =  SS*DUPHI(IJ) + SC*DVPHI(IJ)               &
      &                    - (SC*DULAM(IJ) + CC*DVLAM(IJ))*DCO(IJ)
             ENDDO
 
 !*    2.5.3 LOOP OVER FREQUENCIES.
 !           ----------------------
 
-            IF (ISHALLO.NE.1) THEN
-              DO M=1,NFRE_RED
-                DO IJ=IJS,IJL
-                  SDOT(IJ,K,M) = (SDOT(IJ,K,NFRE_RED)*TCGOND(INDEP(IJ),M)   &
-     &             + OMDD(IJ)*TSIHKD(INDEP(IJ),M))                      &
-     &             * TFAK(INDEP(IJ),M)
-                ENDDO
-
-!*    BRANCH BACK TO 2.5.3 FOR NEXT FREQUENCY.
-
+            DO M=1,NFRE_RED
+              DO IJ=KIJS,KIJL
+                SDOT(IJ,K,M) = (SDOT(IJ,K,NFRE_RED)*CGROUP_EXT(IJ,M)   &
+     &           + OMDD(IJ)*OMOSNH2KD_EXT(IJ,M)) * WAVNUM_EXT(IJ,M) 
               ENDDO
-            ENDIF
+            ENDDO
+
           ENDIF
 
-!*    BRANCH BACK TO 2.5 FOR NEXT DIRECTION.
-
+!*      BRANCH BACK TO 2.5 FOR NEXT DIRECTION.
         ENDDO
 
       IF (LHOOK) CALL DR_HOOK('PROPDOT',1,ZHOOK_HANDLE)

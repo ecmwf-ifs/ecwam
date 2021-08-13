@@ -54,7 +54,6 @@
 
       USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS    ,    &
      &            FP       ,ALPHJ
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPCONS , ONLY : G
 
 ! ----------------------------------------------------------------------
@@ -64,7 +63,8 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
       REAL(KIND=JWRB), INTENT(IN) :: FETCH, FPMAX
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN) :: U10OLD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: U10OLD
+
 
       INTEGER(KIND=JWIM) :: IJ
       REAL(KIND=JWRB) :: GX, U10, GXU, UG
@@ -76,7 +76,7 @@
 
       GX = G * FETCH
       DO IJ = IJS, IJL
-        IF (U10OLD(IJ) .GT. 0.1E-08_JWRB) THEN
+        IF (U10OLD(IJ) > 0.1E-08_JWRB) THEN
           U10 = U10OLD(IJ)
           GXU = GX/(U10*U10)
           UG = G/U10

@@ -1,4 +1,5 @@
-      SUBROUTINE SDISSIP_ARD (F, FL, SL, IJS, IJL, &
+      SUBROUTINE SDISSIP_ARD (KIJS, KIJL, FL1, FLD, SL,           &
+     &                        WAVNUM, CGROUP,                     &
      &                        USNEW, THWNEW, ROAIRN)
 ! ----------------------------------------------------------------------
 
@@ -17,13 +18,16 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDISSIP_ARD (F, FL, IJS, IJL, SL,*
-!                            USNEW, THWNEW,ROAIRN)*
-!          *F*   - SPECTRUM.
-!          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
-!          *IJS* - INDEX OF FIRST GRIDPOINT
-!          *IJL* - INDEX OF LAST GRIDPOINT
-!          *SL*  - TOTAL SOURCE FUNCTION ARRAY
+!       *CALL* *SDISSIP_ARD (KIJS, KIJL, FL1, FLD,SL,*
+!                            WAVNUM, CGROUP,
+!                            USNEW, THWNEW, ROAIRN)*
+!          *KIJS*   - INDEX OF FIRST GRIDPOINT
+!          *KIJL*   - INDEX OF LAST GRIDPOINT
+!          *FL1*    - SPECTRUM.
+!          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
+!          *SL*     - TOTAL SOURCE FUNCTION ARRAY
+!          *WAVNUM* - WAVE NUMBER
+!          *CGROUP* - GROUP SPEED
 !          *USNEW*  - NEW FRICTION VELOCITY IN M/S.
 !          *ROAIRN* - AIR DENSITY IN KG/M3
 !          *THWNEW* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC.
@@ -47,6 +51,7 @@
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FR      , TH     ,ZPIFR
       USE YOWPCONS , ONLY : G        ,ZPI    ,ROWATER
       USE YOWPARAM , ONLY : NANG    ,NFRE
@@ -54,41 +59,40 @@
 &                  SSDSC2  , SSDSC4, SSDSC6,  MICHE, SSDSC3, SSDSBRF1, &
 &                  BRKPBCOEF ,SSDSC5, NSDSNTH, NDIKCUMUL,              &
 &                  INDICESSAT, SATWEIGHTS, CUMULW
-      USE YOWSHAL  , ONLY : TFAK    ,INDEP, TCGOND
-      USE YOWSTAT  , ONLY : ISHALLO
-      USE YOMHOOK   ,ONLY : LHOOK   ,DR_HOOK
+      USE YOWSHAL  , ONLY : INDEP
+!                         !!!!!!!!!!!!!!
+
+      USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USNEW, THWNEW, ROAIRN 
+
+
       INTEGER(KIND=JWIM) :: IJ, K, M, I, J, M2, K2, KK, NANGD
       INTEGER(KIND=JWIM), DIMENSION(NANG) :: KKD
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, THWNEW, ROAIRN 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL,SL
-
-      REAL(KIND=JWRB) :: XK(IJS:IJL,NFRE)
       REAL(KIND=JWRB) :: TPIINV, TPIINVH, TMP01, TMP03
-      REAL(KIND=JWRB) :: EPSR
-      REAL(KIND=JWRB) :: ROG
-      REAL(KIND=JWRB) :: SSDSC6M1
+      REAL(KIND=JWRB) :: EPSR, ROG, SSDSC6M1
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: SIG(NFRE)
-      REAL(KIND=JWRB) :: SSDSC2_SIG(NFRE)
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FACTURB
-      REAL(KIND=JWRB) :: FACSAT(IJS:IJL,NFRE)
-      REAL(KIND=JWRB) :: FACWTRB(IJS:IJL,NFRE)
-      REAL(KIND=JWRB) :: TEMP1(IJS:IJL,NFRE)
-      REAL(KIND=JWRB) :: BTH0(IJS:IJL,NFRE)  !saturation spectrum 
-      REAL(KIND=JWRB) :: BTH(IJS:IJL,NANG,NFRE)  !saturation spectrum 
-      REAL(KIND=JWRB) :: TEMP2(IJS:IJL,NANG,NFRE)
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: D
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SCUMUL 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: RENEWALFREQ
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,0:NANG/2,NFRE) :: WCUMUL
+
+      REAL(KIND=JWRB), DIMENSION(NFRE) :: SIG, SSDSC2_SIG 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FACTURB
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: FACSAT, FACWTRB, TEMP1 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: BTH0 !saturation spectrum
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: BTH !saturation spectrum 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: TEMP2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: D
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: SCUMUL 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: RENEWALFREQ
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,0:NANG/2,NFRE) :: WCUMUL
 
       LOGICAL :: LLSSDSC3,  LLSSDSC5
 
@@ -120,30 +124,19 @@
         SSDSC2_SIG(M)=SSDSC2*SIG(M)
       END DO
 
-      IF (ISHALLO.EQ.0) THEN
-        DO M=1, NFRE
-          DO IJ=IJS,IJL
-            XK(IJ,M) = TFAK(INDEP(IJ),M)
-            FACSAT(IJ,M) = XK(IJ,M)**3*TPIINV*TCGOND(INDEP(IJ),M)
-          ENDDO
+      DO M=1, NFRE
+        DO IJ=KIJS,KIJL
+          FACSAT(IJ,M) = WAVNUM(IJ,M)**3*TPIINV*CGROUP(IJ,M)
         ENDDO
-      ELSE
-        DO M=1, NFRE
-          DO IJ=IJS,IJL
-            XK(IJ,M) = (SIG(M)**2)/G
-            FACSAT(IJ,M) = XK(IJ,M)**3*TPIINVH*G/SIG(M)
-          ENDDO
-        ENDDO
-      ENDIF
-
+      ENDDO
 
       ! COMPUTE SATURATION SPECTRUM
       DO M=1,NFRE
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           BTH0(IJ,M) = 0.0_JWRB
         ENDDO
         DO K=1,NANG
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             BTH(IJ,K,M)=0.0_JWRB
           ENDDO
         ENDDO
@@ -154,11 +147,11 @@
           ! integrates in directional sector
           DO K2=1,NSDSNTH*2+1
             KK=INDICESSAT(K,K2)
-            DO IJ=IJS,IJL
-              BTH(IJ,K,M) = BTH(IJ,K,M) + SATWEIGHTS(K,K2)*F(IJ,KK,M)
+            DO IJ=KIJS,KIJL
+              BTH(IJ,K,M) = BTH(IJ,K,M) + SATWEIGHTS(K,K2)*FL1(IJ,KK,M)
             ENDDO
           ENDDO
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             BTH(IJ,K,M)=BTH(IJ,K,M)*FACSAT(IJ,M)
             BTH0(IJ,M)=MAX(BTH0(IJ,M),BTH(IJ,K,M))
           ENDDO
@@ -169,13 +162,13 @@
       ! SATURATION TERM
 
       DO  M=1,NFRE
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           TEMP1(IJ,M)=SSDSC6*(MAX(0._JWRB,BTH0(IJ,M)*TMP03-SSDSC4))**IPSAT
         ENDDO
       ENDDO
       DO  M=1,NFRE
         DO K=1,NANG
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             D(IJ,K,M)= SSDSC2_SIG(M)*(TEMP1(IJ,M)+SSDSC6M1*(MAX(0._JWRB,BTH(IJ,K,M)*TMP03-SSDSC4))**IPSAT)
           ENDDO
         ENDDO
@@ -186,8 +179,8 @@
       IF (LLSSDSC3) THEN
 
         DO M2=1,NFRE-NDIKCUMUL
-          DO IJ=IJS,IJL
-            IF(BTH0(IJ,M2).GT.SDSBR) THEN
+          DO IJ=KIJS,KIJL
+            IF (BTH0(IJ,M2) > SDSBR) THEN
               TEMP1(IJ,M2)=1.0_JWRB
             ELSE
               TEMP1(IJ,M2)=0.0_JWRB
@@ -196,7 +189,7 @@
         ENDDO
         DO M2=1,NFRE-NDIKCUMUL
           DO K2=1,NANG
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               SCUMUL(IJ,K2,M2)=TEMP1(IJ,M2)*(MAX(SQRT(BTH(IJ,K2,M2))-EPSR,0.0_JWRB))**2
             ENDDO
           ENDDO
@@ -204,7 +197,7 @@
 
         DO M=NDIKCUMUL+1,NFRE
           DO K=1,NANG
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               RENEWALFREQ(IJ,K,M)=0.0_JWRB
             ENDDO
           ENDDO
@@ -215,7 +208,7 @@
 
           DO M2=1,M-NDIKCUMUL
             DO KK=0,NANGD
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 WCUMUL(IJ,KK,M2)=CUMULW(INDEP(IJ),KK,M2,M)
               ENDDO
             ENDDO
@@ -228,13 +221,13 @@
 
             DO K2=1,NANG
               KKD(K2)=ABS(K2-K)
-              IF(KKD(K2).GT.NANGD) KKD(K2)=KKD(K2)-NANGD
+              IF ( KKD(K2) > NANGD) KKD(K2)=KKD(K2)-NANGD
             ENDDO
 
             DO M2=1,M-NDIKCUMUL
               DO K2=1,NANG
                 KK=KKD(K2)
-                DO IJ=IJS,IJL
+                DO IJ=KIJS,KIJL
                   ! Integrates over frequencies M2 and directions K2 to 
                   ! Integration is performed from M2=1 to a frequency lower than M: IK-NDIKCUMUL
                   RENEWALFREQ(IJ,K,M)=RENEWALFREQ(IJ,K,M)+ WCUMUL(IJ,KK,M2)*SCUMUL(IJ,K2,M2)
@@ -246,7 +239,7 @@
 
         DO M=NDIKCUMUL+1,NFRE
           DO K=1,NANG
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               D(IJ,K,M)= D(IJ,K,M) + RENEWALFREQ(IJ,K,M)
             ENDDO
           ENDDO
@@ -257,15 +250,15 @@
 !     WAVE-TURBULENCE INTERACTION TERM
       IF (LLSSDSC5) THEN
         TMP01 = 2._JWRB*SSDSC5/ROG
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           FACTURB(IJ) = TMP01*ROAIRN(IJ)*USNEW(IJ)*USNEW(IJ)
         ENDDO
         DO M=1, NFRE
-          DO IJ=IJS,IJL
-            FACWTRB(IJ,M) = SIG(M)*XK(IJ,M)*FACTURB(IJ)
+          DO IJ=KIJS,KIJL
+            FACWTRB(IJ,M) = SIG(M)*WAVNUM(IJ,M)*FACTURB(IJ)
           ENDDO
           DO K=1,NANG
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               D(IJ,K,M)= D(IJ,K,M)- FACWTRB(IJ,M)*COS(THWNEW(IJ)-TH(K))
             ENDDO
           ENDDO
@@ -276,9 +269,9 @@
       ! ADD ALL CONTRIBUTIONS TO SOURCE TERM
       DO  M=1, NFRE
         DO K=1, NANG
-          DO IJ=IJS,IJL
-            SL(IJ,K,M) = SL(IJ,K,M)+D(IJ,K,M)*F(IJ,K,M)
-            FL(IJ,K,M) = FL(IJ,K,M)+D(IJ,K,M)
+          DO IJ=KIJS,KIJL
+            SL(IJ,K,M) = SL(IJ,K,M)+D(IJ,K,M)*FL1(IJ,K,M)
+            FLD(IJ,K,M) = FLD(IJ,K,M)+D(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO

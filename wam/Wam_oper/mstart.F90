@@ -66,9 +66,8 @@
       USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWJONS  , ONLY : FP       ,ALPHJ    ,THES     ,FM       ,    &
      &            ALFA     ,GAMMA    ,SA       ,SB       ,THETAQ
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : CDTPRO
-      USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
+      USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
 
 ! ----------------------------------------------------------------------
@@ -81,7 +80,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
       REAL(KIND=JWRB), INTENT(IN) :: FETCH, FRMAX
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN) :: U10OLD, THWOLD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: U10OLD, THWOLD
       REAL(KIND=JWRB),DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL1
 
       INTEGER(KIND=JWIM) :: M, K, IJ, NGOU
@@ -113,13 +112,13 @@
 !*    2.1.1 INITIAL VALUES DUE TO OPTION.
 !           -----------------------------
 
-        IF (IOPTI.EQ.1) THEN
+        IF (IOPTI == 1) THEN
           DO IJ = IJS, IJL
             FP(IJ) = 0.0_JWRB
             ALPHJ(IJ) = 0.0_JWRB
             THES(IJ) = THWOLD(IJ)
           ENDDO
-        ELSE IF (IOPTI.EQ.0) THEN
+        ELSE IF (IOPTI == 0) THEN
           DO IJ = IJS, IJL
             FP(IJ) = FM
             ALPHJ(IJ) = ALFA
@@ -129,7 +128,7 @@
           DO IJ = IJS, IJL
             FP(IJ) = FM
             ALPHJ(IJ) = ALFA
-            IF (U10OLD(IJ) .GT. 0.1E-08_JWRB) THEN
+            IF (U10OLD(IJ) > 0.1E-08_JWRB) THEN
               THES(IJ) = THWOLD(IJ)
             ELSE
               THES(IJ) = 0.0_JWRB
@@ -140,7 +139,7 @@
 !*    2.1.2 PEAK FREQUENCY AND ALPHAJONS FROM FETCH LAW.
 !           --------------------------------------------
 
-        IF (IOPTI.NE.0) THEN
+        IF (IOPTI /= 0) THEN
           CALL PEAK (IJS, IJL, FETCH, FRMAX, U10OLD)
         ENDIF
 
@@ -158,10 +157,6 @@
 !         --------------------------------
 
         CALL SPECTRA (IJS, IJL, FL1)
-        IF (ITEST.GT.1) THEN
-           WRITE (IU06,*) '    SUB. SPECTRA DONE'
-        ENDIF
-
 
 ! ----------------------------------------------------------------------
 

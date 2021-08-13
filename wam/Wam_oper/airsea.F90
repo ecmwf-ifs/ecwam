@@ -1,5 +1,6 @@
-      SUBROUTINE AIRSEA (FL1, U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, &
-&                        US, Z0, Z0B, IJS, IJL, ICODE_WND, IUSFG)
+      SUBROUTINE AIRSEA (KIJS, KIJL, FL1,                           &
+&                        U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, &
+&                        US, Z0, Z0B, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
 
@@ -19,8 +20,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *AIRSEA (FL1, U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC,
-!                       US, Z0, Z0B, IJS, IJL, ICODE_WND, IUSFG)*
+!       *CALL* *AIRSEA (KIJS, KIJL, FL1, U10,
+!                       U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC,
+!                       US, Z0, Z0B, ICODE_WND, IUSFG)*
+!          *KIJS*  - INDEX OF FIRST GRIDPOINT.
+!          *KIJL*  - INDEX OF LAST GRIDPOINT.
 !          *FL1*  - SPECTRA
 !          *U10*  - INPUT OR OUTPUT BLOCK OF WINDSPEED U10.
 !          *U10DIR*  - INPUT OR OUTPUT BLOCK OF WINDSPEED DIRECTION.
@@ -31,8 +35,6 @@
 !          *US*   - OUTPUT OR OUTPUT BLOCK OF FRICTION VELOCITY.
 !          *Z0*   - OUTPUT BLOCK OF ROUGHNESS LENGTH.
 !          *Z0B*  - BACKGROUND ROUGHNESS LENGTH.
-!          *IJS*  - INDEX OF FIRST GRIDPOINT.
-!          *IJL*  - INDEX OF LAST GRIDPOINT.
 !          *ICODE_WND* SPECIFIES WHICH OF U10 OR US HAS BEEN FILED UPDATED:
 !                     U10: ICODE_WND=3 --> US will be updated
 !                     US:  ICODE_WND=1 OR 2 --> U10 will be updated
@@ -64,6 +66,7 @@
       USE YOWPHYS,  ONLY : XKAPPA, XNLEV
       USE YOWTEST,  ONLY : IU06
       USE YOWWIND,  ONLY : WSPMIN
+
       USE YOMHOOK,  ONLY : LHOOK, DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -72,12 +75,11 @@
 #include "taut_z0.intfb.h"
 #include "z0wave.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT (IN) :: IJS, IJL, ICODE_WND, IUSFG
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (IN) :: U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (INOUT) :: U10, US
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (OUT) :: Z0, Z0B
+      INTEGER(KIND=JWIM), INTENT (IN) :: KIJS, KIJL, ICODE_WND, IUSFG
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT (IN) :: U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC
+      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT (INOUT) :: U10, US
+      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT (OUT) :: Z0, Z0B
 
       INTEGER(KIND=JWIM) :: IJ, I, J
 
@@ -93,14 +95,14 @@
 !        ----------------------------------
 
       IF (ICODE_WND == 3) THEN
-        CALL TAUT_Z0 (IJS, IJL, IUSFG, FL1, U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, US, Z0, Z0B)
+        CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, US, Z0, Z0B)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
 
 !*    3. DETERMINE ROUGHNESS LENGTH (if needed).
 !        ---------------------------
 
-        CALL Z0WAVE (IJS, IJL, US, TAUW, U10, Z0, Z0B)
+        CALL Z0WAVE (KIJS, KIJL, US, TAUW, U10, Z0, Z0B)
 
 !*    3. DETERMINE U10 (if needed).
 !        ---------------------------
@@ -108,7 +110,7 @@
         XKAPPAD = 1.0_JWRB / XKAPPA
         XLOGLEV = LOG (XNLEV)
 
-        DO IJ = IJS, IJL
+        DO IJ = KIJS, KIJL
           U10 (IJ) = XKAPPAD * US (IJ) * (XLOGLEV - LOG (Z0 (IJ)))
           U10 (IJ) = MAX (U10 (IJ), WSPMIN)
         ENDDO

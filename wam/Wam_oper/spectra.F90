@@ -48,7 +48,6 @@
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWJONS  , ONLY : FP       ,ALPHJ    ,THES     ,GAMMA    ,    &
      &            SA       ,SB
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI
 

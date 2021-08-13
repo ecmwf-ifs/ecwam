@@ -10,11 +10,15 @@
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:)   :: THDC
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:) :: SDOT
 
+      LOGICAL :: LLUPDTTD
+
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *THDD*      REAL      DEPTH GRADIENT PART OF THETA DOT.
 !      *THDC*      REAL      CURRENT GRADIENT PART OF THETA DOT.
 !      *SDOT*      SIGMA DOT ARRAY
+
+!      *LLUPDTTD*  LOGICAL  IF TRUE THETA DOT ARRAYS NEED UPDATING.
 
 ! ----------------------------------------------------------------------
       END MODULE YOWREFD

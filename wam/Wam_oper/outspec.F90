@@ -45,11 +45,12 @@ SUBROUTINE OUTSPEC (IJS, IJL, FL, CICOVER)
                             OUTWSPEC_IO_SERV_HANDLER
       USE YOWCOUT  , ONLY : LWAM_USE_IO_SERV
       USE YOWICE   , ONLY : LICERUN  ,CITHRSH  ,FLMIN
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDATEA   ,    &
      &            MARSTYPE ,LLSOURCE
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
+
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
 
 !-----------------------------------------------------------------------
@@ -60,7 +61,7 @@ SUBROUTINE OUTSPEC (IJS, IJL, FL, CICOVER)
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: FL 
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP), INTENT(IN) :: CICOVER
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICOVER
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: IFCST
@@ -75,17 +76,12 @@ SUBROUTINE OUTSPEC (IJS, IJL, FL, CICOVER)
       
       CALL GSTATS(2080,0)
 
-      IF (ITEST.GT.1) THEN
-        WRITE(IU06,*) '*      THIS IS OUTSPEC         *'
-        CALL FLUSH (IU06)
-      ENDIF
-
 !*    APPLY SEA ICE MASK TO THE OUTPUT SPECTRA (IF NEEDED)
       IF (LICERUN .AND. LLSOURCE) THEN
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ = IJS, IJL
-              IF (CICOVER(IJ).GT.CITHRSH) THEN
+              IF (CICOVER(IJ) > CITHRSH) THEN
                 SPEC(IJ,K,M) = FLMIN 
               ELSE
                 SPEC(IJ,K,M) = FL(IJ,K,M)
@@ -97,13 +93,13 @@ SUBROUTINE OUTSPEC (IJS, IJL, FL, CICOVER)
         SPEC(:,:,:) = FL(:,:,:)
       ENDIF
 
-      IF(CDTPRO.LE.CDATEF) THEN
+      IF (CDTPRO <= CDATEF) THEN
 !*    0.1.  THIS IS AN ANALYSIS DATE.
-        IF (LWCOU .AND. MARSTYPE .EQ. 'fg') THEN
+        IF (LWCOU .AND. MARSTYPE == 'fg') THEN
           CDATE=CDATEA
           CALL DIFDATE (CDATEA, CDTPRO, IFCST)
           IFCST = IFCST/3600
-        ELSEIF (LWCOU .AND. MARSTYPE .EQ. '4v') THEN
+        ELSEIF (LWCOU .AND. MARSTYPE == '4v') THEN
           CDATE=CDATEA
           CALL DIFDATE (CDATEA, CDTPRO, IFCST)
           IFCST = IFCST/3600

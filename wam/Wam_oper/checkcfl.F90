@@ -38,8 +38,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWMPP   , ONLY : NINF
-      USE YOWSHAL  , ONLY : INDEP    ,DEPTH
+      USE YOWMPP   , ONLY : NSUP 
+      USE YOWSHAL  , ONLY : DEPTH
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON
 
@@ -60,7 +60,7 @@
 
       DO IJ = MIJS,MIJL
 
-        IF(CFLEA(IJ).GT.1.) THEN
+        IF (CFLEA(IJ) > 1.0_JWRB) THEN
           WRITE(IU06,*) ' ********************************'
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' * FATAL ERROR IN SUB. CHECKCFL *'
@@ -73,7 +73,7 @@
           WRITE(IU06,*) ' ********************************'
           LLABORTCFL=.TRUE.
         ENDIF
-        IF(CFLWE(IJ).GT.1.) THEN
+        IF (CFLWE(IJ) > 1.0_JWRB) THEN
           WRITE(IU06,*) ' ********************************'
           WRITE(IU06,*) ' *          *                   *'
           WRITE(IU06,*) ' * FATAL ERROR IN SUB. CHECKCFL *'
@@ -86,7 +86,7 @@
           WRITE(IU06,*) ' ********************************'
           LLABORTCFL=.TRUE.
         ENDIF
-        IF(CFLNO(IJ).GT.1.) THEN
+        IF (CFLNO(IJ) > 1.0_JWRB) THEN
           WRITE(IU06,*) ' ********************************'
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' * FATAL ERROR IN SUB. CHECKCFL *'
@@ -99,7 +99,7 @@
           WRITE(IU06,*) ' ********************************'
           LLABORTCFL=.TRUE.
         ENDIF
-        IF(CFLSO(IJ).GT.1.) THEN
+        IF (CFLSO(IJ) > 1.0_JWRB) THEN
           WRITE(IU06,*) ' ********************************'
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' * FATAL ERROR IN SUB. CHECKCFL *'
@@ -112,7 +112,7 @@
           WRITE(IU06,*) ' ********************************'
           LLABORTCFL=.TRUE.
         ENDIF
-        IF(CFLNO2(IJ).GT.1.) THEN
+        IF (CFLNO2(IJ) > 1.0_JWRB) THEN
           WRITE(IU06,*) ' ********************************'
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' * FATAL ERROR IN SUB. CHECKCFL *'
@@ -125,7 +125,7 @@
           WRITE(IU06,*) ' ********************************'
           LLABORTCFL=.TRUE.
         ENDIF
-        IF(CFLSO2(IJ).GT.1.) THEN
+        IF (CFLSO2(IJ) > 1.0_JWRB) THEN
           WRITE(IU06,*) ' ********************************'
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' * FATAL ERROR IN SUB. CHECKCFL *'
@@ -138,7 +138,7 @@
           WRITE(IU06,*) ' ********************************'
           LLABORTCFL=.TRUE.
         ENDIF
-        IF(CFLTP(IJ).GT.1.) THEN
+        IF (CFLTP(IJ) > 1.0_JWRB) THEN
           WRITE(IU06,*) ' ********************************'
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' * FATAL ERROR IN SUB. CHECKCFL *'
@@ -147,24 +147,22 @@
           WRITE(IU06,*) ' * FOR POSITIVE DIRECTIONS      *'
           WRITE(IU06,*) ' * CFLTP = ',CFLTP(IJ)
           WRITE(IU06,*) ' * REDUCE IDELPRO ACCORDINGLY   *'
-          WRITE(IU06,*) ' * IJ = ',IJ, INDEP(IJ),DEPTH(IJ)
+          WRITE(IU06,*) ' * IJ = ',IJ, DEPTH(IJ)
           DO ICL=1,2
             DO IC=1,2
               ICP=KLAT(IJ,IC,ICL)
-              IF(ICP.NE.NINF-1)                                         &
-     &        WRITE(IU06,*)' * KLAT_',IC,ICL, INDEP(ICP),DEPTH(ICP)
+              IF (ICP /= NSUP+1) WRITE(IU06,*)' * KLAT_',IC,ICL, DEPTH(ICP)
             ENDDO
           ENDDO
           DO IC=1,2
             ICP=KLON(IJ,IC)
-            IF(ICP.NE.NINF-1)                                           &
-     &      WRITE(IU06,*)' * KLON_',IC, INDEP(ICP),DEPTH(ICP)
+            IF (ICP /= NSUP+1) WRITE(IU06,*)' * KLON_',IC, DEPTH(ICP)
           ENDDO
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' ********************************'
           LLABORTCFL=.TRUE.
         ENDIF
-        IF(CFLTM(IJ).GT.1.) THEN
+        IF (CFLTM(IJ) > 1.0_JWRB) THEN
           WRITE(IU06,*) ' ********************************'
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' * FATAL ERROR IN SUB. CHECKCFL *'
@@ -173,24 +171,22 @@
           WRITE(IU06,*) ' * FOR NEGATIVE DIRECTIONS      *'
           WRITE(IU06,*) ' * CFLTM = ',CFLTM(IJ)
           WRITE(IU06,*) ' * REDUCE IDELPRO ACCORDINGLY   *'
-          WRITE(IU06,*) ' * IJ = ',IJ, INDEP(IJ),DEPTH(IJ)
+          WRITE(IU06,*) ' * IJ = ',IJ, DEPTH(IJ)
           DO ICL=1,2
             DO IC=1,2
               ICP=KLAT(IJ,IC,ICL)
-              IF(ICP.NE.NINF-1)                                         &
-     &        WRITE(IU06,*)' * KLAT_',IC,ICL, INDEP(ICP),DEPTH(ICP)
+              IF (ICP /= NSUP+1) WRITE(IU06,*)' * KLAT_',IC,ICL, DEPTH(ICP)
             ENDDO
           ENDDO
           DO IC=1,2
             ICP=KLON(IJ,IC)
-            IF(ICP.NE.NINF-1)                                           &
-     &      WRITE(IU06,*)' * KLON_',IC, INDEP(ICP),DEPTH(ICP)
+            IF (ICP /= NSUP+1) WRITE(IU06,*)' * KLON_',IC, DEPTH(ICP)
           ENDDO
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' ********************************'
           LLABORTCFL=.TRUE.
         ENDIF
-        IF(CFLOP(IJ).GT.1.) THEN
+        IF (CFLOP(IJ) > 1.0_JWRB) THEN
           WRITE(IU06,*) ' ********************************'
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' * FATAL ERROR IN SUB. CHECKCFL *'
@@ -203,7 +199,7 @@
           WRITE(IU06,*) ' ********************************'
           LLABORTCFL=.TRUE.
         ENDIF
-        IF(CFLOM(IJ).GT.1.) THEN
+        IF (CFLOM(IJ) > 1.0_JWRB) THEN
           WRITE(IU06,*) ' ********************************'
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' * FATAL ERROR IN SUB. CHECKCFL *'
@@ -217,7 +213,7 @@
           LLABORTCFL=.TRUE.
         ENDIF
 
-        IF(DTC(IJ).GT.1.) THEN
+        IF (DTC(IJ) > 1.0_JWRB) THEN
           WRITE(IU06,*) ' ************************************'
           WRITE(IU06,*) ' *                                  *'
           WRITE(IU06,*) ' * FATAL ERROR IN SUB. CHECKCFL     *'
@@ -229,7 +225,7 @@
           WRITE(IU06,*) ' ************************************'
           LLABORTCFL=.TRUE.
         ENDIF
-        IF(LLABORTCFL) THEN
+        IF (LLABORTCFL) THEN
           WRITE(IU06,*) ' ************************************'
           WRITE(IU06,*) ' * ABORTING IN WAVE MODEL CHECKFL !!*'
           WRITE(IU06,*) ' ************************************'

@@ -1,9 +1,10 @@
-      SUBROUTINE NEWWIND (IJS, IJL, CDATE, CDATEWH,                     &
-     &                    NEWREAD, NEWFILE,                             &
-     &                    U10OLD, THWOLD, U10NEW, THWNEW,               &
-     &                    USOLD, USNEW,                                 &
-     &                    ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,             &
-     &                    CICOVER, CITHICK, CIWA,                       &
+      SUBROUTINE NEWWIND (IJS, IJL, CDATE, CDATEWH,             &
+     &                    NEWREAD, NEWFILE,                     &
+     &                    U10OLD, THWOLD, U10NEW, THWNEW,       &
+     &                    USOLD, USNEW,                         &
+     &                    ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,     &
+     &                    CGROUP,                               &
+     &                    CICOVER, CITHICK, CIWA,               &
      &                    TAUW, BETAOLD)
 ! ----------------------------------------------------------------------
 
@@ -27,6 +28,7 @@
 !                        U10OLD,THWOLD,U10NEW,THWNEW, 
 !                        USOLD, USNEW,
 !                        ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
+!                        CGROUP,
 !                        CICOVER, CITHICK, CIWA,
 !                        TAUW, BETAOLD)
 !      *IJS*     - INDEX OF FIRST GRIDPOINT
@@ -48,6 +50,7 @@
 !      *ROAIRO*  - INTERMEDIATE STORAGE OF AIR DENSITY.
 !      *ZIDLNEW* - Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !      *ZIDLOLD* - INTERMEDIATE STORAGE OF Zi/L.
+!      *CGROUP*  - GROUP SPEED.
 !      *CICOVER* - SEA ICE COVER. 
 !      *CITHICK* - SEA ICE THICKNESS. 
 !      *CIWA*    - SEA ICE WAVE ATTENUATION FACTOR.
@@ -78,15 +81,15 @@
       USE YOWPCONS , ONLY : ACD      ,BCD      ,EPSMIN
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWPARAM , ONLY : NFRE
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPHYS  , ONLY : ALPHA
       USE YOWSTAT  , ONLY : IDELWO   ,NPROMA_WAM
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,    &
      &            NSTORE   ,FF_NEXT  ,WSPMIN_RESET_TAUW  ,              &
      &            USTMIN_RESET_TAUW
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -96,22 +99,21 @@
 #include "incdate.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN) :: U10OLD, THWOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN) :: USOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN) :: ROAIRO, ZIDLOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: TAUW
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN)    :: BETAOLD 
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: U10NEW, THWNEW
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: USNEW
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: ROAIRN, ZIDLNEW
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: CICOVER, CITHICK 
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NFRE), INTENT(INOUT) :: CIWA
-
-      CHARACTER(LEN=14), INTENT(IN) :: CDATE
       CHARACTER(LEN=14), INTENT(INOUT) :: CDATEWH
-
       LOGICAL, INTENT(INOUT) :: NEWREAD, NEWFILE
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: U10OLD, THWOLD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: USOLD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRO, ZIDLOLD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: TAUW
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN)    :: BETAOLD 
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: U10NEW, THWNEW
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: USNEW
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: ROAIRN, ZIDLNEW
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CGROUP
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: CICOVER, CITHICK 
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(INOUT) :: CIWA
+      CHARACTER(LEN=14), INTENT(IN) :: CDATE
+
 
       INTEGER(KIND=JWIM), SAVE :: ISTORE = 0
 
@@ -127,7 +129,7 @@
 
       NPROMA=NPROMA_WAM
 
-      IF(LWCOU) THEN
+      IF (LWCOU) THEN
         ICODE_WND = ICODE_CPL
       ELSE
         ICODE_WND = ICODE
@@ -137,7 +139,7 @@
 
 !*    1. WINDS ARE TAKEN FROM INTERMEDIATE STORAGE.
 !        ------------------------------------------
-      IF (CDATE.LT.CDATEWH) THEN
+      IF (CDATE < CDATEWH) THEN
         CALL GSTATS(1492,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
         DO JKGLO=IJS,IJL,NPROMA
@@ -156,18 +158,14 @@
       ELSE
 !*    2. NEW WIND INPUT.
 !        ---------------
-        IF (CDATE.GE.CDATEFL) THEN
+        IF (CDATE >= CDATEFL) THEN
             NEWFILE = .TRUE.
             ISTORE=1
-            IF (ITEST.GE.2) THEN
-              WRITE(IU06,*) '      SUB. NEWWIND: NEW WIND ',            &
-     &         ' AT CDATE = ', CDATE
-            ENDIF
         ENDIF
 
 !*    2.2 NEW WINDS ARE READ IN.
 !         ----------------------
-        IF (ISTORE.GT.NSTORE) THEN
+        IF (ISTORE > NSTORE) THEN
           WRITE(IU06,*) ' ********************************************'
           WRITE(IU06,*) '      FATAL ERROR IN SUB. NEWWIND:           '
           WRITE(IU06,*) '      ISTORE > NSTORE !!!                    '
@@ -190,7 +188,7 @@
 ! adapt first estimate of wave induced stress for low winds
 ! to a fraction of the simple relation u*^2 = Cd(U10) * U10^2
 ! where this fraction varies from 0 for U10=0 to 1 for U10=WSPMIN_RESET_TAUW
-              IF(U10NEW(IJ).LT.WSPMIN_RESET_TAUW) THEN
+              IF (U10NEW(IJ) < WSPMIN_RESET_TAUW) THEN
                 TLWMAX=WGHT*(ACD+BCD*U10NEW(IJ))*U10NEW(IJ)**3
                 TAUW(IJ)=MIN(TAUW(IJ),TLWMAX)
               ENDIF
@@ -201,7 +199,7 @@
 ! update the estimate of TAUW
               TAUW(IJ)=USNEW(IJ)**2*(1.0_JWRB-(ALPHA/BETAOLD(IJ))**2)
 ! adapt first estimate of wave induced stress for low winds
-              IF (USNEW(IJ).LT.USTMIN_RESET_TAUW) TAUW(IJ)=0.0_JWRB
+              IF (USNEW(IJ) < USTMIN_RESET_TAUW) TAUW(IJ)=0.0_JWRB
             ENDDO
           ENDIF
           DO IJ = KIJS, KIJL
@@ -221,7 +219,7 @@
         NEWREAD = .TRUE.   
 
 !       UPDATE THE SEA ICE REDUCTION FACTOR
-        CALL CIREDUCE (CICOVER, CITHICK, CIWA)
+        CALL CIREDUCE (IJS, IJL, CGROUP, CICOVER, CITHICK, CIWA)
 
       ENDIF
 

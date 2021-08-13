@@ -1,9 +1,9 @@
-      SUBROUTINE GETWND (MIJS, MIJL,                                    &
-     &                   U10, US,                                       &
-     &                   THW,                                           &
-     &                   ADS, ZIDL,                                     &
-     &                   CICVR, CITH,                                   &
-     &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,            &
+      SUBROUTINE GETWND (IJS, IJL,                              &
+     &                   U10, US,                               &
+     &                   THW,                                   &
+     &                   ADS, ZIDL,                             &
+     &                   CICVR, CITH,                           &
+     &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,    &
      &                   LWCUR, ICODE_WND)
 
 ! ----------------------------------------------------------------------
@@ -21,12 +21,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GETWND (MIJS, MIJL,
+!       *CALL* *GETWND (IJS, IJL,
 !                       U10, THW, ADS, ZIDL, CICVR, CITH,
 !                       CDTWIS, LWNDFILE, LCLOSEWND,
 !                       LWCUR, ICODE_WND)*
-!         *MIJS*    - INDEX OF FIRST GRIDPOINT
-!         *MIJL*    - INDEX OF LAST GRIDPOINT
+!         *IJS*    - INDEX OF FIRST GRIDPOINT
+!         *IJL*    - INDEX OF LAST GRIDPOINT
 !         *U10*    - MAGNITUDE OF 10m WIND AT EACH POINT AND BLOCK.
 !         *THW*    - DIRECTION OF 10m WIND AT EACH POINT AND BLOCK.
 !         *ADS*    - AIR DENSITY AT EACH POINT AND BLOCK.
@@ -87,11 +87,11 @@
       USE YOWMPP   , ONLY : IRANK
       USE YOWPARAM , ONLY : CLDOMAIN , LWDINTS
       USE YOWSTAT  , ONLY : NPROMA_WAM 
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : WSPMIN   ,IUNITW
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
+
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWUNPOOL, ONLY : LLUNSTR
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
@@ -103,13 +103,13 @@
 #include "wamwnd.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(OUT) :: ICODE_WND
 
-      REAL(KIND=JWRB), DIMENSION (MIJS:MIJL), INTENT(INOUT) :: U10, US 
-      REAL(KIND=JWRB), DIMENSION (MIJS:MIJL), INTENT(OUT) :: THW
-      REAL(KIND=JWRB), DIMENSION (MIJS:MIJL), INTENT(OUT) :: ADS, ZIDL
-      REAL(KIND=JWRB), DIMENSION (MIJS:MIJL), INTENT(OUT) :: CICVR, CITH
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(INOUT) :: U10, US 
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: THW
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: ADS, ZIDL
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: CICVR, CITH
 
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS
 
@@ -141,7 +141,7 @@
 
  1000 CONTINUE
 
-      IF(IUNITW.EQ.0) THEN
+      IF (IUNITW == 0) THEN
         LLNOTOPENED=.TRUE.
       ELSE
         LLNOTOPENED=.FALSE.
@@ -152,24 +152,17 @@
 !     GET FORCING FIELDS FROM INPUT FILES (if needed)
 !     -----------------------------------
 
-      IF(LWNDFILE) THEN
+      IF (LWNDFILE) THEN
         CALL READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD)
 
         ICODE_WND = ICODE
 
 !       CHECK WIND FIELD DATE
 
-        IF (CDTWIR.LT.CDTWIS) THEN
+        IF (CDTWIR < CDTWIS) THEN
 !         DATE OF INPUT FIELD IS BEFORE REQUESTED DATE
 !         TRY AGAIN
-          IF(LWNDFILE) THEN
-            IF (ITEST.GT.1) THEN
-              WRITE(IU06,*) ' SUB. GETWND - BEFORE REQUESTED DATE '
-              WRITE(IU06,*) ' CDTWIR= ',CDTWIR
-              WRITE(IU06,*) ' CDTWIS= ',CDTWIS
-              WRITE(IU06,*) ' SUB. GETWND - CALLING READWIND AGAIN'
-              CALL FLUSH(IU06)
-            ENDIF
+          IF (LWNDFILE) THEN
             GOTO 1000
           ELSE
             WRITE (IU06,*) ' ****************************************'
@@ -185,7 +178,7 @@
             WRITE (IU06,*) ' ****************************************'
             CALL ABORT1
           ENDIF
-        ELSEIF (CDTWIR.GT.CDTWIS) THEN
+        ELSEIF (CDTWIR > CDTWIS) THEN
 
 !         DATE OF INPUT FIELD IS LATER THAN REQUESTED DATE
           WRITE (IU06,*) ' ****************************************'
@@ -193,7 +186,7 @@
           WRITE (IU06,*) ' *      FATAL ERROR SUB. GETWND         *'
           WRITE (IU06,*) ' *      =======================         *'
           WRITE (IU06,*) ' * WIND DATE IS LATER THAN EXPECTED     *'
-          IF(LWNDFILE) THEN
+          IF (LWNDFILE) THEN
             WRITE (IU06,*) ' * DATE READ IS    CDTWIR = ', CDTWIR
           ELSE
             WRITE (IU06,*) ' * DECODED DATE IS CDTWIR = ', CDTWIR
@@ -207,12 +200,11 @@
         ENDIF
 
         IF (LCLOSEWND .AND. LWNDFILE .AND.                              &
-     &     .NOT.(CLDOMAIN.EQ.'s' .OR. LWDINTS) ) THEN
-          IF(IRANK.EQ.IREAD) THEN
+     &     .NOT.(CLDOMAIN == 's' .OR. LWDINTS) ) THEN
+          IF (IRANK == IREAD) THEN
             CALL IGRIB_CLOSE_FILE(IUNITW)
             LLNOTOPENED = .TRUE.
             IUNITW=0
-            IF (ITEST.GT.1) WRITE(IU06,*) ' SUB. GETWND - CLOSE ', FILNM
           ENDIF
         ENDIF
 
@@ -227,18 +219,18 @@
 ! Mod for OPENMP
         CALL GSTATS(1444,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=MIJS,MIJL,NPROMA
+        DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,MIJL)
-          CALL WAMWND (KIJS, KIJL,                                      &
-     &                 U10(KIJS), US(KIJS),                             &
-     &                 THW(KIJS), ADS(KIJS), ZIDL(KIJS), CITH(KIJS),    &
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
+          CALL WAMWND (KIJS, KIJL,                                   &
+     &                 U10(KIJS), US(KIJS),                          &
+     &                 THW(KIJS), ADS(KIJS), ZIDL(KIJS), CITH(KIJS), &
      &                 LWCUR, ICODE_WND)
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)
 
-        IF(LONLYONCE) THEN
+        IF (LONLYONCE) THEN
           WRITE (IU06,*) ' '
           WRITE (IU06,*) ' SUB. GETWND : '
           WRITE (IU06,*) ' '
@@ -254,9 +246,9 @@
         CALL GSTATS(1444,0)
 ! Mod for OPENMP
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=MIJS,MIJL,NPROMA
+        DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,MIJL)
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
           CALL MICEP(IPARAMCI, CICVR(KIJS), CITH(KIJS), KIJS, KIJL)
         ENDDO
 !$OMP   END PARALLEL DO

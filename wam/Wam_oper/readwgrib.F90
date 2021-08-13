@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
 
-      SUBROUTINE READWGRIB(IU06, FILNM, IPARAM, CDATE, MIJS, MIJL,      &
+      SUBROUTINE READWGRIB(IU06, FILNM, IPARAM, CDATE, IJS, IJL,      &
      &                     FIELD, KZLEV, LLONLYPOS, IREAD )
 
 !-----------------------------------------------------------------------
@@ -17,7 +17,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *READWGRIB*(IU06, FILNM, IPARAM, CDATE, MIJS, MIJL,
+!       *CALL* *READWGRIB*(IU06, FILNM, IPARAM, CDATE, IJS, IJL,
 !    &                     FIELD, KZLEV, LLONLYPOS, IREAD )
 
 !*     VARIABLE.   TYPE.     PURPOSE.
@@ -26,8 +26,8 @@
 !      *FILNM*     DATA INPUT FILENAME.
 !      *IPARAM*    INTEGER   PARAMETER IDENTIFIER OF FIELD
 !      *CDATE*     CHARACTER DATE OF THE REQUESTED FIELD 
-!      *MIJS*      INDEX OF FIRST GRIDPOINT
-!      *MIJL*      INDEX OF LAST GRIDPOINT
+!      *IJS*       INDEX OF FIRST GRIDPOINT
+!      *IJL*       INDEX OF LAST GRIDPOINT
 !      *FIELD*     REAL      WAVE FIELD IN BLOCK FORMAT 
 !      *KZLEV*     INTEGER   REFERENCE LEVEL IN full METER
 !                           (SHOULD BE 0 EXCEPT FOR 233, 245 AND 249 WHERE IT
@@ -68,12 +68,12 @@
 
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : NPROMA_WAM 
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !-----------------------------------------------------------------------
 
@@ -82,10 +82,10 @@
 #include "inwgrib.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, IREAD, IPARAM
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(INOUT) :: KZLEV
 
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(INOUT) :: FIELD 
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: FIELD 
 
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       CHARACTER(LEN=24), INTENT(IN) :: FILNM
@@ -116,7 +116,7 @@
 !*    SIMPLE CHECKS ON THE RETRIEVED DATA 
 !     -----------------------------------
 
-      IF (KPARAM.NE.IPARAM) THEN
+      IF (KPARAM /= IPARAM) THEN
         WRITE(IU06,*)'********************************'
         WRITE(IU06,*)'*                              *'
         WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB *'
@@ -129,7 +129,7 @@
         WRITE(IU06,*)'********************************'
         CALL ABORT1
       ENDIF
-      IF (CCDDATE.NE.CDATE) THEN
+      IF (CCDDATE /= CDATE) THEN
         WRITE(IU06,*)'**********************************'
         WRITE(IU06,*)'*                                *'
         WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB   *'
@@ -150,16 +150,16 @@
 
           NPROMA=NPROMA_WAM
 
-          IF(LLONLYPOS) THEN
+          IF (LLONLYPOS) THEN
             CALL GSTATS(1444,0)
 !$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
-            DO JKGLO=MIJS,MIJL,NPROMA
+            DO JKGLO=IJS,IJL,NPROMA
               KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,MIJL)
+              KIJL=MIN(KIJS+NPROMA-1,IJL)
               DO IJ = KIJS, KIJL
                 IX = IFROMIJ(IJ)
                 JY = JFROMIJ(IJ)
-                IF(WORK(IX,JY).NE.ZMISS .AND. WORK(IX,JY).GT.0.0_JWRB) FIELD(IJ)=WORK(IX,JY)
+                IF (WORK(IX,JY) /= ZMISS .AND. WORK(IX,JY) > 0.0_JWRB) FIELD(IJ)=WORK(IX,JY)
               ENDDO
             ENDDO
 !$OMP       END PARALLEL DO
@@ -168,13 +168,13 @@
           ELSE
             CALL GSTATS(1444,0)
 !$OMP       PARALLEL DO SCHEDULE(STATIC)  PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
-            DO JKGLO=MIJS,MIJL,NPROMA
+            DO JKGLO=IJS,IJL,NPROMA
               KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,MIJL)
+              KIJL=MIN(KIJS+NPROMA-1,IJL)
               DO IJ = KIJS, KIJL
                 IX = IFROMIJ(IJ)
                 JY = JFROMIJ(IJ)
-                IF(WORK(IX,JY).NE.ZMISS) FIELD(IJ)=WORK(IX,JY)
+                IF (WORK(IX,JY) /= ZMISS) FIELD(IJ)=WORK(IX,JY)
               ENDDO
             ENDDO
 !$OMP       END PARALLEL DO

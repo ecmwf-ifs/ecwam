@@ -90,9 +90,8 @@
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJL)
 
-        CALL FEMEAN (FL1(KIJS:KIJL,:,:), KIJS, KIJL, EM(KIJS),          &
-     &               FM(KIJS))
-        CALL STHQ (FL1(KIJS:KIJL,:,:), KIJS, KIJL, TQ(KIJS))
+        CALL FEMEAN (KIJS, KIJL, FL1(KIJS:KIJL,:,:), EM(KIJS), FM(KIJS) )
+        CALL STHQ (KIJS, KIJL, FL1(KIJS:KIJL,:,:), TQ(KIJS))
       ENDDO
 !$OMP END PARALLEL DO
 
@@ -104,7 +103,7 @@
 
       IRECV=1
       CALL MPGATHERBC(IRECV, IJS, IJL, NSCFLD,                          &
-     &                FL1(IJS:IJL,:,:), EM, TQ, FM,                     &
+     &                FL1, EM, TQ, FM,                                  &
      &                FLPTS, EMPTS, TQPTS, FMPTS)
 
 

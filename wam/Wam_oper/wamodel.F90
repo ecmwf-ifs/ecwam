@@ -189,9 +189,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !NEST
 !       *BOUINPT*   - BOUNDARY VALUE INPUT.
 !NEST
-!REFRA
-!       *DOTDC*     - READ COMMON REFDOT.
-!REFRA
 !       *FILLBL*    - ADD LATITUDES TO A BLOCK.
 !       *GSFILE*    - ROUTINE TO DYNAMICALLY FETCH OR DISPOSE FILES.
 !       *HEADBC*    - WRITE BOUNDARY OUTPUT FILE HEADER.
@@ -289,7 +286,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &            CASS     ,NASS     ,LOUTINT  ,                        &
      &            LRSTPARALW, LRSTINFDAT,                               &
      &            LRSTST0  ,LWAMANOUT
-      USE YOWCURR  , ONLY : CDTCUR
+      USE YOWCURR  , ONLY : CDTCUR      ,U     ,V
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : LGRHDIFS 
@@ -302,6 +299,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSMIN
+      USE YOWSHAL  , ONLY : DEPTH    ,EMAXDPT  ,WAVNUM   ,CINV     ,    &
+     &            CGROUP   ,OMOSNH2KD, STOKFAC
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDATER   ,CDATES   ,CDTINTT  ,IDELPRO  ,IDELT    ,    &
      &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &
@@ -318,22 +317,22 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &            Z0B      ,                                            &
      &            BETAOLD  ,ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,    &
      &            FL1
-      USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
+      USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
       USE YOWUNIT  , ONLY : IU02     ,IU04     ,              &
      &            IU19     ,IU20     ,IU30
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,    &
      &            IDELWIN  ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CDATEWO
-      USE YOWNEMOP , ONLY : NEMODP
       USE UNWAM, ONLY : EXCHANGE_FOR_FL1
       USE YOWUNPOOL ,ONLY : LLUNSTR, LLUNBINOUT
       USE YOWPD, ONLY : MNP => npa
+      USE YOWNODEPOOL, ONLY : NP
+
+      USE YOWNEMOP , ONLY : NEMODP
       USE MPL_MODULE
       USE FDBSUBS_MOD, ONLY : IFLUSHFDBSUBS
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWNODEPOOL, ONLY : NP, IPLG, IPGL
-      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
       
 ! ----------------------------------------------------------------------
 
@@ -354,7 +353,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 #include "outbc.intfb.h"
 #include "outbs.intfb.h"
 #include "outint.intfb.h"
-#include "outunwamtest.intfb.h"
 #include "outwnorm.intfb.h"
 #include "outspec.intfb.h"
 #include "propag_wam.intfb.h"
@@ -390,7 +388,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       LOGICAL :: NEWREAD
       LOGICAL, SAVE :: NEWFILE
       LOGICAL :: LLNONASSI
-      LOGICAL :: DO_UPDATE_WIND_FLUX
       LOGICAL :: LL2NDCALL
       LOGICAL :: FFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
       LOGICAL,ALLOCATABLE,DIMENSION(:) :: LCFLFAIL
@@ -402,24 +399,21 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 
       CZERO = ' '
+      LLFLUSH = .FALSE.
+      KTAG=200
+      LRSTST0=.FALSE.
+      NPROMA=NPROMA_WAM
+
+!     TIME FOR THE NEXT SOURCE TERM INTEGRATION
+      CDTIMPNEXT=CDTPRO
+      CALL INCDATE(CDTIMPNEXT,IDELT)   
+!     TIME FOR WIND INPUT UPDATE (SEE NEWWIND)
+      CDTIMP=CDTPRO
 
 !*    0. WRITE OUT NORMS FOR WAVE ENERGY, PEAK PERIOD AND WIND SPEED
 !        -----------------------------------------------------------
-      IF (ITEST .GE. 2) THEN
-        WRITE(IU06,*)
-        WRITE(IU06,*) '   SUB. WAMODEL: JUST ENTERED FOR CDTPRO= ',     &
-     &   CDTPRO, ' AND CDATEA= ', CDATEA
-        CALL FLUSH(IU06)
-      ENDIF
-      LLFLUSH = .FALSE.
 
-      NPROMA=NPROMA_WAM
-
-      IF(CDTPRO.EQ.CDATEA .AND. LLSOURCE ) THEN
-        IF (ITEST.GE.1) THEN
-           WRITE(IU06,*) '   SEEDING OF ZERO ACTION'
-           FLUSH(IU06)
-        ENDIF
+      IF (CDTPRO == CDATEA .AND. LLSOURCE ) THEN
 !       INSURE THERE IS SOME WAVE ENERGY FOR GRID POINTS THAT HAVE BEEN
 !       FREED FROM SEA ICE (ONLY DONE INITIALLY AND IF THE MODEL IS NOT
 !       RESTARTED).
@@ -430,37 +424,17 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL UNSETICE(FL1(KIJS:KIJL,:,:), KIJS, KIJL,U10OLD(KIJS), THWOLD(KIJS))
+          CALL UNSETICE(KIJS, KIJL,                                &
+     &                  DEPTH(KIJS), EMAXDPT(KIJS),                &
+     &                  CICOVER(KIJS), U10OLD(KIJS), THWOLD(KIJS), &
+     &                  FL1(KIJS:KIJL,:,:))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1236,1)
       ENDIF
 
-      KTAG=200
+      IF (CDTPRO == CDATEA .OR. CDTPRO == CDATEF) THEN
 
-      LRSTST0=.FALSE.
-
-!     TIME FOR THE NEXT SOURCE TERM INTEGRATION
-      CDTIMPNEXT=CDTPRO
-      CALL INCDATE(CDTIMPNEXT,IDELT)   
-!     TIME FOR WIND INPUT UPDATE (SEE NEWWIND)
-      CDTIMP=CDTPRO
-
-      IF(CDTPRO.EQ.CDATEA .OR. CDTPRO.EQ.CDATEF) THEN
-!       
-        DO_UPDATE_WIND_FLUX=.TRUE.
-      ELSE
-        DO_UPDATE_WIND_FLUX=.FALSE.
-      END IF
-!#else
-!      IF (HAVE_NEW_COUPLING_FIELDS .eqv. .TRUE.) THEN
-!        DO_UPDATE_WIND_FLUX=.TRUE.
-!      ELSE
-!        DO_UPDATE_WIND_FLUX=.FALSE.
-!      END IF
-!#endif
-
-      IF (DO_UPDATE_WIND_FLUX) THEN
         CDTINTTBAK=CDTINTT
         CDTINTT=CDTPRO
 
@@ -479,14 +453,18 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
         ENDDO
 !$OMP   END PARALLEL DO
 
-        IF(LLSOURCE) THEN
+        IF (LLSOURCE) THEN
+
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
           DO JKGLO=IJS,IJL,NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL)
-            CALL WDFLUXES (KIJS, KIJL,                                  &
-     &                     MIJ(KIJS),                                   &
-     &                     FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),    &
+            CALL WDFLUXES (KIJS, KIJL,                                 &
+     &                     MIJ(KIJS),                                     &
+     &                     FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),        &
+     &                     WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:),           &
+     &                     CGROUP(KIJS:KIJL,:), STOKFAC(KIJS:KIJL,:),        &
+     &                     DEPTH(KIJS),                                 &
      &                     CICOVER(KIJS),                               &
      &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),     &
      &                     Z0NEW(KIJS), Z0B(KIJS),                      &
@@ -495,30 +473,23 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &                     USTOKES(KIJS), VSTOKES(KIJS), STRNMS(KIJS) )
           ENDDO
 !$OMP     END PARALLEL DO
-          IF (ITEST.GE.2) THEN
-            WRITE(IU06,*) '   SUB. WAMODEL: WDFLUXES CALLED'
-           CALL FLUSH (IU06)
-          ENDIF
 
           IF (LLUNSTR) CALL EXCHANGE_FOR_FL1(FL1)
 
         ELSE
           MIJ(:) = NFRE
-          XLLWS(:,:,:)=0._JWRB
+          XLLWS(:,:,:) = 0._JWRB
         ENDIF
 
 !       SET FL1 ON ICE POINTS TO ZERO
         IF (LICERUN .AND. LMASKICE .AND. LLSOURCE) THEN
-          IF (ITEST.GE.1) THEN
-            WRITE(IU06,*) '   SUB. WAMODEL: INITIAL SPECTRUM = 0 AT ICE POINTS'
-          ENDIF
 ! Mod for OPENMP
           CALL GSTATS(1439,0)
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
           DO JKGLO=IJS,IJL,NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL)
-            CALL SETICE(FL1(KIJS:KIJL,:,:), KIJS, KIJL,                 &
+            CALL SETICE(KIJS, KIJL, FL1(KIJS:KIJL,:,:) ,            &
      &                  CICOVER(KIJS), U10NEW(KIJS), THWNEW(KIJS))
           ENDDO
 !$OMP     END PARALLEL DO
@@ -526,28 +497,28 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
         ENDIF
 
 !       OUTPUT POINT SPECTRA
-        IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
+        IF (NGOUT > 0 .OR. LLOUTERS) THEN
           CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,                &
      &                  FL1(IJSLOC:IJLLOC,:,:),USNEW(IJSLOC))
         ENDIF
 
-!*    0.1 SAVE INITIAL INTEGRATED FIELDS
-!         ------------------------------
-        IF((MARSTYPE.EQ.'cf' .OR. MARSTYPE.EQ.'pf' .OR.                 &
-     &      MARSTYPE.EQ.'fc' .OR. MARSTYPE.EQ.'4v' .OR.                 &
-     &      LANAONLY         .OR. LFRSTFLD             )                &
+!*      0.1 SAVE INITIAL INTEGRATED FIELDS
+!           ------------------------------
+        IF ((MARSTYPE == 'cf' .OR. MARSTYPE == 'pf' .OR.                 &
+     &       MARSTYPE == 'fc' .OR. MARSTYPE == '4v' .OR.                 &
+     &       LANAONLY         .OR. LFRSTFLD             )                &
      &     .AND. LWAMANOUT) THEN
 
-          IF(LFRSTFLD) THEN
+          IF (LFRSTFLD) THEN
             FFLAGBAK=FFLAG
             GFLAGBAK=GFLAG
             MARSTYPEBAK=MARSTYPE
-            IF(MARSTYPE.EQ.'fg'.OR.MARSTYPE.EQ.'an') THEN
-              IF(.NOT.LNOCDIN) THEN
+            IF (MARSTYPE == 'fg'.OR.MARSTYPE == 'an') THEN
+              IF (.NOT.LNOCDIN) THEN
                 FFLAG(IRCD)=.FALSE.
                 GFLAG(IRCD)=.FALSE.
               ENDIF
-              IF(LWAVEWIND) THEN
+              IF (LWAVEWIND) THEN
                 FFLAG(IRU10)=.FALSE.
                 GFLAG(IRU10)=.FALSE.
               ENDIF
@@ -562,40 +533,40 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !         NEED TO TEMPORARLY RESET THE IFS FORECAST STEP
 !         IF THE IFS GRIB HEADER IS USED SUCH THAT IT POINTS TO
 !         THE START OF THE RUN.
-          IF(LGRHDIFS) THEN
+          IF (LGRHDIFS) THEN
              LRSTST0=.TRUE.
           ENDIF
 
 !         COMPUTE OUTPUT PARAMETERS
-          IF(NIPRMOUT.GT.0) THEN
+          IF (NIPRMOUT > 0) THEN
             CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
 !           PRINT OUT NORMS
-!!!1 to do: decide if there are cases where we might want LDREPROD false
+            !!!1 to do: decide if there are cases where we might want LDREPROD false
             LDREPROD=.TRUE.
             CALL OUTWNORM(LDREPROD)
           ENDIF
 
-          IF( .NOT. LRESTARTED ) THEN
-            IF(IREST.EQ.1 .AND. MARSTYPE.NE.'an' .AND. LGRIBOUT) THEN
+          IF ( .NOT. LRESTARTED ) THEN
+            IF (IREST == 1 .AND. MARSTYPE /= 'an' .AND. LGRIBOUT) THEN
               CALL OUTSPEC(IJS, IJL, FL1, CICOVER)
               LLFLUSH = .TRUE.
             ENDIF
 
-            IF(NIPRMOUT.GT.0 ) THEN
+            IF (NIPRMOUT > 0 ) THEN
               CALL OUTWINT
               LLFLUSH = .TRUE.
             ENDIF
 
           ENDIF
 
-          IF (LFDB.AND.LLFLUSH) THEN
+          IF (LFDB .AND. LLFLUSH) THEN
              CALL GSTATS(1976,0)
              CALL IFLUSHFDBSUBS()
              CALL GSTATS(1976,1)
              LLFLUSH=.FALSE.
           ENDIF
 
-          IF(LFRSTFLD) THEN
+          IF (LFRSTFLD) THEN
             MARSTYPE=MARSTYPEBAK
             FFLAG=FFLAGBAK
             GFLAG=GFLAGBAK
@@ -606,21 +577,15 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
           CDTINTT=CDTINTTBAK
 
-          IF(LGRHDIFS) THEN
+          IF (LGRHDIFS) THEN
             LRSTST0=.FALSE.
           ENDIF
 
-          IF (ITEST .GE. 2) THEN
-            WRITE(IU06,*)
-            WRITE(IU06,*) '   SUB. WAMODEL: INITIAL FIELDS SAVED '
-            WRITE(IU06,*) '                 FOR FORECAST RUN     '
-            WRITE(IU06,*) '    '
-            CALL FLUSH(IU06)
-          ENDIF
-      
         ENDIF
 
       ENDIF ! DO_UPDATE_WIND_FLUX
+
+
 
 
 !*    1. ADVECTION/PHYSICS TIME LOOP.
@@ -633,20 +598,14 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
         CDTPRA = CDTPRO
         CALL INCDATE(CDTPRO,IDELPRO)
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. WAMODEL: START OF PROPAGATION '
-          WRITE(IU06,*) '     START DATE IS    CDTPRA = ',CDTPRA
-          WRITE(IU06,*) '     END DATE WILL BE CDTPRO = ',CDTPRO
-          CALL FLUSH (IU06)
-        ENDIF
 
 !         UPDATE OUTPUT TIMES.
 
-        IF (NOUTT.GT.0) THEN
+        IF (NOUTT > 0) THEN
           CDTINTT = CZERO
           DO J=1,NOUTT
-            IF (CDTPRO.EQ.COUTT(J)) THEN
-              IF (FFLAG20.OR.GFLAG20) CDTINTT = COUTT(J)
+            IF (CDTPRO == COUTT(J)) THEN
+              IF (FFLAG20 .OR. GFLAG20) CDTINTT = COUTT(J)
             ENDIF
           ENDDO
         ELSE
@@ -654,12 +613,12 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
         ENDIF
 
 !       UPDATE SPECTRA OUTPUT DATE
-        IF (NOUTS.GT.0) THEN
+        IF (NOUTS > 0) THEN
 !         reset CDATES to insure that spectra output is only controlled
 !         by list COUTS
           CDATES='000000000000'
           DO J=1,NOUTS
-            IF (CDTPRO.EQ.COUTS(J)) THEN
+            IF (CDTPRO == COUTS(J)) THEN
               CDTRES=CDTPRO
               CDATER=CDTRES
               CDATES=CDTRES
@@ -667,11 +626,10 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
             ENDIF
           ENDDO
         ELSE
-          IF (CDTRES.LT.CDTPRO) CALL INCDATE(CDTRES,IDELRES)
+          IF (CDTRES < CDTPRO) CALL INCDATE(CDTRES,IDELRES)
         ENDIF
 
-        IF ((IBOUNC.EQ.1.OR.IBOUNF.EQ.1).AND.CDTBC.LT.CDTPRO)           &
-     &  CALL INCDATE(CDTBC,IDELBC)
+        IF ((IBOUNC == 1 .OR. IBOUNF == 1) .AND. CDTBC < CDTPRO) CALL INCDATE(CDTBC,IDELBC)
 
 
 !*    1.5.5 SET TIME COUNTER.
@@ -688,66 +646,55 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !             -------------------------------------------------------
 
 ! IF CDATE CORRESPONDS TO A PROPAGATION TIME
-          IF (CDATE.EQ.CDTPRA) THEN
-
-            CALL PROPAG_WAM(IJS, IJL, FL1)
-
-            IF (ITEST.GE.2) THEN
-              WRITE(IU06,*) '   SUB. WAMODEL: PROPAGATION DONE'
-              CALL FLUSH (IU06)
-            ENDIF
-
+          IF (CDATE == CDTPRA) THEN
+            CALL PROPAG_WAM(IJS, IJL, WAVNUM, CGROUP, OMOSNH2KD, &
+      &                     DEPTH, U, V,                         &
+      &                     FL1)
             CDATE=CDTPRO   
           ENDIF
 
 !*        RETRIEVING NEW FORCING FIELDS FROM TEMPORARY STORAGE IF NEEDED.
 !         ---------------------------------------------------------------
-          CALL NEWWIND(IJS,IJL,CDTIMP,CDATEWH,                          &
-     &                 NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW,     &
-     &                 USOLD, USNEW,                                    &
-     &                 ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,                &
-     &                 CICOVER, CITHICK, CIWA,                          &
+          CALL NEWWIND(IJS, IJL, CDTIMP, CDATEWH,               &
+     &                 NEWREAD, NEWFILE,                        &
+     &                 U10OLD, THWOLD, U10NEW, THWNEW,          &
+     &                 USOLD, USNEW,                            &
+     &                 ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,        &
+     &                 CGROUP,                                  &
+     &                 CICOVER, CITHICK, CIWA,                  &
      &                 TAUW, BETAOLD)
-
-          IF (ITEST.GE.2) THEN
-            WRITE(IU06,*) '   SUB. WAMODEL: NEWWIND CALLED' 
-            CALL FLUSH (IU06)
-          ENDIF
 
 !         IT IS TIME TO INTEGRATE THE SOURCE TERMS
 !         ----------------------------------------
-          IF(CDATE.GE.CDTIMPNEXT) THEN
+          IF (CDATE >= CDTIMPNEXT) THEN
 !           COMPUTE UPDATE DUE TO SOURCE TERMS
             CALL GSTATS(1431,0)
-            IF(LLSOURCE) THEN
+            IF (LLSOURCE) THEN
 !$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
               DO JKGLO=IJS,IJL,NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL)
-                CALL IMPLSCH (FL1(KIJS:KIJL,:,:),                       &
-     &                        KIJS, KIJL,                               &
+                CALL IMPLSCH (KIJS, KIJL, FL1(KIJS:KIJL,:,:),       &
+     &                        WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:),           &
+     &                        CGROUP(KIJS:KIJL,:), STOKFAC(KIJS:KIJL,:),        &
+     &                        DEPTH(KIJS), EMAXDPT(KIJS),               &
      &                        THWOLD(KIJS), USOLD(KIJS),                &
      &                        TAUW(KIJS), TAUWDIR(KIJS),                &
      &                        Z0OLD(KIJS),                              &
      &                        ROAIRO(KIJS), ZIDLOLD(KIJS),              &
-     &                        CICOVER(KIJS), CIWA(KIJS:KIJL,:),         &
+     &                        CICOVER(KIJS), CIWA(KIJS:KIJL,:),               &
      &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),  &
      &                        Z0NEW(KIJS), Z0B(KIJS),                   &
      &                        ROAIRN(KIJS), ZIDLNEW(KIJS),              &
      &                        WSEMEAN(KIJS), WSFMEAN(KIJS),             &
      &                        USTOKES(KIJS), VSTOKES(KIJS),STRNMS(KIJS),&
-     &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:))
+     &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:) )
 
               ENDDO
 !$OMP       END PARALLEL DO
 
               IF (LWNEMOCOU) THEN
                 NEMONTAU = NEMONTAU + 1
-              ENDIF
-
-              IF (ITEST.GE.2) THEN
-                WRITE(IU06,*) '   SUB. WAMODEL: IMPLSCH CALLED'
-                CALL FLUSH (IU06)
               ENDIF
 
             ELSE
@@ -777,24 +724,10 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
             CALL CLOSEND(IJS,IJL,CDTIMP,CDATEWH,                        &
      &                   NEWREAD,NEWFILE,U10OLD,THWOLD,ROAIRO,ZIDLOLD,  &
      &                   U10NEW,THWNEW,ROAIRN,ZIDLNEW)
-            IF (ITEST.GE.2) THEN
-              WRITE(IU06,*) '   SUB. WAMODEL: CLOSEND CALLED' 
-              CALL FLUSH (IU06)
-            ENDIF
 
             CDTIMP=CDTIMPNEXT
             CALL INCDATE(CDTIMPNEXT,IDELT)   
 
-            IF (ITEST.GE.2) THEN
-              WRITE(IU06,*) '   SUB. WAMODEL: SOURCE FUNCTIONS INTEGRATED:'
-              CALL FLUSH(IU06)
-            ENDIF
-          ENDIF
-
-          IF (LLUNSTR .AND. LLUNBINOUT) THEN
-!AR: TEST OUTPUT FOR THE UNSTRUCTURED 
-!MDS: Most likely ultra bugged.
-            CALL OUTUNWAMTEST (FL1(1:MNP,:,:), .FALSE.)
           ENDIF
 
 !*    1.5.5.4 UPDATE TIME;IF TIME LEFT BRANCH BACK TO 1.5.5 
@@ -803,17 +736,12 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 !        END OF TIME LOOP ALL TIME STEPS DONE
 
-          IF (ITEST.GE.2) THEN
-            WRITE(IU06,*) '   SUB. WAMODEL: TIME STEPS DONE.'
-            CALL FLUSH(IU06)
-          ENDIF
-
 !NEST
 !*    1.5.7 INPUT OF BOUNDARY VALUES.
 !           -------------------------
 
           CALL GSTATS(1909,0)
-          IF (IBOUNF.EQ.1) THEN
+          IF (IBOUNF == 1) THEN
             CALL BOUINPT (IU02, FL1, IJS, IJL, NBLKS, NBLKE)
           ENDIF
 !NEST
@@ -822,7 +750,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !*    1.5.9 OUTPUT OF BOUNDARY POINTS.
 !           --------------------------
 
-          IF (IBOUNC.EQ.1) THEN
+          IF (IBOUNC == 1) THEN
             CALL OUTBC (FL1, IJS, IJL, IU19)
           ENDIF
 !NEST
@@ -843,11 +771,11 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
           ENDIF
 #endif
 
-          LRST=(LDWRRE .AND. KADV.EQ.NADV )
+          LRST=(LDWRRE .AND. KADV == NADV )
           IF(LRST) THEN
             WRITE(IU06,*) ' '
             WRITE(IU06,*) '  ******************************************'
-            IF(LDSTOP) THEN
+            IF (LDSTOP) THEN
             WRITE(IU06,*) '  AN INTERRUPT SIGNAL HAS BEEN RECEIVED '
             ENDIF
             WRITE(IU06,*) '  THE NECESSARY BINARY RESTART FILES WILL BE'
@@ -858,27 +786,22 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
           ENDIF
           CALL GSTATS(1909,1)
 
-          IF ( CDTINTT.EQ.CDTPRO .OR. LRST ) THEN
+          IF ( CDTINTT == CDTPRO .OR. LRST ) THEN
 
 !           OUTPUT POINT SPECTRA
-            IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
+            IF (NGOUT > 0 .OR. LLOUTERS) THEN
               CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,            &
      &                      FL1(IJSLOC:IJLLOC,:,:),USNEW(IJSLOC))
             ENDIF
 
 !           COMPUTE OUTPUT PARAMETERS
-            IF(NIPRMOUT.GT.0) THEN
+            IF (NIPRMOUT > 0) THEN
               CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
 
-!!!1 to do: decide if there are cased where we might want LDREPROD false
+!!!1 to do: decide if there are cases where we might want LDREPROD false
               LDREPROD=.TRUE.
-              IF(LLNORMWAMOUT) CALL OUTWNORM(LDREPROD)
+              IF (LLNORMWAMOUT) CALL OUTWNORM(LDREPROD)
 
-            ENDIF
-
-            IF (ITEST.GE.2) THEN
-              WRITE(IU06,*) '   SUB. WAMODEL: MODEL OUTPUT PREPARED IN OUTBS'
-              CALL FLUSH (IU06)
             ENDIF
 
           ENDIF
@@ -889,13 +812,12 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !         ---------------------------------------------
 
         WRITE(IU06,*) ' !!!!!!!!!!!!!! WAVE FIELDS INTEGRATED FOR DATE : ', CDTPRO
-        IF (ITEST.GE.1) CALL FLUSH (IU06)
 
         LLNONASSI=.TRUE.
-        IF (IASSI.EQ.1) THEN
+        IF (IASSI == 1) THEN
 !         IS THIS AN ANALYSIS TIME FROM THE INPUT LIST ?
           DO J=1,NASS
-            IF(CDTPRO.EQ.CASS(J)) THEN
+            IF (CDTPRO == CASS(J)) THEN
               LLNONASSI=.FALSE.
               EXIT
             ENDIF
@@ -907,7 +829,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !       --------------------------------------
         LSV=(CDTRES.EQ.CDTPRO.OR.CDATEE.EQ.CDTPRO.OR.CDTPRO.EQ.CDATER)
 
-        IF (LSV.OR.LRST) THEN
+        IF (LSV .OR. LRST) THEN
 
 !         THIS WILL HAPPEN WHEN IT IS NOT IN DATA ASSIMILATION MODE AND
 !         IT IS EITHER A DETERMINED OUTPUT TIME
@@ -920,7 +842,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
           IF ( LOUT .OR. LRST ) THEN
 
 !           SAVE SPECTRUM IN GRIB
-            IF(LOUT.AND.LGRIBOUT) THEN
+            IF (LOUT .AND. LGRIBOUT) THEN
 !             we have insured that the spectra will be written to FDB
 !             even when the restart option is triggered and it is an
 !             output step for the spectra.
@@ -928,8 +850,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !             IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
 !             BECOMES TYPE AN (i.e. pseudo analysis)
               MARSTYPEBAK=MARSTYPE
-              IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.             &
-     &           (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
+              IF ((MARSTYPE == 'fg' .AND. KADV < NADV) .OR.             &
+     &            (MARSTYPE == '4v' .AND. LLNONASSI) ) THEN
                 MARSTYPE='an'
               ENDIF
 
@@ -941,7 +863,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
               WRITE(IU06,*) ' '
               WRITE(IU06,*) '  GRIB WAVE SPECTRA DISPOSED AT........ CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
-              IF (ITEST.GE.1) CALL FLUSH (IU06)
             ENDIF  
 
 !           SAVE RESTART FILES IN PURE BINARY FORM
@@ -962,10 +883,10 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 
 !*          UPDATE, WRITE AND SAVE WAMINFO FILE.
-            IF (LRST .AND. IRANK.EQ.1) THEN
+            IF (LRST .AND. IRANK == 1) THEN
               ICH = 7 
               CALL DIFDATE (CDATEF,CDATEE,IFOREPD)
-              IF (CDTPRO.LE.CDATEF) THEN
+              IF (CDTPRO <= CDATEF) THEN
                 CALL DIFDATE (CDTPRO,CDATEF,IANALPD)
                 CBPLTDT = CDTPRO
                 NFCST = 1
@@ -976,7 +897,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
                 CALL DIFDATE (CDTPRO,CDATEE,IFOREPD)
               ENDIF
               ISTAT(:) = 0
-              IF (CDATE.EQ.CDATEE) ISTAT(1) = 1
+              IF (CDATE == CDATEE) ISTAT(1) = 1
               IDELWIN = IDELWI
 
               CEPLTDT = CDATEF
@@ -1018,18 +939,17 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 !       WRITE INTEGRATED DATA TO FDB OR TO FILE
 !       ---------------------------------------
-        IF (LWAMANOUT .AND. CDTINTT.EQ.CDTPRO .AND. NIPRMOUT.GT.0 ) THEN
+        IF (LWAMANOUT .AND. CDTINTT == CDTPRO .AND. NIPRMOUT > 0 ) THEN
 !         IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
 !         BECOMES TYPE AN (i.e. speudo analysis)
           MARSTYPEBAK=MARSTYPE
-          IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.                 &
-     &       (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
+          IF ((MARSTYPE == 'fg' .AND. KADV < NADV) .OR.                 &
+     &        (MARSTYPE == '4v' .AND. LLNONASSI) ) THEN
             MARSTYPE='an'
           ENDIF
 
           CALL OUTWINT
           LLFLUSH = .TRUE.
-          IF (ITEST.GE.1) CALL FLUSH (IU06)
 
           MARSTYPE=MARSTYPEBAK
 
@@ -1041,7 +961,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !*      FLUSH FDB IF IT HAS BEEN USED AND IT IS NOT AN ANALYSIS
 !       -------------------------------------------------------
 
-        IF( LFDB .AND. LLFLUSH .AND. (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF) ) THEN
+        IF ( LFDB .AND. LLFLUSH .AND. (IASSI /= 1 .OR. CDTPRO > CDATEF) ) THEN
           CALL GSTATS(1976,0)
           CALL IFLUSHFDBSUBS()
           CALL GSTATS(1976,1)
@@ -1057,27 +977,27 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !       HAS BEEN SIGNALLED TO DO SO.
 !       -------------------------------------------------
 
-        IF (CDATEE.EQ.CDTPRO .AND. LOUTINT ) THEN
+        IF (CDATEE == CDTPRO .AND. LOUTINT ) THEN
 !       MOVE INTEGRATED PARAMETERS OF ENTIRE GRID TO PERMANENT FILES
 
 !         GRIB DATA IF FDB IS NOT USED: 
-          IF (GFLAG20 .AND. .NOT. LFDB .AND. IRANK.EQ.1) THEN
+          IF (GFLAG20 .AND. .NOT. LFDB .AND. IRANK == 1) THEN
             CALL GSFILE (IU06, IU30, 0, CDTPRO, CDATEF, 'MPP', 'S')
           ENDIF
 
 !         PURE BINARY DATA:
-          IF (FFLAG20 .AND. IRANK.EQ.1 ) THEN
+          IF (FFLAG20 .AND. IRANK == 1 ) THEN
             CALL GSFILE (IU06, IU20, 0, CDTPRO, CDATEF, 'MAP', 'S')
           ENDIF
         ENDIF
 
 !       SAVE BOUNDARY VALUE FILE.
-        IF(CDTBC.EQ.CDTPRO) THEN
-          IF (IBOUNC.EQ.1 .AND. IRANK.EQ.1 ) THEN
+        IF (CDTBC == CDTPRO) THEN
+          IF (IBOUNC == 1 .AND. IRANK == 1 ) THEN
             DO II=1,GBOUNC
             CALL GSFILE(IU06, IU19(II), 0, CDTBC, CDTBC,                &
      &        CBCPREF(II), 'S')
-            IF (CDTBC.LT.CDATEE)                                        &
+            IF (CDTBC < CDATEE)                                         &
      &        CALL HEADBC (IPOGBO(II)-IPOGBO(II-1), IDELPRO,            &
      &                     TH(1), FR(1), IU19(II), IU06) 
             ENDDO
@@ -1087,23 +1007,23 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 !*      WAM-NEMO COUPLING (WHEN NO atmospheric model !!!!!!)
 !       ----------------------------------------------------
-        IF (LWNEMOCOU.AND.(.NOT.LWCOU)) THEN
+        IF (LWNEMOCOU .AND. (.NOT.LWCOU)) THEN
           NEMOWSTEP=NEMOWSTEP+1
 
-          IF (MOD(NEMOWSTEP,NEMOFRCO)==0) THEN
+          IF (MOD(NEMOWSTEP,NEMOFRCO) == 0) THEN
             CALL GSTATS(1432,0)
 !$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ) 
             DO JKGLO=IJS,IJL,NPROMA
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,IJL)
-              IF(LWNEMOCOUSTK) THEN
+              IF (LWNEMOCOUSTK) THEN
                 NEMOUSTOKES(KIJS:KIJL) = USTOKES(KIJS:KIJL)
                 NEMOVSTOKES(KIJS:KIJL) = VSTOKES(KIJS:KIJL)
               ELSE
                 NEMOUSTOKES(KIJS:KIJL) = 0.0_NEMODP
                 NEMOVSTOKES(KIJS:KIJL) = 0.0_NEMODP
               ENDIF
-              IF(LWNEMOCOUSTRN)  NEMOSTRN(KIJS:KIJL) = STRNMS(KIJS:KIJL)
+              IF (LWNEMOCOUSTRN)  NEMOSTRN(KIJS:KIJL) = STRNMS(KIJS:KIJL)
             ENDDO
 !$OMP       END PARALLEL DO
             CALL GSTATS(1432,1)

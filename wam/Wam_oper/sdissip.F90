@@ -1,5 +1,6 @@
-      SUBROUTINE SDISSIP (F, FL, SL, IJS, IJL,   &
-     &                    EMEAN, F1MEAN, XKMEAN, &
+      SUBROUTINE SDISSIP (KIJS, KIJL, FL1, FLD, SL,  &
+     &                    WAVNUM, CGROUP,            &
+     &                    EMEAN, F1MEAN, XKMEAN,     &
      &                    USNEW, THWNEW, ROAIRN)
 ! ----------------------------------------------------------------------
 
@@ -15,20 +16,23 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDISSIP (F, FL, IJS, IJL, SL,*
+!       *CALL* *SDISSIP (KIJS, KIJL, FL1, FLD, SL, *
+!                        WAVNUM, CGROUP,  
 !                        EMEAN, F1MEAN, XKMEAN,*
-!                        USNEW, THWNEW,ROAIRN)*
-!          *F*   - SPECTRUM.
-!          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
+!                        USNEW, THWNEW, ROAIRN)*
+!         *KIJS* - INDEX OF FIRST GRIDPOINT
+!         *KIJL* - INDEX OF LAST GRIDPOINT
+!         *FL1*  - SPECTRUM.
+!         *FLD*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*  - TOTAL SOURCE FUNCTION ARRAY
-!          *IJS* - INDEX OF FIRST GRIDPOINT
-!          *IJL* - INDEX OF LAST GRIDPOINT
-!          *EMEAN* - MEAN ENERGY DENSITY 
-!          *F1MEAN* - MEAN FREQUENCY BASED ON 1st MOMENT.
-!          *XKMEAN* - MEAN WAVE NUMBER BASED ON 1st MOMENT.
-!          *USNEW*  - NEW FRICTION VELOCITY IN M/S.
-!          *ROAIRN* - AIR DENSITY IN KG/M3
-!          *THWNEW* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC.
+!       *WAVNUM* - WAVE NUMBER
+!       *CGROUP* - GROUP SPEED
+!        *EMEAN* - MEAN ENERGY DENSITY 
+!       *F1MEAN* - MEAN FREQUENCY BASED ON 1st MOMENT.
+!       *XKMEAN* - MEAN WAVE NUMBER BASED ON 1st MOMENT.
+!       *USNEW*  - NEW FRICTION VELOCITY IN M/S.
+!       *ROAIRN* - AIR DENSITY IN KG/M3
+!       *THWNEW* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC.
 
 !     METHOD.
 !     -------
@@ -51,19 +55,20 @@
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : IPHYS
-      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "sdissip_ard.intfb.h"
 #include "sdissip_jan.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: EMEAN, F1MEAN, XKMEAN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, THWNEW, ROAIRN 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL, SL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EMEAN, F1MEAN, XKMEAN
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USNEW, THWNEW, ROAIRN
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
@@ -71,14 +76,15 @@
 
       IF (LHOOK) CALL DR_HOOK('SDISSIP',0,ZHOOK_HANDLE)
 
-
       SELECT CASE (IPHYS)
       CASE(0)
-         CALL SDISSIP_JAN (F ,FL, SL, IJS, IJL,  &
+         CALL SDISSIP_JAN (KIJS, KIJL, FL1 ,FLD, SL,  &
+     &                     WAVNUM,                    &
      &                     EMEAN, F1MEAN, XKMEAN)
 
       CASE(1) 
-         CALL SDISSIP_ARD (F ,FL, SL, IJS, IJL,  &
+         CALL SDISSIP_ARD (KIJS, KIJL, FL1 ,FLD, SL,   &
+     &                     WAVNUM, CGROUP,             &
      &                     USNEW, THWNEW, ROAIRN)
       END SELECT 
 

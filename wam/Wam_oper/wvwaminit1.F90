@@ -10,12 +10,10 @@
 
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX
       USE YOWCOUT  , ONLY : LFDB
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,    &
-     &         MPMAXLENGTH
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,    NNEXT
+
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-
-      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal, MyRankLocal
 
 ! ----------------------------------------------------------------------
 
@@ -32,7 +30,7 @@
 
 ! RE-INITIALIZE LOGICALS IF COUPLED TO IFS
 
-      IF(LDWCOUIFS) THEN
+      IF (LDWCOUIFS) THEN
         LFDB=LFDBOPIFS
         LWCOU=LDWCOUIFS
         LWCOU2W=LDWCOU2W
@@ -40,7 +38,7 @@
       ENDIF
 
       NPREVIOUS=IRANK-1
-      IF(IRANK.EQ.NPROC) THEN
+      IF (IRANK == NPROC) THEN
         NNEXT=0
       ELSE
         NNEXT=IRANK+1

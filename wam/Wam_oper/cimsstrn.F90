@@ -1,4 +1,4 @@
-      SUBROUTINE CIMSSTRN(F, IJS, IJL, STRN)
+      SUBROUTINE CIMSSTRN(KIJS, KIJL, FL1, WAVNUM, DEPTH, STRN)
 
 ! ----------------------------------------------------------------------
 
@@ -14,11 +14,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *CIMSSTRN (F, IJS, IJL, STRN)*
-!              *F*   - SPECTRUM.
-!              *IJS* - INDEX OF FIRST GRIDPOINT
-!              *IJL* - INDEX OF LAST GRIDPOINT
-!              *STRN*- MEAN SQUARE WAVE STRAIN IN ICE (OUTPUT).
+!       *CALL* *CIMSSTRN (KIJS, KIJL, FL1, WAVNUM, DEPTH, STRN)*
+!              *KIJS*    - INDEX OF FIRST GRIDPOINT
+!              *KIJL*    - INDEX OF LAST GRIDPOINT
+!              *FL1*     - SPECTRUM.
+!              *WAVNUM*  - OPEN WATER WAVE NUMBER
+!              *DEPTH*   - WATER DEPTH
+!              *STRN*    - MEAN SQUARE WAVE STRAIN IN ICE (OUTPUT).
 
 !     METHOD.
 !     -------
@@ -46,23 +48,24 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP,DEPTHA,DEPTHD,BATHYMAX
-      USE YOWSTAT  , ONLY : ISHALLO
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
-      REAL(KIND=JWRB), INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: STRN
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: STRN
 
-      INTEGER(KIND=JWIM) :: IJ,M,K,JD
+
+      INTEGER(KIND=JWIM) :: IJ, M, K
       REAL(KIND=JWRB) :: AKI_ICE
       REAL(KIND=JWRB) :: F1LIM 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DPTH, XK, XKI, E, SUME 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XKI, E, SUME 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -74,7 +77,7 @@
 
       F1LIM=FLMIN/DELTH
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         STRN(IJ) = 0.0_JWRB
       ENDDO
 
@@ -84,35 +87,22 @@
 !        ------------------------------------------
 
       DO M=1,NFRE
-        IF (ISHALLO.EQ.1) THEN
-          DO IJ=IJS,IJL
-            DPTH(IJ)=BATHYMAX
-            XK(IJ)=(ZPI*FR(M))**2/G
-          ENDDO
-        ELSE
-          DO IJ=IJS,IJL
-            JD=INDEP(IJ)
-            DPTH(IJ)=DEPTHA*DEPTHD**(JD-1)
-            XK(IJ)=TFAK(JD,M)
-          ENDDO
-        ENDIF
-
-        DO IJ=IJS,IJL
-          XKI(IJ)=AKI_ICE(G,XK(IJ),DPTH(IJ),ROWATER,CITHICK(IJ))
-          E(IJ)=0.5_JWRB*CITHICK(IJ)*XKI(IJ)**3/XK(IJ)
+        DO IJ=KIJS,KIJL
+          XKI(IJ)=AKI_ICE(G,WAVNUM(IJ,M),DEPTH(IJ),ROWATER,CITHICK(IJ))
+          E(IJ)=0.5_JWRB*CITHICK(IJ)*XKI(IJ)**3/WAVNUM(IJ,M)
         ENDDO
 
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           SUME(IJ) = 0.0_JWRB
         ENDDO
         DO K=1,NANG
-          DO IJ=IJS,IJL
-            SUME(IJ) = SUME(IJ)+F(IJ,K,M)
+          DO IJ=KIJS,KIJL
+            SUME(IJ) = SUME(IJ)+FL1(IJ,K,M)
           ENDDO
         ENDDO
 
-        DO IJ=IJS,IJL
-          IF(SUME(IJ).GT.F1LIM) THEN
+        DO IJ=KIJS,KIJL
+          IF (SUME(IJ) > F1LIM) THEN
             STRN(IJ) = STRN(IJ)+E(IJ)**2*SUME(IJ)*DFIM(M)
           ENDIF
         ENDDO
