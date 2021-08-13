@@ -57,16 +57,6 @@ SUBROUTINE PROENVHALO (IJS, IJL, NINF, NSUP,                  &
 
 IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
 
-!!!
-write(*,*) 'debile, in PROENVHALO ',IJS, IJL, NINF, NSUP
-write(*,*) 'WAVNUM ',WAVNUM 
-write(*,*) 'CGROUP ',CGROUP
-write(*,*) 'OMOSNH2KD ',OMOSNH2KD
-write(*,*) 'DEPTH ',DEPTH
-write(*,*) 'U ',U
-write(*,*) 'V ',V
-
-
       NPROMA=NPROMA_WAM
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,M,IJ) 
       DO JKGLO = IJS, IJL, NPROMA
@@ -86,8 +76,6 @@ write(*,*) 'V ',V
         ENDDO
       ENDDO
 !$OMP END PARALLEL DO
-
-write(*,*) 'debile, in PROENVHALO, after openmp '
 
 !!    should be combine into one single data exchange, when we start using this option.... !!!
       CALL MPEXCHNG(WAVNUM_EXT, NFRE_RED, 1)

@@ -168,15 +168,6 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, WAVNUM, CGROUP, OMOSNH2KD, &
 
              IF (LUPDTWGHT) THEN
 !              NEED HALO VALUES
-!!!
-write(*,*) 'debile, before call to PROENVHALO ',IJS, IJL, NINF, NSUP
-write(*,*) 'WAVNUM ',WAVNUM 
-write(*,*) 'CGROUP ',CGROUP
-write(*,*) 'OMOSNH2KD ',OMOSNH2KD
-write(*,*) 'DEPTH ',DEPTH
-write(*,*) 'U ',U
-write(*,*) 'V ',V
-
                CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
 &                                WAVNUM, CGROUP, OMOSNH2KD,             &
 &                                DEPTH, U, V,                           &
@@ -207,11 +198,11 @@ write(*,*) 'V ',V
              IF (L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
 
 !            NEED HALO VALUES
-             CALL  PROENVHALO (IJS, IJL, NINF, NSUP,      &
-&                  WAVNUM, CGROUP, OMOSNH2KD,             &
-&                  DEPTH, U, V,                           &
-&                  WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
-&                  DEPTH_EXT, U_EXT, V_EXT )
+             CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
+&                              WAVNUM, CGROUP, OMOSNH2KD,             &
+&                              DEPTH, U, V,                           &
+&                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+&                              DEPTH_EXT, U_EXT, V_EXT )
 
              NPROMA=NPROMA_WAM
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
@@ -229,11 +220,11 @@ write(*,*) 'V ',V
              IF (L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
 
 !            NEED HALO VALUES
-             CALL  PROENVHALO (IJS, IJL, NINF, NSUP,      &
-&                  WAVNUM, CGROUP, OMOSNH2KD,             &
-&                  DEPTH, U, V,                           &
-&                  WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
-&                  DEPTH_EXT, U_EXT, V_EXT )
+             CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
+&                              WAVNUM, CGROUP, OMOSNH2KD,             &
+&                              DEPTH, U, V,                           &
+&                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+&                              DEPTH_EXT, U_EXT, V_EXT )
 
              NPROMA=NPROMA_WAM
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
