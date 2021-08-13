@@ -1,4 +1,4 @@
-      SUBROUTINE AIRSEA (KIJS, KIJL, FL1,                           &
+      SUBROUTINE AIRSEA (KIJS, KIJL, FL1, WAVNUM,                   &
 &                        U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, &
 &                        US, Z0, Z0B, ICODE_WND, IUSFG)
 
@@ -20,12 +20,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *AIRSEA (KIJS, KIJL, FL1, U10,
-!                       U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC,
+!       *CALL* *AIRSEA (KIJS, KIJL, FL1, WAVNUM,
+!                       U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC,
 !                       US, Z0, Z0B, ICODE_WND, IUSFG)*
 !          *KIJS*  - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*  - INDEX OF LAST GRIDPOINT.
 !          *FL1*  - SPECTRA
+!          *WAVNUM*  - WAVE NUMBER
 !          *U10*  - INPUT OR OUTPUT BLOCK OF WINDSPEED U10.
 !          *U10DIR*  - INPUT OR OUTPUT BLOCK OF WINDSPEED DIRECTION.
 !          *ROAIRN* - AIR DENSITY IN KG/M3
@@ -75,11 +76,12 @@
 #include "taut_z0.intfb.h"
 #include "z0wave.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT (IN) :: KIJS, KIJL, ICODE_WND, IUSFG
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
-      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT (IN) :: U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC
-      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT (INOUT) :: U10, US
-      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT (OUT) :: Z0, Z0B
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (IN) :: U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (INOUT) :: U10, US
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (OUT) :: Z0, Z0B
 
       INTEGER(KIND=JWIM) :: IJ, I, J
 
@@ -95,7 +97,9 @@
 !        ----------------------------------
 
       IF (ICODE_WND == 3) THEN
-        CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, US, Z0, Z0B)
+        CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, WAVNUM,            &
+     &                U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, &
+     &                US, Z0, Z0B)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
 
