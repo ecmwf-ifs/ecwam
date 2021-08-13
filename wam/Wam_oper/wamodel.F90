@@ -327,12 +327,12 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       USE UNWAM, ONLY : EXCHANGE_FOR_FL1
       USE YOWUNPOOL ,ONLY : LLUNSTR, LLUNBINOUT
       USE YOWPD, ONLY : MNP => npa
+      USE YOWNODEPOOL, ONLY : NP
 
       USE YOWNEMOP , ONLY : NEMODP
       USE MPL_MODULE
       USE FDBSUBS_MOD, ONLY : IFLUSHFDBSUBS
-      USE YOWNODEPOOL, ONLY : NP
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
       
 ! ----------------------------------------------------------------------
 

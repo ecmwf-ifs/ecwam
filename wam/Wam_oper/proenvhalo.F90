@@ -67,8 +67,6 @@ write(*,*) 'U ',U
 write(*,*) 'V ',V
 
 
-      CALL GSTATS(1430,0)
-
       NPROMA=NPROMA_WAM
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,M,IJ) 
       DO JKGLO = IJS, IJL, NPROMA
@@ -88,7 +86,6 @@ write(*,*) 'V ',V
         ENDDO
       ENDDO
 !$OMP END PARALLEL DO
-      CALL GSTATS(1430,1)
 
 write(*,*) 'debile, in PROENVHALO, after openmp '
 
