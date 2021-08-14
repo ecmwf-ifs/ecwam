@@ -40,7 +40,7 @@
 
       USE YOWFRED  , ONLY : COSTH    ,SINTH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
-      USE YOWSTAT  , ONLY : ICASE    ,ISHALLO  ,IREFRA
+      USE YOWSTAT  , ONLY : ICASE    ,IREFRA
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR      ,             &
      &            WLATN    ,WLONN    ,WCORN    ,WKPMN    ,WMPMN     ,   &

@@ -37,7 +37,6 @@
 
       INTEGER(KIND=JWIM) :: IJ, I, NE
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: NS
-      REAL(KIND=JWRB) :: DIRSPRD_GC
       REAL(KIND=JWRB) :: XKS, OMS, COEF
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
    
@@ -68,7 +67,6 @@
 !         mss :  integral of k**2 F(k)  k dk
           XMSSCG(IJ) = XMSSCG(IJ) + DELKCC_GC(I) * XKM_GC(I) 
         ENDDO
-!!!        COEF = C2OSQRTVG_GC(NS(IJ))*HALPHAP(IJ)*DIRSPRD_GC(USTAR(IJ))
         COEF = C2OSQRTVG_GC(NS(IJ))*HALPHAP(IJ)
         XMSSCG(IJ) = XMSSCG(IJ)*COEF
       ENDDO

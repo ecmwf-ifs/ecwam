@@ -304,7 +304,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDATER   ,CDATES   ,CDTINTT  ,IDELPRO  ,IDELT    ,    &
      &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &
-     &            ISHALLO  ,IASSI    ,                                  &
+     &            IASSI    ,                                            &
      &            CDTBC    ,IDELBC   ,                                  &
      &            IPROPAGS ,                                            &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,                        &

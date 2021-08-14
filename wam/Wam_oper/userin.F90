@@ -113,7 +113,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            IDELPRO  ,IDELT    ,IDELWI   ,                        &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
      &            IDELBC   ,                                            &
-     &            ICASE    ,ISHALLO  ,                                  &
+     &            ICASE    ,                                            &
      &            ISNONLIN ,                                            &
      &            IPHYS    ,                                            &
      &            IDAMPING ,                                            &
@@ -680,21 +680,17 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '                Z0RAT = ', Z0RAT
       ENDIF
       WRITE(IU06,*) '' 
-      IF (ISHALLO.EQ.1) THEN
-        WRITE(IU06,*) ' THIS IS A DEEP WATER RUN '
+      WRITE(IU06,*) ' THIS IS ALWAYS A SHALLOW WATER RUN '
+      IF(ISNONLIN.EQ.0) THEN
+        WRITE(IU06,*) ' THE OLD SHALLOW WATER SNONLIN IS USED '
+      ELSE IF (ISNONLIN.EQ.1) THEN
+        WRITE(IU06,*) ' THE NEW SHALLOW WATER SNONLIN IS USED '
       ELSE
-        WRITE(IU06,*) ' THIS IS A SHALLOW WATER RUN '
-        IF(ISNONLIN.EQ.0) THEN
-          WRITE(IU06,*) ' THE OLD SHALLOW WATER SNONLIN IS USED '
-        ELSE IF (ISNONLIN.EQ.1) THEN
-          WRITE(IU06,*) ' THE NEW SHALLOW WATER SNONLIN IS USED '
-        ELSE
-          WRITE(IU06,*) ' WARNING: DO NOT KNOW WHICH SNONLIN TO USE !'
-          WRITE(IU06,*) ' !!!! THIS ISNONLIN IS NOT YET AVAILABLE !!!'
-          WRITE(IU06,*) ' !!!! WARNING: ISNONLIN = ',ISNONLIN
-          WRITE(IU06,*) ' '
-          CALL ABORT1
-        ENDIF
+        WRITE(IU06,*) ' WARNING: DO NOT KNOW WHICH SNONLIN TO USE !'
+        WRITE(IU06,*) ' !!!! THIS ISNONLIN IS NOT YET AVAILABLE !!!'
+        WRITE(IU06,*) ' !!!! WARNING: ISNONLIN = ',ISNONLIN
+        WRITE(IU06,*) ' '
+        CALL ABORT1
       ENDIF
       IF(LLNORMAGAM) THEN
         WRITE(IU06,*) ' RE-NORMALISATION OF WIND INPUT GROWTH RATE'
@@ -712,10 +708,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       IF (IDAMPING.EQ.1 .AND. IPHYS.EQ.0) THEN
         WRITE(IU06,*) ' SWELL DAMPING FORMULATION IS USED'
       ENDIF
-      IF (ISHALLO.EQ.0) THEN
-        IF(LBIWBK) THEN
-          WRITE(IU06,*) ' BOTTOM INDUCED WAVE BREAKING IS USED'
-        ENDIF
+      IF(LBIWBK) THEN
+        WRITE(IU06,*) ' BOTTOM INDUCED WAVE BREAKING IS USED'
       ENDIF
       IF (IPROPAGS.EQ.1) THEN
         WRITE(IU06,*) ' PROPAGATION: DUAL ROTATED QUADRANTS SCHEME'

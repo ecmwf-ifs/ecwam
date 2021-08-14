@@ -250,7 +250,6 @@ SUBROUTINE INITMDL (NADV,                                         &
       USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC    ,              &
      &                      TAUXD    ,TAUYD    ,WSEMEAN  ,WSFMEAN  ,    &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
-      USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
      &            NGX      ,NGY      ,                                  &
@@ -272,7 +271,7 @@ SUBROUTINE INITMDL (NADV,                                         &
      &            CDTINTT  ,CDTBC    ,                                  &
      &            IDELPRO  ,IDELT    ,IDELWI   ,IDELWO   ,IDELRES  ,    &
      &            IDELINT  ,                                            &
-     &            ISHALLO  ,IREFRA   ,                                  &
+     &            IREFRA   ,                                            &
      &            IPHYS    ,                                            &
      &            NPROMA_WAM,                                           &
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,    &
@@ -560,20 +559,8 @@ SUBROUTINE INITMDL (NADV,                                         &
 
       CALL INIT_X0TAUHF
 
-      IF (IPHYS == 1) CALL INIT_SDISS_ARDH
+      KTAG=100
 
-
-      IF (.NOT. LLUNSTR) THEN
-
-      IF (LMESSPASS) THEN
-
-        KTAG=100
-
-!      1.3 OUTPUT MODEL DECOMPOSITION DETAILS 
-!          ----------------------------------
-
-      ENDIF
-      ENDIF ! .NOT. LLUNSTR
 !     1.5 DETERMINE LAST OUTPUT DATE
 !         --------------------------
 
@@ -783,6 +770,10 @@ SUBROUTINE INITMDL (NADV,                                         &
 
 !     INITIALISE GRID POINT FIELDS DEPENDENT ON WATER DEPTH AND FREQUENCY
       CALL INITDPTHFLDS
+
+
+!     INITIALISATION FOR SDISS_ARD
+      IF (IPHYS == 1) CALL INIT_SDISS_ARDH
 
 
 ! ----------------------------------------------------------------------
@@ -1043,7 +1034,7 @@ SUBROUTINE INITMDL (NADV,                                         &
 !     10. WRITE BOUNDARY VALUE FILE HEADER.
 !         ------------------------------
       IF (IBOUNC == 1 .AND. .NOT. LLUNSTR) THEN
-        IF ((LMESSPASS .AND. IRANK == 1).OR..NOT.LMESSPASS) THEN
+        IF (IRANK == 1) THEN
           DO II=1,GBOUNC
             IU19(II)=IWAM_GET_UNIT(IU06, CBCPREF(II), 'w', 'u', 0)
 !           make the unit available for a silly fort.unit output

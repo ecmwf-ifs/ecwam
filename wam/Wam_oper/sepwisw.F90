@@ -146,7 +146,7 @@
         ENDDO
       ENDDO
 
-      IF(.NOT.(CLDOMAIN == 's')) THEN
+      IF (.NOT.(CLDOMAIN == 's')) THEN
 !     CHECK THAT TOTAL SWELL MEAN FREQUENCY IS LOWER THAN WINDSEA ONE
 !     OTHERWISE RESET WIND SECTOR TO WINDSEA
 
@@ -172,7 +172,7 @@
 
 !     CHECK:
       DO IJ=KIJS,KIJL
-         IF(FSWELL(IJ) > 0.96_JWRB*FSEA(IJ)) THEN
+         IF (FSWELL(IJ) > 0.96_JWRB*FSEA(IJ)) THEN
            R(IJ)=1.0_JWRB
          ELSE
            R(IJ)=0.0_JWRB
@@ -201,10 +201,10 @@
       DO IJ=KIJS,KIJL
         DO K=1,NANG
           DO M=NFRE,2,-1
-            IF(SWM(IJ,K,M) == 1.0_JWRB .AND. SWM(IJ,K,M-1) == 1.0_JWRB) THEN
+            IF (SWM(IJ,K,M) == 1.0_JWRB .AND. SWM(IJ,K,M-1) == 1.0_JWRB) THEN
               EXIT
-            ELSEIF(SWM(IJ,K,M) == 0.0_JWRB .AND. SWM(IJ,K,M-1) == 1.0_JWRB) THEN
-               IF(FL1(IJ,K,M) >= FL1(IJ,K,M-1)) SWM(IJ,K,M-1)=0.0_JWRB
+            ELSEIF (SWM(IJ,K,M) == 0.0_JWRB .AND. SWM(IJ,K,M-1) == 1.0_JWRB) THEN
+               IF (FL1(IJ,K,M) >= FL1(IJ,K,M-1)) SWM(IJ,K,M-1)=0.0_JWRB
             ENDIF
           ENDDO
         ENDDO
@@ -224,7 +224,7 @@
 !*    2.1 COMPUTATION OF THE PARTITIONED SWELL OUTPUT PARAMETERS
 !         ------------------------------------------------------
 
-      IF(LLPARTITION) THEN
+      IF (LLPARTITION) THEN
         CALL FEMEAN(KIJS, KIJL, F1, ESWELL, FSWELL)
         CALL STHQ(KIJS, KIJL, F1, THSWELL)
         CALL SEP3TR (KIJS, KIJL, FL1, MIJ, U10NEW, THWNEW,     &
@@ -269,7 +269,7 @@
 !     if there isn't any windsea energy, set the windsea mean direction
 !     to the wind direction.
       DO IJ=KIJS,KIJL
-        IF(ESEA(IJ) <= 0.0_JWRB) THEN
+        IF (ESEA(IJ) <= 0.0_JWRB) THEN
           THWISEA(IJ)=THWNEW(IJ)
         ENDIF
       ENDDO

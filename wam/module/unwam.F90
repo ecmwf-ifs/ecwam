@@ -2990,7 +2990,7 @@ END INTERFACE
       SUBROUTINE ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
       USE YOWUNPOOL, ONLY : LSPHE
       USE YOWFRED,  ONLY : DELTH, FRATIO, FR
-      USE YOWSTAT,  ONLY : IDELPRO, IREFRA, ISHALLO
+      USE YOWSTAT,  ONLY : IDELPRO, IREFRA
       USE YOWGRID,  ONLY : DELPHI, IJS, IJL
       USE YOWPCONS, ONLY : PI, ZPI
       USE YOWREFD,  ONLY : THDD, THDC, SDOT
@@ -3021,16 +3021,16 @@ END INTERFACE
         IF (IREFRA.NE.0) THEN
           DO IP=1,NP_RES
             IJ = IP
-            IF (ISHALLO.NE.1) THEN
-              DO K=1,NANG
-                KP1 = K+1
-                IF (KP1.GT.NANG) KP1 = 1
-                KM1 = K-1
-                IF (KM1.LT.1) KM1 = NANG
-                DRDP(K) = (THDD(IJ, K) + THDD(IJ, KP1))*DELTH0
-                DRDM(K) = (THDD(IJ, K) + THDD(IJ, KM1))*DELTH0
-              END DO
-            END IF
+
+            DO K=1,NANG
+              KP1 = K+1
+              IF (KP1.GT.NANG) KP1 = 1
+              KM1 = K-1
+              IF (KM1.LT.1) KM1 = NANG
+              DRDP(K) = (THDD(IJ, K) + THDD(IJ, KP1))*DELTH0
+              DRDM(K) = (THDD(IJ, K) + THDD(IJ, KM1))*DELTH0
+            END DO
+
             IF ((IREFRA.EQ.2).OR.(IREFRA.EQ.3)) THEN
               DO K=1,NANG
                 KP1 = K+1
@@ -3041,44 +3041,26 @@ END INTERFACE
                 DRCM(K) = (THDC(IJ,K) + THDC(IJ,KM1))*DELTH0
               END DO
             END IF
-            IF (ISHALLO.EQ.1) THEN
-              DFP = PI*(1.+FRATIO)*DELFR0
-              DO M=1,NFRE
-                DO K=1,NANG
-                  DTHP = DRCP(K)
-                  DTHM = DRCM(K)
-                  DTP_I(K,M,IJ) = -DTHP+ABS(DTHP)
-                  DTM_I(K,M,IJ) =  DTHM+ABS(DTHM)
-                  ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
-                  !
-                  DTHP    = SDOT(K,NFRE,IJ) * DFP
-                  ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + 2.* ABS(DTHP)
-                  DOP_I(K,M,IJ) = (-DTHP+ABS(DTHP))/FRATIO
-                  DOM_I(K,M,IJ) = ( DTHP+ABS(DTHP))*FRATIO
-                END DO
+            DO M=1,NFRE
+              DO K=1,NANG
+                MP1 = MIN(NFRE,M+1)
+                MM1 = MAX(1,M-1)
+                DFP = DELFR0/FR(M)
+                DFM = DELFR0/FR(MM1)
+                !
+                DTHP = REAL(OMOSNH2KD(IJ,M),JWRU)*DRDP(K) + DRCP(K)
+                DTHM = REAL(OMOSNH2KD(IJ,M),JWRU)*DRDM(K) + DRCM(K)
+                ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
+                DTP_I(K,M,IJ) = -DTHP+ABS(DTHP)
+                DTM_I(K,M,IJ) =  DTHM+ABS(DTHM)
+                !
+                DTHP = (SDOT(K,M,IJ) + SDOT(K,MP1,IJ))*DFP
+                DTHM = (SDOT(K,M,IJ) + SDOT(K,MM1,IJ))*DFM
+                ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
+                DOP_I(K,M,IJ) = (-DTHP+ABS(DTHP))/FRATIO
+                DOM_I(K,M,IJ) = ( DTHM+ABS(DTHM))*FRATIO
               END DO
-            ELSE
-              DO M=1,NFRE
-                DO K=1,NANG
-                  MP1 = MIN(NFRE,M+1)
-                  MM1 = MAX(1,M-1)
-                  DFP = DELFR0/FR(M)
-                  DFM = DELFR0/FR(MM1)
-                  !
-                  DTHP = REAL(OMOSNH2KD(IJ,M),JWRU)*DRDP(K) + DRCP(K)
-                  DTHM = REAL(OMOSNH2KD(IJ,M),JWRU)*DRDM(K) + DRCM(K)
-                  ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
-                  DTP_I(K,M,IJ) = -DTHP+ABS(DTHP)
-                  DTM_I(K,M,IJ) =  DTHM+ABS(DTHM)
-                  !
-                  DTHP = (SDOT(K,M,IJ) + SDOT(K,MP1,IJ))*DFP
-                  DTHM = (SDOT(K,M,IJ) + SDOT(K,MM1,IJ))*DFM
-                  ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
-                  DOP_I(K,M,IJ) = (-DTHP+ABS(DTHP))/FRATIO
-                  DOM_I(K,M,IJ) = ( DTHM+ABS(DTHM))*FRATIO
-                END DO
-              END DO
-            END IF
+            END DO
           END DO
         END IF
       END IF
@@ -3195,7 +3177,7 @@ END INTERFACE
       USE yowpd, only : comm
       USE yowpd, only : np_global
       USE YOWMPP, ONLY : NINF, NSUP
-      USE YOWSTAT, ONLY : IREFRA, ISHALLO
+      USE YOWSTAT, ONLY : IREFRA
       USE yowunpool
       IMPLICIT NONE
 
@@ -3234,7 +3216,6 @@ END INTERFACE
       WRITE(740+MyRankGlobal,*) 'JWRU=', JWRU
       WRITE(740+MyRankGlobal,*) 'JWRB=', JWRB
       WRITE(740+MyRankGlobal,*) 'IREFRA=', IREFRA
-      WRITE(740+MyRankGlobal,*) 'ISHALLO=', ISHALLO
       FLUSH(740+MyRankGlobal)
 #endif
 
