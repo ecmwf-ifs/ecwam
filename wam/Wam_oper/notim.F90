@@ -1,7 +1,7 @@
       SUBROUTINE NOTIM (CDTWIS, CDTWIE,                       &
      &                  IJS, IJL,                             &
      &                  U10OLD, THWOLD, USOLD, Z0OLD,         &
-     &                  ROAIRO, ZIDLOLD, CICOVER, CITHICK,    &
+     &                  ROAIRO, WSTAROLD, CICOVER, CITHICK,   &
      &                  IREAD, LWCUR)
 
 ! ----------------------------------------------------------------------
@@ -26,20 +26,19 @@
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,
 !    &                 IJS, IJL,
 !    &                 U10OLD,THWOLD,USOLD,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+!    &                 ROAIRO, WSTAROLD, CICOVER, CITHICK,
 !                      IREAD, LWCUR)
-!          *CDTWIS* - DATE OF FIRST WIND FIELD.
-!          *CDTWIE* - DATE OF LAST FIRST WIND FIELD.
-!          *IJS:IJL - ARRAYS DIMENSION
-!          *U10OLD* - WIND SPEED.
-!          *THWOLD* - WIND DIRECTION (RADIANS).
-!          *USOLD*  - FRICTION VELOCITY.
-!          *Z0OLD*  - ROUGHNESS LENGTH IN M.
-!          *ROAIRO* - AIR DENSITY IN KG/M3.
-!          *ZIDLOLD*- Zi/L 
-!                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
-!          *CICOVER*- SEA ICE COVER.
-!          *CITHICK*- SEA ICE THICKNESS. 
+!          *CDTWIS*   - DATE OF FIRST WIND FIELD.
+!          *CDTWIE*   - DATE OF LAST FIRST WIND FIELD.
+!          *IJS:IJL   - ARRAYS DIMENSION
+!          *U10OLD*   - WIND SPEED.
+!          *THWOLD*   - WIND DIRECTION (RADIANS).
+!          *USOLD*    - FRICTION VELOCITY.
+!          *Z0OLD*    - ROUGHNESS LENGTH IN M.
+!          *ROAIRO*   - AIR DENSITY IN KG/M3.
+!          *WSTAROLD* - CONVECTIVE VELOCITY. 
+!          *CICOVER* - SEA ICE COVER.
+!          *CITHICK* - SEA ICE THICKNESS. 
 !          *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 
@@ -90,7 +89,7 @@
       
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) ::            &
      &               U10OLD, THWOLD, USOLD, Z0OLD,                    &
-     &               ROAIRO, ZIDLOLD, CICOVER, CITHICK
+     &               ROAIRO, WSTAROLD, CICOVER, CITHICK
 
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
 
@@ -102,7 +101,7 @@
       INTEGER(KIND=JWIM) :: ICODE_WND
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: U10, US, THW, ADS, ZIDL, CICR, CITH, CD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: U10, US, THW, ADS, WSTAR, CICR, CITH, CD
 
       CHARACTER(LEN=14) :: CDTWIH, CDT, ZERO
 
@@ -133,7 +132,7 @@
         CALL GETWND (IJS, IJL,                          &
      &               U10OLD, USOLD,                     &
      &               THWOLD,                            &
-     &               ROAIRO, ZIDLOLD,                   &
+     &               ROAIRO, WSTAROLD,                   &
      &               CICOVER, CITHICK,                  &
      &               CDA, LWNDFILE, LCLOSEWND, IREAD,   &
      &               LWCUR, ICODE_WND)
@@ -197,7 +196,7 @@
         CALL GETWND (IJS, IJL,                              &
      &               U10, US,                               &
      &               THW,                                   &
-     &               ADS, ZIDL,                             &
+     &               ADS, WSTAR,                             &
      &               CICR, CITH,                            &
      &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,    &
      &               LWCUR, ICODE_WND)
@@ -209,7 +208,7 @@
         ENDIF
         FF_NEXT(IJS:IJL,1)%WDWAVE = THW(IJS:IJL)
         FF_NEXT(IJS:IJL,1)%AIRD   = ADS(IJS:IJL)
-        FF_NEXT(IJS:IJL,1)%ZIDL   = ZIDL(IJS:IJL)
+        FF_NEXT(IJS:IJL,1)%WSTAR  = WSTAR(IJS:IJL)
         FF_NEXT(IJS:IJL,1)%CIFR   = CICR(IJS:IJL)
         FF_NEXT(IJS:IJL,1)%CITH   = CITH(IJS:IJL)
 

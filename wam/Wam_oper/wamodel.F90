@@ -315,7 +315,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,    &
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,TAUWDIR  ,    &
      &            Z0B      ,                                            &
-     &            BETAOLD  ,ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,    &
+     &            BETAOLD  ,ROAIRN   ,ROAIRO   ,WSTARNEW ,WSTAROLD ,    &
      &            FL1
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
@@ -448,7 +448,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
             USNEW(IJ) = USOLD(IJ)
             Z0NEW(IJ) = Z0OLD(IJ)
             ROAIRN(IJ) = ROAIRO(IJ)
-            ZIDLNEW(IJ) = ZIDLOLD(IJ)
+            WSTARNEW(IJ) = WSTAROLD(IJ)
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
@@ -468,7 +468,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &                     CICOVER(KIJS),                               &
      &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),     &
      &                     Z0NEW(KIJS), Z0B(KIJS),                      &
-     &                     ROAIRN(KIJS), ZIDLNEW(KIJS),                 &
+     &                     ROAIRN(KIJS), WSTARNEW(KIJS),                 &
      &                     WSEMEAN(KIJS), WSFMEAN(KIJS),                &
      &                     USTOKES(KIJS), VSTOKES(KIJS), STRNMS(KIJS) )
           ENDDO
@@ -659,7 +659,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &                 NEWREAD, NEWFILE,                        &
      &                 U10OLD, THWOLD, U10NEW, THWNEW,          &
      &                 USOLD, USNEW,                            &
-     &                 ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,        &
+     &                 ROAIRO, ROAIRN, WSTAROLD, WSTARNEW,        &
      &                 CGROUP,                                  &
      &                 CICOVER, CITHICK, CIWA,                  &
      &                 TAUW, BETAOLD)
@@ -681,11 +681,11 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &                        THWOLD(KIJS), USOLD(KIJS),                &
      &                        TAUW(KIJS), TAUWDIR(KIJS),                &
      &                        Z0OLD(KIJS),                              &
-     &                        ROAIRO(KIJS), ZIDLOLD(KIJS),              &
+     &                        ROAIRO(KIJS), WSTAROLD(KIJS),              &
      &                        CICOVER(KIJS), CIWA(KIJS:KIJL,:),               &
      &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),  &
      &                        Z0NEW(KIJS), Z0B(KIJS),                   &
-     &                        ROAIRN(KIJS), ZIDLNEW(KIJS),              &
+     &                        ROAIRN(KIJS), WSTARNEW(KIJS),              &
      &                        WSEMEAN(KIJS), WSFMEAN(KIJS),             &
      &                        USTOKES(KIJS), VSTOKES(KIJS),STRNMS(KIJS),&
      &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:) )
@@ -722,8 +722,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !           -------------------------------
 
             CALL CLOSEND(IJS,IJL,CDTIMP,CDATEWH,                        &
-     &                   NEWREAD,NEWFILE,U10OLD,THWOLD,ROAIRO,ZIDLOLD,  &
-     &                   U10NEW,THWNEW,ROAIRN,ZIDLNEW)
+     &                   NEWREAD,NEWFILE,U10OLD,THWOLD,ROAIRO,WSTAROLD,  &
+     &                   U10NEW,THWNEW,ROAIRN,WSTARNEW)
 
             CDTIMP=CDTIMPNEXT
             CALL INCDATE(CDTIMPNEXT,IDELT)   
@@ -868,7 +868,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !           SAVE RESTART FILES IN PURE BINARY FORM
             IF ( .NOT.LGRIBOUT .OR. LDWRRE ) THEN
               CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR,     &
-     &                       Z0OLD, ROAIRO, ZIDLOLD, CICOVER, CITHICK, &
+     &                       Z0OLD, ROAIRO, WSTAROLD, CICOVER, CITHICK, &
      &                       NBLKS, NBLKE, CDTPRO, CDATEF)
               WRITE(IU06,*) ' '
               WRITE(IU06,*) '  BINARY STRESS FILE DISPOSED AT........',  &

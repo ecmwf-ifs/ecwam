@@ -81,7 +81,7 @@
             FIELDG(IX,JY)%CITH   = 0.0_JWRB
             FIELDG(IX,JY)%LKFR   = 0.0_JWRB
             FIELDG(IX,JY)%AIRD   = ROAIR
-            FIELDG(IX,JY)%ZIDL   = WSTAR0
+            FIELDG(IX,JY)%WSTAR  = WSTAR0
             FIELDG(IX,JY)%UCUR   = 0.0_JWRB
             FIELDG(IX,JY)%VCUR   = 0.0_JWRB
           ENDDO

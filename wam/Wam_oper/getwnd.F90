@@ -1,7 +1,7 @@
       SUBROUTINE GETWND (IJS, IJL,                              &
      &                   U10, US,                               &
      &                   THW,                                   &
-     &                   ADS, ZIDL,                             &
+     &                   ADS, WSTAR,                            &
      &                   CICVR, CITH,                           &
      &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,    &
      &                   LWCUR, ICODE_WND)
@@ -22,7 +22,7 @@
 !     ----------
 
 !       *CALL* *GETWND (IJS, IJL,
-!                       U10, THW, ADS, ZIDL, CICVR, CITH,
+!                       U10, THW, ADS, WSTAR, CICVR, CITH,
 !                       CDTWIS, LWNDFILE, LCLOSEWND,
 !                       LWCUR, ICODE_WND)*
 !         *IJS*    - INDEX OF FIRST GRIDPOINT
@@ -30,7 +30,7 @@
 !         *U10*    - MAGNITUDE OF 10m WIND AT EACH POINT AND BLOCK.
 !         *THW*    - DIRECTION OF 10m WIND AT EACH POINT AND BLOCK.
 !         *ADS*    - AIR DENSITY AT EACH POINT AND BLOCK.
-!         *ZIDL*   - Zi/L  AT EACH POINT AND BLOCK.
+!         *WSTAR*  - CONVECTIVE VELOCITY.
 !         *CICVR*  - SEA ICE COVER.
 !         *CITH*   - SEA ICE THICKNESS.
 !         *CDTWIS* - DATE OF WIND FIELD TO BE LOOKED FOR.
@@ -108,7 +108,7 @@
 
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(INOUT) :: U10, US 
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: THW
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: ADS, ZIDL
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: ADS, WSTAR
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: CICVR, CITH
 
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS
@@ -222,9 +222,9 @@
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL WAMWND (KIJS, KIJL,                                   &
-     &                 U10(KIJS), US(KIJS),                          &
-     &                 THW(KIJS), ADS(KIJS), ZIDL(KIJS), CITH(KIJS), &
+          CALL WAMWND (KIJS, KIJL,                                    &
+     &                 U10(KIJS), US(KIJS),                           &
+     &                 THW(KIJS), ADS(KIJS), WSTAR(KIJS), CITH(KIJS), &
      &                 LWCUR, ICODE_WND)
         ENDDO
 !$OMP   END PARALLEL DO
