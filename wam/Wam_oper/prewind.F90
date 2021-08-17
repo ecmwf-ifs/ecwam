@@ -1,5 +1,5 @@
       SUBROUTINE PREWIND (U10OLD, THWOLD, USOLD, Z0OLD,                &
-     &                    ROAIRO, ZIDLOLD,                             &
+     &                    ROAIRO, WSTAROLD,                            &
      &                    CICOVER, CITHICK,                            &
      &                    LLINIT, LLALLOC_FIELDG_ONLY,                 &
      &                    IREAD,                                       &
@@ -36,7 +36,7 @@
 !     ----------
 
 !     *CALL* *PREWIND (U10OLD,THWOLD,USOLD,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, CICOVER,
+!    &                 ROAIRO, WSTAROLD, CICOVER,
 !    &                 LLINIT,
 !    &                 IREAD,
 !    &                 NFIELDS, NGPTOTG, NC, NR,
@@ -52,11 +52,10 @@
 !      *Z0OLD*     REAL      INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
 !                            M.
 !      *ROAIRO*    REAL      AIR DENSITY IN KG/M3.
-!      *ZIDLOLD*   REAL      Zi/L (Zi: INVERSION HEIGHT,
-!                                   L: MONIN-OBUKHOV LENGTH).
+!      *WSTAROLD*  REAL      CONVECTIVE VELOCITY M/S.
 !      *CICOVER*   REAL      SEA ICE COVER.
 !      *CITHICK*   REAL      SEA ICE THICKNESS.
-!      *LLINIT*    LOGICAL   TRUE IF WAMADSZIDL NEEDS TO BE CALLED.   
+!      *LLINIT*    LOGICAL   TRUE IF WAMADSWSTAR NEEDS TO BE CALLED.   
 !      *LLALLOC_FIELDG_ONLY  LOGICAL IF TRUE THEN FIELDG DATA STRUCTURE WILL
 !                            ONLY BE ALLOCATED BUT NOT INITIALISED.
 !      *IREAD*     INTEGER   PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
@@ -65,7 +64,7 @@
 !      *NGPTOTG*   INTEGER   NUMBER OF ATMOSPHERIC GRID POINTS
 !      *NC*        INTEGER   NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !      *NR*        INTEGER   NUMBER OF ATM. ROWS OF LATITUDES
-!      *FIELDS*    REAL      ATM. FIELDS (U10, V10, AIR DENSITY, Zi/L, U and V CURRENTS)
+!      *FIELDS*    REAL      ATM. FIELDS (U10, V10, AIR DENSITY, w*, U and V CURRENTS)
 !      *LWCUR*     LOGICAL   INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 !      *MASK_IN*   INTEGER   MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
 
@@ -112,7 +111,6 @@
 !       *LOCINT*    - INTERPOLATES IN SPACE.
 !       *NOTIM*     - STEERING SUB FOR INTERPOLATION IN SPACE ONLY.
 !       *READWIND*   - READS A WIND FIELD.
-!       *TIMIN*     - STEERING SUB FOR INTERPOLATION IN SPACE AND TIME.
 !       *WAMWND*    - BLOCKS A WIND FIELD AND CONVERTS TO USTAR.
 
 !     REFERENCE.
@@ -138,14 +136,15 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
+#include "abort1.intfb.h"
 #include "getcurr.intfb.h"
 #include "ifstowam.intfb.h"
 #include "incdate.intfb.h"
 #include "init_fieldg.intfb.h"
 #include "notim.intfb.h"
 #include "recvnemofields.intfb.h"
-#include "timin.intfb.h"
-#include "wamadszidl.intfb.h"
+#include "wamadswstar.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NFIELDS
       INTEGER(KIND=JWIM), INTENT(IN) :: NGPTOTG
@@ -162,7 +161,7 @@
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: USOLD
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: Z0OLD
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: ROAIRO
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: ZIDLOLD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: WSTAROLD
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: CICOVER
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: CITHICK
 
@@ -231,7 +230,7 @@
 !!!   WHEN COUPLED, IT IS ALSO NEEDED TO INITIALISE THE AIR DENSITY AND
 !!!   THE CONVECTIVE VELOCITY SCALE ARRAYS SINCE THESE ARE NOT (YET) PROVIDED
 !!!   AS PART OF THE GRIB RESTART FILES.
-      IF (LLINIT) CALL WAMADSZIDL(IJS, IJL, ROAIRO,ZIDLOLD)
+      IF (LLINIT) CALL WAMADSWSTAR(IJS, IJL, ROAIRO, WSTAROLD)
 
 !     2.2 GET SURFACE CURRENTS TO WAM BLOCK STRUCTURE (if needed) 
 !         -------------------------------------------
@@ -248,7 +247,7 @@
         CALL NOTIM (CDTWIS, CDTWIE,                       &
      &              IJS, IJL,                             &
      &              U10OLD, THWOLD, USOLD, Z0OLD,         &
-     &              ROAIRO, ZIDLOLD, CICOVER, CITHICK,    &
+     &              ROAIRO, WSTAROLD, CICOVER, CITHICK,   &
      &              IREAD, LWCUR)
 
       ELSE
@@ -256,13 +255,14 @@
 !*      2.3 TIME INTERPOLATION.
 !       -------------------
 
-        CALL TIMIN (CDTWIS, CDTWIE,                        &
-     &              IJS, IJL,                              &
-     &              U10OLD, THWOLD,                        &
-     &              USOLD, Z0OLD,                          &
-     &              ROAIRO, ZIDLOLD,                       &
-     &              CICOVER, CITHICK,                      &
-     &              IREAD, LWCUR)
+              WRITE (IU06,*) ' *********************************'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' * PROBLEM IN PREWIND .........  *'
+              WRITE (IU06,*) ' * NOT AN OPTION ANY MORE        *'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' *********************************'
+              CALL FLUSH(IU06)
+              CALL ABORT1
 
       ENDIF
 

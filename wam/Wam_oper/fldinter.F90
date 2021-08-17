@@ -168,7 +168,7 @@
             FIELDG(I,J)%UWND = FIELDS(IJBLOCK(I,J),1)
             FIELDG(I,J)%VWND = FIELDS(IJBLOCK(I,J),2)
             FIELDG(I,J)%AIRD = ZLADEN*FIELDS(IJBLOCK(I,J),3) + (1.0_JWRB-ZLADEN)*ROAIR
-            FIELDG(I,J)%ZIDL = ZLGUST*FIELDS(IJBLOCK(I,J),4) + (1.0_JWRB-ZLGUST)*WSTAR0
+            FIELDG(I,J)%WSTAR = ZLGUST*FIELDS(IJBLOCK(I,J),4) + (1.0_JWRB-ZLGUST)*WSTAR0
             FIELDG(I,J)%CIFR = FIELDS(IJBLOCK(I,J),5)
             FIELDG(I,J)%LKFR = ZLLKC*FIELDS(IJBLOCK(I,J),6)
 
@@ -245,12 +245,12 @@
               FIELDG(I,J)%AIRD = ROAIR
             ENDIF
             IF (LGUST) THEN
-              FIELDG(I,J)%ZIDL=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),4) +    &
+              FIELDG(I,J)%WSTAR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),4) +   &
      &                         DII1*FIELDS(IJBLOCK(II1,JJ),4) ) +       &
      &                   DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),4) +       &
      &                         DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),4) )
             ELSE
-              FIELDG(I,J)%ZIDL = WSTAR0 
+              FIELDG(I,J)%WSTAR = WSTAR0 
             ENDIF
 
 !           FOR SEA ICE FRACTION

@@ -124,7 +124,7 @@ SUBROUTINE INITMDL (NADV,                                         &
 !ASSI
 !           *IUVELO* - OUTPUT UNIT OF BLOCKED WINDFILEDS.
 !                      FILES ARE DYNAMICALLY ASSIGNED IN SUB
-!                      NOTIM OR TIMIN.
+!                      NOTIM
 
 !___PACK  THESE UNITS ARE USED FOR FILES CONTAINING GRIB DATA.
 
@@ -166,7 +166,7 @@ SUBROUTINE INITMDL (NADV,                                         &
 !          IU12, IU13 OR IU14, AND IU15 TO THE PREMANENT RESTART FILES.
 !          FOR DETAILS OF THE FILE NAMES SEE SUB GSFILE.
 
-!          SUB NOTIM OR TIMIN OPENS FILES AND ASSIGNS THEM TO UNIT
+!          SUB NOTIM OPENS FILES AND ASSIGNS THEM TO UNIT
 !          IUVELO FOR THE BLOCKED WINDS. THESE FILES ARE READ AND
 !          DELETED IN SUB IMPLSCH (IU17 AND IU18).
 
@@ -266,7 +266,7 @@ SUBROUTINE INITMDL (NADV,                                         &
      &            INDEP    ,CGROUP   ,IODP     ,IOBND    ,TOOSHALLOW
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,    &
      &            U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,TAUW     ,    &
-     &            Z0B      ,TAUWDIR,  ROAIRO   ,ZIDLOLD  ,              &
+     &            Z0B      ,TAUWDIR,  ROAIRO   ,WSTAROLD  ,             &
      &            FL1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDTINTT  ,CDTBC    ,                                  &
@@ -293,11 +293,11 @@ SUBROUTINE INITMDL (NADV,                                         &
       USE YOWWAMI  , ONLY : CBPLTDT
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
      &            LLNEWCURR,LLWSWAVE ,LLWDWAVE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWUNPOOL, ONLY : LLUNSTR, OUT_METHOD
       USE UNSTRUCT_BOUND , ONLY : IOBP
       USE OUTPUT_STRUCT, ONLY : INITIAL_OUTPUT_INITS
 
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -794,7 +794,7 @@ SUBROUTINE INITMDL (NADV,                                         &
       Z0B(:) = 0.0_JWRB
 
       CALL GETSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD,       &
-     &               ROAIRO, ZIDLOLD, CICOVER, CITHICK,                 &
+     &               ROAIRO, WSTAROLD, CICOVER, CITHICK,                &
      &               NBLKS, NBLKE, IREAD)
 
       CDA = CDTPRO
@@ -1000,7 +1000,7 @@ SUBROUTINE INITMDL (NADV,                                         &
       LLALLOC_FIELDG_ONLY=.FALSE.
 
       CALL PREWIND (U10OLD,THWOLD,USOLD,Z0OLD,                          &
-     &              ROAIRO, ZIDLOLD,                                    &
+     &              ROAIRO, WSTAROLD,                                   &
      &              CICOVER, CITHICK,                                   &
      &              LLINIT, LLALLOC_FIELDG_ONLY,                        &
      &              IREAD,                                              &

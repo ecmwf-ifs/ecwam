@@ -1,5 +1,5 @@
       SUBROUTINE GETSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD, &
-     &                     ROAIRO, ZIDLOLD, CICOVER, CITHICK,           &
+     &                     ROAIRO, WSTAROLD, CICOVER, CITHICK,          &
      &                     NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
@@ -21,7 +21,7 @@
 !     *TAUWDIR*   WAVE STRESS DIRECTION.
 !     *Z0OLD*     ROUGHNESS LENGTH IN M.
 !     *ROAIRO*    AIR DENSITY IN KG/M3.
-!     *ZIDLOLD*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!     *WSTAROLD*  CONVECTIVE VELOCITY.
 !     *CICOVER*   SEA ICE COVER. 
 !     *CITHICK*   SEA ICE THICKNESS. 
 !     *NBLKS*     INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
@@ -83,7 +83,7 @@
       INTEGER(KIND=JWIM),DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
 
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: ROAIRO, ZIDLOLD, CICOVER, CITHICK
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: ROAIRO, WSTAROLD, CICOVER, CITHICK
 
 
       INTEGER(KIND=JWIM) :: IBUFLENGTH
@@ -115,7 +115,7 @@
      &                   U10OLD(IJS), THWOLD(IJS),                      &
      &                   USOLD(IJS), TAUW(IJS), TAUWDIR(IJS),           &
      &                   Z0OLD(IJS),                                    &
-     &                   ROAIRO(IJS), ZIDLOLD(IJS),                     &
+     &                   ROAIRO(IJS), WSTAROLD(IJS),                    &
      &                   CICOVER(IJS), CITHICK(IJS),                    &
      &                   IREAD)
 
@@ -167,7 +167,7 @@
             TAUWDIR(IJ)=RFIELD(IJ,5)
             Z0OLD(IJ)=RFIELD(IJ,6)
             ROAIRO(IJ)=RFIELD(IJ,7)
-            ZIDLOLD(IJ)=RFIELD(IJ,8)
+            WSTAROLD(IJ)=RFIELD(IJ,8)
             CICOVER(IJ)=RFIELD(IJ,9)
             CITHICK(IJ)=RFIELD(IJ,10)
 !           for U and V see below

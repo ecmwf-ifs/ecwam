@@ -84,7 +84,6 @@
 !       *SPR*       - DIRECTIONAL DISTRIBUTION.
 !       *READPRE*   - READS PREPROC OUTPUT.
 !       *READWIND*   - READS A WIND FIELD.
-!       *TIMIN*     - CONTROLS WIND GENERATION (TIME INTERPOLATION).
 
 !     REFERENCES
 !     ----------
@@ -120,7 +119,7 @@
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,    &
      &            USOLD    ,Z0OLD    ,TAUW     ,TAUWDIR  ,FL1      ,    &
-     &            ROAIRO   ,ZIDLOLD  ,NBLKS    ,NBLKE
+     &            ROAIRO   ,WSTAROLD  ,NBLKS    ,NBLKE
       USE YOWTABL  , ONLY :  FAC0     ,FAC1     ,FAC2     ,FAC3    ,    &
      &            FAK      ,FRHF      ,DFIMHF    , OMEGA   ,THH     ,   &
      &            DFDTH    ,IM_P      ,IM_M     ,TA       ,TB      ,    &
@@ -489,7 +488,7 @@
       IF(.NOT.ALLOCATED(TAUW)) ALLOCATE(TAUW(NIBLO))
       IF(.NOT.ALLOCATED(TAUWDIR)) ALLOCATE(TAUWDIR(NIBLO))
       IF(.NOT.ALLOCATED(ROAIRO)) ALLOCATE(ROAIRO(NIBLO))
-      IF(.NOT.ALLOCATED(ZIDLOLD)) ALLOCATE(ZIDLOLD(NIBLO))
+      IF(.NOT.ALLOCATED(WSTAROLD)) ALLOCATE(WSTAROLD(NIBLO))
       IF(.NOT.ALLOCATED(CICOVER)) ALLOCATE(CICOVER(NIBLO))
       IF(.NOT.ALLOCATED(CITHICK)) ALLOCATE(CITHICK(NIBLO))
       U10OLD(:) = WSPMIN
@@ -499,7 +498,7 @@
       TAUWDIR(:) = THWOLD(:)
       Z0OLD(:) = 0.00001_JWRB
       ROAIRO(:) = ROAIR      
-      ZIDLOLD(:) = 0.0_JWRB
+      WSTAROLD(:) = 0.0_JWRB
       CICOVER(:) = 0.0_JWRB
       CITHICK(:) = 0.0_JWRB
 
@@ -514,7 +513,7 @@
         LLALLOC_FIELDG_ONLY=.FALSE.
 
         CALL PREWIND (U10OLD,THWOLD,USOLD,Z0OLD,                        &
-     &                ROAIRO, ZIDLOLD,                                  &
+     &                ROAIRO, WSTAROLD,                                 &
      &                CICOVER, CITHICK,                                 &
      &                LLINIT, LLALLOC_FIELDG_ONLY,                      &
      &                IREAD,                                            &
@@ -578,7 +577,7 @@
       WRITE(IU06,*) 'MAXVAL OF U10OLD = ',MAXVAL(U10OLD)
       IF (.NOT.LGRIBOUT) THEN
         CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD,     &
-     &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK,               &
+     &                 ROAIRO, WSTAROLD, CICOVER, CITHICK,              &
      &                 NBLKS, NBLKE, CDATEA, CDATEA)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSTRESS DONE'
       ENDIF
@@ -590,7 +589,7 @@
       IF(ALLOCATED(TAUW)) DEALLOCATE(TAUW)
       IF(ALLOCATED(TAUWDIR)) DEALLOCATE(TAUWDIR)
       IF(ALLOCATED(ROAIRO)) DEALLOCATE(ROAIRO)
-      IF(ALLOCATED(ZIDLOLD)) DEALLOCATE(ZIDLOLD)
+      IF(ALLOCATED(WSTAROLD)) DEALLOCATE(WSTAROLD)
       IF(ALLOCATED(CICOVER)) DEALLOCATE(CICOVER)
       IF(ALLOCATED(CITHICK)) DEALLOCATE(CITHICK)
 

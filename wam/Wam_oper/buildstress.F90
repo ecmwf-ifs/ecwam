@@ -1,7 +1,7 @@
       SUBROUTINE BUILDSTRESS(IJS, IJL,                                &
      &                       U10OLD, THWOLD,                          &
      &                       USOLD, TAUW, TAUWDIR, Z0OLD,             &
-     &                       ROAIRO, ZIDLOLD,                         &
+     &                       ROAIRO, WSTAROLD,                        &
      &                       CICOVER, CITHICK,                        &
      &                       IREAD)
 
@@ -22,21 +22,21 @@
 !     ----------
 !     CALL *BUILDSTRESS*(IJS, IJL,
 !    &                   U10OLD,THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,ROAIRO,
-!    &                   ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+!    &                   ROAIRO, WSTAROLD, CICOVER, CITHICK,
 !    &                   IREAD)*
-!     *IJS*       INDEX OF FIRST GRIDPOINT
-!     *IJL*       INDEX OF LAST GRIDPOINT
-!     *U10OLD *   WIND SPEED.
-!     *THWOLD *   WIND DIRECTION (RADIANS).
-!     *USOLD*     FRICTION VELOCITY.
-!     *TAUW*      WAVE STRESS MAGNITUDE.
-!     *TAUWDIR*   WAVE STRESS DIRECTION.
-!     *Z0OLD*     ROUGHNESS LENGTH IN M.
-!     *RAD0OLD*   AIR DENSITY IN KG/M3.
-!     *RZIDL0OLD* Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
-!     *CICOVER*   SEA ICE COVER.
-!     *CITHICK*   SEA ICE THICKNESS.
-!     *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
+!     *IJS*        INDEX OF FIRST GRIDPOINT
+!     *IJL*        INDEX OF LAST GRIDPOINT
+!     *U10OLD *    WIND SPEED.
+!     *THWOLD *    WIND DIRECTION (RADIANS).
+!     *USOLD*      FRICTION VELOCITY.
+!     *TAUW*       WAVE STRESS MAGNITUDE.
+!     *TAUWDIR*    WAVE STRESS DIRECTION.
+!     *Z0OLD*      ROUGHNESS LENGTH IN M.
+!     *RAD0OLD*    AIR DENSITY IN KG/M3.
+!     *RWSTAR0OLD* CONVECTIVE VELOCITY.
+!     *CICOVER*    SEA ICE COVER.
+!     *CITHICK*    SEA ICE THICKNESS.
+!     *IREAD*      PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 
 !     METHOD.
 !     -------
@@ -67,7 +67,7 @@
       USE YOWNEMOFLDS,ONLY: NEMOCICOVER, NEMOCITHICK
 
       USE MPL_MODULE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -83,7 +83,7 @@
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: U10OLD, THWOLD
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USOLD, Z0OLD, TAUW, TAUWDIR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: ROAIRO, ZIDLOLD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: ROAIRO, WSTAROLD
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: CICOVER,CITHICK
 
 
@@ -139,7 +139,7 @@
       CALL GETWND (IJS, IJL,                                &
      &             U10OLD, USOLD,                           &
      &             THWOLD,                                  &
-     &             ROAIRO, ZIDLOLD,                         &
+     &             ROAIRO, WSTAROLD,                        &
      &             CICOVER, CITHICK,                        &
      &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,      &
      &             LCR, ICODE_WND)

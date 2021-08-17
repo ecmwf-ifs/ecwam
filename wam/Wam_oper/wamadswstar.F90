@@ -1,18 +1,18 @@
-      SUBROUTINE WAMADSZIDL(IJS, IJL, ADS, ZIDL)
+      SUBROUTINE WAMADSWSTAR(IJS, IJL, ADS, WSTAR)
 ! ----------------------------------------------------------------------
 
 !*    PURPOSE.
 !     --------
 
-!     RE-INITIALISES ADS AND ZIDL TO THE VALUES PROVIDED BY FIELDG
+!     RE-INITIALISES ADS AND WSTAR TO THE VALUES PROVIDED BY FIELDG
 !     IF COUPLED !!!!
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *WAMADSZIDL*(ADS, ZIDL)
-!      *IJS:IJL - FIRST DIMENSION OF ARRAYS ADS and ZIDL
+!     *CALL* *WAMADSWSTAR*(ADS, WSTAR)
+!      *IJS:IJL - FIRST DIMENSION OF ARRAYS ADS and WSTAR
 !     *ADS*      AIR DENSITY IN KG/M3.
-!     *ZIDL*     CONVECTIVE VELOCITy SCALE 
+!     *WSTAR*     CONVECTIVE VELOCITy SCALE 
 
 ! ----------------------------------------------------------------------
 
@@ -29,7 +29,7 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT):: ADS, ZIDL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT):: ADS, WSTAR
 
 
       INTEGER(KIND=JWIM) :: IJ, IX, JY
@@ -39,7 +39,7 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('WAMADSZIDL',0,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('WAMADSWSTAR',0,ZHOOK_HANDLE)
 
 !     KEEP CORRESPONDING CONTRIBUTION 
       IF(LWCOU) THEN
@@ -52,12 +52,12 @@
               IX = IFROMIJ(IJ)
               JY = JFROMIJ(IJ)
               ADS(IJ) = FIELDG(IX,JY)%AIRD
-              ZIDL(IJ)= FIELDG(IX,JY)%ZIDL
+              WSTAR(IJ)= FIELDG(IX,JY)%WSTAR
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
       ENDIF
 
-      IF (LHOOK) CALL DR_HOOK('WAMADSZIDL',1,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('WAMADSWSTAR',1,ZHOOK_HANDLE)
  
-      END SUBROUTINE WAMADSZIDL
+      END SUBROUTINE WAMADSWSTAR

@@ -78,7 +78,7 @@
       USE YOWNEMOFLDS,ONLY: NEMOSST, NEMOCICOVER, NEMOCITHICK,          &
      &                      NEMOUCUR, NEMOVCUR, LNEMOCITHICK
       USE YOWSPEC  , ONLY : TAUW     ,U10NEW   ,THWNEW   ,USNEW    ,    &
-     &            ROAIRN   ,ZIDLNEW
+     &            ROAIRN   ,WSTARNEW
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSUS    ,EPSU10, G, ZPI
       USE YOWSHAL,   ONLY : IODP
@@ -497,7 +497,7 @@
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=ZIDLNEW(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=WSTARNEW(KIJS:KIJL)
       ENDIF
 
       IR=IR+1

@@ -1,6 +1,6 @@
       SUBROUTINE WAMWND (IJS, IJL,                                      &
      &                   U10, US,                                       &
-     &                   THW, ADS, ZIDL, CITH,                          &
+     &                   THW, ADS, WSTAR, CITH,                         &
      &                   LWCUR, ICODE_WND)
 
 ! ----------------------------------------------------------------------
@@ -27,14 +27,13 @@
 
 !       *CALL WAMWND (IJS, IJL,
 !    &                U10, US,
-!    &                THW, ADS, ZIDL, CITH,
+!    &                THW, ADS, WSTAR, CITH,
 !    &                LWCUR, ICODE_WND)
 !          *U10*  - INTERPOLATED WINDS AT ALL POINTS AND BLOCKS.
 !          *US*   - INTERPOLATED FRICTION VELOCITY
 !          *THW*  - INTERPOLATED WIND DIRECTION AT ALL POINTS.
 !          *ADS*  - INTERPOLATED AIR DENSITY AT ALL POINTS.
-!          *ZIDL* - INTERPOLATED Zi/L AT ALL POINTS
-!                   (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!          *WSTAR* - INTERPOLATED CONVECTIVE VELOCITY AT ALL POINTS
 !          *CITH* - SEA ICE THICKNESS. 
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
@@ -80,7 +79,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) :: ICODE_WND
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(INOUT) :: U10, US
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: THW, ADS, ZIDL, CITH
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: THW, ADS, WSTAR, CITH
       LOGICAL, INTENT(IN) :: LWCUR
 
       INTEGER(KIND=JWIM) :: IJ, IX, JY
@@ -113,7 +112,7 @@
         UU(IJ) = FIELDG(IX,JY)%UWND
         VV(IJ) = FIELDG(IX,JY)%VWND
         ADS(IJ) = FIELDG(IX,JY)%AIRD
-        ZIDL(IJ)= FIELDG(IX,JY)%ZIDL
+        WSTAR(IJ)= FIELDG(IX,JY)%WSTAR
         CITH(IJ)= FIELDG(IX,JY)%CITH
       ENDDO
 
