@@ -127,7 +127,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FLD1, FLD2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ESWELL ,FSWELL ,THSWELL, P1SWELL, P2SWELL, SPRDSWELL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ESEA   ,FSEA   ,THWISEA, P1SEA  , P2SEA  , SPRDSEA
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALP, WAVEAGESEA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALP, WAVEAGE, WAVEAGESEA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NTRAIN) :: EMTRAIN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NTRAIN) :: THTRAIN, PMTRAIN
 
@@ -155,6 +155,7 @@
 
       IRA=1
       SIG = 1._JWRB
+      WAVEAGE(:)=ZMISS
       WAVEAGESEA(:)=ZMISS
       GOZPI=G/ZPI
 
@@ -206,8 +207,12 @@
         DO IJ=IJS,IJL
           IF(FM(IJ).GT.0._JWRB) THEN
             BOUT(IJ,ITOBOUT(IR))=1._JWRB/FM(IJ)
+! for testing: estimate of wave age based on mean frequency
+            WAVEAGE(IJ)=MIN(GOZPI/(0.9_JWRB*FM(IJ)*MAX(USNEW(IJ),EPSUS)),40.0_JWRB)
           ELSE
             BOUT(IJ,ITOBOUT(IR))=ZMISS
+! for testing: estimate of wave age based on mean frequency
+            WAVEAGE(IJ)=ZMISS
           ENDIF
         ENDDO
       ENDIF
@@ -659,7 +664,7 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        BOUT(IJS:IJL,ITOBOUT(IR))=5.0_JWRB
+        BOUT(IJS:IJL,ITOBOUT(IR))=WAVEAGE(IJS:IJL)
       ENDIF
 
 
