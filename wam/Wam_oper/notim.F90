@@ -72,7 +72,7 @@
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO   ,NPROMA_WAM
       USE YOWPHYS  , ONLY : XNLEV
       USE YOWTEST  , ONLY : IU06
-      USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,FF_NEXT
+      USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,FF_NEXT
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -126,6 +126,7 @@
       ELSE
         LWNDFILE=.TRUE.
       ENDIF
+
 
       IF (CDA == ZERO) THEN
         CDA = CDTWIS
@@ -185,13 +186,8 @@
       ELSE
 !*      WIND FIELD IS CONSTANT FOR ONE PROPAGATION TIME STEP:
 !       -----------------------------------------------------
-        NSTORE=1
 
-        IF (.NOT.ALLOCATED(CDTNEXT)) ALLOCATE(CDTNEXT(NSTORE))
-
-        IF (.NOT.ALLOCATED(FF_NEXT)) ALLOCATE(FF_NEXT(IJS:IJL,NSTORE))
-
-        CDTNEXT(1)=CDTWIH
+        CDTNEXT=CDTWIH
 
         CALL GETWND (IJS, IJL,                              &
      &               U10, US,                               &
@@ -202,15 +198,15 @@
      &               LWCUR, ICODE_WND)
 
         IF (ICODE_WND == 3 ) THEN
-          FF_NEXT(IJS:IJL,1)%WSWAVE = U10(IJS:IJL)
+          FF_NEXT(IJS:IJL)%WSWAVE = U10(IJS:IJL)
         ELSE
-          FF_NEXT(IJS:IJL,1)%USTAR  = US(IJS:IJL)
+          FF_NEXT(IJS:IJL)%USTAR  = US(IJS:IJL)
         ENDIF
-        FF_NEXT(IJS:IJL,1)%WDWAVE = THW(IJS:IJL)
-        FF_NEXT(IJS:IJL,1)%AIRD   = ADS(IJS:IJL)
-        FF_NEXT(IJS:IJL,1)%WSTAR  = WSTAR(IJS:IJL)
-        FF_NEXT(IJS:IJL,1)%CIFR   = CICR(IJS:IJL)
-        FF_NEXT(IJS:IJL,1)%CITH   = CITH(IJS:IJL)
+        FF_NEXT(IJS:IJL)%WDWAVE = THW(IJS:IJL)
+        FF_NEXT(IJS:IJL)%AIRD   = ADS(IJS:IJL)
+        FF_NEXT(IJS:IJL)%WSTAR  = WSTAR(IJS:IJL)
+        FF_NEXT(IJS:IJL)%CIFR   = CICR(IJS:IJL)
+        FF_NEXT(IJS:IJL)%CITH   = CITH(IJS:IJL)
 
 
 !*      UPDATE WIND FIELD REQUEST TIME.

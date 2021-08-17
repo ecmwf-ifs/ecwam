@@ -22,7 +22,6 @@
      &                      WSEMEAN  ,WSFMEAN
       USE YOWSPEC  , ONLY : U10NEW   ,THWNEW   ,USNEW    ,Z0NEW    ,    &
      &            Z0B      ,ROAIRN   ,WSTARNEW
-      USE YOWWIND  , ONLY : CDTNEXT  ,FF_NEXT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
 
@@ -45,9 +44,6 @@
       IF(ALLOCATED(ROAIRN)) DEALLOCATE(ROAIRN)
       IF(ALLOCATED(WSTARNEW)) DEALLOCATE(WSTARNEW)
 
-
-      IF(ALLOCATED(CDTNEXT)) DEALLOCATE(CDTNEXT)
-      IF(ALLOCATED(FF_NEXT)) DEALLOCATE(FF_NEXT)
 
       IF(ALLOCATED(EMEAN)) DEALLOCATE(EMEAN)
       IF(ALLOCATED(FMEAN)) DEALLOCATE(FMEAN)

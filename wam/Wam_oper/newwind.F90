@@ -160,22 +160,12 @@
 !        ---------------
         IF (CDATE >= CDATEFL) THEN
             NEWFILE = .TRUE.
-            ISTORE=1
         ENDIF
 
 !*    2.2 NEW WINDS ARE READ IN.
 !         ----------------------
-        IF (ISTORE > NSTORE) THEN
-          WRITE(IU06,*) ' ********************************************'
-          WRITE(IU06,*) '      FATAL ERROR IN SUB. NEWWIND:           '
-          WRITE(IU06,*) '      ISTORE > NSTORE !!!                    '
-          WRITE(IU06,*) '      ISTORE = ',ISTORE 
-          WRITE(IU06,*) '      NSTORE = ',NSTORE 
-          WRITE(IU06,*) ' ********************************************'
-          CALL ABORT1
-        ENDIF
 
-        CDA=CDTNEXT(ISTORE)
+        CDA=CDTNEXT
 
         CALL GSTATS(1492,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,TLWMAX)
@@ -184,7 +174,7 @@
           KIJL=MIN(KIJS+NPROMA-1,IJL)
           IF (ICODE_WND == 3 ) THEN
             DO IJ = KIJS, KIJL
-              U10NEW(IJ)=FF_NEXT(IJ,ISTORE)%WSWAVE
+              U10NEW(IJ)=FF_NEXT(IJ)%WSWAVE
 ! adapt first estimate of wave induced stress for low winds
 ! to a fraction of the simple relation u*^2 = Cd(U10) * U10^2
 ! where this fraction varies from 0 for U10=0 to 1 for U10=WSPMIN_RESET_TAUW
@@ -195,7 +185,7 @@
             ENDDO
           ELSE
             DO IJ = KIJS, KIJL
-              USNEW(IJ)=FF_NEXT(IJ,ISTORE)%USTAR
+              USNEW(IJ)=FF_NEXT(IJ)%USTAR
 ! update the estimate of TAUW
               TAUW(IJ)=USNEW(IJ)**2*(1.0_JWRB-(ALPHA/BETAOLD(IJ))**2)
 ! adapt first estimate of wave induced stress for low winds
@@ -203,17 +193,16 @@
             ENDDO
           ENDIF
           DO IJ = KIJS, KIJL
-            THWNEW(IJ)=FF_NEXT(IJ,ISTORE)%WDWAVE
-            ROAIRN(IJ)=FF_NEXT(IJ,ISTORE)%AIRD
-            WSTARNEW(IJ)=FF_NEXT(IJ,ISTORE)%WSTAR
-            CICOVER(IJ)=FF_NEXT(IJ,ISTORE)%CIFR
-            CITHICK(IJ)=FF_NEXT(IJ,ISTORE)%CITH
+            THWNEW(IJ)=FF_NEXT(IJ)%WDWAVE
+            ROAIRN(IJ)=FF_NEXT(IJ)%AIRD
+            WSTARNEW(IJ)=FF_NEXT(IJ)%WSTAR
+            CICOVER(IJ)=FF_NEXT(IJ)%CIFR
+            CITHICK(IJ)=FF_NEXT(IJ)%CITH
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1492,1)
 
-        ISTORE=ISTORE+1
 
         CALL INCDATE(CDATEWH, IDELWO)
         NEWREAD = .TRUE.   

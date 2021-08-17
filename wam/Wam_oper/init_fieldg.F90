@@ -84,6 +84,11 @@
             FIELDG(IX,JY)%WSTAR  = WSTAR0
             FIELDG(IX,JY)%UCUR   = 0.0_JWRB
             FIELDG(IX,JY)%VCUR   = 0.0_JWRB
+            FIELDG(IX,JY)%TAUW   = 0.0_JWRB
+            FIELDG(IX,JY)%TAUWDIR= 0.0_JWRB
+            FIELDG(IX,JY)%Z0     = 0.0_JWRB
+            FIELDG(IX,JY)%Z0B    = 0.0_JWRB
+            FIELDG(IX,JY)%CHNK   = 0.0_JWRB
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
