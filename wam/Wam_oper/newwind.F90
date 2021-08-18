@@ -169,10 +169,6 @@
 !*    2.2 NEW WINDS ARE READ IN.
 !         ----------------------
 
-!!
-write(*,*) 'debile newwind ' 
-write(*,*) FF_NEXT(IJS:IJL)%WSWAVE
-
         CDATEWL = CDTNEXT
 
         CALL GSTATS(1492,0)

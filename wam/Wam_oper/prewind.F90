@@ -258,8 +258,6 @@
      &                     U10OLD, THWOLD, USOLD, Z0OLD,         &
      &                     ROAIRO, WSTAROLD, CICOVER, CITHICK,   &
      &                     IREAD, LWCUR, LLMORE)
-!!
-write(*,*) 'debile prewind, GETFRSTWND called ',LLMORE
         ELSE
           LLMORE = .TRUE.
         ENDIF
@@ -270,8 +268,6 @@ write(*,*) 'debile prewind, GETFRSTWND called ',LLMORE
           CALL NOTIM (CDTWIS, CDTWIE,                       &
      &                IJS, IJL, FF_NEXT,                    &
      &                IREAD, LWCUR)
-!!
-write(*,*) 'debile prewind, NOTIM called '
         ENDIF
       ELSE
 

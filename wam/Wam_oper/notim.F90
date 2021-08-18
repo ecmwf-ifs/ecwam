@@ -125,10 +125,6 @@ ASSOCIATE(U10 => FF_NEXT%WSWAVE, &
      &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,    &
      &               LWCUR, ICODE_WND)
 
-!!
-write(*,*) 'debile notim '
-write(*,*) 'FF_NEXT(IJS:IJL)%WSWAVE ',FF_NEXT(IJS:IJL)%WSWAVE
-
 
 !*      UPDATE WIND FIELD REQUEST TIME.
         CALL INCDATE (CDTWIH,IDELWO)
