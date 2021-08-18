@@ -291,7 +291,7 @@ SUBROUTINE INITMDL (NADV,                                         &
      &            IU38
       USE YOWWAMI  , ONLY : CBPLTDT
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
-     &            LLNEWCURR,LLWSWAVE ,LLWDWAVE
+     &            LLNEWCURR,LLWSWAVE ,LLWDWAVE ,FF_NEXT
       USE YOWUNPOOL, ONLY : LLUNSTR, OUT_METHOD
       USE UNSTRUCT_BOUND , ONLY : IOBP
       USE OUTPUT_STRUCT, ONLY : INITIAL_OUTPUT_INITS
@@ -993,6 +993,7 @@ SUBROUTINE INITMDL (NADV,                                         &
       CALL PREWIND (U10OLD,THWOLD,USOLD,Z0OLD,                          &
      &              ROAIRO, WSTAROLD,                                   &
      &              CICOVER, CITHICK,                                   &
+     &              FF_NEXT,                                            &
      &              LLINIT, LLALLOC_FIELDG_ONLY,                        &
      &              IREAD,                                              &
      &              NFIELDS, NGPTOTG, NC, NR,                           &

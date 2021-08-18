@@ -127,6 +127,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWTEST  , ONLY : IU06
       USE YOWWNDG  , ONLY : ICODE_CPL
+      USE YOWWIND  , ONLY : FF_NEXT
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC, ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,      &
      &            Z0B    ,BETAOLD  ,ROAIRO   ,WSTAROLD  ,                &
@@ -558,8 +559,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         LLALLOC_FIELDG_ONLY=LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
         CALL PREWIND (U10OLD, THWOLD, USOLD, Z0OLD,                     &
-     &                ROAIRO, WSTAROLD,                                  &
+     &                ROAIRO, WSTAROLD,                                 &
      &                CICOVER, CITHICK,                                 &
+     &                FF_NEXT,                                          &
      &                LLINIT, LLALLOC_FIELDG_ONLY,                      &
      &                IREAD,                                            &
      &                NFIELDS, NGPTOTG, NC, NR,                         &
@@ -576,7 +578,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       CALL SETMARSTYPE
 
-      CALL WAMODEL (NADV, LDSTOP, LDWRRE)
+      CALL WAMODEL (NADV, LDSTOP, LDWRRE,  &
+     &              FF_NEXT)
 
 
 !*    2.2  DATA ASSIMILATION AND/OR SAR INVERSION.

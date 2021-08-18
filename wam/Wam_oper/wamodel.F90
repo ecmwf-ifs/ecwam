@@ -1,4 +1,5 @@
-SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
+SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
+&                   FF_NEXT)
 
 ! ----------------------------------------------------------------------
 
@@ -112,11 +113,13 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *WAMODEL (NADV, LDSTOP, LDWRRE)*
+!     *CALL* *WAMODEL (NADV, LDSTOP, LDWRRE,
+!    &                 FF_NEXT)
 !        *NADV*      INTEGER   NUMBER OF ADVECTION ITERATIONS
 !                              PER CALL OF WAMODEL, OUTPUT PARAMETER.
 !        *LDSTOP*    LOGICAL   SET .TRUE. IF STOP SIGNAL RECEIVED.
 !        *LDWRRE*    LOGICAL   SET .TRUE. IF RESTART SIGNAL RECEIVED.
+!        *FF_NEXT*   REAL      DATA STRUCTURE WITH THE NEXT FORCING FIELDS
 
 !     METHOD.
 !     -------
@@ -268,6 +271,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 ! -------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC    ,GBOUNC  , IPOGBO  ,    &
      &            CBCPREF
@@ -366,6 +370,10 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 #include "writsta.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NADV
+      LOGICAL, INTENT(INOUT) :: LDSTOP, LDWRRE
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(IN) :: FF_NEXT
+
+
       INTEGER(KIND=JWIM) :: IJ, K, M, J, IRA, KADV, ICH, ICALL
       INTEGER(KIND=JWIM) :: IFIL, IC, ICL, ICR, II
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
@@ -381,7 +389,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       CHARACTER(LEN=14) :: CDTINTTBAK
       CHARACTER(LEN=14) :: CDATE, CDTPRA, CDTIMP, CDTIMPNEXT, CDTRCF
 
-      LOGICAL, INTENT(INOUT) :: LDSTOP, LDWRRE
       LOGICAL :: LLFLUSH
       LOGICAL :: LSV, LRST, LOUT
       LOGICAL :: LDREPROD
@@ -390,7 +397,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       LOGICAL :: LLNONASSI
       LOGICAL :: LL2NDCALL
       LOGICAL :: FFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
-      LOGICAL,ALLOCATABLE,DIMENSION(:) :: LCFLFAIL
+      LOGICAL, ALLOCATABLE,DIMENSION(:) :: LCFLFAIL
 
       DATA NEWFILE / .FALSE. /
 
@@ -659,7 +666,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &                 NEWREAD, NEWFILE,                        &
      &                 U10OLD, THWOLD, U10NEW, THWNEW,          &
      &                 USOLD, USNEW,                            &
-     &                 ROAIRO, ROAIRN, WSTAROLD, WSTARNEW,        &
+     &                 ROAIRO, ROAIRN, WSTAROLD, WSTARNEW,      &
+     &                 FF_NEXT,                                 &
      &                 CGROUP,                                  &
      &                 CICOVER, CITHICK, CIWA,                  &
      &                 TAUW, BETAOLD)
@@ -763,7 +771,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
           ENDIF
 
 #ifdef ECMWF
-          IF(.NOT.LWCOU .AND. .NOT. LDSTOP) THEN
+          IF (.NOT.LWCOU .AND. .NOT. LDSTOP) THEN
 !!!!      the call to CHESIG is a signal handeling facility which is
 !!!!      specific to running WAM at ECMWF, it can be ignored when
 !!!!      WAM is not run at ECMWF.
@@ -772,7 +780,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 #endif
 
           LRST=(LDWRRE .AND. KADV == NADV )
-          IF(LRST) THEN
+          IF (LRST) THEN
             WRITE(IU06,*) ' '
             WRITE(IU06,*) '  ******************************************'
             IF (LDSTOP) THEN

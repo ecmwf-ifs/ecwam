@@ -3,6 +3,7 @@
      &                    U10OLD, THWOLD, U10NEW, THWNEW,       &
      &                    USOLD, USNEW,                         &
      &                    ROAIRO, ROAIRN, WSTAROLD, WSTARNEW,   &
+     &                    FF_NEXT,                              &
      &                    CGROUP,                               &
      &                    CICOVER, CITHICK, CIWA,               &
      &                    TAUW, BETAOLD)
@@ -28,6 +29,7 @@
 !                        U10OLD,THWOLD,U10NEW,THWNEW, 
 !                        USOLD, USNEW,
 !                        ROAIRO, ROAIRN, WSTAROLD,WSTARNEW,
+!                        FF_NEXT,
 !                        CGROUP,
 !                        CICOVER, CITHICK, CIWA,
 !                        TAUW, BETAOLD)
@@ -50,6 +52,7 @@
 !      *ROAIRO*  - INTERMEDIATE STORAGE OF AIR DENSITY.
 !      *WSTARNEW*- CONVECTIVE VELOCITY.
 !      *WSTAROLD*- INTERMEDIATE STORAGE OF wstar
+!      *FF_NEXT* - DATA STRUCTURE WITH THE NEXT FORCING FIELDS
 !      *CGROUP*  - GROUP SPEED.
 !      *CICOVER* - SEA ICE COVER. 
 !      *CITHICK* - SEA ICE THICKNESS. 
@@ -77,6 +80,7 @@
 !*    *PARAMETER*  FOR ARRAY DIMENSIONS.
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWPCONS , ONLY : ACD      ,BCD      ,EPSMIN
       USE YOWCOUP  , ONLY : LWCOU
@@ -85,8 +89,7 @@
       USE YOWSTAT  , ONLY : IDELWO   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,    &
-     &            NSTORE   ,FF_NEXT  ,WSPMIN_RESET_TAUW  ,              &
-     &            USTMIN_RESET_TAUW
+     &            NSTORE   ,WSPMIN_RESET_TAUW  ,USTMIN_RESET_TAUW
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -109,6 +112,7 @@
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: U10NEW, THWNEW
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: USNEW
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: ROAIRN, WSTARNEW
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(IN) :: FF_NEXT
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CGROUP
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: CICOVER, CITHICK 
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(INOUT) :: CIWA
@@ -164,6 +168,10 @@
 
 !*    2.2 NEW WINDS ARE READ IN.
 !         ----------------------
+
+!!
+write(*,*) 'debile newwind ' 
+write(*,*) FF_NEXT(IJS:IJL)%WSWAVE
 
         CDATEWL = CDTNEXT
 

@@ -1,6 +1,7 @@
       SUBROUTINE PREWIND (U10OLD, THWOLD, USOLD, Z0OLD,                &
      &                    ROAIRO, WSTAROLD,                            &
      &                    CICOVER, CITHICK,                            &
+     &                    FF_NEXT,                                     &
      &                    LLINIT, LLALLOC_FIELDG_ONLY,                 &
      &                    IREAD,                                       &
      &                    NFIELDS, NGPTOTG, NC, NR,                    &
@@ -37,6 +38,7 @@
 
 !     *CALL* *PREWIND (U10OLD,THWOLD,USOLD,Z0OLD,
 !    &                 ROAIRO, WSTAROLD, CICOVER,
+!    &                 FF_NEXT,
 !    &                 LLINIT,
 !    &                 IREAD,
 !    &                 NFIELDS, NGPTOTG, NC, NR,
@@ -55,6 +57,7 @@
 !      *WSTAROLD*  REAL      CONVECTIVE VELOCITY M/S.
 !      *CICOVER*   REAL      SEA ICE COVER.
 !      *CITHICK*   REAL      SEA ICE THICKNESS.
+!      *FF_NEXT*   REAL      DATA STRUCTURE WITH THE NEXT FORCING FIELDS
 !      *LLINIT*    LOGICAL   TRUE IF WAMADSWSTAR NEEDS TO BE CALLED.   
 !      *LLALLOC_FIELDG_ONLY  LOGICAL IF TRUE THEN FIELDG DATA STRUCTURE WILL
 !                            ONLY BE ALLOCATED BUT NOT INITIALISED.
@@ -121,6 +124,7 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCOUP  , ONLY : LWNEMOCOU,LWNEMOCOURECV
       USE YOWGRID  , ONLY : IJS      ,IJL
@@ -129,8 +133,7 @@
      &            IDELWO   ,LANAONLY, IDELT
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : LRESTARTED
-!      USE YOWWIND  , ONLY : CDATEWL   ,CDAWIFL  ,FIELDG  ,FF_NEXT
-      USE YOWWIND  , ONLY : FORCING_FIELDS, CDATEWL   ,CDAWIFL  ,FIELDG
+      USE YOWWIND  , ONLY : CDATEWL   ,CDAWIFL  ,FIELDG
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -166,13 +169,13 @@
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: WSTAROLD
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: CICOVER
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: CITHICK
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NEXT
 
 
       INTEGER(KIND=JWIM) :: IDELWH
       INTEGER(KIND=JWIM) :: ISTORE, IJ
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL) :: FF_NEXT
 
       CHARACTER(LEN=14) :: CDTWIE, CDTWIS, ZERO
 
@@ -247,6 +250,7 @@
 !*      2.2 NO TIME INTERPOLATION.
 !       ----------------------
 
+
         IF (CDATEWL == ZERO) THEN
 !         Initialisation (either first time or following a restart)
           CALL GETFRSTWND (CDTWIS, CDTWIE,                       &
@@ -254,6 +258,8 @@
      &                     U10OLD, THWOLD, USOLD, Z0OLD,         &
      &                     ROAIRO, WSTAROLD, CICOVER, CITHICK,   &
      &                     IREAD, LWCUR, LLMORE)
+!!
+write(*,*) 'debile prewind, GETFRSTWND called ',LLMORE
         ELSE
           LLMORE = .TRUE.
         ENDIF
@@ -264,6 +270,8 @@
           CALL NOTIM (CDTWIS, CDTWIE,                       &
      &                IJS, IJL, FF_NEXT,                    &
      &                IREAD, LWCUR)
+!!
+write(*,*) 'debile prewind, NOTIM called '
         ENDIF
       ELSE
 
