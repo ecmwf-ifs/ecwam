@@ -1,6 +1,6 @@
-      SUBROUTINE NOTIM (CDTWIS, CDTWIE,                       &
-     &                  IJS, IJL, FF_NEXT,                    &
-     &                  IREAD, LWCUR)
+SUBROUTINE NOTIM (CDTWIS, CDTWIE,                       &
+&                 IJS, IJL, FF_NEXT,                    &
+&                 IREAD, LWCUR)
 
 ! ----------------------------------------------------------------------
 
@@ -45,7 +45,7 @@
 #include "incdate.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NEXT
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(OUT) :: FF_NEXT
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
       LOGICAL, INTENT(IN) :: LWCUR
@@ -54,7 +54,6 @@
       INTEGER(KIND=JWIM) :: ICODE_WND
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: U10, US, THW, ADS, WSTAR, CICR, CITH
 
       CHARACTER(LEN=14) :: CDTWIH
 
@@ -67,6 +66,15 @@
 !        --------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('NOTIM',0,ZHOOK_HANDLE)
+
+ASSOCIATE(U10 => FF_NEXT%WSWAVE, &
+ &        US => FF_NEXT%USTAR, &
+ &        THW => FF_NEXT%WDWAVE, &
+ &        ADS => FF_NEXT%AIRD, &
+ &        WSTAR => FF_NEXT%WSTAR, &
+ &        CICR => FF_NEXT%CIFR, &
+ &        CITH => FF_NEXT%CITH )
+
 
       CDTWIH = CDTWIS
 
@@ -117,17 +125,6 @@
      &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,    &
      &               LWCUR, ICODE_WND)
 
-        IF (ICODE_WND == 3 ) THEN
-          FF_NEXT(IJS:IJL)%WSWAVE = U10(IJS:IJL)
-        ELSE
-          FF_NEXT(IJS:IJL)%USTAR  = US(IJS:IJL)
-        ENDIF
-        FF_NEXT(IJS:IJL)%WDWAVE = THW(IJS:IJL)
-        FF_NEXT(IJS:IJL)%AIRD   = ADS(IJS:IJL)
-        FF_NEXT(IJS:IJL)%WSTAR  = WSTAR(IJS:IJL)
-        FF_NEXT(IJS:IJL)%CIFR   = CICR(IJS:IJL)
-        FF_NEXT(IJS:IJL)%CITH   = CITH(IJS:IJL)
-
 !!
 write(*,*) 'debile notim '
 write(*,*) 'FF_NEXT(IJS:IJL)%WSWAVE ',FF_NEXT(IJS:IJL)%WSWAVE
@@ -155,6 +152,8 @@ write(*,*) 'FF_NEXT(IJS:IJL)%WSWAVE ',FF_NEXT(IJS:IJL)%WSWAVE
 
       ENDIF
 
+END ASSOCIATE
+
       IF (LHOOK) CALL DR_HOOK('NOTIM',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE NOTIM
+END SUBROUTINE NOTIM
