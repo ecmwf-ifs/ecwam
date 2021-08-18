@@ -290,7 +290,7 @@ SUBROUTINE INITMDL (NADV,                                         &
      &            IU32     ,IU33     ,IU35     ,IU36     ,IU37     ,    &
      &            IU38
       USE YOWWAMI  , ONLY : CBPLTDT
-      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
+      USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
      &            LLNEWCURR,LLWSWAVE ,LLWDWAVE
       USE YOWUNPOOL, ONLY : LLUNSTR, OUT_METHOD
       USE UNSTRUCT_BOUND , ONLY : IOBP
@@ -788,7 +788,7 @@ SUBROUTINE INITMDL (NADV,                                         &
      &               ROAIRO, WSTAROLD, CICOVER, CITHICK,                &
      &               NBLKS, NBLKE, IREAD)
 
-      CDA = CDTPRO
+      CDATEWL = CDTPRO
 
       IF (LWCOU) LLWSWAVE = .FALSE.
       IF (LWCOU) LLWDWAVE = .FALSE.

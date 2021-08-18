@@ -1,78 +1,38 @@
       SUBROUTINE NOTIM (CDTWIS, CDTWIE,                       &
-     &                  IJS, IJL,                             &
-     &                  U10OLD, THWOLD, USOLD, Z0OLD,         &
-     &                  ROAIRO, WSTAROLD, CICOVER, CITHICK,   &
+     &                  IJS, IJL, FF_NEXT,                    &
      &                  IREAD, LWCUR)
 
 ! ----------------------------------------------------------------------
-
-!     MODIFIED  J. BIDLOT  FEBRARY 1996  MESSAGE PASSING
-!               S. ABDALLA OCTOBER 2001  INCLUSION OF AIR DENSITY & Zi/L
-!               J BIDLOT AUGUST 2006 INCLUSION OF ICE MASK.
-!               J BIDLOT AUGUST 2008 REMOVE INFORMATION FROM COUPLED RUNS
-!                                    AND CLEAN UP OBSOLETE OPTIONS.
-
 
 !**** *NOTIM* - STEERING MODULE IF NO TIME INTERPOLATION WANTED.
 
 !*    PURPOSE.
 !     --------
 
-!       NOTIM NO TIME INTERPOLATION: PROCESS WINDFIELDS.
+!       NOTIM NO TIME INTERPOLATION: PROCESS FORCING FIELDS.
 
 !**   INTERFACE.
 !     ----------  
 
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,
 !    &                 IJS, IJL,
-!    &                 U10OLD,THWOLD,USOLD,Z0OLD,
-!    &                 ROAIRO, WSTAROLD, CICOVER, CITHICK,
 !                      IREAD, LWCUR)
 !          *CDTWIS*   - DATE OF FIRST WIND FIELD.
 !          *CDTWIE*   - DATE OF LAST FIRST WIND FIELD.
 !          *IJS:IJL   - ARRAYS DIMENSION
-!          *U10OLD*   - WIND SPEED.
-!          *THWOLD*   - WIND DIRECTION (RADIANS).
-!          *USOLD*    - FRICTION VELOCITY.
-!          *Z0OLD*    - ROUGHNESS LENGTH IN M.
-!          *ROAIRO*   - AIR DENSITY IN KG/M3.
-!          *WSTAROLD* - CONVECTIVE VELOCITY. 
-!          *CICOVER* - SEA ICE COVER.
-!          *CITHICK* - SEA ICE THICKNESS. 
 !          *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 
-
-!     METHOD.
-!     -------
-
-!       NO TIME INTERPOLATION:
-!       WINDFIELDS ARE PROCESSED EVERY IDELWI SECONDS (U,V),
-!       THE WINDS INTERPOLATED IN SPACE ONLY (US,DS)
-
-!     EXTERNALS.
-!     ----------
-
-!       *ABORT1*     - TERMINATES PROCESSING.
-!       *AIRSEA*    - TOTAL STRESS IN SURFACE LAYER.
-!       *GETWND*    - READ A WINDFIELD AND COMPUTE WIND
-!                     FOR ALL BLOCKS (US,DS).
-!       *INCDATE*   - INCREMENT DATE.
-
-!     REFERENCE.
-!     ----------
-
-!       NONE.
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO   ,NPROMA_WAM
+      USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO
       USE YOWPHYS  , ONLY : XNLEV
       USE YOWTEST  , ONLY : IU06
-      USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,FF_NEXT
+      USE YOWWIND  , ONLY : FORCING_FIELDS, CDATEWL  ,CDTNEXT
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -80,30 +40,22 @@
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "cdustarz0.intfb.h"
 #include "getwnd.intfb.h"
 #include "incdate.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(OUT) :: FF_NEXT
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
-      
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) ::            &
-     &               U10OLD, THWOLD, USOLD, Z0OLD,                    &
-     &               ROAIRO, WSTAROLD, CICOVER, CITHICK
-
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
-
       LOGICAL, INTENT(IN) :: LWCUR
 
 
-      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
-      INTEGER(KIND=JWIM) :: IJ
       INTEGER(KIND=JWIM) :: ICODE_WND
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: U10, US, THW, ADS, WSTAR, CICR, CITH, CD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: U10, US, THW, ADS, WSTAR, CICR, CITH
 
-      CHARACTER(LEN=14) :: CDTWIH, CDT, ZERO
+      CHARACTER(LEN=14) :: CDTWIH
 
       LOGICAL :: LWNDFILE, LCLOSEWND
 
@@ -115,46 +67,13 @@
 
       IF (LHOOK) CALL DR_HOOK('NOTIM',0,ZHOOK_HANDLE)
 
-      ZERO = ' '
       CDTWIH = CDTWIS
-
-      NPROMA=NPROMA_WAM
 
       LCLOSEWND=.FALSE.
       IF (LWCOU) THEN
         LWNDFILE=.FALSE.
       ELSE
         LWNDFILE=.TRUE.
-      ENDIF
-
-
-      IF (CDA == ZERO) THEN
-        CDA = CDTWIS
-        CALL GETWND (IJS, IJL,                          &
-     &               U10OLD, USOLD,                     &
-     &               THWOLD,                            &
-     &               ROAIRO, WSTAROLD,                   &
-     &               CICOVER, CITHICK,                  &
-     &               CDA, LWNDFILE, LCLOSEWND, IREAD,   &
-     &               LWCUR, ICODE_WND)
-
-
-          CALL GSTATS(1493,0)
-!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-          DO JKGLO=IJS,IJL,NPROMA
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL)
-            CALL CDUSTARZ0 (KIJS, KIJL, U10OLD(KIJS), XNLEV,            &
-     &                      CD(KIJS), USOLD(KIJS), Z0OLD(KIJS))
-          ENDDO
-!$OMP     END PARALLEL DO
-          CALL GSTATS(1493,1)
-
-        IF (CDA == CDTWIE) THEN
-          IF (LHOOK) CALL DR_HOOK('NOTIM',1,ZHOOK_HANDLE)
-          RETURN
-        ENDIF
-        CALL INCDATE (CDTWIH, IDELWO)
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -192,7 +111,7 @@
         CALL GETWND (IJS, IJL,                              &
      &               U10, US,                               &
      &               THW,                                   &
-     &               ADS, WSTAR,                             &
+     &               ADS, WSTAR,                            &
      &               CICR, CITH,                            &
      &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,    &
      &               LWCUR, ICODE_WND)
@@ -228,9 +147,6 @@
           WRITE (IU06,*) ' ********************************************'
           CALL ABORT1
         ENDIF
-
-        IF (LHOOK) CALL DR_HOOK('NOTIM',1,ZHOOK_HANDLE)
-        RETURN
 
       ENDIF
 

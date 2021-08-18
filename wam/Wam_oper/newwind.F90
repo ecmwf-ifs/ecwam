@@ -84,7 +84,7 @@
       USE YOWPHYS  , ONLY : ALPHA
       USE YOWSTAT  , ONLY : IDELWO   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06
-      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,    &
+      USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,    &
      &            NSTORE   ,FF_NEXT  ,WSPMIN_RESET_TAUW  ,              &
      &            USTMIN_RESET_TAUW
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
@@ -165,7 +165,7 @@
 !*    2.2 NEW WINDS ARE READ IN.
 !         ----------------------
 
-        CDA=CDTNEXT
+        CDATEWL = CDTNEXT
 
         CALL GSTATS(1492,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,TLWMAX)

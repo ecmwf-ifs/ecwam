@@ -129,7 +129,8 @@
      &            IDELWO   ,LANAONLY, IDELT
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,FIELDG
+!      USE YOWWIND  , ONLY : CDATEWL   ,CDAWIFL  ,FIELDG  ,FF_NEXT
+      USE YOWWIND  , ONLY : FORCING_FIELDS, CDATEWL   ,CDAWIFL  ,FIELDG
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -139,6 +140,7 @@
 
 #include "abort1.intfb.h"
 #include "getcurr.intfb.h"
+#include "getfrstwnd.intfb.h"
 #include "ifstowam.intfb.h"
 #include "incdate.intfb.h"
 #include "init_fieldg.intfb.h"
@@ -170,11 +172,12 @@
       INTEGER(KIND=JWIM) :: ISTORE, IJ
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL) :: FF_NEXT
 
       CHARACTER(LEN=14) :: CDTWIE, CDTWIS, ZERO
 
       LOGICAL, SAVE :: LLFRSTNEMO
-      LOGICAL :: LLINIALL, LLOCAL
+      LOGICAL :: LLINIALL, LLOCAL, LLMORE
 
       DATA LLFRSTNEMO / .TRUE. /
 
@@ -187,7 +190,7 @@
 
       ZERO = ' '
 
-      IF (CDA == ZERO .OR. LANAONLY) THEN
+      IF (CDATEWL == ZERO .OR. LANAONLY) THEN
 !       IF START FROM PRESET FIELDS DO FIRST FIELD IN ADDITION.
         CDTWIS = CDATEA
       ELSE
@@ -244,12 +247,24 @@
 !*      2.2 NO TIME INTERPOLATION.
 !       ----------------------
 
-        CALL NOTIM (CDTWIS, CDTWIE,                       &
-     &              IJS, IJL,                             &
-     &              U10OLD, THWOLD, USOLD, Z0OLD,         &
-     &              ROAIRO, WSTAROLD, CICOVER, CITHICK,   &
-     &              IREAD, LWCUR)
+        IF (CDATEWL == ZERO) THEN
+!         Initialisation (either first time or following a restart)
+          CALL GETFRSTWND (CDTWIS, CDTWIE,                       &
+     &                     IJS, IJL,                             &
+     &                     U10OLD, THWOLD, USOLD, Z0OLD,         &
+     &                     ROAIRO, WSTAROLD, CICOVER, CITHICK,   &
+     &                     IREAD, LWCUR, LLMORE)
+        ELSE
+          LLMORE = .TRUE.
+        ENDIF
 
+
+        IF (LLMORE) THEN
+!         Update forcing
+          CALL NOTIM (CDTWIS, CDTWIE,                       &
+     &                IJS, IJL, FF_NEXT,                    &
+     &                IREAD, LWCUR)
+        ENDIF
       ELSE
 
 !*      2.3 TIME INTERPOLATION.
