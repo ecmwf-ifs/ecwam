@@ -86,7 +86,7 @@
             FIELDG(IX,JY)%VCUR   = 0.0_JWRB
             FIELDG(IX,JY)%TAUW   = 0.0_JWRB
             FIELDG(IX,JY)%TAUWDIR= 0.0_JWRB
-            FIELDG(IX,JY)%Z0     = 0.0_JWRB
+            FIELDG(IX,JY)%Z0M    = 0.0_JWRB
             FIELDG(IX,JY)%Z0B    = 0.0_JWRB
             FIELDG(IX,JY)%CHNK   = 0.0_JWRB
           ENDDO
