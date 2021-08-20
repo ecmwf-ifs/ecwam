@@ -1,7 +1,7 @@
-      SUBROUTINE SINPUT (NGST, KIJS, KIJL, FL1,           & 
-     &                   WAVNUM, CINV, CGROUP,            &
-     &                   THWNEW, U10NEW, USNEW, Z0NEW,    &
-     &                   ROAIRN, WSTAR, RNFAC,            &
+      SUBROUTINE SINPUT (NGST, KIJS, KIJL, FL1,         & 
+     &                   WAVNUM, CINV, CGROUP,          &
+     &                   WDWAVE, WSWAVE, UFRIC, Z0M,    &
+     &                   AIRD, WSTAR, RNFAC,            &
      &                   FLD, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
@@ -13,8 +13,8 @@
 
 !     *CALL* *SINPUT (NGST, KIJS, KIJL, FL1,
 !    &                WAVNUM, CINV, CGROUP,
-!    &                THWNEW, USNEW, Z0NEW,
-!    &                ROAIRN, WSTAR, FLD, SL, SPOS, XLLWS)
+!    &                WDWAVE, UFRIC, Z0M,
+!    &                AIRD, WSTAR, FLD, SL, SPOS, XLLWS)
 !         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
 !                - IF = 2 THEN GUSTINESS PARAMETERISATION
 !         *KIJS* - INDEX OF FIRST GRIDPOINT.
@@ -23,12 +23,12 @@
 !       *WAVNUM* - WAVE NUMBER.
 !         *CINV* - INVERSE PHASE VELOCITY.
 !       *CGROUP* - GROUP SPPED.
-!       *THWNEW* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
+!       *WDWAVE* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                  NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                  CLOCKWISE FROM NORTH).
-!        *USNEW* - NEW FRICTION VELOCITY IN M/S.
-!        *Z0NEW* - ROUGHNESS LENGTH IN M.
-!       *ROAIRN* - AIR DENSITY IN KG/M3
+!        *UFRIC* - FRICTION VELOCITY IN M/S.
+!        *Z0M*   - ROUGHNESS LENGTH IN M.
+!       *AIRD*   - AIR DENSITY IN KG/M3
 !        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
 !        *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !          *FLD* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
@@ -71,8 +71,8 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, U10NEW, USNEW, Z0NEW
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: ROAIRN, WSTAR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: AIRD, WSTAR, RNFAC
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
 
@@ -86,16 +86,16 @@
 
       SELECT CASE (IPHYS)
       CASE(0)
-        CALL SINPUT_JAN (NGST, KIJS, KIJL, FL1,           &
-     &                   WAVNUM, CINV, CGROUP,            &
-     &                   THWNEW, U10NEW, USNEW, Z0NEW,    &
-     &                   ROAIRN, WSTAR, RNFAC,            &
+        CALL SINPUT_JAN (NGST, KIJS, KIJL, FL1,          &
+     &                   WAVNUM, CINV, CGROUP,           &
+     &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
+     &                   AIRD, WSTAR, RNFAC,             &
      &                   FLD, SL, SPOS, XLLWS)
       CASE(1) 
-        CALL SINPUT_ARD (NGST, KIJS, KIJL, FL1,           &
-     &                   WAVNUM, CINV, CGROUP,            &
-     &                   THWNEW, U10NEW, USNEW, Z0NEW,    &
-     &                   ROAIRN, WSTAR, RNFAC,            &
+        CALL SINPUT_ARD (NGST, KIJS, KIJL, FL1,          &
+     &                   WAVNUM, CINV, CGROUP,           &
+     &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
+     &                   AIRD, WSTAR, RNFAC,             &
      &                   FLD, SL, SPOS, XLLWS)
       END SELECT 
 

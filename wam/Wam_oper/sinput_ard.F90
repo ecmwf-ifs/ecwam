@@ -1,7 +1,7 @@
-      SUBROUTINE SINPUT_ARD (NGST, KIJS, KIJL, FL1,           &
-     &                       WAVNUM, CINV, CGROUP,            &
-     &                       THWNEW, U10NEW, USNEW, Z0NEW,    &
-     &                       ROAIRN, WSTAR, RNFAC,            &
+      SUBROUTINE SINPUT_ARD (NGST, KIJS, KIJL, FL1,         &
+     &                       WAVNUM, CINV, CGROUP,          &
+     &                       WDWAVE, WSWAVE, UFRIC, Z0M,    &
+     &                       AIRD, WSTAR, RNFAC,            &
      &                       FLD, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
@@ -33,8 +33,8 @@
 
 !     *CALL* *SINPUT_ARD (NGST, KIJS, KIJL, FL1,
 !    &                    WAVNUM, CINV, CGROUP,
-!    &                    U10NEW, THWNEW, USNEW, Z0NEW,
-!    &                    ROAIRN, WSTAR, RNFAC,
+!    &                    WSWAVE, WDWAVE, UFRIC, Z0M,
+!    &                    AIRD, WSTAR, RNFAC,
 !    &                    FLD, SL, SPOS, XLLWS)
 !         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
 !                - IF = 2 THEN GUSTINESS PARAMETERISATION
@@ -44,12 +44,12 @@
 !       *WAVNUM* - WAVE NUMBER.
 !         *CINV* - INVERSE PHASE VELOCITY.
 !       *CGROUP* - GROUP SPPED.
-!       *THWNEW* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
+!       *WDWAVE* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                  NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                  CLOCKWISE FROM NORTH).
-!        *USNEW* - NEW FRICTION VELOCITY IN M/S.
-!        *Z0NEW* - ROUGHNESS LENGTH IN M.
-!       *ROAIRN* - AIR DENSITY IN KG/M3
+!        *UFRIC* - NEW FRICTION VELOCITY IN M/S.
+!        *Z0M* - ROUGHNESS LENGTH IN M.
+!       *AIRD* - AIR DENSITY IN KG/M3
 !        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
 !        *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !          *FLD* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
@@ -62,16 +62,6 @@
 
 !       SEE REFERENCE.
 
-!     EXTERNALS.
-!     ----------
-
-!       WSIGSTAR.
-
-!     MODIFICATIONS
-!     -------------
-
-!     REFERENCE.
-!     ----------
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
@@ -99,8 +89,8 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, U10NEW, USNEW, Z0NEW
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: ROAIRN, WSTAR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: AIRD, WSTAR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
@@ -129,7 +119,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CNSN, SUMF, SUMFSIN2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CSTRNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FLP_AVG, SLP_AVG
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: GZ0, ROGOROAIR, ROAIRN_PVISC, ROAIRNM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: GZ0, ROGOROAIR, AIRD_PVISC, AIRDM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: XSTRESS, YSTRESS, FLP, SLP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: USG2, TAUX, TAUY, USTP, USTPM1, USDIRP, UCN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: UCNZALPD
@@ -157,27 +147,27 @@
       DELABM1= REAL(IAB)/(ABMAX-ABMIN)
 
       ABS_TAUWSHELTER=ABS(TAUWSHELTER)
-      IF(ABS_TAUWSHELTER == 0.0_JWRB ) THEN
+      IF (ABS_TAUWSHELTER == 0.0_JWRB ) THEN
         LTAUWSHELTER = .FALSE.
       ELSE
         LTAUWSHELTER = .TRUE.
       ENDIF
 
       DO IJ=KIJS,KIJL
-        ROAIRNM(IJ) = 1.0_JWRB/MAX(ROAIRN(IJ),1.0_JWRB)
+        AIRDM(IJ) = 1.0_JWRB/MAX(AIRD(IJ),1.0_JWRB)
       ENDDO
 
-      IF(LLNORMAGAM) THEN
+      IF (LLNORMAGAM) THEN
         CSTRNFAC(:) = CONSTN * RNFAC(:)
         DO M=1,NFRE
           DO IJ=KIJS,KIJL
-            XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*WAVNUM(IJ,M)**2*CGROUP(IJ,M)*ROAIRNM(IJ)
+            XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*WAVNUM(IJ,M)**2*CGROUP(IJ,M)*AIRDM(IJ)
           ENDDO
         ENDDO
 
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            SIN2(IJ,K) = SIN(TH(K)-THWNEW(IJ))**2
+            SIN2(IJ,K) = SIN(TH(K)-WDWAVE(IJ))**2
           ENDDO
         ENDDO
 
@@ -187,7 +177,7 @@
 
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
-      IF (NGST > 1) CALL WSIGSTAR (KIJS, KIJL, U10NEW, USNEW, Z0NEW, WSTAR, SIG_N)
+      IF (NGST > 1) CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N)
 
 ! ----------------------------------------------------------------------
 ! computation of Uorb and Aorb
@@ -225,8 +215,8 @@
         UORBT(IJ) = 2.0_JWRB*SQRT(UORBT(IJ))  ! this is the significant orbital amplitude
         AORB(IJ)  = 2.0_JWRB*SQRT(AORB(IJ))   ! this 1/2 Hs
         RE(IJ)    = FACM1_NU_AIR*UORBT(IJ)*AORB(IJ) ! this is the Reynolds number 
-        Z0VIS(IJ) = FAC_NU_AIR/MAX(USNEW(IJ),0.0001_JWRB)
-        Z0TUB = Z0RAT*MIN(Z0TUBMAX,Z0NEW(IJ))
+        Z0VIS(IJ) = FAC_NU_AIR/MAX(UFRIC(IJ),0.0001_JWRB)
+        Z0TUB = Z0RAT*MIN(Z0TUBMAX,Z0M(IJ))
         Z0NOZ(IJ) = MAX(Z0VIS(IJ),Z0TUB)
         ZORB(IJ)  = AORB(IJ)/Z0NOZ(IJ)
 
@@ -240,7 +230,7 @@
       ENDDO
 
 ! Define the critical Reynolds number
-      IF( SWELLF6 == 1.0_JWRB) THEN
+      IF ( SWELLF6 == 1.0_JWRB) THEN
         DO IJ=KIJS,KIJL
           RE_C(IJ) = SWELLF4
         ENDDO
@@ -273,14 +263,14 @@
 
 ! Initialisation
 
-      IF(NGST == 1) THEN
+      IF (NGST == 1) THEN
         DO IJ=KIJS,KIJL
-          USTP(IJ,1) = USNEW(IJ)
+          USTP(IJ,1) = UFRIC(IJ)
         ENDDO
       ELSE IF (NGST == 2) THEN
         DO IJ=KIJS,KIJL
-          USTP(IJ,1) = USNEW(IJ)*(1.0_JWRB+SIG_N(IJ))
-          USTP(IJ,2) = USNEW(IJ)*(1.0_JWRB-SIG_N(IJ))
+          USTP(IJ,1) = UFRIC(IJ)*(1.0_JWRB+SIG_N(IJ))
+          USTP(IJ,2) = UFRIC(IJ)*(1.0_JWRB-SIG_N(IJ))
         ENDDO
       ELSE
          WRITE (IU06,*) '**************************************'
@@ -300,35 +290,35 @@
         ENDDO
       ENDDO
 
-      IF(LTAUWSHELTER) THEN
+      IF (LTAUWSHELTER) THEN
         DO IGST=1,NGST
           DO IJ=KIJS,KIJL
             XSTRESS(IJ,IGST)=0.0_JWRB
             YSTRESS(IJ,IGST)=0.0_JWRB
             USG2(IJ,IGST)=USTP(IJ,IGST)**2
-            TAUX(IJ,IGST)=USG2(IJ,IGST)*SIN(THWNEW(IJ))
-            TAUY(IJ,IGST)=USG2(IJ,IGST)*COS(THWNEW(IJ))
+            TAUX(IJ,IGST)=USG2(IJ,IGST)*SIN(WDWAVE(IJ))
+            TAUY(IJ,IGST)=USG2(IJ,IGST)*COS(WDWAVE(IJ))
           ENDDO
         ENDDO
       ELSE
         DO IGST=1,NGST
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              COSLP(IJ,K,IGST) = COS(TH(K)-THWNEW(IJ))
+              COSLP(IJ,K,IGST) = COS(TH(K)-WDWAVE(IJ))
             ENDDO
           ENDDO
         ENDDO
       ENDIF
 
       DO IJ=KIJS,KIJL
-        GZ0(IJ) = G*Z0NEW(IJ)
+        GZ0(IJ) = G*Z0M(IJ)
       ENDDO
       DO IJ=KIJS,KIJL
-        ROGOROAIR(IJ) = ROG*ROAIRNM(IJ)
+        ROGOROAIR(IJ) = ROG*AIRDM(IJ)
       ENDDO
 
       DO IJ=KIJS,KIJL
-        ROAIRN_PVISC(IJ) = ROAIRN(IJ)*PVISC(IJ)
+        AIRD_PVISC(IJ) = AIRD(IJ)*PVISC(IJ)
       ENDDO
 
 
@@ -336,7 +326,7 @@
 !        ---------------------------
       DO M=1,NFRE
 
-        IF(LTAUWSHELTER) THEN
+        IF (LTAUWSHELTER) THEN
           DO IGST=1,NGST
             DO IJ=KIJS,KIJL
               TAUPX=TAUX(IJ,IGST)-ABS_TAUWSHELTER*XSTRESS(IJ,IGST)
@@ -371,8 +361,8 @@
           ENDDO
         ENDDO
         DO IJ=KIJS,KIJL
-          ZCN(IJ) = LOG(WAVNUM(IJ,M)*Z0NEW(IJ))
-          CNSN(IJ) = CONST(M)*ROAIRN(IJ)
+          ZCN(IJ) = LOG(WAVNUM(IJ,M)*Z0M(IJ))
+          CNSN(IJ) = CONST(M)*AIRD(IJ)
         ENDDO
 
 !*    2.1 LOOP OVER DIRECTIONS.
@@ -405,7 +395,7 @@
         ENDDO
 
 
-      IF(LLNORMAGAM) THEN
+      IF (LLNORMAGAM) THEN
 
         DO IGST=1,NGST
 
@@ -434,8 +424,8 @@
 !       SWELL DAMPING:
 
         DO IJ=KIJS,KIJL
-          DSTAB1(IJ) = COEF5(M)*ROAIRN_PVISC(IJ)*WAVNUM(IJ,M)
-          TEMP1(IJ) = COEF(M)*ROAIRN(IJ)
+          DSTAB1(IJ) = COEF5(M)*AIRD_PVISC(IJ)*WAVNUM(IJ,M)
+          TEMP1(IJ) = COEF(M)*AIRD(IJ)
         ENDDO
 
         DO IGST=1,NGST
@@ -468,7 +458,7 @@
             ENDDO
           ENDDO
 
-          IF(LTAUWSHELTER) THEN
+          IF (LTAUWSHELTER) THEN
             DO IJ=KIJS,KIJL
               CONST11(IJ)=CONSTF(IJ)*SINTH(K)
               CONST22(IJ)=CONSTF(IJ)*COSTH(K)

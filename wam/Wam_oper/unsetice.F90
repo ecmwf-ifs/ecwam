@@ -1,9 +1,8 @@
       SUBROUTINE UNSETICE(KIJS, KIJL,              &
      &                    DEPTH, EMAXDPT,          &
-     &                    CICOVER, U10OLD, THWOLD, &
+     &                    CICOVER, WSWAVE, WDWAVE, &
      &                    FL1)
 ! ----------------------------------------------------------------------
-!     J. BIDLOT    ECMWF      AUGUST 2006 
 
 !*    PURPOSE.
 !     --------
@@ -15,28 +14,21 @@
 !     ----------
 !     *CALL* *UNSETICE(KIJS, KIJL,              &
 !    &                 DEPTH, EMAXDPT,          &
-!    &                 CICOVER, U10OLD, THWOLD, &
+!    &                 CICOVER, WSWAVE, WDWAVE, &
 !    &                 FL1)
 !     *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
 !     *KIJL*    - LOCAL  INDEX OF LAST GRIDPOINT
 !     *DEPTH*   - WATER DEPTH
 !     *EMAXDPT* - MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
 !     *CICOVER* - SEA ICE COVER
-!     *U10OLD*  - WIND SPEED. (used with fetch law to fill empty 
+!     *WSWAVE*  - WIND SPEED. (used with fetch law to fill empty 
 !                 sea points)
-!     *THWOLD*  - WIND DIRECTION (RADIANS).
+!     *WDWAVE*  - WIND DIRECTION (RADIANS).
 !     *FL1*     - SPECTRA
 
 
 !     METHOD.
 !     -------
-
-!     EXTERNALS.
-!     ----------
-
-!     REFERENCE.
-!     ----------
-!     NONE
 
 ! ----------------------------------------------------------------------
 
@@ -61,7 +53,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH, EMAXDPT 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER, U10OLD, THWOLD 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER, WSWAVE, WDWAVE 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
 
 
@@ -87,7 +79,7 @@
         ZDP=2.0_JWRB/PI
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            COS2NOISE(IJ,K)=MAX(0.0_JWRB,COS(TH(K)-THWOLD(IJ)))**2
+            COS2NOISE(IJ,K)=MAX(0.0_JWRB,COS(TH(K)-WDWAVE(IJ)))**2
             SPRD(IJ,K)=ZDP*COS2NOISE(IJ,K)
           ENDDO
         ENDDO
@@ -136,9 +128,9 @@
 
 !           FIND PEAK PERIOD AND ENERGY LEVEL FROM FETCH LAW
 !           THE SAME FORMULATION AS IN SUBROUTINE PEAK IS USED.
-            IF (U10OLD(IJ) > 0.1E-08_JWRB ) THEN
+            IF (WSWAVE(IJ) > 0.1E-08_JWRB ) THEN
               GX = G * FETCH
-              U10 = U10OLD(IJ)
+              U10 = WSWAVE(IJ)
               GXU = GX/(U10*U10)
               UG = G/U10
               FPK(IJ) = AJONS * GXU ** DJONS

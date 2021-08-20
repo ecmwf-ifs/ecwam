@@ -70,25 +70,25 @@
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JY,IX)
         DO JY=1,NYFF
           DO IX=1,NXFF
-            FIELDG(IX,JY)%XLON   = ZMISS 
-            FIELDG(IX,JY)%YLAT   = ZMISS
-            FIELDG(IX,JY)%UWND   = 0.0_JWRB
-            FIELDG(IX,JY)%VWND   = 0.0_JWRB
-            FIELDG(IX,JY)%WSWAVE = WSPMIN 
-            FIELDG(IX,JY)%WDWAVE = 0.0_JWRB
-            FIELDG(IX,JY)%USTAR  = 0.0_JWRB
-            FIELDG(IX,JY)%CIFR   = 0.0_JWRB
-            FIELDG(IX,JY)%CITH   = 0.0_JWRB
-            FIELDG(IX,JY)%LKFR   = 0.0_JWRB
-            FIELDG(IX,JY)%AIRD   = ROAIR
-            FIELDG(IX,JY)%WSTAR  = WSTAR0
-            FIELDG(IX,JY)%UCUR   = 0.0_JWRB
-            FIELDG(IX,JY)%VCUR   = 0.0_JWRB
-            FIELDG(IX,JY)%TAUW   = 0.0_JWRB
-            FIELDG(IX,JY)%TAUWDIR= 0.0_JWRB
-            FIELDG(IX,JY)%Z0M    = 0.0_JWRB
-            FIELDG(IX,JY)%Z0B    = 0.0_JWRB
-            FIELDG(IX,JY)%CHNK   = 0.0_JWRB
+            FIELDG(IX,JY)%XLON    = ZMISS 
+            FIELDG(IX,JY)%YLAT    = ZMISS
+            FIELDG(IX,JY)%UWND    = 0.0_JWRB
+            FIELDG(IX,JY)%VWND    = 0.0_JWRB
+            FIELDG(IX,JY)%WSWAVE  = WSPMIN 
+            FIELDG(IX,JY)%WDWAVE  = 0.0_JWRB
+            FIELDG(IX,JY)%UFRIC   = 0.0_JWRB
+            FIELDG(IX,JY)%CICOVER = 0.0_JWRB
+            FIELDG(IX,JY)%CITHICK = 0.0_JWRB
+            FIELDG(IX,JY)%LKFR    = 0.0_JWRB
+            FIELDG(IX,JY)%AIRD    = ROAIR
+            FIELDG(IX,JY)%WSTAR   = WSTAR0
+            FIELDG(IX,JY)%UCUR    = 0.0_JWRB
+            FIELDG(IX,JY)%VCUR    = 0.0_JWRB
+            FIELDG(IX,JY)%TAUW    = 0.0_JWRB
+            FIELDG(IX,JY)%TAUWDIR = 0.0_JWRB
+            FIELDG(IX,JY)%Z0M     = 0.0_JWRB
+            FIELDG(IX,JY)%Z0B     = 0.0_JWRB
+            FIELDG(IX,JY)%CHNK    = 0.0_JWRB
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO

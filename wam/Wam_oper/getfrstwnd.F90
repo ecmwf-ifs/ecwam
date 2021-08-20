@@ -1,7 +1,7 @@
-SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                       &
-&                      IJS, IJL,                             &
-&                      U10OLD, THWOLD, USOLD, Z0OLD,         &
-&                      ROAIRO, WSTAROLD, CICOVER, CITHICK,   &
+SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
+&                      IJS, IJL,                       &
+&                      WSWAVE, WDWAVE, UFRIC, Z0M,     &
+&                      AIRD, WSTAR, CICOVER, CITHICK,  &
 &                      IREAD, LWCUR, LLMORE)
 
 ! ----------------------------------------------------------------------
@@ -16,18 +16,18 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                       &
 
 !       *CALL* *GETFRSTWND (CDTWIS, CDTWIE,
 !    &                 IJS, IJL,
-!    &                 U10OLD,THWOLD,USOLD,Z0OLD,
-!    &                 ROAIRO, WSTAROLD, CICOVER, CITHICK,
+!    &                 WSWAVE,WDWAVE,UFRIC,Z0M,
+!    &                 AIRD, WSTAR, CICOVER, CITHICK,
 !                      IREAD, LWCUR, LLMORE)
 !          *CDTWIS*   - DATE OF FIRST WIND FIELD.
 !          *CDTWIE*   - DATE OF LAST FIRST WIND FIELD.
 !          *IJS:IJL   - ARRAYS DIMENSION
-!          *U10OLD*   - WIND SPEED.
-!          *THWOLD*   - WIND DIRECTION (RADIANS).
-!          *USOLD*    - FRICTION VELOCITY.
-!          *Z0OLD*    - ROUGHNESS LENGTH IN M.
-!          *ROAIRO*   - AIR DENSITY IN KG/M3.
-!          *WSTAROLD* - CONVECTIVE VELOCITY. 
+!          *WSWAVE*   - WIND SPEED.
+!          *WDWAVE*   - WIND DIRECTION (RADIANS).
+!          *UFRIC*    - FRICTION VELOCITY.
+!          *Z0M*      - ROUGHNESS LENGTH IN M.
+!          *AIRD*     - AIR DENSITY IN KG/M3.
+!          *WSTAR*    - CONVECTIVE VELOCITY. 
 !          *CICOVER*  - SEA ICE COVER.
 !          *CITHICK*  - SEA ICE THICKNESS. 
 !          *IREAD*    - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
@@ -57,8 +57,8 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                       &
       CHARACTER(LEN=14), INTENT(INOUT) :: CDTWIS
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIE
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: U10OLD, THWOLD, USOLD, Z0OLD
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: ROAIRO, WSTAROLD, CICOVER, CITHICK
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: WSWAVE, WDWAVE, UFRIC, Z0M
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: AIRD, WSTAR, CICOVER, CITHICK
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR
       LOGICAL, INTENT(OUT) :: LLMORE 
@@ -96,12 +96,12 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                       &
       ENDIF
 
       CDATEWL = CDTWIS
-      CALL GETWND (IJS, IJL,                          &
-     &             U10OLD, USOLD,                     &
-     &             THWOLD,                            &
-     &             ROAIRO, WSTAROLD,                   &
-     &             CICOVER, CITHICK,                  &
-     &             CDATEWL, LWNDFILE, LCLOSEWND, IREAD,   &
+      CALL GETWND (IJS, IJL,                             &
+     &             WSWAVE, UFRIC,                        &
+     &             WDWAVE,                               &
+     &             AIRD, WSTAR,                          &
+     &             CICOVER, CITHICK,                     &
+     &             CDATEWL, LWNDFILE, LCLOSEWND, IREAD,  &
      &             LWCUR, ICODE_WND)
 
 
@@ -110,8 +110,8 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                       &
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL CDUSTARZ0 (KIJS, KIJL, U10OLD(KIJS), XNLEV,            &
-     &                    CD(KIJS), USOLD(KIJS), Z0OLD(KIJS))
+          CALL CDUSTARZ0 (KIJS, KIJL, WSWAVE(KIJS), XNLEV,            &
+     &                    CD(KIJS), UFRIC(KIJS), Z0M(KIJS))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1493,1)

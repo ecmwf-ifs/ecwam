@@ -1,5 +1,5 @@
-      SUBROUTINE AIRSEA (KIJS, KIJL, FL1, WAVNUM,                   &
-&                        U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, &
+      SUBROUTINE AIRSEA (KIJS, KIJL, FL1, WAVNUM,           &
+&                        U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
 &                        US, Z0, Z0B, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
@@ -21,7 +21,7 @@
 !     ----------
 
 !       *CALL* *AIRSEA (KIJS, KIJL, FL1, WAVNUM,
-!                       U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC,
+!                       U10, U10DIR, TAUW, TAUWDIR, RNFAC,
 !                       US, Z0, Z0B, ICODE_WND, IUSFG)*
 !          *KIJS*  - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*  - INDEX OF LAST GRIDPOINT.
@@ -29,7 +29,6 @@
 !          *WAVNUM*  - WAVE NUMBER
 !          *U10*  - INPUT OR OUTPUT BLOCK OF WINDSPEED U10.
 !          *U10DIR*  - INPUT OR OUTPUT BLOCK OF WINDSPEED DIRECTION.
-!          *ROAIRN* - AIR DENSITY IN KG/M3
 !          *TAUW* - INPUT BLOCK OF WAVE STRESS.
 !          *TAUWDIR* - INPUT BLOCK OF WAVE STRESS DIRECTION.
 !          *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
@@ -42,22 +41,6 @@
 !          *IUSFG* - IF = 1 THEN USE THE FRICTION VELOCITY (US) AS FIRST GUESS in TAUT_Z0
 !                         0 DO NOT USE THE FIELD US 
 
-
-
-!     METHOD.
-!     -------
-
-!       CALL TAUT_Z0
-
-!     EXTERNALS.
-!     ----------
-
-!       NONE.
-
-!     REFERENCE.
-!     ---------
-
-!       NONE.
 
 ! ----------------------------------------------------------------------
 
@@ -79,7 +62,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (IN) :: U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (IN) :: U10DIR, TAUW, TAUWDIR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (INOUT) :: U10, US
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (OUT) :: Z0, Z0B
 
@@ -97,8 +80,8 @@
 !        ----------------------------------
 
       IF (ICODE_WND == 3) THEN
-        CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, WAVNUM,            &
-     &                U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, &
+        CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, WAVNUM,    &
+     &                U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
      &                US, Z0, Z0B)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN

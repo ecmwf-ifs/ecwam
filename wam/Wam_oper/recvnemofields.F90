@@ -78,7 +78,7 @@
       IF (LREST) THEN
         NEMOCICOVER(IJS:IJL)=CICOVER(IJS:IJL)
         NEMOCITHICK(IJS:IJL)=CITHICK(IJS:IJL)
-        IF(ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
+        IF (ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
           NEMOUCUR(IJS:IJL)=U(IJS:IJL)
           NEMOVCUR(IJS:IJL)=V(IJS:IJL)
         ELSE
@@ -110,17 +110,17 @@
 
         WRITE(IU06,*)' RECVNEMOFIELDS: INITIALISE OCEAN FIELDS'
 
-        IF(LWCOU) THEN
+        IF (LWCOU) THEN
           IF (LWNEMOCOUCIC) THEN
             DO IJ = IJS,IJL
               IX = IFROMIJ(IJ)
               IY = JFROMIJ(IJ)
 !            if lake cover = 0, we assume open ocean point, then get sea ice directly from NEMO
-              IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
+              IF (FIELDG(IX,IY)%LKFR <= 0.0_JWRB ) THEN
                 CICOVER(IJ)=NEMOCICOVER(IJ)
               ELSE
 !            get ice information from atmopsheric model
-                CICOVER(IJ)=FIELDG(IX,IY)%CIFR 
+                CICOVER(IJ)=FIELDG(IX,IY)%CICOVER 
               ENDIF
             ENDDO
           ENDIF
@@ -130,7 +130,7 @@
               IX = IFROMIJ(IJ)
               IY = JFROMIJ(IJ)
 !            if lake cover = 0, we assume open ocean point, then get sea ice thickness directly from NEMO
-              IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
+              IF (FIELDG(IX,IY)%LKFR <= 0.0_JWRB ) THEN
                 CITHICK(IJ)=NEMOCICOVER(IJ)*NEMOCITHICK(IJ)
               ELSE
                 CICOVER(IJ)=0.5_JWRB*NEMOCICOVER(IJ)
@@ -139,12 +139,12 @@
           ENDIF
 
           IF (LWNEMOCOUCUR) THEN
-            IF(ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
+            IF (ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
               DO IJ = IJS,IJL
                 IX = IFROMIJ(IJ)
                 IY = JFROMIJ(IJ)
 !              if lake cover = 0, we assume open ocean point, then get currents directly from NEMO
-                IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
+                IF (FIELDG(IX,IY)%LKFR <= 0.0_JWRB ) THEN
                   U(IJ) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
                   V(IJ) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
                 ELSE
@@ -166,7 +166,7 @@
      &                                  NEMOCITHICK(IJS:IJL)
           ENDIF
           IF (LWNEMOCOUCUR) THEN
-             IF(ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
+             IF (ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
                U(IJS:IJL)=NEMOUCUR(IJS:IJL)
                V(IJS:IJL)=NEMOVCUR(IJS:IJL)
              ENDIF

@@ -30,7 +30,7 @@
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
-!      *IPARAM*    INTEGER   GRIB PARAMETER OF FIELDG*CIFR
+!      *IPARAM*    INTEGER   GRIB PARAMETER OF FIELDG*CICOVER
 !      *CICVR*     REAL      SEA ICE COVER.
 !      *CITH*      REAL      SEA ICE THICKNESS.
 !      *IJS*       INDEX OF FIRST GRIDPOINT
@@ -101,14 +101,14 @@
               CICVR(IJ) = NEMOCICOVER(IJ)
             ELSE
 !            get ice information from atmopsheric model
-              IF (FIELDG(IX,IY)%CIFR == ZMISS .OR.                   &
-     &            FIELDG(IX,IY)%CIFR < 0.01_JWRB .OR.                &
-     &            FIELDG(IX,IY)%CIFR > 1.01_JWRB ) THEN 
+              IF (FIELDG(IX,IY)%CICOVER == ZMISS .OR.                   &
+     &            FIELDG(IX,IY)%CICOVER < 0.01_JWRB .OR.                &
+     &            FIELDG(IX,IY)%CICOVER > 1.01_JWRB ) THEN 
                 CICVR(IJ) = 0.0_JWRB
-              ELSEIF (FIELDG(IX,IY)%CIFR > 0.95_JWRB) THEN 
+              ELSEIF (FIELDG(IX,IY)%CICOVER > 0.95_JWRB) THEN 
                 CICVR(IJ) = 1.0_JWRB
               ELSE
-                CICVR(IJ) = FIELDG(IX,IY)%CIFR 
+                CICVR(IJ) = FIELDG(IX,IY)%CICOVER 
               ENDIF
             ENDIF
           ENDDO
@@ -123,21 +123,21 @@
         DO IJ=IJS,IJL
           IX = IFROMIJ(IJ)
           IY = JFROMIJ(IJ)
-          IF (FIELDG(IX,IY)%CIFR == ZMISS .OR.                       &
-     &        FIELDG(IX,IY)%CIFR < 0.01_JWRB .OR.                    &
-     &        FIELDG(IX,IY)%CIFR > 1.01_JWRB ) THEN 
+          IF (FIELDG(IX,IY)%CICOVER == ZMISS .OR.                       &
+     &        FIELDG(IX,IY)%CICOVER < 0.01_JWRB .OR.                    &
+     &        FIELDG(IX,IY)%CICOVER > 1.01_JWRB ) THEN 
             CICVR(IJ) = 0.0_JWRB
-          ELSEIF (FIELDG(IX,IY)%CIFR .GT. 0.95_JWRB) THEN 
+          ELSEIF (FIELDG(IX,IY)%CICOVER .GT. 0.95_JWRB) THEN 
             CICVR(IJ) = 1.0_JWRB
           ELSE
-            CICVR(IJ) = FIELDG(IX,IY)%CIFR 
+            CICVR(IJ) = FIELDG(IX,IY)%CICOVER 
           ENDIF
         ENDDO
       ELSEIF (IPARAM == 139) THEN
         DO IJ=IJS,IJL
           IX = IFROMIJ(IJ)
           IY = JFROMIJ(IJ)
-          IF (FIELDG(IX,IY)%CIFR < 271.5_JWRB) THEN
+          IF (FIELDG(IX,IY)%CICOVER < 271.5_JWRB) THEN
             CICVR(IJ) = 1.0_JWRB
           ELSE
             CICVR(IJ) = 0.0_JWRB

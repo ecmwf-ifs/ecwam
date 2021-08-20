@@ -264,8 +264,8 @@ SUBROUTINE INITMDL (NADV,                                         &
 
      &            INDEP    ,CGROUP   ,IODP     ,IOBND    ,TOOSHALLOW
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,    &
-     &            U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,TAUW     ,    &
-     &            Z0B      ,TAUWDIR,  ROAIRO   ,WSTAROLD  ,             &
+     &            WSWAVE   ,WDWAVE   ,UFRIC    ,Z0M    ,TAUW     ,    &
+     &            Z0B      ,TAUWDIR,  AIRD   ,WSTAR  ,             &
      &            FL1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDTINTT  ,CDTBC    ,                                  &
@@ -784,8 +784,8 @@ SUBROUTINE INITMDL (NADV,                                         &
 
       Z0B(:) = 0.0_JWRB
 
-      CALL GETSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD,       &
-     &               ROAIRO, WSTAROLD, CICOVER, CITHICK,                &
+      CALL GETSTRESS(WSWAVE, WDWAVE, UFRIC, TAUW, TAUWDIR, Z0M,       &
+     &               AIRD, WSTAR, CICOVER, CITHICK,                &
      &               NBLKS, NBLKE, IREAD)
 
       CDATEWL = CDTPRO
@@ -990,13 +990,13 @@ SUBROUTINE INITMDL (NADV,                                         &
       LLINIT=.NOT.LRESTARTED
       LLALLOC_FIELDG_ONLY=.FALSE.
 
-      CALL PREWIND (U10OLD,THWOLD,USOLD,Z0OLD,                          &
-     &              ROAIRO, WSTAROLD,                                   &
-     &              CICOVER, CITHICK,                                   &
-     &              FF_NEXT,                                            &
-     &              LLINIT, LLALLOC_FIELDG_ONLY,                        &
-     &              IREAD,                                              &
-     &              NFIELDS, NGPTOTG, NC, NR,                           &
+      CALL PREWIND (WSWAVE, WDWAVE, UFRIC, Z0M,                       &
+     &              AIRD, WSTAR,                                      &
+     &              CICOVER, CITHICK,                                 &
+     &              FF_NEXT,                                          &
+     &              LLINIT, LLALLOC_FIELDG_ONLY,                      &
+     &              IREAD,                                            &
+     &              NFIELDS, NGPTOTG, NC, NR,                         &
      &              FIELDS, LWCUR, MASK_IN)
 
       WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'                   

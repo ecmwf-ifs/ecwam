@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
 
-      SUBROUTINE SETICE (KIJS, KIJL, FL1, CICVR, U10NEW, THWNEW)
+      SUBROUTINE SETICE (KIJS, KIJL, FL1, CICOVER, WSWAVE, WDWAVE)
 
 !-----------------------------------------------------------------------
 
@@ -17,23 +17,14 @@
 !**   INTERFACE.
 !     ----------
 
-!         *CALL* *SETICE*
+!         *CALL* *SETICE(KIJS, KIJL, FL1, CICOVER, WSWAVE, WDWAVE)*
+!          *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
+!          *KIJL*    - LOCAL  INDEX OF LAST GRIDPOINT
+!          *FL1*     - SPECTRA
+!          *CICOVER* - SEA ICE COVER
+!          *WSWAVE*  - WIND SPEED.
+!          *WDWAVE*  - WIND DIRECTION (RADIANS).
 
-!     METHOD.
-!     -------
-
-!          NONE.
-
-
-!     EXTERNALS.
-!     ----------
-
-!          .NONE.
-
-!     REFERENCE.
-!     ----------
-
-!          NONE.
 
 ! ----------------------------------------------------------------------
 
@@ -51,7 +42,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(INOUT) :: FL1
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICVR, U10NEW, THWNEW
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER, WSWAVE, WDWAVE
 
 
       INTEGER(KIND=JWIM) :: IJ, M, K
@@ -68,13 +59,13 @@
 
       DO K=1,NANG
         DO IJ = KIJS, KIJL
-          SPRD(IJ,K)=MAX(0.0_JWRB,COS(TH(K)-THWNEW(IJ)))**2
+          SPRD(IJ,K)=MAX(0.0_JWRB,COS(TH(K)-WDWAVE(IJ)))**2
         ENDDO
       ENDDO
 
       DO IJ = KIJS,KIJL
-        IF(CICVR(IJ) > CITHRSH) THEN
-          CIREDUC(IJ)=MAX(EPSMIN,(1.0_JWRB-CICVR(IJ)))
+        IF (CICOVER(IJ) > CITHRSH) THEN
+          CIREDUC(IJ)=MAX(EPSMIN,(1.0_JWRB-CICOVER(IJ)))
           ICEFREE(IJ)=0.0_JWRB
         ELSE
           CIREDUC(IJ)=0.0_JWRB

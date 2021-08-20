@@ -1,5 +1,5 @@
       SUBROUTINE SEPWISW (KIJS, KIJL, MIJ, FL1, XLLWS, CINV,      &
-     &                    USNEW, U10NEW, THWNEW,                  &
+     &                    UFRIC    ,WSWAVE   ,WDWAVE,             &
      &                    ESWELL   ,FSWELL   ,THSWELL  ,          &
      &                    P1SWELL  ,P2SWELL  ,SPRDSWELL,          &
      &                    ESEA     ,FSEA     ,THWISEA  ,          &
@@ -32,7 +32,7 @@
 !     ----------
 
 !       *CALL* SEPWISW (KIJS, KIJL, MIJ, FL1, XLLWS,
-!    &                  USNEW, U10NEW, THWNEW,
+!    &                  UFRIC, WSWAVE, WDWAVE,
 !    &                  ESWELL   ,FSWELL   ,THSWELL  ,
 !    &                  P1SWELL  ,P2SWELL  ,SPRDSWELL,
 !    &                  ESEA     ,FSEA     ,THWISEA  ,
@@ -43,9 +43,9 @@
 !          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !          *FL1*    - BLOCK OF SPECTRA
 !          *XLLWS*  - WINDSEA MASK FROM INPUT SOURCE TERM
-!          *USNEW*  - NEW FRICTION VELOCITY IN M/S.
-!          *U10NEW* - LATESt WIND SPEED.
-!          *THWNEW* - LATEST WIND DIRECTION.
+!          *UFRIC*  - NEW FRICTION VELOCITY IN M/S.
+!          *WSWAVE* - LATESt WIND SPEED.
+!          *WDWAVE* - LATEST WIND DIRECTION.
 !          *        - SWELL and WINDSEA PARAMETERS.
 
 !     METHOD.
@@ -87,7 +87,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: XLLWS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CINV 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USNEW, U10NEW, THWNEW
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, WSWAVE, WDWAVE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: ESWELL ,FSWELL ,THSWELL, P1SWELL, P2SWELL, SPRDSWELL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: ESEA   ,FSEA   ,THWISEA, P1SEA  , P2SEA  , SPRDSEA
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NTRAIN), INTENT(OUT) :: EMTRAIN, THTRAIN, PMTRAIN
@@ -116,13 +116,13 @@
 
       DO M=1,NFRE
         DO IJ=KIJS,KIJL
-          XINVWVAGE(IJ,M)=USNEW(IJ)*CINV(IJ,M)
+          XINVWVAGE(IJ,M)=UFRIC(IJ)*CINV(IJ,M)
         ENDDO
       ENDDO
 
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-          DIRCOEF(IJ,K)=COEF*COS(TH(K)-THWNEW(IJ))
+          DIRCOEF(IJ,K)=COEF*COS(TH(K)-WDWAVE(IJ))
         ENDDO
       ENDDO
 
@@ -181,7 +181,7 @@
       DO K=1,NANG
         DO IJ=KIJS,KIJL
           ! add factor to extend windsea area
-          DIRCOEF(IJ,K)=R(IJ)*COEF*SIGN(1.0_JWRB,0.4_JWRB+COS(TH(K)-THWNEW(IJ)))
+          DIRCOEF(IJ,K)=R(IJ)*COEF*SIGN(1.0_JWRB,0.4_JWRB+COS(TH(K)-WDWAVE(IJ)))
         ENDDO
       ENDDO
       DO M=1,NFRE
@@ -227,7 +227,7 @@
       IF (LLPARTITION) THEN
         CALL FEMEAN(KIJS, KIJL, F1, ESWELL, FSWELL)
         CALL STHQ(KIJS, KIJL, F1, THSWELL)
-        CALL SEP3TR (KIJS, KIJL, FL1, MIJ, U10NEW, THWNEW,     &
+        CALL SEP3TR (KIJS, KIJL, FL1, MIJ, WSWAVE, WDWAVE,     &
      &               ESWELL, FSWELL, THSWELL, FSEA,            &
      &               F1, SWM,                                  &
      &               EMTRAIN  ,THTRAIN  ,PMTRAIN)
@@ -270,7 +270,7 @@
 !     to the wind direction.
       DO IJ=KIJS,KIJL
         IF (ESEA(IJ) <= 0.0_JWRB) THEN
-          THWISEA(IJ)=THWNEW(IJ)
+          THWISEA(IJ)=WDWAVE(IJ)
         ENDIF
       ENDDO
 

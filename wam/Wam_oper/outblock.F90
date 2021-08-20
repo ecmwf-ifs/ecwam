@@ -1,17 +1,17 @@
-      SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
-     &                     FL1, XLLWS,                            & 
-     &                     WAVNUM, CINV, CGROUP,                  &
-     &                     DEPTH,                                 &
-     &                     BOUT)
+SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
+ &                   FL1, XLLWS,                            & 
+ &                   WAVNUM, CINV, CGROUP,                  &
+ &                   DEPTH,                                 &
+ &                   BOUT)
+
 ! ----------------------------------------------------------------------
 
 !**** *OUTBLOCK* - MODEL OUTPUT FROM BLOCK TO FILE, PRINTER AND COMMON.
 
-
 !*    PURPOSE.
 !     --------
 
-!       PREPARE OUTPUT INTEGRATED PARAMETERS FOR ONE BLOCk OF DATA
+!       PREPARE OUTPUT INTEGRATED PARAMETERS.
 
 
 !**   INTERFACE.
@@ -32,44 +32,19 @@
 !      *DEPTH*  - DEPTH
 !      *BOUT*   - OUTPUT PARAMETER BUFFER
 
-!     EXTERNALS.
-!     ----------
-
-!       *FEMEAN*    - COMPUTATION OF MEAN FREQUENCY AT EACH GRID POINT.
-!       *INTPOL*    - MAP SPECTRUM FROM SIGMA TO OMEGA SPACE.
-!       *OUTERS*    - OUTPUT OF SATELLITE COLOCATION SPECTRA.
-!       *SEMEAN*    - COMPUTATION OF TOTAL ENERGY AT EACH GRID POINT.
-!       *SEPWISW*   - SEPARATION OF WINDSEA AND SWELL.
-!       *SEP3TR*    - SEPARATION OF WAVE SPECTRA INTO 3 WAVE TRAINS
-!       *STHQ*      - COMPUTATION OF MEAN WAVE DIRECTION AT EACH
-!                     GRID POINT.
-!       *MWP1*      - COMPUTATION OF MEAN PERIOD (1) AT EACH GRID POINT.
-!       *MWP2*      - COMPUTATION OF MEAN PERIOD (2) AT EACH GRID POINT.
-!       *WDIRSPREAD*- COMPUTATION OF MEAN DIRECTIONAL SPREAD AT EACH 
-!                     GRID POINT. 
-!       *KURTOSIS*  - COMPUTATION OF THE SURFACE ELEVATION KURTOSIS, 
-!                     THE BEJAMIN-FEIR INDEX, THE SPECTRAL PEAKEDNESS 
-!                     FACTOR AND THE MAXIMUM WAVE HEIGHT.
-!   
-!     METHOD.
-!     -------
-
-!       NONE.
-
-!     REFERENCE.
-!     ----------
-
-!       NONE.
-
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : NTRAIN   ,IPFGTBL  ,LSECONDORDER,           &
      &            NIPRMOUT, ITOBOUT
       USE YOWCOUP  , ONLY : LWNEMOCOUSTRN
+
       USE YOWCURR  , ONLY : U, V
+
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,COSTH    ,SINTH, XKMSS_CUTOFF
+
       USE YOWICE   , ONLY : CICOVER  ,CITHICK
+
       USE YOWMEAN  , ONLY : ALTWH    ,CALTWH   ,RALTCOR  ,              &
      &            USTOKES  ,VSTOKES  ,STRNMS   ,                        &
      &            PHIEPS   ,PHIAW    ,TAUOC    ,TAUXD    ,TAUYD     ,   &
@@ -77,8 +52,9 @@
 
       USE YOWNEMOFLDS,ONLY: NEMOSST, NEMOCICOVER, NEMOCITHICK,          &
      &                      NEMOUCUR, NEMOVCUR, LNEMOCITHICK
-      USE YOWSPEC  , ONLY : TAUW     ,U10NEW   ,THWNEW   ,USNEW    ,    &
-     &            ROAIRN   ,WSTARNEW
+      USE YOWSPEC  , ONLY : TAUW     ,WSWAVE   ,WDWAVE   ,UFRIC    ,    &
+     &            AIRD   ,WSTAR
+
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSUS    ,EPSU10, G, ZPI
       USE YOWSHAL,   ONLY : IODP
@@ -180,7 +156,7 @@
 
 !     WIND/SWELL PARAMETERS
       CALL SEPWISW (KIJS, KIJL, MIJ, FL1, XLLWS, CINV,                    &
-     &              USNEW, U10NEW, THWNEW,                                &
+     &              UFRIC, WSWAVE, WDWAVE,                                &
      &              ESWELL, FSWELL, THSWELL, P1SWELL, P2SWELL, SPRDSWELL, &
      &              ESEA, FSEA, THWISEA, P1SEA, P2SEA, SPRDSEA,           &
      &              EMTRAIN, THTRAIN, PMTRAIN)
@@ -217,13 +193,13 @@
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=USNEW(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=UFRIC(KIJS:KIJL)
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
 !       CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=MOD(DEG*THWNEW(KIJS:KIJL)+180._JWRB,360._JWRB)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=MOD(DEG*WDWAVE(KIJS:KIJL)+180._JWRB,360._JWRB)
       ENDIF
 
       IR=IR+1
@@ -243,22 +219,22 @@
 !!      if the numerical computation of TAU and CD changes, a similar
 !!      modification has to be put in buildstress where the friction
 !!      velocity is determined from U10 and CD.
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=MAX(USNEW(KIJS:KIJL)**2,EPSUS)/MAX(U10NEW(KIJS:KIJL)**2,EPSU10)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=MAX(UFRIC(KIJS:KIJL)**2,EPSUS)/MAX(WSWAVE(KIJS:KIJL)**2,EPSU10)
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=TAUW(KIJS:KIJL)/MAX(USNEW(KIJS:KIJL)**2,EPSUS)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=TAUW(KIJS:KIJL)/MAX(UFRIC(KIJS:KIJL)**2,EPSUS)
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        CALL MEANSQS (XKMSS_CUTOFF, KIJS, KIJL, FL1, WAVNUM, U10NEW, USNEW, THWNEW, BOUT(KIJS,ITOBOUT(IR)))
+        CALL MEANSQS (XKMSS_CUTOFF, KIJS, KIJL, FL1, WAVNUM, WSWAVE, UFRIC, WDWAVE, BOUT(KIJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=U10NEW(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=WSWAVE(KIJS:KIJL)
       ENDIF
 
       IR=IR+1
@@ -292,7 +268,7 @@
           IF (FSEA(IJ) > 0._JWRB) THEN
             BOUT(IJ,ITOBOUT(IR))=1._JWRB/FSEA(IJ)
 ! for testing: estimate of wave age based on wind mean frequency
-            WAVEAGESEA(IJ)=MIN(GOZPI/(0.9_JWRB*FSEA(IJ)*MAX(USNEW(IJ),EPSUS)),40.0_JWRB)
+            WAVEAGESEA(IJ)=MIN(GOZPI/(0.9_JWRB*FSEA(IJ)*MAX(UFRIC(IJ),EPSUS)),40.0_JWRB)
           ELSE
             BOUT(IJ,ITOBOUT(IR))=ZMISS
 ! for testing: estimate of wave age based on wind mean frequency
@@ -492,12 +468,12 @@
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=ROAIRN(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=AIRD(KIJS:KIJL)
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=WSTARNEW(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=WSTAR(KIJS:KIJL)
       ENDIF
 
       IR=IR+1
@@ -638,7 +614,7 @@
       IF (IPFGTBL(IR) /= 0) THEN
 
 !!!for testing
-        CALL HALPHAP(KIJS, KIJL, WAVNUM, THWNEW, FL1, HALP)
+        CALL HALPHAP(KIJS, KIJL, WAVNUM, WDWAVE, FL1, HALP)
         BOUT(KIJS:KIJL,ITOBOUT(IR))=2.0_JWRB*HALP(KIJS:KIJL)
 
       ENDIF
@@ -652,7 +628,7 @@
       IF (IPFGTBL(IR) /= 0) THEN
 !!!for testing
         XMODEL_CUTOFF = (ZPI*FR(NFRE))**2/G
-        CALL MEANSQS (XMODEL_CUTOFF, KIJS, KIJL, FL1, WAVNUM, U10NEW, USNEW, THWNEW, BOUT(KIJS,ITOBOUT(IR)))
+        CALL MEANSQS (XMODEL_CUTOFF, KIJS, KIJL, FL1, WAVNUM, WSWAVE, UFRIC, WDWAVE, BOUT(KIJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
@@ -671,4 +647,4 @@
 
       IF (LHOOK) CALL DR_HOOK('OUTBLOCK',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE OUTBLOCK
+END SUBROUTINE OUTBLOCK

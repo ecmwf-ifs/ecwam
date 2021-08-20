@@ -1,4 +1,4 @@
-      SUBROUTINE OUTERS (FL1, IJS, IJL, CDTPRO)
+      SUBROUTINE OUTERS (FL1, IJS, IJL, CDTPRO, WSWAVE, WDWAVE, UFRIC)
 ! -----------------------------------------------------------------     
 
 !**** *OUTERS* -  OUTPUT OF SATELLITE COLOCATION SPECTRA.
@@ -11,9 +11,12 @@
 !*** INTERFACE.                                                         
 !    ----------                                                         
 
-!       *CALL  OUTERS (FL1, CDTPRO)
+!       *CALL  OUTERS (FL1, CDTPRO, WSWAVE, WDWAVE, UFRIC)
 !          *FL1*    -   SPECTRUM.                                       
 !          *CDTPRO* -   MODEL PROPAGATION TIME.                         
+!          *WSWAVE* - WIND SPEED
+!          *WDWAVE* - WIND DIRECTION 
+!          *UFRIC*  - FRICTION VELOCITY
 
 !    EXTERNALS.                                                         
 !    ----------                                                         
@@ -42,8 +45,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWPCONS , ONLY : DEG      ,ZMISS
-      USE YOWSPEC, ONLY   : NSTART   ,NEND     ,                        &
-     &            U10NEW   ,THWNEW   ,USNEW
+      USE YOWSPEC, ONLY   : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06
 
       USE MPL_MODULE
@@ -57,6 +59,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: WSWAVE, WDWAVE, UFRIC
 
       INTEGER(KIND=JWIM) :: NGOU, KCOUNT, IJ, K, M 
       INTEGER(KIND=JWIM) :: IU91, IU92, ITAG
@@ -164,7 +167,7 @@
      &                         NSCFLD,                          &
      &                         IJS, IJL, FL1, FLPTS,            &
      &                         EM, FM, THQ,                     &
-     &                         U10NEW, THWNEW, USNEW,           &
+     &                         WSWAVE, WDWAVE, UFRIC,           &
      &                         EMPTS, FMPTS, THQPTS,            &
      &                         U10PTS, THWPTS, USPTS)
 

@@ -1,5 +1,5 @@
       SUBROUTINE MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,         &
-     &                   IJS, IJL, FL1, U10OLD, THWOLD)
+     &                   IJS, IJL, FL1, WSWAVE, WDWAVE)
 ! ----------------------------------------------------------------------
 
 !**** *MSTART* - MAKES START FIELDS FOR WAMODEL.
@@ -19,7 +19,7 @@
 !     ----------
 
 !   *CALL* *MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,
-!    1              FL1,U10OLD,THWOLD)*
+!    1              FL1,WSWAVE,WDWAVE)*
 !      *IU12*   INTEGER    OUTPUT UNIT BLOCKS OF SPECTRA.
 !      *IU14*   INTEGER    OUTPUT UNIT SECOND LAT OF BLOCKS.
 !      *IU15*   INTEGER    OUTPUT UNIT LAST WINDFIELDS.
@@ -30,15 +30,10 @@
 !      *FETCH*  REAL       FETCH IN METERS.
 !      *FRMAX*  REAL       MAXIMUM PEAK FREQUENCY IN HERTZ.
 !      *FL1*      REAL      2-D SPECTRUM FOR EACH GRID POINT 
-!      *U10NEW*    NEW WIND SPEED IN M/S.
-!      *U10OLD*    INTERMEDIATE STORAGE OF MODULUS OF WIND
+!      *WSWAVE*    INTERMEDIATE STORAGE OF MODULUS OF WIND
 !                  VELOCITY.
-!      *THWNEW*    WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
-!                  NOTATION (POINTING ANGLE OF WIND VECTOR,
-!                  CLOCKWISE FROM NORTH).
-!      *THWOLD*    INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
+!      *WDWAVE*    INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
 !                  WIND VELOCITY.
-!      *USNEW*     NEW FRICTION VELOCITY IN M/S.
 
 !     METHOD.
 !     -------
@@ -80,7 +75,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
       REAL(KIND=JWRB), INTENT(IN) :: FETCH, FRMAX
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: U10OLD, THWOLD
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: WSWAVE, WDWAVE
       REAL(KIND=JWRB),DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL1
 
       INTEGER(KIND=JWIM) :: M, K, IJ, NGOU
@@ -116,7 +111,7 @@
           DO IJ = IJS, IJL
             FP(IJ) = 0.0_JWRB
             ALPHJ(IJ) = 0.0_JWRB
-            THES(IJ) = THWOLD(IJ)
+            THES(IJ) = WDWAVE(IJ)
           ENDDO
         ELSE IF (IOPTI == 0) THEN
           DO IJ = IJS, IJL
@@ -128,8 +123,8 @@
           DO IJ = IJS, IJL
             FP(IJ) = FM
             ALPHJ(IJ) = ALFA
-            IF (U10OLD(IJ) > 0.1E-08_JWRB) THEN
-              THES(IJ) = THWOLD(IJ)
+            IF (WSWAVE(IJ) > 0.1E-08_JWRB) THEN
+              THES(IJ) = WDWAVE(IJ)
             ELSE
               THES(IJ) = 0.0_JWRB
             ENDIF
@@ -140,7 +135,7 @@
 !           --------------------------------------------
 
         IF (IOPTI /= 0) THEN
-          CALL PEAK (IJS, IJL, FETCH, FRMAX, U10OLD)
+          CALL PEAK (IJS, IJL, FETCH, FRMAX, WSWAVE)
         ENDIF
 
 !*    2.1.3 PRINT PARAMETERS AT OUTPUT POINTS.
@@ -149,7 +144,7 @@
         DO NGOU = 1, NGOUT
             IJ = IJAR(NGOU)
             WRITE (IU06,'(1X,2I6,F8.2,F8.2,5F8.4)')  NGOU, IJ,          &
-     &       U10OLD(IJ), THWOLD(IJ)*DEG, FP(IJ), ALPHJ(IJ),             &
+     &       WSWAVE(IJ), WDWAVE(IJ)*DEG, FP(IJ), ALPHJ(IJ),             &
      &       GAMMA, SA, SB
         ENDDO
 

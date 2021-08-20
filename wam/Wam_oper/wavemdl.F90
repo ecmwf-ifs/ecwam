@@ -129,9 +129,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWWNDG  , ONLY : ICODE_CPL
       USE YOWWIND  , ONLY : FF_NEXT
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE YOWSPEC, ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,      &
-     &            Z0B    ,BETAOLD  ,ROAIRO   ,WSTAROLD  ,                &
+
+      USE YOWSPEC, ONLY : WSWAVE   ,WDWAVE   ,UFRIC    ,Z0M    ,      &
+     &            Z0B    ,CHNK  ,AIRD   ,WSTAR  ,                &
      &            NSTART ,NEND     ,FL1
+
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
       USE YOWNEMOP , ONLY : NEMODP
       USE YOWUNPOOL,ONLY : LLUNSTR
@@ -441,10 +443,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL OUTBETA (KIJS, KIJL, PRCHAR, U10OLD(KIJS),            &
-     &                  USOLD(KIJS), Z0OLD(KIJS),                 &
+          CALL OUTBETA (KIJS, KIJL, PRCHAR, WSWAVE(KIJS),            &
+     &                  UFRIC(KIJS), Z0M(KIJS),                 &
      &                  Z0B(KIJS),                                      &
-     &                  BETAOLD(KIJS), BETAB(KIJS) ) 
+     &                  CHNK(KIJS), BETAB(KIJS) ) 
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1443,1)
@@ -558,13 +560,13 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-        CALL PREWIND (U10OLD, THWOLD, USOLD, Z0OLD,                     &
-     &                ROAIRO, WSTAROLD,                                 &
-     &                CICOVER, CITHICK,                                 &
-     &                FF_NEXT,                                          &
-     &                LLINIT, LLALLOC_FIELDG_ONLY,                      &
-     &                IREAD,                                            &
-     &                NFIELDS, NGPTOTG, NC, NR,                         &
+        CALL PREWIND (WSWAVE, WDWAVE, UFRIC, Z0M,                  &
+     &                AIRD, WSTAR,                                 &
+     &                CICOVER, CITHICK,                            &
+     &                FF_NEXT,                                     &
+     &                LLINIT, LLALLOC_FIELDG_ONLY,                 &
+     &                IREAD,                                       &
+     &                NFIELDS, NGPTOTG, NC, NR,                    &
      &                FIELDS, LWCUR, MASK_IN)
 
 
@@ -737,12 +739,12 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL OUTBETA (KIJS, KIJL, PRCHAR, U10OLD(KIJS),            &
-     &                  USOLD(KIJS), Z0OLD(KIJS),                 &
-     &                  Z0B(KIJS),                                      &
+          CALL OUTBETA (KIJS, KIJL, PRCHAR, WSWAVE(KIJS),       &
+     &                  UFRIC(KIJS), Z0M(KIJS),                 &
+     &                  Z0B(KIJS),                              &
      &                  WVBLOCK(KIJS,1), WVBLOCK(KIJS,2) )
 
-          BETAOLD(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,1)
+          CHNK(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,1)
 
 !         SURFACE STOKES DRIFT NEEDED FOR THE IFS
 !         IT MIGHT ALSO BE USED FOR NEMO !!!!!!!!!! 

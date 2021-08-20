@@ -1,7 +1,7 @@
       SUBROUTINE SDISSIP (KIJS, KIJL, FL1, FLD, SL,  &
      &                    WAVNUM, CGROUP,            &
      &                    EMEAN, F1MEAN, XKMEAN,     &
-     &                    USNEW, THWNEW, ROAIRN)
+     &                    UFRIC, WDWAVE, AIRD)
 ! ----------------------------------------------------------------------
 
 !**** *SDISSIP* - COMPUTATION OF DEEP WATER DISSIPATION SOURCE FUNCTION.
@@ -19,7 +19,7 @@
 !       *CALL* *SDISSIP (KIJS, KIJL, FL1, FLD, SL, *
 !                        WAVNUM, CGROUP,  
 !                        EMEAN, F1MEAN, XKMEAN,*
-!                        USNEW, THWNEW, ROAIRN)*
+!                        UFRIC, WDWAVE, AIRD)*
 !         *KIJS* - INDEX OF FIRST GRIDPOINT
 !         *KIJL* - INDEX OF LAST GRIDPOINT
 !         *FL1*  - SPECTRUM.
@@ -30,24 +30,9 @@
 !        *EMEAN* - MEAN ENERGY DENSITY 
 !       *F1MEAN* - MEAN FREQUENCY BASED ON 1st MOMENT.
 !       *XKMEAN* - MEAN WAVE NUMBER BASED ON 1st MOMENT.
-!       *USNEW*  - NEW FRICTION VELOCITY IN M/S.
-!       *ROAIRN* - AIR DENSITY IN KG/M3
-!       *THWNEW* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC.
-
-!     METHOD.
-!     -------
-
-!       SEE REFERENCES.
-
-!     EXTERNALS.
-!     ----------
-
-!       NONE.
-
-!     REFERENCE.
-!     ----------
-
-!       ARDHUIN et AL. JPO DOI:10.1175/20110JPO4324.1
+!       *UFRIC*  - FRICTION VELOCITY IN M/S.
+!       *AIRD*   - AIR DENSITY IN KG/M3
+!       *WDWAVE* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC.
 
 
 ! ----------------------------------------------------------------------
@@ -68,7 +53,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EMEAN, F1MEAN, XKMEAN
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USNEW, THWNEW, ROAIRN
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, WDWAVE, AIRD
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
@@ -85,7 +70,7 @@
       CASE(1) 
          CALL SDISSIP_ARD (KIJS, KIJL, FL1 ,FLD, SL,   &
      &                     WAVNUM, CGROUP,             &
-     &                     USNEW, THWNEW, ROAIRN)
+     &                     UFRIC, WDWAVE, AIRD)
       END SELECT 
 
       IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)

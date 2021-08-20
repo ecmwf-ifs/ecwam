@@ -1,7 +1,7 @@
-      SUBROUTINE SINPUT_JAN (NGST, KIJS, KIJL, FL1 ,           &
-     &                       WAVNUM, CINV, CGROUP,             &
-     &                       THWNEW, U10NEW, USNEW, Z0NEW,     &
-     &                       ROAIRN, WSTAR, RNFAC,             &
+      SUBROUTINE SINPUT_JAN (NGST, KIJS, KIJL, FL1 ,         &
+     &                       WAVNUM, CINV, CGROUP,           &
+     &                       WDWAVE, WSWAVE, UFRIC, Z0M,     &
+     &                       AIRD, WSTAR, RNFAC,             &
                              FLD, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
@@ -48,8 +48,8 @@
 
 !     *CALL* *SINPUT_JAN (NGST, KIJS, KIJL, FL1,
 !    &                    WAVNUM, CINV, CGROUP,
-!    &                    THWNEW, U10NEW, USNEW, Z0NEW,
-!    &                    ROAIRN, WSTAR, RNFAC,
+!    &                    WDWAVE, WSWAVE, UFRIC, Z0M,
+!    &                    AIRD, WSTAR, RNFAC,
 !    &                    FLD, SL, SPOS, XLLWS)
 !         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
 !                - IF = 2 THEN GUSTINESS PARAMETERISATION
@@ -59,12 +59,12 @@
 !       *WAVNUM* - WAVE NUMBER.
 !         *CINV* - INVERSE PHASE VELOCITY.
 !       *CGROUP* - GROUP SPPED.
-!       *THWNEW* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
+!       *WDWAVE* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                  NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                  CLOCKWISE FROM NORTH).
-!        *USNEW* - NEW FRICTION VELOCITY IN M/S.
-!        *Z0NEW* - ROUGHNESS LENGTH IN M.
-!       *ROAIRN* - AIR DENSITY IN KG/M3
+!        *UFRIC* - FRICTION VELOCITY IN M/S.
+!        *Z0M*   - ROUGHNESS LENGTH IN M.
+!       *AIRD*   - AIR DENSITY IN KG/M3
 !        *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
 !          *FLD* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
@@ -122,8 +122,8 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, U10NEW, USNEW, Z0NEW
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: ROAIRN, WSTAR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: AIRD, WSTAR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
@@ -143,7 +143,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SIG_N
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CNSN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EPSIL
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ROAIRNM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: AIRDM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SUMF, SUMFSIN2 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CSTRNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: SIN2
@@ -172,7 +172,7 @@
       CONSTN = DELTH*ROWATER/(XKAPPA*ZPI)
 
       DO IJ=KIJS,KIJL
-        ROAIRNM(IJ) = 1.0_JWRB/MAX(ROAIRN(IJ),1.0_JWRB)
+        AIRDM(IJ) = 1.0_JWRB/MAX(AIRD(IJ),1.0_JWRB)
       ENDDO
 
 !*    1. PRECALCULATED ANGULAR DEPENDENCE.
@@ -180,7 +180,7 @@
 
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-          COSD(IJ,K) = COS(TH(K)-THWNEW(IJ))
+          COSD(IJ,K) = COS(TH(K)-WDWAVE(IJ))
           IF(COSD(IJ,K) > 0.01_JWRB) THEN
             LZ(IJ,K) = .TRUE.
             TEMPD(IJ,K) = XKAPPA/COSD(IJ,K)
@@ -195,13 +195,13 @@
         CSTRNFAC(:) = CONSTN * RNFAC(:)
         DO M=1,NFRE
           DO IJ=KIJS,KIJL
-            XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*WAVNUM(IJ,M)**2*CGROUP(IJ,M)*ROAIRNM(IJ)
+            XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*WAVNUM(IJ,M)**2*CGROUP(IJ,M)*AIRDM(IJ)
           ENDDO
         ENDDO
 
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            SIN2(IJ,K) = SIN(TH(K)-THWNEW(IJ))**2
+            SIN2(IJ,K) = SIN(TH(K)-WDWAVE(IJ))**2
           ENDDO
         ENDDO
 
@@ -211,7 +211,7 @@
 
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
-      IF(NGST > 1) CALL WSIGSTAR (KIJS, KIJL, U10NEW, USNEW, Z0NEW, WSTAR, SIG_N)
+      IF(NGST > 1) CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N)
 
 
 !     DEFINE WHERE SINPUT WILL BE EVALUATED IN RELATIVE TERM WRT USTAR
@@ -244,14 +244,14 @@
 
       IF(NGST == 1) THEN
         DO IJ=KIJS,KIJL
-          US(IJ,1) = USNEW(IJ)
-          Z0(IJ,1) = Z0NEW(IJ)
+          US(IJ,1) = UFRIC(IJ)
+          Z0(IJ,1) = Z0M(IJ)
         ENDDO
       ELSE
         DO IGST=1,NGST
           DO IJ=KIJS,KIJL
-            US(IJ,IGST) = USNEW(IJ)*SIGDEV(IJ,IGST)
-            Z0(IJ,IGST) = Z0NEW(IJ)
+            US(IJ,IGST) = UFRIC(IJ)*SIGDEV(IJ,IGST)
+            Z0(IJ,IGST) = Z0M(IJ)
           ENDDO
         ENDDO
       ENDIF
@@ -263,7 +263,7 @@
       ENDDO
 
       DO IJ=KIJS,KIJL
-        EPSIL(IJ) = ROAIRN(IJ)*RWINV
+        EPSIL(IJ) = AIRD(IJ)*RWINV
       ENDDO
 ! ----------------------------------------------------------------------
 

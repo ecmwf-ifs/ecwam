@@ -68,12 +68,12 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,                       &
       IF (LHOOK) CALL DR_HOOK('NOTIM',0,ZHOOK_HANDLE)
 
 ASSOCIATE(U10 => FF_NEXT%WSWAVE, &
- &        US => FF_NEXT%USTAR, &
+ &        US => FF_NEXT%UFRIC, &
  &        THW => FF_NEXT%WDWAVE, &
  &        ADS => FF_NEXT%AIRD, &
  &        WSTAR => FF_NEXT%WSTAR, &
- &        CICR => FF_NEXT%CIFR, &
- &        CITH => FF_NEXT%CITH )
+ &        CICR => FF_NEXT%CICOVER, &
+ &        CITH => FF_NEXT%CITHICK )
 
 
       CDTWIH = CDTWIS

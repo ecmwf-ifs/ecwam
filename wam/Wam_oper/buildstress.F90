@@ -1,7 +1,7 @@
       SUBROUTINE BUILDSTRESS(IJS, IJL,                                &
-     &                       U10OLD, THWOLD,                          &
-     &                       USOLD, TAUW, TAUWDIR, Z0OLD,             &
-     &                       ROAIRO, WSTAROLD,                        &
+     &                       WSWAVE, WDWAVE,                          &
+     &                       UFRIC, TAUW, TAUWDIR, Z0M,               &
+     &                       AIRD, WSTAR,                        &
      &                       CICOVER, CITHICK,                        &
      &                       IREAD)
 
@@ -21,17 +21,17 @@
 !**   INTERFACE.
 !     ----------
 !     CALL *BUILDSTRESS*(IJS, IJL,
-!    &                   U10OLD,THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,ROAIRO,
-!    &                   ROAIRO, WSTAROLD, CICOVER, CITHICK,
+!    &                   WSWAVE,WDWAVE,UFRIC,TAUW,TAUWDIR,Z0M,AIRD,
+!    &                   AIRD, WSTAR, CICOVER, CITHICK,
 !    &                   IREAD)*
 !     *IJS*        INDEX OF FIRST GRIDPOINT
 !     *IJL*        INDEX OF LAST GRIDPOINT
-!     *U10OLD *    WIND SPEED.
-!     *THWOLD *    WIND DIRECTION (RADIANS).
-!     *USOLD*      FRICTION VELOCITY.
+!     *WSWAVE *    WIND SPEED.
+!     *WDWAVE *    WIND DIRECTION (RADIANS).
+!     *UFRIC*      FRICTION VELOCITY.
 !     *TAUW*       WAVE STRESS MAGNITUDE.
 !     *TAUWDIR*    WAVE STRESS DIRECTION.
-!     *Z0OLD*      ROUGHNESS LENGTH IN M.
+!     *Z0M*      ROUGHNESS LENGTH IN M.
 !     *RAD0OLD*    AIR DENSITY IN KG/M3.
 !     *RWSTAR0OLD* CONVECTIVE VELOCITY.
 !     *CICOVER*    SEA ICE COVER.
@@ -81,9 +81,9 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: U10OLD, THWOLD
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USOLD, Z0OLD, TAUW, TAUWDIR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: ROAIRO, WSTAROLD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: WSWAVE, WDWAVE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: UFRIC, Z0M, TAUW, TAUWDIR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: AIRD, WSTAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: CICOVER,CITHICK
 
 
@@ -137,9 +137,9 @@
       ENDIF
 
       CALL GETWND (IJS, IJL,                                &
-     &             U10OLD, USOLD,                           &
-     &             THWOLD,                                  &
-     &             ROAIRO, WSTAROLD,                        &
+     &             WSWAVE, UFRIC,                           &
+     &             WDWAVE,                                  &
+     &             AIRD, WSTAR,                             &
      &             CICOVER, CITHICK,                        &
      &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,      &
      &             LCR, ICODE_WND)
@@ -186,7 +186,7 @@
         IPARAM=245
         LLONLYPOS=.FALSE.
         CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, IJS, IJL,         &
-     &                 U10OLD(IJS), KZLEVUWAVE, LLONLYPOS, IREAD)
+     &                 WSWAVE(IJS), KZLEVUWAVE, LLONLYPOS, IREAD)
 
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' A DATA FILE CONTAINING WIND SPEED INFORMATION'
@@ -246,11 +246,11 @@
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJL)
 
-        CALL CDUSTARZ0 (KIJS, KIJL, U10OLD(KIJS), TEMPXNLEV, CD(KIJS), USOLD(KIJS), Z0OLD(KIJS))
+        CALL CDUSTARZ0 (KIJS, KIJL, WSWAVE(KIJS), TEMPXNLEV, CD(KIJS), UFRIC(KIJS), Z0M(KIJS))
 
         DO IJ=KIJS,KIJL
-          TAUW(IJ) = 0.1_JWRB * USOLD(IJ)**2
-          TAUWDIR(IJ) = THWOLD(IJ)
+          TAUW(IJ) = 0.1_JWRB * UFRIC(IJ)**2
+          TAUWDIR(IJ) = WDWAVE(IJ)
         ENDDO
 
       ENDDO
@@ -285,12 +285,12 @@
           ENDIF
         ENDIF
 
-!       1.5 COMPUTE TAUW,USOLD AND Z0OLD
+!       1.5 COMPUTE TAUW, UFRIC AND Z0M
 !           ----------------------------
 
         IF (LLCAPCHNK) THEN
           DO IJ=IJS,IJL
-            ALPHAOG(IJ)= CHNKMIN(U10OLD(IJ))*GM1
+            ALPHAOG(IJ)= CHNKMIN(WSWAVE(IJ))*GM1
           ENDDO
         ELSE
           DO IJ=IJS,IJL
@@ -313,21 +313,21 @@
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL)
             DO IJ=KIJS,KIJL
-!!            USOLD WILL FIRST CONTAIN ITS SQUARE
-!!            THE NUMERICAL RELATION BETWEEN USOLD AND U10OLD SHOULD
+!!            UFRIC WILL FIRST CONTAIN ITS SQUARE
+!!            THE NUMERICAL RELATION BETWEEN UFRIC AND WSWAVE SHOULD
 !!            ALWAYS BE AS IN OUTGRID
-              USOLD(IJ) = CD(IJ)*MAX(U10OLD(IJ)**2,EPSU10)
-              USOLD(IJ) = MAX(USOLD(IJ),EPSUS)
-              USTAR = SQRT(USOLD(IJ))
+              UFRIC(IJ) = CD(IJ)*MAX(WSWAVE(IJ)**2,EPSU10)
+              UFRIC(IJ) = MAX(UFRIC(IJ),EPSUS)
+              USTAR = SQRT(UFRIC(IJ))
               CDSQRTINV = MIN(1._JWRB/SQRT(CD(IJ)),100.0_JWRB)
               Z0TOT = TEMPXNLEV*EXP(-XKAPPA*CDSQRTINV)
-!             Z0OLD ONLY CONTAINS CHARNOCK CONTRIBUTION (see taut_z0)
-              Z0OLD(IJ) = MAX(Z0TOT - RUSE*RNUM/USTAR,ALPHAOG(IJ)*USOLD(IJ))
-              CHARNOCKOG = Z0OLD(IJ)/USOLD(IJ)
+!             Z0M ONLY CONTAINS CHARNOCK CONTRIBUTION (see taut_z0)
+              Z0M(IJ) = MAX(Z0TOT - RUSE*RNUM/USTAR,ALPHAOG(IJ)*UFRIC(IJ))
+              CHARNOCKOG = Z0M(IJ)/UFRIC(IJ)
               CHARNOCKOG = MAX(CHARNOCKOG,ALPHAOG(IJ))
-              TAUW(IJ) = MAX(USOLD(IJ)*(1._JWRB-(ALPHAOG(IJ)/CHARNOCKOG)**2),0._JWRB)
-              TAUWDIR(IJ) = THWOLD(IJ)
-              USOLD(IJ) = USTAR 
+              TAUW(IJ) = MAX(UFRIC(IJ)*(1._JWRB-(ALPHAOG(IJ)/CHARNOCKOG)**2),0._JWRB)
+              TAUWDIR(IJ) = WDWAVE(IJ)
+              UFRIC(IJ) = USTAR 
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO

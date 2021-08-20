@@ -3,9 +3,9 @@
      &                     FL1, XLLWS,                        &
      &                     WAVNUM, CINV, CGROUP, STOKFAC,     &
      &                     DEPTH,                             &
-     &                     CICVR,                             &
-     &                     U10NEW, THWNEW, USNEW,             &
-     &                     Z0NEW, Z0B, ROAIRN, WSTAR,         &
+     &                     CICOVER,                           &
+     &                     WSWAVE, WDWAVE, UFRIC,             &
+     &                     Z0M, Z0B, AIRD, WSTAR,             &
      &                     WSEMEAN, WSFMEAN,                  &
      &                     USTOKES, VSTOKES, STRNMS )
 
@@ -27,8 +27,8 @@
 !    &                    MIJ,
 !    &                    FL1, XLLWS,
 !    &                    WAVNUM, CINV, CGROUP, STOKFAC,
-!    &                    CICVR,
-!    &                    THWNEW,USNEW,Z0NEW,Z0B,ROAIRN,WSTAR,
+!    &                    CICOVER,
+!    &                    WDWAVE,UFRIC,Z0M,Z0B,AIRD,WSTAR,
 !    &                    WSEMEAN, WSFMEAN,
 !    &                    USTOKES, VSTOKES, STRNMS)
 
@@ -41,25 +41,18 @@
 !          *CGROUP* - GROUP SPPED.
 !          *STOKFAC* - STOKES DRIFT FACTOR.
 !          *DEPTH*  - WATER DEPTH.
-!          *U10NEW* - WIND SPEED.
-!          *THWNEW* - WIND DIRECTION IN RADIANS.
-!          *USNEW*  - NEW FRICTION VELOCITY IN M/S.
-!          *Z0NEW*  - ROUGHNESS LENGTH IN M.
+!          *WSWAVE* - WIND SPEED.
+!          *WDWAVE* - WIND DIRECTION IN RADIANS.
+!          *UFRIC*  - NEW FRICTION VELOCITY IN M/S.
+!          *Z0M*  - ROUGHNESS LENGTH IN M.
 !          *Z0B*    - BACKGROUND ROUGHNESS LENGTH.
-!          *ROAIRN* - AIR DENSITY IN KG/M3.
+!          *AIRD* - AIR DENSITY IN KG/M3.
 !          *WSTAR*  - FREE CONVECTION VELOCITY SCALE (M/S).
 !          *WSEMEAN*  WINDSEA VARIANCE.
 !          *WSFMEAN*  WINDSEA MEAN FREQUENCY.
 !          *USTOKES*  U-COMP SURFACE STOKES DRIFT.
 !          *VSTOKES*  V-COMP SURFACE STOKES DRIFT.
 !          *STRNMS*   MEAN SQUARE STRAIN INTO THE SEA ICE (only if LWNEMOCOUSTRN).
-
-
-!     METHOD.
-!     -------
-
-!     REFERENCE.
-!     ----------
 
 ! ----------------------------------------------------------------------
 
@@ -95,9 +88,9 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP, STOKFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICVR
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, ROAIRN, WSTAR
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: U10NEW, USNEW, Z0NEW, Z0B
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, AIRD, WSTAR
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSWAVE, UFRIC, Z0M, Z0B
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: WSEMEAN, WSFMEAN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
@@ -139,7 +132,7 @@
      &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
       TAUW_LOC(:) = 0.0_JWRB
-      TAUWDIR_LOC(:) = THWNEW(:)
+      TAUWDIR_LOC(:) = WDWAVE(:)
 
       LUPDTUS = .FALSE.
       FMEANWS(:) = FMEAN(:)
@@ -150,10 +143,10 @@
      &             LUPDTUS,                                         &
      &             FL1,                                             &
      &             WAVNUM, CINV, CGROUP,                            &
-     &             U10NEW, THWNEW, ROAIRN, WSTAR, CICVR,            &
+     &             WSWAVE, WDWAVE, AIRD, WSTAR, CICOVER,            &
      &             FMEAN, FMEANWS,                                  &
      &             FLM,                                             &
-     &             USNEW, TAUW_LOC, TAUWDIR_LOC, Z0NEW, Z0B, PHIWA, &
+     &             UFRIC, TAUW_LOC, TAUWDIR_LOC, Z0M, Z0B, PHIWA, &
      &             FLD, SL, SPOS,                                   &
      &             MIJ, RHOWGDFTH, XLLWS)
 
@@ -162,16 +155,16 @@
         CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,    &
      &                WAVNUM, CGROUP,              &
      &                EMEAN, F1MEAN, XKMEAN,       &
-     &                USNEW, THWNEW, ROAIRN)
+     &                UFRIC, WDWAVE, AIRD)
 
         IF (.NOT. LWVFLX_SNL) THEN
           CALL WNFLUXES (KIJS, KIJL,                        &
      &                   MIJ, RHOWGDFTH,                    &
      &                   CINV,                              &
-     &                   SL, CICVR,                         &
+     &                   SL, CICOVER,                       &
      &                   PHIWA,                             &
-     &                   EMEAN, F1MEAN, U10NEW, THWNEW,     &
-     &                   USNEW, ROAIRN, .FALSE.)
+     &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
+     &                   UFRIC, AIRD, .FALSE.)
         ENDIF
 
         CALL SNONLIN (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH, AKMEAN)
@@ -180,10 +173,10 @@
           CALL WNFLUXES (KIJS, KIJL,                        &
      &                   MIJ, RHOWGDFTH,                    &
      &                   CINV,                              &
-     &                   SL, CICVR,                         &
+     &                   SL, CICOVER,                       &
      &                   PHIWA,                             &
-     &                   EMEAN, F1MEAN, U10NEW, THWNEW,     &
-     &                   USNEW, ROAIRN, .FALSE.)
+     &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
+     &                   UFRIC, AIRD, .FALSE.)
         ENDIF
 
         IF (LWFLUX) THEN
@@ -200,7 +193,7 @@
           ENDDO
         ENDIF
 
-        CALL STOKESDRIFT(KIJS, KIJL, FL1, STOKFAC, U10NEW, THWNEW, CICVR, USTOKES, VSTOKES)
+        CALL STOKESDRIFT(KIJS, KIJL, FL1, STOKFAC, WSWAVE, WDWAVE, CICOVER, USTOKES, VSTOKES)
 
         IF (LWNEMOCOUSTRN) CALL CIMSSTRN(KIJS, KIJL, FL1, WAVNUM, DEPTH, STRNMS)
 

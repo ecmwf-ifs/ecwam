@@ -169,11 +169,11 @@
             FIELDG(I,J)%VWND = FIELDS(IJBLOCK(I,J),2)
             FIELDG(I,J)%AIRD = ZLADEN*FIELDS(IJBLOCK(I,J),3) + (1.0_JWRB-ZLADEN)*ROAIR
             FIELDG(I,J)%WSTAR = ZLGUST*FIELDS(IJBLOCK(I,J),4) + (1.0_JWRB-ZLGUST)*WSTAR0
-            FIELDG(I,J)%CIFR = FIELDS(IJBLOCK(I,J),5)
+            FIELDG(I,J)%CICOVER = FIELDS(IJBLOCK(I,J),5)
             FIELDG(I,J)%LKFR = ZLLKC*FIELDS(IJBLOCK(I,J),6)
 
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
-            FIELDG(I,J)%CITH = 0.0_JWRB
+            FIELDG(I,J)%CITHICK = 0.0_JWRB
           ENDDO
 
           IF (LLNEWCURR) THEN
@@ -301,16 +301,16 @@
                   CI=PMISS
                 ENDIF
               ENDIF
-              FIELDG(I,J)%CIFR=CI
+              FIELDG(I,J)%CICOVER=CI
             ELSE
-              FIELDG(I,J)%CIFR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),5) +    &
+              FIELDG(I,J)%CICOVER=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),5) + &
      &                      DII1*FIELDS(IJBLOCK(II1,JJ),5) ) +          &
      &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),5) +          &
      &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),5) )
             ENDIF
 
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
-            FIELDG(I,J)%CITH = 0.0_JWRB
+            FIELDG(I,J)%CITHICK = 0.0_JWRB
 
 
             IF (LLKC) THEN

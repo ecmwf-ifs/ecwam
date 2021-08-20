@@ -361,7 +361,7 @@
               DO J=1,NYFF
                 JSN=NYFF-J+1
                 DO I=1,NLONRGG_LOC(JSN)
-                  FIELDG(I,J)%CIFR=WORK(I,J)
+                  FIELDG(I,J)%CICOVER=WORK(I,J)
                 ENDDO
               ENDDO
               LLNOTREAD(IVAR)=.FALSE.
@@ -379,7 +379,7 @@
               DO J=1,NYFF
                 JSN=NYFF-J+1
                 DO I=1,NLONRGG_LOC(JSN)
-                  FIELDG(I,J)%CITH=WORK(I,J)
+                  FIELDG(I,J)%CITHICK=WORK(I,J)
                 ENDDO
               ENDDO
               LLNOTREAD(IVAR)=.FALSE.
@@ -635,12 +635,12 @@
 !!!! a sea ice cover=SWAMPCIFR
         DO J=1,NYFF/2
           DO I=1,NXFF
-            FIELDG(I,J)%CIFR=SWAMPCIFR
+            FIELDG(I,J)%CICOVER=SWAMPCIFR
           ENDDO
         ENDDO
         DO J=NYFF/2+1,NYFF
           DO I=1,NXFF
-            FIELDG(I,J)%CIFR=0.0_JWRB
+            FIELDG(I,J)%CICOVER=0.0_JWRB
           ENDDO
         ENDDO
 

@@ -184,65 +184,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 !       ALL PARAMETERS HAVE TO BE THE VALUES GIVEN AT THE END OF THE
 !       PREPROC OUTPUT IN COLUMN 'REQUIRED'.
 
-!     EXTERNALS.
-!     ----------
-
-!       *ABORT1*    - TERMINATES PROCESSING.
-!       *AIRSEA*    - SURFACE LAYER STRESS.
-!NEST
-!       *BOUINPT*   - BOUNDARY VALUE INPUT.
-!NEST
-!       *FILLBL*    - ADD LATITUDES TO A BLOCK.
-!       *GSFILE*    - ROUTINE TO DYNAMICALLY FETCH OR DISPOSE FILES.
-!       *HEADBC*    - WRITE BOUNDARY OUTPUT FILE HEADER.
-!       *IMPLSCH*   - IMPLICIT SCHEME FOR INTEGRATION OF SOURCE
-!                     FUNCTIONS IN TIME AND INPUT OF WINDS.
-!       *INCDATE*   - UPDATE DATE TIME GROUP.
-!NEST
-!       *INTSPEC*   - INTERPOLATION OF SPECTRA.
-!NEST
-!       *MAKEGRID*  - MAKES GRIDDED FIELDS.
-!       *OUTBC*     - OUTPUT OF BOUNDARY VALUES.
-!       *OUTBS*     - CONTROLS OUTPUT FROM BLOCKS.
-!       *OUTGRID*   - SAVE BLOCKED PARAMETERS INTO GRID ARRAYS.
-!       *OUTWINT*   - OUTPUT OF INTEGRATED PARAMETERS.
-!       *PEAKFR*    - COMUTE PEAK FREQUENCY.
-!       *PROPAG*    - PROPAGATION SCHEME.
-!NEST
-!       *ROTSPEC*   - ROTATE A SPECTRUM.
-!NEST
-!       *SAVSTRESS* - DISPOSE STRESS/WIND RESTART FILES.
-!       *SAVSPEC    - DISPOSE SPECTRUM RESTART FILES.
-!SHALLOW
-!       *SBOTTOM*   - COMPUTES BOTTOM DISSIPATION SOURCE TERM AND
-!                     LINEAR CONTRIBUTION TO FUNCTIONAL MATRIX.
-!SHALLOW
-!       *SDISSIP*   - COMPUTATION OF DISSIPATION SOURCE FUNCTION
-!                     AND LINEAR CONTRIBUTION OF DISSIPATION TO
-!                     FUNCTIONAL MATRIX IN IMPLICIT SCHEME.
-!       *SEMEAN*    - COMPUTATION OF TOTAL ENERGY AT EACH GRID POINT.
-!       *SEPWISW*   - COMPUTATION OF 2-DIMENSIONAL SWELL DISTRIBUTION
-!                     TOTAL SWELL ENERGY, MEAN SWELL DIRECTION, AND
-!                     MEAN SWELL FREQUENCY AT EACH GRID POINT.
-!ICE
-!       *SETICE*    - SET SPECTRA ON ICE EDGE TO ZERO.
-!ICE
-!       *SINFLX*    - COMPUTATION OF INPUT SOURCE FUNCTION, AND
-!                     LINEAR CONTRIBUTION OF INPUT SOURCE FUNCTION
-!                     TO FUNCTIONAL MATRIX IN IMPLICIT SCHEME.
-!                     and COMPUTATION OF WAVE STRESS.
-!       *SNONLIN*   - COMPUTATION OF NONLINEAR TRANSFER RATE AND
-!                     DIAGONAL LINEAR CONTRIBUTION OF NONLINEAR SOURCE
-!                     FUNCTION TO FUNCTIONAL MATRIX.
-!       *STHQ*      - COMPUTATION OF MEAN WAVE DIRECTION AT EACH
-!                     GRID POINT.
-!NEST
-!       *STRSPEC*   - STRETCH A SPECTRUM.
-!NEST
-!       *OUTWNORM*  - COMPUTES A FEW NORMS OF GRIDDED FIELDS
-!       *UNSETICE*  - FILL GAPS LEFT WHEN SEA ICE MASK CHANGES INITIALLY
-!                     FROM THE PREVIOUS RUN.
-
 !     REFERENCE.
 !     ----------
 
@@ -316,10 +257,10 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
      &            LLSOURCE ,                                            &
      &            LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE
       USE YOWSPEC, ONLY   : NBLKS    ,NBLKE    ,                        &
-     &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,    &
-     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,TAUWDIR  ,    &
+     &            WSWAVE   ,WDWAVE   ,UFRIC    ,    &
+     &            Z0M    ,TAUW     ,TAUWDIR  ,    &
      &            Z0B      ,                                            &
-     &            BETAOLD  ,ROAIRN   ,ROAIRO   ,WSTARNEW ,WSTAROLD ,    &
+     &            CHNK  ,AIRD   ,WSTAR ,    &
      &            FL1
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
@@ -392,14 +333,14 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
       LOGICAL :: LLFLUSH
       LOGICAL :: LSV, LRST, LOUT
       LOGICAL :: LDREPROD
-      LOGICAL :: NEWREAD
-      LOGICAL, SAVE :: NEWFILE
+      LOGICAL :: LLNEWREAD
+      LOGICAL, SAVE :: LLNEWFILE
       LOGICAL :: LLNONASSI
       LOGICAL :: LL2NDCALL
       LOGICAL :: FFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
       LOGICAL, ALLOCATABLE,DIMENSION(:) :: LCFLFAIL
 
-      DATA NEWFILE / .FALSE. /
+      DATA LLNEWFILE / .FALSE. /
 
 ! ----------------------------------------------------------------------
 
@@ -433,7 +374,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
           KIJL=MIN(KIJS+NPROMA-1,IJL)
           CALL UNSETICE(KIJS, KIJL,                                &
      &                  DEPTH(KIJS), EMAXDPT(KIJS),                &
-     &                  CICOVER(KIJS), U10OLD(KIJS), THWOLD(KIJS), &
+     &                  CICOVER(KIJS), WSWAVE(KIJS), WDWAVE(KIJS), &
      &                  FL1(KIJS:KIJL,:,:))
         ENDDO
 !$OMP   END PARALLEL DO
@@ -444,21 +385,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 
         CDTINTTBAK=CDTINTT
         CDTINTT=CDTPRO
-
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ) 
-        DO JKGLO=IJS,IJL,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL)
-          DO IJ=KIJS,KIJL
-            U10NEW(IJ) = U10OLD(IJ)
-            THWNEW(IJ) = THWOLD(IJ)
-            USNEW(IJ) = USOLD(IJ)
-            Z0NEW(IJ) = Z0OLD(IJ)
-            ROAIRN(IJ) = ROAIRO(IJ)
-            WSTARNEW(IJ) = WSTAROLD(IJ)
-          ENDDO
-        ENDDO
-!$OMP   END PARALLEL DO
 
         IF (LLSOURCE) THEN
 
@@ -473,9 +399,9 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
      &                     CGROUP(KIJS:KIJL,:), STOKFAC(KIJS:KIJL,:),        &
      &                     DEPTH(KIJS),                                 &
      &                     CICOVER(KIJS),                               &
-     &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),     &
-     &                     Z0NEW(KIJS), Z0B(KIJS),                      &
-     &                     ROAIRN(KIJS), WSTARNEW(KIJS),                 &
+     &                     WSWAVE(KIJS), WDWAVE(KIJS), UFRIC(KIJS),     &
+     &                     Z0M(KIJS), Z0B(KIJS),                      &
+     &                     AIRD(KIJS), WSTAR(KIJS),                 &
      &                     WSEMEAN(KIJS), WSFMEAN(KIJS),                &
      &                     USTOKES(KIJS), VSTOKES(KIJS), STRNMS(KIJS) )
           ENDDO
@@ -497,7 +423,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL)
             CALL SETICE(KIJS, KIJL, FL1(KIJS:KIJL,:,:) ,            &
-     &                  CICOVER(KIJS), U10NEW(KIJS), THWNEW(KIJS))
+     &                  CICOVER(KIJS), WSWAVE(KIJS), WDWAVE(KIJS))
           ENDDO
 !$OMP     END PARALLEL DO
           CALL GSTATS(1439,1)
@@ -506,7 +432,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 !       OUTPUT POINT SPECTRA
         IF (NGOUT > 0 .OR. LLOUTERS) THEN
           CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,                &
-     &                  FL1(IJSLOC:IJLLOC,:,:),USNEW(IJSLOC))
+     &                  FL1(IJSLOC:IJLLOC,:,:), WSWAVE(IJSLOC), WDWAVE(IJSLOC), UFRIC(IJSLOC))
         ENDIF
 
 !*      0.1 SAVE INITIAL INTEGRATED FIELDS
@@ -643,7 +569,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 !           -----------------
           CDATE   = CDTPRA
           CDATEWH = CDATEWO    
-          NEWREAD = .FALSE.
+          LLNEWREAD = .FALSE.
 
  1550     CONTINUE                       
 
@@ -663,14 +589,14 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 !*        RETRIEVING NEW FORCING FIELDS FROM TEMPORARY STORAGE IF NEEDED.
 !         ---------------------------------------------------------------
           CALL NEWWIND(IJS, IJL, CDTIMP, CDATEWH,               &
-     &                 NEWREAD, NEWFILE,                        &
-     &                 U10OLD, THWOLD, U10NEW, THWNEW,          &
-     &                 USOLD, USNEW,                            &
-     &                 ROAIRO, ROAIRN, WSTAROLD, WSTARNEW,      &
+     &                 LLNEWREAD, LLNEWFILE,                    &
+     &                 WSWAVE, WDWAVE,                          &
+     &                 UFRIC,                                   &
+     &                 AIRD, WSTAR,                        &
      &                 FF_NEXT,                                 &
      &                 CGROUP,                                  &
      &                 CICOVER, CITHICK, CIWA,                  &
-     &                 TAUW, BETAOLD)
+     &                 TAUW, CHNK)
 
 !         IT IS TIME TO INTEGRATE THE SOURCE TERMS
 !         ----------------------------------------
@@ -686,14 +612,11 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
      &                        WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:),           &
      &                        CGROUP(KIJS:KIJL,:), STOKFAC(KIJS:KIJL,:),        &
      &                        DEPTH(KIJS), EMAXDPT(KIJS),               &
-     &                        THWOLD(KIJS), USOLD(KIJS),                &
      &                        TAUW(KIJS), TAUWDIR(KIJS),                &
-     &                        Z0OLD(KIJS),                              &
-     &                        ROAIRO(KIJS), WSTAROLD(KIJS),              &
      &                        CICOVER(KIJS), CIWA(KIJS:KIJL,:),               &
-     &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),  &
-     &                        Z0NEW(KIJS), Z0B(KIJS),                   &
-     &                        ROAIRN(KIJS), WSTARNEW(KIJS),              &
+     &                        WSWAVE(KIJS), WDWAVE(KIJS), UFRIC(KIJS),  &
+     &                        Z0M(KIJS), Z0B(KIJS),                   &
+     &                        AIRD(KIJS), WSTAR(KIJS),              &
      &                        WSEMEAN(KIJS), WSFMEAN(KIJS),             &
      &                        USTOKES(KIJS), VSTOKES(KIJS),STRNMS(KIJS),&
      &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:) )
@@ -729,9 +652,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 !*          COPY AND CLOSE FILES IF NEEDED.
 !           -------------------------------
 
-            CALL CLOSEND(IJS,IJL,CDTIMP,CDATEWH,                        &
-     &                   NEWREAD,NEWFILE,U10OLD,THWOLD,ROAIRO,WSTAROLD,  &
-     &                   U10NEW,THWNEW,ROAIRN,WSTARNEW)
+            CALL CLOSEND(CDTIMP,CDATEWH, LLNEWREAD, LLNEWFILE)
 
             CDTIMP=CDTIMPNEXT
             CALL INCDATE(CDTIMPNEXT,IDELT)   
@@ -799,7 +720,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 !           OUTPUT POINT SPECTRA
             IF (NGOUT > 0 .OR. LLOUTERS) THEN
               CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,            &
-     &                      FL1(IJSLOC:IJLLOC,:,:),USNEW(IJSLOC))
+     &                      FL1(IJSLOC:IJLLOC,:,:), WSWAVE(IJSLOC), WDWAVE(IJSLOC), UFRIC(IJSLOC))
             ENDIF
 
 !           COMPUTE OUTPUT PARAMETERS
@@ -875,16 +796,15 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 
 !           SAVE RESTART FILES IN PURE BINARY FORM
             IF ( .NOT.LGRIBOUT .OR. LDWRRE ) THEN
-              CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR,     &
-     &                       Z0OLD, ROAIRO, WSTAROLD, CICOVER, CITHICK, &
+              CALL SAVSTRESS(WSWAVE, WDWAVE, UFRIC, TAUW, TAUWDIR,   &
+     &                       Z0M, AIRD, WSTAR, CICOVER, CITHICK,     &
      &                       NBLKS, NBLKE, CDTPRO, CDATEF)
               WRITE(IU06,*) ' '
-              WRITE(IU06,*) '  BINARY STRESS FILE DISPOSED AT........',  &
-     &         ' CDTPRO  = ', CDTPRO
+              WRITE(IU06,*) '  BINARY STRESS FILE DISPOSED AT........ CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
+
               CALL SAVSPEC(IJS, IJL, FL1, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
-              WRITE(IU06,*) '  BINARY WAVE SPECTRA DISPOSED AT........', &
-     &         ' CDTPRO  = ', CDTPRO
+              WRITE(IU06,*) '  BINARY WAVE SPECTRA DISPOSED AT........ CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
               CALL FLUSH(IU06)
             ENDIF

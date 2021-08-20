@@ -1,6 +1,6 @@
       SUBROUTINE SDISSIP_ARD (KIJS, KIJL, FL1, FLD, SL,           &
      &                        WAVNUM, CGROUP,                     &
-     &                        USNEW, THWNEW, ROAIRN)
+     &                        UFRIC, WDWAVE, AIRD)
 ! ----------------------------------------------------------------------
 
 !**** *SDISSIP_ARD* - COMPUTATION OF DISSIPATION SOURCE FUNCTION.
@@ -20,7 +20,7 @@
 
 !       *CALL* *SDISSIP_ARD (KIJS, KIJL, FL1, FLD,SL,*
 !                            WAVNUM, CGROUP,
-!                            USNEW, THWNEW, ROAIRN)*
+!                            UFRIC, WDWAVE, AIRD)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FL1*    - SPECTRUM.
@@ -28,9 +28,9 @@
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY
 !          *WAVNUM* - WAVE NUMBER
 !          *CGROUP* - GROUP SPEED
-!          *USNEW*  - NEW FRICTION VELOCITY IN M/S.
-!          *ROAIRN* - AIR DENSITY IN KG/M3
-!          *THWNEW* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC.
+!          *UFRIC*  - FRICTION VELOCITY IN M/S.
+!          *AIRD*   - AIR DENSITY IN KG/M3
+!          *WDWAVE* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC.
 
 
 !     METHOD.
@@ -73,7 +73,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USNEW, THWNEW, ROAIRN 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, WDWAVE, AIRD 
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, I, J, M2, K2, KK, NANGD
@@ -251,7 +251,7 @@
       IF (LLSSDSC5) THEN
         TMP01 = 2._JWRB*SSDSC5/ROG
         DO IJ=KIJS,KIJL
-          FACTURB(IJ) = TMP01*ROAIRN(IJ)*USNEW(IJ)*USNEW(IJ)
+          FACTURB(IJ) = TMP01*AIRD(IJ)*UFRIC(IJ)*UFRIC(IJ)
         ENDDO
         DO M=1, NFRE
           DO IJ=KIJS,KIJL
@@ -259,7 +259,7 @@
           ENDDO
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              D(IJ,K,M)= D(IJ,K,M)- FACWTRB(IJ,M)*COS(THWNEW(IJ)-TH(K))
+              D(IJ,K,M)= D(IJ,K,M)- FACWTRB(IJ,M)*COS(WDWAVE(IJ)-TH(K))
             ENDDO
           ENDDO
         ENDDO

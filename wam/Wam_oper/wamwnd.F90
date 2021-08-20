@@ -115,7 +115,7 @@
         VV(IJ) = FIELDG(IX,JY)%VWND
         ADS(IJ) = FIELDG(IX,JY)%AIRD
         WSTAR(IJ)= FIELDG(IX,JY)%WSTAR
-        CITH(IJ)= FIELDG(IX,JY)%CITH
+        CITH(IJ)= FIELDG(IX,JY)%CITHICK
       ENDDO
 
 
@@ -138,7 +138,7 @@
           DO IJ = KIJS,KIJL
             IF (U10(IJ) <= 0.0_JWRB) THEN
               WSPEED(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
-              IF(WSPEED(IJ) > 0.0_JWRB) THEN
+              IF (WSPEED(IJ) > 0.0_JWRB) THEN
                 U10(IJ) = WSPEED(IJ)
                 THW(IJ) = ATAN2(UU(IJ),VV(IJ))
               ELSE
@@ -177,7 +177,7 @@
             IF (FIELDG(IX,JY)%WSWAVE /= ZMISS .AND.                      &
      &          FIELDG(IX,JY)%WSWAVE > 0.0_JWRB ) THEN
               WSPEED(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
-              IF(WSPEED(IJ) > 0.0_JWRB) THEN
+              IF (WSPEED(IJ) > 0.0_JWRB) THEN
                 RESCALE=FIELDG(IX,JY)%WSWAVE/WSPEED(IJ)
                 UU(IJ) = UU(IJ) * RESCALE 
                 VV(IJ) = VV(IJ) * RESCALE

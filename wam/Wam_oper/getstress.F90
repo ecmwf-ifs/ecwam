@@ -1,5 +1,5 @@
-      SUBROUTINE GETSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD, &
-     &                     ROAIRO, WSTAROLD, CICOVER, CITHICK,          &
+      SUBROUTINE GETSTRESS(WSWAVE, WDWAVE, UFRIC, TAUW, TAUWDIR, Z0M, &
+     &                     AIRD, WSTAR, CICOVER, CITHICK,             &
      &                     NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
@@ -13,15 +13,15 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL**GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,NBLKS,NBLKE,IREAD)
-!     *U10OLD*    WIND SPEED.
-!     *THWOLD*    WIND DIRECTION (RADIANS).
-!     *USOLD*     FRICTION VELOCITY.
+!     *CALL**GETSTRESS(WSWAVE,WDWAVE,UFRIC,TAUW,TAUWDIR,Z0M,NBLKS,NBLKE,IREAD)
+!     *WSWAVE*    WIND SPEED.
+!     *WDWAVE*    WIND DIRECTION (RADIANS).
+!     *UFRIC*     FRICTION VELOCITY.
 !     *TAUW*      WAVE STRESS.
 !     *TAUWDIR*   WAVE STRESS DIRECTION.
-!     *Z0OLD*     ROUGHNESS LENGTH IN M.
-!     *ROAIRO*    AIR DENSITY IN KG/M3.
-!     *WSTAROLD*  CONVECTIVE VELOCITY.
+!     *Z0M*       ROUGHNESS LENGTH IN M.
+!     *AIRD*      AIR DENSITY IN KG/M3.
+!     *WSTAR*     CONVECTIVE VELOCITY.
 !     *CICOVER*   SEA ICE COVER. 
 !     *CITHICK*   SEA ICE THICKNESS. 
 !     *NBLKS*     INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
@@ -82,8 +82,8 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       INTEGER(KIND=JWIM),DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
 
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: ROAIRO, WSTAROLD, CICOVER, CITHICK
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: WSWAVE, WDWAVE, UFRIC, TAUW, TAUWDIR, Z0M
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: AIRD, WSTAR, CICOVER, CITHICK
 
 
       INTEGER(KIND=JWIM) :: IBUFLENGTH
@@ -112,10 +112,10 @@
 !       GRIB RESTART
 !       CREATES WIND AND STRESS FIELDS FROM GRIB WINDS AND DRAG COEFFICIENT.
         CALL BUILDSTRESS(IJS, IJL,                                      &
-     &                   U10OLD(IJS), THWOLD(IJS),                      &
-     &                   USOLD(IJS), TAUW(IJS), TAUWDIR(IJS),           &
-     &                   Z0OLD(IJS),                                    &
-     &                   ROAIRO(IJS), WSTAROLD(IJS),                    &
+     &                   WSWAVE(IJS), WDWAVE(IJS),                      &
+     &                   UFRIC(IJS), TAUW(IJS), TAUWDIR(IJS),           &
+     &                   Z0M(IJS),                                      &
+     &                   AIRD(IJS), WSTAR(IJS),                         &
      &                   CICOVER(IJS), CITHICK(IJS),                    &
      &                   IREAD)
 
@@ -160,14 +160,14 @@
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
           DO IJ=KIJS,KIJL
-            U10OLD(IJ)=RFIELD(IJ,1)
-            THWOLD(IJ)=RFIELD(IJ,2)
-            USOLD(IJ)=RFIELD(IJ,3)
+            WSWAVE(IJ)=RFIELD(IJ,1)
+            WDWAVE(IJ)=RFIELD(IJ,2)
+            UFRIC(IJ)=RFIELD(IJ,3)
             TAUW(IJ)=RFIELD(IJ,4)
             TAUWDIR(IJ)=RFIELD(IJ,5)
-            Z0OLD(IJ)=RFIELD(IJ,6)
-            ROAIRO(IJ)=RFIELD(IJ,7)
-            WSTAROLD(IJ)=RFIELD(IJ,8)
+            Z0M(IJ)=RFIELD(IJ,6)
+            AIRD(IJ)=RFIELD(IJ,7)
+            WSTAR(IJ)=RFIELD(IJ,8)
             CICOVER(IJ)=RFIELD(IJ,9)
             CITHICK(IJ)=RFIELD(IJ,10)
 !           for U and V see below

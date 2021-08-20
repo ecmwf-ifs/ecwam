@@ -1,4 +1,4 @@
-      SUBROUTINE WSIGSTAR (IJS, IJL,U10NEW, USNEW, Z0NEW, WSTAR, SIG_N)
+      SUBROUTINE WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N)
 ! ----------------------------------------------------------------------
 
 !**** *WSIGSTAR* - COMPUTATION OF THE RELATIVE STANDARD DEVIATION OF USTAR.
@@ -12,14 +12,14 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *WSIGSTAR (IJS, IJL, U10NEW, USNEW, Z0NEW, WSTAR, SIG_N)
-!             *IJS*   - INDEX OF FIRST GRIDPOINT.
-!             *IJL*   - INDEX OF LAST GRIDPOINT.
-!             *U10NEW* - 10M WIND SPEED (m/s).
-!             *USNEW* - NEW FRICTION VELOCITY IN M/S.
-!             *Z0NEW* - ROUGHNESS LENGTH IN M.
-!             *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
-!             *SIG_N* - ESTINATED RELATIVE STANDARD DEVIATION OF USTAR.
+!     *CALL* *WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N)
+!             *KIJS*   - INDEX OF FIRST GRIDPOINT.
+!             *KIJL*   - INDEX OF LAST GRIDPOINT.
+!             *WSWAVE* - 10M WIND SPEED (m/s).
+!             *UFRIC*  - NEW FRICTION VELOCITY IN M/S.
+!             *Z0M*    - ROUGHNESS LENGTH IN M.
+!             *WSTAR*  - FREE CONVECTION VELOCITY SCALE (M/S).
+!             *SIG_N*  - ESTINATED RELATIVE STANDARD DEVIATION OF USTAR.
 
 
 !     METHOD.
@@ -30,14 +30,6 @@
 !     (but with the background gustiness set to 0.)
 !     and USTAR=SQRT(Cd)*U10 to DERIVE THE STANDARD DEVIATION OF USTAR.
 !     WITH CD=A+B*U10 (see below).
-
-!     EXTERNALS.
-!     ----------
-
-!       NONE.
-
-!     MODIFICATIONS
-!     -------------
 
 !     REFERENCE.
 !     ----------
@@ -58,9 +50,9 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10NEW, USNEW, Z0NEW, WSTAR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: SIG_N
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WSWAVE, UFRIC, Z0M, WSTAR
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: SIG_N
 
       INTEGER(KIND=JWIM) :: IJ
 
@@ -82,18 +74,18 @@
         ZN = 0.0_JWRB
       ENDIF
 
-      DO IJ=IJS,IJL
-        U10M1=1.0_JWRB/MAX(U10NEW(IJ),WSPMIN)
+      DO IJ=KIJS,KIJL
+        U10M1=1.0_JWRB/MAX(WSWAVE(IJ),WSPMIN)
         ! CHARNOCK:
-        Z0VIS = ZN/MAX(USNEW(IJ),EPSUS)
-        ZCHAR=G*(Z0NEW(IJ)-Z0VIS)/MAX(USNEW(IJ)**2,EPSUS)
+        Z0VIS = ZN/MAX(UFRIC(IJ),EPSUS)
+        ZCHAR=G*(Z0M(IJ)-Z0VIS)/MAX(UFRIC(IJ)**2,EPSUS)
         ZCHAR=MAX(MIN(ZCHAR,ALPHAMAX),ALPHAMIN)
 
         BCD = BCDLIN*SQRT(ZCHAR)
-        C_D = ACDLIN + BCD * U10NEW(IJ)
+        C_D = ACDLIN + BCD * WSWAVE(IJ)
         DC_DDU = BCD
-        SIG_CONV = 1.0_JWRB + 0.5_JWRB*U10NEW(IJ)/C_D * DC_DDU
-        SIG_N(IJ) = MIN(SIG_NMAX, SIG_CONV * U10M1*(BG_GUST*USNEW(IJ)**3 + &
+        SIG_CONV = 1.0_JWRB + 0.5_JWRB*WSWAVE(IJ)/C_D * DC_DDU
+        SIG_N(IJ) = MIN(SIG_NMAX, SIG_CONV * U10M1*(BG_GUST*UFRIC(IJ)**3 + &
      &                  0.5_JWRB*XKAPPA*WSTAR(IJ)**3)**ONETHIRD )
       ENDDO
 

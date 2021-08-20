@@ -1,10 +1,10 @@
       SUBROUTINE WNFLUXES (KIJS, KIJL,                      &
      &                     MIJ, RHOWGDFTH,                  &
      &                     CINV,                            &
-     &                     SSURF, CICVR,                    &
+     &                     SSURF, CICOVER,                  &
      &                     PHIWA,                           &
-     &                     EM, F1, U10, THW,                &
-     &                     USNEW, ROAIRN, LNUPD)
+     &                     EM, F1, WSWAVE, WDWAVE,          &
+     &                     UFRIC, AIRD, LNUPD)
 
 ! ----------------------------------------------------------------------
 
@@ -19,10 +19,10 @@
 !       *CALL* *WNFLUXES* (KIJS, KIJL,
 !    &                     MIJ, RHOWGDFTH,
 !    &                     CINV,
-!    &                     SSURF, CICVR,
+!    &                     SSURF, CICOVER,
 !    &                     PHIWA,
-!    &                     EM, F1, U10, THW,
-!    &                     USNEW, ROAIRN, LNUPD)
+!    &                     EM, F1, WSWAVE, WDWAVE,
+!    &                     UFRIC, AIRD, LNUPD)
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*    - INDEX OF LAST GRIDPOINT.
 !          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE
@@ -32,26 +32,16 @@
 !          *CINV*   - INVERSE PHASE SPEED.
 !          *SSURF*  - CONTRIBUTION OF ALL SOURCE TERMS ACTING ON 
 !                     THE SURFACE MOMENTUM AND ENERGY FLUXES.
-!          *CICVR*  - SEA ICE COVER.
+!          *CICOVER*- SEA ICE COVER.
 !          *PHIWA*  - ENERGY FLUX FROM WIND INTO WAVES INTEGRATED
 !                     OVER THE FULL FREQUENCY RANGE.
 !          *EM*     - MEAN WAVE VARIANCE.
 !          *F1*     - MEAN WAVE FREQUENCY BASED ON f*F INTEGRATION.
-!          *U10*    - NEW WIND SPEED IN M/S.
-!          *THW*    - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC CONVENTION
-!          *USNEW*  - NEW FRICTION VELOCITY IN M/S.
-!          *ROAIRN* - AIR DENSITY IN KG/M3.
+!          *WSWAVE* - WIND SPEED IN M/S.
+!          *WDWAVE* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC CONVENTION
+!          *UFRIC*  - FRICTION VELOCITY IN M/S.
+!          *AIRD*   - AIR DENSITY IN KG/M3.
 !          *LNUPD*  - UPDATE NEMO FIELDS.
-
-
-!     METHOD.
-!     -------
-
-!     EXTERNALS.
-!     ---------
-
-!     REFERENCE.
-!     ----------
 
 ! ----------------------------------------------------------------------
 
@@ -83,10 +73,10 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CINV 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: SSURF
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICVR 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: PHIWA
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EM, F1, U10, THW
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USNEW, ROAIRN
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EM, F1, WSWAVE, WDWAVE
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, AIRD
 
       LOGICAL, INTENT(IN) :: LNUPD
 
@@ -171,12 +161,12 @@
 
       IF (LICERUN .AND. LWAMRSETCI) THEN
         DO IJ=KIJS,KIJL
-          IF(CICVR(IJ) > CIBLOCK) THEN
-            OOVAL(IJ)=EXP(-MIN((CICVR(IJ)*CITHRSH_INV)**4,10._JWRB))
+          IF(CICOVER(IJ) > CIBLOCK) THEN
+            OOVAL(IJ)=EXP(-MIN((CICOVER(IJ)*CITHRSH_INV)**4,10._JWRB))
 !           ADJUST USTAR FOR THE PRESENCE OF SEA ICE
-            U10P = MAX(U10(IJ),EPSU10)
+            U10P = MAX(WSWAVE(IJ),EPSU10)
             CD_BULK = MIN((C1 + C2*U10P**P1)*U10P**P2, CDMAX)
-            CD_WAVE = (USNEW(IJ)/U10P)**2
+            CD_WAVE = (UFRIC(IJ)/U10P)**2
             CD_ICE = OOVAL(IJ)*CD_WAVE + (1.0_JWRB-OOVAL(IJ))*CD_BULK
             USTAR(IJ) = MAX(SQRT(CD_ICE)*U10P,EPSUS)
 
@@ -190,14 +180,14 @@
             F1_OC(IJ) = MIN(MAX(F1_OC(IJ), FR(2)),FR(NFRE))
           ELSE
             OOVAL(IJ) = 1.0_JWRB
-            USTAR(IJ) = USNEW(IJ)
+            USTAR(IJ) = UFRIC(IJ)
             EM_OC(IJ) = EM(IJ)
             F1_OC(IJ) = F1(IJ)
           ENDIF
         ENDDO
       ELSE
         OOVAL(:) = 1.0_JWRB
-        USTAR(:) = USNEW(:)
+        USTAR(:) = UFRIC(:)
         EM_OC(:) = EM(:)
         F1_OC(:) = F1(:)
       ENDIF
@@ -211,16 +201,16 @@
 
       DO IJ=KIJS,KIJL
 
-        TAU        = ROAIRN(IJ)*MAX(USTAR(IJ)**2,EPSUS)
-        TAUXD(IJ)  = TAU*SIN(THW(IJ))
-        TAUYD(IJ)  = TAU*COS(THW(IJ))
+        TAU        = AIRD(IJ)*MAX(USTAR(IJ)**2,EPSUS)
+        TAUXD(IJ)  = TAU*SIN(WDWAVE(IJ))
+        TAUYD(IJ)  = TAU*COS(WDWAVE(IJ))
 
         TAUOCXD(IJ)= TAUXD(IJ)-OOVAL(IJ)*XSTRESS(IJ)
         TAUOCYD(IJ)= TAUYD(IJ)-OOVAL(IJ)*YSTRESS(IJ)
         TAUO       = SQRT(TAUOCXD(IJ)**2+TAUOCYD(IJ)**2)
         TAUOC(IJ)  = MIN(MAX(TAUO/TAU,TAUOCMIN),TAUOCMAX)
 
-        XN        = ROAIRN(IJ)*MAX(USTAR(IJ)**3,EPSUS3)
+        XN        = AIRD(IJ)*MAX(USTAR(IJ)**3,EPSUS3)
         PHIOCD(IJ)= OOVAL(IJ)*(PHILF(IJ)-PHIWA(IJ))+(1.0_JWRB-OOVAL(IJ))*PHIOC_ICE*XN
 
         PHIEPS(IJ)= PHIOCD(IJ)/XN 
@@ -252,7 +242,7 @@
             NEMOTAUX(IJ) = NEMOTAUX(IJ) + TAUXD(IJ)
             NEMOTAUY(IJ) = NEMOTAUY(IJ) + TAUYD(IJ)
           ENDIF 
-          NEMONEW10(IJ) = NEMONEW10(IJ) + U10(IJ)
+          NEMONEW10(IJ) = NEMONEW10(IJ) + WSWAVE(IJ)
           NEMOPHIF(IJ)  = NEMOPHIF(IJ) + PHIOCD(IJ) 
         ENDIF
       ENDDO

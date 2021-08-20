@@ -1,6 +1,6 @@
-      SUBROUTINE STRESSO (KIJS, KIJL, FL1, SL, SPOS,              &
-     &                    CINV,                                   &
-     &                    THWNEW, USNEW, Z0NEW, ROAIRN, RNFAC,    &
+      SUBROUTINE STRESSO (KIJS, KIJL, FL1, SL, SPOS,          &
+     &                    CINV,                               &
+     &                    WDWAVE, UFRIC, Z0M, AIRD, RNFAC,    &
      &                    TAUW, TAUWDIR, PHIWA, LLPHIWA)
 
 ! ----------------------------------------------------------------------
@@ -24,7 +24,7 @@
 
 !        *CALL* *STRESSO (KIJS, KIJL, FL1, SL, SPOS,
 !    &                    CINV,
-!    &                    THWNEW, USNEW, Z0NEW, ROAIRN, RNFAC,
+!    &                    WDWAVE, UFRIC, Z0M, AIRD, RNFAC,
 !    &                    TAUW, TAUWDIR, PHIWA)*
 !         *KIJS*        - INDEX OF FIRST GRIDPOINT.
 !         *KIJL*        - INDEX OF LAST GRIDPOINT.
@@ -32,12 +32,12 @@
 !         *SL*          - WIND INPUT SOURCE FUNCTION ARRAY (positive and negative contributions).
 !         *SPOS*        - POSITIVE WIND INPUT SOURCE FUNCTION ARRAY.
 !         *CINV*        - INVERSE PHASE VELOCITY.
-!         *THWNEW*      - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
+!         *WDWAVE*      - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                         NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                         CLOCKWISE FROM NORTH).
-!         *USNEW*       - NEW FRICTION VELOCITY IN M/S.
-!         *Z0NEW*       - ROUGHNESS LENGTH IN M.
-!         *ROAIRN*      - AIR DENSITY IN KG/M**3.
+!         *UFRIC*       - FRICTION VELOCITY IN M/S.
+!         *Z0M*         - ROUGHNESS LENGTH IN M.
+!         *AIRD*        - AIR DENSITY IN KG/M**3.
 !         *RNFAC*       - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !         *TAUW*        - KINEMATIC WAVE STRESS IN (M/S)**2
 !         *TAUWDIR*     - KINEMATIC WAVE STRESS DIRECTION
@@ -54,16 +54,9 @@
 !       HAS TO BE STORED IN *SPOS* (CALL FIRST SINPUT, THEN
 !       STRESSO, AND THEN THE REST OF THE SOURCE FUNCTIONS)
 
-!     EXTERNALS.
-!     -----------
-
-!       NONE.
-
 !     REFERENCE.
 !     ----------
-!       R SNYDER ET AL,1981.
-!       G. KOMEN, S. HASSELMANN AND K. HASSELMANN, JPO, 1984.
-!       P. JANSSEN, JPO, 1985
+!       P. JANSSEN, 
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
@@ -87,7 +80,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CINV
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: SL, SPOS
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, UFRIC, Z0M, AIRD, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: TAUW, TAUWDIR, PHIWA
       LOGICAL, INTENT(IN) :: LLPHIWA
 
@@ -154,8 +147,8 @@
 
 !     TAUW is the kinematic wave stress !
       DO IJ=KIJS,KIJL
-        XSTRESS(IJ) = XSTRESS(IJ)/MAX(ROAIRN(IJ),1.0_JWRB)
-        YSTRESS(IJ) = YSTRESS(IJ)/MAX(ROAIRN(IJ),1.0_JWRB)
+        XSTRESS(IJ) = XSTRESS(IJ)/MAX(AIRD(IJ),1.0_JWRB)
+        YSTRESS(IJ) = YSTRESS(IJ)/MAX(AIRD(IJ),1.0_JWRB)
       ENDDO
 
       IF ( LLPHIWA ) THEN
@@ -179,20 +172,20 @@
 !     ----------------------------------------------------------------------------------
 
       DO IJ=KIJS,KIJL
-        US2(IJ)=USNEW(IJ)**2
+        US2(IJ)=UFRIC(IJ)**2
       ENDDO
 
       IF ( IPHYS.EQ.0 .OR. TAUWSHELTER == 0.0_JWRB) THEN
         LTAUWSHELTER = .FALSE.
         DO IJ=KIJS,KIJL
-          USDIRP(IJ)=THWNEW(IJ)
-          UST(IJ)=USNEW(IJ)
+          USDIRP(IJ)=WDWAVE(IJ)
+          UST(IJ)=UFRIC(IJ)
         ENDDO
       ELSE
         LTAUWSHELTER = .TRUE.
         DO IJ=KIJS,KIJL
-          TAUX(IJ)=US2(IJ)*SIN(THWNEW(IJ))
-          TAUY(IJ)=US2(IJ)*COS(THWNEW(IJ))
+          TAUX(IJ)=US2(IJ)*SIN(WDWAVE(IJ))
+          TAUY(IJ)=US2(IJ)*COS(WDWAVE(IJ))
           TAUPX(IJ)=TAUX(IJ)-TAUWSHELTER*XSTRESS(IJ)
           TAUPY(IJ)=TAUY(IJ)-TAUWSHELTER*YSTRESS(IJ)
           USDIRP(IJ)=ATAN2(TAUPX(IJ),TAUPY(IJ))
@@ -200,8 +193,8 @@
         ENDDO
       ENDIF
 
-      CALL TAU_PHI_HF(KIJS, KIJL, LTAUWSHELTER, USNEW, Z0NEW, &
-     &                FL1, THWNEW, ROAIRN, RNFAC,             &
+      CALL TAU_PHI_HF(KIJS, KIJL, LTAUWSHELTER, UFRIC, Z0M, &
+     &                FL1, WDWAVE, AIRD, RNFAC,             &
      &                UST, TAUHF, PHIHF, LLPHIWA)
 
       DO IJ=KIJS,KIJL

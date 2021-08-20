@@ -1,4 +1,4 @@
-      SUBROUTINE STOKESDRIFT(KIJS, KIJL, FL1, STOKFAC, U10, THW, CICVR, USTOKES, VSTOKES)
+      SUBROUTINE STOKESDRIFT(KIJS, KIJL, FL1, STOKFAC, WSWAVE, WDWAVE, CICOVER, USTOKES, VSTOKES)
  
 !
 !***  *STOKESDRIFT*   DETERMINES THE STOKES DRIFT
@@ -12,7 +12,7 @@
 !
 !     INTERFACE.
 !     ----------
-!              *CALL*  *STOKESDRIFT(KIJS, KIJL, FL1, STOKFAC, U10,THW,CICVR,USTOKES,VSTOKES)*
+!              *CALL*  *STOKESDRIFT(KIJS, KIJL, FL1, STOKFAC, WSWAVE,WDWAVE,CICOVER,USTOKES,VSTOKES)*
 !
 !                       INPUT:
 !                            *KIJS*   - FIRST GRIDPOINT
@@ -20,10 +20,10 @@
 !                            *FL1*    - 2-D SPECTRUM
 !                            *STOKFAC*- FACTOR TO COMPUTE THE STOKES DRIFT
 !                            Auxilliary fields to specify Stokes when model sea ice cover the blocking threshold
-!                            as 0.016*U10, aligned in the wind direction
-!                            *U10*    - WIND SPEED IN M/S.
-!                            *THW*    - WIND DIRECTION IN RADIANS.
-!                            *CICVR*  - SEA ICE COVER.
+!                            as 0.016*WSWAVE, aligned in the wind direction
+!                            *WSWAVE* - WIND SPEED IN M/S.
+!                            *WDWAVE* - WIND DIRECTION IN RADIANS.
+!                            *CICOVER*- SEA ICE COVER.
 !
 !                       OUTPUT: 
 !                            *USTOKES*   - U-COMPONENT STOKES DRIFT
@@ -58,7 +58,7 @@
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: STOKFAC 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: U10, THW, CICVR
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WSWAVE, WDWAVE, CICOVER
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: USTOKES, VSTOKES
 
 
@@ -117,9 +117,9 @@
 !     ---------------------
       IF (LICERUN .AND. LWAMRSETCI) THEN
        DO IJ=KIJS,KIJL
-         IF (CICVR(IJ) > CITHRSH) THEN
-           USTOKES(IJ) = 0.016_JWRB*U10(IJ)*SIN(THW(IJ))*(1.0_JWRB - CICVR(IJ))
-           VSTOKES(IJ) = 0.016_JWRB*U10(IJ)*COS(THW(IJ))*(1.0_JWRB - CICVR(IJ))
+         IF (CICOVER(IJ) > CITHRSH) THEN
+           USTOKES(IJ) = 0.016_JWRB*WSWAVE(IJ)*SIN(WDWAVE(IJ))*(1.0_JWRB - CICOVER(IJ))
+           VSTOKES(IJ) = 0.016_JWRB*WSWAVE(IJ)*COS(WDWAVE(IJ))*(1.0_JWRB - CICOVER(IJ))
          ENDIF
        ENDDO
      ENDIF
