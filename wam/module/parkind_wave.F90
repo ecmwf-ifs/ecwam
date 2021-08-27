@@ -1,0 +1,28 @@
+MODULE PARKIND_WAVE
+!
+!     *** Define usual kinds ***
+!
+USE PARKIND1, ONLY : JPIM, JPRB, JPRD
+
+IMPLICIT NONE
+SAVE
+!
+!     Integer Kinds
+!     -------------
+!
+INTEGER, PARAMETER :: JWIM = JPIM
+
+!
+!     Real Kinds
+!     ----------
+!
+INTEGER, PARAMETER :: JWRB = JPRB
+INTEGER, PARAMETER :: JWRU = JPRD
+#ifdef PARKIND1_SINGLE_NEMO
+INTEGER, PARAMETER :: JWRO = SELECTED_REAL_KIND(6,37)
+#else
+INTEGER, PARAMETER :: JWRO = SELECTED_REAL_KIND(13,300)
+#endif
+!
+
+END MODULE PARKIND_WAVE
