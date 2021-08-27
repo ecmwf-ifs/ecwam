@@ -37,7 +37,7 @@
 
       USE YOWMPP   , ONLY : NPRECI
 
-      USE FDBSUBS_MOD, ONLY : IWRITEFDBSUBS, IFLUSHFDBSUBS
+      USE WAM_MULTIO_MOD, ONLY : WAM_MULTIO_WRITE, WAM_MULTIO_FLUSH
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 !     ------------------------------------------------------------------
@@ -85,11 +85,10 @@
 !!      CALL IGRIB_GET_MESSAGE_SIZE(IGRIB_HANDLE,KBYTES)
 !!      CALL IGRIB_WRITE_BYTES(IFILE_HANDLE,KGRIB,KBYTES)
 
-
-      CALL IWRITEFDBSUBS( KGRIB, KLEN, ISTAT ) 
+      CALL WAM_MULTIO_WRITE( KGRIB, KLEN, ISTAT )
       IF ( ISTAT .NE. 0 ) THEN
         WRITE(KUSO, '( "Error\ /WGRIB2FDB/ Failed to write to fdb")' )
-        CALL IFLUSHFDBSUBS()
+        CALL WAM_MULTIO_FLUSH()
         KERR = 1
         RETURN
       ENDIF

@@ -38,7 +38,7 @@ SUBROUTINE OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
       USE UNWAM    , ONLY : EXCHANGE_FOR_FL1
       USE YOWUNPOOL ,ONLY : LLUNSTR
 
-      USE FDBSUBS_MOD, ONLY : IFLUSHFDBSUBS
+      USE WAM_MULTIO_MOD, ONLY : WAM_MULTIO_FLUSH
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       
 ! ----------------------------------------------------------------------
@@ -211,7 +211,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 
         IF (LFDB .AND. LLFLUSH) THEN
            CALL GSTATS(1976,0)
-           CALL IFLUSHFDBSUBS()
+           CALL WAM_MULTIO_FLUSH()
            CALL GSTATS(1976,1)
            LLFLUSH=.FALSE.
         ENDIF
