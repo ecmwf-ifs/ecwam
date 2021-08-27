@@ -443,10 +443,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                NEMO2WAM) 
 
 
-#ifdef ECMWF
-        IF(IRANK==1 .AND. LSMSSIG_WAM) CALL SIGMASTER()
-#endif
-
         LLCHKCFL=.FALSE.
 
         FRSTIME = .FALSE.                                              

@@ -86,7 +86,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #include "outwpsp.intfb.h"
 #include "abort1.intfb.h"
 #include "bouinpt.intfb.h"
-#include "chesig.intfb.h"
 #include "difdate.intfb.h"
 #include "gsfile_new.intfb.h"
 #include "headbc.intfb.h"
@@ -246,15 +245,6 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
           ILOOP = ILOOP +1
         ENDDO
 
-
-#ifdef ECMWF
-        IF (.NOT.LWCOU .AND. .NOT. LDSTOP) THEN
-!!!!      the call to CHESIG is a signal handeling facility which is
-!!!!      specific to running standalone WAM at ECMWF, it can be ignored when
-!!!!      WAM is not run at ECMWF.
-            CALL CHESIG (IU06, IRANK, NPROC, LDSTOP, LDWRRE)
-        ENDIF
-#endif
 
 !       1.3 CHECK WHETHER OUTPUT(s) NEEDED
 !           ------------------------------

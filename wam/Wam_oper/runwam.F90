@@ -92,7 +92,7 @@
      &                      NEMOTSTEP,   NEMOFRCO                  ,    &
      &                      NEMONSTEP,   NEMOCSTEP, NEMOWSTEP
       USE YOWMPP   , ONLY : IRANK    ,NPROC
-      USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO   ,ISIGHUP  ,ISIGINT  ,    &
+      USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO                       ,    &
      &            IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO
       USE YOWALTAS , ONLY : LODBRALT
       USE MPL_MODULE
@@ -228,25 +228,7 @@
 
       CALL WVALLOC
 
-
-!     1.2 INITIALIZE SIGNAL HANDLER.
-!         --------------------------
-
-      ISIGHUP = 0  !    1 /* hangup */
-      ISIGINT = 0  !    2 /* interrupt (rubout) */
-
-!!!!  the call to IFSSIG and sigmaster are specific to signal handling for runs at
-!!!!  ECMWF, it can be commented out for other configuration.
-#ifdef ECMWF 
-      WRITE(IU06,*) ' INITIALIZE SIGNAL HANDLER on PE ', IRANK 
-      CALL IFSSIG (ISIGHUP, ISIGINT, IRANK)
-
-      IF(IRANK.EQ.1) CALL SIGMASTER()
-
-      WRITE(IU06,*) ' SIGNAL HANDLER on PE ', IRANK, ' OK'
-#endif
-
-!     1.3 OPEN ODB DATABASE TO RETRIEVE SATELLITE DATA
+!     1.2 OPEN ODB DATABASE TO RETRIEVE SATELLITE DATA
 !         --------------------------------------------
       IF (LODBRALT) CALL OPENDB('ECMA','OLD',INFO,0)
 
