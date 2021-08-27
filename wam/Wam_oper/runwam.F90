@@ -1,4 +1,4 @@
-      SUBROUTINE RUNWAM(LNEMOIO)
+      SUBROUTINE RUNWAM
 
 ! ----------------------------------------------------------------------
 
@@ -111,8 +111,6 @@
 #include "wvwaminit.intfb.h"
 #include "wvwaminit1.intfb.h"
 
-      LOGICAL, INTENT(IN) :: LNEMOIO
-
 ! DIMENSION DUMMY COUPLED VARIABLES
       INTEGER(KIND=JWIM), PARAMETER :: NLONW=1
       INTEGER(KIND=JWIM), PARAMETER :: NLATW=1
@@ -164,11 +162,6 @@
 
 ! ----------------------------------------------------------------------
 
-
-      IF (.NOT.LNEMOIO) THEN
-         LMPLUSERCOMM = .TRUE.
-         MPLUSERCOMM = MPI_COMM_WORLD
-      ENDIF
 
       time0=-wam_user_clock()
       IU06=6
@@ -362,7 +355,6 @@
 #endif
 
       CALL MPCLOSE_UNIT
-      IF (.NOT.LNEMOIO) CALL MPL_END
 
       IF (LHOOK) CALL DR_HOOK('RUNWAM',1,ZHOOK_HANDLE)
 
