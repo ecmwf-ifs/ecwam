@@ -662,8 +662,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           WRITE(CLSETEV,' (A25,'' step '',I8,''&'') ') CMETER,IFCSTEP_HOUR
           CLSMSNAME="                                             "
           CLECFNAME="                                             "
-          CALL UTIL_CGETENV(CL_CPENV,'NOSMS',CLSMSNAME, ICPLEN)
-          CALL UTIL_CGETENV(CL_CPENV_ECF,'NOECF',CLECFNAME,ICPLEN_ECF)
+          CALL GET_ENVIRONMENT_VARIABLE(NAME=CL_CPENV,     VALUE=CLSMSNAME, LENGTH=ICPLEN)
+          CALL GET_ENVIRONMENT_VARIABLE(NAME=CL_CPENV_ECF, VALUE=CLECFNAME, LENGTH=ICPLEN_ECF)
+          IF( ICPLEN     == 0 ) CLSMSNAME = 'NOSMS'
+          IF( ICPLEN_ECF == 0 ) CLECFNAME = 'NOECF'
           IF ((ICPLEN > 0.AND.CLSMSNAME(1:5) /= 'NOSMS') .OR.           &
      &        (ICPLEN_ECF > 0.AND.CLECFNAME(1:5) /= 'NOECF') ) THEN
             CALL SYSTEM(CLSETEV)
