@@ -23,7 +23,7 @@
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
-      LOGICAL, INTENT(IN) :: LDWCOUIFS, LDWCOU2W, LDWCOURNW, LWCOUHMF, LDWFLUX, LFDBOPIFS
+      LOGICAL, INTENT(IN) :: LDWCOUIFS, LDWCOU2W, LDWCOURNW, LDWCOUHMF, LDWFLUX, LFDBOPIFS
 
 ! ----------------------------------------------------------------------
  
