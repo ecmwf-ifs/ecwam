@@ -621,16 +621,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ENDIF
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' MODEL TIME STEPS:'
-      WRITE(IU06,*) ' SOURCE TERM INTEGRATION TIME STEP : ', &
-     & IDELT,' SECS'
-      WRITE(IU06,*) ' PROPAGATION TIME STEP ............: ', &
-     & IDELPRO,' SECS'
+      WRITE(IU06,*) ' SOURCE TERM INTEGRATION TIME STEP : ', IDELT,' SECS'
+      WRITE(IU06,*) ' PROPAGATION TIME STEP ............: ', IDELPRO,' SECS'
       IF(.NOT.LWCOU) THEN
         IF(NDELW_LST.LE.0) THEN
-          WRITE(IU06,*) ' MODEL WIND INPUT TIME STEP .......: ', &
-     &     IDELWI,' SECS'
-          WRITE(IU06,*) ' MODEL WIND OUTPUT TIME STEP.......: ', &
-     &     IDELWO,' SECS'
+          WRITE(IU06,*) ' MODEL WIND INPUT TIME STEP .......: ', IDELWI,' SECS'
+          WRITE(IU06,*) ' MODEL WIND OUTPUT TIME STEP.......: ', IDELWO,' SECS'
         ELSE
           DO IC=1,NDELW_LST
             WRITE(IU06,*) ' MODEL WIND INPUT  TIME STEP UNTIL ', &
@@ -640,8 +636,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           ENDDO
         ENDIF
       ELSE
-        WRITE(IU06,*) ' IFS COUPLING TIME STEP . .........: ',   &
-     & KCOUSTEP,' SECS'
+        WRITE(IU06,*) ' IFS COUPLING TIME STEP . .........: ', KCOUSTEP,' SECS' 
       ENDIF
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' MODEL OPTIONS:'
