@@ -107,7 +107,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FLD1, FLD2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ESWELL ,FSWELL ,THSWELL, P1SWELL, P2SWELL, SPRDSWELL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ESEA   ,FSEA   ,THWISEA, P1SEA  , P2SEA  , SPRDSEA
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: HALP, WAVEAGESEA
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: HALP, WAVEAGE, WAVEAGESEA
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NTRAIN) :: EMTRAIN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NTRAIN) :: THTRAIN, PMTRAIN
 
@@ -133,6 +133,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 
       IRA=1
       SIG = 1._JWRB
+      WAVEAGE(:)=ZMISS
       WAVEAGESEA(:)=ZMISS
       GOZPI=G/ZPI
 
@@ -185,8 +186,12 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
         DO IJ=KIJS,KIJL
           IF (FM(IJ) > 0._JWRB) THEN
             BOUT(IJ,ITOBOUT(IR))=1._JWRB/FM(IJ)
+! for testing: estimate of wave age based on mean frequency
+            WAVEAGE(IJ)=MIN(GOZPI/(0.9_JWRB*FM(IJ)*MAX(USNEW(IJ),EPSUS)),1000.0_JWRB)
           ELSE
             BOUT(IJ,ITOBOUT(IR))=ZMISS
+! for testing: estimate of wave age based on mean frequency
+            WAVEAGE(IJ)=ZMISS
           ENDIF
         ENDDO
       ENDIF
@@ -268,7 +273,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
           IF (FSEA(IJ) > 0._JWRB) THEN
             BOUT(IJ,ITOBOUT(IR))=1._JWRB/FSEA(IJ)
 ! for testing: estimate of wave age based on wind mean frequency
-            WAVEAGESEA(IJ)=MIN(GOZPI/(0.9_JWRB*FSEA(IJ)*MAX(UFRIC(IJ),EPSUS)),40.0_JWRB)
+            WAVEAGESEA(IJ)=MIN(GOZPI/(0.9_JWRB*FSEA(IJ)*MAX(USNEW(IJ),EPSUS)),1000.0_JWRB)
           ELSE
             BOUT(IJ,ITOBOUT(IR))=ZMISS
 ! for testing: estimate of wave age based on wind mean frequency
@@ -638,7 +643,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=5.0_JWRB
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=WAVEAGE(IJS:IJL)
       ENDIF
 
 

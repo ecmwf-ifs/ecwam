@@ -85,7 +85,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE MPL_MPIF
-      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   ,LWNEMOCOU          ,    &
+      USE YOWCOUP  , ONLY : LWCOU, LWCOU2W, LWCOURNW , LWCOUHMF, LWFLUX,&
+     &                      LWNEMOCOU,                                  &
      &                      NEMOINIDATE, NEMOINITIME               ,    &
      &                      NEMOITINI,   NEMOITEND                 ,    &
      &                      NEMOTSTEP,   NEMOFRCO                  ,    &
@@ -154,7 +155,7 @@
       LOGICAL :: LWCUR
       LOGICAL :: LWSTOKES
       LOGICAL :: LLRNL
-      LOGICAL :: LDWCOU2W, LFDBIFS
+      LOGICAL :: LFDBIFS
 
       DATA LLSTOP, LLWRRE, LLNORMWAMOUT_GLOBAL  / 3*.FALSE. /
 
@@ -197,7 +198,9 @@
 !         --------------------
 
       LWCOU=.FALSE.
-      LDWCOU2W=.FALSE.
+      LWCOU2W=.FALSE.
+      LWCOURNW=.FALSE.
+      LWCOUHMF=.FALSE.
       LWFLUX=.FALSE. ! will be reset to true if ocean fluxes are output.
       LWCUR=.FALSE. ! only used in coupled runs
       LFDBIFS=.FALSE.
@@ -213,7 +216,7 @@
 
       CALL WVWAMINIT (LWCOU,IU06,LLRNL,NGAUSSW,NLON,NLAT,RSOUTW,RNORTW)
 
-      CALL WVWAMINIT1 (LWCOU,LDWCOU2W,LWFLUX,LWCUR,LFDBIFS)
+      CALL WVWAMINIT1 (LWCOU, LWCOU2W, LWCOURNW, LWCOUHMF, LWFLUX, LFDBIFS)
 
 !     0.3 DETERMINE GRID DOMAIN DECOMPOSITION 
 !         -----------------------------------

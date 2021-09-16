@@ -99,8 +99,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : CASS     ,NASS
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX   ,LWCOUNORMS,   &
-     &         LLNORMWAMOUT_GLOBAL, LLNORMWAM2IFS,                      &
+      USE YOWCOUP  , ONLY : LWCOU, LWCOU2W, LWCOUHMF, LWFLUX,           &
+     &         LWCOUNORMS, LLNORMWAMOUT_GLOBAL, LLNORMWAM2IFS,          &
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,             &
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU,           &
      &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTK,              &
@@ -678,14 +678,17 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
 !       FIELDS TO BE PASSED TO THE ATMOSPHERIC MODEL ARE:
 
-!       1. CHARNOCK FIELD
+!       1. CHARNOCK FIELD(S)
         FLABEL(1)=' Charnock'
         DEFVAL(1)=PRCHAR ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
-        FLABEL(2)=' Eqv Chnk'
-        DEFVAL(2)=PRCHAR-ALPHA
+        IFLDOFFSET=1
 
-        IFLDOFFSET=2
+        IF (LWCOUHMF) THEN
+          IFLDOFFSET=IFLDOFFSET+1
+          FLABEL(IFLDOFFSET)=' Eqv Chnk'
+          DEFVAL(IFLDOFFSET)=PRCHAR-ALPHA
+        ENDIF
 
         IF (LWSTOKES) THEN
 !         2. U-STOKESDRIFT
@@ -742,14 +745,19 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           CALL OUTBETA (KIJS, KIJL, PRCHAR, WSWAVE(KIJS),       &
      &                  UFRIC(KIJS), Z0M(KIJS),                 &
      &                  Z0B(KIJS),                              &
-     &                  WVBLOCK(KIJS,1), WVBLOCK(KIJS,2) )
+     &                  CHNK(KIJS), BETAB(KIJS) ) 
 
-          CHNK(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,1)
+          IFLDOFFSET=1
+          WVBLOCK(KIJS:KIJL,IFLDOFFSET)=CHNK(KIJS:KIJL)
+
+          IF (LWCOUHMF) THEN
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=BETAB(KIJS:KIJL)
+          ENDIF
 
 !         SURFACE STOKES DRIFT NEEDED FOR THE IFS
 !         IT MIGHT ALSO BE USED FOR NEMO !!!!!!!!!! 
 
-          IFLDOFFSET=2
           IF (LWSTOKES) THEN
             IFLDOFFSET=IFLDOFFSET+1
             WVBLOCK(KIJS:KIJL,IFLDOFFSET)=USTOKES(KIJS:KIJL)
