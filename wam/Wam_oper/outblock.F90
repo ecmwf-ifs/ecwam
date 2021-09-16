@@ -187,7 +187,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
           IF (FM(IJ) > 0._JWRB) THEN
             BOUT(IJ,ITOBOUT(IR))=1._JWRB/FM(IJ)
 ! for testing: estimate of wave age based on mean frequency
-            WAVEAGE(IJ)=MIN(GOZPI/(0.9_JWRB*FM(IJ)*MAX(USNEW(IJ),EPSUS)),1000.0_JWRB)
+            WAVEAGE(IJ)=MIN(GOZPI/(0.9_JWRB*FM(IJ)*MAX(UFRIC(IJ),EPSUS)),1000.0_JWRB)
           ELSE
             BOUT(IJ,ITOBOUT(IR))=ZMISS
 ! for testing: estimate of wave age based on mean frequency
@@ -273,7 +273,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
           IF (FSEA(IJ) > 0._JWRB) THEN
             BOUT(IJ,ITOBOUT(IR))=1._JWRB/FSEA(IJ)
 ! for testing: estimate of wave age based on wind mean frequency
-            WAVEAGESEA(IJ)=MIN(GOZPI/(0.9_JWRB*FSEA(IJ)*MAX(USNEW(IJ),EPSUS)),1000.0_JWRB)
+            WAVEAGESEA(IJ)=MIN(GOZPI/(0.9_JWRB*FSEA(IJ)*MAX(UFRIC(IJ),EPSUS)),1000.0_JWRB)
           ELSE
             BOUT(IJ,ITOBOUT(IR))=ZMISS
 ! for testing: estimate of wave age based on wind mean frequency
@@ -643,7 +643,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=WAVEAGE(IJS:IJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=WAVEAGE(KIJS:KIJL)
       ENDIF
 
 
