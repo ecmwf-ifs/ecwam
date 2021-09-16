@@ -147,7 +147,7 @@
       REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELFL(NFRE)
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEANALL, FMEANALL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEAN, FMEAN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: F1MEAN, AKMEAN, XKMEAN 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: PHIWA
@@ -199,7 +199,7 @@
 !        ------------------------
 
       CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                    &
-     &            EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
+     &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
       DO K=1,NANG
         DO IJ=KIJS,KIJL
@@ -244,7 +244,7 @@
      &               FL1,                                      &
      &               WAVNUM, CINV, CGROUP,                     &
      &               WSWAVE, WDWAVE, AIRD, WSTAR, CICOVER,     &
-     &               FMEANALL, FMEANWS,                        &
+     &               FMEAN, FMEANWS,                        &
      &               FLM,                                      &
      &               UFRIC, TAUW, TAUWDIR, Z0M, Z0B, PHIWA,    &
      &               FLD, SL, SPOS,                            &
@@ -257,7 +257,7 @@
 
       CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,     &
      &              WAVNUM, CGROUP,               &
-     &              EMEANALL, F1MEAN, XKMEAN,     &
+     &              EMEAN, F1MEAN, XKMEAN,     &
      &              UFRIC, WDWAVE, AIRD)
 
 !     Save source term contributions relevant for the calculation of ocean fluxes
@@ -288,7 +288,7 @@
       ENDIF
 
 
-      CALL SDIWBK(KIJS, KIJL, FL1 ,FLD, SL, DEPTH, EMAXDPT, EMEANALL, F1MEAN)
+      CALL SDIWBK(KIJS, KIJL, FL1 ,FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)
 
       CALL SBOTTOM (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH)
 
@@ -304,7 +304,7 @@
         DELFL(M) = COFRM4(M)*DELT
       ENDDO
       DO IJ=KIJS,KIJL
-        USFM(IJ) = UFRIC(IJ)*MAX(FMEANWS(IJ),FMEANALL(IJ))
+        USFM(IJ) = UFRIC(IJ)*MAX(FMEANWS(IJ),FMEAN(IJ))
       ENDDO
 
       DO M=1,NFRE
@@ -351,7 +351,7 @@
      &                 CINV,                                    &
      &                 SSOURCE, CICOVER,                        &
      &                 PHIWA,                                   &
-     &                 EMEANALL, F1MEAN, WSWAVE, WDWAVE,        &
+     &                 EMEAN, F1MEAN, WSWAVE, WDWAVE,        &
      &                 UFRIC, AIRD, .TRUE.)
       ENDIF
 ! ----------------------------------------------------------------------
@@ -360,7 +360,7 @@
 !         -----------------------------------------------------
 
       CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                      &
-     &            EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
+     &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
       CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, EMEANWS, FMEANWS)

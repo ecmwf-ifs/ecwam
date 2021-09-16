@@ -11,7 +11,7 @@
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWCURR  , ONLY : U        ,V
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,              &
+      USE YOWMEAN  , ONLY : PHIEPS   ,                                  &
      &                      USTOKES  ,VSTOKES  ,STRNMS   ,              &
      &                      PHIAW    ,TAUOC    ,TAUXD    ,TAUYD    ,    &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD   ,              &
@@ -68,9 +68,6 @@
         ALLOCATE(FL1(NSTART(IRANK):NEND(IRANK),NANG,NFRE))
         FL1(:,:,:) = 0.0_JWRB
       ENDIF
-
-      IF (.NOT.ALLOCATED(EMEAN)) ALLOCATE(EMEAN(NSTART(IRANK):NEND(IRANK)))
-      IF (.NOT.ALLOCATED(FMEAN)) ALLOCATE(FMEAN(NSTART(IRANK):NEND(IRANK)))
 
       IF (.NOT.ALLOCATED(USTOKES)) ALLOCATE(USTOKES(NSTART(IRANK):NEND(IRANK)))
       IF (.NOT.ALLOCATED(VSTOKES)) ALLOCATE(VSTOKES(NSTART(IRANK):NEND(IRANK)))

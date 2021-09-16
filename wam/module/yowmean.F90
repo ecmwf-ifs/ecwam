@@ -6,9 +6,7 @@
 
 !*    **  INTEGRATED PARAMETERS OF A BLOCK.
 
-      REAL(KIND=JWRB), ALLOCATABLE :: EMEAN(:)
       REAL(KIND=JWRB), ALLOCATABLE :: WSEMEAN(:)
-      REAL(KIND=JWRB), ALLOCATABLE :: FMEAN(:)
       REAL(KIND=JWRB), ALLOCATABLE :: WSFMEAN(:)
 
       REAL(KIND=JWRB), ALLOCATABLE :: ALTWH(:)
@@ -33,9 +31,7 @@
 
 !*     VARIABLE.      TYPE.     PURPOSE.
 !      ---------      -------   --------
-!      *EMEAN*        REAL      TOTAL VARIANCE.
 !      *WSEMEAN*      REAL      WINDSEA VARIANCE.
-!      *FMEAN*        REAL      MEAN FREQUENCY (1./MEAN PERIOD).
 !      *WSFMEAN*      REAL      WINDSEA MEAN FREQUENCY (1./MEAN PERIOD).
 
 !      *ALTWH*        REAL      ALTIMETER WAVE HEIGHT 

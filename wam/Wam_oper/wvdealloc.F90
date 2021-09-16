@@ -15,7 +15,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,              &
+      USE YOWMEAN  , ONLY : PHIEPS   ,                                  &
      &                      USTOKES  ,VSTOKES  ,STRNMS   ,              &
      &                      PHIAW    ,TAUOC    ,TAUXD    ,TAUYD    ,    &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD   ,              &
@@ -34,9 +34,6 @@
 
 !     1.  DEALLOCATE NECESSARY ARRAYS
 !         -------------------------
-
-      IF (ALLOCATED(EMEAN)) DEALLOCATE(EMEAN)
-      IF (ALLOCATED(FMEAN)) DEALLOCATE(FMEAN)
 
       IF (ALLOCATED(USTOKES)) DEALLOCATE(USTOKES)
       IF (ALLOCATED(VSTOKES)) DEALLOCATE(VSTOKES)

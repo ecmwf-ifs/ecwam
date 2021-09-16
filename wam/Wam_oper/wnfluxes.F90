@@ -50,11 +50,11 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWALTAS , ONLY : EGRCRV   ,AFCRV       ,BFCRV
       USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOTAUOC, NEMOTAUX, NEMOTAUY, &
-     &                      NEMONEW10, NEMOPHIF   , LWFLUX,             &
+     &                      NEMONEW10, NEMOPHIF   ,                     &
      &                      NPHIEPS  ,NTAUOC      ,NSWH     ,NMWP
       USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH
       USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH, CIBLOCK
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,    &
+      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,                        &
      &                      TAUOC    ,TAUXD    ,TAUYD    ,              &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
       USE YOWNEMOP , ONLY : NEMODP
@@ -190,13 +190,6 @@
         USTAR(:) = UFRIC(:)
         EM_OC(:) = EM(:)
         F1_OC(:) = F1(:)
-      ENDIF
-
-      IF(LWFLUX) THEN
-        DO IJ=KIJS,KIJL
-          EMEAN(IJ)  = EM_OC(IJ) 
-          FMEAN(IJ)  = F1_OC(IJ) 
-        ENDDO
       ENDIF
 
       DO IJ=KIJS,KIJL
