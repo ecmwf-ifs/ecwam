@@ -294,6 +294,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 #include "gsfile_new.intfb.h"
 #include "headbc.intfb.h"
 #include "implsch.intfb.h"
+#include "iwam_get_unit.intfb.h"
 #include "incdate.intfb.h"
 #include "newwind.intfb.h"
 #include "outbc.intfb.h"
@@ -321,7 +322,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
       INTEGER(KIND=JWIM) :: IFIL, IC, ICL, ICR, II
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER(KIND=JWIM) :: JSTPNEMO, IDATE, ITIME
-      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
+!!      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MIJ
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
