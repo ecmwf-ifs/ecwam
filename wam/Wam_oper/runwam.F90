@@ -202,7 +202,7 @@
       LWCOURNW=.FALSE.
       LWCOUHMF=.FALSE.
       LWFLUX=.FALSE. ! will be reset to true if ocean fluxes are output.
-      LWCUR=.FALSE. ! only used in coupled runs
+      LWCUR=.FALSE. ! only used in coupled runs with atmospheric model
       LFDBIFS=.FALSE.
 
 
@@ -232,7 +232,7 @@
 !     1.1  ALLOCATE NECESSARY ARRAYS
 !          -------------------------
 
-      CALL WVALLOC(LWCUR)
+      CALL WVALLOC
 
 
 !     1.2 INITIALIZE SIGNAL HANDLER.
@@ -276,7 +276,6 @@
       IDUM=0
       IGRIB_HANDLE_DUM=-99 ! only used in coupled model
       NATMFLX=0
-      LWCUR=.FALSE. ! only used in coupled runs with atmospheric model
       LWSTOKES=.FALSE.  ! only used in coupled runs with atmospheric model
       RMISS=-999.0_JWRB ! missing data indicator
       ZRCHAR=0.0155_JWRB ! default value for Charnock

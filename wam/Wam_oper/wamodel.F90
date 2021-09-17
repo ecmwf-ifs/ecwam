@@ -1,5 +1,5 @@
 SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
-&                   FF_NEXT)
+&                   FF_NEXT, INTFLDS)
 
 ! ----------------------------------------------------------------------
 
@@ -114,12 +114,13 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 !     ----------
 
 !     *CALL* *WAMODEL (NADV, LDSTOP, LDWRRE,
-!    &                 FF_NEXT)
+!    &                 FF_NEXT, INTFLDS)
 !        *NADV*      INTEGER   NUMBER OF ADVECTION ITERATIONS
 !                              PER CALL OF WAMODEL, OUTPUT PARAMETER.
 !        *LDSTOP*    LOGICAL   SET .TRUE. IF STOP SIGNAL RECEIVED.
 !        *LDWRRE*    LOGICAL   SET .TRUE. IF RESTART SIGNAL RECEIVED.
 !        *FF_NEXT*   REAL      DATA STRUCTURE WITH THE NEXT FORCING FIELDS
+!        *INTFLDS*   REAL      INTEGRATED/DERIVED PARAMETERS
 
 !     METHOD.
 !     -------
@@ -212,7 +213,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 ! -------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS
 
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC    ,GBOUNC  , IPOGBO  ,    &
      &            CBCPREF
@@ -232,6 +233,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
      &            LRSTPARALW, LRSTINFDAT,                               &
      &            LRSTST0  ,LWAMANOUT
       USE YOWCURR  , ONLY : CDTCUR      ,U     ,V
+
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : LGRHDIFS 
@@ -239,7 +241,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CITHICK  ,    &
      &            CIWA
-      USE YOWMEAN  , ONLY : WSEMEAN  ,WSFMEAN  ,USTOKES  ,VSTOKES  ,STRNMS
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,LWAVEWIND 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -313,6 +314,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
       INTEGER(KIND=JWIM), INTENT(IN) :: NADV
       LOGICAL, INTENT(INOUT) :: LDSTOP, LDWRRE
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(IN) :: FF_NEXT
+      TYPE(INTGT_PARAM_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: INTFLDS
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, J, IRA, KADV, ICH, ICALL
@@ -344,7 +346,14 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
+
+ASSOCIATE(WSEMEAN => INTFLDS%WSEMEAN, &
+&         WSFMEAN => INTFLDS%WSFMEAN, &  
+&         USTOKES => INTFLDS%USTOKES, &
+&         VSTOKES => INTFLDS%VSTOKES, &
+&         STRNMS  => INTFLDS%STRNMS )
+
 
       CZERO = ' '
       LLFLUSH = .FALSE.
@@ -402,8 +411,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
      &                     WSWAVE(KIJS), WDWAVE(KIJS), UFRIC(KIJS),     &
      &                     Z0M(KIJS), Z0B(KIJS),                      &
      &                     AIRD(KIJS), WSTAR(KIJS),                 &
-     &                     WSEMEAN(KIJS), WSFMEAN(KIJS),                &
-     &                     USTOKES(KIJS), VSTOKES(KIJS), STRNMS(KIJS) )
+     &                     INTFLDS(KIJS) )
           ENDDO
 !$OMP     END PARALLEL DO
 
@@ -472,7 +480,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 
 !         COMPUTE OUTPUT PARAMETERS
           IF (NIPRMOUT > 0) THEN
-            CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
+            CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS, INTFLDS)
 !           PRINT OUT NORMS
             !!!1 to do: decide if there are cases where we might want LDREPROD false
             LDREPROD=.TRUE.
@@ -617,8 +625,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
      &                        WSWAVE(KIJS), WDWAVE(KIJS), UFRIC(KIJS),  &
      &                        Z0M(KIJS), Z0B(KIJS),                   &
      &                        AIRD(KIJS), WSTAR(KIJS),              &
-     &                        WSEMEAN(KIJS), WSFMEAN(KIJS),             &
-     &                        USTOKES(KIJS), VSTOKES(KIJS),STRNMS(KIJS),&
+     &                        INTFLDS(KIJS),             &
      &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:) )
 
               ENDDO
@@ -725,7 +732,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 
 !           COMPUTE OUTPUT PARAMETERS
             IF (NIPRMOUT > 0) THEN
-              CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
+              CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS, INTFLDS)
 
 !!!1 to do: decide if there are cases where we might want LDREPROD false
               LDREPROD=.TRUE.
@@ -975,6 +982,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 !*    BRANCHING BACK TO 1.0 FOR NEXT PROPAGATION STEP.
       ENDDO ADVECTION
 
-      IF (LHOOK) CALL DR_HOOK('WAMODEL',1,ZHOOK_HANDLE)
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('WAMODEL',1,ZHOOK_HANDLE)
 
 END SUBROUTINE WAMODEL

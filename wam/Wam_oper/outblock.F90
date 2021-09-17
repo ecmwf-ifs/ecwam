@@ -1,7 +1,7 @@
 SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
  &                   FL1, XLLWS,                            & 
  &                   WAVNUM, CINV, CGROUP,                  &
- &                   DEPTH,                                 &
+ &                   DEPTH, INTFLDS,                        &
  &                   BOUT)
 
 ! ----------------------------------------------------------------------
@@ -19,7 +19,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 !      *CALL*OUTBLOCK (KIJS, KIJL, MIJ,
 !     &                FL1, XLLWS,
 !     &                WAVENUM, CINV, CGROUP,
-!     &                DEPTH,
+!     &                DEPTH, INTFLDS,
 !     &                BOUT)
 !      *KIJS*   - INDEX OF FIRST LOCAL GRIDPOINT
 !      *KIJL*   - INDEX OF LAST LOCAL GRIDPOINT
@@ -30,10 +30,12 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 !      *CINV*   - INVERSE PHASE SPEED
 !      *CGROUP* - GROUP SPEED
 !      *DEPTH*  - DEPTH
+!      *INTFLDS*- INTEGRATED/DERIVED PARAMETERS
 !      *BOUT*   - OUTPUT PARAMETER BUFFER
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS
 
       USE YOWCOUT  , ONLY : NTRAIN   ,IPFGTBL  ,LSECONDORDER,           &
      &            NIPRMOUT, ITOBOUT
@@ -44,12 +46,6 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,COSTH    ,SINTH, XKMSS_CUTOFF
 
       USE YOWICE   , ONLY : CICOVER  ,CITHICK
-
-      USE YOWMEAN  , ONLY : ALTWH    ,CALTWH   ,RALTCOR  ,              &
-     &            USTOKES  ,VSTOKES  ,STRNMS   ,                        &
-     &            PHIEPS   ,PHIAW    ,TAUOC    ,TAUXD    ,TAUYD     ,   &
-     &            TAUOCXD  ,TAUOCYD  ,PHIOCD
-
       USE YOWNEMOFLDS,ONLY: NEMOSST, NEMOCICOVER, NEMOCITHICK,          &
      &                      NEMOUCUR, NEMOVCUR, LNEMOCITHICK
       USE YOWSPEC  , ONLY : TAUW     ,WSWAVE   ,WDWAVE   ,UFRIC    ,    &
@@ -89,6 +85,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1, XLLWS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
+      TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(IN) :: INTFLDS 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NIPRMOUT), INTENT(OUT) :: BOUT
 
 
@@ -296,29 +293,17 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        IF (.NOT.ALLOCATED(ALTWH)) THEN
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
-        ELSE
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=ALTWH(KIJS:KIJL)
-        ENDIF
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=INTFLDS(KIJS:KIJL)%ALTWH
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        IF (.NOT.ALLOCATED(CALTWH)) THEN
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
-        ELSE
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=CALTWH(KIJS:KIJL)
-        ENDIF
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=INTFLDS(KIJS:KIJL)%CALTWH
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        IF (.NOT.ALLOCATED(RALTCOR)) THEN
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
-        ELSE
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=RALTCOR(KIJS:KIJL)
-        ENDIF
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=INTFLDS(KIJS:KIJL)%RALTCOR
       ENDIF
 
       IR=IR+1
@@ -399,11 +384,11 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 !     SURFACE STOKES DRIFT U and V
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=USTOKES(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=INTFLDS(KIJS:KIJL)%USTOKES
       ENDIF
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=VSTOKES(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=INTFLDS(KIJS:KIJL)%VSTOKES
       ENDIF
 
       IR=IR+1
@@ -426,17 +411,17 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=PHIEPS(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=INTFLDS(KIJS:KIJL)%PHIEPS
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=PHIAW(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=INTFLDS(KIJS:KIJL)%PHIAW
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=TAUOC(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=INTFLDS(KIJS:KIJL)%TAUOC
       ENDIF
 
       DO ITR=1,NTRAIN
@@ -459,7 +444,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
         IF (LWNEMOCOUSTRN) THEN
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=STRNMS(KIJS:KIJL)
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=INTFLDS(KIJS:KIJL)%STRNMS
         ELSE
           CALL CIMSSTRN (KIJS, KIJL, FL1, WAVNUM, DEPTH, BOUT(KIJS,ITOBOUT(IR)))
         ENDIF
@@ -588,28 +573,28 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=TAUXD(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=INTFLDS(KIJS:KIJL)%TAUXD
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=TAUYD(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=INTFLDS(KIJS:KIJL)%TAUYD
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=TAUOCXD(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=INTFLDS(KIJS:KIJL)%TAUOCXD
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=TAUOCYD(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=INTFLDS(KIJS:KIJL)%TAUOCYD
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
 !      !!! make the energy flux positive
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=MAX(-PHIOCD(KIJS:KIJL),0.0_JWRB)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=MAX(-INTFLDS(KIJS:KIJL)%PHIOCD,0.0_JWRB)
       ENDIF
 
 

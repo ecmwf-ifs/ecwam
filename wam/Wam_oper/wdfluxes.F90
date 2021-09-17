@@ -6,8 +6,7 @@
      &                     CICOVER,                           &
      &                     WSWAVE, WDWAVE, UFRIC,             &
      &                     Z0M, Z0B, AIRD, WSTAR,             &
-     &                     WSEMEAN, WSFMEAN,                  &
-     &                     USTOKES, VSTOKES, STRNMS )
+     &                     INTFLDS)
 
 ! ----------------------------------------------------------------------
 
@@ -29,8 +28,7 @@
 !    &                    WAVNUM, CINV, CGROUP, STOKFAC,
 !    &                    CICOVER,
 !    &                    WDWAVE,UFRIC,Z0M,Z0B,AIRD,WSTAR,
-!    &                    WSEMEAN, WSFMEAN,
-!    &                    USTOKES, VSTOKES, STRNMS)
+!    &                    INTFLDS)
 
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*   - INDEX OF LAST GRIDPOINT.
@@ -47,24 +45,16 @@
 !          *Z0M*  - ROUGHNESS LENGTH IN M.
 !          *Z0B*    - BACKGROUND ROUGHNESS LENGTH.
 !          *AIRD* - AIR DENSITY IN KG/M3.
-!          *WSTAR*  - FREE CONVECTION VELOCITY SCALE (M/S).
-!          *WSEMEAN*  WINDSEA VARIANCE.
-!          *WSFMEAN*  WINDSEA MEAN FREQUENCY.
-!          *USTOKES*  U-COMP SURFACE STOKES DRIFT.
-!          *VSTOKES*  V-COMP SURFACE STOKES DRIFT.
-!          *STRNMS*   MEAN SQUARE STRAIN INTO THE SEA ICE (only if LWNEMOCOUSTRN).
+!          *INTFLDS*-  INTEGRATED/DERIVED PARAMETERS
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS
 
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
-
-      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC
-!                        !!!!!!!!!!!!!!!!!!!!!!!!!
-
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : WSEMEAN_MIN
 
@@ -91,8 +81,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, AIRD, WSTAR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSWAVE, UFRIC, Z0M, Z0B
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: WSEMEAN, WSFMEAN
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
+      TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
 
@@ -117,7 +106,13 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
+
+ASSOCIATE(WSEMEAN => INTFLDS%WSEMEAN, &
+&         WSFMEAN => INTFLDS%WSFMEAN, &  
+&         USTOKES => INTFLDS%USTOKES, &
+&         VSTOKES => INTFLDS%VSTOKES, &
+&         STRNMS  => INTFLDS%STRNMS )
 
 !*    1. INITIALISATION.
 !        ---------------
@@ -164,7 +159,7 @@
      &                   SL, CICOVER,                       &
      &                   PHIWA,                             &
      &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
-     &                   UFRIC, AIRD, .FALSE.)
+     &                   UFRIC, AIRD, INTFLDS, .FALSE.)
         ENDIF
 
         CALL SNONLIN (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH, AKMEAN)
@@ -176,7 +171,7 @@
      &                   SL, CICOVER,                       &
      &                   PHIWA,                             &
      &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
-     &                   UFRIC, AIRD, .FALSE.)
+     &                   UFRIC, AIRD, INTFLDS, .FALSE.)
         ENDIF
 
         IF (LWFLUX) THEN
@@ -199,8 +194,8 @@
 
       ENDIF
 ! ----------------------------------------------------------------------
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('WDFLUXES',1,ZHOOK_HANDLE)
 
-      IF (LHOOK) CALL DR_HOOK('WDFLUXES',1,ZHOOK_HANDLE)
-
-      END SUBROUTINE WDFLUXES
+END SUBROUTINE WDFLUXES
 

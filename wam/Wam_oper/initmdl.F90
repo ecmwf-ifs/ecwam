@@ -229,8 +229,7 @@ SUBROUTINE INITMDL (NADV,                                         &
      &                      LWNEMOCOU,LWNEMOCOURECV
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,                        &
      &            FFLAG20  ,GFLAG20  ,                                  &
-     &            NGOUT    ,IJAR     ,NOUTT    ,LOUTINT  ,              &
-     &            LWFLUXOUT
+     &            NGOUT    ,IJAR     ,NOUTT    ,LOUTINT
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
@@ -247,9 +246,6 @@ SUBROUTINE INITMDL (NADV,                                         &
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,                        &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            KMNOP    ,KMSOP    ,IPER
-      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC    ,              &
-     &                      TAUXD    ,TAUYD    ,WSEMEAN  ,WSFMEAN  ,    &
-     &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
      &            NGX      ,NGY      ,                                  &
@@ -460,30 +456,6 @@ SUBROUTINE INITMDL (NADV,                                         &
 !         ------------------------
 
       CALL USERIN (IFORCA, LWCUR)
-
-      IF (LWFLUXOUT) THEN
-        IF (.NOT.ALLOCATED(PHIEPS)) THEN 
-          ALLOCATE(PHIEPS(IJS:IJL))
-          PHIEPS(:) = 0.0_JWRB
-        ENDIF
-        IF (.NOT.ALLOCATED(PHIAW)) THEN 
-          ALLOCATE(PHIAW(IJS:IJL))
-          PHIAW(:) = 0.0_JWRB
-        ENDIF
-        IF (.NOT.ALLOCATED(TAUOC)) THEN
-          ALLOCATE(TAUOC(IJS:IJL))
-          TAUOC(:) = 0.0_JWRB
-        ENDIF
-
-        IF (.NOT.ALLOCATED(TAUXD)) ALLOCATE(TAUXD(IJS:IJL))
-        IF (.NOT.ALLOCATED(TAUYD)) ALLOCATE(TAUYD(IJS:IJL))
-        IF (.NOT.ALLOCATED(WSEMEAN)) ALLOCATE(WSEMEAN(IJS:IJL))
-        IF (.NOT.ALLOCATED(WSFMEAN)) ALLOCATE(WSFMEAN(IJS:IJL))
-        IF (.NOT.ALLOCATED(TAUOCXD)) ALLOCATE(TAUOCXD(IJS:IJL))
-        IF (.NOT.ALLOCATED(TAUOCYD)) ALLOCATE(TAUOCYD(IJS:IJL))
-        IF (.NOT.ALLOCATED(PHIOCD)) ALLOCATE(PHIOCD(IJS:IJL))
-
-      ENDIF
 
 !     DEFINE COEFFICIENT FOR MEAN PERIODS CALCULATION
       IF (ALLOCATED(DFIMOFR)) DEALLOCATE(DFIMOFR)

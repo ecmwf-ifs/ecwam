@@ -1,4 +1,4 @@
-      SUBROUTINE WVALLOC(LWCUR)
+      SUBROUTINE WVALLOC
 
 ! ----------------------------------------------------------------------
 
@@ -11,14 +11,11 @@
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWCURR  , ONLY : U        ,V
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
-      USE YOWMEAN  , ONLY : PHIEPS   ,                                  &
-     &                      USTOKES  ,VSTOKES  ,STRNMS   ,              &
-     &                      PHIAW    ,TAUOC    ,TAUXD    ,TAUYD    ,    &
-     &                      TAUOCXD  ,TAUOCYD  ,PHIOCD   ,              &
-     &                      WSEMEAN  ,WSFMEAN
+      USE YOWMEAN  , ONLY : INTFLDS
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,LL1D
+      USE YOWPCONS , ONLY : ZMISS
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,                          &
      &            WSWAVE   ,WDWAVE   ,UFRIC  ,  &
      &            Z0M    ,TAUW     ,TAUWDIR  ,  &
@@ -38,8 +35,6 @@
       INTEGER(KIND=JWIM) :: NPR, MAXLEN
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-
-      LOGICAL, INTENT(IN) :: LWCUR
 
 ! ----------------------------------------------------------------------
  
@@ -69,33 +64,16 @@
         FL1(:,:,:) = 0.0_JWRB
       ENDIF
 
-      IF (.NOT.ALLOCATED(USTOKES)) ALLOCATE(USTOKES(NSTART(IRANK):NEND(IRANK)))
-      IF (.NOT.ALLOCATED(VSTOKES)) ALLOCATE(VSTOKES(NSTART(IRANK):NEND(IRANK)))
+      IF (.NOT.ALLOCATED(INTFLDS)) THEN 
+        ALLOCATE(INTFLDS(NSTART(IRANK):NEND(IRANK)))
 
-      IF (.NOT.ALLOCATED(PHIEPS)) THEN 
-        ALLOCATE(PHIEPS(NSTART(IRANK):NEND(IRANK)))
-        PHIEPS(:) = 0.0_JWRB
-      ENDIF
-      IF (.NOT.ALLOCATED(PHIAW)) THEN 
-        ALLOCATE(PHIAW(NSTART(IRANK):NEND(IRANK)))
-        PHIAW(:) = 0.0_JWRB
-      ENDIF
-      IF (.NOT.ALLOCATED(TAUOC)) THEN
-        ALLOCATE(TAUOC(NSTART(IRANK):NEND(IRANK)))
-        TAUOC(:) = 0.0_JWRB
-      ENDIF
-
-      IF (.NOT.ALLOCATED(TAUXD)) ALLOCATE(TAUXD(NSTART(IRANK):NEND(IRANK)))
-      IF (.NOT.ALLOCATED(TAUYD)) ALLOCATE(TAUYD(NSTART(IRANK):NEND(IRANK)))
-      IF (.NOT.ALLOCATED(TAUOCXD)) ALLOCATE(TAUOCXD(NSTART(IRANK):NEND(IRANK)))
-      IF (.NOT.ALLOCATED(TAUOCYD)) ALLOCATE(TAUOCYD(NSTART(IRANK):NEND(IRANK)))
-      IF (.NOT.ALLOCATED(PHIOCD)) ALLOCATE(PHIOCD(NSTART(IRANK):NEND(IRANK)))
-      IF (.NOT.ALLOCATED(WSEMEAN)) ALLOCATE(WSEMEAN(NSTART(IRANK):NEND(IRANK)))
-      IF (.NOT.ALLOCATED(WSFMEAN)) ALLOCATE(WSFMEAN(NSTART(IRANK):NEND(IRANK)))
-
-      IF (.NOT.ALLOCATED(STRNMS)) THEN
-        ALLOCATE(STRNMS(NSTART(IRANK):NEND(IRANK)))
-        STRNMS(:) = 0.0_JWRB
+        INTFLDS(:)%PHIEPS  = 0.0_JWRB
+        INTFLDS(:)%PHIAW   = 0.0_JWRB
+        INTFLDS(:)%TAUOC   = 0.0_JWRB
+        INTFLDS(:)%STRNMS  = 0.0_JWRB
+        INTFLDS(:)%ALTWH   = ZMISS 
+        INTFLDS(:)%CALTWH  = ZMISS 
+        INTFLDS(:)%RALTCOR = ZMISS 
       ENDIF
 
       IF (.NOT.ALLOCATED(U)) THEN

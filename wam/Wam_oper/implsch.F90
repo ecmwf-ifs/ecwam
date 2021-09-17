@@ -1,15 +1,14 @@
-      SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
-     &                    WAVNUM, CINV,                            &
-     &                    CGROUP, STOKFAC,                         &
-     &                    DEPTH, EMAXDPT,                          &
-     &                    TAUW, TAUWDIR,                           &
-     &                    CICOVER, CIWA,                           &
-     &                    WSWAVE, WDWAVE, UFRIC,                   &
-     &                    Z0M, Z0B,                                &
-     &                    AIRD, WSTAR,                             &
-     &                    WSEMEAN, WSFMEAN,                        &
-     &                    USTOKES, VSTOKES, STRNMS,                &
-     &                    MIJ, XLLWS)
+SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
+&                   WAVNUM, CINV,                            &
+&                   CGROUP, STOKFAC,                         &
+&                   DEPTH, EMAXDPT,                          &
+&                   TAUW, TAUWDIR,                           &
+&                   CICOVER, CIWA,                           &
+&                   WSWAVE, WDWAVE, UFRIC,                   &
+&                   Z0M, Z0B,                                &
+&                   AIRD, WSTAR,                             &
+&                   INTFLDS,                                 &
+&                   MIJ, XLLWS)
 
 ! ----------------------------------------------------------------------
 
@@ -34,7 +33,7 @@
 !    &                   TAUW,TAUWDIR,
 !    &                   CICOVER, CIWA,
 !    &                   WSWAVE,WDWAVE,UFRIC,Z0M,AIRD,WSTAR,
-!    &                   USTOKES, VSTOKES, STRNMS,
+!    &                   INTFLDS,
 !    &                   MIJ,  XLLWS)
 !      *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
 !      *KIJL*    - LOCAL INDEX OF LAST GRIDPOINT
@@ -54,15 +53,11 @@
 !      *Z0B*       BACKGROUND ROUGHNESS LENGTH.
 !      *TAUW*      WAVE STRESS IN (M/S)**2
 !      *TAUWDIR*   WAVE STRESS DIRECTION. 
-!      *AIRD*      AIR DENSITY IN KG/M3.
-!      *WSTAR*  FREE CONVECTION VELOCITY SCALE (M/S)
 !      *CICOVER*   SEA ICE COVER.
 !      *CIWA*      SEA ICE WAVE ATTENUATION.
-!      *WSEMEAN*   WINDSEA VARIANCE.
-!      *WSFMEAN*   WINDSEA MEAN FREQUENCY.
-!      *USTOKES*   U-COMP SURFACE STOKES DRIFT.
-!      *VSTOKES*   V-COMP SURFACE STOKES DRIFT.
-!      *STRNMS*    MEAN SQUARE STRAIN INTO THE SEA ICE (only if LWNEMOCOUSTRN).
+!      *AIRD*      AIR DENSITY IN KG/M3.
+!      *WSTAR*     FREE CONVECTION VELOCITY SCALE (M/S)
+!      *INTFLDS*   INTEGRATED/DERIVED PARAMETERS
 !      *MIJ*       LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !      *XLLWS*     TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
 
@@ -90,6 +85,7 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS
 
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU, LWNEMOCOUSTRN 
       USE YOWCOUT  , ONLY : LWFLUXOUT 
@@ -134,8 +130,8 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: Z0M
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: Z0B
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: AIRD, WSTAR
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: WSEMEAN, WSFMEAN
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
+      TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
+
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CIWA
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
@@ -168,7 +164,13 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
+
+ASSOCIATE(WSEMEAN => INTFLDS%WSEMEAN, &
+&         WSFMEAN => INTFLDS%WSFMEAN, &  
+&         USTOKES => INTFLDS%USTOKES, &
+&         VSTOKES => INTFLDS%VSTOKES, &
+&         STRNMS  => INTFLDS%STRNMS )
 
 
 !*    1. INITIALISATION.
@@ -352,7 +354,7 @@
      &                 SSOURCE, CICOVER,                        &
      &                 PHIWA,                                   &
      &                 EMEAN, F1MEAN, WSWAVE, WDWAVE,        &
-     &                 UFRIC, AIRD, .TRUE.)
+     &                 UFRIC, AIRD, INTFLDS, .TRUE.)
       ENDIF
 ! ----------------------------------------------------------------------
 
@@ -400,6 +402,8 @@
 
 
 ! ----------------------------------------------------------------------
-      IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE IMPLSCH
+
+END SUBROUTINE IMPLSCH

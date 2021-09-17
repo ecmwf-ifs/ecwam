@@ -1,10 +1,10 @@
-      SUBROUTINE WNFLUXES (KIJS, KIJL,                      &
-     &                     MIJ, RHOWGDFTH,                  &
-     &                     CINV,                            &
-     &                     SSURF, CICOVER,                  &
-     &                     PHIWA,                           &
-     &                     EM, F1, WSWAVE, WDWAVE,          &
-     &                     UFRIC, AIRD, LNUPD)
+SUBROUTINE WNFLUXES (KIJS, KIJL,                      &
+&                    MIJ, RHOWGDFTH,                  &
+&                    CINV,                            &
+&                    SSURF, CICOVER,                  &
+&                    PHIWA,                           &
+&                    EM, F1, WSWAVE, WDWAVE,          &
+&                    UFRIC, AIRD, INTFLDS, LNUPD)
 
 ! ----------------------------------------------------------------------
 
@@ -22,7 +22,7 @@
 !    &                     SSURF, CICOVER,
 !    &                     PHIWA,
 !    &                     EM, F1, WSWAVE, WDWAVE,
-!    &                     UFRIC, AIRD, LNUPD)
+!    &                     UFRIC, AIRD, INTFLDS, LNUPD)
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*    - INDEX OF LAST GRIDPOINT.
 !          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE
@@ -41,11 +41,13 @@
 !          *WDWAVE* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC CONVENTION
 !          *UFRIC*  - FRICTION VELOCITY IN M/S.
 !          *AIRD*   - AIR DENSITY IN KG/M3.
+!          *INTFLDS*-  INTEGRATED/DERIVED PARAMETERS
 !          *LNUPD*  - UPDATE NEMO FIELDS.
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWALTAS , ONLY : EGRCRV   ,AFCRV       ,BFCRV
@@ -54,9 +56,7 @@
      &                      NPHIEPS  ,NTAUOC      ,NSWH     ,NMWP
       USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH
       USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH, CIBLOCK
-      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,                        &
-     &                      TAUOC    ,TAUXD    ,TAUYD    ,              &
-     &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
+
       USE YOWNEMOP , ONLY : NEMODP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : TAUOCMIN ,TAUOCMAX ,PHIEPSMIN,PHIEPSMAX,    &
@@ -77,6 +77,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: PHIWA
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EM, F1, WSWAVE, WDWAVE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, AIRD
+      TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
 
       LOGICAL, INTENT(IN) :: LNUPD
 
@@ -116,7 +117,17 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
+
+ASSOCIATE(PHIEPS  => INTFLDS%PHIEPS,  &
+&         PHIAW   => INTFLDS%PHIAW,   &
+&         TAUOC   => INTFLDS%TAUOC,   &
+&         TAUXD   => INTFLDS%TAUXD,   &
+&         TAUYD   => INTFLDS%TAUYD,   &
+&         TAUOCXD => INTFLDS%TAUOCXD, &
+&         TAUOCYD => INTFLDS%TAUOCYD, &
+&         PHIOCD  => INTFLDS%PHIOCD)
+
 
       EPSUS3 =  EPSUS*SQRT(EPSUS)
 
@@ -241,7 +252,7 @@
       ENDDO
 
 ! ----------------------------------------------------------------------
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('WNFLUXES',1,ZHOOK_HANDLE)
 
-      IF (LHOOK) CALL DR_HOOK('WNFLUXES',1,ZHOOK_HANDLE)
-
-      END SUBROUTINE WNFLUXES
+END SUBROUTINE WNFLUXES

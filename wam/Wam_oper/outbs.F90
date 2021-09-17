@@ -1,4 +1,4 @@
-SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
+SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS, INTFLDS)
 ! ----------------------------------------------------------------------
 
 !**** *OUTBS* - MODEL OUTPUT FROM BLOCK TO FILE, PRINTER AND COMMON.
@@ -10,11 +10,13 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
 
 !**   INTERFACE.
 !     ----------
-!      *CALL*OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
+!      *CALL*OUTBS (IJS, IJL, MIJ, FL1, XLLWS, INTFLDS)
 !      *IJS:IJL - FIRST DIMENSION OF ARRAYS MIJ, FL1, XLLWS.
 !      *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !      *FL1*    - INPUT SPECTRUM.
 !      *XLLWS*  - WINDSEA MASK FROM INPUT SOURCE TERM
+!      *INTFLDS*- INTEGRATED/DERIVED PARAMETERS
+
 
 !     EXTERNALS.
 !     ----------
@@ -33,6 +35,7 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,NIPRMOUT    ,BOUT
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
@@ -51,6 +54,7 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
            
       REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: XLLWS
+      TYPE(INTGT_PARAM_FIELDS), DIMENSION(IJS:IJL), INTENT(IN) :: INTFLDS
 
       INTEGER(KIND=JWIM) :: M, IJ, JKGLO, KIJS, KIJL, NPROMA
 
@@ -75,7 +79,7 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
         CALL OUTBLOCK(KIJS, KIJL, MIJ(KIJS),                                       &
      &                FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),                    &
      &                WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:), CGROUP(KIJS:KIJL,:), &
-     &                DEPTH(KIJS),                                                 &
+     &                DEPTH(KIJS), INTFLDS(KIJS),                                  &
      &                BOUT(KIJS:KIJL,:))
       ENDDO
 !$OMP END PARALLEL DO

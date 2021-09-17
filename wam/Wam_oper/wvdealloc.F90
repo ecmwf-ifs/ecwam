@@ -15,11 +15,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWMEAN  , ONLY : PHIEPS   ,                                  &
-     &                      USTOKES  ,VSTOKES  ,STRNMS   ,              &
-     &                      PHIAW    ,TAUOC    ,TAUXD    ,TAUYD    ,    &
-     &                      TAUOCXD  ,TAUOCYD  ,PHIOCD   ,              &
-     &                      WSEMEAN  ,WSFMEAN
+      USE YOWMEAN  , ONLY : INTFLDS
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
@@ -35,20 +31,7 @@
 !     1.  DEALLOCATE NECESSARY ARRAYS
 !         -------------------------
 
-      IF (ALLOCATED(USTOKES)) DEALLOCATE(USTOKES)
-      IF (ALLOCATED(VSTOKES)) DEALLOCATE(VSTOKES)
-      IF (ALLOCATED(STRNMS)) DEALLOCATE(STRNMS)
-
-      IF (ALLOCATED(PHIEPS)) DEALLOCATE(PHIEPS)
-      IF (ALLOCATED(PHIAW)) DEALLOCATE(PHIAW)
-      IF (ALLOCATED(TAUOC)) DEALLOCATE(TAUOC)
-      IF (ALLOCATED(TAUXD)) DEALLOCATE(TAUXD)
-      IF (ALLOCATED(TAUYD)) DEALLOCATE(TAUYD)
-      IF (ALLOCATED(TAUOCXD)) DEALLOCATE(TAUOCXD)
-      IF (ALLOCATED(TAUOCYD)) DEALLOCATE(TAUOCYD)
-      IF (ALLOCATED(PHIOCD)) DEALLOCATE(PHIOCD)
-      IF (ALLOCATED(WSEMEAN)) DEALLOCATE(WSEMEAN)
-      IF (ALLOCATED(WSFMEAN)) DEALLOCATE(WSFMEAN)
+      IF (ALLOCATED(INTFLDS)) DEALLOCATE(INTFLDS)
 
       IF (LHOOK) CALL DR_HOOK('WVDEALLOC',1,ZHOOK_HANDLE)
 
