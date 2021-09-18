@@ -129,7 +129,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            LRELWIND ,                                            &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
-      USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
+      USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,   &
      &            PATH     ,CPATH    ,CWI
       USE YOWUNIT  , ONLY : IU04     ,IU20     ,IU30     ,IU32
@@ -148,6 +148,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 #include "abort1.intfb.h"
 #include "difdate.intfb.h"
 #include "initgc.intfb.h"
+#include "iwam_get_unit.intfb.h"
 #include "mpcrtbl.intfb.h"
 #include "outxt.intfb.h"
 #include "readsta.intfb.h"
@@ -168,7 +169,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       INTEGER(KIND=JWIM) :: MINBUFRSAT, MAXBUFRSAT
       INTEGER(KIND=JWIM) :: IUWDFILE
       INTEGER(KIND=JWIM) :: IWTIME, IWTIME_old
-      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
       INTEGER(KIND=JWIM) :: NPROC_RST
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -196,7 +196,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !*    1. ANALYSE NAMELIST NALINE.
 !        ------------------------
 
-      IF (IDAMPING.NE.0 .AND. IDAMPING.NE.1) THEN
+      IF (IDAMPING /=0 .AND. IDAMPING /= 1) THEN
         WRITE(IU06,*) ' WRONG VALUE FOR IDAMPING !!!'
         WRITE(IU06,*) ' IDAMPING =',IDAMPING
         CALL ABORT1
@@ -210,14 +210,14 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
                             ! this needs to be changed later.
       ENDIF
 
-      IF(.NOT.LWCOU) LGRHDIFS = .FALSE.  ! by definition
-      IF(LGRHDIFS) THEN
+      IF (.NOT.LWCOU) LGRHDIFS = .FALSE.  ! by definition
+      IF (LGRHDIFS) THEN
 !       GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
         CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'stream',IFS_STREAM)
-        IF(.NOT.LNEWLVTP) THEN
+        IF (.NOT.LNEWLVTP) THEN
           CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,      &
      &                      MARSFCTYPE, ISTREAM, LASTREAM)
-          IF(CSTREAM.EQ.'****') THEN
+          IF (CSTREAM == '****') THEN
             WRITE(IU06,*) '*****************************************'
             WRITE(IU06,*) ''
             WRITE(IU06,*) ' ERROR IN USERIN !!!!'
@@ -231,7 +231,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         ELSE
           ISTREAM=IFS_STREAM
         ENDIF
-      ELSEIF(ISTREAM.LE.0) THEN
+      ELSEIF (ISTREAM <= 0) THEN
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'+ SUBROUTINE USERIN :                      +'
@@ -243,7 +243,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         CALL ABORT1
       ENDIF
 
-      IF(ISTREAM.LE.0) THEN
+      IF (ISTREAM <= 0) THEN
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'+ SUBROUTINE USERIN :                      +'
@@ -255,7 +255,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         CALL ABORT1
       ENDIF
 
-      IF (LWNEMOCOU.AND..NOT.LWNEMOCOUSEND.AND..NOT.LWNEMOCOURECV) THEN
+      IF (LWNEMOCOU .AND. .NOT.LWNEMOCOUSEND .AND. .NOT.LWNEMOCOURECV) THEN
         WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++++'
         WRITE(IU06,*) '+                                             +'
         WRITE(IU06,*) '+ SUBROUTINE USERIN :                         +'
@@ -267,7 +267,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         CALL ABORT1
       ENDIF
 
-      IF(.NOT.LWCOU) THEN
+      IF (.NOT.LWCOU) THEN
         CDATEA = CBPLTDT
         CDATEE = CEPLTDT
       ELSE
@@ -282,52 +282,52 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       YEXPVER(5-LEN:4)=YEXPVER(1:LEN)
       YEXPVER(1:4-LEN)='0000'
 
-      IF(LWCOU) THEN
+      IF (LWCOU) THEN
 !       TIME STEP SELECTION: 
-        IF(KCOUSTEP.LE.IDELPRO .AND. KCOUSTEP.LE.IDELT) THEN
+        IF (KCOUSTEP <= IDELPRO .AND. KCOUSTEP <= IDELT) THEN
 !         TIGHT COUPLING
           IDELPRO=KCOUSTEP
           IDELT=KCOUSTEP
-        ELSE IF(KCOUSTEP.GE.IDELPRO .AND. KCOUSTEP.LE.IDELT) THEN
+        ELSEIF (KCOUSTEP >= IDELPRO .AND. KCOUSTEP <= IDELT) THEN
 !         IDELT IS SET BY COUPLING
           IDELT=KCOUSTEP
           DO IC=1,IDELT
             IDELPRO_NEW=IDELT/IC
-            IF(IDELPRO_NEW*IC.EQ.IDELT.AND.IDELPRO_NEW.LE.IDELPRO )EXIT
+            IF (IDELPRO_NEW*IC == IDELT .AND. IDELPRO_NEW <= IDELPRO )EXIT
           ENDDO
           IDELPRO=IDELPRO_NEW
-        ELSE IF(KCOUSTEP.LE.IDELPRO.AND.KCOUSTEP.GE.IDELT) THEN
+        ELSEIF (KCOUSTEP <= IDELPRO .AND. KCOUSTEP >= IDELT) THEN
 !         IDELPRO IS SET BY COUPLING
           IDELPRO=KCOUSTEP
           DO IC=1,IDELPRO
             IDELT_NEW=IDELPRO/IC
-            IF(IDELT_NEW*IC.EQ.IDELPRO.AND.IDELT_NEW.LE.IDELT) EXIT
+            IF (IDELT_NEW*IC == IDELPRO .AND. IDELT_NEW <= IDELT) EXIT
           ENDDO
           IDELT=IDELT_NEW
         ELSE
-          IF(IDELPRO.LE.IDELT) THEN
+          IF (IDELPRO <= IDELT) THEN
             DO IC=1,KCOUSTEP
               IDELT_NEW=KCOUSTEP/IC
-              IF(IDELT_NEW*IC.EQ.KCOUSTEP.AND.IDELT_NEW.LE.IDELT) EXIT
+              IF (IDELT_NEW*IC == KCOUSTEP .AND. IDELT_NEW <= IDELT) EXIT
             ENDDO
             IDELT=IDELT_NEW
   
             DO IC=1,IDELT
             IDELPRO_NEW=IDELT/IC
-              IF(IDELPRO_NEW*IC.EQ.IDELT .AND. IDELPRO_NEW.LE.IDELPRO) EXIT
+              IF (IDELPRO_NEW*IC == IDELT .AND. IDELPRO_NEW <= IDELPRO) EXIT
             ENDDO
             IDELPRO=IDELPRO_NEW
 
           ELSE
             DO IC=1,KCOUSTEP
             IDELPRO_NEW=KCOUSTEP/IC
-              IF(IDELPRO_NEW*IC.EQ.KCOUSTEP .AND. IDELPRO_NEW.LE.IDELPRO) EXIT
+              IF (IDELPRO_NEW*IC == KCOUSTEP .AND. IDELPRO_NEW <= IDELPRO) EXIT
             ENDDO
             IDELPRO=IDELPRO_NEW
 
             DO IC=1,IDELPRO
               IDELT_NEW=IDELPRO/IC
-              IF(IDELT_NEW*IC.EQ.IDELPRO.AND.IDELT_NEW.LE.IDELT) EXIT
+              IF (IDELT_NEW*IC == IDELPRO .AND. IDELT_NEW <= IDELT) EXIT
             ENDDO
             IDELT=IDELT_NEW
           ENDIF
@@ -347,7 +347,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
 !* CHECK FLAG FOR GRIBING AS SOME OPTIONS ARE NOT IMPLEMENTED
 !* IN OUTINT
-      IF (IREST.GT.0 .AND. LGRIBOUT .AND. .NOT.GFLAG(IRWDIR)) THEN
+      IF (IREST > 0 .AND. LGRIBOUT .AND. .NOT.GFLAG(IRWDIR)) THEN
         GFLAG(IRWDIR) = .TRUE.
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' YOU HAVE REQUESTED RESTART FILE IN GRIB FORMAT' 
@@ -358,7 +358,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' '
       ENDIF
-      IF (IREST.GT.0 .AND. LGRIBOUT .AND. .NOT.GFLAG(IRCD)) THEN
+      IF (IREST > 0 .AND. LGRIBOUT .AND. .NOT.GFLAG(IRCD)) THEN
         GFLAG(IRCD) = .TRUE.
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' YOU HAVE REQUESTED RESTART FILE IN GRIB FORMAT' 
@@ -369,7 +369,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' '
       ENDIF
-      IF (IREST.GT.0 .AND. LGRIBOUT .AND. .NOT.GFLAG(IRU10)) THEN
+      IF (IREST > 0 .AND. LGRIBOUT .AND. .NOT.GFLAG(IRU10)) THEN
         GFLAG(IRU10) = .TRUE.
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' YOU HAVE REQUESTED RESTART FILE IN GRIB FORMAT' 
@@ -380,13 +380,13 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' '
       ENDIF
-      IF (GFLAG(IRALTHS) .AND. (IASSI.NE.1.OR..NOT.LALTAS)) THEN
+      IF (GFLAG(IRALTHS) .AND. (IASSI /= 1 .OR. .NOT.LALTAS) ) THEN
         GFLAG(IRALTHS) = .FALSE.
       ENDIF
-      IF (GFLAG(IRALTHSC) .AND. (IASSI.NE.1.OR..NOT.LALTAS)) THEN
+      IF (GFLAG(IRALTHSC) .AND. (IASSI /= 1 .OR. .NOT.LALTAS) ) THEN
         GFLAG(IRALTHSC) = .FALSE.
       ENDIF
-      IF (GFLAG(IRALTRC) .AND. (IASSI.NE.1.OR..NOT.LALTAS)) THEN
+      IF (GFLAG(IRALTRC) .AND. (IASSI /= 1 .OR. .NOT.LALTAS) ) THEN
         GFLAG(IRALTRC) = .FALSE.
       ENDIF
 
@@ -395,10 +395,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !     IN CASE OF NO MESSAGE PASSING THE TABLE IS STILL USED TO
 !     POINT TO THE PARAMETRE WHICH ARE OUTPUT.
       CALL MPCRTBL
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '    SUB. INITMDL: MPCRTBL DONE'
-        CALL FLUSH (IU06)
-      ENDIF
 
       FFLAG20 = SET_WFLAGS(FFLAG,JPPFLAG)
       GFLAG20 = SET_WFLAGS(GFLAG,JPPFLAG)
@@ -409,18 +405,18 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
 !     DEFINE GRIDDED OUTPUT ARRAYS WHICH ARE USED IN THE ASSIMILATION
       UFLAG=.FALSE.
-      IF(IASSI.EQ.1) THEN
+      IF (IASSI == 1) THEN
         UFLAG(1)=.TRUE.
       ENDIF
 
       ICPLEN=LEN_TRIM(CPATH)
-      IF(ICPLEN.GT.0.AND.CPATH(ICPLEN:ICPLEN).EQ.'/') THEN
+      IF (ICPLEN > 0 .AND. CPATH(ICPLEN:ICPLEN) == '/') THEN
         CPATH=CPATH(1:ICPLEN-1)
         ICPLEN=ICPLEN-1
       ENDIF
       CWI=CPATH(1:ICPLEN)//'/waminfo'
 
-      IF(LFDBIOOUT.AND..NOT.LGRIBOUT) THEN
+      IF (LFDBIOOUT .AND. .NOT.LGRIBOUT) THEN
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'+ LFDBIOOUT = TRUE AND LGRIBOUT = FALSE    +'
@@ -458,8 +454,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*)'+                                           +'
 !       OVER-WRITE LRSTPARALR WITH WHAT THE RESTART FILE WANTS
         LRSTPARALR=LRSTPARAL
-        IF(LRSTPARALR) THEN
-          IF(NPROC_RST .NE. NPROC) THEN
+        IF (LRSTPARALR) THEN
+          IF (NPROC_RST /= NPROC) THEN
             WRITE(IU06,*)'+                                           +'
             WRITE(IU06,*)'+++++++++++++++++++++++++++++++++++++++++++++'
             WRITE(IU06,*)'+                                           +'
@@ -489,7 +485,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           ENDIF
         ELSE
           WRITE(IU06,*)'+ NON PARALLEL READ OPTION WAS SELECTED     +'
-        ENDIF  
+        ENDIF
         WRITE(IU06,*)'+ MODEL CONTINUES USING RESTART DATE.       +'
         WRITE(IU06,*)'+                                           +'
         WRITE(IU06,*)'+++++++++++++++++++++++++++++++++++++++++++++'
@@ -507,7 +503,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         IFORCA = NFCST
 
         IF (.NOT. LWCOU) THEN
-          IF (CDATEE.NE.CENDDT) THEN
+          IF (CDATEE /= CENDDT) THEN
             WRITE(IU06,*)'+++++++++++++++++++++++++++++++++++++++++++++'
             WRITE(IU06,*)'+                                           +'
             WRITE(IU06,*)'+    WARNING ERROR IN SUB. USERIN           +'
@@ -526,7 +522,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             CENDDT = CDATEE
           ENDIF
         ELSE
-          IF ( CDATEA .NE. CBEGDT ) THEN
+          IF ( CDATEA /= CBEGDT ) THEN
             WRITE(IU06,*)'+                                           +'
             WRITE(IU06,*)'+++++++++++++++++++++++++++++++++++++++++++++'
             WRITE(IU06,*)'+                                           +'
@@ -544,7 +540,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           ENDIF
         ENDIF
 
-        IF(LFDBIOOUT.AND..NOT.LGRIBOUT) THEN
+        IF (LFDBIOOUT .AND. .NOT.LGRIBOUT) THEN
           WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
           WRITE(IU06,*)'+                                          +'
           WRITE(IU06,*)'+ LFDBIOOUT = TRUE AND LGRIBOUT = FALSE    +'
@@ -558,7 +554,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         CALL FLUSH(IU06)
       ENDIF
 
-      IF(CBPLTDT.GT.CDATEA.AND..NOT.LRESTARTED) THEN
+      IF (CBPLTDT > CDATEA .AND. .NOT.LRESTARTED) THEN
         WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
         WRITE(IU06,*) '+                                           +'
         WRITE(IU06,*) '+    WARNING IN SUB. USERIN                 +'
@@ -572,22 +568,22 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         CBPLTDT=CDATEA
       ENDIF
 
-      IF(CDATER .NE. '00000000000000') THEN
-        IF(CDATER .LT. CDATEA) CDATER = CDATEE
-        IF(CDATER .GT. CDATEE) CDATER = CDATEE
+      IF (CDATER /= '00000000000000') THEN
+        IF (CDATER < CDATEA) CDATER = CDATEE
+        IF (CDATER > CDATEE) CDATER = CDATEE
       ENDIF
-      IF(CDATES .LT. CDATEA) CDATES = CDATEE
-      IF(CDATES .GT. CDATEE) CDATES = CDATEE
+      IF (CDATES < CDATEA) CDATES = CDATEE
+      IF (CDATES > CDATEE) CDATES = CDATEE
 
 !     IF IDELBC IS SET TO ZERO THEN IT WILL BE RESET TO THE LENGTH
 !     OF THE RUN (I.E. THE FILE(S) WILL DISPOSED AT THE END OF THE
 !     RUN.
-      IF(IDELBC.LE.0) CALL DIFDATE(CDATEA,CDATEE,IDELBC)
+      IF (IDELBC <= 0) CALL DIFDATE(CDATEA,CDATEE,IDELBC)
 
 !     1.3 CHECK IF IDELALT WAS SET ELSE SET IT TO IDELWO
 !         ----------------------------------------------
 
-      IF (IDELALT.EQ.0 .AND. IASSI.EQ.1) THEN
+      IF (IDELALT == 0 .AND. IASSI == 1) THEN
         IDELALT=IDELWO
         WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++++'
         WRITE(IU06,*) '+                                             +'
@@ -607,7 +603,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) ' WAVE MODEL'
       WRITE(IU06,*) ' '
       WRITE(IU06,*) ' COUPLING WITH ATMOS. MODEL (LWCOU) : ',LWCOU
-      IF(LWCOU) THEN
+      IF (LWCOU) THEN
       WRITE(IU06,*) '  WITH LWCOU2W  : ', LWCOU2W
       WRITE(IU06,*) '  WITH LWCOURNW : ', LWCOURNW
       WRITE(IU06,*) '  WITH LWCOUHMF : ', LWCOUHMF
@@ -617,15 +613,15 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' STARTING DATE ........... : ',CDATEA
       WRITE(IU06,*) ' END DATE ................ : ',CDATEE
-      IF(CDATEF.LT.CDATEE) THEN
+      IF (CDATEF < CDATEE) THEN
         WRITE(IU06,*) ' FORECAST STARTING DATE    : ',CDATEF
       ENDIF
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' MODEL TIME STEPS:'
       WRITE(IU06,*) ' SOURCE TERM INTEGRATION TIME STEP : ', IDELT,' SECS'
       WRITE(IU06,*) ' PROPAGATION TIME STEP ............: ', IDELPRO,' SECS'
-      IF(.NOT.LWCOU) THEN
-        IF(NDELW_LST.LE.0) THEN
+      IF (.NOT.LWCOU) THEN
+        IF (NDELW_LST <= 0) THEN
           WRITE(IU06,*) ' MODEL WIND INPUT TIME STEP .......: ', IDELWI,' SECS'
           WRITE(IU06,*) ' MODEL WIND OUTPUT TIME STEP.......: ', IDELWO,' SECS'
         ELSE
@@ -650,12 +646,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) '   LLUNBINOUT= ',LLUNBINOUT
         WRITE(IU06,*) ' '
       ENDIF
-      IF (ICASE.EQ.1) THEN
+      IF (ICASE == 1) THEN
         WRITE(IU06,*) ' PROPAGATION GRID SPHERICAL LAT/LON COORDINATES'
       ELSE
         WRITE(IU06,*) ' PROPAGATION GRID CARTESIAN COORDINATES'
       ENDIF
-      IF(LL1D) THEN
+      IF (LL1D) THEN
         WRITE(IU06,*) ' 1D DECOMPOSITION OF THE DOMAIN ' 
       ELSE
         WRITE(IU06,*) ' 2D DECOMPOSITION OF THE DOMAIN ' 
@@ -672,20 +668,20 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '                DTHRN_U = ', DTHRN_U
       WRITE(IU06,*) '                TAILFACTOR = ', TAILFACTOR
       WRITE(IU06,*) '                TAILFACTOR_PM = ', TAILFACTOR_PM
-      IF (IPHYS.EQ.0) THEN
+      IF (IPHYS == 0) THEN
       WRITE(IU06,*) '                CDIS = ', CDIS
       WRITE(IU06,*) '                DELTA_SDIS = ', DELTA_SDIS
       WRITE(IU06,*) '                CDISVIS = ', CDISVIS
-      ELSE IF (IPHYS.EQ.1) THEN
+      ELSEIF (IPHYS == 1) THEN
       WRITE(IU06,*) '                SWELLF5 = ', SWELLF5
       WRITE(IU06,*) '                Z0TUBMAX = ', Z0TUBMAX
       WRITE(IU06,*) '                Z0RAT = ', Z0RAT
       ENDIF
       WRITE(IU06,*) '' 
       WRITE(IU06,*) ' THIS IS ALWAYS A SHALLOW WATER RUN '
-      IF(ISNONLIN.EQ.0) THEN
+      IF (ISNONLIN == 0) THEN
         WRITE(IU06,*) ' THE OLD SHALLOW WATER SNONLIN IS USED '
-      ELSE IF (ISNONLIN.EQ.1) THEN
+      ELSEIF (ISNONLIN == 1) THEN
         WRITE(IU06,*) ' THE NEW SHALLOW WATER SNONLIN IS USED '
       ELSE
         WRITE(IU06,*) ' WARNING: DO NOT KNOW WHICH SNONLIN TO USE !'
@@ -694,41 +690,41 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' '
         CALL ABORT1
       ENDIF
-      IF(LLNORMAGAM) THEN
+      IF (LLNORMAGAM) THEN
         WRITE(IU06,*) ' RE-NORMALISATION OF WIND INPUT GROWTH RATE'
       ENDIF
-      IF(LLGCBZ0) THEN
+      IF (LLGCBZ0) THEN
         WRITE(IU06,*) ' USE GRAVITY-CAPILLARY MODEL FOR THE BACKGROUND ROUGHNESS'
-        IF(LLCAPCHNK) THEN
+        IF (LLCAPCHNK) THEN
           WRITE(IU06,*) ' REDUCED COUPLING FOR STRONG WINDS'
         ENDIF
       ELSE
-        IF(LLCAPCHNK) THEN
+        IF (LLCAPCHNK) THEN
           WRITE(IU06,*) ' CAP CHARNOCK FOR HIGH WINDS (REDUCE COUPLING)'
         ENDIF
       ENDIF
-      IF (IDAMPING.EQ.1 .AND. IPHYS.EQ.0) THEN
+      IF (IDAMPING == 1 .AND. IPHYS == 0) THEN
         WRITE(IU06,*) ' SWELL DAMPING FORMULATION IS USED'
       ENDIF
-      IF(LBIWBK) THEN
+      IF (LBIWBK) THEN
         WRITE(IU06,*) ' BOTTOM INDUCED WAVE BREAKING IS USED'
       ENDIF
-      IF (IPROPAGS.EQ.1) THEN
+      IF (IPROPAGS == 1) THEN
         WRITE(IU06,*) ' PROPAGATION: DUAL ROTATED QUADRANTS SCHEME'
 !!!! PROPAGS1 has not yet been adapted for anything else then
 !!! propgation on a spherical coordinates without currents.
-        IF(ICASE.NE.1 .OR.                                              &
-     &     (ICASE.EQ.1 .AND. (IREFRA.EQ.2 .OR. IREFRA.EQ.3))            &
+        IF (ICASE /= 1 .OR.                                             &
+     &     (ICASE == 1 .AND. (IREFRA == 2 .OR. IREFRA == 3))            &
      &    ) THEN
           WRITE(IU06,*) ' !!!! WARNING: '
           WRITE(IU06,*) ' !!!! THIS OPTION IS NOT YET AVAILABLE !!!'
           WRITE(IU06,*) ' !!!! IT WILL BE AS IF IPROPAGS=0 ' 
           WRITE(IU06,*) ' '
         ENDIF
-      ELSE IF (IPROPAGS.EQ.2) THEN
+      ELSE IF (IPROPAGS == 2) THEN
         WRITE(IU06,*) ' PROPAGATION: CORNER TRANSPORT UPSTREAM SCHEME'
 !!!! PROPAGS2 has not yet been adapted for anything else then
-        IF(ICASE.NE.1) THEN
+        IF (ICASE /= 1) THEN
           WRITE(IU06,*) ' !!!! WARNING: '
           WRITE(IU06,*) ' !!!! THIS OPTION IS NOT YET AVAILABLE !!!'
           WRITE(IU06,*) ' '
@@ -742,22 +738,22 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ELSE
         WRITE(IU06,*) ' WITHOUT SUB-GRID PARAMETRISATION !!! '
       ENDIF
-      IF (IREFRA.EQ.0) THEN
+      IF (IREFRA == 0) THEN
         WRITE(IU06,*) ' MODEL RUNS WITHOUT REFRACTION'
-      ELSEIF (IREFRA.EQ.1) THEN
+      ELSEIF (IREFRA == 1) THEN
         WRITE(IU06,*) ' MODEL RUNS WITH DEPTH REFRACTION ONLY'
-      ELSEIF (IREFRA.EQ.2) THEN
+      ELSEIF (IREFRA == 2) THEN
         WRITE(IU06,*) ' MODEL RUNS WITH CURRENT REFRACTION ONLY'
-        IF(LLCFLCUROFF)  WRITE(IU06,*) ' IF CFL CRITERIA IS NOT SATISFIED, CURRENT REFRACTION WILL BE TURNED OFF LOCALLY'
-        IF(.NOT.LWCOU) THEN
+        IF (LLCFLCUROFF)  WRITE(IU06,*) ' IF CFL CRITERIA IS NOT SATISFIED, CURRENT REFRACTION WILL BE TURNED OFF LOCALLY'
+        IF (.NOT.LWCOU) THEN
         WRITE(IU06,*) ' WITH A CURRENT INPUT TIME STEP OF ',IDELCUR,    &
      &                ' SECONDS.'
         WRITE(IU06,*) ' STARTING FROM ',CDATECURA
         ENDIF
-      ELSEIF (IREFRA.EQ.3) THEN
+      ELSEIF (IREFRA == 3) THEN
         WRITE(IU06,*) ' MODEL RUNS WITH DEPTH AND CURRENT REFRACTION'
-        IF(LLCFLCUROFF)  WRITE(IU06,*) ' IF CFL CRITERIA IS NOT SATISFIED, CURRENT REFRACTION WILL BE TURNED OFF LOCALLY'
-        IF(.NOT.LWCOU) THEN
+        IF (LLCFLCUROFF)  WRITE(IU06,*) ' IF CFL CRITERIA IS NOT SATISFIED, CURRENT REFRACTION WILL BE TURNED OFF LOCALLY'
+        IF (.NOT.LWCOU) THEN
         WRITE(IU06,*) ' WITH A CURRENT INPUT TIME STEP OF ',IDELCUR,    &
      &                ' SECONDS.'
         WRITE(IU06,*) ' STARTING FROM ',CDATECURA
@@ -765,15 +761,15 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ENDIF
 
       IF (LLSOURCE) THEN
-        IF(NDELW_LST.LE.0) THEN
-          IF (IDELWO.GE.IDELWI) THEN
+        IF (NDELW_LST <= 0) THEN
+          IF (IDELWO >= IDELWI) THEN
             WRITE(IU06,*) ' WIND FIELDS ARE NOT INTERPOLATED IN TIME.'
           ELSE
             WRITE(IU06,*) ' WIND FIELDS ARE INTERPOLATED IN TIME.'
           ENDIF
         ELSE
           DO IC=1,NDELW_LST
-            IF (IDELWO_LST(IC).GE.IDELWI_LST(IC)) THEN
+            IF (IDELWO_LST(IC) >= IDELWI_LST(IC)) THEN
               WRITE(IU06,*)' WIND FIELDS ARE NOT INTERPOLATED IN TIME', &
      &                     ' UNTIL ', CDTW_LST(IC)
             ELSE
@@ -795,7 +791,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           WRITE(IU06,*) ' VARIABLE AIR DENSITY EFFECT IS INCLUDED.'
         ENDIF
         IF ( (LWCOU .AND. LWCUR) .OR.                                   &
-     &        IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+     &        IREFRA == 2 .OR. IREFRA == 3) THEN
           WRITE(IU06,*) ' SURFACE CURRENTS ARE PROVIDED,'
           IF ( LWCOU ) THEN 
             IF (LRELWIND) THEN
@@ -819,7 +815,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ENDIF
 
 !     WHEN IMPOSING THE ICE MASK SET THRESHOLD TO 0.3
-      IF(LMASKICE) THEN
+      IF (LMASKICE) THEN
         CITHRSH=0.3_JWRB
         CITHRSH_SAT=CITHRSH
         CIBLOCK=0.0_JWRB
@@ -835,7 +831,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !     HIGH FREQUENCY SPECTRAL TAIL WILL ONLY BE IMPOSED IF SEA ICE COVER <=CITHRSH_TAIL
         CITHRSH_TAIL=0.01_JWRB
 !     ICE WATER DRAG COEFFICIENT
-        IF(LCIWABR) THEN
+        IF (LCIWABR) THEN
           CDICWA=0.01_JWRB
         ELSE
           CDICWA=0.0_JWRB
@@ -844,7 +840,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
       IF (LICERUN) THEN
         WRITE(IU06,*) ' VARYING SEA ICE BOUNDARY WILL BE DETERMINED.'
-        IF(LMASKICE) THEN
+        IF (LMASKICE) THEN
           WRITE(IU06,*) ' AT A FIXED SEA ICE THRESHOLD OF ',CITHRSH
           WRITE(IU06,*) ' WITH FULL BLOCKING THRESHOLD OF ',CIBLOCK
           WRITE(IU06,*) ' AT A FIXED SEA ICE ASSIMLATION THRESHOLD OF ',&
@@ -858,11 +854,11 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &                    CITHRSH_SAT
           WRITE(IU06,*) ' WITH A SPECTRAL TAIL SEA ICE THRESHOLD OF ',  &
      &                    CITHRSH_TAIL
-          IF(LCIWABR) THEN
+          IF (LCIWABR) THEN
           WRITE(IU06,*) ' WITH AN ICE-WATER DRAG COEFFICENT OF ',CDICWA
           ENDIF
         ENDIF
-        IF(LWAMRSETCI) THEN
+        IF (LWAMRSETCI) THEN
           WRITE(IU06,*) ''
           WRITE(IU06,*) ' COUPLED WAVE FIELDS RESET UNDER SEA ICE'
           WRITE(IU06,*) ''
@@ -873,41 +869,31 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' SEA ICE THICKNESS IS PART OF THE INPUT.'
       ENDIF
 
-      IF(.NOT.LWCOU) THEN
-        IF (IBOUNC.EQ.1) THEN
+      IF (.NOT.LWCOU) THEN
+        IF (IBOUNC == 1) THEN
           WRITE(IU06,*) ' MODEL PRODUCES BOUNDARY DATA (COARSE GRID)'
-        ELSE
-          IF(ITEST.GT.0) THEN
-          WRITE(IU06,*) ' MODEL RUNS WITHOUT BOUNDARY POINTS',          &
-     &     ' (COARSE GRID)'
-          ENDIF
         ENDIF
-        IF (IBOUNF.EQ.1) THEN
+        IF (IBOUNF == 1) THEN
           WRITE(IU06,*) ' MODEL RUNS WITH BOUNDARY POINTS (FINE GRID)'
-        ELSE
-          IF(ITEST.GT.0) THEN
-          WRITE(IU06,*) ' MODEL RUNS WITHOUT BOUNDARY POINTS',          &
-     &     ' (FINE GRID)'
-          ENDIF
         ENDIF
         WRITE(IU06,*) ' '
-        IF (IFORCA.EQ.1) THEN
+        IF (IFORCA == 1) THEN
           WRITE(IU06,*) ' MODEL STARTS FROM ANALYSIS FIELDS'
         ELSE
           WRITE(IU06,*) ' MODEL STARTS FROM FORECAST FIELDS'
         ENDIF
       ENDIF
-      IF(LNSESTART) THEN
+      IF (LNSESTART) THEN
         WRITE(IU06,*) ' INITIAL SPECTRA ARE RESET TO NOISE.' 
       ENDIF
-      IF (IASSI.EQ.1) THEN
+      IF (IASSI == 1) THEN
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' WAVE DATA ASSIMILATION IS CARRIED OUT'
-        IF(NASS.GT.0) THEN
+        IF (NASS > 0) THEN
           WRITE(IU06,*) ' AT DATE(S) '
           WRITE(IU06,'(2X,A14)') (CASS(I),I=1,NASS)
         ELSE
-          IF(LWCOU) THEN
+          IF (LWCOU) THEN
             WRITE(IU06,*) ' AT DATE ', CDATEF
           ELSE
             WRITE(IU06,*) ' UNTIL THE END OF THE ANALYSIS PERIOD'
@@ -915,10 +901,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           ENDIF
           CALL FLUSH(IU06)
         ENDIF
-        IF(LALTAS) THEN
+        IF (LALTAS) THEN
           WRITE(IU06,*) ' WITH ALTIMETER DATA IN TIME WINDOW(S) OF '
           WRITE(IU06,*) ' IDELALT = ', IDELALT,' SECONDS'
-          IF(IDELALT.LE.10800) THEN
+          IF (IDELALT <= 10800) THEN
             WRITE(IU06,*) ' ENDING AT ASSIMILATION TIME(S) '
           ELSE
             WRITE(IU06,*) ' CENTERED AROUND THE ASSIMILATION TIME(S) '
@@ -931,7 +917,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             MINBUFRSAT=MIN(IBUFRSAT(ISAT),MINBUFRSAT)
             MAXBUFRSAT=MAX(IBUFRSAT(ISAT),MAXBUFRSAT)
           ENDDO
-          IF(ALLOCATED(LALTPASSIV)) DEALLOCATE(LALTPASSIV)
+          IF (ALLOCATED(LALTPASSIV)) DEALLOCATE(LALTPASSIV)
           ALLOCATE(LALTPASSIV(MINBUFRSAT:MAXBUFRSAT))
           LALTPASSIV=.FALSE.
           DO ISAT=1,NUMALT
@@ -942,30 +928,30 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           DO ISAT=1,NUMALT
              WRITE(IU06,*) ' THE ALTIMETER DATA FROM ',                 &
      &                     TRIM(CSATNAME(ISAT)),' (',IBUFRSAT(ISAT),')'
-            IF(LALTPAS(ISAT)) THEN
+            IF (LALTPAS(ISAT)) THEN
               WRITE(IU06,*) ' THE DATA WILL ONLY BE USED PASSIVELY !!! '
               WRITE(IU06,*) '  '
             ENDIF
-            IF(LALTLRGR(ISAT)) THEN
+            IF (LALTLRGR(ISAT)) THEN
               WRITE(IU06,*) ' THE DATA WILL BE CORRECTED ' 
               WRITE(IU06,*) ' ACCORDING TO FOLLOWING LINEAR REGRESSION'
               WRITE(IU06,*) ' Hsnew= ',HSCOEFCOR(ISAT),' Hs + ',        &
      &                                 HSCONSCOR(ISAT) 
             ENDIF
-            IF(LALTCOR(ISAT)) THEN
+            IF (LALTCOR(ISAT)) THEN
               WRITE(IU06,*) ' THE DATA WILL BE CORRECTED ' 
               WRITE(IU06,*) ' ACCORDING TO THE MODEL SEA STATE.' 
             ENDIF
             WRITE(IU06,*) ' THE THRESHOLD FOR BACKGROUND CHECK IS ',    &
      &                      ALTBGTHRSH(ISAT)
-            IF(HSALTCUT(ISAT).LT.999999.) THEN
+            IF (HSALTCUT(ISAT) < 999999.) THEN
               WRITE(IU06,*) ' THE INPUT MINIMUM WAVE HEIGHT IS ',       &
      &                        HSALTCUT(ISAT)
             ELSE
               WRITE(IU06,*) ' THE MINIMUM WAVE HEIGHT WILL BE',         &
      &                      ' THE OBSERVATION ERROR.'
             ENDIF
-            IF(LALTGRDOUT(ISAT)) THEN
+            IF (LALTGRDOUT(ISAT)) THEN
               WRITE(IU06,*) ' GRIDDED ALTIMETER FIELDS WILL BE' 
               WRITE(IU06,*) ' PRODUCED FOR THIS ALTIMETER.' 
               LLNALTGO = .FALSE.
@@ -980,7 +966,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*) '  '
           ENDIF
         ENDIF
-        IF(LSARAS) THEN
+        IF (LSARAS) THEN
           WRITE(IU06,*) ' '
           WRITE(IU06,*) ' WITH SAR DATA IN TIME WINDOW(S) OF ' 
           WRITE(IU06,*) ' IDELALT = ', IDELALT,' SECONDS' 
@@ -989,7 +975,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ELSE
         WRITE(IU06,*) ' DATA ASSIMILATION IS NOT CARRIED OUT'
       ENDIF
-      IF(LSARINV) THEN
+      IF (LSARINV) THEN
         WRITE(IU06,*) '  '
         WRITE(IU06,*) ' SAR INVERSION IS CARRIED OUT'
         WRITE(IU06,*) '  '
@@ -997,16 +983,16 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' MODEL OUTPUT SELECTION:'
       WRITE(IU06,*) '  '
-      IF (NOUTT.GT.0) THEN
+      IF (NOUTT > 0) THEN
         WRITE(IU06,*) ' NUMBER OF OUTPUT TIMES IS NOUTT = ', NOUTT
         WRITE(IU06,*) ' OUTPUT WILL BE PROCESSED AT:'
         WRITE(IU06,'(6(2X,A14))') (COUTT(I),I=1,NOUTT)
         WRITE(IU06,*) '  '
       ENDIF
-      IF(FFLAG20) CALL OUTXT(IU06,IU20,IU30,IU20,IU32,IDELINT,IASSI,    &
+      IF (FFLAG20) CALL OUTXT(IU06,IU20,IU30,IU20,IU32,IDELINT,IASSI,    &
      & NOUTT,'IU20','IU30','IU20','IU32')
 
-      IF(LSECONDORDER) THEN
+      IF (LSECONDORDER) THEN
         WRITE(IU06,*) ' SECOND ORDER CORRECTION WILL BE APPLIED TO ',   &
      &                ' OUTPUT INTEGRATED PARAMETERS BASED ON MOMENTS'
         WRITE(IU06,*) '  '
@@ -1016,14 +1002,14 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '###  NAME       OUTPUT OPTION :       FILE  GRIB ',&
      &               ' OUT PE  PARAMID'
       WRITE(IU06,*) '                            F = FALSE   T = TRUE '
-      IF(LWAM_USE_IO_SERV) THEN
+      IF (LWAM_USE_IO_SERV) THEN
         WRITE(IU06,*) ''
         WRITE (IU06,*) ' OUTPUT TASK WILL USE THE IFS IOSERVER' 
         WRITE (IU06,*) ' INFORMATION ON OUT PE (below) HAS NO MEANING' 
         WRITE(IU06,*) ''
       ENDIF
       DO ITG = 1,JPPFLAG
-        IF(FFLAG(ITG) .OR. GFLAG(ITG)) THEN
+        IF (FFLAG(ITG) .OR. GFLAG(ITG)) THEN
         WRITE(CITG,'(I3.3)') ITG
         WRITE(IU06,*) CITG,COUTNAME(ITG),                               &
      &   '...', FFLAG(ITG),'...',GFLAG(ITG),'...',IPFGTBL(ITG),'...',   &
@@ -1032,13 +1018,13 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ENDDO
       WRITE(IU06,*) ''
 
-      IF(LWCOU .AND. LWFLUX) THEN
+      IF (LWCOU .AND. LWFLUX) THEN
         WRITE(IU06,*) ''
         WRITE(IU06,*) ' OCEAN FLUXES WILL ALSO BE RETURNED TO IFS.'
         WRITE(IU06,*) ''
       ENDIF
 
-      IF(LWVFLX_SNL) THEN
+      IF (LWVFLX_SNL) THEN
         WRITE(IU06,*) ' OCEAN FLUXES WILL INCLUDE SNL CONTRIBUTION'
       ELSE
         WRITE(IU06,*) ' OCEAN FLUXES WILL NOT INCLUDE SNL CONTRIBUTION'
@@ -1047,7 +1033,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
       ! INITIALISATION FOR GRAVITY-CAPILLARY
       CALL INITGC
-      IF(XKMSS_CUTOFF <= 0.0_JWRB) THEN
+      IF (XKMSS_CUTOFF <= 0.0_JWRB) THEN
         XKMSS_CUTOFF = XK_GC(NWAV_GC)
       ENDIF
       WRITE(IU06,*) ' THE MAXIMUM WAVE NUMBER FOR MSS CALCULATION IS ',XKMSS_CUTOFF
@@ -1085,14 +1071,14 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) ' BINARY RESTART READ  PARALLEL = ', LRSTPARALR 
       WRITE(IU06,*) ' BINARY RESTART WRITE PARALLEL = ', LRSTPARALW 
       WRITE(IU06,*) '  '
-      IF (NOUTS.GT.0.AND.IREST.EQ.1) THEN
+      IF ( NOUTS > 0 ) THEN
         WRITE(IU06,*) ' NUMBER OF SPECTRA OUTPUT TIMES IS NOUTS = ', NOUTS
         WRITE(IU06,*) ' SPECTRA OUTPUT WILL BE PROCESSED AT:'
         WRITE(IU06,'(6(2X,A14))') (COUTS(I),I=1,NOUTS)
         WRITE(IU06,*) '  '
 
-      ELSEIF (IREST.EQ.1) THEN
-        IF(.NOT.LGRIBOUT) THEN
+      ELSEIF (IREST == 1) THEN
+        IF (.NOT.LGRIBOUT) THEN
           WRITE(IU06,*) ' SPECTRA FILES WILL BE WRITTEN OUT TO DISK '   &
      &    ,'EVERY ...', IDELRES, ' SECONDS AND AT THE END OF THE RUN'
         ELSE
@@ -1100,10 +1086,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &    ,'EVERY ...', IDELRES
           WRITE(IU06,*) '  AND AT THE END OF THE RUN.'
         ENDIF
-        IF(CDATER.LT.CDATEE.AND..NOT.LGRIBOUT) WRITE(IU06,*)            &
+        IF (CDATER < CDATEE .AND. .NOT.LGRIBOUT) WRITE(IU06,*)            &
      &   ' !! HOWEVER BOTH RESTART FILES WILL ONLY BE SAVED',           &
      &   ' AT ...', CDATER 
-        IF(CDATES.LT.CDATEE) WRITE(IU06,*)                              &
+        IF (CDATES < CDATEE) WRITE(IU06,*)                              &
      &   ' BUT SPECTRA FILES ALONE  WILL BE SAVED UNTIL '               &
      &   ,'...', CDATES 
       ELSE
@@ -1111,20 +1097,20 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ENDIF
 
       WRITE(IU06,*) '  '
-      IF(LNOCDIN.AND.LGRIBIN) THEN
+      IF (LNOCDIN .AND. LGRIBIN) THEN
         WRITE(IU06,*) '  '
         WRITE (IU06,*) ' NO DRAG COEFFICIENT FIELD IS PROVIDED AS INPUT'
         WRITE (IU06,*) ' THE FIELD WILL BE INITIALISED BY TAKING' 
         WRITE (IU06,*) ' ZERO WAVE STRESS (TAUW)' 
       ENDIF
-      IF(LGRIBIN.AND.ITEST.GT.0) THEN
+      IF (LGRIBIN) THEN
         WRITE(IU06,*) '  '
         WRITE (IU06,*) ' GRIB SPECTRA FIELD ARE USED AS INPUT'
       ENDIF
       WRITE(IU06,*) '  '
-      IF(LFDBIOOUT) THEN
+      IF (LFDBIOOUT) THEN
         WRITE (IU06,*) ' FDB SOFTWARE IS USED TO WRITE OUTPUT SPECTRA FILES' 
-        IF(LWAM_USE_IO_SERV) THEN
+        IF (LWAM_USE_IO_SERV) THEN
           WRITE (IU06,*) ' OUTPUT TASK WILL USE THE IFS IOSERVER' 
         ELSE
         WRITE (IU06,*) ' OUTPUT TASK SELECTED WITH STRIDE = ',NWRTOUTWAM
@@ -1145,11 +1131,11 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,'("  STREAM .....: ", A4)') CSTREAM 
       WRITE(IU06,'("  CLASS.......: ", A4)') YCLASS
       WRITE(IU06,'("  EXPERIMENT..: ", A4)') YEXPVER
-      IF( CLDOMAIN == 'g' ) THEN
+      IF ( CLDOMAIN == 'g' ) THEN
         WRITE(IU06,'("  MODEL NUMBER: ", I4)') IMDLGRBID_G
-      ELSE IF( CLDOMAIN == 'm' ) THEN
+      ELSEIF ( CLDOMAIN == 'm' ) THEN
         WRITE(IU06,'("  MODEL NUMBER: ", I4)') IMDLGRBID_M
-      ELSE IF( CLDOMAIN == 's' ) THEN
+      ELSEIF ( CLDOMAIN == 's' ) THEN
         WRITE(IU06,*) '  ONE GRIDPOINT OR SWAMP CASE !!!'
         WRITE(IU06,*) '  SWAMPWIND = ',SWAMPWIND
         WRITE(IU06,*) '  SWAMPWIND2= ',SWAMPWIND2
@@ -1159,12 +1145,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) '  SWAMPCITH = ',SWAMPCITH
       ENDIF
 
-      IF ( ISTREAM .EQ. 1082 .OR. ISTREAM .EQ. 1095 .OR.                &
-     &     ISTREAM .EQ. 1203 .OR. ISTREAM .EQ. 1204 ) THEN
+      IF ( ISTREAM == 1082 .OR. ISTREAM == 1095 .OR.                &
+     &     ISTREAM == 1203 .OR. ISTREAM == 1204 ) THEN
         WRITE(IU06,*) '  '
-        IF(ISTREAM.EQ.1095 .OR. ISTREAM.EQ.1203 ) THEN
+        IF (ISTREAM == 1095 .OR. ISTREAM == 1203 ) THEN
           WRITE(IU06,'("  MONTHLY FORECAST RUN : ")')
-        ELSEIF(ISTREAM.EQ.1204 ) THEN
+        ELSEIF (ISTREAM == 1204 ) THEN
           WRITE(IU06,'("  MONTHLY FORECAST HINDCAST RUN : ")')
           WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
         ELSE
@@ -1176,42 +1162,42 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,'("  SYSTEM NUMBER:           ", I4  )') NSYSNB
         WRITE(IU06,'("  METHOD NUMBER:           ", I4  )') NMETNB 
         WRITE(IU06,*) '  '
-      ELSE IF ( ISTREAM .EQ. 1083 ) THEN
+      ELSE IF ( ISTREAM == 1083 ) THEN
         WRITE(IU06,'("  MULTI ANALYSIS FORECAST HINDCAST RUN : ")')
         WRITE(IU06,'("  ************************************ ")')
         WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
         WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
-      ELSE IF ( ISTREAM .EQ. 1084 ) THEN
+      ELSE IF ( ISTREAM == 1084 ) THEN
         WRITE(IU06,'("  ENSEMBLE FORECAST HINDCAST RUN : ")')
         WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
         WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
         WRITE(IU06,'("  ************************************ ")')
         WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
         WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
-      ELSE IF ( ISTREAM .EQ. 1085 ) THEN
+      ELSE IF ( ISTREAM == 1085 ) THEN
         WRITE(IU06,'("  FORECAST HINDCAST RUN : ")')
         WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
-      ELSE IF ( ISTREAM .EQ. 1078 ) THEN
+      ELSE IF ( ISTREAM == 1078 ) THEN
         WRITE(IU06,'("  NEW ENSEMBLE FORECAST HINDCAST RUN OVERLAP: ")')
         WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
         WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
         WRITE(IU06,'("  ************************************ ")')
         WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
         WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
-      ELSE IF ( ISTREAM .EQ. 1079 ) THEN
+      ELSE IF ( ISTREAM == 1079 ) THEN
         WRITE(IU06,'("  NEW ENSEMBLE FORECAST HINDCAST RUN : ")')
         WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
         WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
         WRITE(IU06,'("  ************************************ ")')
         WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
         WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
-      ELSE IF ( ISTREAM .EQ. 1088 ) THEN
+      ELSE IF ( ISTREAM == 1088 ) THEN
           WRITE(IU06,'("  ENSEMBLE DATA ASSIMILATION RUN : ")')
           WRITE(IU06,'("  ************************************ ")')
           WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
           WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
       ELSE
-        IF (NENSFNB.NE.0.OR.NTOTENS.NE.0) THEN
+        IF (NENSFNB /= 0 .OR. NTOTENS /= 0) THEN
           WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
           WRITE(IU06,'("  ************************************ ")')
           WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
@@ -1220,13 +1206,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ENDIF
 
       WRITE(IU06,*) '  '
-      WRITE(IU06,*) ' TEST OUTPUT LEVEL IS .............. ITEST = ',    &
-     & ITEST
-      WRITE(IU06,*) ' TEST OUTPUT OF IN BLOCK LOOPS UPTO ITESTB = ',    &
-     & ITESTB
-      WRITE(IU06,*) '  '
 
-      IF(LSMSSIG_WAM) THEN
+      IF (LSMSSIG_WAM) THEN
         WRITE(IU06,*) '  '
         WRITE(IU06,*) ' SIGNALLING IS ACTIVE with '
         WRITE(IU06,*) ' ',TRIM(CMETER),' and ',TRIM(CEVENT)
@@ -1243,8 +1224,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !*    2.1 WIND OUTPUT AND PROPAGATION TIME STEP.
 !         --------------------------------------
 
-      IF ((IDELWO.LT.IDELPRO.AND.MOD(IDELPRO,IDELWO).NE.0) .OR.         &
-     &    (IDELWO.GE.IDELPRO.AND.MOD(IDELWO,IDELPRO).NE.0)) THEN
+      IF ((IDELWO  < IDELPRO .AND. MOD(IDELPRO,IDELWO) /= 0) .OR.         &
+     &    (IDELWO >= IDELPRO .AND. MOD(IDELWO,IDELPRO) /= 0)) THEN
         WRITE(IU06,*) '*******************************************'
         WRITE(IU06,*) '*                                         *'
         WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1261,7 +1242,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !*    2.2 SOURCE FUNCTION AND PROPAGATION TIMESTEP.
 !         -----------------------------------------
 
-      IF (MOD(IDELPRO,IDELT).NE.0 .AND. MOD(IDELT,IDELPRO).NE.0 ) THEN
+      IF (MOD(IDELPRO,IDELT) /= 0 .AND. MOD(IDELT,IDELPRO) /= 0 ) THEN
         WRITE(IU06,*) '*******************************************'
         WRITE(IU06,*) '*                                         *'
         WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1278,7 +1259,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !*    2.3 SOURCE FUNCTION AND WIND OUTPUT TIMESTEP.
 !         -----------------------------------------
 
-      IF (MOD(IDELWO,IDELT).NE.0 .AND. MOD(IDELT,IDELWO).NE.0 ) THEN
+      IF (MOD(IDELWO,IDELT) /= 0 .AND. MOD(IDELT,IDELWO) /= 0 ) THEN
         WRITE(IU06,*) '*******************************************'
         WRITE(IU06,*) '*                                         *'
         WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1296,8 +1277,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !*    2.4 WIND INPUT AND WIND OUTPUT TIMESTEP.
 !         ------------------------------------
 
-      IF(NDELW_LST.LE.0) THEN
-        IF (IDELWO.GT.IDELWI) THEN
+      IF (NDELW_LST <= 0) THEN
+        IF (IDELWO > IDELWI) THEN
           WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
           WRITE(IU06,*) '+                                         +'
           WRITE(IU06,*) '+   WARNING ERROR IN SUB. USERIN          +'
@@ -1315,7 +1296,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
           IDELWI = IDELWO
         ENDIF
-        IF ((IDELWO.LE.IDELWI.AND.MOD(IDELWI,IDELWO).NE.0)) THEN
+        IF ((IDELWO <= IDELWI .AND. MOD(IDELWI,IDELWO) /= 0)) THEN
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) '*                                         *'
           WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1330,7 +1311,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         ENDIF
       ELSE
         DO IC=1,NDELW_LST
-          IF (IDELWO_LST(IC).GT.IDELWI_LST(IC)) THEN
+          IF (IDELWO_LST(IC) > IDELWI_LST(IC)) THEN
             WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
             WRITE(IU06,*) '+                                         +'
             WRITE(IU06,*) '+   WARNING ERROR IN SUB. USERIN          +'
@@ -1348,8 +1329,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
             IDELWI_LST(IC) = IDELWO_LST(IC)
           ENDIF
-          IF ((IDELWO_LST(IC).LE.IDELWI_LST(IC).AND.                    &
-     &         MOD(IDELWI_LST(IC),IDELWO_LST(IC)).NE.0)) THEN
+          IF ((IDELWO_LST(IC) <= IDELWI_LST(IC).AND.                    &
+     &         MOD(IDELWI_LST(IC),IDELWO_LST(IC)) /= 0)) THEN
             WRITE(IU06,*) '*******************************************'
             WRITE(IU06,*) '*                                         *'
             WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1363,8 +1344,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*) '*******************************************'
             LERROR = .TRUE.
            ENDIF
-          IF(IC.GT.1) THEN
-            IF(CDTW_LST(IC).LE.CDTW_LST(IC-1)) THEN
+          IF (IC > 1) THEN
+            IF (CDTW_LST(IC) <= CDTW_LST(IC-1)) THEN
               WRITE(IU06,*) '***************************************'
               WRITE(IU06,*) '*                                     *'
               WRITE(IU06,*) '*   FATAL ERROR IN SUB. USERIN        *'
@@ -1385,7 +1366,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
       CWDFILE='wind_forcing_time_series'
       INQUIRE(FILE=CWDFILE,EXIST=LWDINTS)
-      IF(LWDINTS) THEN
+      IF (LWDINTS) THEN
         LEN=LEN_TRIM(CWDFILE)
         WRITE(IU06,*) ' '
         WRITE(IU06,*) '  FILE ',CWDFILE(1:LEN),' WAS FOUND.'
@@ -1399,7 +1380,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         IWTIME_old=IWTIME
         DO WHILE (.TRUE.)
           READ(IUWDFILE,*,END=110) IWTIME,WSPEED,WTHETA
-          IF((IWTIME-IWTIME_old).NE.IDELWI) THEN
+          IF ((IWTIME-IWTIME_old).NE.IDELWI) THEN
             WRITE(IU06,*) '****************************************'
             WRITE(IU06,*) '*                                      *'
             WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN        *'
@@ -1425,7 +1406,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !*    2.5 FILE DISPOSE TIMESTEP.
 !         ----------------------
 
-      IF (MOD(IDELRES,IDELPRO).NE.0 ) THEN
+      IF (MOD(IDELRES,IDELPRO) /= 0 ) THEN
         WRITE(IU06,*) '*******************************************'
         WRITE(IU06,*) '*                                         *'
         WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1439,7 +1420,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         LERROR = .TRUE.
       ENDIF
 
-      IF (MOD(IDELBC,IDELPRO).NE.0 .AND. MOD(IDELBC,IDELWI).NE.0) THEN
+      IF (MOD(IDELBC,IDELPRO) /= 0 .AND. MOD(IDELBC,IDELWI) /= 0) THEN
         WRITE(IU06,*) '*******************************************'
         WRITE(IU06,*) '*                                         *'
         WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1465,10 +1446,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
       ENDIF
 
-      IF (NOUTT.GT.0) THEN
+      IF (NOUTT > 0) THEN
         DO J=1,NOUTT
           CALL DIFDATE (CDATEA, COUTT(J), ISHIFT)
-          IF (ISHIFT.LT.0) THEN
+          IF (ISHIFT < 0) THEN
             WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
             WRITE(IU06,*) '+                                         +'
             WRITE(IU06,*) '+    WARNING INFO IN SUB. USERIN          +'
@@ -1478,7 +1459,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*) '+ PROGRAM WILL IGNORE THIS OUTPUT TIME    +'
             WRITE(IU06,*) '+                                         +'
             WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
-          ELSE IF (MOD(ISHIFT,IDELPRO).NE.0) THEN
+          ELSE IF (MOD(ISHIFT,IDELPRO) /= 0) THEN
             WRITE(IU06,*) '++++++++++++++++++++++++++++++++++++++++'
             WRITE(IU06,*) '+                                      +'
             WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN      +'
@@ -1492,7 +1473,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           ENDIF
         ENDDO
       ELSE
-        IF ((FFLAG20.OR.GFLAG20) .AND. IDELINT.EQ.0) THEN
+        IF ((FFLAG20.OR.GFLAG20) .AND. IDELINT == 0) THEN
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) '*                                         *'
           WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1505,7 +1486,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           WRITE(IU06,*) '*******************************************'
           LERROR = .TRUE.
         ENDIF
-        IF ((FFLAG20.OR.GFLAG20) .AND. MOD(IDELINT,IDELPRO).NE.0) THEN
+        IF ((FFLAG20.OR.GFLAG20) .AND. MOD(IDELINT,IDELPRO) /= 0) THEN
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) '*                                         *'
           WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1524,10 +1505,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         ENDIF
       ENDIF
 
-      IF (NOUTS.GT.0) THEN
+      IF (NOUTS > 0) THEN
         DO J=1,NOUTS
           CALL DIFDATE (CDATEA, COUTS(J), ISHIFT)
-          IF (ISHIFT.LE.0 .OR. MOD(ISHIFT,IDELPRO).NE.0) THEN
+          IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELPRO) /= 0) THEN
             WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
             WRITE(IU06,*) '+                                       +'
             WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN       +'
@@ -1542,10 +1523,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         ENDDO
       ENDIF
 
-      IF (NASS.GT.0.AND.IASSI.EQ.1) THEN
+      IF (NASS > 0 .AND. IASSI == 1) THEN
         DO J=1,NASS
           CALL DIFDATE (CDATEA, CASS(J), ISHIFT)
-          IF (ISHIFT.LE.0 .OR. MOD(ISHIFT,IDELPRO).NE.0) THEN
+          IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELPRO) /= 0) THEN
             WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
             WRITE(IU06,*) '+                                       +'
             WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN       +'

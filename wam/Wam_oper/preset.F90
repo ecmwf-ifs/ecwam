@@ -142,6 +142,7 @@
       IMPLICIT NONE 
 #include "abort1.intfb.h"
 #include "cigetdeac.intfb.h"
+#include "iwam_get_unit.intfb.h"
 #include "iniwcst.intfb.h"
 #include "mstart.intfb.h"
 #include "mswell.intfb.h"
@@ -161,7 +162,6 @@
       INTEGER(KIND=JWIM) :: IU05, IU07 
       INTEGER(KIND=JWIM) :: I4(2)
       INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
-      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
 
       REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JWRB) :: THETA, FETCH, FRMAX 

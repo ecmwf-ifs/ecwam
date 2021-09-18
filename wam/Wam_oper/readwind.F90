@@ -113,6 +113,7 @@
 #include "abort1.intfb.h"
 #include "grib2wgrid.intfb.h"
 #include "incdate.intfb.h"
+#include "iwam_get_unit.intfb.h"
 #include "kgribsize.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD 
@@ -126,7 +127,6 @@
       INTEGER(KIND=JWIM) :: IFORP, IPARAM, KZLEV, IDM 
       INTEGER(KIND=JWIM) :: IWTIME, IDTTURN
       INTEGER(KIND=JWIM) :: LNAME 
-      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
       INTEGER(KIND=JWIM) :: IRET
       INTEGER(KIND=JWIM) :: KGRIB_HANDLE
       INTEGER(KIND=JWIM) :: IDUM(2)

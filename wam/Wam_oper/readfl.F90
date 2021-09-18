@@ -47,7 +47,7 @@
       USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : LL1D
       USE YOWSPEC  , ONLY : IJ2NEWIJ
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
 
@@ -55,6 +55,7 @@
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
+#include "iwam_get_unit.intfb.h"
 #include "unblkrord.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJINF, IJSUP, KINF, KSUP, MINF, MSUP
@@ -66,8 +67,7 @@
 
       LOGICAL, INTENT(IN) :: LOUNIT, LCUNIT, LRSTPARAL
 
-      INTEGER(KIND=JWIM) :: LFILE, IJ, J2, J3, IULOG
-      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT 
+      INTEGER(KIND=JWIM) :: LFILE, IJ, J2, J3
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP) :: FL_G
@@ -79,19 +79,12 @@
       IF (LHOOK) CALL DR_HOOK('READFL',0,ZHOOK_HANDLE)
 
       LFILE=0
-      IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
+      IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
 
-      IF (ITEST.GE.1) THEN
-        IULOG=IU06
-      ELSE
-        IULOG=-1
-      ENDIF
-
-
-      IF(LOUNIT) THEN
+      IF (LOUNIT) THEN
         LLEXIST=.FALSE.
         INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
-        IF(.NOT. LLEXIST) THEN
+        IF (.NOT. LLEXIST) THEN
           WRITE (IU06,*) '*************************************'
           WRITE (IU06,*) '*                                   *'
           WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
@@ -108,10 +101,10 @@
           WRITE (*,*) '*************************************'
           CALL ABORT1
         ENDIF
-        IUNIT=IWAM_GET_UNIT(IULOG, FILENAME(1:LFILE), 'r', 'u',0)
+        IUNIT=IWAM_GET_UNIT(IU06, FILENAME(1:LFILE), 'r', 'u',0)
       ENDIF
 
-      IF(LLUNSTR .AND. .NOT.LRSTPARAL) THEN
+      IF (LLUNSTR .AND. .NOT.LRSTPARAL) THEN
         READ(IUNIT) (((FL_G(IJ,J2,J3),                                  &
      &                  IJ=IJINF,IJSUP),                                &
      &                  J2=KINF,KSUP),                                  &
@@ -122,7 +115,7 @@
      &               FL_G(IJINF:IJSUP,KINF:KSUP,MINF:MSUP))
 
       
-      ELSEIF(LRSTPARAL .OR. LL1D .OR. NPROC.EQ.1) THEN
+      ELSEIF (LRSTPARAL .OR. LL1D .OR. NPROC == 1) THEN
         READ(IUNIT) (((FL(IJ,J2,J3),                                    &
      &                  IJ=IJINF,IJSUP),                                &
      &                  J2=KINF,KSUP),                                  &
@@ -136,9 +129,7 @@
      &                  J3=MINF,MSUP)
 
       ENDIF
-      IF(LCUNIT) CLOSE(IUNIT)
-
-      IF (ITEST.GE.2) WRITE(IU06,*) ' SUB. READFL: INPUT OF FL DONE'
+      IF (LCUNIT) CLOSE(IUNIT)
 
       IF (LHOOK) CALL DR_HOOK('READFL',1,ZHOOK_HANDLE)
 

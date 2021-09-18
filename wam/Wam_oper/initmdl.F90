@@ -309,6 +309,7 @@ SUBROUTINE INITMDL (NADV,                                         &
 #include "init_x0tauhf.intfb.h"
 #include "initdpthflds.intfb.h"
 #include "initnemocpl.intfb.h"
+#include "iwam_get_unit.intfb.h"
 #include "iniwcst.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 #include "prewind.intfb.h"
@@ -335,7 +336,6 @@ SUBROUTINE INITMDL (NADV,                                         &
       INTEGER(KIND=JWIM) :: JD
       INTEGER(KIND=JWIM) :: IDELWH
       INTEGER(KIND=JWIM) :: IU05, IU09, IU10
-      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER(KIND=JWIM) :: NTOT, MTHREADS
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS

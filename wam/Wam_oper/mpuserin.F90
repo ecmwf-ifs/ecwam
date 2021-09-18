@@ -121,12 +121,12 @@
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
+#include "iwam_get_unit.intfb.h"
 #include "mpcrtbl.intfb.h"
 #include "wposnam.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU05
       INTEGER(KIND=JWIM) :: ISAT, IC, II
-      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
