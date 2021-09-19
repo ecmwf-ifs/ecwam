@@ -184,6 +184,7 @@
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "aki.intfb.h"
 #include "peak_ang.intfb.h"
 #include "stat_nl.intfb.h"
 #include "h_max.intfb.h"
@@ -210,7 +211,7 @@
       REAL(KIND=JWRB) :: CONST_SIG_SQRTPIM1, CONST_OM_ZPI, OM_MEAN
       REAL(KIND=JWRB) :: TRANS, DUR, TAU, ZFAC, ZEPS, HS
       REAL(KIND=JWRB) :: ZEPSILON, ZSQREPSILON, FRMAX, FRMIN
-      REAL(KIND=JWRB) :: AKI, TRANSF_BFI
+      REAL(KIND=JWRB) :: TRANSF_BFI
  
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FAC4
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: HMAXN

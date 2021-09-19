@@ -71,6 +71,7 @@ PROGRAM CREATE_BATHY
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       IMPLICIT NONE
+#include "aki.intfb.h"
 #include "iwam_get_unit.intfb.h"
 
       INTEGER(KIND=JWIM), PARAMETER :: ILON=10801
@@ -104,7 +105,6 @@ PROGRAM CREATE_BATHY
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
 
       REAL(KIND=JWRB), PARAMETER :: OLDPI = 3.1415927_JWRB
-      REAL(KIND=JWRB) :: AKI
       REAL(KIND=JWRB) :: PI, RAD, OLDRAD, G, X60, FRATIO, FR1
       REAL(KIND=JWRB) :: XDELLA, XDELLO
       REAL(KIND=JWRB) :: AMOSOP, AMONOP, AMOWEP, AMOEAP
@@ -177,7 +177,7 @@ PROGRAM CREATE_BATHY
       FILENAME='grid_description'
 !!!!!!!!!! grid_description is alsoread in uiprep  !!!!!!!!!!
       INQUIRE(FILE=FILENAME,EXIST=LLGRID)
-      IF(LLGRID) THEN
+      IF (LLGRID) THEN
         IU=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0)
         OPEN(IU,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
         READ (IU,*) ISPECTRUNC
@@ -191,7 +191,7 @@ PROGRAM CREATE_BATHY
       ENDIF
 
 
-      IF(LLGRID) THEN
+      IF (LLGRID) THEN
         XDELLA = (AMONOP-AMOSOP)/(NY-1)
         ALLOCATE(NLONRGG(NY))
 
@@ -202,7 +202,7 @@ PROGRAM CREATE_BATHY
           NX = MAX(NX,NLONRGG(KSN))
         ENDDO
 
-        IF(IPER.EQ.1) THEN
+        IF (IPER.EQ.1) THEN
           XDELLO  = 360._JWRB/REAL(NX)
           AMOEAP = AMOWEP + 360._JWRB - XDELLO
         ELSE
@@ -239,7 +239,7 @@ PROGRAM CREATE_BATHY
       DO K=1,NY
 !       !!! from south to north !!!!
         COSPH(K)   = COS(XLAT(K)*RAD)
-        IF(.NOT.LLGRID) THEN
+        IF (.NOT.LLGRID) THEN
           IF (IRGG.EQ.1) THEN
             IF(XDELLA .EQ.  0.25_JWRB .AND.                             &
      &         AMOWEP .EQ. -98.0_JWRB .AND. AMOSOP.EQ.9.0_JWRB .AND.    &
@@ -253,7 +253,7 @@ PROGRAM CREATE_BATHY
              NLONRGG(K)=                                                &
      &         MAX(NINT(NX*(COS(XLAT(K)*RAD)/(2._JWRB*COS(X60*RAD)))),2)
             ENDIF
-            IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
+            IF (MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
             NLONRGG(K) = NX
           ENDIF

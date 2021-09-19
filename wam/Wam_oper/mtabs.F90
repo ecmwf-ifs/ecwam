@@ -48,10 +48,10 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "aki.intfb.h"
 
       INTEGER(KIND=JWIM) :: M, JD, NAN, NSTP
 
-      REAL(KIND=JWRB) :: AKI
       REAL(KIND=JWRB) :: GH, OM, AD, AK, AKD, DEPTHE
 
 ! ----------------------------------------------------------------------
