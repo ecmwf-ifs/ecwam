@@ -41,7 +41,7 @@ REAL(KIND=JWRB) FUNCTION TRANSF_SNL(XK0,D,XNU,SIG_TH)
 !*    1. DETERMINE TRANSFER FUNCTION.
 !     ------------------------------
 
-      IF (D < BATHYMAX .AND. D > .0._JWRB) THEN
+      IF (D < BATHYMAX .AND. D > 0._JWRB) THEN
         X   = XK0*D
         IF ( X > DKMAX) THEN
           TRANSF_SNL = 1._JWRB

@@ -58,7 +58,6 @@ SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
       INTEGER(KIND=JWIM) :: KP1,KM1,JH
       INTEGER(KIND=JWIM) :: ICL,ICR,ICC, ICRM, JCR
       INTEGER(KIND=JWIM) :: MP1, MM1
-      INTEGER(KIND=JWIM) :: ISAMESIGN
       INTEGER(KIND=JWIM) :: ISSU(2),ISSV(2)
 
       REAL(KIND=JWRB) :: DELPRO, DTNEW
@@ -699,21 +698,27 @@ SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
         ENDDO  ! END LOOP ON FREQUENCIES
       ENDDO  ! END LOOP OVER DIRECTIONS
 
-! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
 
-END SUBROUTINE CTUW 
+      RETURN
+
+      CONTAINS
+
+! ----------------------------------------------------------------------
 
       INTEGER(KIND=JWIM) FUNCTION ISAMESIGN(A,B)
 !       =1 IF A AND B HAVE THE SAME SIGN, 0 OTHERWISE
         USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-
         IMPLICIT NONE
-        REAL(KIND=JWRB) :: A,B
+
+        REAL(KIND=JWRB), INTENT(IN) :: A,B
+
         IF (SIGN(1.0_JWRB,A) == SIGN(1.0_JWRB,B)) THEN
           ISAMESIGN=1
         ELSE
           ISAMESIGN=0
         ENDIF
       END FUNCTION ISAMESIGN
+
+END SUBROUTINE CTUW 
