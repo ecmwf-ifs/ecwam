@@ -1,4 +1,4 @@
-      REAL(KIND=JWRB) FUNCTION TRANSF(XK,D)
+REAL(KIND=JWRB) FUNCTION TRANSF(XK,D)
 !
 !***  DETERMINE NARROW BAND LIMIT NONLINEAR TRANSFER FUNCTION            
 !     BASED ON TECH MEMO 464 BY P. JANSSEN AND M. ONORATO
@@ -23,22 +23,24 @@
  
       IMPLICIT NONE
 
-      REAL(KIND=JWRB) :: EPS,D,X,XK,T_0,OM,C_0,V_G,DV_G,XNL_1,XNL_2,XNL
+      REAL(KIND=JWRB), INTENT(IN) :: XK,D
+
+      REAL(KIND=JWRB) :: EPS,X,T_0,OM,C_0,V_G,DV_G,XNL_1,XNL_2,XNL
 
       EPS=0.0001_JWRB
 !
 !*    1. DETERMINE TRANSFER FUNCTION.
 !     ------------------------------
 !     
-      IF(D.LT.999.0_JWRB .AND. D.GT.0.0_JWRB) THEN
+      IF ( D < 999.0_JWRB .AND. D > 0.0_JWRB) THEN
         X   = XK*D
-        IF ( X .GT. DKMAX) THEN
+        IF ( X > DKMAX) THEN
           TRANSF = 1.0_JWRB 
         ELSE
           T_0 = TANH(X)
           OM  = SQRT(G*XK*T_0)
           C_0 = OM/XK
-          IF(X .LT. EPS) THEN
+          IF (X < EPS) THEN
             V_G = 0.5_JWRB*C_0
             V_G = C_0
           ELSE
@@ -56,4 +58,4 @@
         TRANSF = 1.0_JWRB 
       ENDIF
 !
-      END FUNCTION TRANSF
+END FUNCTION TRANSF

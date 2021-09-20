@@ -74,6 +74,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "transf.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
@@ -88,7 +89,6 @@
 
       REAL(KIND=JWRB), PARAMETER :: ENH_MAX=10.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: ENH_MIN=0.1_JWRB   ! to prevent ENH to become too small
-      REAL(KIND=JWRB) :: TRANSF
       REAL(KIND=JWRB) :: XK 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,MLSTHG) :: ENH
 

@@ -66,6 +66,8 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG, FL1, WAVNUM,   &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "chnkmin.intfb.h"
+#include "dirsprd_gc.intfb.h"
 #include "halphap.intfb.h"
 #include "stress_gc.intfb.h"
 
@@ -90,11 +92,9 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG, FL1, WAVNUM,   &
       REAL(KIND=JWRB), PARAMETER :: ACDLIN=0.0008_JWRB
       REAL(KIND=JWRB), PARAMETER :: BCDLIN=0.00047_JWRB
       REAL(KIND=JWRB) :: ALPHAGM1
-      REAL(KIND=JWRB) :: DIRSPRD_GC
 
       REAL(KIND=JWRB), PARAMETER :: Z0MIN = 0.000001_JWRB
       REAL(KIND=JWRB) :: Z0MINRST
-      REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: CHARNOCK_MIN
       REAL(KIND=JWRB) :: COSDIFF 
       REAL(KIND=JWRB) :: ZCHAR

@@ -54,6 +54,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "aki_ice.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
@@ -63,7 +64,6 @@
 
 
       INTEGER(KIND=JWIM) :: IJ, M, K
-      REAL(KIND=JWRB) :: AKI_ICE
       REAL(KIND=JWRB) :: F1LIM 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XKI, E, SUME 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE

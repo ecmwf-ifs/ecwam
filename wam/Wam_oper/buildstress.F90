@@ -74,6 +74,7 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "cdustarz0.intfb.h"
+#include "chnkmin.intfb.h"
 #include "getwnd.intfb.h"
 #include "init_fieldg.intfb.h"
 #include "readwgrib.intfb.h"
@@ -93,7 +94,6 @@
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER(KIND=JWIM) :: NWAVEWIND(1)
 
-      REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: RUSE
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: TEMPXNLEV, CDSQRTINV, Z0TOT, USTAR, CHARNOCKOG

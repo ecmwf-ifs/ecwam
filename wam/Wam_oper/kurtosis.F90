@@ -187,6 +187,7 @@
 #include "aki.intfb.h"
 #include "peak_ang.intfb.h"
 #include "stat_nl.intfb.h"
+#include "transf_bfi.intfb.h"
 #include "h_max.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
@@ -211,7 +212,6 @@
       REAL(KIND=JWRB) :: CONST_SIG_SQRTPIM1, CONST_OM_ZPI, OM_MEAN
       REAL(KIND=JWRB) :: TRANS, DUR, TAU, ZFAC, ZEPS, HS
       REAL(KIND=JWRB) :: ZEPSILON, ZSQREPSILON, FRMAX, FRMIN
-      REAL(KIND=JWRB) :: TRANSF_BFI
  
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FAC4
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: HMAXN
@@ -302,7 +302,7 @@
       ENDDO
       DO M=1,NFRE
         DO IJ=KIJS,KIJL
-          IF(FF(IJ,M) > FFMAX(IJ)) THEN
+          IF (FF(IJ,M) > FFMAX(IJ)) THEN
             SUM40(IJ)= SUM40(IJ)+FF(IJ,M)*DFIM(M)
             SUM4(IJ) = SUM4(IJ)+FF(IJ,M)**2*FAC4(M)
           ENDIF

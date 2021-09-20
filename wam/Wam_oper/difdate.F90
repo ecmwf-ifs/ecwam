@@ -114,7 +114,7 @@
         READ(CDATE1,'(I4, 5I2)')IYEAR1,IMON1,IDAY1,IHOUR1,IMIN1,ISEC1
 !       with satellite data it might happen that the seconds were
 !       rounded to 60. One needs to increment the date properly.
-        IF(ISEC1==60) THEN
+        IF (ISEC1==60) THEN
           IYEAR=IYEAR1
           IMON=IMON1
           IDAY=IDAY1
@@ -164,7 +164,7 @@
         READ(CDATE2,'(I4, 5I2)')IYEAR2,IMON2,IDAY2,IHOUR2,IMIN2,ISEC2
 !       with satellite data it might happen that the seconds were
 !       rounded to 60. One needs to increment the date properly.
-        IF(ISEC2==60) THEN
+        IF (ISEC2==60) THEN
           IYEAR=IYEAR2
           IMON=IMON2
           IDAY=IDAY2
@@ -196,18 +196,18 @@
 
       IRET=0
       MON(2)=MFEB_LENGTH(IYEAR1)
-      IF(IMON1<1 .OR. IMON1>12) IRET=-1
-      IF(IDAY1<1 .OR. IDAY1>MON(MIN(MAX(IMON1,1),12))) IRET=-2
-      IF(IHOUR1<0 .OR. IHOUR1>23) IRET=-3
-      IF(IMIN1<0 .OR. IMIN1>59) IRET=-4
-      IF(ISEC1<0 .OR. ISEC1>59) IRET=-5
+      IF (IMON1<1 .OR. IMON1>12) IRET=-1
+      IF (IDAY1<1 .OR. IDAY1>MON(MIN(MAX(IMON1,1),12))) IRET=-2
+      IF (IHOUR1<0 .OR. IHOUR1>23) IRET=-3
+      IF (IMIN1<0 .OR. IMIN1>59) IRET=-4
+      IF (ISEC1<0 .OR. ISEC1>59) IRET=-5
 
       MON(2)=MFEB_LENGTH(IYEAR2)
-      IF(IMON2<1 .OR. IMON2>12) IRET=-1
-      IF(IDAY2<1 .OR. IDAY2>MON(MIN(MAX(IMON2,1),12))) IRET=-2
-      IF(IHOUR2<0 .OR. IHOUR2>23) IRET=-3
-      IF(IMIN2<0 .OR. IMIN2>59) IRET=-4
-      IF(ISEC2<0 .OR. ISEC2>59) IRET=-5
+      IF (IMON2<1 .OR. IMON2>12) IRET=-1
+      IF (IDAY2<1 .OR. IDAY2>MON(MIN(MAX(IMON2,1),12))) IRET=-2
+      IF (IHOUR2<0 .OR. IHOUR2>23) IRET=-3
+      IF (IMIN2<0 .OR. IMIN2>59) IRET=-4
+      IF (ISEC2<0 .OR. ISEC2>59) IRET=-5
 
       IF (IRET/=0) THEN
         WRITE(6, '(" DIFDATE:  FATAL@! IRET= ", I3 )') IRET
@@ -245,7 +245,7 @@
 !     ------------------------------------------------------------
 
       ISI = 1 
-      IF (CDT1.GT.CDT2) THEN
+      IF (CDT1 > CDT2) THEN
          ISI  = -1
          IDUM=IYEAR1
          IYEAR1=IYEAR2
@@ -286,7 +286,7 @@
  
 !     3.2 ADD DIFFERENCE FROM MONTH.
  
-      IF (IYEAR2.GT.IYEAR1) THEN
+      IF (IYEAR2 > IYEAR1) THEN
  
 !     3.2.1 START AND END MONTHS ARE IN DIFFERENT YEARS.
  
@@ -299,7 +299,7 @@
             MON(2)=MFEB_LENGTH(IYEAR1)
 
          ENDDO
-         IF (IMON2.GT.1) THEN
+         IF (IMON2 > 1) THEN
             MON(2)=MFEB_LENGTH(IYEAR2)
             DO M=1,IMON2-1
                KSHIFT = KSHIFT + INT(MON(M)*86400)
@@ -309,7 +309,7 @@
  
 !     3.2.2 START AND END MONTHS ARE IN THE SAME YEAR.
  
-         IF (IMON2.GT.IMON1) THEN
+         IF (IMON2 > IMON1) THEN
             DO M=IMON1,IMON2-1
                KSHIFT = KSHIFT + INT(MON(M)*86400)
             ENDDO
@@ -330,14 +330,14 @@
 
       CONTAINS
 
-      INTEGER FUNCTION MFEB_LENGTH(IYEAR)
+      INTEGER(KIND=JWIM) FUNCTION MFEB_LENGTH(IYEAR)
 !     LENGTH OF FEBRUARY IN DAYS FOR YEAR IYEAR (YYYY)
       INTEGER :: IYEAR
-      IF(MOD(IYEAR,400).EQ.0) THEN
+      IF (MOD(IYEAR,400) == 0) THEN
         MFEB_LENGTH=29
-      ELSE IF(MOD(IYEAR,100).EQ.0) THEN
+      ELSEIF (MOD(IYEAR,100) == 0) THEN
         MFEB_LENGTH=28
-      ELSE IF(MOD(IYEAR,4).EQ.0) THEN
+      ELSEIF (MOD(IYEAR,4) == 0) THEN
         MFEB_LENGTH=29
       ELSE
         MFEB_LENGTH=28

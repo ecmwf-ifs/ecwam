@@ -47,13 +47,13 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "chnkmin.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB),DIMENSION(IJS:IJL),INTENT(IN)  ::  US, TAUW, UTOP
       REAL(KIND=JWRB),DIMENSION(IJS:IJL),INTENT(OUT) ::  Z0, Z0B
 
       INTEGER(KIND=JWIM) :: IJ
-      REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: UST2, UST3, ARG
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAOG
@@ -62,7 +62,7 @@
 
       IF (LHOOK) CALL DR_HOOK('Z0WAVE',0,ZHOOK_HANDLE)
 
-      IF(LLCAPCHNK) THEN
+      IF (LLCAPCHNK) THEN
         DO IJ=IJS,IJL
           ALPHAOG(IJ)= CHNKMIN(UTOP(IJ))*GM1
         ENDDO
