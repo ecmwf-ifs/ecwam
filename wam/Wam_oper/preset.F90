@@ -1,4 +1,4 @@
-      PROGRAM preset
+PROGRAM preset
 
 ! ----------------------------------------------------------------------
 
@@ -99,7 +99,6 @@
      &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
       USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJS      , IJL,         &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
-      USE YOWICE   , ONLY : CICOVER  ,CITHICK
       USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,    &
      &            SB       ,THETAQ
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,    &
@@ -117,9 +116,10 @@
      &            IDELPRO  ,IDELWI   ,IDELWO   ,                        &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NPROMA_WAM,   &
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,WSWAVE   ,WDWAVE   ,    &
-     &            UFRIC    ,Z0M    ,TAUW     ,TAUWDIR  ,FL1      ,    &
-     &            AIRD   ,WSTAR  ,NBLKS    ,NBLKE
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1      ,    &
+     &            NBLKS    ,NBLKE
+
+
       USE YOWTABL  , ONLY :  FAC0     ,FAC1     ,FAC2     ,FAC3    ,    &
      &            FAK      ,FRHF      ,DFIMHF    , OMEGA   ,THH     ,   &
      &            DFDTH    ,IM_P      ,IM_M     ,TA       ,TB      ,    &
@@ -214,7 +214,18 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
+
+ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        UFRIC => FF_NOW%UFRIC, &
+ &        Z0M => FF_NOW%Z0M, &
+ &        TAUW => FF_NOW%TAUW, &
+ &        TAUWDIR => FF_NOW%TAUWDIR, &
+ &        AIRD => FF_NOW%AIRD, &
+ &        WSTAR => FF_NOW%WSTAR, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        CITHICK => FF_NOW%CITHICK )
 
       CALL MPL_INIT(KOUTPUT=1)
 
@@ -482,18 +493,8 @@
       IREAD=1
 
       IF (.NOT.ALLOCATED(FL1)) ALLOCATE (FL1(NIBLO,NANG,NFRE))
-      IF (.NOT.ALLOCATED(WSWAVE)) ALLOCATE(WSWAVE(NIBLO))
-      IF (.NOT.ALLOCATED(WDWAVE)) ALLOCATE(WDWAVE(NIBLO))
-      IF (.NOT.ALLOCATED(UFRIC)) ALLOCATE(UFRIC(NIBLO))
-      IF (.NOT.ALLOCATED(Z0M)) ALLOCATE(Z0M(NIBLO))
-      IF (.NOT.ALLOCATED(TAUW)) ALLOCATE(TAUW(NIBLO))
-      IF (.NOT.ALLOCATED(TAUWDIR)) ALLOCATE(TAUWDIR(NIBLO))
-      IF (.NOT.ALLOCATED(AIRD)) ALLOCATE(AIRD(NIBLO))
-      IF (.NOT.ALLOCATED(WSTAR)) ALLOCATE(WSTAR(NIBLO))
-      IF (.NOT.ALLOCATED(CICOVER)) ALLOCATE(CICOVER(NIBLO))
-      IF (.NOT.ALLOCATED(CITHICK)) ALLOCATE(CITHICK(NIBLO))
-      IF (.NOT.ALLOCATED(FF_NEXT)) ALLOCATE(FF_NEXT(NIBLO))
 
+      IF (.NOT.ALLOCATED(FF_NOW)) ALLOCATE(FF_NOW(NIBLO))
       WSWAVE(:) = WSPMIN
       WDWAVE(:) = 0.0_JWRB
       UFRIC(:) =  WSWAVE(:)*0.035847_JWRB
@@ -505,6 +506,7 @@
       CICOVER(:) = 0.0_JWRB
       CITHICK(:) = 0.0_JWRB
 
+      IF (.NOT.ALLOCATED(FF_NEXT)) ALLOCATE(FF_NEXT(NIBLO))
 
       IF (IOPTI > 0 .AND. IOPTI /= 3) THEN
 
@@ -515,13 +517,10 @@
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=.FALSE.
 
-        CALL PREWIND (WSWAVE,WDWAVE,UFRIC,Z0M,            &
-     &                AIRD, WSTAR,                     &
-     &                CICOVER, CITHICK,                     &
-     &                FF_NEXT,                              &
-     &                LLINIT, LLALLOC_FIELDG_ONLY,          &
-     &                IREAD,                                &
-     &                NFIELDS, NGPTOTG, NC, NR,             &
+        CALL PREWIND (IJS, IJL, FF_NOW, FF,NEXT,       &
+     &                LLINIT, LLALLOC_FIELDG_ONLY,     &
+     &                IREAD,                           &
+     &                NFIELDS, NGPTOTG, NC, NR,        &
      &                FIELDS, LWCUR, MASK_IN)
 
       TAUW(:) = 0.1_JWRB * UFRIC(:)**2
@@ -580,16 +579,7 @@
      &                 NBLKS, NBLKE, CDATEA, CDATEA)
       ENDIF
 
-      IF (ALLOCATED(WSWAVE)) DEALLOCATE(WSWAVE)
-      IF (ALLOCATED(WDWAVE)) DEALLOCATE(WDWAVE)
-      IF (ALLOCATED(UFRIC)) DEALLOCATE(UFRIC)
-      IF (ALLOCATED(Z0M)) DEALLOCATE(Z0M)
-      IF (ALLOCATED(TAUW)) DEALLOCATE(TAUW)
-      IF (ALLOCATED(TAUWDIR)) DEALLOCATE(TAUWDIR)
-      IF (ALLOCATED(AIRD)) DEALLOCATE(AIRD)
-      IF (ALLOCATED(WSTAR)) DEALLOCATE(WSTAR)
-      IF (ALLOCATED(CICOVER)) DEALLOCATE(CICOVER)
-      IF (ALLOCATED(CITHICK)) DEALLOCATE(CITHICK)
+      IF (ALLOCATED(FF_NOW)) DEALLOCATE(FF_NOW)
 
       WRITE (IU06,*) ' SAVING SPECTRA '
 
@@ -613,6 +603,7 @@
 
       CALL MPL_END()
 
-      IF (LHOOK) CALL DR_HOOK('PRESET',1,ZHOOK_HANDLE)
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('PRESET',1,ZHOOK_HANDLE)
 
-      END
+END PROGRAM

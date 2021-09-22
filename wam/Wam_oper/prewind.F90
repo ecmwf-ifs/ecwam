@@ -1,11 +1,8 @@
-      SUBROUTINE PREWIND (WSWAVE, WDWAVE, UFRIC, Z0M,             &
-     &                    AIRD, WSTAR,                            &
-     &                    CICOVER, CITHICK,                       &
-     &                    FF_NEXT,                                &
-     &                    LLINIT, LLALLOC_FIELDG_ONLY,            &
-     &                    IREAD,                                  &
-     &                    NFIELDS, NGPTOTG, NC, NR,               &
-     &                    FIELDS, LWCUR, MASK_IN)
+SUBROUTINE PREWIND (IJS, IJL, FF_NOW, FF_NEXT,              &
+ &                  LLINIT, LLALLOC_FIELDG_ONLY,            &
+ &                  IREAD,                                  &
+ &                  NFIELDS, NGPTOTG, NC, NR,               &
+ &                  FIELDS, LWCUR, MASK_IN)
 
 ! ----------------------------------------------------------------------
 
@@ -19,26 +16,15 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *PREWIND (WSWAVE,WDWAVE,UFRIC,Z0M,
-!    &                 AIRD, WSTAR, CICOVER,
-!    &                 FF_NEXT,
-!    &                 LLINIT,
+!     *CALL* *PREWIND (IJS, IJL, FF_NOW, FF_NEXT,
+!    &                 LLINIT, LLALLOC_FIELDG_ONLY,
 !    &                 IREAD,
 !    &                 NFIELDS, NGPTOTG, NC, NR,
 !    &                 FIELDS, LWCUR, MASK_IN)*
 
-!      *WSWAVE*    REAL      INTERMEDIATE STORAGE OF MODULUS OF WIND
-!                            VELOCITY.
-!                            CLOCKWISE FROM NORTH).
-!      *WDWAVE*    REAL      INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
-!                            WIND VELOCITY.
-!      *UFRIC*     REAL      INTERMEDIATE STORAGE OF MODULUS OF FRICTION
-!                            VELOCITY.
-!      *Z0M*       REAL      INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN M.
-!      *AIRD*      REAL      AIR DENSITY IN KG/M3.
-!      *WSTAR*     REAL      CONVECTIVE VELOCITY M/S.
-!      *CICOVER*   REAL      SEA ICE COVER.
-!      *CITHICK*   REAL      SEA ICE THICKNESS.
+!      *IJS*                 INDEX OF FIRST GRIDPOINT.
+!      *IJL*                 INDEX OF LAST GRIDPOINT.
+!      *FF_NOW*    REAL      DATA STRUCTURE WITH THE CURRENT FORCING FIELDS
 !      *FF_NEXT*   REAL      DATA STRUCTURE WITH THE NEXT FORCING FIELDS
 !      *LLINIT*    LOGICAL   TRUE IF WAMADSWSTAR NEEDS TO BE CALLED.   
 !      *LLALLOC_FIELDG_ONLY  LOGICAL IF TRUE THEN FIELDG DATA STRUCTURE WILL
@@ -87,7 +73,6 @@
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOUSAMEGRID, LWNEMOCOU, LWNEMOCOURECV
-      USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,    &
      &            IDELWO   ,LANAONLY, IDELT
@@ -111,14 +96,8 @@
 #include "recvnemofields.intfb.h"
 #include "wamadswstar.intfb.h"
 
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: WSWAVE
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: WDWAVE
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: UFRIC
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: Z0M
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: AIRD
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: WSTAR
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: CICOVER
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: CITHICK
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NEXT
       LOGICAL, INTENT(IN) :: LLINIT
       LOGICAL, INTENT(IN) :: LLALLOC_FIELDG_ONLY
@@ -148,6 +127,16 @@
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('PREWIND',0,ZHOOK_HANDLE)
+
+ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        UFRIC => FF_NOW%UFRIC, &
+ &        Z0M => FF_NOW%Z0M, &
+ &        AIRD => FF_NOW%AIRD, &
+ &        WSTAR => FF_NOW%WSTAR, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        CITHICK => FF_NOW%CITHICK )
+
 
 !*    1. BEGIN AND END DATES OF WIND FIELDS TO BE PROCESSED.
 !        ---------------------------------------------------
@@ -256,7 +245,7 @@
 !         -----------------------------------------------
 
       DEALLOCATE(FIELDG)
-
+END ASSOCIATE
       IF (LHOOK) CALL DR_HOOK('PREWIND',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE PREWIND
+END SUBROUTINE PREWIND

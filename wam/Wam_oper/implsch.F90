@@ -2,11 +2,8 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 &                   WAVNUM, CINV,                            &
 &                   CGROUP, STOKFAC,                         &
 &                   DEPTH, EMAXDPT,                          &
-&                   TAUW, TAUWDIR,                           &
-&                   CICOVER, CIWA,                           &
-&                   WSWAVE, WDWAVE, UFRIC,                   &
-&                   Z0M, Z0B,                                &
-&                   AIRD, WSTAR,                             &
+&                   FF_NOW,                                  &
+&                   CIWA,                                    &
 &                   INTFLDS,                                 &
 &                   MIJ, XLLWS)
 
@@ -30,9 +27,8 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 !       *CALL* *IMPLSCH (KIJS, KIJL, FL1,
 !    &                   WAVNUM, CINV, CGROUP, STOKFAC,
 !    &                   DEPTH, EMAXDPT,
-!    &                   TAUW,TAUWDIR,
-!    &                   CICOVER, CIWA,
-!    &                   WSWAVE,WDWAVE,UFRIC,Z0M,AIRD,WSTAR,
+!    &                   FF_NOW,
+!    &                   CIWA,
 !    &                   INTFLDS,
 !    &                   MIJ,  XLLWS)
 !      *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
@@ -44,19 +40,8 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 !      *STOKFAC* - FACTOR TO COMPUTE THE STOKES SURFACE DRIFT
 !      *DEPTH*     WATER DEPTH
 !      *EMAXDPT*   MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
-!      *WSWAVE*    WIND SPEED IN M/S.
-!      *WDWAVE*    WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
-!                  NOTATION (POINTING ANGLE OF WIND VECTOR,
-!                  CLOCKWISE FROM NORTH).
-!      *UFRIC*     FRICTION VELOCITY IN M/S.
-!      *Z0M*       ROUGHNESS LENGTH IN M.
-!      *Z0B*       BACKGROUND ROUGHNESS LENGTH.
-!      *TAUW*      WAVE STRESS IN (M/S)**2
-!      *TAUWDIR*   WAVE STRESS DIRECTION. 
-!      *CICOVER*   SEA ICE COVER.
+!      *FF_NOW*    FORCING FIELDS
 !      *CIWA*      SEA ICE WAVE ATTENUATION.
-!      *AIRD*      AIR DENSITY IN KG/M3.
-!      *WSTAR*     FREE CONVECTION VELOCITY SCALE (M/S)
 !      *INTFLDS*   INTEGRATED/DERIVED PARAMETERS
 !      *MIJ*       LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !      *XLLWS*     TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
@@ -123,13 +108,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(OUT) :: MIJ
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP, STOKFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH, EMAXDPT
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: TAUW, TAUWDIR
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSWAVE, UFRIC 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: Z0M
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: Z0B
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: AIRD, WSTAR
+      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW 
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CIWA
@@ -166,11 +145,21 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
 IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
-ASSOCIATE(WSEMEAN => INTFLDS%WSEMEAN, &
-&         WSFMEAN => INTFLDS%WSFMEAN, &  
-&         USTOKES => INTFLDS%USTOKES, &
-&         VSTOKES => INTFLDS%VSTOKES, &
-&         STRNMS  => INTFLDS%STRNMS )
+ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        UFRIC => FF_NOW%UFRIC, &
+ &        Z0M => FF_NOW%Z0M, &
+ &        Z0B => FF_NOW%Z0B, &
+ &        TAUW => FF_NOW%TAUW, &
+ &        TAUWDIR => FF_NOW%TAUWDIR, &
+ &        AIRD => FF_NOW%AIRD, &
+ &        WSTAR => FF_NOW%WSTAR, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        WSEMEAN => INTFLDS%WSEMEAN, &
+ &        WSFMEAN => INTFLDS%WSFMEAN, &  
+ &        USTOKES => INTFLDS%USTOKES, &
+ &        VSTOKES => INTFLDS%VSTOKES, &
+ &        STRNMS  => INTFLDS%STRNMS )
 
 
 !*    1. INITIALISATION.

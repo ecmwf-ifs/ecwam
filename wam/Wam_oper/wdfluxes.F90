@@ -3,9 +3,7 @@
      &                     FL1, XLLWS,                        &
      &                     WAVNUM, CINV, CGROUP, STOKFAC,     &
      &                     DEPTH,                             &
-     &                     CICOVER,                           &
-     &                     WSWAVE, WDWAVE, UFRIC,             &
-     &                     Z0M, Z0B, AIRD, WSTAR,             &
+     &                     FF_NOW,                            &
      &                     INTFLDS)
 
 ! ----------------------------------------------------------------------
@@ -26,8 +24,7 @@
 !    &                    MIJ,
 !    &                    FL1, XLLWS,
 !    &                    WAVNUM, CINV, CGROUP, STOKFAC,
-!    &                    CICOVER,
-!    &                    WDWAVE,UFRIC,Z0M,Z0B,AIRD,WSTAR,
+!    &                    FF_NOW,
 !    &                    INTFLDS)
 
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT.
@@ -39,12 +36,7 @@
 !          *CGROUP* - GROUP SPPED.
 !          *STOKFAC* - STOKES DRIFT FACTOR.
 !          *DEPTH*  - WATER DEPTH.
-!          *WSWAVE* - WIND SPEED.
-!          *WDWAVE* - WIND DIRECTION IN RADIANS.
-!          *UFRIC*  - NEW FRICTION VELOCITY IN M/S.
-!          *Z0M*  - ROUGHNESS LENGTH IN M.
-!          *Z0B*    - BACKGROUND ROUGHNESS LENGTH.
-!          *AIRD* - AIR DENSITY IN KG/M3.
+!          *FF_NOW* - FORCING FIELDS AT CURRENT TIME.
 !          *INTFLDS*-  INTEGRATED/DERIVED PARAMETERS
 
 ! ----------------------------------------------------------------------
@@ -78,9 +70,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP, STOKFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, AIRD, WSTAR
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSWAVE, UFRIC, Z0M, Z0B
+      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) ::FF_NOW 
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
@@ -108,11 +98,19 @@
 
 IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 
-ASSOCIATE(WSEMEAN => INTFLDS%WSEMEAN, &
-&         WSFMEAN => INTFLDS%WSFMEAN, &  
-&         USTOKES => INTFLDS%USTOKES, &
-&         VSTOKES => INTFLDS%VSTOKES, &
-&         STRNMS  => INTFLDS%STRNMS )
+ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        UFRIC => FF_NOW%UFRIC, &
+ &        Z0M => FF_NOW%Z0M, &
+ &        Z0B => FF_NOW%Z0B, &
+ &        AIRD => FF_NOW%AIRD, &
+ &        WSTAR => FF_NOW%WSTAR, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        WSEMEAN => INTFLDS%WSEMEAN, &
+ &        WSFMEAN => INTFLDS%WSFMEAN, &  
+ &        USTOKES => INTFLDS%USTOKES, &
+ &        VSTOKES => INTFLDS%VSTOKES, &
+ &        STRNMS  => INTFLDS%STRNMS )
 
 !*    1. INITIALISATION.
 !        ---------------

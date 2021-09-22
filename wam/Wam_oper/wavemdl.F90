@@ -108,11 +108,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &         LIFS_IO_SERV_ENABLED,                                    &
      &         NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
       USE YOWGRIBHD, ONLY : DATE_TIME_WINDOW_END
-      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWCURR  , ONLY : IDELCUR  ,LLCHKCFL
       USE YOWFRED  , ONLY : FR
       USE YOWGRID  , ONLY : IJS      ,IJL
-      USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,FLMIN
+      USE YOWICE   , ONLY : FLMIN
       USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS,   AMONOP
       USE YOWMEAN  , ONLY : INTFLDS
       USE YOWMPP   , ONLY : IRANK    ,NPROC
@@ -128,16 +127,13 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWWNDG  , ONLY : ICODE_CPL
       USE YOWWIND  , ONLY : FF_NEXT
       USE YOWTEXT  , ONLY : LRESTARTED
-
-      USE YOWSPEC, ONLY : WSWAVE   ,WDWAVE   ,UFRIC    ,Z0M    ,      &
-     &            Z0B    ,CHNK  ,AIRD   ,WSTAR  ,                &
-     &            NSTART ,NEND     ,FL1
-
-      USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1 
+      USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW   ,CDATEWO  ,CDATEFL
       USE YOWNEMOP , ONLY : NEMODP
-      USE YOWUNPOOL,ONLY : LLUNSTR
+      USE YOWUNPOOL,ONLY  : LLUNSTR
 
       USE YOMHOOK , ONLY : LHOOK,   DR_HOOK
+      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE GRIB_API_INTERFACE
       USE MPL_MODULE
 ! --------------------------------------------------------------------- 
@@ -222,7 +218,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       REAL(KIND=JWRB), INTENT(IN) :: RNU_ATM 
 !     REDUCED KINEMATIC AIR DENSITY FOR MOEMNTUM TRANSFER
       REAL(KIND=JWRB), INTENT(IN) :: RNUM_ATM 
-!     USED TO SPECIFY THE END OF THE 4DVAr ANALYSIS WINDOW WHEN COUPLED 
+!     USED TO SPECIFY THE END OF THE 4DVAR ANALYSIS WINDOW WHEN COUPLED 
       INTEGER(KIND=JWIM), INTENT(IN) :: IDATE_TIME_WINDOW_END
 !     ATMOSPHERIC NSTEP (CT3)
       INTEGER(KIND=JWIM), INTENT(IN) :: NSTEP
@@ -431,6 +427,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
         CALL INITMDL (NADV,                                             &
      &                IREAD,                                            &
+     &                FF_NOW,                                           &
      &                NFIELDS, NGPTOTG, NC, NR,                         &
      &                FIELDS, LWCUR, MASK_IN, PRPLRADI)
 
@@ -442,16 +439,13 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL OUTBETA (KIJS, KIJL, PRCHAR, WSWAVE(KIJS),            &
-     &                  UFRIC(KIJS), Z0M(KIJS),                 &
-     &                  Z0B(KIJS),                                      &
-     &                  CHNK(KIJS), BETAB(KIJS) ) 
+          CALL OUTBETA (KIJS, KIJL, PRCHAR, FF_NOW(KIJS), BETAB(KIJS))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1443,1)
 
 #ifdef ECMWF
-        IF(IRANK==1.AND.LSMSSIG_WAM) CALL SIGMASTER()
+        IF(IRANK==1 .AND. LSMSSIG_WAM) CALL SIGMASTER()
 #endif
 
         LLCHKCFL=.FALSE.
@@ -559,13 +553,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-        CALL PREWIND (WSWAVE, WDWAVE, UFRIC, Z0M,                  &
-     &                AIRD, WSTAR,                                 &
-     &                CICOVER, CITHICK,                            &
-     &                FF_NEXT,                                     &
-     &                LLINIT, LLALLOC_FIELDG_ONLY,                 &
-     &                IREAD,                                       &
-     &                NFIELDS, NGPTOTG, NC, NR,                    &
+        CALL PREWIND (IJS, IJL, FF_NOW, FF,NEXT,       &
+     &                LLINIT, LLALLOC_FIELDG_ONLY,     &
+     &                IREAD,                           &
+     &                NFIELDS, NGPTOTG, NC, NR,        &
      &                FIELDS, LWCUR, MASK_IN)
 
 
@@ -580,7 +571,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       CALL SETMARSTYPE
 
       CALL WAMODEL (NADV, LDSTOP, LDWRRE,  &
-     &              FF_NEXT, INTFLDS)
+     &              FF_NOW, FF_NEXT, INTFLDS)
 
 
 !*    2.2  DATA ASSIMILATION AND/OR SAR INVERSION.
@@ -741,13 +732,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL OUTBETA (KIJS, KIJL, PRCHAR, WSWAVE(KIJS),       &
-     &                  UFRIC(KIJS), Z0M(KIJS),                 &
-     &                  Z0B(KIJS),                              &
-     &                  CHNK(KIJS), BETAB(KIJS) ) 
-
+          CALL OUTBETA (KIJS, KIJL, PRCHAR, FF_NOW(KIJS), BETAB(KIJS))
           IFLDOFFSET=1
-          WVBLOCK(KIJS:KIJL,IFLDOFFSET)=CHNK(KIJS:KIJL)
+          WVBLOCK(KIJS:KIJL,IFLDOFFSET)=FF_NOW(KIJS:KIJL)%CHNK
 
           IF (LWCOUHMF) THEN
             IFLDOFFSET=IFLDOFFSET+1

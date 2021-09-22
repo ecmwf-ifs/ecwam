@@ -1,12 +1,8 @@
-      SUBROUTINE NEWWIND (IJS, IJL, CDATE, CDATEWH,             &
-     &                    LLNEWREAD, LLNEWFILE,                 &
-     &                    WSWAVE, WDWAVE,                       &
-     &                    UFRIC,                                &
-     &                    AIRD, WSTAR,                          &
-     &                    FF_NEXT,                              &
-     &                    CGROUP,                               &
-     &                    CICOVER, CITHICK, CIWA,               &
-     &                    TAUW, CHNK)
+SUBROUTINE NEWWIND (IJS, IJL, CDATE, CDATEWH,             &
+ &                  LLNEWREAD, LLNEWFILE,                 &
+ &                  FF_NOW, FF_NEXT,                      &
+ &                  CGROUP,                               &
+ &                  CIWA)
 ! ----------------------------------------------------------------------
 
 !**** *NEWWIND* - HANDLING OF WINDS OUTSIDE MULTITASKED AREA    
@@ -26,32 +22,18 @@
 !     ----------
 
 !       *CALL* *NEWWIND (IJS, IJL, CDATE, LLNEWREAD, LLNEWFILE,
-!                        WSWAVE,WDWAVE, 
-!                        UFRIC,
-!                        AIRD, WSTAR,
-!                        FF_NEXT,
+!                        FF_NOW, FF_NEXT,
 !                        CGROUP,
-!                        CICOVER, CITHICK, CIWA,
-!                        TAUW, CHNK)
+!                        CICOVER, CITHICK, CIWA)
 !      *IJS*     - INDEX OF FIRST GRIDPOINT
 !      *IJL*     - INDEX OF LAST GRIDPOINT
 !      *CDATE*   - START DATE OF SOURCE FUNCTION INTEGRATION
 !      *LLNEWREAD* TRUE IF NEW WINDS HAVE BEEN READ
 !      *LLNEWFILE* TRUE IF NEW WIND FILE HAS BEEN OPENED
-!      *WSWAVE*  - NEW WIND SPEED IN M/S.
-!      *WDWAVE*  - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
-!                  NOTATION (POINTING ANGLE OF WIND VECTOR,
-!                  CLOCKWISE FROM NORTH).
-!      *UFRIC*   - NEW FRICTIOn VELOCITY
-!      *AIRD*    - AIR DENSITY IN KG/M3.
-!      *WSTAR*   - CONVECTIVE VELOCITY.
+!      *FF_NOW*  - DATA STRUCTURE WITH THE CURRENT FORCING FIELDS
 !      *FF_NEXT* - DATA STRUCTURE WITH THE NEXT FORCING FIELDS
 !      *CGROUP*  - GROUP SPEED.
-!      *CICOVER* - SEA ICE COVER. 
-!      *CITHICK* - SEA ICE THICKNESS. 
 !      *CIWA*    - SEA ICE WAVE ATTENUATION FACTOR.
-!      *TAUW*    - WAVE STRESS
-!      *CHNK*    - CHARNOCK PARAMETER 
 
 !     METHOD.
 !     -------
@@ -98,15 +80,10 @@
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       CHARACTER(LEN=14), INTENT(INOUT) :: CDATEWH
       LOGICAL, INTENT(INOUT) :: LLNEWREAD, LLNEWFILE
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: WSWAVE, WDWAVE
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: UFRIC
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: AIRD, WSTAR
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(IN) :: FF_NEXT
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CGROUP
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: CICOVER, CITHICK 
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(INOUT) :: CIWA
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: TAUW
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN)    :: CHNK 
 
 
       INTEGER(KIND=JWIM) :: ICODE_WND
@@ -118,6 +95,16 @@
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
+
+ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        UFRIC => FF_NOW%UFRIC, &
+ &        TAUW => FF_NOW%TAUW, &
+ &        CHNK => FF_NOW%CHNK, &
+ &        AIRD => FF_NOW%AIRD, &
+ &        WSTAR => FF_NOW%WSTAR, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        CITHICK => FF_NOW%CITHICK)
 
       NPROMA=NPROMA_WAM
 
@@ -189,6 +176,7 @@
 
       ENDIF
 
+END ASSOCIATE
       IF (LHOOK) CALL DR_HOOK('NEWWIND',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE NEWWIND
+END SUBROUTINE NEWWIND

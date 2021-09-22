@@ -1,5 +1,5 @@
 SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
-&                   FF_NEXT, INTFLDS)
+&                   FF_NOW, FF_NEXT, INTFLDS)
 
 ! ----------------------------------------------------------------------
 
@@ -114,11 +114,12 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 !     ----------
 
 !     *CALL* *WAMODEL (NADV, LDSTOP, LDWRRE,
-!    &                 FF_NEXT, INTFLDS)
+!    &                 FF_NPW, FF_NEXT, INTFLDS)
 !        *NADV*      INTEGER   NUMBER OF ADVECTION ITERATIONS
 !                              PER CALL OF WAMODEL, OUTPUT PARAMETER.
 !        *LDSTOP*    LOGICAL   SET .TRUE. IF STOP SIGNAL RECEIVED.
 !        *LDWRRE*    LOGICAL   SET .TRUE. IF RESTART SIGNAL RECEIVED.
+!        *FF_NOW*    REAL      FORCING FIELDS AT CURRENT TIME.
 !        *FF_NEXT*   REAL      DATA STRUCTURE WITH THE NEXT FORCING FIELDS
 !        *INTFLDS*   REAL      INTEGRATED/DERIVED PARAMETERS
 
@@ -239,8 +240,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
       USE YOWGRIBHD, ONLY : LGRHDIFS 
       USE YOWGRID  , ONLY : IJS      ,IJL       ,                       &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CITHICK  ,    &
-     &            CIWA
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CIWA
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,LWAVEWIND 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -257,12 +257,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
      &            NMETNB   ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,    &
      &            LLSOURCE ,                                            &
      &            LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE
-      USE YOWSPEC, ONLY   : NBLKS    ,NBLKE    ,                        &
-     &            WSWAVE   ,WDWAVE   ,UFRIC    ,    &
-     &            Z0M    ,TAUW     ,TAUWDIR  ,    &
-     &            Z0B      ,                                            &
-     &            CHNK  ,AIRD   ,WSTAR ,    &
-     &            FL1
+      USE YOWSPEC, ONLY   : NBLKS    ,NBLKE    ,FL1
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
       USE YOWUNIT  , ONLY : IU02     ,IU04     ,              &
@@ -314,6 +309,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NADV
       LOGICAL, INTENT(INOUT) :: LDSTOP, LDWRRE
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(IN) :: FF_NEXT
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: INTFLDS
 
@@ -348,11 +344,15 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 
 IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 
-ASSOCIATE(WSEMEAN => INTFLDS%WSEMEAN, &
-&         WSFMEAN => INTFLDS%WSFMEAN, &  
-&         USTOKES => INTFLDS%USTOKES, &
-&         VSTOKES => INTFLDS%VSTOKES, &
-&         STRNMS  => INTFLDS%STRNMS )
+ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        UFRIC => FF_NOW%UFRIC, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        WSEMEAN => INTFLDS%WSEMEAN, &
+ &        WSFMEAN => INTFLDS%WSFMEAN, &  
+ &        USTOKES => INTFLDS%USTOKES, &
+ &        VSTOKES => INTFLDS%VSTOKES, &
+ &        STRNMS  => INTFLDS%STRNMS )
 
 
       CZERO = ' '
@@ -402,15 +402,12 @@ ASSOCIATE(WSEMEAN => INTFLDS%WSEMEAN, &
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL)
             CALL WDFLUXES (KIJS, KIJL,                                 &
-     &                     MIJ(KIJS),                                     &
-     &                     FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),        &
-     &                     WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:),           &
-     &                     CGROUP(KIJS:KIJL,:), STOKFAC(KIJS:KIJL,:),        &
-     &                     DEPTH(KIJS),                                 &
-     &                     CICOVER(KIJS),                               &
-     &                     WSWAVE(KIJS), WDWAVE(KIJS), UFRIC(KIJS),     &
-     &                     Z0M(KIJS), Z0B(KIJS),                      &
-     &                     AIRD(KIJS), WSTAR(KIJS),                 &
+     &                     MIJ(KIJS),                                  &
+     &                     FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),   &
+     &                     WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:),     &
+     &                     CGROUP(KIJS:KIJL,:), STOKFAC(KIJS:KIJL,:),  &
+     &                     DEPTH(KIJS),                                &
+     &                     FF_NOW(KIJS),                               &
      &                     INTFLDS(KIJS) )
           ENDDO
 !$OMP     END PARALLEL DO
@@ -598,13 +595,9 @@ ASSOCIATE(WSEMEAN => INTFLDS%WSEMEAN, &
 !         ---------------------------------------------------------------
           CALL NEWWIND(IJS, IJL, CDTIMP, CDATEWH,               &
      &                 LLNEWREAD, LLNEWFILE,                    &
-     &                 WSWAVE, WDWAVE,                          &
-     &                 UFRIC,                                   &
-     &                 AIRD, WSTAR,                        &
-     &                 FF_NEXT,                                 &
+     &                 FF_NOW, FF_NEXT,                         &
      &                 CGROUP,                                  &
-     &                 CICOVER, CITHICK, CIWA,                  &
-     &                 TAUW, CHNK)
+     &                 CIWA)
 
 !         IT IS TIME TO INTEGRATE THE SOURCE TERMS
 !         ----------------------------------------
@@ -620,11 +613,8 @@ ASSOCIATE(WSEMEAN => INTFLDS%WSEMEAN, &
      &                        WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:),           &
      &                        CGROUP(KIJS:KIJL,:), STOKFAC(KIJS:KIJL,:),        &
      &                        DEPTH(KIJS), EMAXDPT(KIJS),               &
-     &                        TAUW(KIJS), TAUWDIR(KIJS),                &
-     &                        CICOVER(KIJS), CIWA(KIJS:KIJL,:),               &
-     &                        WSWAVE(KIJS), WDWAVE(KIJS), UFRIC(KIJS),  &
-     &                        Z0M(KIJS), Z0B(KIJS),                   &
-     &                        AIRD(KIJS), WSTAR(KIJS),              &
+     &                        FF_NOW(KIJS),                 &
+     &                        CIWA(KIJS:KIJL,:),               &
      &                        INTFLDS(KIJS),             &
      &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:) )
 
@@ -803,9 +793,7 @@ ASSOCIATE(WSEMEAN => INTFLDS%WSEMEAN, &
 
 !           SAVE RESTART FILES IN PURE BINARY FORM
             IF ( .NOT.LGRIBOUT .OR. LDWRRE ) THEN
-              CALL SAVSTRESS(WSWAVE, WDWAVE, UFRIC, TAUW, TAUWDIR,   &
-     &                       Z0M, AIRD, WSTAR, CICOVER, CITHICK,     &
-     &                       NBLKS, NBLKE, CDTPRO, CDATEF)
+              CALL SAVSTRESS(IJS, IJL, FF_NOW, NBLKS, NBLKE, CDTPRO, CDATEF)
               WRITE(IU06,*) ' '
               WRITE(IU06,*) '  BINARY STRESS FILE DISPOSED AT........ CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '

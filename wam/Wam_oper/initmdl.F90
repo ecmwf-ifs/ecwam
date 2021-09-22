@@ -1,6 +1,7 @@
-SUBROUTINE INITMDL (NADV,                                         &
-     &              IREAD,                                        &
-     &              NFIELDS, NGPTOTG, NC, NR,                     &
+SUBROUTINE INITMDL (NADV,                                 &
+     &              IREAD,                                &
+     &              FF_NOW,                               &
+     &              NFIELDS, NGPTOTG, NC, NR,             &
      &              FIELDS, LWCUR, MASK_IN, PRPLRADI)
 
 ! ----------------------------------------------------------------------
@@ -45,12 +46,14 @@ SUBROUTINE INITMDL (NADV,                                         &
 
 !    *CALL* *INITMDL (NADV,
 !    &                IREAD,
+!    &                FF_NOW,
 !    &                NFIELDS, NGPTOTG, NC, NR,
 !    &                FIELDS, LWCUR, MASK_IN)*
 
 !      *NADV*      INTEGER   NUMBER OF ADVECTION ITERATIONS
 !      *IREAD*     INTEGER   PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                            (IF NEEDED).
+!      *FF_NOW*              FORCING FIELDS AT CURRENT TIME.
 !      *NFIELDS*   INTEGER   NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
 !      *NGPTOTG*   INTEGER   NUMBER OF ATMOSPHERIC GRID POINTS
 !      *NC*        INTEGER   NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
@@ -222,6 +225,7 @@ SUBROUTINE INITMDL (NADV,                                         &
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC,        &
      &            GBOUNC  , IPOGBO   ,CBCPREF
@@ -242,7 +246,7 @@ SUBROUTINE INITMDL (NADV,                                         &
      &            DFIM_END_L, DFIM_END_U
       USE YOWGRIBHD, ONLY : LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IJS     ,IJL      ,COSPH
-      USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
+      USE YOWICE   , ONLY : CIWA
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,                        &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            KMNOP    ,KMSOP    ,IPER
@@ -260,8 +264,6 @@ SUBROUTINE INITMDL (NADV,                                         &
 
      &            INDEP    ,CGROUP   ,IODP     ,IOBND    ,TOOSHALLOW
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,    &
-     &            WSWAVE   ,WDWAVE   ,UFRIC    ,Z0M    ,TAUW     ,    &
-     &            Z0B      ,TAUWDIR,  AIRD   ,WSTAR  ,             &
      &            FL1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDTINTT  ,CDTBC    ,                                  &
@@ -320,14 +322,15 @@ SUBROUTINE INITMDL (NADV,                                         &
 
       INTEGER(KIND=JWIM), INTENT(OUT) :: NADV
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
       INTEGER(KIND=JWIM), INTENT(IN) :: NFIELDS
       INTEGER(KIND=JWIM), INTENT(IN) :: NGPTOTG
       INTEGER(KIND=JWIM), INTENT(IN) :: NC
       INTEGER(KIND=JWIM), INTENT(IN) :: NR
-      REAL(KIND=JWRB), INTENT(IN) :: PRPLRADI
+      REAL(KIND=JWRB),DIMENSION(NGPTOTG,NFIELDS), INTENT(IN) :: FIELDS
       LOGICAL, INTENT(IN) :: LWCUR
       INTEGER(KIND=JWIM),DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
-      REAL(KIND=JWRB),DIMENSION(NGPTOTG,NFIELDS), INTENT(IN) :: FIELDS
+      REAL(KIND=JWRB), INTENT(IN) :: PRPLRADI
 
 
       INTEGER(KIND=JWIM) :: IFORCA
@@ -361,7 +364,11 @@ SUBROUTINE INITMDL (NADV,                                         &
 
 !----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
+
+ASSOCIATE(CICOVER => FF_NOW%CICOVER, &
+ &        CITHICK => FF_NOW%CITHICK )
+
 
       CALL INIWCST(PRPLRADI)
 
@@ -754,11 +761,7 @@ SUBROUTINE INITMDL (NADV,                                         &
 !        USED). AND READ IN LAST WINDFIELDS FROM RESTARTFILE.
 !        ---------------------------------------------------------------
 
-      Z0B(:) = 0.0_JWRB
-
-      CALL GETSTRESS(WSWAVE, WDWAVE, UFRIC, TAUW, TAUWDIR, Z0M,       &
-     &               AIRD, WSTAR, CICOVER, CITHICK,                &
-     &               NBLKS, NBLKE, IREAD)
+      CALL GETSTRESS(IJS, IJL, FF_NOW, NBLKS, NBLKE, IREAD) 
 
       CDATEWL = CDTPRO
 
@@ -962,13 +965,10 @@ SUBROUTINE INITMDL (NADV,                                         &
       LLINIT=.NOT.LRESTARTED
       LLALLOC_FIELDG_ONLY=.FALSE.
 
-      CALL PREWIND (WSWAVE, WDWAVE, UFRIC, Z0M,                       &
-     &              AIRD, WSTAR,                                      &
-     &              CICOVER, CITHICK,                                 &
-     &              FF_NEXT,                                          &
-     &              LLINIT, LLALLOC_FIELDG_ONLY,                      &
-     &              IREAD,                                            &
-     &              NFIELDS, NGPTOTG, NC, NR,                         &
+      CALL PREWIND (IJS, IJL, FF_NOW, FF_NEXT,       &
+     &              LLINIT, LLALLOC_FIELDG_ONLY,     &
+     &              IREAD,                           &
+     &              NFIELDS, NGPTOTG, NC, NR,        &
      &              FIELDS, LWCUR, MASK_IN)
 
       WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'                   
@@ -1021,7 +1021,7 @@ SUBROUTINE INITMDL (NADV,                                         &
       ENDIF
 !NEST
 
-
-      IF (LHOOK) CALL DR_HOOK('INITMDL',1,ZHOOK_HANDLE)
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('INITMDL',1,ZHOOK_HANDLE)
 
 END SUBROUTINE INITMDL
