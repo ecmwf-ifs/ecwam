@@ -118,8 +118,6 @@ PROGRAM preset
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1      ,    &
      &            NBLKS    ,NBLKE
-
-
       USE YOWTABL  , ONLY :  FAC0     ,FAC1     ,FAC2     ,FAC3    ,    &
      &            FAK      ,FRHF      ,DFIMHF    , OMEGA   ,THH     ,   &
      &            DFDTH    ,IM_P      ,IM_M     ,TA       ,TB      ,    &

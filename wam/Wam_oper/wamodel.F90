@@ -381,9 +381,9 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL UNSETICE(KIJS, KIJL,                                &
-     &                  DEPTH(KIJS), EMAXDPT(KIJS),                &
-     &                  CICOVER(KIJS), WSWAVE(KIJS), WDWAVE(KIJS), &
+          CALL UNSETICE(KIJS, KIJL,                  &
+     &                  DEPTH(KIJS), EMAXDPT(KIJS),  &
+     &                  FF_NOW(KIJS),                &
      &                  FL1(KIJS:KIJL,:,:))
         ENDDO
 !$OMP   END PARALLEL DO
@@ -477,7 +477,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 
 !         COMPUTE OUTPUT PARAMETERS
           IF (NIPRMOUT > 0) THEN
-            CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS, INTFLDS)
+            CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS, FF_NOW, INTFLDS)
 !           PRINT OUT NORMS
             !!!1 to do: decide if there are cases where we might want LDREPROD false
             LDREPROD=.TRUE.
@@ -684,10 +684,6 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !*    1.5.10 MODEL OUTPUT INTEGRATED DATA ARE SAVED
 !            --------------------------------------
 
-          IF (ITEST.GE.2) THEN
-              WRITE(IU06,*) '   SUB. WAMODEL: MODEL ', 'OUTPUT CDTINTT=',CDTINTT
-          ENDIF
-
 #ifdef ECMWF
           IF (.NOT.LWCOU .AND. .NOT. LDSTOP) THEN
 !!!!      the call to CHESIG is a signal handeling facility which is
@@ -722,7 +718,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 
 !           COMPUTE OUTPUT PARAMETERS
             IF (NIPRMOUT > 0) THEN
-              CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS, INTFLDS)
+              CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS, FF_NOW, INTFLDS)
 
 !!!1 to do: decide if there are cases where we might want LDREPROD false
               LDREPROD=.TRUE.

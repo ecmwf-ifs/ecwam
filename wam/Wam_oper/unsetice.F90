@@ -1,7 +1,7 @@
-      SUBROUTINE UNSETICE(KIJS, KIJL,              &
-     &                    DEPTH, EMAXDPT,          &
-     &                    CICOVER, WSWAVE, WDWAVE, &
-     &                    FL1)
+SUBROUTINE UNSETICE(KIJS, KIJL,              &
+ &                  DEPTH, EMAXDPT,          &
+ &                  FF_NOW,                  &
+ &                  FL1)
 ! ----------------------------------------------------------------------
 
 !*    PURPOSE.
@@ -14,16 +14,12 @@
 !     ----------
 !     *CALL* *UNSETICE(KIJS, KIJL,              &
 !    &                 DEPTH, EMAXDPT,          &
-!    &                 CICOVER, WSWAVE, WDWAVE, &
 !    &                 FL1)
 !     *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
 !     *KIJL*    - LOCAL  INDEX OF LAST GRIDPOINT
 !     *DEPTH*   - WATER DEPTH
 !     *EMAXDPT* - MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
-!     *CICOVER* - SEA ICE COVER
-!     *WSWAVE*  - WIND SPEED. (used with fetch law to fill empty 
-!                 sea points)
-!     *WDWAVE*  - WIND DIRECTION (RADIANS).
+!     *FF_NOW*  - FORCING FIELDS AT CURRENT TIME
 !     *FL1*     - SPECTRA
 
 
@@ -33,6 +29,7 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRID  , ONLY : DELPHI
@@ -53,7 +50,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH, EMAXDPT 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER, WSWAVE, WDWAVE 
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(IN) :: FF_NOW
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
 
 
@@ -72,7 +69,11 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('UNSETICE',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('UNSETICE',0,ZHOOK_HANDLE)
+
+ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        CICOVER => FF_NOW%CICOVER)
 
       IF (.NOT.LRESTARTED .AND. CLDOMAIN /= 's') THEN
 
@@ -167,6 +168,8 @@
 
       ENDIF
 
-      IF (LHOOK) CALL DR_HOOK('UNSETICE',1,ZHOOK_HANDLE)
+END ASSOCIATE
 
-      END SUBROUTINE UNSETICE
+IF (LHOOK) CALL DR_HOOK('UNSETICE',1,ZHOOK_HANDLE)
+
+END SUBROUTINE UNSETICE

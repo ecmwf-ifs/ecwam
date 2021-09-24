@@ -1,7 +1,7 @@
 SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
  &                   FL1, XLLWS,                            & 
  &                   WAVNUM, CINV, CGROUP,                  &
- &                   DEPTH, INTFLDS,                        &
+ &                   DEPTH, FF_NOW, INTFLDS,                &
  &                   BOUT)
 
 ! ----------------------------------------------------------------------
@@ -30,6 +30,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 !      *CINV*   - INVERSE PHASE SPEED
 !      *CGROUP* - GROUP SPEED
 !      *DEPTH*  - DEPTH
+!      *FF_NOW* - FORCING FIELDS
 !      *INTFLDS*- INTEGRATED/DERIVED PARAMETERS
 !      *BOUT*   - OUTPUT PARAMETER BUFFER
 
@@ -42,15 +43,13 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
       USE YOWCOUP  , ONLY : LWNEMOCOUSTRN
 
       USE YOWCURR  , ONLY : U, V
+!!!!!!!!!!!!!!!!!!!!!
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,COSTH    ,SINTH, XKMSS_CUTOFF
 
-      USE YOWICE   , ONLY : CICOVER  ,CITHICK
-
       USE YOWNEMOFLDS,ONLY: NEMOSST, NEMOCICOVER, NEMOCITHICK,          &
      &                      NEMOUCUR, NEMOVCUR, LNEMOCITHICK
-      USE YOWSPEC  , ONLY : TAUW     ,WSWAVE   ,WDWAVE   ,UFRIC    ,    &
-     &            AIRD   ,WSTAR
+!!!!!!!!!!!!!!!!!!
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSUS    ,EPSU10, G, ZPI
@@ -86,6 +85,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1, XLLWS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
+      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(IN) :: FF_NOW
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(IN) :: INTFLDS 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NIPRMOUT), INTENT(OUT) :: BOUT
 
@@ -121,20 +121,28 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 
 IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 
-ASSOCIATE(ALTWH   => INTFLDS%ALTWH  , &
-&         CALTWH  => INTFLDS%CALTWH , &
-&         RALTCOR => INTFLDS%RALTCOR, &
-&         USTOKES => INTFLDS%USTOKES, &
-&         VSTOKES => INTFLDS%VSTOKES, &
-&         STRNMS  => INTFLDS%STRNMS,  &
-&         PHIEPS  => INTFLDS%PHIEPS,  &
-&         PHIAW   => INTFLDS%PHIAW,   &
-&         TAUOC   => INTFLDS%TAUOC,   &
-&         TAUXD   => INTFLDS%TAUXD,   &
-&         TAUYD   => INTFLDS%TAUYD,   &
-&         TAUOCXD => INTFLDS%TAUOCXD, &
-&         TAUOCYD => INTFLDS%TAUOCYD, &
-&         PHIOCD  => INTFLDS%PHIOCD)
+ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        UFRIC => FF_NOW%UFRIC, &
+ &        TAUW => FF_NOW%TAUW, &
+ &        AIRD => FF_NOW%AIRD, &
+ &        WSTAR => FF_NOW%WSTAR, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        CITHICK => FF_NOW%CITHICK, &
+ &        ALTWH   => INTFLDS%ALTWH  , &
+ &        CALTWH  => INTFLDS%CALTWH , &
+ &        RALTCOR => INTFLDS%RALTCOR, &
+ &        USTOKES => INTFLDS%USTOKES, &
+ &        VSTOKES => INTFLDS%VSTOKES, &
+ &        STRNMS  => INTFLDS%STRNMS,  &
+ &        PHIEPS  => INTFLDS%PHIEPS,  &
+ &        PHIAW   => INTFLDS%PHIAW,   &
+ &        TAUOC   => INTFLDS%TAUOC,   &
+ &        TAUXD   => INTFLDS%TAUXD,   &
+ &        TAUYD   => INTFLDS%TAUYD,   &
+ &        TAUOCXD => INTFLDS%TAUOCXD, &
+ &        TAUOCYD => INTFLDS%TAUOCYD, &
+ &        PHIOCD  => INTFLDS%PHIOCD)
 
 
 !
@@ -463,7 +471,7 @@ ASSOCIATE(ALTWH   => INTFLDS%ALTWH  , &
         IF (LWNEMOCOUSTRN) THEN
           BOUT(KIJS:KIJL,ITOBOUT(IR))=STRNMS(KIJS:KIJL)
         ELSE
-          CALL CIMSSTRN (KIJS, KIJL, FL1, WAVNUM, DEPTH, BOUT(KIJS,ITOBOUT(IR)))
+          CALL CIMSSTRN (KIJS, KIJL, FL1, WAVNUM, DEPTH, CITHICK, BOUT(KIJS,ITOBOUT(IR)))
         ENDIF
       ENDIF
 
