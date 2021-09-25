@@ -515,7 +515,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=.FALSE.
 
-        CALL PREWIND (IJS, IJL, FF_NOW, FF,NEXT,       &
+        CALL PREWIND (IJS, IJL, FF_NOW, FF_NEXT,       &
      &                LLINIT, LLALLOC_FIELDG_ONLY,     &
      &                IREAD,                           &
      &                NFIELDS, NGPTOTG, NC, NR,        &
@@ -572,9 +572,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
       WRITE(IU06,*) 'MINVAL OF WSWAVE = ',MINVAL(WSWAVE)
       WRITE(IU06,*) 'MAXVAL OF WSWAVE = ',MAXVAL(WSWAVE)
       IF (.NOT.LGRIBOUT) THEN
-        CALL SAVSTRESS(WSWAVE, WDWAVE, UFRIC, TAUW, TAUWDIR, Z0M,     &
-     &                 AIRD, WSTAR, CICOVER, CITHICK,              &
-     &                 NBLKS, NBLKE, CDATEA, CDATEA)
+        CALL SAVSTRESS(IJS, IJL, FF_NOW, NBLKS, NBLKE, CDATEA, CDATEA) 
       ENDIF
 
       IF (ALLOCATED(FF_NOW)) DEALLOCATE(FF_NOW)

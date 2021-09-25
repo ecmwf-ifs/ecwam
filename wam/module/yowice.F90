@@ -18,8 +18,10 @@
       REAL(KIND=JWRB)              :: CDICWA
       REAL(KIND=JWRB)              :: TICMIN, HICMIN
       REAL(KIND=JWRB)              :: DTIC, DHIC
+!!!!!!!
       REAL(KIND=JWRB), ALLOCATABLE :: CIWA(:,:) 
       REAL(KIND=JWRB), ALLOCATABLE :: CIDEAC(:,:) 
+!!!!!!!
 
       LOGICAL :: LICERUN 
       LOGICAL :: LICETH

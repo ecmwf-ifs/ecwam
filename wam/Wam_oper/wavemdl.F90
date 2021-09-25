@@ -553,7 +553,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-        CALL PREWIND (IJS, IJL, FF_NOW, FF,NEXT,       &
+        CALL PREWIND (IJS, IJL, FF_NOW, FF_NEXT,       &
      &                LLINIT, LLALLOC_FIELDG_ONLY,     &
      &                IREAD,                           &
      &                NFIELDS, NGPTOTG, NC, NR,        &
