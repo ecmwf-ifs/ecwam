@@ -348,8 +348,6 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
  &        WDWAVE => FF_NOW%WDWAVE, &
  &        UFRIC => FF_NOW%UFRIC, &
  &        CICOVER => FF_NOW%CICOVER, &
- &        WSEMEAN => INTFLDS%WSEMEAN, &
- &        WSFMEAN => INTFLDS%WSFMEAN, &  
  &        USTOKES => INTFLDS%USTOKES, &
  &        VSTOKES => INTFLDS%VSTOKES, &
  &        STRNMS  => INTFLDS%STRNMS )
@@ -428,7 +426,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL)
             CALL SETICE(KIJS, KIJL, FL1(KIJS:KIJL,:,:) ,            &
-     &                  CICOVER(KIJS), WSWAVE(KIJS), WDWAVE(KIJS))
+     &                  CICOVER(KIJS:KIJL), WSWAVE(KIJS:KIJL), WDWAVE(KIJS:KIJL))
           ENDDO
 !$OMP     END PARALLEL DO
           CALL GSTATS(1439,1)
