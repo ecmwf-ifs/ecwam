@@ -1,7 +1,7 @@
       SUBROUTINE BUILDSTRESS(IJS, IJL,                                &
      &                       WSWAVE, WDWAVE,                          &
      &                       UFRIC, TAUW, TAUWDIR, Z0M,               &
-     &                       AIRD, WSTAR,                        &
+     &                       AIRD, WSTAR,                             &
      &                       CICOVER, CITHICK,                        &
      &                       IREAD)
 
@@ -148,6 +148,11 @@
         DEALLOCATE(NEMOCICOVER,NEMOCITHICK)
       ENDIF
 
+!!!!debile
+      do IJ=IJS,IJL
+        WRITE(IU06,*) ' debile buildstress after getwnd ', IJ, WSWAVE(IJ)
+      enddo
+
 
 !     1.2 USE DATA FROM A FILE CONTAINING WIND SPEED MODIFIED BY
 !         ----------------------------------------------------
@@ -187,6 +192,11 @@
         LLONLYPOS=.TRUE.
         CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, IJS, IJL,         &
      &                 WSWAVE(IJS), KZLEVUWAVE, LLONLYPOS, IREAD)
+!!!!debile
+      do IJ=IJS,IJL
+        WRITE(IU06,*) ' debile buildstress after readwgrib ', IJ, WSWAVE(IJ)
+      enddo
+
 
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' A DATA FILE CONTAINING WIND SPEED INFORMATION'
@@ -237,11 +247,6 @@
 
 !     1.3 INITIALISE CD USING THE FRICTION VELOCITY FOR TAUW=0.
 !         ----------------------------------------------------
-
-!!!!debile
-      do IJ=IJS,IJL
-        WRITE(IU06,*) ' debile buildstress ', IJ, WSWAVE(IJ)
-      enddo
 
 
 

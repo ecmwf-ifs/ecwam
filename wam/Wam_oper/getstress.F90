@@ -117,12 +117,11 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
       IF (LGRIBIN .AND. .NOT.LRESTARTED) THEN
 !       GRIB RESTART
 !       CREATES WIND AND STRESS FIELDS FROM GRIB WINDS AND DRAG COEFFICIENT.
-        CALL BUILDSTRESS(IJS, IJL,                                      &
-     &                   WSWAVE(IJS), WDWAVE(IJS),                      &
-     &                   UFRIC(IJS), TAUW(IJS), TAUWDIR(IJS),           &
-     &                   Z0M(IJS),                                      &
-     &                   AIRD(IJS), WSTAR(IJS),                         &
-     &                   CICOVER(IJS), CITHICK(IJS),                    &
+        CALL BUILDSTRESS(IJS, IJL,                            &
+     &                   WSWAVE, WDWAVE,                      &
+     &                   UFRIC, TAUW, TAUWDIR, Z0M,           &
+     &                   AIRD, WSTAR,                         &
+     &                   CICOVER, CITHICK,                    &
      &                   IREAD)
 
 
