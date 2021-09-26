@@ -148,12 +148,6 @@
         DEALLOCATE(NEMOCICOVER,NEMOCITHICK)
       ENDIF
 
-!!!!debile
-      do IJ=IJS,IJL
-        WRITE(IU06,*) ' debile buildstress after getwnd ', IJ, WSWAVE(IJ)
-      enddo
-
-
 !     1.2 USE DATA FROM A FILE CONTAINING WIND SPEED MODIFIED BY
 !         ----------------------------------------------------
 !     A PREVIOUS WAVE MODEL RUN ON WHICH THIS RESTART IS BASED
@@ -192,11 +186,6 @@
         LLONLYPOS=.TRUE.
         CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, IJS, IJL,         &
      &                 WSWAVE(IJS), KZLEVUWAVE, LLONLYPOS, IREAD)
-!!!!debile
-      do IJ=IJS,IJL
-        WRITE(IU06,*) ' debile buildstress after readwgrib ', IJ, WSWAVE(IJ)
-      enddo
-
 
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' A DATA FILE CONTAINING WIND SPEED INFORMATION'
