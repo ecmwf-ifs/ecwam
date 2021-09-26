@@ -184,7 +184,7 @@
 
       IF (LWAVEWIND) THEN
         IPARAM=245
-        LLONLYPOS=.FALSE.
+        LLONLYPOS=.TRUE.
         CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, IJS, IJL,         &
      &                 WSWAVE(IJS), KZLEVUWAVE, LLONLYPOS, IREAD)
 
@@ -237,6 +237,13 @@
 
 !     1.3 INITIALISE CD USING THE FRICTION VELOCITY FOR TAUW=0.
 !         ----------------------------------------------------
+
+!!!!debile
+      do IJ=IJS,IJL
+        WRITE(IU06,*) ' debile buildstress ', IJ, WSWAVE(IJ)
+      enddo
+
+
 
 ! Mod for OPENMP
       NPROMA=NPROMA_WAM
