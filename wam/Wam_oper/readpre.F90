@@ -16,6 +16,8 @@
 !                          YOU ALSO HAVE TO CHANGE OUTCOM.
 ! ALSO CHECK
 !            READPREB in Alt
+!  and
+!            ... /nemo/tools/interpolate/wambingrid.F90
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !*    PURPOSE.
