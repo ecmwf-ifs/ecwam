@@ -55,13 +55,12 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "cimsstrn.intfb.h"
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
 #include "sdissip.intfb.h"
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
-#include "stokesdrift.intfb.h"
+#include "stokestrn.intfb.h"
 #include "wnfluxes.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
@@ -70,7 +69,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP, STOKFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
-      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) ::FF_NOW 
+      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW 
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
@@ -106,12 +105,8 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
  &        AIRD => FF_NOW%AIRD, &
  &        WSTAR => FF_NOW%WSTAR, &
  &        CICOVER => FF_NOW%CICOVER, &
- &        CITHICK => FF_NOW%CITHICK, &
  &        WSEMEAN => INTFLDS%WSEMEAN, &
- &        WSFMEAN => INTFLDS%WSFMEAN, &  
- &        USTOKES => INTFLDS%USTOKES, &
- &        VSTOKES => INTFLDS%VSTOKES, &
- &        STRNMS  => INTFLDS%STRNMS )
+ &        WSFMEAN => INTFLDS%WSFMEAN)
 
 !*    1. INITIALISATION.
 !        ---------------
@@ -187,9 +182,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
           ENDDO
         ENDIF
 
-        CALL STOKESDRIFT(KIJS, KIJL, FL1, STOKFAC, WSWAVE, WDWAVE, CICOVER, USTOKES, VSTOKES)
-
-        IF (LWNEMOCOUSTRN) CALL CIMSSTRN(KIJS, KIJL, FL1, WAVNUM, DEPTH, CITHICK, STRNMS)
+        CALL STOKESTRN(KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, FF_NOW, INTFLDS)
 
       ENDIF
 ! ----------------------------------------------------------------------

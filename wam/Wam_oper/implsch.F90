@@ -88,7 +88,6 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "imphftail.intfb.h"
 #include "sdepthlim.intfb.h"
 #include "cimsstrn.intfb.h"
 #include "ciwabr.intfb.h"
@@ -100,7 +99,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 #include "setice.intfb.h"
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
-#include "stokesdrift.intfb.h"
+#include "stokestrn.intfb.h"
 #include "wnfluxes.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
@@ -155,12 +154,8 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
  &        AIRD => FF_NOW%AIRD, &
  &        WSTAR => FF_NOW%WSTAR, &
  &        CICOVER => FF_NOW%CICOVER, &
- &        CITHICK => FF_NOW%CITHICK, &
  &        WSEMEAN => INTFLDS%WSEMEAN, &
- &        WSFMEAN => INTFLDS%WSFMEAN, &  
- &        USTOKES => INTFLDS%USTOKES, &
- &        VSTOKES => INTFLDS%VSTOKES, &
- &        STRNMS  => INTFLDS%STRNMS )
+ &        WSFMEAN => INTFLDS%WSFMEAN)
 
 
 !*    1. INITIALISATION.
@@ -386,10 +381,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !*    2.7 SURFACE STOKES DRIFT AND STRAIN IN SEA ICE
 !         ------------------------------------------
 
-      CALL STOKESDRIFT(KIJS, KIJL, FL1, STOKFAC, WSWAVE, WDWAVE, CICOVER, USTOKES, VSTOKES)
-
-      IF (LWNEMOCOUSTRN) CALL CIMSSTRN(KIJS, KIJL, FL1, WAVNUM, DEPTH, CITHICK, STRNMS)
-
+      CALL STOKESTRN(KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, FF_NOW, INTFLDS)
 
 ! ----------------------------------------------------------------------
 END ASSOCIATE

@@ -2,7 +2,7 @@
      &                   U10, US,                               &
      &                   THW,                                   &
      &                   ADS, WSTAR,                            &
-     &                   CICVR, CITH,                           &
+     &                   CICOVER, CITHICK,                           &
      &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,    &
      &                   LWCUR, ICODE_WND)
 
@@ -22,7 +22,7 @@
 !     ----------
 
 !       *CALL* *GETWND (IJS, IJL,
-!                       U10, THW, ADS, WSTAR, CICVR, CITH,
+!                       U10, THW, ADS, WSTAR, CICOVER, CITHICK,
 !                       CDTWIS, LWNDFILE, LCLOSEWND,
 !                       LWCUR, ICODE_WND)*
 !         *IJS*    - INDEX OF FIRST GRIDPOINT
@@ -31,8 +31,8 @@
 !         *THW*    - DIRECTION OF 10m WIND AT EACH POINT AND BLOCK.
 !         *ADS*    - AIR DENSITY AT EACH POINT AND BLOCK.
 !         *WSTAR*  - CONVECTIVE VELOCITY.
-!         *CICVR*  - SEA ICE COVER.
-!         *CITH*   - SEA ICE THICKNESS.
+!         *CICOVER*  - SEA ICE COVER.
+!         *CITHICK*   - SEA ICE THICKNESS.
 !         *CDTWIS* - DATE OF WIND FIELD TO BE LOOKED FOR.
 !         *LWNDFILE - FLAG USED TO DETERMINE WHETHER WINDS ARE READ FROM
 !                     FILE OR ARE AVAILABLE IN ARRAY FIELDG (SEE *IFSTOWAM).
@@ -109,7 +109,7 @@
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(INOUT) :: U10, US 
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: THW
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: ADS, WSTAR
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: CICVR, CITH
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: CICOVER, CITHICK
 
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS
 
@@ -224,7 +224,7 @@
           KIJL=MIN(KIJS+NPROMA-1,IJL)
           CALL WAMWND (KIJS, KIJL,                                    &
      &                 U10(KIJS), US(KIJS),                           &
-     &                 THW(KIJS), ADS(KIJS), WSTAR(KIJS), CITH(KIJS), &
+     &                 THW(KIJS), ADS(KIJS), WSTAR(KIJS), CITHICK(KIJS), &
      &                 LWCUR, ICODE_WND)
         ENDDO
 !$OMP   END PARALLEL DO
@@ -249,7 +249,7 @@
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL MICEP(IPARAMCI, CICVR(KIJS), CITH(KIJS), KIJS, KIJL)
+          CALL MICEP(IPARAMCI, CICOVER(KIJS), CITHICK(KIJS), KIJS, KIJL)
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)

@@ -1,0 +1,72 @@
+SUBROUTINE STOKESTRN (KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, FF_NOW, INTFLDS)
+
+! ----------------------------------------------------------------------
+
+!**** *STOKESTRN* - WRAPPER TO CALL STOKESDRIFT and CIMSSTRN 
+
+!*    PURPOSE.
+!     --------
+
+!**   INTERFACE.
+!     ----------
+
+!       *CALL* *STOKESTRN (KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, FF_NOW, INTFLDS)
+
+!          *KIJS*   - INDEX OF FIRST GRIDPOINT.
+!          *KIJL*   - INDEX OF LAST GRIDPOINT.
+!          *FL1*    - SPECTRUM(INPUT).
+!          *WAVNUM* - WAVE NUMBER.
+!          *STOKFAC* - STOKES DRIFT FACTOR.
+!          *DEPTH*  - WATER DEPTH.
+!          *FF_NOW* - FORCING FIELDS AT CURRENT TIME.
+!          *INTFLDS*-  INTEGRATED/DERIVED PARAMETERS
+
+! ----------------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS
+
+      USE YOWCOUP  , ONLY : LWNEMOCOUSTRN
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+
+! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+#include "cimsstrn.intfb.h"
+#include "stokesdrift.intfb.h"
+
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, STOKFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
+      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW 
+      TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
+
+
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+
+! ----------------------------------------------------------------------
+
+IF (LHOOK) CALL DR_HOOK('STOKESTRN',0,ZHOOK_HANDLE)
+
+ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        CITHICK => FF_NOW%CITHICK, &
+ &        USTOKES => INTFLDS%USTOKES, &
+ &        VSTOKES => INTFLDS%VSTOKES, &
+ &        STRNMS  => INTFLDS%STRNMS )
+
+
+CALL STOKESDRIFT(KIJS, KIJL, FL1, STOKFAC, WSWAVE, WDWAVE, CICOVER, USTOKES, VSTOKES)
+
+IF (LWNEMOCOUSTRN) CALL CIMSSTRN(KIJS, KIJL, FL1, WAVNUM, DEPTH, CITHICK, STRNMS)
+
+! ----------------------------------------------------------------------
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('STOKESTRN',1,ZHOOK_HANDLE)
+
+END SUBROUTINE STOKESTRN
