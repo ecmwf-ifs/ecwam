@@ -1,11 +1,9 @@
 SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
-&                   WAVNUM, CINV,                            &
-&                   CGROUP, STOKFAC,                         &
-&                   DEPTH, EMAXDPT,                          &
-&                   FF_NOW,                                  &
-&                   CIWA,                                    &
-&                   INTFLDS,                                 &
-&                   MIJ, XLLWS)
+ &                  WVPRPT,                                  &
+ &                  DEPTH, EMAXDPT,                          &
+ &                  FF_NOW,                                  &
+ &                  INTFLDS,                                 &
+ &                  MIJ, XLLWS)
 
 ! ----------------------------------------------------------------------
 
@@ -25,23 +23,18 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 !     ----------
 
 !       *CALL* *IMPLSCH (KIJS, KIJL, FL1,
-!    &                   WAVNUM, CINV, CGROUP, STOKFAC,
+!    &                   WVPRPT,
 !    &                   DEPTH, EMAXDPT,
 !    &                   FF_NOW,
-!    &                   CIWA,
 !    &                   INTFLDS,
 !    &                   MIJ,  XLLWS)
 !      *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
 !      *KIJL*    - LOCAL INDEX OF LAST GRIDPOINT
 !      *FL1*     - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
-!      *WAVNUM*  - WAVE NUMBER.
-!      *CINV*    - INVERSE PHASE VELOCITY.
-!      *CGROUP*  - GROUP SPPED.
-!      *STOKFAC* - FACTOR TO COMPUTE THE STOKES SURFACE DRIFT
+!      *WVPRPT*  - WAVE PROPERTIES FIELDS
 !      *DEPTH*     WATER DEPTH
 !      *EMAXDPT*   MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
 !      *FF_NOW*    FORCING FIELDS
-!      *CIWA*      SEA ICE WAVE ATTENUATION.
 !      *INTFLDS*   INTEGRATED/DERIVED PARAMETERS
 !      *MIJ*       LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !      *XLLWS*     TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
@@ -70,7 +63,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS
+      USE YOWDRVTYPE  , ONLY : FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
 
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU, LWNEMOCOUSTRN 
       USE YOWCOUT  , ONLY : LWFLUXOUT 
@@ -104,13 +97,11 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
-      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(OUT) :: MIJ
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP, STOKFAC
+      TYPE(FREQUENCY), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WVPRPT
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH, EMAXDPT
       TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW 
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
-
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CIWA
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(OUT) :: MIJ
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
 
@@ -144,7 +135,12 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
 IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
-ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ASSOCIATE(WAVNUM => WVPRPT%WAVNUM, &
+ &        CINV => WVPRPT%CINV, &
+ &        CGROUP => WVPRPT%CGROUP, &
+ &        STOKFAC => WVPRPT%STOKFAC, &
+ &        CIWA => WVPRPT%CIWA, &
+ &        WSWAVE => FF_NOW%WSWAVE, &
  &        WDWAVE => FF_NOW%WDWAVE, &
  &        UFRIC => FF_NOW%UFRIC, &
  &        Z0M => FF_NOW%Z0M, &

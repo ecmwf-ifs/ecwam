@@ -246,7 +246,6 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            DFIM_END_L, DFIM_END_U
       USE YOWGRIBHD, ONLY : LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IJS     ,IJL      ,COSPH
-      USE YOWICE   , ONLY : CIWA
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,                        &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            KMNOP    ,KMSOP    ,IPER
@@ -261,8 +260,8 @@ SUBROUTINE INITMDL (NADV,                                 &
 
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
 !                                   !!!!!!!!!!
-
-     &            INDEP    ,CGROUP   ,IODP     ,IOBND    ,TOOSHALLOW
+     &            WVPRPT,                                               &
+     &            INDEP    ,IODP     ,IOBND    ,TOOSHALLOW
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,    &
      &            FL1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
@@ -366,7 +365,9 @@ SUBROUTINE INITMDL (NADV,                                 &
 
 IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
-ASSOCIATE(CICOVER => FF_NOW%CICOVER, &
+ASSOCIATE(CGROUP => WVPRPT%CGROUP, &
+ &        CIWA => WVPRPT%CIWA, &
+ &        CICOVER => FF_NOW%CICOVER, &
  &        CITHICK => FF_NOW%CITHICK )
 
 

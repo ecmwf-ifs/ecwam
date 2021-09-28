@@ -6,6 +6,19 @@
 
       IMPLICIT NONE
 
+!*    **  *VARIABLES DEPENDENT ON FREQUENCY (but not direction)
+!          i.e. wave properties dependent on water depth or sea ice
+
+      TYPE FREQUENCY 
+        REAL(KIND=JWRB) :: WAVNUM     ! WAVE NUMBER
+        REAL(KIND=JWRB) :: CINV       ! RECIPROCAL OF THE PHASE VELOCITY (1/c)
+        REAL(KIND=JWRB) :: CGROUP     ! GROUP SPEED
+        REAL(KIND=JWRB) :: OMOSNH2KD  ! OMEGA / SINH(2KD)
+        REAL(KIND=JWRB) :: STOKFAC    ! FACTOR TO COMPUTE SURFACE STOKES DRIFT FROM SPECTRUM 2*G*K**2/(OMEGA*TANH(2KD))
+        REAL(KIND=JWRB) :: CIWA       ! SEA ICE WAVE ATTENUATION
+      END TYPE FREQUENCY 
+
+
 !*    **  *VARIABLES USED FOR FORCING INPUT AND COMPUTATIONS.
 !          See *INIT_FIELDG* for the initialisation
 

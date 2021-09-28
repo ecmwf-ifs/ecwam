@@ -13,9 +13,6 @@
       USE YOWCURR  , ONLY : U        ,V
 !!!!!!!!!!!!!!!!!!!!!!!!
 
-      USE YOWICE   , ONLY : CIWA
-!!!!!!!!!!!!!
-
       USE YOWMEAN  , ONLY : INTFLDS
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC
@@ -44,8 +41,6 @@
 !         -------------------------
 
       IF (.NOT.ALLOCATED(FF_NOW)) ALLOCATE(FF_NOW(NSTART(IRANK):NEND(IRANK)))
-
-      IF (.NOT.ALLOCATED(CIWA)) ALLOCATE(CIWA(NSTART(IRANK):NEND(IRANK),NFRE))
 
 
       IF (.NOT.ALLOCATED(FL1)) THEN

@@ -1,6 +1,6 @@
 SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
  &                   FL1, XLLWS,                            & 
- &                   WAVNUM, CINV, CGROUP,                  &
+ &                   WVPRPT,                                &
  &                   DEPTH, FF_NOW, INTFLDS,                &
  &                   BOUT)
 
@@ -18,17 +18,15 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 !     ----------
 !      *CALL*OUTBLOCK (KIJS, KIJL, MIJ,
 !     &                FL1, XLLWS,
-!     &                WAVENUM, CINV, CGROUP,
-!     &                DEPTH, INTFLDS,
+!     &                WVPRPT,
+!     &                DEPTH, FF_NOW, INTFLDS,
 !     &                BOUT)
 !      *KIJS*   - INDEX OF FIRST LOCAL GRIDPOINT
 !      *KIJL*   - INDEX OF LAST LOCAL GRIDPOINT
 !      *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !      *FL1*    - INPUT SPECTRUM.
 !      *XLLWS*  - WINDSEA MASK FROM INPUT SOURCE TERM
-!      *WAVNUM* - WAVE NUMBER
-!      *CINV*   - INVERSE PHASE SPEED
-!      *CGROUP* - GROUP SPEED
+!      *WVPRPT* - WAVE PROPERTIES
 !      *DEPTH*  - DEPTH
 !      *FF_NOW* - FORCING FIELDS
 !      *INTFLDS*- INTEGRATED/DERIVED PARAMETERS
@@ -36,7 +34,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS
+      USE YOWDRVTYPE  , ONLY : FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
 
       USE YOWCOUT  , ONLY : NTRAIN   ,IPFGTBL  ,LSECONDORDER,           &
      &            NIPRMOUT, ITOBOUT
@@ -85,7 +83,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: MIJ
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1, XLLWS
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
+      TYPE(FREQUENCY), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WVPRPT
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
       TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(IN) :: FF_NOW
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(IN) :: INTFLDS 
@@ -123,7 +121,10 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 
 IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 
-ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ASSOCIATE(WAVNUM => WVPRPT%WAVNUM, &
+ &        CINV => WVPRPT%CINV, &
+ &        CGROUP => WVPRPT%CGROUP, &
+ &        WSWAVE => FF_NOW%WSWAVE, &
  &        WDWAVE => FF_NOW%WDWAVE, &
  &        UFRIC => FF_NOW%UFRIC, &
  &        TAUW => FF_NOW%TAUW, &

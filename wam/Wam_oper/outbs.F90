@@ -1,4 +1,4 @@
-SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS, FF_NOW, INTFLDS)
+SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS, WVPRPT, FF_NOW, INTFLDS)
 ! ----------------------------------------------------------------------
 
 !**** *OUTBS* - MODEL OUTPUT FROM BLOCK TO FILE, PRINTER AND COMMON.
@@ -36,12 +36,12 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS, FF_NOW, INTFLDS)
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS
+      USE YOWDRVTYPE  , ONLY : FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,NIPRMOUT    ,BOUT
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSHAL  , ONLY : DEPTH    ,WAVNUM      ,CINV        ,CGROUP
+      USE YOWSHAL  , ONLY : DEPTH
       USE YOWSTAT  , ONLY : NPROMA_WAM
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -55,6 +55,7 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS, FF_NOW, INTFLDS)
            
       REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: XLLWS
+      TYPE(FREQUENCY), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WVPRPT
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(IN) :: FF_NOW
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(IJS:IJL), INTENT(IN) :: INTFLDS
 
@@ -78,10 +79,10 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS, FF_NOW, INTFLDS)
       DO JKGLO = IJSLOC, IJLLOC, NPROMA
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
-        CALL OUTBLOCK(KIJS, KIJL, MIJ(KIJS),                                       &
-     &                FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),                    &
-     &                WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:), CGROUP(KIJS:KIJL,:), &
-     &                DEPTH(KIJS), FF_NOW(KIJS), INTFLDS(KIJS),                    &
+        CALL OUTBLOCK(KIJS, KIJL, MIJ(KIJS),                      &
+     &                FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),   &
+     &                WVPRPT(KIJS:KIJL,:),                        &
+     &                DEPTH(KIJS), FF_NOW(KIJS), INTFLDS(KIJS),   &
      &                BOUT(KIJS:KIJL,:))
       ENDDO
 !$OMP END PARALLEL DO

@@ -1,5 +1,5 @@
 SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
-&                   FF_NOW, FF_NEXT, INTFLDS)
+&                   WVPRPT, FF_NOW, FF_NEXT, INTFLDS, FL1)
 
 ! ----------------------------------------------------------------------
 
@@ -119,6 +119,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 !                              PER CALL OF WAMODEL, OUTPUT PARAMETER.
 !        *LDSTOP*    LOGICAL   SET .TRUE. IF STOP SIGNAL RECEIVED.
 !        *LDWRRE*    LOGICAL   SET .TRUE. IF RESTART SIGNAL RECEIVED.
+!        *WVPRPT*    REAL      WAVE PROPERTIES FIELDS
 !        *FF_NOW*    REAL      FORCING FIELDS AT CURRENT TIME.
 !        *FF_NEXT*   REAL      DATA STRUCTURE WITH THE NEXT FORCING FIELDS
 !        *INTFLDS*   REAL      INTEGRATED/DERIVED PARAMETERS
@@ -214,7 +215,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 ! -------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS
+      USE YOWDRVTYPE  , ONLY : FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
 
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC    ,GBOUNC  , IPOGBO  ,    &
      &            CBCPREF
@@ -240,13 +241,14 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
       USE YOWGRIBHD, ONLY : LGRHDIFS 
       USE YOWGRID  , ONLY : IJS      ,IJL       ,                       &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CIWA
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,LWAVEWIND 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSMIN
-      USE YOWSHAL  , ONLY : DEPTH    ,EMAXDPT  ,WAVNUM   ,CINV     ,    &
-     &            CGROUP   ,OMOSNH2KD, STOKFAC
+
+      USE YOWSHAL  , ONLY : DEPTH    ,EMAXDPT
+
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDATER   ,CDATES   ,CDTINTT  ,IDELPRO  ,IDELT    ,    &
      &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &
@@ -257,7 +259,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
      &            NMETNB   ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,    &
      &            LLSOURCE ,                                            &
      &            LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE
-      USE YOWSPEC, ONLY   : NBLKS    ,NBLKE    ,FL1
+      USE YOWSPEC, ONLY   : NBLKS    ,NBLKE
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
       USE YOWUNIT  , ONLY : IU02     ,IU04     ,              &
@@ -309,9 +311,11 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NADV
       LOGICAL, INTENT(INOUT) :: LDSTOP, LDWRRE
+      TYPE(FREQUENCY), DIMENSION(IJS:IJL,NFRE), INTENT(INOUT) :: WVPRPT
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(IN) :: FF_NEXT
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: INTFLDS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, J, IRA, KADV, ICH, ICALL
@@ -401,8 +405,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
             CALL WDFLUXES (KIJS, KIJL,                                 &
      &                     MIJ(KIJS),                                  &
      &                     FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),   &
-     &                     WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:),     &
-     &                     CGROUP(KIJS:KIJL,:), STOKFAC(KIJS:KIJL,:),  &
+     &                     WVPRPT(KIJS:KIJL,:),                        &
      &                     DEPTH(KIJS),                                &
      &                     FF_NOW(KIJS),                               &
      &                     INTFLDS(KIJS) )
@@ -473,7 +476,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 
 !         COMPUTE OUTPUT PARAMETERS
           IF (NIPRMOUT > 0) THEN
-            CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS, FF_NOW, INTFLDS)
+            CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS, WVPRPT, FF_NOW, INTFLDS)
 !           PRINT OUT NORMS
             !!!1 to do: decide if there are cases where we might want LDREPROD false
             LDREPROD=.TRUE.
@@ -581,9 +584,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 
 ! IF CDATE CORRESPONDS TO A PROPAGATION TIME
           IF (CDATE == CDTPRA) THEN
-            CALL PROPAG_WAM(IJS, IJL, WAVNUM, CGROUP, OMOSNH2KD, &
-      &                     DEPTH, U, V,                         &
-      &                     FL1)
+            CALL PROPAG_WAM(IJS, IJL, WVPRPT, DEPTH, U, V, FL1)
             CDATE=CDTPRO   
           ENDIF
 
@@ -591,9 +592,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !         ---------------------------------------------------------------
           CALL NEWWIND(IJS, IJL, CDTIMP, CDATEWH,               &
      &                 LLNEWREAD, LLNEWFILE,                    &
-     &                 FF_NOW, FF_NEXT,                         &
-     &                 CGROUP,                                  &
-     &                 CIWA)
+     &                 WVPRPT, FF_NOW, FF_NEXT)
 
 !         IT IS TIME TO INTEGRATE THE SOURCE TERMS
 !         ----------------------------------------
@@ -606,11 +605,9 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL)
                 CALL IMPLSCH (KIJS, KIJL, FL1(KIJS:KIJL,:,:),       &
-     &                        WAVNUM(KIJS:KIJL,:), CINV(KIJS:KIJL,:),           &
-     &                        CGROUP(KIJS:KIJL,:), STOKFAC(KIJS:KIJL,:),        &
-     &                        DEPTH(KIJS), EMAXDPT(KIJS),               &
+     &                        WVPRPT(KIJS:KIJL,:),                  &
+     &                        DEPTH(KIJS), EMAXDPT(KIJS),           &
      &                        FF_NOW(KIJS),                 &
-     &                        CIWA(KIJS:KIJL,:),               &
      &                        INTFLDS(KIJS),             &
      &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:) )
 
@@ -713,7 +710,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 
 !           COMPUTE OUTPUT PARAMETERS
             IF (NIPRMOUT > 0) THEN
-              CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS, FF_NOW, INTFLDS)
+              CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS, WVPRPT, FF_NOW, INTFLDS)
 
 !!!1 to do: decide if there are cases where we might want LDREPROD false
               LDREPROD=.TRUE.

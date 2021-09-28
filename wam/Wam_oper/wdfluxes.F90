@@ -1,7 +1,7 @@
       SUBROUTINE WDFLUXES (KIJS, KIJL,                        &
      &                     MIJ,                               &
      &                     FL1, XLLWS,                        &
-     &                     WAVNUM, CINV, CGROUP, STOKFAC,     &
+     &                     WVPRPT,                            &
      &                     DEPTH,                             &
      &                     FF_NOW,                            &
      &                     INTFLDS)
@@ -23,18 +23,15 @@
 !       *CALL* *WDFLUXES (KIJS, KIJL,
 !    &                    MIJ,
 !    &                    FL1, XLLWS,
-!    &                    WAVNUM, CINV, CGROUP, STOKFAC,
+!    &                    WVPRPT,
 !    &                    FF_NOW,
 !    &                    INTFLDS)
 
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*   - INDEX OF LAST GRIDPOINT.
 !          *FL1*    - SPECTRUM(INPUT).
-!          *XLLWS* - TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
-!          *WAVNUM* - WAVE NUMBER.
-!          *CINV*   - INVERSE PHASE VELOCITY.
-!          *CGROUP* - GROUP SPPED.
-!          *STOKFAC* - STOKES DRIFT FACTOR.
+!          *XLLWS*  - TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
+!          *WVPRPT* - WAVE PROPERTIES FIELDS
 !          *DEPTH*  - WATER DEPTH.
 !          *FF_NOW* - FORCING FIELDS AT CURRENT TIME.
 !          *INTFLDS*-  INTEGRATED/DERIVED PARAMETERS
@@ -42,7 +39,7 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS
+      USE YOWDRVTYPE  , ONLY : FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
 
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN
       USE YOWCOUT  , ONLY : LWFLUXOUT 
@@ -67,9 +64,9 @@
       INTEGER(KIND=JWIM),  DIMENSION(KIJS:KIJL), INTENT(OUT) :: MIJ
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP, STOKFAC
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
-      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW 
+      TYPE(FREQUENCY), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WVPRPT
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
+      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
@@ -97,7 +94,11 @@
 
 IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 
-ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ASSOCIATE(WAVNUM => WVPRPT%WAVNUM, &
+ &        CINV => WVPRPT%CINV, &
+ &        CGROUP => WVPRPT%CGROUP, &
+ &        STOKFAC => WVPRPT%STOKFAC, &
+ &        WSWAVE => FF_NOW%WSWAVE, &
  &        WDWAVE => FF_NOW%WDWAVE, &
  &        UFRIC => FF_NOW%UFRIC, &
  &        Z0M => FF_NOW%Z0M, &

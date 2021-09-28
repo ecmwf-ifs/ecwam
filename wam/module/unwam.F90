@@ -2994,7 +2994,7 @@ END INTERFACE
       USE YOWGRID,  ONLY : DELPHI, IJS, IJL
       USE YOWPCONS, ONLY : PI, ZPI
       USE YOWREFD,  ONLY : THDD, THDC, SDOT
-      USE YOWSHAl,  ONLY : OMOSNH2KD
+      USE YOWSHAl,  ONLY : WVPRPT 
       USE yowpd, only : np_global
       USE YOWUNPOOL, ONLY : SI
       IMPLICIT NONE
@@ -3048,8 +3048,12 @@ END INTERFACE
                 DFP = DELFR0/FR(M)
                 DFM = DELFR0/FR(MM1)
                 !
-                DTHP = REAL(OMOSNH2KD(IJ,M),JWRU)*DRDP(K) + DRCP(K)
-                DTHM = REAL(OMOSNH2KD(IJ,M),JWRU)*DRDM(K) + DRCM(K)
+
+                DTHP = REAL(WVPRPT(IJ,M)%OMOSNH2KD,JWRU)*DRDP(K) + DRCP(K)
+                DTHM = REAL(WVPRPT(IJ,M)%OMOSNH2KD,JWRU)*DRDM(K) + DRCM(K)
+
+
+
                 ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
                 DTP_I(K,M,IJ) = -DTHP+ABS(DTHP)
                 DTM_I(K,M,IJ) =  DTHM+ABS(DTHM)
