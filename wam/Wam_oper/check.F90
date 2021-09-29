@@ -44,7 +44,7 @@
       USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLO
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH
+      USE YOWSHAL  , ONLY : NDEPTH
       USE YOWTEST  , ONLY : IU06, ITEST
 
 ! ----------------------------------------------------------------------
@@ -85,16 +85,16 @@
 
       IERR = 0
       DO IJ=IJS,IJL
-        IF (IXLG(IJ).NE.0.OR.KXLT(IJ).NE.0) LST(IXLG(IJ),KXLT(IJ)) = 'S'
+      IF (IXLG(IJ) /= 0 .OR. KXLT(IJ) /= 0) LST(IXLG(IJ),KXLT(IJ)) = 'S'
       ENDDO
 
 !*    2.1 INCLUDE OUTPUT POINTS.
 !         ----------------------
 
-      IF (NGOUT.GT.0) THEN
+      IF (NGOUT > 0) THEN
         DO IO=1,NGOUT
           IJ = IJAR(IO)
-          IF (IJ.LT.IJS .OR. IJ.GT.IJL) THEN
+          IF (IJ < IJS .OR. IJ > IJL) THEN
             IERR = IERR+1
             WRITE (IU06,*) ' ***************************************'
             WRITE (IU06,*) ' *                                     *'
@@ -109,19 +109,19 @@
             WRITE (IU06,*) ' * MAX. NUMBER IS        IJL = ', IJL
             WRITE (IU06,*) ' *                                     *'
             WRITE (IU06,*) ' ***************************************'
-            IF (IERR.GT.20) CALL ABORT1
+            IF (IERR > 20) CALL ABORT1
           ENDIF
-       IF (IXLG(IJ).NE.0.OR.KXLT(IJ).NE.0) LST(IXLG(IJ),KXLT(IJ)) = '+' 
+     IF (IXLG(IJ) /= 0 .OR. KXLT(IJ) /= 0) LST(IXLG(IJ),KXLT(IJ)) = '+' 
         ENDDO
       ENDIF
 
 !*    2.2 INCLUDE COARSE GRID NEST OUTPUT POINTS.
 !         ---------------------------------------
 
-      IF (IBOUNC.EQ.1) THEN
+      IF (IBOUNC == 1) THEN
         DO IO=1,NBOUNC
           IJ = IJARC(IO)
-          IF (IJ.LT.IJS.OR.IJ.GT.IJL) THEN
+          IF (IJ < IJS .OR. IJ > IJL) THEN
             IERR = IERR+1
             WRITE (IU06,*) ' ***************************************'
             WRITE (IU06,*) ' *                                     *'
@@ -136,9 +136,9 @@
             WRITE (IU06,*) ' * MAX. NUMBER IS        IJL = ', IJL
             WRITE (IU06,*) ' *                                     *'
             WRITE (IU06,*) ' ***************************************'
-            IF (IERR.GT.20) CALL ABORT1
+            IF (IERR > 20) CALL ABORT1
           ENDIF
-          IF (IXLG(IJ).NE.0.OR.KXLT(IJ).NE.0)                     &
+          IF (IXLG(IJ) /= 0 .OR. KXLT(IJ) /= 0)                     &
      &     LST(IXLG(IJ),KXLT(IJ)) = '/'
         ENDDO
       ENDIF
@@ -146,10 +146,10 @@
 !*    2.3 INCLUDE FINE GRID NEST INPUT POINTS.
 !         ------------------------------------
 
-      IF (IBOUNF.EQ.1) THEN
+      IF (IBOUNF == 1) THEN
         DO IO=1,NBOUNF
           IJ = IJARF(IO)
-          IF (IJ.LT.IJS.OR.IJ.GT.IJL) THEN
+          IF (IJ < IJS .OR. IJ > IJL) THEN
             IERR = IERR+1
             WRITE (IU06,*) ' ***************************************'
             WRITE (IU06,*) ' *                                     *'
@@ -164,45 +164,10 @@
             WRITE (IU06,*) ' * MAX. NUMBER IS        IJL = ', IJL
             WRITE (IU06,*) ' *                                     *'
             WRITE (IU06,*) ' ***************************************'
-            IF (IERR.GT.20) CALL ABORT1
+            IF (IERR > 20) CALL ABORT1
           ENDIF
-          IF (IXLG(IJ).NE.0.OR.KXLT(IJ).NE.0)                     &
+          IF (IXLG(IJ) /= 0 .OR. KXLT(IJ) /= 0)                     &
      &     LST(IXLG(IJ),KXLT(IJ)) = 'B'
-        ENDDO
-      ENDIF
-
-!*    2.4 PRINT LAND SEA MAP.
-!         -------------------
-
-
-      IF (ITEST.GE.3) THEN
-        ILEN = 120
-        IPAGE = (NX+ILEN-1)/ILEN
-        IF (IPAGE.GT.1) THEN
-          LAST = (NX-ILEN*(IPAGE-1)+IPAGE-2)/(IPAGE-1)
-          IF (LAST.LE.10) THEN
-            ILEN = ILEN + 10
-            IPAGE = (NX+ILEN-1)/ILEN
-          ENDIF
-        ENDIF
-        DO L=1,IPAGE
-          IA = (L-1)*ILEN
-          IE = MIN(IA+ILEN,NX)
-          IA = IA + 1
-          BMOWEP = AMOWEP +REAL(IA-1)*XDELLO
-          BMOEAP = AMOWEP +REAL(IE-1)*XDELLO
-          WRITE (IU06,'(1H1,'' LAND SEA MAP OF FULL GRID '',            &
-     &     ''   L = LAND  S = SEA  + = OUTPUT POINT'',                  &
-     &     ''                PAGE: '',I2)') L
-          WRITE (IU06,'(2X,''LONGITUDE IS FROM '',F7.2,'' TO '',F7.2)') &
-     &     BMOWEP, BMOEAP
-          WRITE (IU06,'(2X,''LATITUDE  IS FROM '',F7.2,'' TO '',F7.2)') &
-     &     AMONOP, AMOSOP
-          WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
-          DO K=NY,1,-1
-            WRITE (IU06,'(1X,I1,130A1)') MOD(K,10),(LST(I,K),I=IA,IE)
-          ENDDO
-          WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
         ENDDO
       ENDIF
 

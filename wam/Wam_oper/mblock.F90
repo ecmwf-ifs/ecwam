@@ -45,7 +45,7 @@
       USE YOWGRID  , ONLY : NLONRGG  ,IJS      ,IJL
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NY       ,AMOSOP   ,    &
      &            XDELLA
-      USE YOWSHAL  , ONLY : DEPTH
+      USE YOWSHAL  , ONLY : DEPTH_INPUT
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -64,12 +64,12 @@
 !        -------------------------------------------
 
 
-      ALLOCATE(DEPTH(NIBLO))
+      ALLOCATE(DEPTH_INPUT(NIBLO))
       ALLOCATE(IXLG(NIBLO))
       ALLOCATE(KXLT(NIBLO))
 
       DO IJ=1,NIBLO
-        DEPTH(IJ) = 0.0_JWRB
+        DEPTH_INPUT(IJ) = 0.0_JWRB
         IXLG(IJ) = 0
         KXLT(IJ) = 0
       ENDDO
@@ -124,7 +124,7 @@
         DO I=1,NLONRGG(K)
           IF (BATHY(I,K).GT.-990.0_JWRB) THEN
             IP = IP+1
-            DEPTH(IP) = BATHY(I,K)
+            DEPTH_INPUT(IP) = BATHY(I,K)
             IXLG(IP) = I
             KXLT(IP) = K
           ENDIF

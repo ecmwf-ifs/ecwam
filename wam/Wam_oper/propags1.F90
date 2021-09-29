@@ -1,4 +1,5 @@
       SUBROUTINE PROPAGS1 (F1, F3, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
+&                          DEPTH,                                    &
 &                          CGROUP_EXT, OMOSNH2KD_EXT,                &
 &                          U_EXT, V_EXT,                             &
 &                          L1STCALL)
@@ -40,6 +41,7 @@
 !     ----------
 
 !       *CALL* *PROPAGS1(F1, F3, NINF, NSUP, IJS, IJL, KIJS, KIJL,
+!                        DEPTH,
 !                        CGROUP_EXT, OMOSNH2KD_EXT, 
 !                        U_EXT, V_EXT, 
 !                        L1STCALL)
@@ -49,6 +51,7 @@
 !          *IJS:IJL*     - 1st DIMENSION OF F3 
 !          *KIJS*        - ACTIVE INDEX OF FIRST POINT
 !          *KIJL*        - ACTIVE INDEX OF LAST POINT
+!          *DEPTH*       - WATER at ACTIVE GRID POINTS
 !          *CGROUP_EXT*  - GROUP VELOCITY
 !          *OMOSNH2KD_EXT- OMEGA / SINH(2KD)
 !          *U_EXT        - U-COMPONENT OF SURFACE CURRENT
@@ -98,6 +101,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN):: DEPTH
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: CGROUP_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: OMOSNH2KD_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: U_EXT
@@ -855,7 +859,7 @@
                 CFLNO(IJ) = CFLNO(IJ)*CGOMFULL
                 DTC(IJ) = CFLEA(IJ)+CFLNO(IJ)+CFLTP(IJ)+CFLTM(IJ)
               ENDDO
-              CALL CHECKCFL(KIJS, KIJL, DTC,                            &
+              CALL CHECKCFL(KIJS, KIJL, DEPTH(KIJS), DTC,               &
      &                      CFLEA,CFLEA,CFLNO,CFLNO,CFLNO,CFLNO,        &
      &                      CFLTP,CFLTM,CFLTP,CFLTM)
             ENDIF

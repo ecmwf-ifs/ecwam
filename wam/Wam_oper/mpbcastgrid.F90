@@ -57,7 +57,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
      &            NGX      ,NGY      ,                                  &
      &            NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH_INPUT,DEPTHA   ,DEPTHD   ,  &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
      &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,              &
@@ -90,7 +90,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
       IF (LHOOK) CALL DR_HOOK('MPBCASTGRID',0,ZHOOK_HANDLE)
 
-      IF (ISEND.EQ.0 .OR. NPROC.EQ.1) THEN
+      IF (ISEND == 0 .OR. NPROC == 1) THEN
          WRITE (IU06,*) ''
 !     1.1 SEND TO ALL PROCESSORS OTHER THAN ISEND
 !         ------------------------------------------------
@@ -100,7 +100,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 !       ALLOCATE ALL ARRAYS
         ALLOCATE(ICOMBUF(MFIRST))
 
-        IF (IRANK.EQ.ISEND) THEN
+        IF (IRANK == ISEND) THEN
           IKCOUNT=0
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NANG
@@ -140,7 +140,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           ICOMBUF(IKCOUNT)=NANGH
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NMAX
-          IF (IKCOUNT.NE.MFIRST) THEN
+          IF (IKCOUNT /= MFIRST) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* IKCOUNT .NE. MFIRST !!!*' 
             WRITE (IU06,*) '* ON IRANK = ',IRANK
@@ -154,7 +154,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         CALL MPL_BROADCAST(ICOMBUF,KROOT=ISEND,KTAG=ITAG,CDSTRING='MPBCASTGRID:')
         ITAG=ITAG+1
 
-        IF (IRANK.NE.ISEND) THEN
+        IF (IRANK /= ISEND) THEN
           IKCOUNT=0
           IKCOUNT=IKCOUNT+1
           NANG=ICOMBUF(IKCOUNT)
@@ -194,7 +194,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           NANGH=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           NMAX=ICOMBUF(IKCOUNT)
-          IF (IKCOUNT.NE.MFIRST) THEN
+          IF (IKCOUNT /= MFIRST) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* IKCOUNT .NE. MFIRST !!!*' 
             WRITE (IU06,*) '* ON IRANK = ',IRANK
@@ -219,7 +219,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         ALLOCATE(ICOMBUF(MIC))
         ALLOCATE(ZCOMBUF(MZC))
 
-        IF (IRANK.NE.ISEND) THEN
+        IF (IRANK /= ISEND) THEN
 
           IF (.NOT.ALLOCATED(FR)) ALLOCATE(FR(NFRE))
           IF (.NOT.ALLOCATED(DFIM)) ALLOCATE(DFIM(NFRE))
@@ -250,12 +250,12 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           IF (.NOT.ALLOCATED(FKLAM1)) ALLOCATE(FKLAM1(MFRSTLW:MLSTHG))
           IF (.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
 
-          IF (NGOUT.GT.0) THEN
+          IF (NGOUT > 0) THEN
             IF (.NOT.ALLOCATED(IJAR)) ALLOCATE(IJAR(NGOUT))
           ENDIF
 
-          IF (ALLOCATED(DEPTH)) DEALLOCATE(DEPTH)
-          ALLOCATE(DEPTH(NIBLO))
+          IF (ALLOCATED(DEPTH_INPUT)) DEALLOCATE(DEPTH_INPUT)
+          ALLOCATE(DEPTH_INPUT(NIBLO))
 
           IF (.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
           IF (.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
@@ -469,7 +469,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
           DO IJ=1,NIBLO
             KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=DEPTH(IJ)
+            ZCOMBUF(KCOUNT)=DEPTH_INPUT(IJ)
           ENDDO
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=DEPTHA
@@ -614,7 +614,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             ENDDO
           ENDDO
 
-          IF (IKCOUNT.NE.MIC) THEN
+          IF (IKCOUNT /= MIC) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
             WRITE (IU06,*) '* IKCOUNT NE MIC PRIOR   *'
@@ -624,7 +624,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             WRITE (IU06,*) '**************************'
             CALL ABORT1
           ENDIF 
-          IF (KCOUNT.NE.MZC) THEN
+          IF (KCOUNT /= MZC) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
             WRITE (IU06,*) '* KCOUNT NE MZC PRIOR    *'
@@ -644,7 +644,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
      &                     CDSTRING='MPBCASTGRID 2:')
         ITAG=ITAG+1
 
-        IF (IRANK.NE.ISEND) THEN
+        IF (IRANK /= ISEND) THEN
           KCOUNT=0
           IKCOUNT=0
           DO M=1,NFRE
@@ -823,7 +823,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
           DO IJ=1,NIBLO
             KCOUNT=KCOUNT+1
-            DEPTH(IJ)=ZCOMBUF(KCOUNT)
+            DEPTH_INPUT(IJ)=ZCOMBUF(KCOUNT)
           ENDDO
           KCOUNT=KCOUNT+1
           DEPTHA=ZCOMBUF(KCOUNT)
@@ -968,7 +968,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             ENDDO
           ENDDO
 
-          IF (IKCOUNT.NE.MIC) THEN
+          IF (IKCOUNT /= MIC) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
             WRITE (IU06,*) '* IKCOUNT NE MIC AFTER   *'
@@ -978,7 +978,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             WRITE (IU06,*) '**************************'
             CALL ABORT1
           ENDIF 
-          IF (KCOUNT.NE.MZC) THEN
+          IF (KCOUNT /= MZC) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
             WRITE (IU06,*) '* KCOUNT NE MZC AFTER    *'

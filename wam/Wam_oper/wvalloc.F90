@@ -9,14 +9,9 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LWCOU
-
-      USE YOWCURR  , ONLY : U        ,V
-!!!!!!!!!!!!!!!!!!!!!!!!
-
       USE YOWMEAN  , ONLY : INTFLDS
-      USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,LL1D
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO
@@ -58,15 +53,6 @@
         INTFLDS(:)%ALTWH   = ZMISS 
         INTFLDS(:)%CALTWH  = ZMISS 
         INTFLDS(:)%RALTCOR = ZMISS 
-      ENDIF
-
-      IF (.NOT.ALLOCATED(U)) THEN
-        ALLOCATE(U(NSTART(IRANK):NEND(IRANK)))
-        U(:) = 0.0_JWRB
-      ENDIF
-      IF (.NOT.ALLOCATED(V)) THEN
-        ALLOCATE(V(NSTART(IRANK):NEND(IRANK)))
-        V(:) = 0.0_JWRB
       ENDIF
 
 

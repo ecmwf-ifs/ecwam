@@ -18,7 +18,7 @@ SUBROUTINE INITDPTHFLDS
       USE YOWFRED  , ONLY : ZPIFR
       USE YOWGRID  , ONLY : IJS, IJL
       USE YOWPARAM , ONLY : NFRE
-      USE YOWSHAL  , ONLY : DEPTH, NDEPTH,                              &
+      USE YOWSHAL  , ONLY : WVENVI, NDEPTH,                             &
      &                      INDEP, TFAK, TCGOND, TSIHKD, TFAC_ST,       &
      &                      GAM_B_J, EMAXDPT,                           &
      &                      WVPRPT, WVPRPT_LAND
@@ -55,12 +55,12 @@ IF (LHOOK) CALL DR_HOOK('INITDPTHFLDS',0,ZHOOK_HANDLE)
         DO IJ = KIJS, KIJL
 !         REDUCE GAMMA FOR SMALL DEPTH ( < 4m)
 !         (might need to be revisted when grid is fine resolution)
-          IF (DEPTH(IJ) < 4.0_JWRB) THEN
-            GAM=GAM_B_J*DEPTH(IJ)/4.0_JWRB
+          IF (WVENVI(IJ)%DEPTH < 4.0_JWRB) THEN
+            GAM=GAM_B_J*WVENVI(IJ)%DEPTH/4.0_JWRB
           ELSE
             GAM=GAM_B_J
           ENDIF
-          EMAXDPT(IJ)=0.0625_JWRB*(GAM*DEPTH(IJ))**2
+          EMAXDPT(IJ)=0.0625_JWRB*(GAM*WVENVI(IJ)%DEPTH)**2
         ENDDO
 
         DO M=1,NFRE

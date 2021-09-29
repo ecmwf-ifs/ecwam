@@ -123,9 +123,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NIBLO    ,              &
      &            NGX      ,NGY      ,LL1D     ,KWAMVER
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI
-
-      USE YOWSHAL  , ONLY : DEPTH
-
+      USE YOWSHAL  , ONLY : DEPTH_INPUT, WVENVI 
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,    &
      &            NFROMPE  ,NFROMPEMAX,NTOPE   ,NTOPEMAX ,NIJSTART ,    &
@@ -896,10 +894,10 @@
 
         ALLOCATE(RDUM(NIBLO))
         DO NIJ=NSTART(1),NEND(NPR)
-          RDUM(NIJ)=DEPTH(NEWIJ2IJ(NIJ))
+          RDUM(NIJ)=DEPTH_INPUT(NEWIJ2IJ(NIJ))
         ENDDO
         DO NIJ=NSTART(1),NEND(NPR)
-          DEPTH(NIJ)=RDUM(NIJ)
+          DEPTH_INPUT(NIJ)=RDUM(NIJ)
         ENDDO
         DEALLOCATE(RDUM)
 
@@ -1664,19 +1662,20 @@
           DEALLOCATE(KDUM3)
         ENDIF
 
-!       ONLY KEEP THE RELEVANT PART OF THE WATER DEPTH.
-        ALLOCATE(RDUM(NSTART(IRANK):NEND(IRANK)))
-        DO IJ=NSTART(IRANK),NEND(IRANK)
-          RDUM(IJ)=DEPTH(IJ)
-        ENDDO
-        DEALLOCATE(DEPTH)
-        ALLOCATE(DEPTH(NSTART(IRANK):NEND(IRANK)))
-        DO IJ=NSTART(IRANK),NEND(IRANK)
-          DEPTH(IJ)=RDUM(IJ)
-        ENDDO
-        DEALLOCATE(RDUM)
-
       ENDIF
+
+!     ONLY KEEP THE RELEVANT PART OF THE WATER DEPTH.
+      ALLOCATE(WVENVI(NSTART(IRANK):NEND(IRANK)))
+
+      DO IJ=NSTART(IRANK),NEND(IRANK)
+        WVENVI(IJ)%DEPTH = DEPTH_INPUT(IJ)
+
+!!!!   when this is moved to reading depth as an inout field, wvenvi should be allocated and intialised in wvalloc !!!
+        WVENVI(IJ)%UCUR = 0.0_JWRB
+        WVENVI(IJ)%VCUR = 0.0_JWRB
+      ENDDO
+
+      DEALLOCATE(DEPTH_INPUT)
 
 
 !     5. MODIFY KLAT AND KLON SUCH THAT POINT INDICES FOR LAND IS

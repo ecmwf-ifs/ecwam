@@ -1,7 +1,4 @@
-SUBROUTINE UNSETICE(KIJS, KIJL,              &
- &                  DEPTH, EMAXDPT,          &
- &                  FF_NOW,                  &
- &                  FL1)
+SUBROUTINE UNSETICE(KIJS, KIJL, WVENVI, FF_NOW, FL1) 
 ! ----------------------------------------------------------------------
 
 !*    PURPOSE.
@@ -12,13 +9,10 @@ SUBROUTINE UNSETICE(KIJS, KIJL,              &
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *UNSETICE(KIJS, KIJL,              &
-!    &                 DEPTH, EMAXDPT,          &
-!    &                 FL1)
+!     *CALL* *UNSETICE(KIJS, KIJL, WVENVI, FF_NOW, FL1)
 !     *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
 !     *KIJL*    - LOCAL  INDEX OF LAST GRIDPOINT
-!     *DEPTH*   - WATER DEPTH
-!     *EMAXDPT* - MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
+!     *WVENVI*  - WAVE ENVIRONEMENT
 !     *FF_NOW*  - FORCING FIELDS AT CURRENT TIME
 !     *FL1*     - SPECTRA
 
@@ -29,7 +23,7 @@ SUBROUTINE UNSETICE(KIJS, KIJL,              &
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FORCING_FIELDS
 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRID  , ONLY : DELPHI
@@ -49,7 +43,7 @@ SUBROUTINE UNSETICE(KIJS, KIJL,              &
 #include "jonswap.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH, EMAXDPT 
+      TYPE(ENVIRONMENT), DIMENSION(KIJS:KIJL), INTENT(IN) :: WVENVI
       TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(IN) :: FF_NOW
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
 
@@ -71,7 +65,9 @@ SUBROUTINE UNSETICE(KIJS, KIJL,              &
 
 IF (LHOOK) CALL DR_HOOK('UNSETICE',0,ZHOOK_HANDLE)
 
-ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ASSOCIATE(DEPTH => WVENVI%DEPTH, &
+ &        EMAXDPT => WVENVI%EMAXDPT, &
+ &        WSWAVE => FF_NOW%WSWAVE, &
  &        WDWAVE => FF_NOW%WDWAVE, &
  &        CICOVER => FF_NOW%CICOVER)
 

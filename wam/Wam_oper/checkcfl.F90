@@ -1,6 +1,6 @@
-      SUBROUTINE CHECKCFL (MIJS, MIJL, DTC,                             &
-     &                     CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2,CFLSO2,       &
-     &                     CFLTP,CFLTM,CFLOP,CFLOM)
+      SUBROUTINE CHECKCFL (KIJS, KIJL, DEPTH, DTC,               &
+     &                     CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2,       &
+     &                     CFLSO2, CFLTP,CFLTM,CFLOP,CFLOM)
 
 ! ----------------------------------------------------------------------
 
@@ -16,11 +16,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *CHECKCFL(MIJS, MIJL, DTC
+!       *CALL* *CHECKCFL(KIJS, KIJL, DEPTH, DTC
 !    &                   CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2,CFLSO2, 
 !    &                   CFLTP,CFLTM,CFLOP,CFLOM)*
-!          *MIJS* - INDEX OF FIRST POINT
-!          *MIJL* - INDEX OF LAST POINT
+!          *KIJS* - INDEX OF FIRST POINT
+!          *KIJL* - INDEX OF LAST POINT
+!          *DEPTH* - WATER DEPTH
 !          AND ALL COEFFICIENTS OF THE UPWIND SCHEME.
 
 !     METHOD.
@@ -39,7 +40,6 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMPP   , ONLY : NSUP 
-      USE YOWSHAL  , ONLY : DEPTH
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON
 
@@ -48,17 +48,21 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER(KIND=JWIM) :: MIJS, MIJL, IJ, IC, ICP, ICL
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2 
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: CFLSO2,CFLTP,CFLTM,CFLOP,CFLOM
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: DTC
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH 
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: DTC
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2 
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: CFLSO2,CFLTP,CFLTM,CFLOP,CFLOM
+
+
+      INTEGER(KIND=JWIM) :: IJ, IC, ICP, ICL
       LOGICAL :: LLABORTCFL
 
 ! ----------------------------------------------------------------------
 
       LLABORTCFL=.FALSE.
 
-      DO IJ = MIJS,MIJL
+      DO IJ = KIJS,KIJL
 
         IF (CFLEA(IJ) > 1.0_JWRB) THEN
           WRITE(IU06,*) ' ********************************'

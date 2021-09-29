@@ -2,9 +2,7 @@
      &                     MIJ,                               &
      &                     FL1, XLLWS,                        &
      &                     WVPRPT,                            &
-     &                     DEPTH,                             &
-     &                     FF_NOW,                            &
-     &                     INTFLDS)
+     &                     WVENVI, FF_NOW, INTFLDS)
 
 ! ----------------------------------------------------------------------
 
@@ -24,22 +22,21 @@
 !    &                    MIJ,
 !    &                    FL1, XLLWS,
 !    &                    WVPRPT,
-!    &                    FF_NOW,
-!    &                    INTFLDS)
+!    &                    WVENVI, FF_NOW, INTFLDS)
 
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*   - INDEX OF LAST GRIDPOINT.
 !          *FL1*    - SPECTRUM(INPUT).
 !          *XLLWS*  - TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
 !          *WVPRPT* - WAVE PROPERTIES FIELDS
-!          *DEPTH*  - WATER DEPTH.
+!          *WVENVI* - WAVE ENVIRONEMENT
 !          *FF_NOW* - FORCING FIELDS AT CURRENT TIME.
 !          *INTFLDS*-  INTEGRATED/DERIVED PARAMETERS
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
 
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN
       USE YOWCOUT  , ONLY : LWFLUXOUT 
@@ -65,7 +62,7 @@
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
       TYPE(FREQUENCY), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WVPRPT
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
+      TYPE(ENVIRONMENT), DIMENSION(KIJS:KIJL), INTENT(IN) :: WVENVI
       TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
@@ -94,7 +91,8 @@
 
 IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 
-ASSOCIATE(WAVNUM => WVPRPT%WAVNUM, &
+ASSOCIATE(DEPTH => WVENVI%DEPTH, &
+ &        WAVNUM => WVPRPT%WAVNUM, &
  &        CINV => WVPRPT%CINV, &
  &        CGROUP => WVPRPT%CGROUP, &
  &        STOKFAC => WVPRPT%STOKFAC, &

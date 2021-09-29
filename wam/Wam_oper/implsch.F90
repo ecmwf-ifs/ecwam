@@ -1,7 +1,6 @@
 SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                  WVPRPT,                                  &
- &                  DEPTH, EMAXDPT,                          &
- &                  FF_NOW,                                  &
+ &                  WVENVI, FF_NOW,                          &
  &                  INTFLDS,                                 &
  &                  MIJ, XLLWS)
 
@@ -24,16 +23,14 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
 !       *CALL* *IMPLSCH (KIJS, KIJL, FL1,
 !    &                   WVPRPT,
-!    &                   DEPTH, EMAXDPT,
-!    &                   FF_NOW,
+!    &                   WVENVI, FF_NOW,
 !    &                   INTFLDS,
 !    &                   MIJ,  XLLWS)
 !      *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
 !      *KIJL*    - LOCAL INDEX OF LAST GRIDPOINT
 !      *FL1*     - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !      *WVPRPT*  - WAVE PROPERTIES FIELDS
-!      *DEPTH*     WATER DEPTH
-!      *EMAXDPT*   MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
+!      *WVENVI*  - WAVE ENVIRONEMENT  
 !      *FF_NOW*    FORCING FIELDS
 !      *INTFLDS*   INTEGRATED/DERIVED PARAMETERS
 !      *MIJ*       LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
@@ -63,7 +60,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
 
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU, LWNEMOCOUSTRN 
       USE YOWCOUT  , ONLY : LWFLUXOUT 
@@ -98,7 +95,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
       TYPE(FREQUENCY), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WVPRPT
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH, EMAXDPT
+      TYPE(ENVIRONMENT), DIMENSION(KIJS:KIJL), INTENT(IN) :: WVENVI
       TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW 
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(OUT) :: MIJ
@@ -135,7 +132,9 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
 IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
-ASSOCIATE(WAVNUM => WVPRPT%WAVNUM, &
+ASSOCIATE(DEPTH => WVENVI%DEPTH, &
+ &        EMAXDPT => WVENVI%EMAXDPT, &
+ &        WAVNUM => WVPRPT%WAVNUM, &
  &        CINV => WVPRPT%CINV, &
  &        CGROUP => WVPRPT%CGROUP, &
  &        STOKFAC => WVPRPT%STOKFAC, &
