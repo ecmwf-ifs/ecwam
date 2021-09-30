@@ -235,7 +235,6 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
       USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
       USE YOWREFD  , ONLY : LLUPDTTD
-
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,TOOSHALLOW,   &
      &            WVENVI   ,WVPRPT
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,    &
@@ -700,7 +699,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       ENDDO
 
       IF (.NOT. LLUNSTR) THEN
-         IOBND(:)=1
+         IOBND(IJS:IJL)=1
       ELSE
         DO IJ = IJS, IJL
           IF (IOBP(IJ) /= 0) THEN
@@ -980,26 +979,26 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       CALL INISNONLIN
 
-END ASSOCIATE
 ! ----------------------------------------------------------------------
 !NEST
 !     10. WRITE BOUNDARY VALUE FILE HEADER.
 !         ------------------------------
-      IF (IBOUNC == 1 .AND. .NOT. LLUNSTR) THEN
-        IF (IRANK == 1) THEN
-          DO II=1,GBOUNC
-            IU19(II)=IWAM_GET_UNIT(IU06, CBCPREF(II), 'w', 'u', 0)
+!!      IF (IBOUNC == 1 .AND. .NOT. LLUNSTR) THEN
+!!        IF (IRANK == 1) THEN
+!!          DO II=1,GBOUNC
+!!            IU19(II)=IWAM_GET_UNIT(IU06, CBCPREF(II), 'w', 'u', 0)
 !           make the unit available for a silly fort.unit output
 !           we will need to recode this a bit better !!!
 
-            CLOSE(IU19(II))
-            CALL HEADBC (IPOGBO(II)-IPOGBO(II-1),IDELPRO,TH(1),FR(1),   &
-     &                   IU19(II), IU06)
-          ENDDO
-        ENDIF
-      ENDIF
+!!            CLOSE(IU19(II))
+!!            CALL HEADBC (IPOGBO(II)-IPOGBO(II-1),IDELPRO,TH(1),FR(1),   &
+!!     &                   IU19(II), IU06)
+!!          ENDDO
+!!        ENDIF
+!!      ENDIF
 !NEST
 
+END ASSOCIATE
 IF (LHOOK) CALL DR_HOOK('INITMDL',1,ZHOOK_HANDLE)
 
 END SUBROUTINE INITMDL
