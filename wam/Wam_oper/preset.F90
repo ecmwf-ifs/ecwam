@@ -65,29 +65,6 @@ PROGRAM preset
 !       (UNITS IU12,IU14, AND IU15) TO PERMANENT FILES.
 
 
-!     EXTERNALS.
-!     ----------
-!       *ABORT1*    - TERMINATES PROCESSING.
-!       *BUILDSTRESS- RECONSTRUCT THE LAW FILE FROM WINDS AND CD. 
-!       *GRSTNAME*  - BUILD NAME FOR INPUT/OUTPUT FILES 
-!       *GSFILE*    - GETS OR SAVES FILES (COMPUTER DEPENDENT).
-!       *INCDATE*   - UPDATES A DATE TINE GROUP.
-!       *INIWCST*   - SETS GLOBAL CONSTANTS.
-!       *LOCINT*    - INTERPOLATES TO MODEL GRID.
-!       *MSTART*    - GENERATES THE RESTART FILES.
-!       *NOTIM*     - CONTROLS WIND GENERATION (NO TIME INTERPOLATION).
-!       *PEAK*      - COMPUTES PARAMETERS BY FETCH LAWS.
-!       *PREWIND*   - PREPARES WINDS.
-!       *SAVSPEC*   - SAVES THE RESTART SPECTRA.
-!       *SAVSTRESS* - SAVES THE RESTART WIND AND STRESS FIELDS.
-!       *SPECTRA*   - COMPUTES SPECTRA FROM PARAMETERS.
-!       *SPR*       - DIRECTIONAL DISTRIBUTION.
-!       *READPRE*   - READS PREPROC OUTPUT.
-!       *READWIND*   - READS A WIND FIELD.
-
-!     REFERENCES
-!     ----------
-!       NONE.
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
@@ -111,6 +88,7 @@ PROGRAM preset
      &            NIBLO    ,SWAMPWIND,CLDOMAIN ,LL1D
       USE YOWPCONS , ONLY : G        ,RAD      ,DEG      ,ZMISS    ,    &
      &            ROAIR
+      USE YOWSHAL  , ONLY : DEPTH_INPUT, WVENVI
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,    &
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,    &
      &            IDELPRO  ,IDELWI   ,IDELWO   ,                        &
@@ -372,6 +350,19 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       ENDIF
 
 
+!!!  transfer DEPTH_INPUT to WVENVI
+      ALLOCATE(WVENVI(NSTART(IRANK):NEND(IRANK)))
+
+      DO IJ=NSTART(IRANK),NEND(IRANK)
+        WVENVI(IJ)%DEPTH = DEPTH_INPUT(IJ)
+
+!!!!   when this is moved to reading depth as an input field, wvenvi should be allocated and intialised in wvalloc !!!
+        WVENVI(IJ)%UCUR = 0.0_JWRB
+        WVENVI(IJ)%VCUR = 0.0_JWRB
+      ENDDO
+      DEALLOCATE(DEPTH_INPUT)
+
+
 
 !!!   deallocate big arrays that were read in with READPRE
 
@@ -506,10 +497,10 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=.FALSE.
 
-        CALL PREWIND (IJS, IJL, FF_NOW, FF_NEXT,       &
-     &                LLINIT, LLALLOC_FIELDG_ONLY,     &
-     &                IREAD,                           &
-     &                NFIELDS, NGPTOTG, NC, NR,        &
+        CALL PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT,   &
+     &                LLINIT, LLALLOC_FIELDG_ONLY,         &
+     &                IREAD,                               &
+     &                NFIELDS, NGPTOTG, NC, NR,            &
      &                FIELDS, LWCUR, MASK_IN)
 
       FF_NOW(:)%TAUW = 0.1_JWRB * FF_NOW(:)%UFRIC**2
@@ -561,7 +552,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
 !     STRESS RELATED FIELDS :
       IF (.NOT.LGRIBOUT) THEN
-        CALL SAVSTRESS(IJS, IJL, FF_NOW, NBLKS, NBLKE, CDATEA, CDATEA) 
+        CALL SAVSTRESS(IJS, IJL, WVENVI, FF_NOW, NBLKS, NBLKE, CDATEA, CDATEA) 
       ENDIF
 
 

@@ -93,7 +93,7 @@
      &            SWAMPCIFR
       USE YOWSTAT  , ONLY : CDATEA   ,IDELWI   ,LADEN    ,LGUST    ,    &
      &            NPROMA_WAM
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLATN    ,    &
      &            RLONL    ,RLONR    ,KCOL     ,KROW     ,ICODE    ,    &
      &            IWPER    ,ICOORD
@@ -302,7 +302,7 @@
           KGRIB_HANDLE=-99
           CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,KGRIB)
           ZDUM=0.0_JWRB
-          CALL GRIB2WGRID (IU06, ITEST, NPROMA_WAM,                     &
+          CALL GRIB2WGRID (IU06, NPROMA_WAM,                            &
      &                     KGRIB_HANDLE, KGRIB, ISIZE,                  &
      &                     LLUNSTR,                                     &
      &                     NXFF, NYFF, NLONRGG_LOC,                     &

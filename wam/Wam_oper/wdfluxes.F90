@@ -29,7 +29,7 @@
 !          *FL1*    - SPECTRUM(INPUT).
 !          *XLLWS*  - TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
 !          *WVPRPT* - WAVE PROPERTIES FIELDS
-!          *WVENVI* - WAVE ENVIRONEMENT
+!          *WVENVI* - WAVE ENVIRONMENT
 !          *FF_NOW* - FORCING FIELDS AT CURRENT TIME.
 !          *INTFLDS*-  INTEGRATED/DERIVED PARAMETERS
 
@@ -92,6 +92,7 @@
 IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 
 ASSOCIATE(DEPTH => WVENVI%DEPTH, &
+ &        INDEP => WVENVI%INDEP, &
  &        WAVNUM => WVPRPT%WAVNUM, &
  &        CINV => WVPRPT%CINV, &
  &        CGROUP => WVPRPT%CGROUP, &
@@ -141,7 +142,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       IF (LCFLX) THEN
 
         CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,    &
-     &                WAVNUM, CGROUP,              &
+     &                INDEP, WAVNUM, CGROUP,       &
      &                EMEAN, F1MEAN, XKMEAN,       &
      &                UFRIC, WDWAVE, AIRD)
 

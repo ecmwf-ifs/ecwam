@@ -1,8 +1,9 @@
 SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
-&                      IJS, IJL,                       &
-&                      WSWAVE, WDWAVE, UFRIC, Z0M,     &
-&                      AIRD, WSTAR, CICOVER, CITHICK,  &
-&                      IREAD, LWCUR, LLMORE)
+ &                     IJS, IJL,                       &
+ &                     UCUR, VCUR,                     &
+ &                     WSWAVE, WDWAVE, UFRIC, Z0M,     &
+ &                     AIRD, WSTAR, CICOVER, CITHICK,  &
+ &                     IREAD, LWCUR, LLMORE)
 
 ! ----------------------------------------------------------------------
 
@@ -22,6 +23,8 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
 !          *CDTWIS*   - DATE OF FIRST WIND FIELD.
 !          *CDTWIE*   - DATE OF LAST FIRST WIND FIELD.
 !          *IJS:IJL   - ARRAYS DIMENSION
+!        i *UCUR*     - U-COMPONENT OF THE SURFACE CURRENT
+!          *VCUR*     - V-COMPONENT OF THE SURFACE CURRENT
 !          *WSWAVE*   - WIND SPEED.
 !          *WDWAVE*   - WIND DIRECTION (RADIANS).
 !          *UFRIC*    - FRICTION VELOCITY.
@@ -57,6 +60,7 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
       CHARACTER(LEN=14), INTENT(INOUT) :: CDTWIS
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIE
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(IN) :: UCUR, VCUR
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: WSWAVE, WDWAVE, UFRIC, Z0M
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: AIRD, WSTAR, CICOVER, CITHICK
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
@@ -97,6 +101,7 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
 
       CDATEWL = CDTWIS
       CALL GETWND (IJS, IJL,                             &
+     &             UCUR, VCUR,                           &
      &             WSWAVE, UFRIC,                        &
      &             WDWAVE,                               &
      &             AIRD, WSTAR,                          &

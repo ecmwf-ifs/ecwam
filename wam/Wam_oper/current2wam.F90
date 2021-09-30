@@ -1,4 +1,4 @@
-      SUBROUTINE CURRENT2WAM (FILNM, IREAD, CDATEIN, IJS, IJL, U, V)
+      SUBROUTINE CURRENT2WAM (FILNM, IREAD, CDATEIN, IJS, IJL, UCUR, VCUR)
 
 !--------------------------------------------------------------------
 
@@ -15,14 +15,14 @@
 
 !**   INTERFACE
 !     ---------
-!     *CALL* *CURRENT2WAM(FILNM, IREAD, CDATEIN, IJS, IJL, U, V)*
+!     *CALL* *CURRENT2WAM(FILNM, IREAD, CDATEIN, IJS, IJL, UCUR, VCUR)*
 
 !     *FILNM*     DATA INPUT FILENAME.
 !     *IREAD*     RANK OF THE PROCESS WHICH INPUTS THE DATA. 
 !     *CDATEIN*   DATE OF THE DECODED DATA. 
 !     *IJS:IJL    SIZE OF U and V
-!     *U*         U-COMPONENT OF SURFACE CURRENT
-!     *V*         V-COMPONENT OF SURFACE CURRENT
+!     *UCUR*      U-COMPONENT OF SURFACE CURRENT
+!     *VCUR*      V-COMPONENT OF SURFACE CURRENT
 
 
 !     METHOD.
@@ -46,7 +46,7 @@
       USE YOWPCONS , ONLY : ZMISS    ,EPSMIN
       USE YOWSTAT  , ONLY : NPROMA_WAM 
       USE YOWSPEC  , ONLY : NSTART   ,NEND
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWPD, ONLY : MNP => npa
       USE YOWUNPOOL ,ONLY : LLUNSTR
       USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG
@@ -66,7 +66,7 @@
       CHARACTER(LEN=24), INTENT(IN) :: FILNM
       CHARACTER(LEN=14), INTENT(INOUT) :: CDATEIN
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: U, V
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: UCUR, VCUR
 
 
       INTEGER(KIND=JWIM) :: NBIT = 1000000
@@ -183,7 +183,7 @@
 
         KK=0
         MM=0
-        CALL GRIB2WGRID (IU06, ITEST, NPROMA_WAM,                       &
+        CALL GRIB2WGRID (IU06, NPROMA_WAM,                              &
      &                   KGRIB_HANDLE, INGRIB, ISIZE,                   &
      &                   LLUNSTR,                                       &
      &                   NXFF, NYFF, NLONRGG_LOC,                       &
@@ -218,25 +218,25 @@
              DO IJ = IJS, IJL
                IX = IFROMIJ(IJ)
                JY = JFROMIJ(IJ)
-               U(IJ) = FIELD(IX,JY)
+               UCUR(IJ) = FIELD(IX,JY)
 !              SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
 !              OCEAN MODEL. THEY ARE SET TO 0.
 !              0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
-               IF (ABS(U(IJ)) <= WLOWEST) U(IJ)=0.0_JWRB
-               IF (U(IJ) <= ZMISS) U(IJ)=0.0_JWRB
-               U(IJ)=SIGN(MIN(ABS(U(IJ)),CURRENT_MAX),U(IJ))
+               IF (ABS(UCUR(IJ)) <= WLOWEST) UCUR(IJ)=0.0_JWRB
+               IF (UCUR(IJ) <= ZMISS) UCUR(IJ)=0.0_JWRB
+               UCUR(IJ)=SIGN(MIN(ABS(UCUR(IJ)),CURRENT_MAX),UCUR(IJ))
              ENDDO
         ELSEIF (IPARAM == 132) THEN
              DO IJ = IJS, IJL 
                IX = IFROMIJ(IJ)
                JY = JFROMIJ(IJ)
-               V(IJ) = FIELD(IX,JY)
+               VCUR(IJ) = FIELD(IX,JY)
 !              SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
 !              OCEAN MODEL. THEY ARE SET TO 0.
 !              0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
-               IF (ABS(V(IJ)) <= WLOWEST) V(IJ)=0.0_JWRB
-               IF (V(IJ) <= ZMISS) V(IJ)=0.0_JWRB
-               V(IJ)=SIGN(MIN(ABS(V(IJ)),CURRENT_MAX),V(IJ))
+               IF (ABS(VCUR(IJ)) <= WLOWEST) VCUR(IJ)=0.0_JWRB
+               IF (VCUR(IJ) <= ZMISS) VCUR(IJ)=0.0_JWRB
+               VCUR(IJ)=SIGN(MIN(ABS(VCUR(IJ)),CURRENT_MAX),VCUR(IJ))
              ENDDO
         ELSE
           WRITE(IU06,*) ' *****************************************'

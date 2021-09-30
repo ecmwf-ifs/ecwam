@@ -1,5 +1,5 @@
       SUBROUTINE SDISSIP (KIJS, KIJL, FL1, FLD, SL,  &
-     &                    WAVNUM, CGROUP,            &
+     &                    INDEP, WAVNUM, CGROUP,     &
      &                    EMEAN, F1MEAN, XKMEAN,     &
      &                    UFRIC, WDWAVE, AIRD)
 ! ----------------------------------------------------------------------
@@ -17,7 +17,7 @@
 !     ----------
 
 !       *CALL* *SDISSIP (KIJS, KIJL, FL1, FLD, SL, *
-!                        WAVNUM, CGROUP,  
+!                        INDEP, WAVNUM, CGROUP,  
 !                        EMEAN, F1MEAN, XKMEAN,*
 !                        UFRIC, WDWAVE, AIRD)*
 !         *KIJS* - INDEX OF FIRST GRIDPOINT
@@ -25,6 +25,7 @@
 !         *FL1*  - SPECTRUM.
 !         *FLD*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*  - TOTAL SOURCE FUNCTION ARRAY
+!       *INDEP*  - DEPTH INDEX
 !       *WAVNUM* - WAVE NUMBER
 !       *CGROUP* - GROUP SPEED
 !        *EMEAN* - MEAN ENERGY DENSITY 
@@ -51,6 +52,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: INDEP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EMEAN, F1MEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, WDWAVE, AIRD
@@ -69,7 +71,7 @@
 
       CASE(1) 
          CALL SDISSIP_ARD (KIJS, KIJL, FL1 ,FLD, SL,   &
-     &                     WAVNUM, CGROUP,             &
+     &                     INDEP, WAVNUM, CGROUP,      &
      &                     UFRIC, WDWAVE, AIRD)
       END SELECT 
 

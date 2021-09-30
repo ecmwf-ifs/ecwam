@@ -30,7 +30,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 !      *KIJL*    - LOCAL INDEX OF LAST GRIDPOINT
 !      *FL1*     - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !      *WVPRPT*  - WAVE PROPERTIES FIELDS
-!      *WVENVI*  - WAVE ENVIRONEMENT  
+!      *WVENVI*  - WAVE ENVIRONMENT  
 !      *FF_NOW*    FORCING FIELDS
 !      *INTFLDS*   INTEGRATED/DERIVED PARAMETERS
 !      *MIJ*       LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
@@ -68,7 +68,6 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWICE   , ONLY : FLMIN    ,LCIWABR  ,LICERUN   ,LMASKICE
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : WSEMEAN_MIN 
-      USE YOWSHAL  , ONLY : IODP     ,IOBND
       USE YOWSTAT  , ONLY : IDELT    ,CDTPRO   ,LBIWBK
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
@@ -133,6 +132,9 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
 ASSOCIATE(DEPTH => WVENVI%DEPTH, &
+ &        INDEP => WVENVI%INDEP, &
+ &        IODP => WVENVI%IODP, &
+ &        IOBND => WVENVI%IOBND, &
  &        EMAXDPT => WVENVI%EMAXDPT, &
  &        WAVNUM => WVPRPT%WAVNUM, &
  &        CINV => WVPRPT%CINV, &
@@ -237,8 +239,8 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
 
-      CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,     &
-     &              WAVNUM, CGROUP,               &
+      CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,  &
+     &              INDEP, WAVNUM, CGROUP,     &
      &              EMEAN, F1MEAN, XKMEAN,     &
      &              UFRIC, WDWAVE, AIRD)
 
@@ -296,35 +298,35 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       ENDDO
 
       IF (LLUNSTR) THEN
-      DO K=1,NANG
-        DO M=1,NFRE
-          DO IJ=KIJS,KIJL
-            GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
-            GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
-            FLHAB = ABS(GTEMP2)
-            FLHAB = MIN(FLHAB,TEMP(IJ,M))
-            FL1(IJ,K,M) = FL1(IJ,K,M) + IOBND(IJ)*SIGN(FLHAB,GTEMP2)
-            FL1(IJ,K,M) = MAX(IODP(IJ)*CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
-            SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M) + DELTM * MIN(FLMAX(M)-FL1(IJ,K,M),0.0_JWRB)
-            FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
+        DO K=1,NANG
+          DO M=1,NFRE
+            DO IJ=KIJS,KIJL
+              GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
+              GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
+              FLHAB = ABS(GTEMP2)
+              FLHAB = MIN(FLHAB,TEMP(IJ,M))
+              FL1(IJ,K,M) = FL1(IJ,K,M) + IOBND(IJ)*SIGN(FLHAB,GTEMP2)
+              FL1(IJ,K,M) = MAX(IODP(IJ)*CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
+              SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M) + DELTM * MIN(FLMAX(M)-FL1(IJ,K,M),0.0_JWRB)
+              FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
+            ENDDO
           ENDDO
         ENDDO
-      ENDDO
       ELSE
-      DO K=1,NANG
-        DO M=1,NFRE
-          DO IJ=KIJS,KIJL
-            GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
-            GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
-            FLHAB = ABS(GTEMP2)
-            FLHAB = MIN(FLHAB,TEMP(IJ,M))
-            FL1(IJ,K,M) = FL1(IJ,K,M) + SIGN(FLHAB,GTEMP2)
-            FL1(IJ,K,M) = MAX(CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
-            SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M) + DELTM * MIN(FLMAX(M)-FL1(IJ,K,M),0.0_JWRB)
-            FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
+        DO K=1,NANG
+          DO M=1,NFRE
+            DO IJ=KIJS,KIJL
+              GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
+              GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
+              FLHAB = ABS(GTEMP2)
+              FLHAB = MIN(FLHAB,TEMP(IJ,M))
+              FL1(IJ,K,M) = FL1(IJ,K,M) + SIGN(FLHAB,GTEMP2)
+              FL1(IJ,K,M) = MAX(CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
+              SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M) + DELTM * MIN(FLMAX(M)-FL1(IJ,K,M),0.0_JWRB)
+              FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
+            ENDDO
           ENDDO
         ENDDO
-      ENDDO
       ENDIF
 
       IF (LCFLX) THEN

@@ -329,13 +329,13 @@ END INTERFACE
 !**********************************************************************
       SUBROUTINE SET_CURTXY
       USE YOWUNPOOL, ONLY : LCALC
-      USE YOWCURR, ONLY : U, V
+      USE YOWSHAL, ONLY : WVENVI
       IMPLICIT NONE
       INTEGER(KIND=JWIM) :: IP, IG
       IG=1
       DO IP=1,MNP
-        CURTXY(1,IP)=REAL(U(IP),JWRU)
-        CURTXY(2,IP)=REAL(V(IP),JWRU)
+        CURTXY(1,IP)=REAL(WVENVI(IP)%UCUR,JWRU)
+        CURTXY(2,IP)=REAL(WVENVI(IP)%VCUR,JWRU)
       END DO
       LCALC=.TRUE.
       END SUBROUTINE SET_CURTXY
@@ -1455,11 +1455,11 @@ END INTERFACE
 !     --------------------------------------------------------------
 
       USE YOWUNPOOL 
-      USE YOWSHAL  , ONLY : DEPTH
+      USE YOWSHAL  , ONLY : DEPTH_INPUT
       IMPLICIT NONE
       INTEGER(KIND=JWIM) :: istat
-      IF(ALLOCATED(DEPTH)) DEALLOCATE(DEPTH)
-      ALLOCATE( DEPTH(MNP))
+      IF(ALLOCATED(DEPTH_INPUT)) DEALLOCATE(DEPTH_INPUT)
+      ALLOCATE( DEPTH_INPUT(MNP))
       ALLOCATE( CCON(MNP) ); CCON = 0
       ALLOCATE( Jstart(MNP) ); Jstart = 0
       ALLOCATE( SI(MNP) ); SI = 0.0_JWRU
@@ -1514,7 +1514,7 @@ END INTERFACE
       USE MPL_MPIF
       USE YOWUNPOOL, ONLY : DEGRAD, REARTH
       USE YOWUNPOOL, ONLY : BND, DBG, GRID, FILEDEF
-      USE YOWSHAL  , ONLY : DEPTH    ,DEPTHA    ,TOOSHALLOW
+      USE YOWSHAL  , ONLY : DEPTH_INPUT    ,DEPTHA    ,TOOSHALLOW
       USE YOWPARAM , ONLY : NIBLO
       USE yowpd, only: z, comm, np_global, initPD, setDimSize
       USE UNSTRUCT_BOUND, ONLY : INIT_BOUNDARY
@@ -1531,7 +1531,7 @@ END INTERFACE
       CALL INIT_UNWAM_ARRAYS
 !JB do not allow negative depth !!!!
       DO IP = 1, MNP 
-        DEPTH(IP) = REAL(MAX(DEP(IP),REAL(TOOSHALLOW,JWRU)),JWRB)
+        DEPTH_INPUT(IP) = REAL(MAX(DEP(IP),REAL(TOOSHALLOW,JWRU)),JWRB)
       ENDDO
       DDIR = DELTH
 !
@@ -2197,13 +2197,13 @@ END INTERFACE
 !     --------------------------------------------------------------
 
         USE YOWUNPOOL
-        USE YOWSHAL  , ONLY : DEPTH
+        USE YOWSHAL  , ONLY : DEPTH_INPUT
         IMPLICIT NONE
         INTEGER(KIND=JWIM), INTENT(IN) :: IHANDLE
         WRITE(IHANDLE) MNP, MNE, NFRE, NANG
         WRITE(IHANDLE) XP
         WRITE(IHANDLE) YP 
-        WRITE(IHANDLE) DEPTH
+        WRITE(IHANDLE) DEPTH_INPUT
         WRITE(IHANDLE) CCON
         WRITE(IHANDLE) SI
         WRITE(IHANDLE) TRIA
@@ -2251,7 +2251,7 @@ END INTERFACE
 !     --------------------------------------------------------------
 
         USE YOWUNPOOL
-        USE YOWSHAL  , ONLY : DEPTH
+        USE YOWSHAL  , ONLY : DEPTH_INPUT
         IMPLICIT NONE
 
         INTEGER(KIND=JWIM), INTENT(IN) :: IHANDLE
@@ -2261,7 +2261,7 @@ END INTERFACE
         CALL INIT_UNWAM_ARRAYS
 !         READ(IHANDLE) XP
 !         READ(IHANDLE) YP 
-        READ(IHANDLE) DEPTH
+        READ(IHANDLE) DEPTH_INPUT
         READ(IHANDLE) CCON
         READ(IHANDLE) SI
         READ(IHANDLE) TRIA

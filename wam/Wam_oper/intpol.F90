@@ -1,4 +1,4 @@
-      SUBROUTINE INTPOL (KIJS, KIJL, FLR, FLA, WAVNUM, IRA)
+      SUBROUTINE INTPOL (KIJS, KIJL, FLR, FLA, WAVNUM, UCUR, VCUR, IRA)
 
 ! ----------------------------------------------------------------------
 
@@ -16,12 +16,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *INTPOL (KIJS, KIJL, FLR, FLA, WAVNUM, IRA)*
+!       *CALL* *INTPOL (KIJS, KIJL, FLR, FLA, WAVNUM, UCUR, VCUR, IRA)*
 !         *KIJS*  - INDEX OF FIRST GRIDPOINT.
 !         *KIJL*  - INDEX OF LAST GRIDPOINT.
 !         *FLR*   - SPECTRA (INPUT)
 !         *FLA*   - SPECTRA (OUTPUT)
 !         *WAVNUM*- WAVE NUMBER.
+!         *UCUR*  - U-COMPONENT OF THE SURFACE CURRENT
+!         *VCUR*  - V-COMPONENT OF THE SURFACE CURRENT
 !         *IRA*   - = 1 TRANSFORMATION FROM MOVING TO ABSOLUTE COORD.
 !                   =-1 TRANSFORMATION FROM ABSOLUTE TO MOVING COORD.
 
@@ -44,7 +46,6 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : FR       ,DFIM     ,COSTH    ,SINTH     ,   &
      &              DELTH  ,FRATIO   ,FLOGSPRDM1
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -61,6 +62,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FLR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLA
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM 
+      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(IN) :: UCUR, VCUR
       INTEGER(KIND=JWIM), INTENT(IN) :: IRA
 
 
@@ -143,7 +145,7 @@
 !           ----------------------------------------------
 
           DO IJ = KIJS, KIJL
-            FNEF(IJ) = FR(M) + IRA*WAVNUM(IJ,M)*(COSTH(K)*V(IJ) + SINTH(K)*U(IJ))
+            FNEF(IJ) = FR(M) + IRA*WAVNUM(IJ,M)*(COSTH(K)*VCUR(IJ) + SINTH(K)*UCUR(IJ))
             IF (FNEF(IJ) > 0.0_JWRB) THEN
               KNEW(IJ) = K
             ELSE

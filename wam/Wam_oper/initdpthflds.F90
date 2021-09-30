@@ -19,8 +19,8 @@ SUBROUTINE INITDPTHFLDS
       USE YOWGRID  , ONLY : IJS, IJL
       USE YOWPARAM , ONLY : NFRE
       USE YOWSHAL  , ONLY : WVENVI, NDEPTH,                             &
-     &                      INDEP, TFAK, TCGOND, TSIHKD, TFAC_ST,       &
-     &                      GAM_B_J, EMAXDPT,                           &
+     &                      TFAK, TCGOND, TSIHKD, TFAC_ST,              &
+     &                      GAM_B_J,                                    &
      &                      WVPRPT, WVPRPT_LAND
       USE YOWSTAT  , ONLY : NPROMA_WAM
 
@@ -29,15 +29,13 @@ SUBROUTINE INITDPTHFLDS
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM) :: M, IJ, JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: M, IJ, JKGLO, KIJS, KIJL, NPROMA, INDP
 
       REAL(KIND=JWRB) :: GAM
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('INITDPTHFLDS',0,ZHOOK_HANDLE)
-
-      IF (.NOT.ALLOCATED(EMAXDPT)) ALLOCATE(EMAXDPT(IJS:IJL))
 
       IF (.NOT.ALLOCATED(WVPRPT)) ALLOCATE(WVPRPT(IJS:IJL,NFRE))
       IF (.NOT.ALLOCATED(WVPRPT_LAND)) ALLOCATE(WVPRPT_LAND(NFRE))
@@ -46,7 +44,7 @@ IF (LHOOK) CALL DR_HOOK('INITDPTHFLDS',0,ZHOOK_HANDLE)
       CALL GSTATS(1502,0)
       NPROMA=NPROMA_WAM
 
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,M,IJ,GAM)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,M,IJ,GAM,INDP)
       DO JKGLO = IJS, IJL, NPROMA
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJL)
@@ -60,16 +58,17 @@ IF (LHOOK) CALL DR_HOOK('INITDPTHFLDS',0,ZHOOK_HANDLE)
           ELSE
             GAM=GAM_B_J
           ENDIF
-          EMAXDPT(IJ)=0.0625_JWRB*(GAM*WVENVI(IJ)%DEPTH)**2
+          WVENVI(IJ)%EMAXDPT = 0.0625_JWRB*(GAM*WVENVI(IJ)%DEPTH)**2
         ENDDO
 
         DO M=1,NFRE
           DO IJ=KIJS,KIJL
-            WVPRPT(IJ,M)%WAVNUM = TFAK(INDEP(IJ),M)
+            INDP = WVENVI(IJ)%INDEP
+            WVPRPT(IJ,M)%WAVNUM = TFAK(INDP,M)
             WVPRPT(IJ,M)%CINV   = WVPRPT(IJ,M)%WAVNUM/ZPIFR(M)
-            WVPRPT(IJ,M)%CGROUP = TCGOND(INDEP(IJ),M)
-            WVPRPT(IJ,M)%OMOSNH2KD = TSIHKD(INDEP(IJ),M)
-            WVPRPT(IJ,M)%STOKFAC = TFAC_ST(INDEP(IJ),M)
+            WVPRPT(IJ,M)%CGROUP = TCGOND(INDP,M)
+            WVPRPT(IJ,M)%OMOSNH2KD = TSIHKD(INDP,M)
+            WVPRPT(IJ,M)%STOKFAC = TFAC_ST(INDP,M)
 
             WVPRPT(IJ,M)%CIWA = 1.0_JWRB
           ENDDO

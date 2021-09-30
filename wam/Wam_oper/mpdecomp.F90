@@ -1670,7 +1670,7 @@
       DO IJ=NSTART(IRANK),NEND(IRANK)
         WVENVI(IJ)%DEPTH = DEPTH_INPUT(IJ)
 
-!!!!   when this is moved to reading depth as an inout field, wvenvi should be allocated and intialised in wvalloc !!!
+!!!!   when this is moved to reading depth as an input field, wvenvi should be allocated and intialised in wvalloc !!!
         WVENVI(IJ)%UCUR = 0.0_JWRB
         WVENVI(IJ)%VCUR = 0.0_JWRB
       ENDDO

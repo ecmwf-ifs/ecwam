@@ -195,28 +195,6 @@ SUBROUTINE INITMDL (NADV,                                 &
 !REFRA
 !            -  OPENS THE FIRST RESULT FILES.
 
-!     EXTERNALS.
-!     ----------
-
-!       *ABORT1*     - TERMINATES PROCESSING.
-!       *DIFDATE*   - COMPUTES A TIME DIFFERENCE.
-!REFRA
-!       *GRADI*     - COMPUTES DEPTH AND CURRENT GRADIENTS.
-!REFRA
-!       *GSFILE*    - ROUTINE TO DYNAMICALLY FETCH OR DISPOSE FILES.
-!       *GETSPEC*   - READS SPECTRA
-!       *GETSTRESS  - READS RESTART STRESS/WIND FILE
-!       *HEADBC*    - WRITE BOUNDARY OUTPUT FILE HEADER.
-!       *INCDATE*   - UPDATE DATE TIME GROUP.
-!       *INIWCST*   - SETS GLOBAL CONSTANTS.
-!       *PREWIND*   - REFORMAT FORCING FIELDS.
-!NEST
-!       *READBOU*   - READS PREPROC BOUNDARY FILES.
-!NEST
-!       *SETMARSTYPE* SETS VARIABLE MARSTYPE
-!       *SETWGRIBHD*- SETS DEFAULT GRIB HEADERS  
-!       *USERIN*    - READS USER INPUT.
-
 !     REFERENCE
 !     ---------
 
@@ -258,10 +236,8 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
       USE YOWREFD  , ONLY : LLUPDTTD
 
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
-!                                   !!!!!!!!!!
-     &            WVPRPT,                                               &
-     &            INDEP    ,IODP     ,IOBND    ,TOOSHALLOW
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,TOOSHALLOW,   &
+     &            WVENVI   ,WVPRPT
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,    &
      &            FL1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
@@ -365,7 +341,11 @@ SUBROUTINE INITMDL (NADV,                                 &
 
 IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
-ASSOCIATE(CGROUP => WVPRPT%CGROUP, &
+ASSOCIATE(DEPTH => WVENVI%DEPTH, &
+ &        INDEP => WVENVI%INDEP, &
+ &        IODP => WVENVI%IODP, &
+ &        IOBND => WVENVI%IOBND, &
+ &        CGROUP => WVPRPT%CGROUP, &
  &        CIWA => WVPRPT%CIWA, &
  &        CICOVER => FF_NOW%CICOVER, &
  &        CITHICK => FF_NOW%CITHICK )
@@ -711,7 +691,6 @@ ASSOCIATE(CGROUP => WVPRPT%CGROUP, &
 !         ------------------------------------
 
 !     BUILD DEPTH POINTER AND RESET DEPTH TO ALL POSITIVE
-      IF (.NOT.ALLOCATED(IODP)) ALLOCATE(IODP(IJS:IJL))
       DO IJ=IJS,IJL
         IF (DEPTH(IJ) <= TOOSHALLOW) THEN
           IODP(IJ) = 0
@@ -720,7 +699,6 @@ ASSOCIATE(CGROUP => WVPRPT%CGROUP, &
         ENDIF
       ENDDO
 
-      IF (.NOT.ALLOCATED(IOBND)) ALLOCATE(IOBND(IJS:IJL))
       IF (.NOT. LLUNSTR) THEN
          IOBND(:)=1
       ELSE
@@ -739,7 +717,6 @@ ASSOCIATE(CGROUP => WVPRPT%CGROUP, &
       ENDDO
 
 !     COMPUTE INDEP
-      IF (.NOT.ALLOCATED(INDEP)) ALLOCATE(INDEP(IJS:IJL))
       DO IJ=IJS,IJL
         XD = LOG(DEPTH(IJ)/DEPTHA)/LOG(DEPTHD)+1.0_JWRB
         ID = NINT(XD)
@@ -762,7 +739,7 @@ ASSOCIATE(CGROUP => WVPRPT%CGROUP, &
 !        USED). AND READ IN LAST WINDFIELDS FROM RESTARTFILE.
 !        ---------------------------------------------------------------
 
-      CALL GETSTRESS(IJS, IJL, FF_NOW, NBLKS, NBLKE, IREAD) 
+      CALL GETSTRESS(IJS, IJL, WVENVI, FF_NOW, NBLKS, NBLKE, IREAD) 
 
       CDATEWL = CDTPRO
 
@@ -966,10 +943,10 @@ ASSOCIATE(CGROUP => WVPRPT%CGROUP, &
       LLINIT=.NOT.LRESTARTED
       LLALLOC_FIELDG_ONLY=.FALSE.
 
-      CALL PREWIND (IJS, IJL, FF_NOW, FF_NEXT,       &
-     &              LLINIT, LLALLOC_FIELDG_ONLY,     &
-     &              IREAD,                           &
-     &              NFIELDS, NGPTOTG, NC, NR,        &
+      CALL PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT,   &
+     &              LLINIT, LLALLOC_FIELDG_ONLY,         &
+     &              IREAD,                               &
+     &              NFIELDS, NGPTOTG, NC, NR,            &
      &              FIELDS, LWCUR, MASK_IN)
 
       WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'                   
@@ -991,7 +968,7 @@ ASSOCIATE(CGROUP => WVPRPT%CGROUP, &
 !*    9.1 READ SPECTRA
 !         ------------
 
-      CALL GETSPEC(FL1, IJS, IJL, NBLKS, NBLKE, IREAD)
+      CALL GETSPEC(FL1, IJS, IJL, WVENVI, NBLKS, NBLKE, IREAD)
 
       WRITE(IU06,*) '    SUB. INITMDL: SPECTRA READ IN'
       CALL FLUSH (IU06)

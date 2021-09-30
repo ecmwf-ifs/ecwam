@@ -67,7 +67,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
      &            NGX      ,NGY      ,                                  &
      &            NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,IMDLGRDID
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH_INPUT,DEPTHA   ,DEPTHD   ,  &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST  ,TOOSHALLOW
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
      &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,              &
@@ -221,9 +221,9 @@
 !        ----------------------------------------------------
 
         CALL READREC(14)
-!!!   note that the size of DEPTH will be readjusted in mpdecomp !!!
-        IF(ALLOCATED(DEPTH)) DEALLOCATE(DEPTH)
-        ALLOCATE(DEPTH(NIBLO))
+!!!   note that the size of DEPTH_INPUT will be readjusted in mpdecomp !!!
+        IF(ALLOCATED(DEPTH_INPUT)) DEALLOCATE(DEPTH_INPUT)
+        ALLOCATE(DEPTH_INPUT(NIBLO))
         IF(.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
         IF(.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
         IF(.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
@@ -264,11 +264,6 @@
         IF(.NOT.ALLOCATED(TFAKH)) ALLOCATE(TFAKH(NFREH,NDEPTH))
 
         CALL READREC(18)
-
-!*      10. READ MODULE YOWCURR.
-!           --------------------
-
-!       THE OCEAN CURRENTS ARE INPUT IN INITMDL
 
 !       THE UNSTRUCTURED BITS (if pre-computed by PREPROC)
         IF (LLUNSTR .AND. LPREPROC) THEN
@@ -327,7 +322,7 @@
      &     R8_OMEGA,                                                    &
      &     R8_THH,                                                      &
      &     R8_DFDTH,                                                    &
-     &     R8_DEPTH,                                                    &
+     &     R8_DEPTH_INPUT,                                              &
      &     R8_FAK                
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) ::                   &
      &     R8_TCGOND,                                                   &
@@ -502,27 +497,27 @@
          ENDIF
       CASE(15)
          IF (LLR8TOR4) THEN
-            ALLOCATE(R8_DEPTH(NIBLO))
+            ALLOCATE(R8_DEPTH_INPUT(NIBLO))
             ALLOCATE(R8_TCGOND(NDEPTH,NFRE))
             ALLOCATE(R8_TFAK(NDEPTH,NFRE))
             ALLOCATE(R8_TSIHKD(NDEPTH,NFRE))
             ALLOCATE(R8_TFAC_ST(NDEPTH,NFRE))
-            READ(IU07,IOSTAT=ISTAT) R8_DEPTH, R8_TCGOND,                &
+            READ(IU07,IOSTAT=ISTAT) R8_DEPTH_INPUT, R8_TCGOND,          &
      &           R8_TFAK, R8_TSIHKD, R8_TFAC_ST
             IF (ISTAT /= 0) GOTO 1000
-            DEPTH = R8_DEPTH
+            DEPTH_INPUT(:) = R8_DEPTH_INPUT(:)
             TCGOND = R8_TCGOND
             TFAK = R8_TFAK
             TSIHKD = R8_TSIHKD
             TFAC_ST = R8_TFAC_ST
 
-            DEALLOCATE(R8_DEPTH)
+            DEALLOCATE(R8_DEPTH_INPUT)
             DEALLOCATE(R8_TCGOND)
             DEALLOCATE(R8_TFAK)
             DEALLOCATE(R8_TSIHKD)
             DEALLOCATE(R8_TFAC_ST)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) DEPTH, TCGOND,                      &
+            READ(IU07,IOSTAT=ISTAT) DEPTH_INPUT, TCGOND,                &
      &           TFAK, TSIHKD, TFAC_ST
             IF (ISTAT /= 0) GOTO 1000
          ENDIF

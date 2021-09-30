@@ -703,8 +703,8 @@
 !         ------------------------------------------
           IF (LLCHKCFL .AND. M == 1) THEN
             CALL CHECKCFL (KIJS, KIJL, DEPTH(KIJS), DTC,                &
-     &                     CFLEA,CFLEA,CFLNO,CFLNO,CFLNO,CFLNO,         &
-     &                     CFLTP,CFLTM,CFLTP,CFLTM)
+     &                     CFLEA,CFLEA,CFLNO,CFLNO,CFLNO,               &
+     &                     CFLNO,CFLTP,CFLTM,CFLTP,CFLTM)
           ENDIF
 
 !*    BRANCH BACK TO 3.1.4.2 FOR NEXT FREQUENCY.
@@ -908,9 +908,9 @@
 !         TEST THE STABILITY OF THE ADVECTION SCHEME
 !         ------------------------------------------
           IF (LLCHKCFL .AND. M == 1) THEN
-            CALL CHECKCFL (KIJS, KIJL, DTC,                             &
-     &                     CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2,CFLSO2,       &
-     &                     CFLTP,CFLTM,CFLOP,CFLOM)
+            CALL CHECKCFL (KIJS, KIJL, DEPTH(KIJS), DTC,                &
+     &                     CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2,              &
+     &                     CFLSO2,CFLTP,CFLTM,CFLOP,CFLOM)
           ENDIF
 
 !*    4.1.4.3 LOOP OVER GRIDPOINTS.

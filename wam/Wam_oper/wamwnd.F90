@@ -1,6 +1,7 @@
-      SUBROUTINE WAMWND (KIJS, KIJL,                                    &
-     &                   U10, US,                                       &
-     &                   THW, ADS, WSTAR, CITH,                         &
+      SUBROUTINE WAMWND (KIJS, KIJL,                &
+     &                   UCUR, VCUR,                &
+     &                   U10, US,                   &
+     &                   THW, ADS, WSTAR, CITH,     &
      &                   LWCUR, ICODE_WND)
 
 ! ----------------------------------------------------------------------
@@ -19,16 +20,17 @@
 
 !       CONVERTS THE INTERPOLATED INPUT FIELDS TO WAM BLOCKS FOR ALL
 !       POINTS IN THE GRID ON A PE, EXCEPT FOR U and V CURRENTS !!!
-!       SEE *GETCURR* (THEY ARE NEEDED OVER THE GRID POINT HALO).
-!       U and V ARE HOWEVER NEEDED HERE !!!.
 
 !**   INTERFACE.
 !     ----------
 
 !       *CALL WAMWND (KIJS, KIJL,
-!    &                U10, US,
-!    &                THW, ADS, WSTAR, CITH,
-!    &                LWCUR, ICODE_WND)
+!                     UCUR, VCUR,
+!                     U10, US,
+!                     THW, ADS, WSTAR, CITH,
+!                     LWCUR, ICODE_WND)
+!          *UCUR* - U-COMPONENT OF THE SURFACE CURRENT
+!          *VCUR* - V-COMPONENT OF THE SURFACE CURRENT
 !          *U10*  - INTERPOLATED WINDS AT ALL POINTS AND BLOCKS.
 !          *US*   - INTERPOLATED FRICTION VELOCITY
 !          *THW*  - INTERPOLATED WIND DIRECTION AT ALL POINTS.
@@ -62,7 +64,6 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWCURR  , ONLY : U        ,V
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWPCONS , ONLY : G        ,ZPI      ,ZMISS    ,EPSUS
       USE YOWPHYS  , ONLY : XKAPPA
@@ -79,6 +80,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(IN) :: ICODE_WND
+      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(IN) :: UCUR, VCUR 
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(INOUT) :: U10, US
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(OUT) :: THW, ADS, WSTAR, CITH
       LOGICAL, INTENT(IN) :: LWCUR
@@ -153,8 +155,8 @@
             DO IJ = KIJS,KIJL
               UU(IJ) = U10(IJ)*SIN(THW(IJ))
               VV(IJ) = U10(IJ)*COS(THW(IJ))
-              UU(IJ) = UU(IJ) - RWFAC*U(IJ)
-              VV(IJ) = VV(IJ) - RWFAC*V(IJ)
+              UU(IJ) = UU(IJ) - RWFAC*UCUR(IJ)
+              VV(IJ) = VV(IJ) - RWFAC*VCUR(IJ)
               WSPEED(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
               IF (WSPEED(IJ) > 0.0_JWRB) THEN
                 U10(IJ) = WSPEED(IJ)
@@ -187,8 +189,8 @@
 
           IF (LCORREL) THEN
             DO IJ = KIJS,KIJL
-              UU(IJ) = UU(IJ) + RWFAC*U(IJ)
-              VV(IJ) = VV(IJ) + RWFAC*V(IJ)
+              UU(IJ) = UU(IJ) + RWFAC*UCUR(IJ)
+              VV(IJ) = VV(IJ) + RWFAC*VCUR(IJ)
             ENDDO
           ENDIF
 
@@ -206,8 +208,8 @@
 
           IF (LCORREL) THEN
             DO IJ = KIJS,KIJL
-              UU(IJ) = UU(IJ) + RWFAC*U(IJ)
-              VV(IJ) = VV(IJ) + RWFAC*V(IJ)
+              UU(IJ) = UU(IJ) + RWFAC*UCUR(IJ)
+              VV(IJ) = VV(IJ) + RWFAC*VCUR(IJ)
             ENDDO
           ENDIF
 

@@ -1,4 +1,5 @@
       SUBROUTINE BUILDSTRESS(IJS, IJL,                                &
+     &                       UCUR, VCUR,                              &
      &                       WSWAVE, WDWAVE,                          &
      &                       UFRIC, TAUW, TAUWDIR, Z0M,               &
      &                       AIRD, WSTAR,                             &
@@ -21,11 +22,14 @@
 !**   INTERFACE.
 !     ----------
 !     CALL *BUILDSTRESS*(IJS, IJL,
+!                        UCUR, VCUR,
 !    &                   WSWAVE,WDWAVE,UFRIC,TAUW,TAUWDIR,Z0M,AIRD,
 !    &                   AIRD, WSTAR, CICOVER, CITHICK,
 !    &                   IREAD)*
 !     *IJS*        INDEX OF FIRST GRIDPOINT
 !     *IJL*        INDEX OF LAST GRIDPOINT
+!     *UCUR*       U-COMPONENT OF THE SURFACE CURRENT
+!     *VCUR*       V-COMPONENT OF THE SURFACE CURRENT
 !     *WSWAVE *    WIND SPEED.
 !     *WDWAVE *    WIND DIRECTION (RADIANS).
 !     *UFRIC*      FRICTION VELOCITY.
@@ -82,6 +86,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
 
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(IN) :: UCUR, VCUR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: WSWAVE, WDWAVE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: UFRIC, Z0M, TAUW, TAUWDIR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: AIRD, WSTAR
@@ -137,6 +142,7 @@
       ENDIF
 
       CALL GETWND (IJS, IJL,                                &
+     &             UCUR, VCUR,                              &
      &             WSWAVE, UFRIC,                           &
      &             WDWAVE,                                  &
      &             AIRD, WSTAR,                             &

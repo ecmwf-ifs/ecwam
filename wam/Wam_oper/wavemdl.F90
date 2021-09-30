@@ -121,9 +121,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWPHYS  , ONLY : RNU      ,RNUM     ,ALPHA
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,    &
-     &            LSMSSIG_WAM,CMETER ,CEVENT   ,LSARINV  ,NPROMA_WAM,   &
+     &            LSMSSIG_WAM,CMETER ,CEVENT   ,NPROMA_WAM,             &
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
-      USE YOWSHAL  , ONLY : WVPRPT
+      USE YOWSHAL  , ONLY : WVENVI   ,WVPRPT
       USE YOWTEST  , ONLY : IU06
       USE YOWWNDG  , ONLY : ICODE_CPL
       USE YOWWIND  , ONLY : FF_NEXT
@@ -554,10 +554,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-        CALL PREWIND (IJS, IJL, FF_NOW, FF_NEXT,       &
-     &                LLINIT, LLALLOC_FIELDG_ONLY,     &
-     &                IREAD,                           &
-     &                NFIELDS, NGPTOTG, NC, NR,        &
+        CALL PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT, &
+     &                LLINIT, LLALLOC_FIELDG_ONLY,       &
+     &                IREAD,                             &
+     &                NFIELDS, NGPTOTG, NC, NR,          &
      &                FIELDS, LWCUR, MASK_IN)
 
 
@@ -572,10 +572,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       CALL SETMARSTYPE
 
       CALL WAMODEL (NADV, LDSTOP, LDWRRE,  &
-     &              WVPRPT, FF_NOW, FF_NEXT, INTFLDS, FL1)
+     &              WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS, FL1)
 
 
-!*    2.2  DATA ASSIMILATION AND/OR SAR INVERSION.
+!*    2.2  DATA ASSIMILATION
 !*         IF REQUESTED AND MODEL IS IN ANALYSIS PERIOD.
 !          THE DATA ASSIMILATION SOFTWARE IS NOT AVAILABLE
 !          FOR GENERAL DISSIMINATION !
@@ -596,29 +596,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
         IF (NASS > 0 ) THEN
           IF ( CDTPRO == CDTASS ) THEN
-            CALL WAMASSI (LDSTOP, LDWRRE, WVPRPT, FF_NOW, INTFLDS, FL1)
+            CALL WAMASSI (LDSTOP, LDWRRE, WVENVI, WVPRPT, FF_NOW, INTFLDS, FL1)
           ENDIF
         ELSEIF ( (.NOT.LWCOU .AND. CDTPRO <= CDATEF ) .OR. (LWCOU .AND. CDTPRO == CDATEF) ) THEN
-          CALL WAMASSI (LDSTOP, LDWRRE, WVPRPT, FF_NOW, INTFLDS, FL1)
-        ENDIF
-      ELSE IF (IASSI /= 1 .AND. LSARINV) THEN
-
-!!!!
-!!!!! we may have to introduce a list for sar inversion time !!!!
-!       UPDATE ANALYSIS TIME (which is now the inversion time)
-        DO J=1,NASS
-          IF (CDTPRO == CASS(J)) THEN
-            CDTASS=CDTPRO
-            EXIT
-          ENDIF
-        ENDDO
-
-        IF (NASS > 0 ) THEN
-          IF ( CDTPRO == CDTASS ) THEN
-            CALL SARINVERT
-          ENDIF
-        ELSEIF ( (.NOT.LWCOU .AND. CDTPRO <= CDATEF ) .OR. (LWCOU .AND. CDTPRO == CDATEF)) THEN
-          CALL SARINVERT
+          CALL WAMASSI (LDSTOP, LDWRRE, WVENVI, WVPRPT, FF_NOW, INTFLDS, FL1)
         ENDIF
       ENDIF
 #endif

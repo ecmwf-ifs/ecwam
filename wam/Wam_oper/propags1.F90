@@ -859,9 +859,9 @@
                 CFLNO(IJ) = CFLNO(IJ)*CGOMFULL
                 DTC(IJ) = CFLEA(IJ)+CFLNO(IJ)+CFLTP(IJ)+CFLTM(IJ)
               ENDDO
-              CALL CHECKCFL(KIJS, KIJL, DEPTH(KIJS), DTC,               &
-     &                      CFLEA,CFLEA,CFLNO,CFLNO,CFLNO,CFLNO,        &
-     &                      CFLTP,CFLTM,CFLTP,CFLTM)
+              CALL CHECKCFL(KIJS, KIJL, DEPTH(KIJS), DTC,         &
+     &                      CFLEA,CFLEA,CFLNO,CFLNO,CFLNO,        &
+     &                      CFLNO,CFLTP,CFLTM,CFLTP,CFLTM)
             ENDIF
 
 
@@ -1081,9 +1081,9 @@
 !         TEST THE STABILITY OF THE ADVECTION SCHEME
 !         ------------------------------------------
           IF (LLCHKCFL .AND. M == 1) THEN
-            CALL CHECKCFL(KIJS, KIJL, DTC,                              &
-     &                    CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2,CFLSO2,        &
-     &                    CFLTP,CFLTM,CFLOP,CFLOM)
+            CALL CHECKCFL(KIJS, KIJL, DEPTH(KIJS), DTC,          &
+     &                    CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2,        &
+     &                    CFLSO2,CFLTP,CFLTM,CFLOP,CFLOM)
           ENDIF
 
 !*    4.1.4.3 LOOP OVER GRIDPOINTS.

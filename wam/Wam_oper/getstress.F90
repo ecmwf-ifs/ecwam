@@ -1,4 +1,4 @@
-      SUBROUTINE GETSTRESS(IJS, IJL, FF_NOW, NBLKS, NBLKE, IREAD)
+      SUBROUTINE GETSTRESS(IJS, IJL, WVENVI, FF_NOW, NBLKS, NBLKE, IREAD)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
@@ -12,9 +12,10 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL**GETSTRESS(IJS, IJL, FF_NOW, NBLKS, NBLKE, IREAD)
+!     *CALL**GETSTRESS(IJS, IJL, WVENVI, FF_NOW, NBLKS, NBLKE, IREAD)
 !     *IJS*       INDEX OF FIRST GRIDPOINT.
 !     *IJL*       INDEX OF LAST GRIDPOINT.
+!     *WVENVI*    WAVE ENVIRONMENT
 !     *FF_NOW*    FORCING FIELDS AT CURRENT TIME
 !     *NBLKS*     INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !     *NBLKE*     INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
@@ -40,13 +41,9 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FORCING_FIELDS
 
       USE YOWCOUT  , ONLY : NREAL    ,LRSTPARALR
-
-      USE YOWCURR  , ONLY : U        ,V
-!!!                !!!!!!!!!!!!!!!!!!!!!!!!!!!
-
       USE YOWMESPAS, ONLY : LGRIBIN  ,LWAVEWIND
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NSUP     ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NIBLO
@@ -72,6 +69,7 @@
 #include "readstress.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       INTEGER(KIND=JWIM),DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
@@ -94,7 +92,9 @@
 
       IF (LHOOK) CALL DR_HOOK('GETSTRESS',0,ZHOOK_HANDLE)
 
-ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ASSOCIATE(UCUR => WVENVI%UCUR, &
+ &        VCUR => WVENVI%VCUR, &
+ &        WSWAVE => FF_NOW%WSWAVE, &
  &        WDWAVE => FF_NOW%WDWAVE, &
  &        UFRIC => FF_NOW%UFRIC, &
  &        Z0M => FF_NOW%Z0M, &
@@ -118,6 +118,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !       GRIB RESTART
 !       CREATES WIND AND STRESS FIELDS FROM GRIB WINDS AND DRAG COEFFICIENT.
         CALL BUILDSTRESS(IJS, IJL,                            &
+     &                   UCUR, VCUR,                          &
      &                   WSWAVE, WDWAVE,                      &
      &                   UFRIC, TAUW, TAUWDIR, Z0M,           &
      &                   AIRD, WSTAR,                         &
@@ -175,28 +176,15 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
             WSTAR(IJ)=RFIELD(IJ,8)
             CICOVER(IJ)=RFIELD(IJ,9)
             CITHICK(IJ)=RFIELD(IJ,10)
-!           for U and V see below
+            UCUR(IJ)=RFIELD(IJ,11)
+            VCUR(IJ)=RFIELD(IJ,12)
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
 
-        IF (ALLOCATED(U) .AND. ALLOCATED(V)) THEN
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
-          DO JKGLO=IJS,IJL,NPROMA
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL)
-            DO IJ=KIJS,KIJL
-              U(IJ)=RFIELD(IJ,11)
-              V(IJ)=RFIELD(IJ,12)
-            ENDDO
-          ENDDO
-!$OMP     END PARALLEL DO
-
-          IF (IREFRA /= 0) LLUPDTTD = .TRUE.
-  
-!         SET LOGICAL TO RECOMPUTE THE WEIGHTS IN CTUW.
+        IF (IREFRA /= 0) THEN
+          LLUPDTTD = .TRUE.
           LUPDTWGHT=.TRUE.
-
         ENDIF
 
         DEALLOCATE(RFIELD)

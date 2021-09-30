@@ -1,8 +1,9 @@
       SUBROUTINE GETWND (IJS, IJL,                              &
+     &                   UCUR, VCUR,                            &
      &                   U10, US,                               &
      &                   THW,                                   &
      &                   ADS, WSTAR,                            &
-     &                   CICOVER, CITHICK,                           &
+     &                   CICOVER, CITHICK,                      &
      &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,    &
      &                   LWCUR, ICODE_WND)
 
@@ -22,11 +23,14 @@
 !     ----------
 
 !       *CALL* *GETWND (IJS, IJL,
+!                       UCUR, VCUR,
 !                       U10, THW, ADS, WSTAR, CICOVER, CITHICK,
 !                       CDTWIS, LWNDFILE, LCLOSEWND,
 !                       LWCUR, ICODE_WND)*
 !         *IJS*    - INDEX OF FIRST GRIDPOINT
 !         *IJL*    - INDEX OF LAST GRIDPOINT
+!         *UCUR*   - U-COMPONENT OF THE SURFACE CURRENT
+!         *VCUR*   - V-COMPONENT OF THE SURFACE CURRENT
 !         *U10*    - MAGNITUDE OF 10m WIND AT EACH POINT AND BLOCK.
 !         *THW*    - DIRECTION OF 10m WIND AT EACH POINT AND BLOCK.
 !         *ADS*    - AIR DENSITY AT EACH POINT AND BLOCK.
@@ -106,6 +110,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(OUT) :: ICODE_WND
 
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(IN) :: UCUR, VCUR
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(INOUT) :: U10, US 
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: THW
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: ADS, WSTAR
@@ -222,8 +227,9 @@
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL WAMWND (KIJS, KIJL,                                    &
-     &                 U10(KIJS), US(KIJS),                           &
+          CALL WAMWND (KIJS, KIJL,                                       &
+     &                 UCUR(KIJS), VCUR(KIJS),                           &
+     &                 U10(KIJS), US(KIJS),                              &
      &                 THW(KIJS), ADS(KIJS), WSTAR(KIJS), CITHICK(KIJS), &
      &                 LWCUR, ICODE_WND)
         ENDDO

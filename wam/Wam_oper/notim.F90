@@ -1,5 +1,5 @@
 SUBROUTINE NOTIM (CDTWIS, CDTWIE,                       &
-&                 IJS, IJL, FF_NEXT,                    &
+&                 IJS, IJL, WVENVI, FF_NEXT,            &
 &                 IREAD, LWCUR)
 
 ! ----------------------------------------------------------------------
@@ -15,19 +15,21 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,                       &
 !     ----------  
 
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,
-!    &                 IJS, IJL,
+!    &                 IJS, IJL, WVENVI, FF_NEXT,
 !                      IREAD, LWCUR)
 !          *CDTWIS*   - DATE OF FIRST WIND FIELD.
 !          *CDTWIE*   - DATE OF LAST FIRST WIND FIELD.
 !          *IJS:IJL   - ARRAYS DIMENSION
-!          *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
-!          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
+!          *WVENVI*   - WAVE ENVIRONMENT.
+!          *FF_NEXT*  - DATA STRUCTURE WITH THE NEXT FORCING FIELDS
+!          *IREAD*    - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
+!          *LWCUR*    - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FORCING_FIELDS
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO
@@ -45,6 +47,7 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,                       &
 #include "incdate.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(OUT) :: FF_NEXT
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
@@ -67,7 +70,9 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,                       &
 
       IF (LHOOK) CALL DR_HOOK('NOTIM',0,ZHOOK_HANDLE)
 
-ASSOCIATE(U10 => FF_NEXT%WSWAVE, &
+ASSOCIATE(UCUR => WVENVI%UCUR, &
+ &        VCUR => WVENVI%VCUR, &
+ &        U10 => FF_NEXT%WSWAVE, &
  &        US => FF_NEXT%UFRIC, &
  &        THW => FF_NEXT%WDWAVE, &
  &        ADS => FF_NEXT%AIRD, &
@@ -118,6 +123,7 @@ ASSOCIATE(U10 => FF_NEXT%WSWAVE, &
         CDTNEXT=CDTWIH
 
         CALL GETWND (IJS, IJL,                              &
+     &               UCUR, VCUR,                            &
      &               U10, US,                               &
      &               THW,                                   &
      &               ADS, WSTAR,                            &

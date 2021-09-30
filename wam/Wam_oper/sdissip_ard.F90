@@ -1,5 +1,5 @@
       SUBROUTINE SDISSIP_ARD (KIJS, KIJL, FL1, FLD, SL,           &
-     &                        WAVNUM, CGROUP,                     &
+     &                        INDEP, WAVNUM, CGROUP,              &
      &                        UFRIC, WDWAVE, AIRD)
 ! ----------------------------------------------------------------------
 
@@ -19,13 +19,14 @@
 !     ----------
 
 !       *CALL* *SDISSIP_ARD (KIJS, KIJL, FL1, FLD,SL,*
-!                            WAVNUM, CGROUP,
+!                            INDEP, WAVNUM, CGROUP,
 !                            UFRIC, WDWAVE, AIRD)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FL1*    - SPECTRUM.
 !          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY
+!          *INDEP*  - DEPTH INDEX
 !          *WAVNUM* - WAVE NUMBER
 !          *CGROUP* - GROUP SPEED
 !          *UFRIC*  - FRICTION VELOCITY IN M/S.
@@ -59,8 +60,6 @@
 &                  SSDSC2  , SSDSC4, SSDSC6,  MICHE, SSDSC3, SSDSBRF1, &
 &                  BRKPBCOEF ,SSDSC5, NSDSNTH, NDIKCUMUL,              &
 &                  INDICESSAT, SATWEIGHTS, CUMULW
-      USE YOWSHAL  , ONLY : INDEP
-!                         !!!!!!!!!!!!!!
 
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK
 
@@ -72,6 +71,7 @@
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: INDEP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, WDWAVE, AIRD 
 

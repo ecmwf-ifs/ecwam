@@ -36,7 +36,6 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, WVENVI, WVPRPT, FL1)
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NIBLO
       USE YOWREFD  , ONLY : LLUPDTTD ,THDD     ,THDC     ,SDOT
-      USE YOWSHAL  , ONLY : BATHYMAX
       USE YOWSTAT  , ONLY : IPROPAGS ,NPROMA_WAM
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE UNWAM    , ONLY : PROPAG_UNWAM
@@ -136,7 +135,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !            NEED HALO VALUES
              CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
 &                              WAVNUM, CGROUP, OMOSNH2KD,             &
-&                              DEPTH, U, V,                           &
+&                              DEPTH, UCUR, VCUR,                     &
 &                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
 &                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
 
@@ -200,7 +199,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !            NEED HALO VALUES
              CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
 &                              WAVNUM, CGROUP, OMOSNH2KD,             &
-&                              DEPTH, U, V,                           &
+&                              DEPTH, UCUR, VCUR,                     &
 &                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
 &                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
 
@@ -223,7 +222,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !            NEED HALO VALUES
              CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
 &                              WAVNUM, CGROUP, OMOSNH2KD,             &
-&                              DEPTH, U, V,                           &
+&                              DEPTH, UCUR, VCUR,                     &
 &                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
 &                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
 

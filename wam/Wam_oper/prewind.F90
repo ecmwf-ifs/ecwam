@@ -1,4 +1,4 @@
-SUBROUTINE PREWIND (IJS, IJL, FF_NOW, FF_NEXT,              &
+SUBROUTINE PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT,      &
  &                  LLINIT, LLALLOC_FIELDG_ONLY,            &
  &                  IREAD,                                  &
  &                  NFIELDS, NGPTOTG, NC, NR,               &
@@ -16,7 +16,7 @@ SUBROUTINE PREWIND (IJS, IJL, FF_NOW, FF_NEXT,              &
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *PREWIND (IJS, IJL, FF_NOW, FF_NEXT,
+!     *CALL* *PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT,
 !    &                 LLINIT, LLALLOC_FIELDG_ONLY,
 !    &                 IREAD,
 !    &                 NFIELDS, NGPTOTG, NC, NR,
@@ -24,6 +24,7 @@ SUBROUTINE PREWIND (IJS, IJL, FF_NOW, FF_NEXT,              &
 
 !      *IJS*                 INDEX OF FIRST GRIDPOINT.
 !      *IJL*                 INDEX OF LAST GRIDPOINT.
+!      *WVENVI*              WAVE ENVIRONMENT.
 !      *FF_NOW*    REAL      DATA STRUCTURE WITH THE CURRENT FORCING FIELDS
 !      *FF_NEXT*   REAL      DATA STRUCTURE WITH THE NEXT FORCING FIELDS
 !      *LLINIT*    LOGICAL   TRUE IF WAMADSWSTAR NEEDS TO BE CALLED.   
@@ -70,7 +71,7 @@ SUBROUTINE PREWIND (IJS, IJL, FF_NOW, FF_NEXT,              &
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FORCING_FIELDS
 
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOUSAMEGRID, LWNEMOCOU, LWNEMOCOURECV
       USE YOWPARAM , ONLY : NGX      ,NGY
@@ -97,6 +98,7 @@ SUBROUTINE PREWIND (IJS, IJL, FF_NOW, FF_NEXT,              &
 #include "wamadswstar.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NEXT
       LOGICAL, INTENT(IN) :: LLINIT
@@ -129,7 +131,9 @@ SUBROUTINE PREWIND (IJS, IJL, FF_NOW, FF_NEXT,              &
 
       IF (LHOOK) CALL DR_HOOK('PREWIND',0,ZHOOK_HANDLE)
 
-ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ASSOCIATE(UCUR => WVENVI%UCUR, &
+ &        VCUR => WVENVI%VCUR, &
+ &        WSWAVE => FF_NOW%WSWAVE, &
  &        WDWAVE => FF_NOW%WDWAVE, &
  &        UFRIC => FF_NOW%UFRIC, &
  &        Z0M => FF_NOW%Z0M, &
@@ -185,7 +189,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
       IF (LWNEMOCOU .AND. LWNEMOCOURECV) THEN
         LLNREST = LLFRSTNEMO.AND.LRESTARTED
         LLNINIT = LLFRSTNEMO.AND..NOT.LRESTARTED
-        CALL RECVNEMOFIELDS(IJS, IJL, FF_NOW, LLNREST, LLNINIT)
+        CALL RECVNEMOFIELDS(IJS, IJL, WVENVI, FF_NOW, LLNREST, LLNINIT)
         LLFRSTNEMO=.FALSE.
       ENDIF
 
@@ -197,7 +201,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !     2.2 GET SURFACE CURRENTS TO WAM BLOCK STRUCTURE (if needed) 
 !         -------------------------------------------
 
-      CALL GETCURR(LWCUR, IREAD)
+      CALL GETCURR(LWCUR, IREAD, IJS, IJL, UCUR, VCUR)
 
 
 !*    PROCESS THE OTHER FORCING FIELDS.
@@ -212,6 +216,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !         Initialisation (either first time or following a restart)
           CALL GETFRSTWND (CDTWIS, CDTWIE,                 &
      &                     IJS, IJL,                       &
+     &                     UCUR, VCUR,                     &
      &                     WSWAVE, WDWAVE, UFRIC, Z0M,     &
      &                     AIRD, WSTAR, CICOVER, CITHICK,  &
      &                     IREAD, LWCUR, LLMORE)
@@ -223,7 +228,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
         IF (LLMORE) THEN
 !         Update forcing
           CALL NOTIM (CDTWIS, CDTWIE,                       &
-     &                IJS, IJL, FF_NEXT,                    &
+     &                IJS, IJL, WVENVI, FF_NEXT,            &
      &                IREAD, LWCUR)
         ENDIF
       ELSE
