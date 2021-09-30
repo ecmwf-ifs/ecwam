@@ -3126,8 +3126,8 @@ END INTERFACE
       IMPLICIT NONE
       INTEGER(KIND=JWIM), INTENT(IN) :: IP
       REAL(KIND=JWRU), INTENT(IN)  :: AC(NANG,NFRE,MNP)
-      REAL(KIND=JWRU), intent(out) :: IMATRA(NANG,NFRE)
-      REAL(KIND=JWRU), intent(out) :: IMATDA(NANG,NFRE)
+      REAL(KIND=JWRU), intent(inout) :: IMATRA(NANG,NFRE)
+      REAL(KIND=JWRU), intent(inout) :: IMATDA(NANG,NFRE)
       REAL(KIND=JWRU) eVal
       IF (LNONL) THEN
          !*    Advanced computation, likely call to IMPLSCH
