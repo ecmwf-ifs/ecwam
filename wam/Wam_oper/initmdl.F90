@@ -1,8 +1,9 @@
 SUBROUTINE INITMDL (NADV,                                 &
-     &              IREAD,                                &
-     &              FF_NOW,                               &
-     &              NFIELDS, NGPTOTG, NC, NR,             &
-     &              FIELDS, LWCUR, MASK_IN, PRPLRADI)
+ &                  IREAD,                                &
+ &                  WVENVI, WVPRPT, FF_NOW,               &
+ &                  FL1,                                  &
+ &                  NFIELDS, NGPTOTG, NC, NR,             &
+ &                  FIELDS, LWCUR, MASK_IN, PRPLRADI)
 
 ! ----------------------------------------------------------------------
 
@@ -46,22 +47,26 @@ SUBROUTINE INITMDL (NADV,                                 &
 
 !    *CALL* *INITMDL (NADV,
 !    &                IREAD,
-!    &                FF_NOW,
+!    &                WVENVI, WVPRPT, FF_NOW,               &
+!    &                FL1,                                  &
 !    &                NFIELDS, NGPTOTG, NC, NR,
 !    &                FIELDS, LWCUR, MASK_IN)*
 
-!      *NADV*      INTEGER   NUMBER OF ADVECTION ITERATIONS
-!      *IREAD*     INTEGER   PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
-!                            (IF NEEDED).
-!      *FF_NOW*              FORCING FIELDS AT CURRENT TIME.
-!      *NFIELDS*   INTEGER   NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
-!      *NGPTOTG*   INTEGER   NUMBER OF ATMOSPHERIC GRID POINTS
-!      *NC*        INTEGER   NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
-!      *NR*        INTEGER   NUMBER OF ATM. ROWS OF LATITUDES
-!      *FIELDS*    REAL      ATM. FIELDS (U10, V10, AIR DENSITY, Zi/L, U and V CURRENTS)
-!      *LWCUR*    LOGICAL   INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
-!      *MASK_IN*   INTEGER   MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
-!      *PRPLRADI*  REAL      EARTH RADIUS REDUCTION FACTOR FOR SMALL PLANET
+!      *NADV*      NUMBER OF ADVECTION ITERATIONS
+!      *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
+!                  (IF NEEDED).
+!      *WVENVI*    WAVE ENVIRONMENT FIELDS
+!      *WVPRPT*    WAVE PROPERTIES FIELDS
+!      *FF_NOW*    FORCING FIELDS AT CURRENT TIME.
+!      *FL1*       SPECTRUM
+!      *NFIELDS*   NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
+!      *NGPTOTG*   NUMBER OF ATMOSPHERIC GRID POINTS
+!      *NC*        NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
+!      *NR*        NUMBER OF ATM. ROWS OF LATITUDES
+!      *FIELDS*    ATM. FIELDS (U10, V10, AIR DENSITY, Zi/L, U and V CURRENTS)
+!      *LWCUR*     INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
+!      *MASK_IN*   MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
+!      *PRPLRADI*  EARTH RADIUS REDUCTION FACTOR FOR SMALL PLANET
 
 !          ---- INPUT/OUTPUT UNITS ---
 
@@ -203,7 +208,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
 
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC,        &
      &            GBOUNC  , IPOGBO   ,CBCPREF
@@ -235,10 +240,8 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
       USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
       USE YOWREFD  , ONLY : LLUPDTTD
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,TOOSHALLOW,   &
-     &            WVENVI   ,WVPRPT
-      USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,    &
-     &            FL1
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,TOOSHALLOW
+      USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDTINTT  ,CDTBC    ,                                  &
      &            IDELPRO  ,IDELT    ,IDELWI   ,IDELWO   ,IDELRES  ,    &
@@ -296,7 +299,10 @@ SUBROUTINE INITMDL (NADV,                                 &
 
       INTEGER(KIND=JWIM), INTENT(OUT) :: NADV
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
+      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
+      TYPE(FREQUENCY), DIMENSION(IJS:IJL,NFRE), INTENT(INOUT) :: WVPRPT
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
       INTEGER(KIND=JWIM), INTENT(IN) :: NFIELDS
       INTEGER(KIND=JWIM), INTENT(IN) :: NGPTOTG
       INTEGER(KIND=JWIM), INTENT(IN) :: NC
@@ -528,7 +534,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       ELSE
         COUTLST=CDATEA
         IF (GFLAG20) THEN
-          DO WHILE (COUTLST <= CDATEE.AND.IDELINT > 0)
+          DO WHILE (COUTLST <= CDATEE .AND. IDELINT > 0)
             CALL INCDATE (COUTLST,IDELINT)
           ENDDO
           CALL INCDATE (COUTLST,-IDELINT)
@@ -818,7 +824,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
         IF (LANAONLY) THEN
           CDTINTT=CDATEA
         ELSE
-          DO WHILE (CDTINTT.LE.CDTPRO)
+          DO WHILE (CDTINTT <= CDTPRO)
             CALL INCDATE (CDTINTT, IDELINT)
           ENDDO
         ENDIF
@@ -960,7 +966,6 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       CALL CIREDUCE (IJS, IJL, CGROUP, CICOVER, CITHICK, CIWA)
 
       WRITE(IU06,*) ' SUB. INITMDL: CIREDUCE DONE'                   
-      CALL FLUSH (IU06)
 
 ! ----------------------------------------------------------------------
 
@@ -983,19 +988,19 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !NEST
 !     10. WRITE BOUNDARY VALUE FILE HEADER.
 !         ------------------------------
-!!      IF (IBOUNC == 1 .AND. .NOT. LLUNSTR) THEN
-!!        IF (IRANK == 1) THEN
-!!          DO II=1,GBOUNC
-!!            IU19(II)=IWAM_GET_UNIT(IU06, CBCPREF(II), 'w', 'u', 0)
+      IF (IBOUNC == 1 .AND. .NOT. LLUNSTR) THEN
+        IF (IRANK == 1) THEN
+          DO II=1,GBOUNC
+            IU19(II)=IWAM_GET_UNIT(IU06, CBCPREF(II), 'w', 'u', 0)
 !           make the unit available for a silly fort.unit output
 !           we will need to recode this a bit better !!!
 
-!!            CLOSE(IU19(II))
-!!            CALL HEADBC (IPOGBO(II)-IPOGBO(II-1),IDELPRO,TH(1),FR(1),   &
-!!     &                   IU19(II), IU06)
-!!          ENDDO
-!!        ENDIF
-!!      ENDIF
+            CLOSE(IU19(II))
+            CALL HEADBC (IPOGBO(II)-IPOGBO(II-1),IDELPRO,TH(1),FR(1),   &
+     &                   IU19(II), IU06)
+          ENDDO
+        ENDIF
+      ENDIF
 !NEST
 
 END ASSOCIATE

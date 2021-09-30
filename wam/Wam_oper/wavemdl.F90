@@ -426,12 +426,12 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !       INQUIRE IF IUNITW IS ALREADY OPEN THEN CLOSE IT
         IF (IUNITW /= 0) CLOSE(IUNITW)
 
-        CALL INITMDL (NADV,                                             &
-     &                IREAD,                                            &
-     &                FF_NOW,                                           &
-     &                NFIELDS, NGPTOTG, NC, NR,                         &
+        CALL INITMDL (NADV,                                    &
+     &                IREAD,                                   &
+     &                WVENVI, WVPRPT, FF_NOW,                  &
+     &                FL1,                                     &
+     &                NFIELDS, NGPTOTG, NC, NR,                &
      &                FIELDS, LWCUR, MASK_IN, PRPLRADI)
-
 
 
         NPROMA=NPROMA_WAM
