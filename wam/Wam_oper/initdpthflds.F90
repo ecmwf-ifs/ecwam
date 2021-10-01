@@ -1,4 +1,4 @@
-SUBROUTINE INITDPTHFLDS
+SUBROUTINE INITDPTHFLDS(IJS, IJL, WVENVI, WVPRPT)
 ! ----------------------------------------------------------------------
 
 !**** *INITDPTHFLDS* - 
@@ -13,15 +13,14 @@ SUBROUTINE INITDPTHFLDS
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE,   ONLY : FREQUENCY
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY
 
       USE YOWFRED  , ONLY : ZPIFR
-      USE YOWGRID  , ONLY : IJS, IJL
       USE YOWPARAM , ONLY : NFRE
-      USE YOWSHAL  , ONLY : WVENVI, NDEPTH,                             &
-     &                      TFAK, TCGOND, TSIHKD, TFAC_ST,              &
-     &                      GAM_B_J,                                    &
-     &                      WVPRPT, WVPRPT_LAND
+      USE YOWSHAL  , ONLY : NDEPTH,                             &
+     &                      TFAK, TCGOND, TSIHKD, TFAC_ST,      &
+     &                      GAM_B_J,                            &
+     &                      WVPRPT_LAND
       USE YOWSTAT  , ONLY : NPROMA_WAM
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -29,7 +28,12 @@ SUBROUTINE INITDPTHFLDS
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM) :: M, IJ, JKGLO, KIJS, KIJL, NPROMA, INDP
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
+      TYPE(FREQUENCY), DIMENSION(IJS:IJL,NFRE), INTENT(INOUT) :: WVPRPT
+
+
+      INTEGER(KIND=JWIM) :: M, IJ, JKGLO, KIJS, KIJL, NPROMA
 
       REAL(KIND=JWRB) :: GAM
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -37,14 +41,20 @@ SUBROUTINE INITDPTHFLDS
 ! ----------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('INITDPTHFLDS',0,ZHOOK_HANDLE)
 
-      IF (.NOT.ALLOCATED(WVPRPT)) ALLOCATE(WVPRPT(IJS:IJL,NFRE))
-      IF (.NOT.ALLOCATED(WVPRPT_LAND)) ALLOCATE(WVPRPT_LAND(NFRE))
+ASSOCIATE(DEPTH => WVENVI%DEPTH, &
+ &        INDEP => WVENVI%INDEP, &
+ &        EMAXDPT => WVENVI%EMAXDPT, &
+ &        WAVNUM => WVPRPT%WAVNUM, &
+ &        CINV => WVPRPT%CINV, &
+ &        CGROUP => WVPRPT%CGROUP, &
+ &        OMOSNH2KD => WVPRPT%OMOSNH2KD, &
+ &        STOKFAC => WVPRPT%STOKFAC, &
+ &        CIWA => WVPRPT%CIWA )
 
 
       CALL GSTATS(1502,0)
       NPROMA=NPROMA_WAM
-
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,M,IJ,GAM,INDP)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,M,IJ,GAM)
       DO JKGLO = IJS, IJL, NPROMA
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJL)
@@ -53,43 +63,46 @@ IF (LHOOK) CALL DR_HOOK('INITDPTHFLDS',0,ZHOOK_HANDLE)
         DO IJ = KIJS, KIJL
 !         REDUCE GAMMA FOR SMALL DEPTH ( < 4m)
 !         (might need to be revisted when grid is fine resolution)
-          IF (WVENVI(IJ)%DEPTH < 4.0_JWRB) THEN
-            GAM=GAM_B_J*WVENVI(IJ)%DEPTH/4.0_JWRB
+          IF (DEPTH(IJ) < 4.0_JWRB) THEN
+            GAM=GAM_B_J*DEPTH(IJ)/4.0_JWRB
           ELSE
             GAM=GAM_B_J
           ENDIF
-          WVENVI(IJ)%EMAXDPT = 0.0625_JWRB*(GAM*WVENVI(IJ)%DEPTH)**2
+          EMAXDPT(IJ) = 0.0625_JWRB*(GAM*DEPTH(IJ))**2
         ENDDO
 
         DO M=1,NFRE
           DO IJ=KIJS,KIJL
-            INDP = WVENVI(IJ)%INDEP
-            WVPRPT(IJ,M)%WAVNUM = TFAK(INDP,M)
-            WVPRPT(IJ,M)%CINV   = WVPRPT(IJ,M)%WAVNUM/ZPIFR(M)
-            WVPRPT(IJ,M)%CGROUP = TCGOND(INDP,M)
-            WVPRPT(IJ,M)%OMOSNH2KD = TSIHKD(INDP,M)
-            WVPRPT(IJ,M)%STOKFAC = TFAC_ST(INDP,M)
+            INDEP(IJ) = INDEP(IJ)
+            WAVNUM(IJ,M) = TFAK(INDEP(IJ),M)
+            CINV(IJ,M)   = WAVNUM(IJ,M)/ZPIFR(M)
+            CGROUP(IJ,M) = TCGOND(INDEP(IJ),M)
+            OMOSNH2KD(IJ,M) = TSIHKD(INDEP(IJ),M)
+            STOKFAC(IJ,M) = TFAC_ST(INDEP(IJ),M)
 
-            WVPRPT(IJ,M)%CIWA = 1.0_JWRB
+            CIWA(IJ,M) = 1.0_JWRB
           ENDDO
-        ENDDO
-
-        ! Fictitious values for land point (NSUP+1)
-        DO M=1,NFRE
-          WVPRPT_LAND(M)%WAVNUM = TFAK(NDEPTH,M)
-          WVPRPT_LAND(M)%CINV   = WVPRPT_LAND(M)%WAVNUM/ZPIFR(M)
-          WVPRPT_LAND(M)%CGROUP = TCGOND(NDEPTH,M)
-          WVPRPT_LAND(M)%OMOSNH2KD = TSIHKD(NDEPTH,M)
-          WVPRPT_LAND(M)%STOKFAC = TFAC_ST(NDEPTH,M)
-
-          WVPRPT_LAND(M)%CIWA = 1.0_JWRB
         ENDDO
 
       ENDDO
 !$OMP END PARALLEL DO
-
       CALL GSTATS(1502,1)
 
+
+      ! Fictitious values for land point (NSUP+1)
+      IF (.NOT.ALLOCATED(WVPRPT_LAND)) ALLOCATE(WVPRPT_LAND(NFRE))
+
+      DO M=1,NFRE
+        WVPRPT_LAND(M)%WAVNUM = TFAK(NDEPTH,M)
+        WVPRPT_LAND(M)%CINV   = WVPRPT_LAND(M)%WAVNUM/ZPIFR(M)
+        WVPRPT_LAND(M)%CGROUP = TCGOND(NDEPTH,M)
+        WVPRPT_LAND(M)%OMOSNH2KD = TSIHKD(NDEPTH,M)
+        WVPRPT_LAND(M)%STOKFAC = TFAC_ST(NDEPTH,M)
+
+        WVPRPT_LAND(M)%CIWA = 1.0_JWRB
+      ENDDO
+
+END ASSOCIATE
 IF (LHOOK) CALL DR_HOOK('INITDPTHFLDS',1,ZHOOK_HANDLE)
 
 END SUBROUTINE INITDPTHFLDS

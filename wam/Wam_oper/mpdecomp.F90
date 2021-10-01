@@ -152,7 +152,11 @@
 #include "wam_sortini.intfb.h"
 #include "wam_sorti.intfb.h"
 
-      INTEGER(KIND=JWIM) :: NPR, MAXLEN 
+      INTEGER(KIND=JWIM), INTENT(IN) :: NPR
+      INTEGER(KIND=JWIM), INTENT(OUT) :: MAXLEN 
+      LOGICAL, INTENT(IN) :: LLIRANK
+
+
       INTEGER(KIND=JWIM) :: IJ, M, K, I, J, IP, IPR, IAR, IX, JSN, IH
       INTEGER(KIND=JWIM) :: IC, ICC, JC, JCS, JCM, IIL, NGOU, NH, JH, INBNGH 
       INTEGER(KIND=JWIM) :: ITAG, IREAD 
@@ -199,7 +203,6 @@
 
       CHARACTER(LEN=80) :: LOGFILENAME
 
-      LOGICAL :: LLIRANK
       LOGICAL :: LLEXIST
       LOGICAL :: LL_sekf
       LOGICAL :: LLRNL
