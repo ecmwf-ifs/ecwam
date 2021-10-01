@@ -1,4 +1,4 @@
-SUBROUTINE INITDPTHFLDS(IJS, IJL, WVENVI, WVPRPT)
+SUBROUTINE INITDPTHFLDS(IJS, IJL, WVENVI, WVPRPT, WVPRPT_LAND)
 ! ----------------------------------------------------------------------
 
 !**** *INITDPTHFLDS* - 
@@ -19,8 +19,7 @@ SUBROUTINE INITDPTHFLDS(IJS, IJL, WVENVI, WVPRPT)
       USE YOWPARAM , ONLY : NFRE
       USE YOWSHAL  , ONLY : NDEPTH,                             &
      &                      TFAK, TCGOND, TSIHKD, TFAC_ST,      &
-     &                      GAM_B_J,                            &
-     &                      WVPRPT_LAND
+     &                      GAM_B_J
       USE YOWSTAT  , ONLY : NPROMA_WAM
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -30,7 +29,8 @@ SUBROUTINE INITDPTHFLDS(IJS, IJL, WVENVI, WVPRPT)
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
-      TYPE(FREQUENCY), DIMENSION(IJS:IJL,NFRE), INTENT(INOUT) :: WVPRPT
+      TYPE(FREQUENCY), DIMENSION(IJS:IJL,NFRE), INTENT(OUT) :: WVPRPT
+      TYPE(FREQUENCY), DIMENSION(NFRE), INTENT(OUT) :: WVPRPT_LAND
 
 
       INTEGER(KIND=JWIM) :: M, IJ, JKGLO, KIJS, KIJL, NPROMA
@@ -90,8 +90,6 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
 
       ! Fictitious values for land point (NSUP+1)
-      IF (.NOT.ALLOCATED(WVPRPT_LAND)) ALLOCATE(WVPRPT_LAND(NFRE))
-
       DO M=1,NFRE
         WVPRPT_LAND(M)%WAVNUM = TFAK(NDEPTH,M)
         WVPRPT_LAND(M)%CINV   = WVPRPT_LAND(M)%WAVNUM/ZPIFR(M)

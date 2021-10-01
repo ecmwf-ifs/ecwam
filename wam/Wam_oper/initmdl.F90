@@ -226,7 +226,8 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            FLMAX    ,RHOWG_DFIM,                                 &
      &            DFIM     ,DFIMOFR  ,DFIMFR  ,DFIMFR2   ,              &
      &            DFIM_SIM ,DFIMOFR_SIM ,DFIMFR_SIM ,DFIMFR2_SIM ,      &
-     &            DFIM_END_L, DFIM_END_U
+     &            DFIM_END_L, DFIM_END_U,                               &
+     &            WVPRPT_LAND
       USE YOWGRIBHD, ONLY : LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IJS     ,IJL      ,COSPH
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,                        &
@@ -731,7 +732,8 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
 
 !     INITIALISE GRID POINT FIELDS DEPENDENT ON WATER DEPTH AND FREQUENCY
-      CALL INITDPTHFLDS(IJS, IJL, WVENVI, WVPRPT)
+      IF (.NOT.ALLOCATED(WVPRPT_LAND)) ALLOCATE(WVPRPT_LAND(NFRE))
+      CALL INITDPTHFLDS(IJS, IJL, WVENVI, WVPRPT, WVPRPT_LAND)
 
 
 !     INITIALISATION FOR SDISS_ARD

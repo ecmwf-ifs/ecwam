@@ -31,7 +31,6 @@
       TYPE(FREQUENCY) , ALLOCATABLE :: WVPRPT(:,:)
 
 !*   ** FICTIOUS VALUE FOR LAND POINT (NSUP+1)
-      TYPE(FREQUENCY) , ALLOCATABLE  :: WVPRPT_LAND(:)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -55,10 +54,6 @@
 !!     GRID POINT AND FREQUENCY FIELDS:
 !      --------------------------------
 !      *WVPRPT*    REAL      WAVE PROPERTIES
-
-!*   ** FICTIOUS VALUE FOR LAND POINT (NSUP+1)
-!      --------------------------------------
-!      *WVPRPT_LAND*    REAL      WAVE PROPERTIES
 
 ! ----------------------------------------------------------------------
       END MODULE YOWSHAL
