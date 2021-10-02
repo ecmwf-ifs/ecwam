@@ -59,34 +59,41 @@ SUBROUTINE UPDNEMOFIELDS
 
       IMPLICIT NONE
 
+      INTEGER(KIND=JWIM) :: IJ, NPOINTS, IC
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJL-IJS+1) :: NSWH, NMWP, NPHIEPS, NTAUOC
+      REAL(KIND=JWRB), DIMENSION(IJL-IJS+1) :: NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
+
 ! -------------------------------------------------------------------   
 
 IF (LHOOK) CALL DR_HOOK('UPDNEMOFIELDS',0,ZHOOK_HANDLE)
 
-ASSOCIATE(NSWH  => WAM2NEMO%NSWH,  &
- &        NMWP  => WAM2NEMO%NMWP,  &
- &        NPHIEPS  => WAM2NEMO%NPHIEPS,  &
- &        NTAUOC  => WAM2NEMO%NTAUOC,  &
- &        NEMOSTRN  => WAM2NEMO%NEMOSTRN,  &
- &        NEMOUSTOKES  => WAM2NEMO%NEMOUSTOKES,  &
- &        NEMOVSTOKES  => WAM2NEMO%NEMOVSTOKES)
+
+      NPOINTS = IJL-IJS+1
 
       IF (LWNEMOCOU) THEN
 
+         DO IC = 1, NPOINTS
+            IJ = IJS+IC-1
+            NSWH(IC)  = WAM2NEMO(IJ)%NSWH
+            NMWP(IC)  = WAM2NEMO(IJ)%NMWP
+            NPHIEPS(IC) = WAM2NEMO(IJ)%NPHIEPS
+            NTAUOC(IC) = WAM2NEMO(IJ)%NTAUOC
+            NEMOSTRN(IC) = WAM2NEMO(IJ)%NEMOSTRN
+            NEMOUSTOKES(IC) = WAM2NEMO(IJ)%NEMOUSTOKES
+            NEMOVSTOKES(IC) = WAM2NEMO(IJ)%NEMOVSTOKES
+         ENDDO
+
 #ifdef WITH_NEMO
-        CALL NEMOGCMCOUP_WAM_UPDATE( IRANK-1, NPROC, MPL_COMM,          &
-     &       IJL-IJS+1,                                                 &
-     &       NSWH(IJS:IJL), NMWP(IJS:IJL),                              &
-     &       NPHIEPS(IJS:IJL), NTAUOC(IJS:IJL),                         &
-     &       NEMOSTRN(IJS:IJL),                                         &
-     &       NEMOUSTOKES(IJS:IJL), NEMOVSTOKES(IJS:IJL),                &
-     &       CDTPRO, LWNEMOCOUDEBUG )
+        CALL NEMOGCMCOUP_WAM_UPDATE( IRANK-1, NPROC, MPL_COMM,             &
+     &                               NPOINTS                               &
+     &                               NSWH, NMWP, NPHIEPS, NTAUOC,          &
+     &                               NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES,   &
+     &                               CDTPRO, LWNEMOCOUDEBUG )
 #endif
 
       ENDIF
 
-END ASSOCIATE
 IF (LHOOK) CALL DR_HOOK('UPDNEMOFIELDS',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE UPDNEMOFIELDS
+END SUBROUTINE UPDNEMOFIELDS
