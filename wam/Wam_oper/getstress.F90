@@ -1,9 +1,8 @@
-      SUBROUTINE GETSTRESS(IJS, IJL, WVENVI, FF_NOW, NBLKS, NBLKE, IREAD)
+      SUBROUTINE GETSTRESS(IJS, IJL, IFROMIJ, JFROMIJ,       &
+     &                     WVENVI, FF_NOW, NEMO2WAM,         &
+     &                     NBLKS, NBLKE, IREAD)
 
 ! ----------------------------------------------------------------------
-!     J. BIDLOT    ECMWF      SEPTEMBER 1997 
-
-!     S. ABDALLA   ECMWF      OCTOBER 2001  AIR DENSITY & Zi/L
 
 !*    PURPOSE.
 !     --------
@@ -15,38 +14,24 @@
 !     *CALL**GETSTRESS(IJS, IJL, WVENVI, FF_NOW, NBLKS, NBLKE, IREAD)
 !     *IJS*       INDEX OF FIRST GRIDPOINT.
 !     *IJL*       INDEX OF LAST GRIDPOINT.
+!     *IFROMIJ*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!     *JFROMIJ*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !     *WVENVI*    WAVE ENVIRONMENT
 !     *FF_NOW*    FORCING FIELDS AT CURRENT TIME
+!     *NEMO2WAM*  FIELDS FRON OCEAN MODEL to WAM
 !     *NBLKS*     INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !     *NBLKE*     INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 
-!     METHOD.
-!     -------
-!     THE READING IS ONLY DONE ON PE 1, THEREFORE
-!     THE RELEVANT INFORMATION IS SENT TO THE OTHER PE'S USING 
-!     MPDISTRIBSCFLD
-
-!     EXTERNALS.
-!     ----------
-!     BUILDSTRESS
-!     GRSTNAME
-!     MPDISTRIBSCFLD
-!     MPL_BARRIER
-!     READSTRESS
-
-!     REFERENCE.
-!     ----------
-!     NONE
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FORCING_FIELDS
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FORCING_FIELDS, OCEAN2WAVE
 
       USE YOWCOUT  , ONLY : NREAL    ,LRSTPARALR
       USE YOWMESPAS, ONLY : LGRIBIN  ,LWAVEWIND
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NSUP     ,KTAG
-      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NIBLO
+      USE YOWPARAM , ONLY : NIBLO
       USE YOWREFD  , ONLY : LLUPDTTD
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,IREFRA   ,    &
      &            NPROMA_WAM,LNSESTART
@@ -69,8 +54,10 @@
 #include "readstress.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
       TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
+      TYPE(OCEAN2WAVE), DIMENSION(IJS:IJL), INTENT(INOUT) :: NEMO2WAM
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       INTEGER(KIND=JWIM),DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
 
@@ -117,12 +104,8 @@ ASSOCIATE(UCUR => WVENVI%UCUR, &
       IF (LGRIBIN .AND. .NOT.LRESTARTED) THEN
 !       GRIB RESTART
 !       CREATES WIND AND STRESS FIELDS FROM GRIB WINDS AND DRAG COEFFICIENT.
-        CALL BUILDSTRESS(IJS, IJL,                            &
-     &                   UCUR, VCUR,                          &
-     &                   WSWAVE, WDWAVE,                      &
-     &                   UFRIC, TAUW, TAUWDIR, Z0M,           &
-     &                   AIRD, WSTAR,                         &
-     &                   CICOVER, CITHICK,                    &
+        CALL BUILDSTRESS(IJS, IJL, IFROMIJ, JFROMIJ,       &
+     &                   WVENVI, FF_NOW, NEMO2WAM,         &
      &                   IREAD)
 
 

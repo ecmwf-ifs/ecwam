@@ -916,8 +916,7 @@
 !     RESET CERTAIN FLAGS:
 
 !     WE SHOULD RECEIVE DATA FROM NEMO
-      IF (LWNEMOCOUCIC.OR.LWNEMOCOUCIT.OR.LWNEMOCOUCUR)                 &
-     &   LWNEMOCOURECV = .TRUE.
+      IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT .OR. LWNEMOCOUCUR) LWNEMOCOURECV = .TRUE.
 
 
 ! Here we set LL1D = .TRUE. for the case of LLUNSTR in order to omit the mapping for the parallel strucutured grid

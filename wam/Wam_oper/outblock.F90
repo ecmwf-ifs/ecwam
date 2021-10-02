@@ -1,7 +1,8 @@
-SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
- &                   FL1, XLLWS,                            & 
- &                   WVPRPT,                                &
- &                   WVENVI, FF_NOW, INTFLDS,               &
+SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
+ &                   FL1, XLLWS,                     & 
+ &                   WVPRPT,                         &
+ &                   WVENVI, FF_NOW, INTFLDS,        &
+ &                   NEMO2WAM,                       &
  &                   BOUT)
 
 ! ----------------------------------------------------------------------
@@ -19,31 +20,30 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
 !      *CALL*OUTBLOCK (KIJS, KIJL, MIJ,
 !     &                FL1, XLLWS,
 !     &                WVPRPT,
-!     &                WVENVI, FF_NOW, INTFLDS,
+!     &                WVENVI, FF_NOW, INTFLDS, NEMO2WAM,
 !     &                BOUT)
-!      *KIJS*   - INDEX OF FIRST LOCAL GRIDPOINT
-!      *KIJL*   - INDEX OF LAST LOCAL GRIDPOINT
-!      *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
-!      *FL1*    - INPUT SPECTRUM.
-!      *XLLWS*  - WINDSEA MASK FROM INPUT SOURCE TERM
-!      *WVPRPT* - WAVE PROPERTIES
-!      *WVENVI* - WAVE ENVORONEMENT
-!      *FF_NOW* - FORCING FIELDS
-!      *INTFLDS*- INTEGRATED/DERIVED PARAMETERS
-!      *BOUT*   - OUTPUT PARAMETER BUFFER
+!      *KIJS*    - INDEX OF FIRST LOCAL GRIDPOINT
+!      *KIJL*    - INDEX OF LAST LOCAL GRIDPOINT
+!      *MIJ*     - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!      *FL1*     - INPUT SPECTRUM.
+!      *XLLWS*   - WINDSEA MASK FROM INPUT SOURCE TERM
+!      *WVPRPT*  - WAVE PROPERTIES
+!      *WVENVI*  - WAVE ENVORONEMENT
+!      *FF_NOW*  - FORCING FIELDS
+!      *INTFLDS* - INTEGRATED/DERIVED PARAMETERS
+!      *NEMO2WAM*- FIELDS FRON OCEAN MODEL to WAM
+!      *BOUT*    - OUTPUT PARAMETER BUFFER
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
+     &                         INTGT_PARAM_FIELDS, OCEAN2WAVE
 
       USE YOWCOUT  , ONLY : NTRAIN   ,IPFGTBL  ,LSECONDORDER,           &
      &            NIPRMOUT, ITOBOUT
       USE YOWCOUP  , ONLY : LWNEMOCOUSTRN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,COSTH    ,SINTH, XKMSS_CUTOFF
 
-      USE YOWNEMOFLDS,ONLY: NEMOSST, NEMOCICOVER, NEMOCITHICK,          &
-     &                      NEMOUCUR, NEMOVCUR, LNEMOCITHICK
-!!!!!!!!!!!!!!!!!!
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSUS    ,EPSU10, G, ZPI
@@ -80,6 +80,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                       &
       TYPE(ENVIRONMENT), DIMENSION(KIJS:KIJL), INTENT(IN) :: WVENVI
       TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(IN) :: FF_NOW
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(IN) :: INTFLDS 
+      TYPE(OCEAN2WAVE), DIMENSION(KIJS:KIJL), INTENT(IN) :: NEMO2WAM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NIPRMOUT), INTENT(OUT) :: BOUT
 
 
@@ -142,8 +143,12 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
  &        TAUYD   => INTFLDS%TAUYD,   &
  &        TAUOCXD => INTFLDS%TAUOCXD, &
  &        TAUOCYD => INTFLDS%TAUOCYD, &
- &        PHIOCD  => INTFLDS%PHIOCD)
-
+ &        PHIOCD  => INTFLDS%PHIOCD, &
+ &        NEMOSST => NEMO2WAM%NEMOSST, &
+ &        NEMOCICOVER => NEMO2WAM%NEMOCICOVER, &
+ &        NEMOCITHICK => NEMO2WAM%NEMOCITHICK, &
+ &        NEMOUCUR => NEMO2WAM%NEMOUCUR, &
+ &        NEMOVCUR => NEMO2WAM%NEMOVCUR)
 
 !
 !*    1. COMPUTE MEAN PARAMETERS.
@@ -500,51 +505,27 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        IF (.NOT. ALLOCATED(NEMOSST)) THEN
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
-        ELSE
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOSST(KIJS:KIJL)
-        ENDIF
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOSST(KIJS:KIJL)
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        IF (.NOT. ALLOCATED(NEMOCICOVER)) THEN
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
-        ELSE
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOCICOVER(KIJS:KIJL)
-        ENDIF
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOCICOVER(KIJS:KIJL)
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        IF (LNEMOCITHICK) THEN
-          IF (.NOT. ALLOCATED(NEMOCITHICK)) THEN
-            BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
-          ELSE
-            BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOCITHICK(KIJS:KIJL)
-          ENDIF
-        ELSE
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
-        ENDIF
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOCITHICK(KIJS:KIJL)
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        IF (.NOT. ALLOCATED(NEMOUCUR)) THEN
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
-        ELSE
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOUCUR(KIJS:KIJL)
-        ENDIF
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOUCUR(KIJS:KIJL)
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        IF (.NOT. ALLOCATED(NEMOVCUR)) THEN
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
-        ELSE
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOVCUR(KIJS:KIJL)
-        ENDIF
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOVCUR(KIJS:KIJL)
       ENDIF
 
       IR=IR+1

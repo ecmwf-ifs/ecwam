@@ -1,11 +1,12 @@
-      SUBROUTINE GETWND (IJS, IJL,                              &
+      SUBROUTINE GETWND (IJS, IJL, IFROMIJ, JFROMIJ,            &
      &                   UCUR, VCUR,                            &
      &                   U10, US,                               &
      &                   THW,                                   &
      &                   ADS, WSTAR,                            &
      &                   CICOVER, CITHICK,                      &
      &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,    &
-     &                   LWCUR, ICODE_WND)
+     &                   LWCUR, NEMOCICOVER, NEMOCITHICK,       &
+     &                   ICODE_WND)
 
 ! ----------------------------------------------------------------------
 
@@ -22,13 +23,16 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GETWND (IJS, IJL,
+!       *CALL* *GETWND (IJS, IJL, IFROMIJ, JFROMIJ,
 !                       UCUR, VCUR,
 !                       U10, THW, ADS, WSTAR, CICOVER, CITHICK,
 !                       CDTWIS, LWNDFILE, LCLOSEWND,
-!                       LWCUR, ICODE_WND)*
+!                       LWCUR, NEMOCICOVER, NEMOCITHICK, 
+!                       ICODE_WND)*
 !         *IJS*    - INDEX OF FIRST GRIDPOINT
 !         *IJL*    - INDEX OF LAST GRIDPOINT
+!         *IFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!         *JFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !         *UCUR*   - U-COMPONENT OF THE SURFACE CURRENT
 !         *VCUR*   - V-COMPONENT OF THE SURFACE CURRENT
 !         *U10*    - MAGNITUDE OF 10m WIND AT EACH POINT AND BLOCK.
@@ -45,6 +49,8 @@
 !         *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                    (IF NEEDED)
 !         *LWCUR*  -  LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
+!         *NEMOCICOVER  NEMO SEA ICE COVER (if used)
+!         *NEMOCITHICK  NEMO SEA ICE THICKNESS (if used)
 !         *ICODE_WND* SPECIFIES WHICH OF U10 OR US HAS BEEN UPDATED:
 !                     U10: ICODE_WND=3
 !                     US:  ICODE_WND=1 OR 2
@@ -106,20 +112,19 @@
 #include "readwind.intfb.h"
 #include "wamwnd.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), INTENT(OUT) :: ICODE_WND
-
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(IN) :: UCUR, VCUR
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(INOUT) :: U10, US 
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: THW
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: ADS, WSTAR
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: CICOVER, CITHICK
-
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS
-
-      LOGICAL, INTENT(IN) :: LWNDFILE, LCLOSEWND, LWCUR
-
+      LOGICAL, INTENT(IN) :: LWNDFILE, LCLOSEWND
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
+      LOGICAL, INTENT(IN) :: LWCUR
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(IN) :: NEMOCICOVER, NEMOCITHICK
+      INTEGER(KIND=JWIM), INTENT(OUT) :: ICODE_WND
 
       INTEGER(KIND=JWIM) :: JKGLO,KIJS,KIJL,NPROMA
       INTEGER(KIND=JWIM) :: I, J
@@ -255,7 +260,8 @@
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL MICEP(IPARAMCI, CICOVER(KIJS), CITHICK(KIJS), KIJS, KIJL)
+          CALL MICEP(IPARAMCI, KIJS, KIJL, IFROMIJ(KIJS), JFROMIJ(KIJL),  &
+     &               CICOVER(KIJS), CITHICK(KIJS), NEMOCICOVER(KIJS), NEMOCITHICK(KIJS)) 
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)

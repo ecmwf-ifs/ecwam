@@ -1,10 +1,11 @@
-SUBROUTINE WNFLUXES (KIJS, KIJL,                      &
-&                    MIJ, RHOWGDFTH,                  &
-&                    CINV,                            &
-&                    SSURF, CICOVER,                  &
-&                    PHIWA,                           &
-&                    EM, F1, WSWAVE, WDWAVE,          &
-&                    UFRIC, AIRD, INTFLDS, LNUPD)
+SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
+ &                   MIJ, RHOWGDFTH,                   &
+ &                   CINV,                             &
+ &                   SSURF, CICOVER,                   &
+ &                   PHIWA,                            &
+ &                   EM, F1, WSWAVE, WDWAVE,           &
+ &                   UFRIC, AIRD, INTFLDS, WAM2NEMO,   &
+ &                   LNUPD)
 
 ! ----------------------------------------------------------------------
 
@@ -22,7 +23,8 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                      &
 !    &                     SSURF, CICOVER,
 !    &                     PHIWA,
 !    &                     EM, F1, WSWAVE, WDWAVE,
-!    &                     UFRIC, AIRD, INTFLDS, LNUPD)
+!    &                     UFRIC, AIRD, INTFLDS, WAM2NEMO,
+!    &                     LNUPD)
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*    - INDEX OF LAST GRIDPOINT.
 !          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE
@@ -42,18 +44,17 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                      &
 !          *UFRIC*  - FRICTION VELOCITY IN M/S.
 !          *AIRD*   - AIR DENSITY IN KG/M3.
 !          *INTFLDS*-  INTEGRATED/DERIVED PARAMETERS
+!          WAM2NEMO*- WAVE FIELDS PASSED TO NEMO
 !          *LNUPD*  - UPDATE NEMO FIELDS.
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWALTAS , ONLY : EGRCRV   ,AFCRV       ,BFCRV
-      USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOTAUOC, NEMOTAUX, NEMOTAUY, &
-     &                      NEMONEW10, NEMOPHIF   ,                     &
-     &                      NPHIEPS  ,NTAUOC      ,NSWH     ,NMWP
+      USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOTAUOC
       USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH
       USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH, CIBLOCK
 
@@ -78,7 +79,7 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                      &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EM, F1, WSWAVE, WDWAVE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, AIRD
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
-
+      TYPE(WAVE2OCEAN), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WAM2NEMO
       LOGICAL, INTENT(IN) :: LNUPD
 
 
@@ -120,13 +121,21 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                      &
 IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
 
 ASSOCIATE(PHIEPS  => INTFLDS%PHIEPS,  &
-&         PHIAW   => INTFLDS%PHIAW,   &
-&         TAUOC   => INTFLDS%TAUOC,   &
-&         TAUXD   => INTFLDS%TAUXD,   &
-&         TAUYD   => INTFLDS%TAUYD,   &
-&         TAUOCXD => INTFLDS%TAUOCXD, &
-&         TAUOCYD => INTFLDS%TAUOCYD, &
-&         PHIOCD  => INTFLDS%PHIOCD)
+ &        PHIAW   => INTFLDS%PHIAW,   &
+ &        TAUOC   => INTFLDS%TAUOC,   &
+ &        TAUXD   => INTFLDS%TAUXD,   &
+ &        TAUYD   => INTFLDS%TAUYD,   &
+ &        TAUOCXD => INTFLDS%TAUOCXD, &
+ &        TAUOCYD => INTFLDS%TAUOCYD, &
+ &        PHIOCD  => INTFLDS%PHIOCD, &
+ &        NEMOTAUX  => WAM2NEMO%NEMOTAUX,  &
+ &        NEMOTAUY => WAM2NEMO%NEMOTAUY,  &
+ &        NEMOWSWAVE => WAM2NEMO%NEMOWSWAVE,  &
+ &        NEMOPHIF => WAM2NEMO%NEMOPHIF, &
+ &        NSWH  => WAM2NEMO%NSWH,  &
+ &        NMWP  => WAM2NEMO%NMWP,  &
+ &        NPHIEPS  => WAM2NEMO%NPHIEPS,  &
+ &        NTAUOC  => WAM2NEMO%NTAUOC)
 
 
       EPSUS3 =  EPSUS*SQRT(EPSUS)
@@ -225,7 +234,7 @@ ASSOCIATE(PHIEPS  => INTFLDS%PHIEPS,  &
         PHIAW(IJ) = PHIWA(IJ)/XN
         PHIAW(IJ) = OOVAL(IJ)*PHIWA(IJ)/XN+(1.0_JWRB-OOVAL(IJ))*PHIAW_ICE
 
-        IF (LWNEMOCOU.AND.LNUPD) THEN
+        IF (LWNEMOCOU .AND. LNUPD) THEN
           NPHIEPS(IJ) = PHIEPS(IJ)
           NTAUOC(IJ)  = TAUOC(IJ)
           IF (EM_OC(IJ) /= 0.0_JWRB) THEN
@@ -246,7 +255,7 @@ ASSOCIATE(PHIEPS  => INTFLDS%PHIEPS,  &
             NEMOTAUX(IJ) = NEMOTAUX(IJ) + TAUXD(IJ)
             NEMOTAUY(IJ) = NEMOTAUY(IJ) + TAUYD(IJ)
           ENDIF 
-          NEMONEW10(IJ) = NEMONEW10(IJ) + WSWAVE(IJ)
+          NEMOWSWAVE(IJ) = NEMOWSWAVE(IJ) + WSWAVE(IJ)
           NEMOPHIF(IJ)  = NEMOPHIF(IJ) + PHIOCD(IJ) 
         ENDIF
       ENDDO

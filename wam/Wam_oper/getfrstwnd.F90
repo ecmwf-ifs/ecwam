@@ -1,9 +1,8 @@
 SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
- &                     IJS, IJL,                       &
- &                     UCUR, VCUR,                     &
- &                     WSWAVE, WDWAVE, UFRIC, Z0M,     &
- &                     AIRD, WSTAR, CICOVER, CITHICK,  &
- &                     IREAD, LWCUR, LLMORE)
+ &                     IJS, IJL, IFROMIJ, JFROMIJ,     &
+ &                     WVENVI, FF_NOW,                 &
+ &                     IREAD, LWCUR, NEMO2WAM,         & 
+ &                     LLMORE)
 
 ! ----------------------------------------------------------------------
 
@@ -16,31 +15,27 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
 !     ----------  
 
 !       *CALL* *GETFRSTWND (CDTWIS, CDTWIE,
-!    &                 IJS, IJL,
-!    &                 WSWAVE,WDWAVE,UFRIC,Z0M,
-!    &                 AIRD, WSTAR, CICOVER, CITHICK,
-!                      IREAD, LWCUR, LLMORE)
+!                      IJS, IJL,  IFROMIJ, JFROMIJ,
+!                      WVENVI, FF_NOW,
+!                      IREAD, LWCUR, NEMO2WAM,
+!                      LLMORE)
 !          *CDTWIS*   - DATE OF FIRST WIND FIELD.
 !          *CDTWIE*   - DATE OF LAST FIRST WIND FIELD.
 !          *IJS:IJL   - ARRAYS DIMENSION
-!        i *UCUR*     - U-COMPONENT OF THE SURFACE CURRENT
-!          *VCUR*     - V-COMPONENT OF THE SURFACE CURRENT
-!          *WSWAVE*   - WIND SPEED.
-!          *WDWAVE*   - WIND DIRECTION (RADIANS).
-!          *UFRIC*    - FRICTION VELOCITY.
-!          *Z0M*      - ROUGHNESS LENGTH IN M.
-!          *AIRD*     - AIR DENSITY IN KG/M3.
-!          *WSTAR*    - CONVECTIVE VELOCITY. 
-!          *CICOVER*  - SEA ICE COVER.
-!          *CITHICK*  - SEA ICE THICKNESS. 
+!          *IFROMIJ*  - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!          *JFROMIJ*  - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!          *WVENVI*   - WAVE ENVIRONMENT.
+!          *FF_NOW*   - DATA STRUCTURE WITH THE CURRENT FORCING FIELDS
 !          *IREAD*    - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !          *LWCUR*    - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
+!          *NEMO2WAM* - FIELDS FRON OCEAN MODEL to WAM
 !          *LLMORE*   - TRUE IF MORE WIND DATA NEEDED (i.e. call to *NOTIM*)
 
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FORCING_FIELDS, OCEAN2WAVE
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWSTAT  , ONLY : IDELWO   ,NPROMA_WAM
@@ -60,9 +55,11 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
       CHARACTER(LEN=14), INTENT(INOUT) :: CDTWIS
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIE
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(IN) :: UCUR, VCUR
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: WSWAVE, WDWAVE, UFRIC, Z0M
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: AIRD, WSTAR, CICOVER, CITHICK
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
+      TYPE(OCEAN2WAVE), DIMENSION(IJS:IJL), INTENT(INOUT) :: NEMO2WAM
+
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR
       LOGICAL, INTENT(OUT) :: LLMORE 
@@ -85,7 +82,21 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
 !*       IF COLD START.
 !        --------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('GETFRSTWND',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('GETFRSTWND',0,ZHOOK_HANDLE)
+
+ASSOCIATE(UCUR => WVENVI%UCUR, &
+ &        VCUR => WVENVI%VCUR, &
+ &        WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        UFRIC => FF_NOW%UFRIC, &
+ &        Z0M => FF_NOW%Z0M, &
+ &        AIRD => FF_NOW%AIRD, &
+ &        WSTAR => FF_NOW%WSTAR, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        CITHICK => FF_NOW%CITHICK, &
+ &        NEMOCICOVER => NEMO2WAM%NEMOCICOVER, &
+ &        NEMOCITHICK => NEMO2WAM%NEMOCITHICK)
+
 
       ZERO = ' '
       CDTWIH = CDTWIS
@@ -100,14 +111,15 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
       ENDIF
 
       CDATEWL = CDTWIS
-      CALL GETWND (IJS, IJL,                             &
-     &             UCUR, VCUR,                           &
-     &             WSWAVE, UFRIC,                        &
-     &             WDWAVE,                               &
-     &             AIRD, WSTAR,                          &
-     &             CICOVER, CITHICK,                     &
-     &             CDATEWL, LWNDFILE, LCLOSEWND, IREAD,  &
-     &             LWCUR, ICODE_WND)
+      CALL GETWND (IJS, IJL, IFROMIJ, JFROMIJ,            &
+     &             UCUR, VCUR,                            &
+     &             WSWAVE, UFRIC,                         &
+     &             WDWAVE,                                &
+     &             AIRD, WSTAR,                           &
+     &             CICOVER, CITHICK,                      &
+     &             CDATEWL, LWNDFILE, LCLOSEWND, IREAD,   &
+     &             LWCUR, NEMOCICOVER, NEMOCITHICK,       & 
+     &             ICODE_WND)
 
 
         CALL GSTATS(1493,0)
@@ -115,8 +127,8 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL CDUSTARZ0 (KIJS, KIJL, WSWAVE(KIJS), XNLEV,            &
-     &                    CD(KIJS), UFRIC(KIJS), Z0M(KIJS))
+          CALL CDUSTARZ0 (KIJS, KIJL, WSWAVE(KIJS:KIJL), XNLEV,            &
+     &                    CD(KIJS), UFRIC(KIJS:KIJL), Z0M(KIJS:KIJL))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1493,1)
@@ -128,6 +140,8 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
         LLMORE = .TRUE.
       ENDIF
 
-      IF (LHOOK) CALL DR_HOOK('GETFRSTWND',1,ZHOOK_HANDLE)
+END ASSOCIATE
+
+IF (LHOOK) CALL DR_HOOK('GETFRSTWND',1,ZHOOK_HANDLE)
 
 END SUBROUTINE GETFRSTWND

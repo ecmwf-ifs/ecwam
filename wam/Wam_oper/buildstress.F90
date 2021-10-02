@@ -1,10 +1,6 @@
-      SUBROUTINE BUILDSTRESS(IJS, IJL,                                &
-     &                       UCUR, VCUR,                              &
-     &                       WSWAVE, WDWAVE,                          &
-     &                       UFRIC, TAUW, TAUWDIR, Z0M,               &
-     &                       AIRD, WSTAR,                             &
-     &                       CICOVER, CITHICK,                        &
-     &                       IREAD)
+SUBROUTINE BUILDSTRESS(IJS, IJL, IFROMIJ, JFROMIJ,       &
+ &                     WVENVI, FF_NOW, NEMO2WAM,         &
+ &                     IREAD)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF   APRIL 1998 
@@ -21,42 +17,22 @@
 
 !**   INTERFACE.
 !     ----------
-!     CALL *BUILDSTRESS*(IJS, IJL,
-!                        UCUR, VCUR,
-!    &                   WSWAVE,WDWAVE,UFRIC,TAUW,TAUWDIR,Z0M,AIRD,
-!    &                   AIRD, WSTAR, CICOVER, CITHICK,
+!     CALL *BUILDSTRESS*(IJS, IJL, IFROMIJ  ,JFROMIJ,
+!                        WVENVI, FF_NOW, NEMO2WAM,
 !    &                   IREAD)*
-!     *IJS*        INDEX OF FIRST GRIDPOINT
-!     *IJL*        INDEX OF LAST GRIDPOINT
-!     *UCUR*       U-COMPONENT OF THE SURFACE CURRENT
-!     *VCUR*       V-COMPONENT OF THE SURFACE CURRENT
-!     *WSWAVE *    WIND SPEED.
-!     *WDWAVE *    WIND DIRECTION (RADIANS).
-!     *UFRIC*      FRICTION VELOCITY.
-!     *TAUW*       WAVE STRESS MAGNITUDE.
-!     *TAUWDIR*    WAVE STRESS DIRECTION.
-!     *Z0M*      ROUGHNESS LENGTH IN M.
-!     *RAD0OLD*    AIR DENSITY IN KG/M3.
-!     *RWSTAR0OLD* CONVECTIVE VELOCITY.
-!     *CICOVER*    SEA ICE COVER.
-!     *CITHICK*    SEA ICE THICKNESS.
-!     *IREAD*      PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
+!     *IJS*      - INDEX OF FIRST GRIDPOINT
+!     *IJL*      - INDEX OF LAST GRIDPOINT
+!     *IFROMIJ*  - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!     *JFROMIJ*  - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!     *WVENVI*   - WAVE ENVIRONMENT.
+!     *FF_NOW*   - DATA STRUCTURE WITH THE CURRENT FORCING FIELDS
+!     *NEMO2WAM* - FIELDS FRON OCEAN MODEL to WAM
+!     *IREAD*    - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 
-!     METHOD.
-!     -------
-
-!     EXTERNALS.
-!     ----------
-!     *ABORT1*
-!     *GETWND*
-!     *READWGRIB*
-
-!     REFERENCE.
-!     ----------
-!     NONE
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FORCING_FIELDS, OCEAN2WAVE
 
       USE YOWCOUP  , ONLY : LWCOU    , LLCAPCHNK, LLGCBZ0  ,            &
      &                      LWNEMOCOUCIC, LWNEMOCOUCIT
@@ -68,7 +44,6 @@
       USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,FIELDG   ,    &
      &                      NXFF     ,NYFF
-      USE YOWNEMOFLDS,ONLY: NEMOCICOVER, NEMOCITHICK
 
       USE MPL_MODULE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -84,13 +59,11 @@
 #include "readwgrib.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
+      TYPE(OCEAN2WAVE), DIMENSION(IJS:IJL), INTENT(INOUT) :: NEMO2WAM
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
-
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(IN) :: UCUR, VCUR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: WSWAVE, WDWAVE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: UFRIC, Z0M, TAUW, TAUWDIR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: AIRD, WSTAR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: CICOVER,CITHICK
 
 
       INTEGER(KIND=JWIM) :: ICODE_WND
@@ -114,7 +87,25 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
+
+ASSOCIATE(UCUR => WVENVI%UCUR, &
+ &        VCUR => WVENVI%VCUR, &
+ &        WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        UFRIC => FF_NOW%UFRIC, &
+ &        Z0M => FF_NOW%Z0M, &
+ &        Z0B => FF_NOW%Z0B, &
+ &        TAUW => FF_NOW%TAUW, &
+ &        TAUWDIR => FF_NOW%TAUWDIR, &
+ &        AIRD => FF_NOW%AIRD, &
+ &        WSTAR => FF_NOW%WSTAR, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        CITHICK => FF_NOW%CITHICK, &
+ &        NEMOCICOVER => NEMO2WAM%NEMOCICOVER, &
+ &        NEMOCITHICK => NEMO2WAM%NEMOCITHICK)
+
+
 
       CDATEWO = ' '
       CDAWIFL = ' '
@@ -135,24 +126,15 @@
       LWNDFILE=.TRUE.
       LCLOSEWND=.TRUE.
 
-      IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT) THEN
-        ALLOCATE(NEMOCICOVER(IJS:IJL),NEMOCITHICK(IJS:IJL))
-        NEMOCICOVER(IJS:IJL)=0.0_JWRB
-        NEMOCITHICK(IJS:IJL)=0.0_JWRB
-      ENDIF
-
-      CALL GETWND (IJS, IJL,                                &
-     &             UCUR, VCUR,                              &
-     &             WSWAVE, UFRIC,                           &
-     &             WDWAVE,                                  &
-     &             AIRD, WSTAR,                             &
-     &             CICOVER, CITHICK,                        &
-     &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,      &
-     &             LCR, ICODE_WND)
-
-      IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT) THEN
-        DEALLOCATE(NEMOCICOVER,NEMOCITHICK)
-      ENDIF
+      CALL GETWND (IJS, IJL, IFROMIJ, JFROMIJ,          &
+     &             UCUR, VCUR,                          &
+     &             WSWAVE, UFRIC,                       &
+     &             WDWAVE,                              &
+     &             AIRD, WSTAR,                         &
+     &             CICOVER, CITHICK,                    &
+     &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,  &
+     &             LCR, NEMOCICOVER, NEMOCITHICK,       &
+     &             ICODE_WND)
 
 !     1.2 USE DATA FROM A FILE CONTAINING WIND SPEED MODIFIED BY
 !         ----------------------------------------------------
@@ -191,7 +173,7 @@
         IPARAM=245
         LLONLYPOS=.TRUE.
         CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, IJS, IJL,         &
-     &                 WSWAVE(IJS), KZLEVUWAVE, LLONLYPOS, IREAD)
+     &                 WSWAVE, KZLEVUWAVE, LLONLYPOS, IREAD)
 
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' A DATA FILE CONTAINING WIND SPEED INFORMATION'
@@ -253,7 +235,7 @@
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJL)
 
-        CALL CDUSTARZ0 (KIJS, KIJL, WSWAVE(KIJS), TEMPXNLEV, CD(KIJS), UFRIC(KIJS), Z0M(KIJS))
+        CALL CDUSTARZ0 (KIJS, KIJL, WSWAVE(KIJS:KIJL), TEMPXNLEV, CD(KIJS), UFRIC(KIJS:KIJL), Z0M(KIJS:KIJL))
 
         DO IJ=KIJS,KIJL
           TAUW(IJ) = 0.1_JWRB * UFRIC(IJ)**2
@@ -272,7 +254,7 @@
         FILNM='cdwavein'
 !       !!!! CD was initialised above !!!!
         CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, IJS, IJL,         &
-     &                 CD(IJS), KZLEVCD, LLONLYPOS, IREAD)
+     &                 CD, KZLEVCD, LLONLYPOS, IREAD)
 
 !       TEST REFERENCE LEVEL FOR UWAVE AND CD
 
@@ -345,6 +327,8 @@
 
       WRITE(IU06,*) ' SUB. BUILDSTRESS: INPUT OF RESTART FILES DONE'
 
-      IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',1,ZHOOK_HANDLE)
+END ASSOCIATE
 
-      END SUBROUTINE BUILDSTRESS
+IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',1,ZHOOK_HANDLE)
+
+END SUBROUTINE BUILDSTRESS

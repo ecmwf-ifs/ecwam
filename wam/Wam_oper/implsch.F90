@@ -1,7 +1,7 @@
 SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                  WVPRPT,                                  &
  &                  WVENVI, FF_NOW,                          &
- &                  INTFLDS,                                 &
+ &                  INTFLDS, WAM2NEMO,                       &
  &                  MIJ, XLLWS)
 
 ! ----------------------------------------------------------------------
@@ -24,7 +24,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 !       *CALL* *IMPLSCH (KIJS, KIJL, FL1,
 !    &                   WVPRPT,
 !    &                   WVENVI, FF_NOW,
-!    &                   INTFLDS,
+!    &                   INTFLDS, WAM2NEMO,
 !    &                   MIJ,  XLLWS)
 !      *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
 !      *KIJL*    - LOCAL INDEX OF LAST GRIDPOINT
@@ -33,6 +33,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 !      *WVENVI*  - WAVE ENVIRONMENT  
 !      *FF_NOW*    FORCING FIELDS
 !      *INTFLDS*   INTEGRATED/DERIVED PARAMETERS
+!      *WAM2NEMO*  WAVE FIELDS PASSED TO NEMO
 !      *MIJ*       LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !      *XLLWS*     TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
 
@@ -60,7 +61,8 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,   &
+ &                             INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU, LWNEMOCOUSTRN 
       USE YOWCOUT  , ONLY : LWFLUXOUT 
@@ -97,6 +99,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       TYPE(ENVIRONMENT), DIMENSION(KIJS:KIJL), INTENT(IN) :: WVENVI
       TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW 
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
+      TYPE(WAVE2OCEAN), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WAM2NEMO
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(OUT) :: MIJ
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
@@ -335,8 +338,9 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
      &                 CINV,                                    &
      &                 SSOURCE, CICOVER,                        &
      &                 PHIWA,                                   &
-     &                 EMEAN, F1MEAN, WSWAVE, WDWAVE,        &
-     &                 UFRIC, AIRD, INTFLDS, .TRUE.)
+     &                 EMEAN, F1MEAN, WSWAVE, WDWAVE,           &
+     &                 UFRIC, AIRD, INTFLDS, WAM2NEMO,          &
+     &                 .TRUE.)
       ENDIF
 ! ----------------------------------------------------------------------
 
@@ -378,7 +382,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !*    2.7 SURFACE STOKES DRIFT AND STRAIN IN SEA ICE
 !         ------------------------------------------
 
-      CALL STOKESTRN(KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, FF_NOW, INTFLDS)
+      CALL STOKESTRN(KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, FF_NOW, INTFLDS, WAM2NEMO)
 
 ! ----------------------------------------------------------------------
 END ASSOCIATE

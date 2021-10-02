@@ -103,17 +103,16 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &         LWCOUNORMS, LLNORMWAMOUT_GLOBAL, LLNORMWAM2IFS,          &
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,             &
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU,           &
-     &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTK,              &
-     &         LWNEMOCOUSTRN, IFSTSTEP, IFSNSTEP,                       &
-     &         LIFS_IO_SERV_ENABLED,                                    &
-     &         NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
+     &         IFSTSTEP, IFSNSTEP,                                      &
+     &         LIFS_IO_SERV_ENABLED
       USE YOWGRIBHD, ONLY : DATE_TIME_WINDOW_END
       USE YOWCURR  , ONLY : IDELCUR  ,LLCHKCFL
       USE YOWFRED  , ONLY : FR
       USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWICE   , ONLY : FLMIN
-      USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS,   AMONOP
+      USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS,   AMONOP, IFROMIJ ,JFROMIJ
       USE YOWMEAN  , ONLY : INTFLDS
+      USE YOWNEMOFLDS , ONLY : WAM2NEMO, NEMO2WAM
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE    ,     &
      &                      LL1D
@@ -130,7 +129,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1 
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW   ,CDATEWO  ,CDATEFL
-      USE YOWNEMOP , ONLY : NEMODP
       USE YOWUNPOOL,ONLY  : LLUNSTR
 
       USE YOMHOOK , ONLY : LHOOK,   DR_HOOK
@@ -431,7 +429,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                WVENVI, WVPRPT, FF_NOW,                  &
      &                FL1,                                     &
      &                NFIELDS, NGPTOTG, NC, NR,                &
-     &                FIELDS, LWCUR, MASK_IN, PRPLRADI)
+     &                FIELDS, LWCUR, MASK_IN, PRPLRADI,        &
+     &                NEMO2WAM) 
 
 
         NPROMA=NPROMA_WAM
@@ -554,11 +553,13 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-        CALL PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT, &
+        CALL PREWIND (IJS, IJL, IFROMIJ, JFROMIJ,        &
+     &                WVENVI, FF_NOW, FF_NEXT,           &
      &                LLINIT, LLALLOC_FIELDG_ONLY,       &
      &                IREAD,                             &
      &                NFIELDS, NGPTOTG, NC, NR,          &
-     &                FIELDS, LWCUR, MASK_IN)
+     &                FIELDS, LWCUR, MASK_IN,            &
+     &                NEMO2WAM) 
 
 
       ENDIF
@@ -572,7 +573,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       CALL SETMARSTYPE
 
       CALL WAMODEL (NADV, LDSTOP, LDWRRE,  &
-     &              WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS, FL1)
+     &              WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS, &
+     &              WAM2NEMO, NEMO2WAM, FL1)
 
 
 !*    2.2  DATA ASSIMILATION
@@ -596,10 +598,12 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
         IF (NASS > 0 ) THEN
           IF ( CDTPRO == CDTASS ) THEN
-            CALL WAMASSI (LDSTOP, LDWRRE, WVENVI, WVPRPT, FF_NOW, INTFLDS, FL1)
+            CALL WAMASSI (LDSTOP, LDWRRE, WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
+ &                        WAM2NEMO, NEMO2WAM, FL1)
           ENDIF
         ELSEIF ( (.NOT.LWCOU .AND. CDTPRO <= CDATEF ) .OR. (LWCOU .AND. CDTPRO == CDATEF) ) THEN
-          CALL WAMASSI (LDSTOP, LDWRRE, WVENVI, WVPRPT, FF_NOW, INTFLDS, FL1)
+          CALL WAMASSI (LDSTOP, LDWRRE, WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
+ &                      WAM2NEMO, NEMO2WAM, FL1)
         ENDIF
       ENDIF
 #endif
@@ -755,35 +759,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL GSTATS(1443,1)
 
 
-!        GRIDDED FIELDS THAT WILL RETURNED TO NEMO (if coupled).
-!        -----------------------------------------------------
-
-        IF (LWNEMOCOU .AND. LWNEMOCOUSEND .AND. LWCOU) THEN
-          CALL GSTATS(1443,0)
-!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-          DO JKGLO=IJS,IJL,NPROMA
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL)
-            IF (LWNEMOCOUSTK) THEN
-              NEMOUSTOKES(KIJS:KIJL)=INTFLDS(KIJS:KIJL)%USTOKES
-              NEMOVSTOKES(KIJS:KIJL)=INTFLDS(KIJS:KIJL)%VSTOKES
-            ELSE
-              NEMOUSTOKES(KIJS:KIJL)=0.0_NEMODP
-              NEMOVSTOKES(KIJS:KIJL)=0.0_NEMODP
-            ENDIF
-
-            IF (LWNEMOCOUSTRN) THEN
-              NEMOSTRN(KIJS:KIJL) = INTFLDS(KIJS:KIJL)%STRNMS
-            ENDIF
-
-          ENDDO
-!$OMP     END PARALLEL DO
-          CALL GSTATS(1443,1)
-        ENDIF
-
 !       GRIDDED FIELDS ARE NEEDED FOR IFS, GATHERING OF THE NECESSARY 
 !       INFORMATION
-
         CALL MPFLDTOIFS(IJS, IJL, NWVFIELDS, WVBLOCK,              &
      &                  WVFLDG, DEFVAL, MASK_OUT, LLGLOBAL_WVFLDG)
 

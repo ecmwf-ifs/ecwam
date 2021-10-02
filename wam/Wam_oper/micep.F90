@@ -1,6 +1,5 @@
-!-------------------------------------------------------------------
-
-      SUBROUTINE MICEP (IPARAM, CICVR, CITH, IJS, IJL)
+SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
+ &                CICVR, CITH, NEMOCICOVER, NEMOCITHICK)
 
 !-------------------------------------------------------------------
 
@@ -26,15 +25,21 @@
 
 !**   INTERFACE
 !     ---------
-!             *CALL MICEP* *(IPARAM, CICVR, CITH, IJS, IJL)
+!             *CALL MICEP* *(IPARAM, CICVR, CITH, KIJS, KIJL)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *IPARAM*    INTEGER   GRIB PARAMETER OF FIELDG*CICOVER
-!      *CICVR*     REAL      SEA ICE COVER.
-!      *CITH*      REAL      SEA ICE THICKNESS.
-!      *IJS*       INDEX OF FIRST GRIDPOINT
-!      *IJL*       INDEX OF LAST GRIDPOINT
+!      *KIJS*      INDEX OF FIRST GRIDPOINT
+!      *KIJL*      INDEX OF LAST GRIDPOINT
+!      *IFROMIJ*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!      *JFROMIJ*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+
+!      *CICVR*     SEA ICE COVER.
+!      *CITH*      SEA ICE THICKNESS.
+!      *NEMOCICOVER NEMO SEA ICE COVER (if used)
+!      *NEMOCITHICK NEMO SEA ICE THICKNESS (if used)
+
 
 
 !     METHOD.
@@ -51,14 +56,13 @@
 
       USE YOWICE   , ONLY : CITHRSH  ,LICERUN ,LMASKICE   ,LICETH     , &
      &               HICMIN
-      USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY     ,CLDOMAIN   ,SWAMPCITH
       USE YOWPCONS , ONLY : ZMISS
       USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : FIELDG 
       USE YOWCOUP  , ONLY : LWCOU    ,LWNEMOCOUCIC, LWNEMOCOUCIT
-      USE YOWNEMOFLDS, ONLY : NEMOCICOVER, NEMOCITHICK, LNEMOICEREST
+      USE YOWNEMOFLDS, ONLY : LNEMOICEREST
 
       USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK
 
@@ -66,9 +70,10 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IPARAM, IJS, IJL
-
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(INOUT) :: CICVR, CITH
+      INTEGER(KIND=JWIM), INTENT(IN) :: IPARAM, KIJS, KIJL
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(INOUT) :: CICVR, CITH
+      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(IN) :: NEMOCICOVER, NEMOCITHICK
 
 
       INTEGER(KIND=JWIM) :: IJ, IX, IY
@@ -93,7 +98,7 @@
 
       IF (LWNEMOCOUCIC) THEN
         IF (LWCOU) THEN
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             IX = IFROMIJ(IJ)
             IY = JFROMIJ(IJ)
             IF (FIELDG(IX,IY)%LKFR <= 0.0_JWRB ) THEN
@@ -113,14 +118,14 @@
             ENDIF
           ENDDO
         ELSE
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             IX = IFROMIJ(IJ)
             IY = JFROMIJ(IJ)
             CICVR(IJ) = NEMOCICOVER(IJ)
           ENDDO
         ENDIF
       ELSEIF (IPARAM == 31) THEN
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           IX = IFROMIJ(IJ)
           IY = JFROMIJ(IJ)
           IF (FIELDG(IX,IY)%CICOVER == ZMISS .OR.                       &
@@ -134,7 +139,7 @@
           ENDIF
         ENDDO
       ELSEIF (IPARAM == 139) THEN
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           IX = IFROMIJ(IJ)
           IY = JFROMIJ(IJ)
           IF (FIELDG(IX,IY)%CICOVER < 271.5_JWRB) THEN
@@ -148,11 +153,11 @@
 
       IF (.NOT. LICERUN .OR. LMASKICE) THEN
 !       SEA ICE THICKNESS IN CASE IT IS NOT SUPPLIED AS INPUT:
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           CITH(IJ)=0.0_JWRB
         ENDDO
       ELSEIF (CLDOMAIN == 's') THEN
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           IF (CICVR(IJ) > 0.0_JWRB) THEN
             CITH(IJ)=SWAMPCITH
           ELSE
@@ -161,7 +166,7 @@
         ENDDO
       ELSEIF ((.NOT.LICETH) .AND. (.NOT.LWNEMOCOUCIT)) THEN
 !       SEA ICE THICKNESS IS PARAMETERISED:
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           IF (CICVR(IJ) > 0.0_JWRB) THEN
             CITH(IJ)=MAX(C1+C2*CICVR(IJ),0.0_JWRB)
           ELSE
@@ -171,7 +176,7 @@
 
       ELSEIF (LWNEMOCOUCIT) THEN
         IF (LWCOU) THEN
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             IX = IFROMIJ(IJ)
             IY = JFROMIJ(IJ)
             IF (FIELDG(IX,IY)%LKFR <= 0.0_JWRB ) THEN
@@ -194,11 +199,11 @@
 
         ELSE
           IF (LNEMOICEREST) THEN
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
                CITH(IJ)=NEMOCITHICK(IJ)
             ENDDO
           ELSE
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
                CITH(IJ)=CICVR(IJ)*NEMOCITHICK(IJ)
             ENDDO
           ENDIF
@@ -206,7 +211,7 @@
 
 !       CONSISTENCY CHECK:
 !       no ice if thickness < 0.5*HICMIN
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           IF (CICVR(IJ) > 0.0_JWRB .AND. CITH(IJ) < 0.5_JWRB*HICMIN) THEN
             CICVR(IJ)=0.0_JWRB
             CITH(IJ)=0.0_JWRB
@@ -216,13 +221,13 @@
       ELSE
 
 !!!!   define a representative sea ice thickness that account for sea ice coverage
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           CITH(IJ)=CICVR(IJ)*CITH(IJ)
         ENDDO
 
 !       CONSISTENCY CHECK:
 !       no ice if thickness < 0.5*HICMIN
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           IF (CICVR(IJ) > 0.0_JWRB .AND. CITH(IJ) < 0.5_JWRB*HICMIN) THEN
             CICVR(IJ)=0.0_JWRB
             CITH(IJ)=0.0_JWRB
@@ -233,4 +238,4 @@
 
       IF (LHOOK) CALL DR_HOOK('MICEP',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE MICEP
+END SUBROUTINE MICEP

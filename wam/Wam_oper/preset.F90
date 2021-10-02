@@ -81,6 +81,7 @@ PROGRAM preset
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,    &
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,    &
      &            IFROMIJ  ,JFROMIJ
+      USE YOWNEMOFLDS , ONLY : NEMO2WAM
       USE YOWMESPAS, ONLY : LMESSPASS,LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG     ,NPRECR   ,NPRECI
@@ -488,6 +489,8 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       IF (.NOT.ALLOCATED(FF_NEXT)) ALLOCATE(FF_NEXT(NIBLO))
 
+      IF (.NOT.ALLOCATED(NEMO2WAM)) ALLOCATE(NEMO2WAM(NIBLO))
+
       IF (IOPTI > 0 .AND. IOPTI /= 3) THEN
 
 !!!! might need to restict call when needed !!!
@@ -497,11 +500,13 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=.FALSE.
 
-        CALL PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT,   &
-     &                LLINIT, LLALLOC_FIELDG_ONLY,         &
-     &                IREAD,                               &
-     &                NFIELDS, NGPTOTG, NC, NR,            &
-     &                FIELDS, LWCUR, MASK_IN)
+        CALL PREWIND (IJS, IJL, IFROMIJ, JFROMIJ,        &
+     &                WVENVI, FF_NOW, FF_NEXT,           &
+     &                LLINIT, LLALLOC_FIELDG_ONLY,       &
+     &                IREAD,                             &
+     &                NFIELDS, NGPTOTG, NC, NR,          &
+     &                FIELDS, LWCUR, MASK_IN,            &
+     &                NEMO2WAM)
 
       FF_NOW(:)%TAUW = 0.1_JWRB * FF_NOW(:)%UFRIC**2
 

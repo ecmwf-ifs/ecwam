@@ -1,8 +1,9 @@
-      SUBROUTINE WDFLUXES (KIJS, KIJL,                        &
-     &                     MIJ,                               &
-     &                     FL1, XLLWS,                        &
-     &                     WVPRPT,                            &
-     &                     WVENVI, FF_NOW, INTFLDS)
+      SUBROUTINE WDFLUXES (KIJS, KIJL,                 &
+     &                     MIJ,                        &
+     &                     FL1, XLLWS,                 &
+     &                     WVPRPT,                     &
+     &                     WVENVI, FF_NOW,             &
+     &                     INTFLDS, WAM2NEMO)
 
 ! ----------------------------------------------------------------------
 
@@ -22,7 +23,7 @@
 !    &                    MIJ,
 !    &                    FL1, XLLWS,
 !    &                    WVPRPT,
-!    &                    WVENVI, FF_NOW, INTFLDS)
+!    &                    WVENVI, FF_NOW, INTFLDS, WAM2NEMO)
 
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*   - INDEX OF LAST GRIDPOINT.
@@ -32,11 +33,13 @@
 !          *WVENVI* - WAVE ENVIRONMENT
 !          *FF_NOW* - FORCING FIELDS AT CURRENT TIME.
 !          *INTFLDS*-  INTEGRATED/DERIVED PARAMETERS
+!          *WAM2NEMO* FIELDS PASSED FROM WAM TO NEMO
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
+     &                         INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN
       USE YOWCOUT  , ONLY : LWFLUXOUT 
@@ -65,6 +68,7 @@
       TYPE(ENVIRONMENT), DIMENSION(KIJS:KIJL), INTENT(IN) :: WVENVI
       TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
+      TYPE(WAVE2OCEAN), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WAM2NEMO
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
 
@@ -153,7 +157,8 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
      &                   SL, CICOVER,                       &
      &                   PHIWA,                             &
      &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
-     &                   UFRIC, AIRD, INTFLDS, .FALSE.)
+     &                   UFRIC, AIRD, INTFLDS, WAM2NEMO,    &
+     &                  .FALSE.)
         ENDIF
 
         CALL SNONLIN (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH, AKMEAN)
@@ -165,7 +170,8 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
      &                   SL, CICOVER,                       &
      &                   PHIWA,                             &
      &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
-     &                   UFRIC, AIRD, INTFLDS, .FALSE.)
+     &                   UFRIC, AIRD, INTFLDS, WAM2NEMO,    &
+     &                  .FALSE.)
         ENDIF
 
         IF (LWFLUX) THEN
@@ -182,7 +188,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
           ENDDO
         ENDIF
 
-        CALL STOKESTRN(KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, FF_NOW, INTFLDS)
+        CALL STOKESTRN(KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, FF_NOW, INTFLDS, WAM2NEMO)
 
       ENDIF
 ! ----------------------------------------------------------------------

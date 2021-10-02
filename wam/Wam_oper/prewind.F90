@@ -1,8 +1,10 @@
-SUBROUTINE PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT,      &
+SUBROUTINE PREWIND (IJS, IJL, IFROMIJ, JFROMIJ,             &
+ &                  WVENVI, FF_NOW, FF_NEXT,                &
  &                  LLINIT, LLALLOC_FIELDG_ONLY,            &
  &                  IREAD,                                  &
  &                  NFIELDS, NGPTOTG, NC, NR,               &
- &                  FIELDS, LWCUR, MASK_IN)
+ &                  FIELDS, LWCUR, MASK_IN,                 &
+ &                  NEMO2WAM)
 
 ! ----------------------------------------------------------------------
 
@@ -16,14 +18,18 @@ SUBROUTINE PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT,      &
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT,
+!     *CALL* *PREWIND (IJS, IJL, IFROMIJ ,JFROMIJ,
+!    &                 WVENVI, FF_NOW, FF_NEXT,
 !    &                 LLINIT, LLALLOC_FIELDG_ONLY,
 !    &                 IREAD,
 !    &                 NFIELDS, NGPTOTG, NC, NR,
-!    &                 FIELDS, LWCUR, MASK_IN)*
+!    &                 FIELDS, LWCUR, MASK_IN,
+!    &                 NEMO2WAM)*
 
 !      *IJS*                 INDEX OF FIRST GRIDPOINT.
 !      *IJL*                 INDEX OF LAST GRIDPOINT.
+!      *IFROMIJ*             POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!      *JFROMIJ*             POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !      *WVENVI*              WAVE ENVIRONMENT.
 !      *FF_NOW*    REAL      DATA STRUCTURE WITH THE CURRENT FORCING FIELDS
 !      *FF_NEXT*   REAL      DATA STRUCTURE WITH THE NEXT FORCING FIELDS
@@ -39,6 +45,7 @@ SUBROUTINE PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT,      &
 !      *FIELDS*    REAL      ATM. FIELDS (U10, V10, AIR DENSITY, w*, U and V CURRENTS)
 !      *LWCUR*     LOGICAL   INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 !      *MASK_IN*   INTEGER   MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
+!      *NEMO2WAM*            FIELDS FRON OCEAN MODEL to WAM
 
 !     METHOD.
 !     -------
@@ -71,7 +78,7 @@ SUBROUTINE PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT,      &
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FORCING_FIELDS
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FORCING_FIELDS, OCEAN2WAVE
 
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOUSAMEGRID, LWNEMOCOU, LWNEMOCOURECV
       USE YOWPARAM , ONLY : NGX      ,NGY
@@ -98,6 +105,7 @@ SUBROUTINE PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT,      &
 #include "wamadswstar.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
       TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NEXT
@@ -111,6 +119,7 @@ SUBROUTINE PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT,      &
       REAL(KIND=JWRB),DIMENSION(NGPTOTG,NFIELDS), INTENT(IN) :: FIELDS
       LOGICAL, INTENT(IN) :: LWCUR
       INTEGER(KIND=JWIM),DIMENSION(NGPTOTG), INTENT(INOUT)  :: MASK_IN
+      TYPE(OCEAN2WAVE), DIMENSION(IJS:IJL), INTENT(INOUT) :: NEMO2WAM
 
 
 
@@ -135,12 +144,12 @@ ASSOCIATE(UCUR => WVENVI%UCUR, &
  &        VCUR => WVENVI%VCUR, &
  &        WSWAVE => FF_NOW%WSWAVE, &
  &        WDWAVE => FF_NOW%WDWAVE, &
- &        UFRIC => FF_NOW%UFRIC, &
- &        Z0M => FF_NOW%Z0M, &
  &        AIRD => FF_NOW%AIRD, &
  &        WSTAR => FF_NOW%WSTAR, &
  &        CICOVER => FF_NOW%CICOVER, &
- &        CITHICK => FF_NOW%CITHICK )
+ &        CITHICK => FF_NOW%CITHICK, &
+ &        NEMOUCUR => NEMO2WAM%NEMOUCUR, &
+ &        NEMOVCUR => NEMO2WAM%NEMOVCUR)
 
 
 !*    1. BEGIN AND END DATES OF WIND FIELDS TO BE PROCESSED.
@@ -189,7 +198,8 @@ ASSOCIATE(UCUR => WVENVI%UCUR, &
       IF (LWNEMOCOU .AND. LWNEMOCOURECV) THEN
         LLNREST = LLFRSTNEMO.AND.LRESTARTED
         LLNINIT = LLFRSTNEMO.AND..NOT.LRESTARTED
-        CALL RECVNEMOFIELDS(IJS, IJL, WVENVI, FF_NOW, LLNREST, LLNINIT)
+        CALL RECVNEMOFIELDS(IJS, IJL, IFROMIJ ,JFROMIJ,                 &
+     &                      WVENVI, NEMO2WAM, FF_NOW, LLNREST, LLNINIT)
         LLFRSTNEMO=.FALSE.
       ENDIF
 
@@ -201,7 +211,8 @@ ASSOCIATE(UCUR => WVENVI%UCUR, &
 !     2.2 GET SURFACE CURRENTS TO WAM BLOCK STRUCTURE (if needed) 
 !         -------------------------------------------
 
-      CALL GETCURR(LWCUR, IREAD, IJS, IJL, UCUR, VCUR)
+      CALL GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ ,JFROMIJ, &
+     &             NEMOUCUR, NEMOVCUR, UCUR, VCUR)
 
 
 !*    PROCESS THE OTHER FORCING FIELDS.
@@ -215,11 +226,10 @@ ASSOCIATE(UCUR => WVENVI%UCUR, &
         IF (CDATEWL == ZERO) THEN
 !         Initialisation (either first time or following a restart)
           CALL GETFRSTWND (CDTWIS, CDTWIE,                 &
-     &                     IJS, IJL,                       &
-     &                     UCUR, VCUR,                     &
-     &                     WSWAVE, WDWAVE, UFRIC, Z0M,     &
-     &                     AIRD, WSTAR, CICOVER, CITHICK,  &
-     &                     IREAD, LWCUR, LLMORE)
+     &                     IJS, IJL, IFROMIJ, JFROMIJ,     &
+     &                     WVENVI, FF_NOW,                 &
+     &                     IREAD, LWCUR, NEMO2WAM,         &
+     &                     LLMORE)
         ELSE
           LLMORE = .TRUE.
         ENDIF
@@ -227,9 +237,10 @@ ASSOCIATE(UCUR => WVENVI%UCUR, &
 
         IF (LLMORE) THEN
 !         Update forcing
-          CALL NOTIM (CDTWIS, CDTWIE,                       &
-     &                IJS, IJL, WVENVI, FF_NEXT,            &
-     &                IREAD, LWCUR)
+          CALL NOTIM (CDTWIS, CDTWIE,             &
+     &                IJS, IJL, IFROMIJ, JFROMIJ, &
+     &                WVENVI, FF_NEXT,            &
+     &                IREAD, LWCUR, NEMO2WAM)
         ENDIF
       ELSE
 

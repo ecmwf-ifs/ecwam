@@ -3,7 +3,8 @@ SUBROUTINE INITMDL (NADV,                                 &
  &                  WVENVI, WVPRPT, FF_NOW,               &
  &                  FL1,                                  &
  &                  NFIELDS, NGPTOTG, NC, NR,             &
- &                  FIELDS, LWCUR, MASK_IN, PRPLRADI)
+ &                  FIELDS, LWCUR, MASK_IN, PRPLRADI,     &
+ &                  NEMO2WAM)
 
 ! ----------------------------------------------------------------------
 
@@ -50,7 +51,8 @@ SUBROUTINE INITMDL (NADV,                                 &
 !    &                WVENVI, WVPRPT, FF_NOW,               &
 !    &                FL1,                                  &
 !    &                NFIELDS, NGPTOTG, NC, NR,
-!    &                FIELDS, LWCUR, MASK_IN)*
+!    &                FIELDS, LWCUR, MASK_IN,
+!    &                NEMO2WAM)*
 
 !      *NADV*      NUMBER OF ADVECTION ITERATIONS
 !      *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
@@ -67,6 +69,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 !      *LWCUR*     INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 !      *MASK_IN*   MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
 !      *PRPLRADI*  EARTH RADIUS REDUCTION FACTOR FOR SMALL PLANET
+!      *NEMO2WAM*  FIELDS FRON OCEAN MODEL to WAM
 
 !          ---- INPUT/OUTPUT UNITS ---
 
@@ -208,14 +211,12 @@ SUBROUTINE INITMDL (NADV,                                 &
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
-
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
+     &                         INTGT_PARAM_FIELDS, OCEAN2WAVE
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC,        &
      &            GBOUNC  , IPOGBO   ,CBCPREF
-      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,              &
-     &                      LWNEMOCOU,LWNEMOCOURECV
-      USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,                        &
-     &            FFLAG20  ,GFLAG20  ,                                  &
+      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,LWNEMOCOU
+      USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,GFLAG20  ,    &
      &            NGOUT    ,IJAR     ,NOUTT    ,LOUTINT
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA
       USE YOWFPBO  , ONLY : IBOUNF
@@ -232,7 +233,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IJS     ,IJL      ,COSPH
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,                        &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
-     &            KMNOP    ,KMSOP    ,IPER
+     &            KMNOP    ,KMSOP    ,IPER     ,IFROMIJ  , JFROMIJ
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
      &            NGX      ,NGY      ,                                  &
@@ -312,6 +313,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       LOGICAL, INTENT(IN) :: LWCUR
       INTEGER(KIND=JWIM),DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
       REAL(KIND=JWRB), INTENT(IN) :: PRPLRADI
+      TYPE(OCEAN2WAVE), DIMENSION(IJS:IJL), INTENT(INOUT) :: NEMO2WAM
 
 
       INTEGER(KIND=JWIM) :: IFORCA
@@ -746,7 +748,9 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !        USED). AND READ IN LAST WINDFIELDS FROM RESTARTFILE.
 !        ---------------------------------------------------------------
 
-      CALL GETSTRESS(IJS, IJL, WVENVI, FF_NOW, NBLKS, NBLKE, IREAD) 
+      CALL GETSTRESS(IJS, IJL, IFROMIJ, JFROMIJ,       &
+     &               WVENVI, FF_NOW, NEMO2WAM,         &
+     &               NBLKS, NBLKE, IREAD) 
 
       CDATEWL = CDTPRO
 
@@ -932,7 +936,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       ENDIF
 
 !     INITIALIZE THE NEMO COUPLING
-      IF (LWNEMOCOU) CALL INITNEMOCPL(LWNEMOCOURECV)
+      IF (LWNEMOCOU) CALL INITNEMOCPL(IJS, IJL, IFROMIJ  ,JFROMIJ)
 
 
       IF (LLUNSTR) THEN
@@ -950,11 +954,13 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       LLINIT=.NOT.LRESTARTED
       LLALLOC_FIELDG_ONLY=.FALSE.
 
-      CALL PREWIND (IJS, IJL, WVENVI, FF_NOW, FF_NEXT,   &
+      CALL PREWIND (IJS, IJL, IFROMIJ  ,JFROMIJ,         &
+     &              WVENVI, FF_NOW, FF_NEXT,             &
      &              LLINIT, LLALLOC_FIELDG_ONLY,         &
      &              IREAD,                               &
      &              NFIELDS, NGPTOTG, NC, NR,            &
-     &              FIELDS, LWCUR, MASK_IN)
+     &              FIELDS, LWCUR, MASK_IN,              &
+     &              NEMO2WAM)
 
       WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'                   
       CALL FLUSH (IU06)

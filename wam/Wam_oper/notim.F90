@@ -1,6 +1,7 @@
-SUBROUTINE NOTIM (CDTWIS, CDTWIE,                       &
-&                 IJS, IJL, WVENVI, FF_NEXT,            &
-&                 IREAD, LWCUR)
+SUBROUTINE NOTIM (CDTWIS, CDTWIE,              &
+ &                IJS, IJL, IFROMIJ, JFROMIJ,  &
+ &                WVENVI, FF_NEXT,             &
+ &                IREAD, LWCUR, NEMO2WAM)
 
 ! ----------------------------------------------------------------------
 
@@ -15,21 +16,25 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,                       &
 !     ----------  
 
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,
-!    &                 IJS, IJL, WVENVI, FF_NEXT,
-!                      IREAD, LWCUR)
+!    &                 IJS, IJL, IFROMIJ, JFROMIJ,
+!                      WVENVI, FF_NEXT,
+!                      IREAD, LWCUR, NEMO2WAM)
 !          *CDTWIS*   - DATE OF FIRST WIND FIELD.
 !          *CDTWIE*   - DATE OF LAST FIRST WIND FIELD.
 !          *IJS:IJL   - ARRAYS DIMENSION
+!          *IFROMIJ*    POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!          *JFROMIJ*    POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !          *WVENVI*   - WAVE ENVIRONMENT.
 !          *FF_NEXT*  - DATA STRUCTURE WITH THE NEXT FORCING FIELDS
 !          *IREAD*    - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !          *LWCUR*    - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
+!          *NEMO2WAM* - FIELDS FRON OCEAN MODEL to WAM
 
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FORCING_FIELDS
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FORCING_FIELDS, OCEAN2WAVE
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO
@@ -47,11 +52,13 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,                       &
 #include "incdate.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IFROMIJ, JFROMIJ
       TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NEXT
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
       LOGICAL, INTENT(IN) :: LWCUR
+      TYPE(OCEAN2WAVE), DIMENSION(IJS:IJL), INTENT(INOUT) :: NEMO2WAM
 
 
       INTEGER(KIND=JWIM) :: ICODE_WND
@@ -78,7 +85,9 @@ ASSOCIATE(UCUR => WVENVI%UCUR, &
  &        ADS => FF_NEXT%AIRD, &
  &        WSTAR => FF_NEXT%WSTAR, &
  &        CICR => FF_NEXT%CICOVER, &
- &        CITH => FF_NEXT%CITHICK )
+ &        CITH => FF_NEXT%CITHICK, &
+ &        NEMOCICOVER => NEMO2WAM%NEMOCICOVER, &
+ &        NEMOCITHICK => NEMO2WAM%NEMOCITHICK)
 
 
       CDTWIH = CDTWIS
@@ -122,14 +131,15 @@ ASSOCIATE(UCUR => WVENVI%UCUR, &
 
         CDTNEXT=CDTWIH
 
-        CALL GETWND (IJS, IJL,                              &
+        CALL GETWND (IJS, IJL, IFROMIJ, JFROMIJ,            &
      &               UCUR, VCUR,                            &
      &               U10, US,                               &
      &               THW,                                   &
      &               ADS, WSTAR,                            &
      &               CICR, CITH,                            &
      &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,    &
-     &               LWCUR, ICODE_WND)
+     &               LWCUR, NEMOCICOVER, NEMOCITHICK,       &
+     &               ICODE_WND)
 
 
 !*      UPDATE WIND FIELD REQUEST TIME.

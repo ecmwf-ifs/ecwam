@@ -1,5 +1,6 @@
-SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
-&                   WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS, FL1)
+SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,                      &
+ &                  WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,  &
+ &                  WAM2NEMO, NEMO2WAM, FL1)
 
 ! ----------------------------------------------------------------------
 
@@ -114,16 +115,19 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 !     ----------
 
 !     *CALL* *WAMODEL (NADV, LDSTOP, LDWRRE,
-!    &                 WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS, FL1)
-!        *NADV*      INTEGER   NUMBER OF ADVECTION ITERATIONS
-!                              PER CALL OF WAMODEL, OUTPUT PARAMETER.
-!        *LDSTOP*    LOGICAL   SET .TRUE. IF STOP SIGNAL RECEIVED.
-!        *LDWRRE*    LOGICAL   SET .TRUE. IF RESTART SIGNAL RECEIVED.
-!        *WVENVI*              WAVE ENVIRONMENT FIELDS
-!        *WVPRPT*    REAL      WAVE PROPERTIES FIELDS
-!        *FF_NOW*    REAL      FORCING FIELDS AT CURRENT TIME.
-!        *FF_NEXT*   REAL      DATA STRUCTURE WITH THE NEXT FORCING FIELDS
-!        *INTFLDS*   REAL      INTEGRATED/DERIVED PARAMETERS
+!    &                 WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,
+!    &                 WAM2NEMO, NEMO2WAM, FL1)
+!        *NADV*      NUMBER OF ADVECTION ITERATIONS
+!                    PER CALL OF WAMODEL, OUTPUT PARAMETER.
+!        *LDSTOP*    SET .TRUE. IF STOP SIGNAL RECEIVED.
+!        *LDWRRE*    SET .TRUE. IF RESTART SIGNAL RECEIVED.
+!        *WVENVI*    WAVE ENVIRONMENT FIELDS
+!        *WVPRPT*    WAVE PROPERTIES FIELDS
+!        *FF_NOW*    FORCING FIELDS AT CURRENT TIME.
+!        *FF_NEXT*   DATA STRUCTURE WITH THE NEXT FORCING FIELDS
+!        *INTFLDS*   INTEGRATED/DERIVED PARAMETERS
+!        *WAM2NEMO*  WAVE FIELDS PASSED TO NEMO
+!        *NEMO2WAM*  FIELDS FRON OCEAN MODEL to WAM
 
 !     METHOD.
 !     -------
@@ -216,16 +220,15 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
 ! -------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS, INTGT_PARAM_FIELDS
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
+     &                         INTGT_PARAM_FIELDS, WAVE2OCEAN, OCEAN2WAVE
 
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC    ,GBOUNC  , IPOGBO  ,    &
      &            CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,LLNORMWAMOUT,                     &
-     &                      KCOUSTEP, LWNEMOCOU, NEMONTAU,              &
-     &                      LWNEMOCOUSTK ,LWNEMOCOUSTRN,                &
+     &                      LWNEMOCOU, NEMONTAU,                        &
      &                      NEMOWSTEP, NEMOFRCO     ,                   &
-     &                      NEMOCSTEP, NEMONSTEP   ,                    &
-     &                      NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
+     &                      NEMOCSTEP, NEMONSTEP
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,GFLAG20  ,    &
      &            JPPFLAG  ,FFLAG    ,GFLAG    ,                        &
      &            IRCD     ,IRU10    , IRALTHS  ,IRALTHSC  ,IRALTRC ,   &
@@ -269,7 +272,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
       USE YOWPD, ONLY : MNP => npa
       USE YOWNODEPOOL, ONLY : NP
 
-      USE YOWNEMOP , ONLY : NEMODP
       USE MPL_MODULE
       USE FDBSUBS_MOD, ONLY : IFLUSHFDBSUBS
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -313,6 +315,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE,  &
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(IN) :: FF_NEXT
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: INTFLDS
+      TYPE(WAVE2OCEAN), DIMENSION(IJS:IJL), INTENT(INOUT) :: WAM2NEMO
+      TYPE(OCEAN2WAVE), DIMENSION(IJS:IJL), INTENT(IN) :: NEMO2WAM
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
 
 
@@ -401,7 +405,8 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
      &                     MIJ(KIJS),                                  &
      &                     FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),   &
      &                     WVPRPT(KIJS:KIJL,:),                        &
-     &                     WVENVI(KIJS), FF_NOW(KIJS), INTFLDS(KIJS) )
+     &                     WVENVI(KIJS), FF_NOW(KIJS),                 &
+     &                     INTFLDS(KIJS), WAM2NEMO(KIJS) )
           ENDDO
 !$OMP     END PARALLEL DO
 
@@ -469,7 +474,8 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 
 !         COMPUTE OUTPUT PARAMETERS
           IF (NIPRMOUT > 0) THEN
-            CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS, WVPRPT, WVENVI, FF_NOW, INTFLDS)
+            CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS,                    &
+     &                  WVPRPT, WVENVI, FF_NOW, INTFLDS, NEMO2WAM)
 !           PRINT OUT NORMS
             !!!1 to do: decide if there are cases where we might want LDREPROD false
             LDREPROD=.TRUE.
@@ -600,15 +606,13 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
                 CALL IMPLSCH (KIJS, KIJL, FL1(KIJS:KIJL,:,:),       &
      &                        WVPRPT(KIJS:KIJL,:),                  &
      &                        WVENVI(KIJS), FF_NOW(KIJS),           &
-     &                        INTFLDS(KIJS),                        &
+     &                        INTFLDS(KIJS), WAM2NEMO(KIJS),        &
      &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:) )
 
               ENDDO
 !$OMP       END PARALLEL DO
 
-              IF (LWNEMOCOU) THEN
-                NEMONTAU = NEMONTAU + 1
-              ENDIF
+              IF (LWNEMOCOU) NEMONTAU = NEMONTAU + 1
 
             ELSE
 !             NO SOURCE TERM CONTRIBUTION
@@ -702,7 +706,8 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 
 !           COMPUTE OUTPUT PARAMETERS
             IF (NIPRMOUT > 0) THEN
-              CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS, WVPRPT, WVENVI, FF_NOW, INTFLDS)
+              CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS,                   &
+     &                    WVPRPT, WVENVI, FF_NOW, INTFLDS, NEMO2WAM)
 
 !!!1 to do: decide if there are cases where we might want LDREPROD false
               LDREPROD=.TRUE.
@@ -908,43 +913,25 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
         ENDIF
  
 
-!*      WAM-NEMO COUPLING (WHEN NO atmospheric model !!!!!!)
+!*      WAM-NEMO COUPLING (!!!!! WHEN NO atmospheric model !!!!!!)
+!       (when coupled see cnt4 in ifs)
 !       ----------------------------------------------------
         IF (LWNEMOCOU .AND. (.NOT.LWCOU)) THEN
           NEMOWSTEP=NEMOWSTEP+1
 
           IF (MOD(NEMOWSTEP,NEMOFRCO) == 0) THEN
-            CALL GSTATS(1432,0)
-!$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ) 
-            DO JKGLO=IJS,IJL,NPROMA
-              KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,IJL)
-              IF (LWNEMOCOUSTK) THEN
-                NEMOUSTOKES(KIJS:KIJL) = USTOKES(KIJS:KIJL)
-                NEMOVSTOKES(KIJS:KIJL) = VSTOKES(KIJS:KIJL)
-              ELSE
-                NEMOUSTOKES(KIJS:KIJL) = 0.0_NEMODP
-                NEMOVSTOKES(KIJS:KIJL) = 0.0_NEMODP
-              ENDIF
-              IF (LWNEMOCOUSTRN)  NEMOSTRN(KIJS:KIJL) = STRNMS(KIJS:KIJL)
-            ENDDO
-!$OMP       END PARALLEL DO
-            CALL GSTATS(1432,1)
-
             CALL UPDNEMOFIELDS
             CALL UPDNEMOSTRESS
 
+#ifdef WITH_NEMO
             DO JSTPNEMO=NEMOCSTEP,NEMOCSTEP+NEMONSTEP-1
                ! Advance the NEMO model 1 time step
-#ifdef WITH_NEMO
                CALL NEMOGCMCOUP_STEP( JSTPNEMO, IDATE, ITIME )
-#endif
                WRITE(IU06,*)'NEMO TIME IS : ',JSTPNEMO, IDATE, ITIME
             ENDDO
+#endif
             NEMOCSTEP=NEMOCSTEP+NEMONSTEP
-
           ENDIF
-
         ENDIF
 
 !*    BRANCHING BACK TO 1.0 FOR NEXT PROPAGATION STEP.
