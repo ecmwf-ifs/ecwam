@@ -86,7 +86,7 @@ IF (LHOOK) CALL DR_HOOK('UPDNEMOFIELDS',0,ZHOOK_HANDLE)
 
 #ifdef WITH_NEMO
         CALL NEMOGCMCOUP_WAM_UPDATE( IRANK-1, NPROC, MPL_COMM,             &
-     &                               NPOINTS                               &
+     &                               NPOINTS,                              &
      &                               NSWH, NMWP, NPHIEPS, NTAUOC,          &
      &                               NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES,   &
      &                               CDTPRO, LWNEMOCOUDEBUG )
