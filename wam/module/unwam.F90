@@ -1514,7 +1514,7 @@ END INTERFACE
       USE MPL_MPIF
       USE YOWUNPOOL, ONLY : DEGRAD, REARTH
       USE YOWUNPOOL, ONLY : BND, DBG, GRID, FILEDEF
-      USE YOWSHAL  , ONLY : DEPTH_INPUT    ,DEPTHA    ,TOOSHALLOW
+      USE YOWSHAL  , ONLY : WVENVI, DEPTH_INPUT, DEPTHA    ,TOOSHALLOW
       USE YOWPARAM , ONLY : NIBLO
       USE yowpd, only: z, comm, np_global, initPD, setDimSize
       USE UNSTRUCT_BOUND, ONLY : INIT_BOUNDARY
@@ -1533,6 +1533,14 @@ END INTERFACE
       DO IP = 1, MNP 
         DEPTH_INPUT(IP) = REAL(MAX(DEP(IP),REAL(TOOSHALLOW,JWRU)),JWRB)
       ENDDO
+
+
+!!    Transfer the water depth to array it is used by the wave physics
+      DO IP = 1, MNP 
+        WVENVI(IP)%DEPTH = DEPTH_INPUT(IP)
+     ENDDO
+
+
       DDIR = DELTH
 !
 ! set time step
@@ -2251,10 +2259,12 @@ END INTERFACE
 !     --------------------------------------------------------------
 
         USE YOWUNPOOL
-        USE YOWSHAL  , ONLY : DEPTH_INPUT
+        USE YOWSHAL  , ONLY : WVENVI, DEPTH_INPUT
         IMPLICIT NONE
 
         INTEGER(KIND=JWIM), INTENT(IN) :: IHANDLE
+
+        INTEGER(KIND=JWIM) :: IP
 ! 
 !         READ(IHANDLE) MNP, MNE, MSC, MDC
 
@@ -2271,6 +2281,11 @@ END INTERFACE
         READ(IHANDLE) IOBP
         READ(IHANDLE) IOBPD
         READ(IHANDLE) IOBWB
+
+!!      Transfer the water depth to array it is used by the wave physics
+        DO IP = 1, MNP 
+          WVENVI(IP)%DEPTH = DEPTH_INPUT(IP)
+       ENDDO
 
       END SUBROUTINE UNWAM_IN
 !**********************************************************************

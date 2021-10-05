@@ -209,30 +209,31 @@
 
 !----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('MPDECOMP',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('MPDECOMP',0,ZHOOK_HANDLE)
 
 !     0. READ GRID INPUT FROM PREPROC 
 !        ----------------------------
 
 !AR: ITAG was not set
-      ITAG =0 
-      IREAD=IREADG
+ITAG =0 
+IREAD=IREADG
 
-!     CALL TO *READPRE* HAS BEEN MOVED TO WVWAMINIT
-!     Re-initilize for SEKF surface analysis loops
-      IF (LWVWAMINIT) THEN
-        LL_sekf = .True.
-        LLRNL=.TRUE.
-        CALL WVWAMINIT(LL_sekf,IU06,LLRNL,                              &
-     &                 NGAUSSW_sekf, NLON_sekf,NLAT_sekf,RS_sekf,RN_sekf)
-      ENDIF
+! CALL TO *READPRE* HAS BEEN MOVED TO WVWAMINIT
+! Re-initilize for SEKF surface analysis loops
+IF (LWVWAMINIT) THEN
+  LL_sekf = .True.
+  LLRNL=.TRUE.
+  CALL WVWAMINIT(LL_sekf,IU06,LLRNL,                              &
+ &               NGAUSSW_sekf, NLON_sekf,NLAT_sekf,RS_sekf,RN_sekf)
+ENDIF
 
-      WRITE(IU06,*) ' PREPROC GRID INFORMATION AVAILABLE'
-      CALL FLUSH (IU06)
+WRITE(IU06,*) ' PREPROC GRID INFORMATION AVAILABLE'
+CALL FLUSH (IU06)
 
 
-      IF (LLUNSTR) THEN
-      !! UNSTRUCTURED GRID : !! (This is still experimental !!)
+IF (LLUNSTR) THEN
+
+      !! UNSTRUCTURED GRID : !! (This is still very experimental !!)
 
 !AR: augmented domain ...
         NINF = 1
@@ -283,7 +284,7 @@
         ENDDO
 
 
-      ELSE
+ELSE
       !! NON UNSTRUCTURED GRID : !!
 
       NXFF=NGX
@@ -2466,11 +2467,11 @@
       LWVWAMINIT=.TRUE.
 
 
-      ENDIF ! LLUNSTR
+ENDIF ! LLUNSTR
 
-      WRITE(IU06,*) ' MODEL DECOMPOSITION FINISHED.'
-      CALL FLUSH(IU06)
+WRITE(IU06,*) ' MODEL DECOMPOSITION FINISHED.'
+CALL FLUSH(IU06)
 
-      IF (LHOOK) CALL DR_HOOK('MPDECOMP',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('MPDECOMP',1,ZHOOK_HANDLE)
 
       END SUBROUTINE MPDECOMP
