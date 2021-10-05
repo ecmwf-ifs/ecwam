@@ -114,10 +114,10 @@
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,                  &
      &            DELLAM   ,DELLAM1  ,COSPH    ,COSPHM1  ,DELPHI   ,    &
      &            CDR      ,SDR      ,PRQRT    ,NLONRGG
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,KXLTMIN  ,KXLTMAX  ,    &
+      USE YOWMAP   , ONLY : BLK2GLO  ,BLK2LOC  ,KXLTMIN  ,KXLTMAX  ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,LLBOUND  ,    &
-     &            KMNOP    ,KMSOP    ,IFROMIJ  ,JFROMIJ
+     &            KMNOP    ,KMSOP
       USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG     ,    &
      &                      NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NIBLO    ,              &
@@ -297,8 +297,8 @@ ELSE
       KMNOP=1
       KMSOP=NGY
       DO IJ = IJS,IJL
-        KMNOP=MAX(KXLT(IJ),KMNOP)
-        KMSOP=MIN(KXLT(IJ),KMSOP)
+        KMNOP=MAX(BLK2GLO(IJ)%KXLT,KMNOP)
+        KMSOP=MIN(BLK2GLO(IJ)%KXLT,KMSOP)
       ENDDO
 
       IF (ALLOCATED(KLAT)) DEALLOCATE(KLAT)
@@ -649,8 +649,8 @@ ELSE
 !         by determining the array IJNDEX which contain the IJ's with
 !         increasing longitude and latitude.
 
-          KLATBOT=KXLT(NSTART1D(IPR))
-          KLATTOP=KXLT(NEND1D(IPR))
+          KLATBOT=BLK2GLO(NSTART1D(IPR))%KXLT
+          KLATTOP=BLK2GLO(NEND1D(IPR))%KXLT
           ALLOCATE(KSTART1(KLATBOT:KLATTOP))
           KSTART1(:)=0
           ALLOCATE(KEND1(KLATBOT:KLATTOP))
@@ -659,8 +659,8 @@ ELSE
           KXLAT=KLATBOT
           KSTART1(KXLAT) = NSTART1D(IPR)
           DO IJ=NSTART1D(IPR)+1,NEND1D(IPR)
-            IF (KXLAT < KXLT(IJ)) THEN
-              KXLAT = KXLT(IJ)
+            IF (KXLAT < BLK2GLO(IJ)%KXLT) THEN
+              KXLAT = BLK2GLO(IJ)%KXLT
               KSTART1(KXLAT) = IJ 
               KEND1(KXLAT-1) = IJ-1
             ENDIF
@@ -680,12 +680,12 @@ ELSE
           ENDDO
           KXLAT=KLATBOT
           DO IJ=NSTART1D(IPR),NEND1D(IPR)
-            IF (KXLAT < KXLT(IJ)) THEN
-              KXLAT = KXLT(IJ)
+            IF (KXLAT < BLK2GLO(IJ)%KXLT) THEN
+              KXLAT = BLK2GLO(IJ)%KXLT
             ENDIF
             NLON(KXLAT)=NLON(KXLAT)+1
-            IX = IXLG(IJ)
-            JSN= KXLT(IJ)
+            IX = BLK2GLO(IJ)%IXLG
+            JSN= BLK2GLO(IJ)%KXLT
             XLON=AMOWEP+(IX-1)*ZDELLO(JSN)
             XLON=FLOAT(NINT(100*XLON))/100.0_JWRB
             IXLON(NLON(KXLAT),KXLAT)=NINT(XLON*XDELLOINV)
@@ -883,16 +883,16 @@ ELSE
 
         ALLOCATE(KDUM(NIBLO))
         DO NIJ=NSTART(1),NEND(NPR)
-          KDUM(NIJ)=IXLG(NEWIJ2IJ(NIJ))
+          KDUM(NIJ)=BLK2GLO(NEWIJ2IJ(NIJ))%IXLG
         ENDDO
         DO NIJ=NSTART(1),NEND(NPR)
-          IXLG(NIJ)=KDUM(NIJ)
+          BLK2GLO(NIJ)%IXLG=KDUM(NIJ)
         ENDDO
         DO NIJ=NSTART(1),NEND(NPR)
-          KDUM(NIJ)=KXLT(NEWIJ2IJ(NIJ))
+          KDUM(NIJ)=BLK2GLO(NEWIJ2IJ(NIJ))%KXLT
         ENDDO
         DO NIJ=NSTART(1),NEND(NPR)
-          KXLT(NIJ)=KDUM(NIJ)
+          BLK2GLO(NIJ)%KXLT=KDUM(NIJ)
         ENDDO
         DEALLOCATE(KDUM)
 
@@ -1389,20 +1389,20 @@ ELSE
       DELLAM1(NLAND) = 0.0_JWRB
       IF ( NPR > 1 ) THEN
         DO IJ=NSTART(IRANK),NEND(IRANK)
-          JH = KXLT(IJ)
+          JH = BLK2GLO(IJ)%KXLT
           DELLAM1(IJ)=1.0_JWRB/DELLAM(JH)
           COSPHM1(IJ)=1.0_JWRB/COSPH(JH)
         ENDDO 
         DO IH=1,NLENHALO(IRANK)
           IJ=IJFROMPE(IH,IRANK)
-          JH = KXLT(IJ)
+          JH = BLK2GLO(IJ)%KXLT
           IJ=IJHALO(IH)
           DELLAM1(IJ)=1.0_JWRB/DELLAM(JH)
           COSPHM1(IJ)=1.0_JWRB/COSPH(JH)
         ENDDO
       ELSE
         DO IJ=NINF,NSUP
-          JH = KXLT(IJ)
+          JH = BLK2GLO(IJ)%KXLT
           DELLAM1(IJ)=1.0_JWRB/DELLAM(JH)
           COSPHM1(IJ)=1.0_JWRB/COSPH(JH)
         ENDDO 
@@ -1415,7 +1415,7 @@ ELSE
         ENDDO
         IF ( NPR > 1 ) THEN
           DO IJ=NSTART(IRANK),NEND(IRANK)
-            JH = KXLT(IJ)
+            JH = BLK2GLO(IJ)%KXLT
             DO K=1,NANG
               A=SQRT2O2*COSTH(K)*COSPH(JH)
               B=SQRT2O2*SINTH(K) 
@@ -1425,7 +1425,7 @@ ELSE
           ENDDO 
           IF (IRGG == 1) THEN
             DO IJ=NSTART(IRANK),NEND(IRANK)
-              JH = KXLT(IJ)
+              JH = BLK2GLO(IJ)%KXLT
               THETAMAX=ATAN2(1.0_JWRB,COSPH(JH))
               SINTHMAX=SIN(THETAMAX)
               DELTA=COSPH(JH)/(SINTHMAX*(1.0_JWRB+COSPH(JH)**2))
@@ -1438,7 +1438,7 @@ ELSE
           ENDIF
           DO IH=1,NLENHALO(IRANK)
             IJ=IJFROMPE(IH,IRANK)
-            JH = KXLT(IJ)
+            JH = BLK2GLO(IJ)%KXLT
             IJ=IJHALO(IH)
             DO K=1,NANG
               A=SQRT2O2*COSTH(K)*COSPH(JH)
@@ -1449,7 +1449,7 @@ ELSE
           ENDDO
         ELSE
           DO IJ=NINF,NSUP
-            JH = KXLT(IJ)
+            JH = BLK2GLO(IJ)%KXLT
             DO K=1,NANG
               A=SQRT2O2*COSTH(K)*COSPH(JH)
               B=SQRT2O2*SINTH(K) 
@@ -1459,7 +1459,7 @@ ELSE
           ENDDO 
           IF (IRGG == 1) THEN
             DO IJ=NSTART(IRANK),NEND(IRANK)
-              JH = KXLT(IJ)
+              JH = BLK2GLO(IJ)%KXLT
               THETAMAX=ATAN2(1.0_JWRB,COSPH(JH))
               SINTHMAX=SIN(THETAMAX)
               DELTA=COSPH(JH)/(SINTHMAX*(1.0_JWRB+COSPH(JH)**2))
@@ -1476,15 +1476,14 @@ ELSE
 !     CREATE IFROMIJ, JFROMIJ
 !     !!!! IT IS ONLY DEFINED FOR GRID POINTS ON A GIVEN PE  !!!!
 
-      IF (ALLOCATED(IFROMIJ)) DEALLOCATE(IFROMIJ)
-      ALLOCATE(IFROMIJ(NSTART(IRANK):NEND(IRANK)))
-      IF (ALLOCATED(JFROMIJ)) DEALLOCATE(JFROMIJ)
-      ALLOCATE(JFROMIJ(NSTART(IRANK):NEND(IRANK)))
+      IF (ALLOCATED(BLK2LOC)) DEALLOCATE(BLK2LOC)
+      ALLOCATE(BLK2LOC(NSTART(IRANK):NEND(IRANK)))
 
 !     LOCAL POINTS
       DO IJ=NSTART(IRANK),NEND(IRANK)
-        IFROMIJ(IJ)=IXLG(IJ)
-        JFROMIJ(IJ)=NGY-KXLT(IJ)+1
+        BLK2LOC(IJ)%IFROMIJ=BLK2GLO(IJ)%IXLG
+        BLK2LOC(IJ)%KFROMIJ=BLK2GLO(IJ)%KXLT
+        BLK2LOC(IJ)%JFROMIJ=NGY-BLK2GLO(IJ)%KXLT+1
       ENDDO
 
       DEALLOCATE(IJFROMPE)
@@ -2437,8 +2436,8 @@ ELSE
         KXLTMIN(IP)=NGY
         KXLTMAX(IP)=1
         DO IJ=NSTART(IP),NEND(IP)
-           KXLTMIN(IP)=MIN(KXLTMIN(IP),KXLT(IJ))
-           KXLTMAX(IP)=MAX(KXLTMAX(IP),KXLT(IJ))
+           KXLTMIN(IP)=MIN(KXLTMIN(IP),BLK2GLO(IJ)%KXLT)
+           KXLTMAX(IP)=MAX(KXLTMAX(IP),BLK2GLO(IJ)%KXLT)
         ENDDO
       ENDDO
 

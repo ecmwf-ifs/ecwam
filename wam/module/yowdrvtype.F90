@@ -7,6 +7,25 @@
 
       IMPLICIT NONE
 
+!*    **  *VARIABLES DEPENDENT ON GLOBAL GRID POINTS ON STRUCTURED GRID
+!!! (ideally this be removed, but currently still need for the propagation hallo,
+!!!  but also for the wave DA. It should be possible to localise this...)
+
+      TYPE WVGRIDGLO
+        INTEGER(KIND=JWIM) :: IXLG ! WEST-EAST INDEX FOR A GIVEN IJ
+        INTEGER(KIND=JWIM) :: KXLT ! NORTH-SOUTH INDEX FOR A GIVEN IJ
+      END TYPE WVGRIDGLO 
+
+
+!*    **  *VARIABLES DEPENDENT ON LOCAL GRID POINTS ON STRUCTURED GRID
+
+      TYPE WVGRIDLOC
+        INTEGER(KIND=JWIM) :: IFROMIJ ! WEST-EAST INDEX FOR A GIVEN IJ (LOCAL VERSION OF IXLG) 
+        INTEGER(KIND=JWIM) :: KFROMIJ ! SOUTH-NORTH INDEX FOR A GIVEN IJ (LOCAL VERSION OF KXLT) 
+        INTEGER(KIND=JWIM) :: JFROMIJ ! NORTH-SOUTH INDEX FOR A GIVEN IJ (LOCAL VERSION OF NGY-KXLT+1)
+      END TYPE WVGRIDLOC 
+
+
 !*    **  *VARIABLES DEPENDENT ON DEPTH or CURRENTS (but not frequency or direction
 !          i.e. the environment in which the waves evolve 
 

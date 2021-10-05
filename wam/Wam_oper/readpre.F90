@@ -1,4 +1,4 @@
-      SUBROUTINE READPRE (IU07)
+SUBROUTINE READPRE (IU07)
 
 ! ----------------------------------------------------------------------
 
@@ -60,7 +60,7 @@
      &            AF11     ,FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,    &
      &            ACL1     ,ACL2     ,CL11     ,CL21     ,DAL1     ,    &
      &            DAL2     ,FRH      ,MFRSTLW  ,MLSTHG
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,    &
+      USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,              &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
@@ -169,10 +169,9 @@
 !*    3. READ MODULE YOWMAP (LONG. AND LAT. INDICES OF GRID POINTS).
 !        --------------------------------------------------------
 
-        IF(ALLOCATED(IXLG)) DEALLOCATE(IXLG)
-        ALLOCATE(IXLG(NIBLO))
-        IF(ALLOCATED(KXLT)) DEALLOCATE(KXLT)
-        ALLOCATE(KXLT(NIBLO))
+        IF(ALLOCATED(BLK2GLO)) DEALLOCATE(BLK2GLO)
+        ALLOCATE(BLK2GLO(NIBLO))
+
         IF(.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
 
         CALL READREC(5)
@@ -414,9 +413,9 @@
          IF (LLR8TOR4) THEN
             ALLOCATE(R8_ZDELLO(NGY))
 
-            READ(IU07,IOSTAT=ISTAT) IXLG, KXLT, NX, NY, IPER,           &
-     &           R8_AMOWEP, R8_AMOSOP, R8_AMOEAP, R8_AMONOP,            &
-     &           R8_XDELLA, R8_XDELLO,                                  &
+            READ(IU07,IOSTAT=ISTAT) BLK2GLO%IXLG, BLK2GLO%KXLT, NX, NY, IPER, &
+     &           R8_AMOWEP, R8_AMOSOP, R8_AMOEAP, R8_AMONOP,                  &
+     &           R8_XDELLA, R8_XDELLO,                                        &
      &           R8_ZDELLO, IRGG
             IF (ISTAT /= 0) GOTO 1000
 
@@ -430,9 +429,9 @@
 
             DEALLOCATE(R8_ZDELLO)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) IXLG, KXLT, NX, NY, IPER,           &
-     &           AMOWEP, AMOSOP, AMOEAP, AMONOP,                        &
-     &           XDELLA, XDELLO,                                        &
+            READ(IU07,IOSTAT=ISTAT) BLK2GLO%IXLG, BLK2GLO%KXLT, NX, NY, IPER, &
+     &           AMOWEP, AMOSOP, AMOEAP, AMONOP,                              &
+     &           XDELLA, XDELLO,                                              &
      &           ZDELLO, IRGG
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
@@ -631,4 +630,4 @@
 
       END
 
-      END SUBROUTINE READPRE
+END SUBROUTINE READPRE

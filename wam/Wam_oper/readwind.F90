@@ -85,8 +85,7 @@
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWICE   , ONLY : LICERUN  ,IPARAMCI ,LICETH
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IXLG     ,    &
-     &            KXLT
+     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
       USE YOWPARAM , ONLY : NIBLO    ,CLDOMAIN ,                        &
      &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,LWDINTS  ,    &
