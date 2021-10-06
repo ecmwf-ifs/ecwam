@@ -64,7 +64,7 @@
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,    &
      &                      TAUOC    ,TAUXD    ,TAUYD    ,              &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
-      USE YOWNEMOP , ONLY : NEMODP
+      USE PARKIND1 , ONLY : JPRO
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : TAUOCMIN ,TAUOCMAX ,PHIEPSMIN,PHIEPSMAX,    &
      &               EPSUS ,EPSU10   ,G        ,ZPI
@@ -229,14 +229,14 @@
           NPHIEPS(IJ) = PHIEPS(IJ)
           NTAUOC(IJ)  = TAUOC(IJ)
           IF (EM_OC(IJ)/=0.0_JWRB) THEN
-             NSWH(IJ) = 4.0_NEMODP*SQRT(EM_OC(IJ))
+             NSWH(IJ) = 4.0_JPRO*SQRT(EM_OC(IJ))
           ELSE
-             NSWH(IJ) = 0.0_NEMODP
+             NSWH(IJ) = 0.0_JPRO
           ENDIF
           IF (F1_OC(IJ)/=0.0_JWRB) THEN
-             NMWP(IJ) = 1.0_NEMODP/F1_OC(IJ)
+             NMWP(IJ) = 1.0_JPRO/F1_OC(IJ)
           ELSE
-             NMWP(IJ) = 0.0_NEMODP
+             NMWP(IJ) = 0.0_JPRO
           ENDIF
 
           IF (LWNEMOTAUOC) THEN
