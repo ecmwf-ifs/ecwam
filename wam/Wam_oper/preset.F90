@@ -130,8 +130,7 @@
       USE YOWTEXT  , ONLY : ICPLEN   ,USERID   ,RUNID    ,PATH     ,    &
      &            CPATH
       USE YOWUNPOOL ,ONLY : LLUNSTR  ,LPREPROC
-      USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15     ,              &
-     &            IUSCR
+      USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
      &            LLNEWCURR,NXFF     ,NYFF    
       USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
@@ -384,11 +383,6 @@
         ENDDO
       ENDIF
 
-
-      ALLOCATE(IUSCR(NBLO))
-      DO IG=1,NBLO
-        IUSCR(IG) = 39+IG
-      ENDDO
 
 !!!   deallocate big arrays that were read in with READPRE
 
