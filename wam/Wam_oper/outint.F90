@@ -106,15 +106,7 @@
 !       DEFINE OUTPUT FILE FOR GRIB DATA (if not written to FDB)
         IF(.NOT.LFDB .AND.(IRANK.EQ.1)) THEN
        !  output to file should only take place on one PE
-          IF ( MARSTYPE == 'an' ) THEN
-            FILEID = 'ANP'
-          ELSEIF ( MARSTYPE == '4v' ) THEN
-            FILEID = '4VP'
-          ELSEIF ( MARSTYPE == 'fg' ) THEN
-            FILEID = 'FGP'
-         ELSE
-           FILEID = 'FCP'
-         ENDIF
+         FILEID = 'MPP'
          CALL GRSTNAME(CDTPRO,CDATEF,FILEID,ICPLEN,CPATH,OUTFILEN)
          LFILE=LEN_TRIM(OUTFILEN)
          CALL IGRIB_OPEN_FILE(IUOUT,OUTFILEN(1:LFILE),'w')
