@@ -22,7 +22,7 @@
 
 !         *CDATE*    CHAR*14    DATE (YYYYMMDDHHmmss) OF FILE TO BE SAVED.
 !         *CDATEF*   CHAR*14    DATE TIME GROUP OF FORECAST START.
-!         *IFCST*               FORECAST STEP IN HOURS. (only used if CDATE <= CDATEF)
+!         *IFCST*               FORECAST STEP IN HOURS. (only used if CDATE < CDATEF)
 !         *FILEID*   CHARACTER  FILE ID.
 !         *KCPLEN*   INTEGER    LENGTH OF CPAD
 !         *CPAD*     CHARACTER  PATH FOR OUTPUT TO DISK  
@@ -86,7 +86,7 @@
       IMAXYEAR=HUGE(IMAXYEAR)/IYEARSEC ! desired coding
 
       FILENA = FILEID
-      IF (CDATE <= CDATEF) THEN
+      IF (CDATE < CDATEF) THEN
         CDATEH = CDATE
         ISHIFT = IFCST 
         ISHIFTDAY=0
