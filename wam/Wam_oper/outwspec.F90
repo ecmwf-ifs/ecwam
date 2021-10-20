@@ -138,7 +138,12 @@ ENDDO
 IUOUT=0
 IF (.NOT.LFDBIOOUT .AND. IPR(IRANK).EQ.IRANK) THEN
 !  output to file should only take place on one PE
-   FILEID = 'SGS'
+   IF(MARSTYPE == 'fg') THEN
+     ! fg only exist in uncoupled anlysis experiments
+     FILEID = 'SFG'
+   ELSE
+     FILEID = 'SGS'
+   ENDIF
    CALL GRSTNAME(CDTPRO,CDATEF,IFCST,FILEID,ICPLEN,CPATH,OUTFILEN)
    LFILE=LEN_TRIM(OUTFILEN)
    CALL IGRIB_OPEN_FILE(IUOUT,OUTFILEN(1:LFILE),'w')

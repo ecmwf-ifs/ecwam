@@ -106,7 +106,12 @@
 !       DEFINE OUTPUT FILE FOR GRIB DATA (if not written to FDB)
         IF(.NOT.LFDB .AND.(IRANK.EQ.1)) THEN
        !  output to file should only take place on one PE
-         FILEID = 'MPP'
+         IF(MARSTYPE == 'fg') THEN
+           ! fg only exist in uncoupled anlysis experiments
+           FILEID = 'MFG'
+         ELSE
+           FILEID = 'MPP'
+         ENDIF
          CALL GRSTNAME(CDTPRO,CDATEF,IFCST,FILEID,ICPLEN,CPATH,OUTFILEN)
          LFILE=LEN_TRIM(OUTFILEN)
          CALL IGRIB_OPEN_FILE(IUOUT,OUTFILEN(1:LFILE),'w')
