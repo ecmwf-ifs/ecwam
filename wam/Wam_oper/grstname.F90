@@ -1,6 +1,6 @@
 ! ----------------------------------------------------------------------
 
-      SUBROUTINE GRSTNAME (CDATE, CDATEF, FILEID, KCPLEN, CPAD,         &
+      SUBROUTINE GRSTNAME (CDATE, CDATEF, IFCST, FILEID, KCPLEN, CPAD,  &
      &                     FILENAME)
 
 ! ----------------------------------------------------------------------
@@ -17,11 +17,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GRSTNAME (CDATE, CDATEF, FILEID, KCPLEN, CPAD,
+!       *CALL* *GRSTNAME (CDATE, CDATEF, IFCST, FILEID, KCPLEN, CPAD,
 !                         FILENAME)*
 
 !         *CDATE*    CHAR*14    DATE (YYYYMMDDHHmmss) OF FILE TO BE SAVED.
 !         *CDATEF*   CHAR*14    DATE TIME GROUP OF FORECAST START.
+!         *IFCST*               FORECAST STEP IN HOURS. (only used if CDATE <= CDATEF)
 !         *FILEID*   CHARACTER  FILE ID.
 !         *KCPLEN*   INTEGER    LENGTH OF CPAD
 !         *CPAD*     CHARACTER  PATH FOR OUTPUT TO DISK  
@@ -57,9 +58,10 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM) :: KCPLEN
-      CHARACTER(LEN=3), INTENT(IN) :: FILEID
       CHARACTER(LEN=14), INTENT(IN) :: CDATE, CDATEF
+      INTEGER(KIND=JWIM), INTENT(IN) :: IFCST
+      CHARACTER(LEN=3), INTENT(IN) :: FILEID
+      INTEGER(KIND=JWIM), INTENT(IN) :: KCPLEN
       CHARACTER(LEN=*), INTENT(IN) :: CPAD
       CHARACTER(LEN=*), INTENT(OUT) :: FILENAME
 
@@ -84,9 +86,9 @@
       IMAXYEAR=HUGE(IMAXYEAR)/IYEARSEC ! desired coding
 
       FILENA = FILEID
-      IF (CDATE.LE.CDATEF) THEN
+      IF (CDATE <= CDATEF) THEN
         CDATEH = CDATE
-        ISHIFT = 0
+        ISHIFT = IFCST 
         ISHIFTDAY=0
       ELSE
         CDATEH = CDATEF
@@ -97,7 +99,7 @@
         CDT=CDATE
 !       IN CASE THE DATE DIFFERENCE IS LARGER THAN WHAT DIFDATE CAN DO.
         IYRDIF=IYEAR2-IYEAR1
-        IF(ABS(IYRDIF).GE.IMAXYEAR) THEN
+        IF (ABS(IYRDIF) >= IMAXYEAR) THEN
           NCHUNCK=ABS(IYRDIF)/IMAXYEAR
           DO IC=1,NCHUNCK
             ISFT=-SIGN(1,IYRDIF)*IMAXYEAR*IYEARSEC
@@ -124,7 +126,7 @@
 !     2.0   GET PATH AND ADD IT TO FILE NAME
 !           --------------------------------
 
-      IF(KCPLEN.EQ.0) THEN
+      IF (KCPLEN == 0) THEN
         FILENAME=FILENA(1:LNAME)
       ELSE
         FILENAME=CPAD(1:KCPLEN)//'/'//FILENA(1:LNAME)
