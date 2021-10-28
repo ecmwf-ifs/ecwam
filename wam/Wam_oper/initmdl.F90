@@ -1,5 +1,6 @@
 SUBROUTINE INITMDL (NADV,                                 &
  &                  IREAD,                                &
+ &                  BLK2GLO,                              &
  &                  WVENVI, WVPRPT, FF_NOW,               &
  &                  FL1,                                  &
  &                  NFIELDS, NGPTOTG, NC, NR,             &
@@ -48,8 +49,9 @@ SUBROUTINE INITMDL (NADV,                                 &
 
 !    *CALL* *INITMDL (NADV,
 !    &                IREAD,
-!    &                WVENVI, WVPRPT, FF_NOW,               &
-!    &                FL1,                                  &
+!    &                BLK2GLO,
+!    &                WVENVI, WVPRPT, FF_NOW,
+!    &                FL1,                  
 !    &                NFIELDS, NGPTOTG, NC, NR,
 !    &                FIELDS, LWCUR, MASK_IN,
 !    &                NEMO2WAM)*
@@ -57,6 +59,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 !      *NADV*      NUMBER OF ADVECTION ITERATIONS
 !      *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                  (IF NEEDED).
+!      *BLK2GLO*   BLOCK TO GRID TRANSFORMATION
 !      *WVENVI*    WAVE ENVIRONMENT FIELDS
 !      *WVPRPT*    WAVE PROPERTIES FIELDS
 !      *FF_NOW*    FORCING FIELDS AT CURRENT TIME.
@@ -211,7 +214,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO, ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, OCEAN2WAVE
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC,        &
      &            GBOUNC  , IPOGBO   ,CBCPREF
@@ -301,6 +304,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 
       INTEGER(KIND=JWIM), INTENT(OUT) :: NADV
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
+      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO 
       TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
       TYPE(FREQUENCY), DIMENSION(IJS:IJL,NFRE), INTENT(INOUT) :: WVPRPT
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
@@ -980,7 +984,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !*    9.1 READ SPECTRA
 !         ------------
 
-      CALL GETSPEC(FL1, IJS, IJL, WVENVI, NBLKS, NBLKE, IREAD)
+      CALL GETSPEC(FL1, IJS, IJL, BLK2GLO, WVENVI, NBLKS, NBLKE, IREAD)
 
       WRITE(IU06,*) '    SUB. INITMDL: SPECTRA READ IN'
       CALL FLUSH (IU06)

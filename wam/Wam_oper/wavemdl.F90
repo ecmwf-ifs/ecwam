@@ -426,6 +426,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
         CALL INITMDL (NADV,                                    &
      &                IREAD,                                   &
+     &                BLK2GLO,                                 &
      &                WVENVI, WVPRPT, FF_NOW,                  &
      &                FL1,                                     &
      &                NFIELDS, NGPTOTG, NC, NR,                &
@@ -763,7 +764,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
 !       GRIDDED FIELDS ARE NEEDED FOR IFS, GATHERING OF THE NECESSARY 
 !       INFORMATION
-        CALL MPFLDTOIFS(IJS, IJL, NWVFIELDS, WVBLOCK,              &
+        CALL MPFLDTOIFS(IJS, IJL, BLK2GLO, NWVFIELDS, WVBLOCK,              &
      &                  WVFLDG, DEFVAL, MASK_OUT, LLGLOBAL_WVFLDG)
 
 
