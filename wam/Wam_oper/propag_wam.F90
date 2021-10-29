@@ -1,4 +1,4 @@
-SUBROUTINE PROPAG_WAM (IJS, IJL, WVENVI, WVPRPT, FL1)
+SUBROUTINE PROPAG_WAM (IJS, IJL, BLK2GLO, WVENVI, WVPRPT, FL1)
 
 ! ----------------------------------------------------------------------
 
@@ -12,9 +12,10 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, WVENVI, WVPRPT, FL1)
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *PROPAG_WAM (IJS, IJL, WVENVI, WVPRPT, FL1)
+!     *CALL* *PROPAG_WAM (IJS, IJL, BLK2GLO, WVENVI, WVPRPT, FL1)
 !          *IJS*       - INDEX OF FIRST GRIDPOINT.
 !          *IJL*       - INDEX OF LAST GRIDPOINT.
+!          *BLK2GLO*   - BLOCK TO GRID TRANSFORMATION
 !          *WVENVI*    - WAVE ENVIRONMENT FIELDS
 !          *WVPRPT*    - WAVE PROPERTIES FIELDS
 !          *FL1*       - SPECTRUM
@@ -30,7 +31,7 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, WVENVI, WVPRPT, FL1)
 ! -------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO, ENVIRONMENT, FREQUENCY
 
       USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
       USE YOWMPP   , ONLY : NINF     ,NSUP
@@ -56,6 +57,7 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, WVENVI, WVPRPT, FL1)
 #include "propdot.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
       TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(IN) :: WVENVI
       TYPE(FREQUENCY), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WVPRPT
       REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL1
@@ -148,8 +150,9 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1,IJL)
                CALL PROPDOT(KIJS, KIJL, NINF, NSUP,                                     &
+     &                      BLK2GLO,                                                    &
      &                      WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT,                      &
-     &                      DEPTH_EXT, UCUR_EXT, VCUR_EXT,                                    &
+     &                      DEPTH_EXT, UCUR_EXT, VCUR_EXT,                              &
      &                      THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
              ENDDO
 !$OMP        END PARALLEL DO
@@ -175,6 +178,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
 !              COMPUTES ADVECTION WEIGTHS AND CHECK CFL CRITERIA
                CALL CTUWUPDT(IJS, IJL, NINF, NSUP,       &
+&                            BLK2GLO,                    &
 &                            CGROUP_EXT, OMOSNH2KD_EXT,  &
 &                            DEPTH_EXT, UCUR_EXT, VCUR_EXT )
 
@@ -209,6 +213,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1,IJL)
                CALL PROPAGS1(FL1_EXT, FL1, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
+&                            BLK2GLO,                                        &
 &                            DEPTH,                                          &
 &                            CGROUP_EXT, OMOSNH2KD_EXT,                      &
 &                            UCUR_EXT, VCUR_EXT,                             &
@@ -232,6 +237,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1,IJL)
                CALL PROPAGS(FL1_EXT, FL1, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
+&                           BLK2GLO,                                        &
 &                           DEPTH,                                          &
 &                           CGROUP_EXT, OMOSNH2KD_EXT,                      &
 &                           UCUR_EXT, VCUR_EXT,                             &

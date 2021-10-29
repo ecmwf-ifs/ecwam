@@ -1,4 +1,5 @@
       SUBROUTINE PROPDOT(KIJS, KIJL, NINF, NSUP,                &
+     &                   BLK2GLO,                               &
      &                   WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
      &                   DEPTH_EXT, U_EXT, V_EXT,               & 
      &                   THDC, THDD, SDOT)
@@ -20,12 +21,14 @@
 !     ----------
 
 !       *CALL* *PROPDOT*(KIJS, KIJL, NINF, NSUP,
+!                        BLK2GLO,
 !                        WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
 !                        DEPTH_EXT, U_EXT, V_EXT,       & 
 !                        THDC, THDD, SDOT)
 !          *KIJS*        - STARTING INDEX
 !          *KIJL*        - ENDING INDEX
 !          *NINF:NSUP+1* - 1st DIMENSION OF *_EXT ARRAYS 
+!          *BLK2GLO*     - BLOCK TO GRID TRANSFORMATION
 !          *WAVNUM_EXT*  - WAVE NUMBER.
 !          *CGROUP_EXT*  - GROUP SPPED.
 !          *OMOSNH2KD_EXT*- OMEGA / SINH(2KD)
@@ -53,11 +56,14 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
       USE YOWFRED  , ONLY : COSTH    ,SINTH
+
       USE YOWGRID  , ONLY : COSPHM1
 !!!!!!!!!! debile                  ???????
-      USE YOWPARAM , ONLY : NANG     ,NFRE_RED
+
+      USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE_RED
       USE YOWSTAT  , ONLY : ICASE    ,IREFRA
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -69,6 +75,7 @@
 #include "gradi.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, NINF, NSUP
+      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: DEPTH_EXT, U_EXT, V_EXT
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(OUT) :: THDC, THDD
@@ -92,6 +99,7 @@
 !         ----------------------------
 
         CALL GRADI (KIJS, KIJL, NINF, NSUP, IREFRA, &
+     &              BLK2GLO,                        &
      &              DEPTH_EXT, U_EXT, V_EXT,        & 
      &              DDPHI, DDLAM, DUPHI,            &
      &              DULAM, DVPHI, DVLAM)

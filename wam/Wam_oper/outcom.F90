@@ -75,7 +75,7 @@
      &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,    &
      &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,    &
      &            FRH      ,KFRH     ,MFRSTLW  ,MLSTHG
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,    &
+      USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
       USE YOWCOUT  , ONLY : NGOUT    ,IJAR
@@ -177,12 +177,12 @@
 !        --------------------
 
       IF (IFORM.NE.2) THEN
-        WRITE (IU07) IXLG, KXLT, NX, NY, IPER,                          &
+        WRITE (IU07) BLK2GLO%IXLG, BLK2GLO%KXLT, NX, NY, IPER,          &
      &   AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO,                &
      &   ZDELLO, IRGG
       ENDIF
       IF (IFORM.NE.1) THEN
-        WRITE (IU17,998) IXLG, KXLT, NX, NY, IPER
+        WRITE (IU17,998) BLK2GLO%IXLG, BLK2GLO%KXLT, NX, NY, IPER
         WRITE (IU17,999) AMOWEP, AMOSOP, AMOEAP, AMONOP,                &
      &   XDELLA, XDELLO,ZDELLO
       ENDIF

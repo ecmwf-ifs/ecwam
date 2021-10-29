@@ -1,7 +1,8 @@
-      SUBROUTINE GRADI (KIJS, KIJL, NINF, NSUP, IREFRA, &
-     &                  DPTHEXT, UEXT, VEXT,            &
-     &                  DDPHI, DDLAM, DUPHI,            &
-     &                  DULAM, DVPHI, DVLAM)
+SUBROUTINE GRADI (KIJS, KIJL, NINF, NSUP, IREFRA,   &
+ &                  BLK2GLO,                        &
+ &                  DPTHEXT, UEXT, VEXT,            &
+ &                  DDPHI, DDLAM, DUPHI,            &
+ &                  DULAM, DVPHI, DVLAM)
 
 ! ----------------------------------------------------------------------
 
@@ -19,6 +20,7 @@
 !     ----------
 
 !       *CALL* *GRADI (KIJS, KIJL, NINF, NSUP, IREFRA,
+!                      BLK2GLO,
 !                      DPTHEXT, UEXT, VEXT,
 !                      DDPHI, DDLAM, DUPHI,
 !                      DULAM, DVPHI, DVLAM)*
@@ -26,6 +28,7 @@
 !          *KIJL*   - ENDING INDEX
 !          *NINF:NSUP+1* : DIMENSION OF DPTHEXT, UEXT, VEXT 
 !          *IREFRA* - REFRACTION OPTION.
+!          *BLK2GLO*- BLOCK TO GRID TRANSFORMATION
 !          *DDPHI*  - LATITUDE DEPTH GRADIENT.
 !          *DDLAM*  - LONGITUDE DEPTH GRADIENT.
 !          *DUPHI*  - LATITUDE  U-COMPONENT GRADIENT.
@@ -51,10 +54,11 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
       USE YOWCURR  , ONLY : CURRENT_GRADIENT_MAX
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,COSPH
-      USE YOWMAP   , ONLY : KXLT
+      USE YOWPARAM , ONLY : NIBLO
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -68,6 +72,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: NINF 
       INTEGER(KIND=JWIM), INTENT(IN) :: NSUP 
       INTEGER(KIND=JWIM), INTENT(IN) :: IREFRA
+      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: DPTHEXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: UEXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: VEXT 
@@ -88,7 +93,10 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
+
+ASSOCIATE(KXLT => BLK2GLO%KXLT)
+
 
 !*    1. INITIALISE.
 !        -----------
@@ -211,6 +219,7 @@
         ENDDO
       ENDIF
 
-      IF (LHOOK) CALL DR_HOOK('GRADI',1,ZHOOK_HANDLE)
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('GRADI',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE GRADI
+END SUBROUTINE GRADI

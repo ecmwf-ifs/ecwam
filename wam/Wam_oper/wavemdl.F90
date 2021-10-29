@@ -573,7 +573,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       CALL SETMARSTYPE
 
-      CALL WAMODEL (NADV, LDSTOP, LDWRRE,                     &
+      CALL WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,            &
      &              WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS, &
      &              WAM2NEMO, NEMO2WAM, FL1)
 

@@ -1,6 +1,7 @@
 SUBROUTINE CTUWUPDT (IJS, IJL, NINF, NSUP,       &
-&                    CGROUP_EXT, OMOSNH2KD_EXT,  &
-&                    DEPTH_EXT, U_EXT, V_EXT )
+ &                   BLK2GLO,                    &
+ &                   CGROUP_EXT, OMOSNH2KD_EXT,  &
+ &                   DEPTH_EXT, U_EXT, V_EXT )
 
 
 ! ----------------------------------------------------------------------
@@ -15,12 +16,13 @@ SUBROUTINE CTUWUPDT (IJS, IJL, NINF, NSUP,       &
 ! -------------------------------------------------------------------
 
 USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
 USE YOWCURR  , ONLY : LLCFLCUROFF
 USE YOWFRED  , ONLY : COSTH    ,SINTH
 USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
 USE YOWMPP   , ONLY : IRANK    ,NPROC
-USE YOWPARAM , ONLY : NANG     ,NFRE_RED
+USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE_RED
 USE YOWSTAT  , ONLY : IREFRA   ,NPROMA_WAM 
 USE YOWTEST  , ONLY : IU06
 USE YOWUBUF  , ONLY : SUMWN    ,                                            &
@@ -38,6 +40,7 @@ USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP ! GRID POINT WITH HALO EXTEND NINF:NSUP+1 
+TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO  ! BLOCK TO GRID TRANSFORMATION
 REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: CGROUP_EXT  ! GROUP VELOCITY
 REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: OMOSNH2KD_EXT ! OMEGA / SINH(2KD)
 REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: DEPTH_EXT ! WATER DEPTH
@@ -161,6 +164,7 @@ DO JKGLO=IJS,IJL,NPROMA
   KIJL=MIN(KIJS+NPROMA-1,IJL)
   ICALL = 1
   CALL CTUW(KIJS, KIJL, NINF, NSUP, LCFLFAIL(KIJS), ICALL, &
+&           BLK2GLO,                                       &
 &           CGROUP_EXT, OMOSNH2KD_EXT,                     &
 &           DEPTH_EXT, U_EXT, V_EXT )
 
@@ -179,6 +183,7 @@ DO JKGLO=IJS,IJL,NPROMA
     IF (LL2NDCALL) THEN
        ICALL = 2
        CALL CTUW(KIJS, KIJL, NINF, NSUP, LCFLFAIL(KIJS), ICALL, &
+&                BLK2GLO,                                       &
 &                CGROUP_EXT, OMOSNH2KD_EXT,                     &
 &                DEPTH_EXT, U_EXT, V_EXT )
     ENDIF

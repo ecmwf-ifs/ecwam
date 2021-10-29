@@ -1,6 +1,7 @@
 SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
-&                CGROUP_EXT, OMOSNH2KD_EXT,               &
-&                DEPTH_EXT, U_EXT, V_EXT )
+ &               BLK2GLO,                                 &
+ &               CGROUP_EXT, OMOSNH2KD_EXT,               &
+ &               DEPTH_EXT, U_EXT, V_EXT )
 ! ----------------------------------------------------------------------
 
 !**** *CTUW* - COMPUTATION OF THE CONER TRANSPORT SCHEME WEIGHTS.
@@ -15,13 +16,14 @@ SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
       USE YOWCURR  , ONLY : LLCFLCUROFF
       USE YOWFRED  , ONLY : FR       ,DELTH    ,FRATIO   ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : SINPH    ,COSPH    ,COSPHM1
-      USE YOWMAP   , ONLY : IXLG     , KXLT     ,IRGG    ,IPER     ,             &
+      USE YOWMAP   , ONLY : IRGG    ,IPER     ,                                   &
      &                      XDELLA   ,ZDELLO   ,AMOWEP   ,AMOSOP 
-      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NGY
+      USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE_RED ,NGY
       USE YOWPCONS , ONLY : ZPI      ,R        ,CIRC
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSTAT  , ONLY : IDELPRO  ,ICASE    ,IREFRA
@@ -44,6 +46,7 @@ SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
 !                                               THE SECOND CALL WILL TRY TO TEST WHETHER OR NOT
 !                                               CFL IS VIOLATED WHEN THE CURRENT REFRACTION TERMS ARE SET TO 0
 !                                               FOR THOSE POINTS WHERE IT WAS VIOLATED AT THE FIRST CALL  
+      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO  ! BLOCK TO GRID TRANSFORMATION
       LOGICAL, DIMENSION(KIJS:KIJL), INTENT(INOUT) :: LCFLFAIL ! TRUE IF CFL CRITERION WAS VIOLATED.
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: CGROUP_EXT  ! GROUP VELOCITY
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: OMOSNH2KD_EXT ! OMEGA / SINH(2KD)
@@ -87,7 +90,10 @@ SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
+
+ASSOCIATE(IXLG => BLK2GLO%IXLG, &
+ &        KXLT => BLK2GLO%KXLT)
 
       NLAND = NSUP+1
 
@@ -698,8 +704,8 @@ SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
         ENDDO  ! END LOOP ON FREQUENCIES
       ENDDO  ! END LOOP OVER DIRECTIONS
 
-
-      IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
 
       RETURN
 

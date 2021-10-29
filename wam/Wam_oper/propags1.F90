@@ -1,8 +1,9 @@
-      SUBROUTINE PROPAGS1 (F1, F3, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
-&                          DEPTH,                                    &
-&                          CGROUP_EXT, OMOSNH2KD_EXT,                &
-&                          U_EXT, V_EXT,                             &
-&                          L1STCALL)
+SUBROUTINE PROPAGS1 (F1, F3, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
+ &                   BLK2GLO,                                  &
+ &                   DEPTH,                                    &
+ &                   CGROUP_EXT, OMOSNH2KD_EXT,                &
+ &                   U_EXT, V_EXT,                             &
+ &                   L1STCALL)
 
 ! ----------------------------------------------------------------------
 
@@ -41,6 +42,7 @@
 !     ----------
 
 !       *CALL* *PROPAGS1(F1, F3, NINF, NSUP, IJS, IJL, KIJS, KIJL,
+!                        BLK2GLO,
 !                        DEPTH,
 !                        CGROUP_EXT, OMOSNH2KD_EXT, 
 !                        U_EXT, V_EXT, 
@@ -51,6 +53,7 @@
 !          *IJS:IJL*     - 1st DIMENSION OF F3 
 !          *KIJS*        - ACTIVE INDEX OF FIRST POINT
 !          *KIJL*        - ACTIVE INDEX OF LAST POINT
+!          *BLK2GLO*     - BLOCK TO GRID TRANSFORMATION
 !          *DEPTH*       - WATER at ACTIVE GRID POINTS
 !          *CGROUP_EXT*  - GROUP VELOCITY
 !          *OMOSNH2KD_EXT- OMEGA / SINH(2KD)
@@ -74,14 +77,15 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
       USE YOWCURR  , ONLY : LLCHKCFL
       USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,FRATIO   ,    &
      &            COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,DELLAM1  ,SINPH    ,    &
      &            COSPH    ,COSPHM1  ,CDR      ,SDR      ,PRQRT
-      USE YOWMAP   , ONLY : KXLT     ,IRGG
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
+      USE YOWMAP   , ONLY : IRGG
+      USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE     ,NFRE_RED
       USE YOWPCONS , ONLY : PI       ,ZPI      ,R
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSTAT  , ONLY : IDELPRO  ,ICASE    ,IREFRA
@@ -101,6 +105,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN):: DEPTH
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: CGROUP_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: OMOSNH2KD_EXT
@@ -152,9 +157,9 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('PROPAGS1',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('PROPAGS1',0,ZHOOK_HANDLE)
 
-! ----------------------------------------------------------------------
+ASSOCIATE(KXLT => BLK2GLO%KXLT)
 
       ALLOCATE(DELLA0(NINF:NSUP+1))
       ALLOCATE(DPH(NINF:NSUP+1))
@@ -1153,6 +1158,7 @@
       DEALLOCATE(CFLOP)
       DEALLOCATE(CFLOM)
 
-      IF (LHOOK) CALL DR_HOOK('PROPAGS1',1,ZHOOK_HANDLE)
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('PROPAGS1',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE PROPAGS1
+END SUBROUTINE PROPAGS1
