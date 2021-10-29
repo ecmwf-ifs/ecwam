@@ -41,8 +41,13 @@
       INTEGER(KIND=JWIM) :: NS
       INTEGER(KIND=JWIM) :: I
 
+      REAL(KIND=JWRB) :: XLAMBDA  ! Correction factor in the wave growth for gravity-capillary waves
+                                  ! XLAMBDA = 1.0_JWRB + XLAMA * TANH(XLAMB * USTAR**NLAM)
+      REAL(KIND=JWRB), PARAMETER :: XLAMA = 0.25_JWRB
+      REAL(KIND=JWRB), PARAMETER :: XLAMB = 4.0_JWRB
+      INTEGER(KIND=JWIM), PARAMETER :: NLAM = 4
+
       REAL(KIND=JWRB) :: TAUWCG_MIN
-      REAL(KIND=JWRB) :: XLAMBDA
       REAL(KIND=JWRB) :: XKS, OMS, ZABHRC
       REAL(KIND=JWRB) :: X, XLOG, ZLOG, ZLOG2X
       REAL(KIND=JWRB) :: CONST, ZN 
@@ -65,7 +70,7 @@
 
       TAUWCG_MIN = (USTAR*(Z0MIN/Z0))**2
 
-      XLAMBDA = 1.0_JWRB + 0.25_JWRB*TANH(4.0_JWRB*USTAR**4)
+      XLAMBDA = 1.0_JWRB + XLAMA * TANH(XLAMB * USTAR**NLAM)
 
       ZABHRC = ANG_GC * BETAMAXOXKAPPA2 * HALP * C2OSQRTVG_GC(NS)
       IF(LLNORMAGAM) THEN
