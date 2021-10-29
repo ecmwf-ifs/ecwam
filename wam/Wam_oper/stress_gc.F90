@@ -78,10 +78,11 @@
 !       GROWTHRATE BY WIND WITHOUT the multiplicative factor representing the ratio of air density to water density (eps)
 !       and BETAMAXOXKAPPA2
         X       = USTAR*CM_GC(I)
-        XLOG    = LOG(XK_GC(I)*Z0) + XKAPPA/(X + ZALP) - LOG(XLAMBDA) 
-        ZLOG    = MIN(XLOG,0.0_JWRB)
+        XLOG    = LOG(XK_GC(I)*Z0) + XKAPPA/(X + ZALP)
+        ZLOG    = XLOG - LOG(XLAMBDA) 
+        ZLOG    = MIN(ZLOG,0.0_JWRB)
         ZLOG2X  = ZLOG*ZLOG*X
-        GAM_W(I)= ZLOG2X*EXP(ZLOG)*ZLOG2X*OM3GMKM_GC(I)
+        GAM_W(I)= ZLOG2X*EXP(XLOG)*ZLOG2X*OM3GMKM_GC(I)
       ENDDO
 
       ZN = CONST*XKMSQRTVGOC2_GC(NS)*GAM_W(NS)
