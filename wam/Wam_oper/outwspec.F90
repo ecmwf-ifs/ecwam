@@ -38,7 +38,7 @@ SUBROUTINE OUTWSPEC (IJS, IJL, SPEC, MARSTYPE, CDATE, IFCST)
 !-------------------------------------------------------------------
 USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 USE YOWCOUT  , ONLY : NWRTOUTWAM
-USE YOWMAP   , ONLY : IXLG     ,KXLT
+USE YOWMAP   , ONLY : BLK2GLO
 USE YOWMESPAS, ONLY : LFDBIOOUT
 USE YOWMPP   , ONLY : NPRECI   ,IRANK    ,NPROC
 USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NGX      ,NGY
@@ -184,7 +184,6 @@ DO IC=1,NN,ISTEP
      &                    ZRECVBUF,IRECVCOUNTS,                         &
      &                    CDSTRING='OUTWSPEC:')
         CALL GSTATS(692,1)
-        IF (ITEST.GT.1) WRITE(IU06,*) 'SUB OUTWSPEC: MPL_ALLTOALLV DONE'
 
 
         CALL GSTATS(1496,0)
@@ -194,8 +193,8 @@ DO IC=1,NN,ISTEP
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,NEND(NPROC))
           DO IJ=KIJS,KIJL
-            IX = IXLG(IJ)
-            IY = NGY- KXLT(IJ) +1
+            IX = BLK2GLO(IJ)%IXLG 
+            IY = NGY- BLK2GLO(IJ)%KXLT +1
             FIELD(IX,IY) = ZRECVBUF(IJ)
           ENDDO
         ENDDO

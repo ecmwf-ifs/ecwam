@@ -37,8 +37,7 @@
 
       USE YOWCINP  , ONLY : OUTLONG  ,OUTLAT
       USE YOWCOUT  , ONLY : NGOUT    ,IJAR
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,    &
-     &            XDELLA   ,ZDELLO
+      USE YOWMAP   , ONLY : BLK2GLO   ,AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO
       USE YOWPARAM , ONLY : NIBLO
       USE YOWSPEC,   ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06
@@ -90,8 +89,8 @@
      &             ''  POINT.'')')
       DO IO=1,NGOUT
         IF (IJAR(IO).GT.0) THEN
-          KX  = KXLT(IJAR(IO))
-          IX  = IXLG(IJAR(IO))
+          IX  = BLK2GLO(IJAR(IO))%IXLG
+          KX  = BLK2GLO(IJAR(IO))%KXLT
           ALONG = AMOWEP + (IX-1)*ZDELLO(KX)
           ALAT  = AMOSOP + (KX-1)*XDELLA
         ELSE

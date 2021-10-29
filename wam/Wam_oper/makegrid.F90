@@ -41,7 +41,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMONOP   ,    &
+      USE YOWMAP   , ONLY : BLK2GLO  ,AMOWEP   ,AMONOP   ,    &
      &            XDELLA   ,ZDELLO   ,IPER
       USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
@@ -131,8 +131,8 @@
         ENDIF
       ELSE
         DO IJ = 1, NIBLO 
-          IX = IXLG(IJ)
-          IY = NGY-KXLT(IJ)+1
+          IX = BLK2GLO(IJ)%IXLG 
+          IY = NGY-BLK2GLO(IJ)%KXLT+1
           GRID(IX,IY) = BLOCK(IJ)
         ENDDO
       ENDIF ! LLUNSTR

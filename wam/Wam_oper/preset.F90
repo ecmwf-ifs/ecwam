@@ -78,7 +78,7 @@ PROGRAM preset
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
       USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,    &
      &            SB       ,THETAQ
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,    &
+      USE YOWMAP   , ONLY : BLK2GLO   ,IRGG     ,AMOWEP   ,             &
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,    &
      &            IFROMIJ  ,JFROMIJ
       USE YOWNEMOFLDS , ONLY : NEMO2WAM
@@ -345,8 +345,8 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         IF (ALLOCATED(JFROMIJ)) DEALLOCATE(JFROMIJ)
         ALLOCATE(JFROMIJ(IJSLOC:IJLLOC))
         DO IJ = IJSLOC, IJLLOC 
-          IFROMIJ(IJ)=IXLG(IJ)
-          JFROMIJ(IJ)=NGY-KXLT(IJ)+1
+          IFROMIJ(IJ)=BLK2GLO(IJ)%IXLG
+          JFROMIJ(IJ)=NGY-BLK2GLO(IJ)%KXLT+1
         ENDDO
       ENDIF
 

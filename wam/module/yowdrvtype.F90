@@ -8,7 +8,7 @@
       IMPLICIT NONE
 
 !*    **  *VARIABLES DEPENDENT ON GLOBAL GRID POINTS ON STRUCTURED GRID
-!!! (ideally this be removed, but currently still need for the propagation hallo,
+!!! (ideally this be removed, but currently still need for the propagation halo, and the output of global fields
 !!!  but also for the wave DA. It should be possible to localise this...)
 
       TYPE WVGRIDGLO

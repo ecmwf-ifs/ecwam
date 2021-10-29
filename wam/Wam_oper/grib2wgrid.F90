@@ -185,7 +185,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
       PMOSOP=0.0_JWRB
       PMOEAP=0.0_JWRB
       PMONOP=0.0_JWRB
-      GOUT: DO K=1,NYFF
+      OUTDM: DO K=1,NYFF
         JSN=NYFF-K+1
         DO I=1,KLONRGG_LOC(JSN)
           IF (YLAT(I,K).EQ.PMISS .OR. XLON(I,K).EQ.PMISS) CYCLE
@@ -193,9 +193,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
           PMOSOP=YLAT(I,K)
           PMOEAP=XLON(I,K)
           PMONOP=YLAT(I,K)
-          EXIT GOUT
+          EXIT OUTDM
         ENDDO
-      ENDDO GOUT
+      ENDDO OUTDM
       DO K=1,NYFF
         JSN=NYFF-K+1
         DO I=1,KLONRGG_LOC(JSN)

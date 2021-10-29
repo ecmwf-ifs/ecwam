@@ -40,8 +40,7 @@
       USE YOWCOER  , ONLY : NERS     ,CDTERS   ,IERS     ,IJERS    ,    &
      &            IGERS
       USE YOWFRED  , ONLY : FR       ,TH       ,FRATIO
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,    &
-     &            XDELLA   ,ZDELLO
+      USE YOWMAP   , ONLY : BLK2GLO  ,AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWPCONS , ONLY : DEG      ,ZMISS
@@ -176,8 +175,8 @@
           XFRE = REAL(NFRE)
           DO NGOU=1,IERS
               IJ = IJERS(NGOU)                                         
-              XLON = AMOWEP + REAL(IXLG(IJ)-1)*ZDELLO(KXLT(IJ))
-              XLAT = AMOSOP + REAL(KXLT(IJ)-1)*XDELLA               
+              XLON = AMOWEP + REAL(BLK2GLO(IJ)%IXLG-1)*ZDELLO(KXLT(IJ))
+              XLAT = AMOSOP + REAL(BLK2GLO(IJ)%KXLT-1)*XDELLA               
 
 !*    1.1 WRITE INFORMATION TO FILE IU92.                               
 !         -------------------------------                               

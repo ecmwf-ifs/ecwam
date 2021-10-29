@@ -16,6 +16,7 @@
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
       USE YOWCOUP  , ONLY : LWCOU, LIFS_IO_SERV_ENABLED,                &
                             OUTINT_IO_SERV_HANDLER

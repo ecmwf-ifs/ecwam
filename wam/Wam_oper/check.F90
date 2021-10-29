@@ -42,7 +42,7 @@
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF   ,IJARF
       USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWGRID  , ONLY : IJS      ,IJL
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,    &
+      USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLO
       USE YOWSHAL  , ONLY : NDEPTH
       USE YOWTEST  , ONLY : IU06, ITEST
@@ -85,7 +85,7 @@
 
       IERR = 0
       DO IJ=IJS,IJL
-      IF (IXLG(IJ) /= 0 .OR. KXLT(IJ) /= 0) LST(IXLG(IJ),KXLT(IJ)) = 'S'
+      IF (BLK2GLO(IJ)%IXLG /= 0 .OR. BLK2GLO(IJ)%KXLT /= 0) LST(BLK2GLO(IJ)%IXLG,BLK2GLO(IJ)%KXLT) = 'S'
       ENDDO
 
 !*    2.1 INCLUDE OUTPUT POINTS.
@@ -111,7 +111,7 @@
             WRITE (IU06,*) ' ***************************************'
             IF (IERR > 20) CALL ABORT1
           ENDIF
-     IF (IXLG(IJ) /= 0 .OR. KXLT(IJ) /= 0) LST(IXLG(IJ),KXLT(IJ)) = '+' 
+     IF (BLK2GLO(IJ)%IXLG /= 0 .OR. BLK2GLO(IJ)%KXLT /= 0) LST(BLK2GLO(IJ)%IXLG,BLK2GLO(IJ)%KXLT) = '+' 
         ENDDO
       ENDIF
 
@@ -138,8 +138,8 @@
             WRITE (IU06,*) ' ***************************************'
             IF (IERR > 20) CALL ABORT1
           ENDIF
-          IF (IXLG(IJ) /= 0 .OR. KXLT(IJ) /= 0)                     &
-     &     LST(IXLG(IJ),KXLT(IJ)) = '/'
+          IF (BLK2GLO(IJ)%IXLG /= 0 .OR. BLK2GLO(IJ)%KXLT /= 0)                     &
+     &     LST(BLK2GLO(IJ)%IXLG,BLK2GLO(IJ)%KXLT) = '/'
         ENDDO
       ENDIF
 
@@ -166,8 +166,8 @@
             WRITE (IU06,*) ' ***************************************'
             IF (IERR > 20) CALL ABORT1
           ENDIF
-          IF (IXLG(IJ) /= 0 .OR. KXLT(IJ) /= 0)                     &
-     &     LST(IXLG(IJ),KXLT(IJ)) = 'B'
+          IF (BLK2GLO(IJ)%IXLG /= 0 .OR. BLK2GLO(IJ)%KXLT /= 0)         &
+     &     LST(BLK2GLO(IJ)%IXLG,BLK2GLO(IJ)%KXLT) = 'B'
         ENDDO
       ENDIF
 

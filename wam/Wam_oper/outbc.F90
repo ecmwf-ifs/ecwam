@@ -47,11 +47,10 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LL1D
       USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,GBOUNC   ,IPOGBO
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,    &
+      USE YOWMAP   , ONLY : BLK2GLO  ,AMOWEP   ,AMOSOP   ,    &
      &            XDELLA   ,ZDELLO
       USE YOWMPP   , ONLY : NPROC  , IRANK
       USE YOWSTAT  , ONLY : CDTPRO   ,NPROMA_WAM
-      USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWSPEC  , ONLY : IJ2NEWIJ
 
 ! ----------------------------------------------------------------------
@@ -95,12 +94,6 @@
       ENDDO
 !$OMP END PARALLEL DO
 
-      IF (ITEST.GE.3) THEN
-        WRITE(IU06,*) '      SUB. OUTBC: INTEGRATED',                   &
-     &   ' PARAMETERS COMPUTED FOR BOUNDARY POINTS OUTPUT'
-        CALL FLUSH(IU06)
-      ENDIF
-
       IRECV=1
       CALL MPGATHERBC(IRECV, IJS, IJL, NSCFLD,                          &
      &                FL1, EM, TQ, FM,                                  &
@@ -110,16 +103,16 @@
 !*    2. WRITE INFORMATION TO FILE(s) IU19.
 !        ----------------------------------
 
-      IF(IRANK.EQ.IRECV) THEN
+      IF (IRANK == IRECV) THEN
         DO II=1,GBOUNC
           DO NGOU=IPOGBO(II-1)+1,IPOGBO(II)
-            IF(LL1D .OR. NPROC.EQ.1) THEN
+            IF (LL1D .OR. NPROC == 1) THEN
               IJ = IJARC(NGOU)
             ELSE
               IJ = IJ2NEWIJ(IJARC(NGOU))
             ENDIF
-            IX = IXLG(IJ)
-            KX = KXLT(IJ)
+            IX = BLK2GLO(IJ)%IXLG 
+            KX = BLK2GLO(IJ)%KXLT 
             XLON = AMOWEP + REAL(IX-1)*ZDELLO(KX)
             XLAT = AMOSOP + REAL(KX-1)*XDELLA
 

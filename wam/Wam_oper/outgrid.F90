@@ -76,19 +76,19 @@
       NFLDTOT=0
       NFLDPPEMAX=1
       DO ICT=1,JPPFLAG
-        IF(IPFGTBL(ICT).GT.0) THEN 
+        IF (IPFGTBL(ICT) > 0) THEN 
           NFLDPPE(IPFGTBL(ICT))=NFLDPPE(IPFGTBL(ICT))+1
           NFLDTOT=NFLDTOT+1
           NFLDPPEMAX=MAX(NFLDPPEMAX,NFLDPPE(IPFGTBL(ICT)))
         ENDIF
       ENDDO
-      IF (HaveMPI_arrays .eqv. .FALSE.) THEN
-        IF (LLUNSTR .and. (OUT_METHOD .eq. 2)) THEN
+      IF ( .NOT. HaveMPI_arrays ) THEN
+        IF (LLUNSTR .AND. (OUT_METHOD == 2)) THEN
            CALL INITIAL_OUTPUT_INITS_NEXTGEN
         END IF
       END IF
       HaveMPI_arrays=.TRUE.
-      IF(NFLDTOT.EQ.0) THEN
+      IF (NFLDTOT == 0) THEN
         IF (LHOOK) CALL DR_HOOK('OUTGRID',1,ZHOOK_HANDLE)
         RETURN
       ENDIF
@@ -105,7 +105,7 @@
         IRECVCOUNTS(IPR)=NFLDPPE(IRANK)*(NBLKE(IPR)-NBLKS(IPR)+1)
       ENDDO
 
-      IF ((.NOT.LLUNSTR).OR.(OUT_METHOD.eq.1)) THEN
+      IF ((.NOT.LLUNSTR) .OR. (OUT_METHOD == 1)) THEN
       
 !     LOADING THE COMMUNICATION BUFFER
         ALLOCATE(ZSENDBUF(NFLDPPEMAX * MPMAXLENGTH,NPROC))
@@ -113,7 +113,7 @@
         ICNT(:)=0
         DO ICT=1,JPPFLAG
           IPR=IPFGTBL(ICT)
-          IF(IPR.GT.0) THEN 
+          IF (IPR > 0) THEN 
             DO IJ=IJSLOC,IJLLOC
               ICNT(IPR) = ICNT(IPR) + 1
               ZSENDBUF(ICNT(IPR),IPR) = BOUT(IJ,ITOBOUT(ICT))
@@ -133,10 +133,10 @@
 
 !     GLOBAL EXCHANGE
 
-      IF ((.NOT.LLUNSTR).OR.(OUT_METHOD.eq.1)) THEN
+      IF ((.NOT.LLUNSTR) .OR. (OUT_METHOD == 1)) THEN
         CALL GSTATS(693,0)
         IR=0
-        IF(NFLDPPE(IRANK).GT.0) THEN
+        IF (NFLDPPE(IRANK) > 0) THEN
           ALLOCATE(ZRECVBUF(NFLDPPE(IRANK)*MPMAXLENGTH,NPROC))
           DO IPR=1,NPROC
             IR=IR+1
@@ -147,7 +147,7 @@
           ENDDO
         ENDIF
         DO IPR=1,NPROC
-          IF(NFLDPPE(IPR).GT.0) THEN
+          IF (NFLDPPE(IPR) > 0) THEN
             IR=IR+1
             CALL MPL_SEND(ZSENDBUF(1:ICNT(IPR),IPR),KDEST=IPR,          &
      &        KTAG=KTAG,                                                &
@@ -164,7 +164,7 @@
 !     RETRIEVE THE INFORMATION
 !     ------------------------
 
-      IF (LLUNSTR .AND. (OUT_METHOD .EQ. 2)) THEN
+      IF (LLUNSTR .AND. (OUT_METHOD == 2)) THEN
         NIBLO_OUT = NIBLO_FD
       ELSE
         NIBLO_OUT = NIBLO
@@ -175,17 +175,17 @@
 !     RECEIVING AND TRANSFERING FROM BLOCK TO GRID
 !     --------------------------------------------
 
-      IF(NFLDPPE(IRANK).GT.0) THEN
-        IF(ALLOCATED(GOUT)) DEALLOCATE(GOUT)
+      IF (NFLDPPE(IRANK) > 0) THEN
+        IF (ALLOCATED(GOUT)) DEALLOCATE(GOUT)
         ALLOCATE(GOUT(NFLDPPE(IRANK),NGX,NGY))
       ENDIF
 
       ICNT(:)=0
       ICT=1
       IFLD=1
-      DO WHILE ( IFLD.LE.NFLDPPE(IRANK) .AND. ICT .LE. JPPFLAG )
-        IF(IPFGTBL(ICT).EQ.IRANK ) THEN
-          IF (.NOT.(LLUNSTR) .OR. (OUT_METHOD .eq. 1)) THEN
+      DO WHILE ( IFLD <= NFLDPPE(IRANK) .AND. ICT <= JPPFLAG )
+        IF (IPFGTBL(ICT) == IRANK ) THEN
+          IF (.NOT.(LLUNSTR) .OR. (OUT_METHOD == 1)) THEN
             DO IPR=1,NPROC
               ICOUNT=ICNT(IPR)
               DO IJ=NBLKS(IPR),NBLKE(IPR)
@@ -207,8 +207,8 @@
       ENDDO  ! WHILE
 
       DEALLOCATE(GTEMP)
-      IF(ALLOCATED(ZRECVBUF)) DEALLOCATE(ZRECVBUF)
-      IF(ALLOCATED(ZSENDBUF)) DEALLOCATE(ZSENDBUF)
+      IF (ALLOCATED(ZRECVBUF)) DEALLOCATE(ZRECVBUF)
+      IF (ALLOCATED(ZSENDBUF)) DEALLOCATE(ZSENDBUF)
 
       IF (LHOOK) CALL DR_HOOK('OUTGRID',1,ZHOOK_HANDLE)
 
