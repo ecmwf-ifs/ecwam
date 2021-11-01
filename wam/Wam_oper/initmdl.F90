@@ -1,6 +1,6 @@
 SUBROUTINE INITMDL (NADV,                                 &
  &                  IREAD,                                &
- &                  BLK2GLO,                              &
+ &                  BLK2GLO,  BLK2LOC,                    &
  &                  WVENVI, WVPRPT, FF_NOW,               &
  &                  FL1,                                  &
  &                  NFIELDS, NGPTOTG, NC, NR,             &
@@ -49,7 +49,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 
 !    *CALL* *INITMDL (NADV,
 !    &                IREAD,
-!    &                BLK2GLO,
+!    &                BLK2GLO, BLK2LOC, 
 !    &                WVENVI, WVPRPT, FF_NOW,
 !    &                FL1,                  
 !    &                NFIELDS, NGPTOTG, NC, NR,
@@ -60,6 +60,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 !      *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                  (IF NEEDED).
 !      *BLK2GLO*   BLOCK TO GRID TRANSFORMATION
+!      *BLK2LOC*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !      *WVENVI*    WAVE ENVIRONMENT FIELDS
 !      *WVPRPT*    WAVE PROPERTIES FIELDS
 !      *FF_NOW*    FORCING FIELDS AT CURRENT TIME.
@@ -214,7 +215,8 @@ SUBROUTINE INITMDL (NADV,                                 &
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : WVGRIDGLO, ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO, WVGRIDLOC,                    &
+     &                         ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, OCEAN2WAVE
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC,        &
      &            GBOUNC  , IPOGBO   ,CBCPREF
@@ -236,7 +238,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IJS     ,IJL      ,COSPH
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,                        &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
-     &            KMNOP    ,KMSOP    ,IPER     ,IFROMIJ  , JFROMIJ
+     &            KMNOP    ,KMSOP    ,IPER
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
      &            NGX      ,NGY      ,                                  &
@@ -305,6 +307,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       INTEGER(KIND=JWIM), INTENT(OUT) :: NADV
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO 
+      TYPE(WVGRIDLOC), DIMENSION(IJS:IJL), INTENT(IN) :: BLK2LOC
       TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
       TYPE(FREQUENCY), DIMENSION(IJS:IJL,NFRE), INTENT(INOUT) :: WVPRPT
       TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
@@ -752,7 +755,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !        USED). AND READ IN LAST WINDFIELDS FROM RESTARTFILE.
 !        ---------------------------------------------------------------
 
-      CALL GETSTRESS(IJS, IJL, IFROMIJ, JFROMIJ,       &
+      CALL GETSTRESS(IJS, IJL, BLK2LOC,                &
      &               WVENVI, FF_NOW, NEMO2WAM,         &
      &               NBLKS, NBLKE, IREAD) 
 
@@ -940,7 +943,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       ENDIF
 
 !     INITIALIZE THE NEMO COUPLING
-      IF (LWNEMOCOU) CALL INITNEMOCPL(IJS, IJL, IFROMIJ  ,JFROMIJ)
+      IF (LWNEMOCOU) CALL INITNEMOCPL(IJS, IJL, BLK2LOC)
 
 
       IF (LLUNSTR) THEN
@@ -958,7 +961,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       LLINIT=.NOT.LRESTARTED
       LLALLOC_FIELDG_ONLY=.FALSE.
 
-      CALL PREWIND (IJS, IJL, IFROMIJ  ,JFROMIJ,         &
+      CALL PREWIND (IJS, IJL, BLK2LOC,                   &
      &              WVENVI, FF_NOW, FF_NEXT,             &
      &              LLINIT, LLALLOC_FIELDG_ONLY,         &
      &              IREAD,                               &

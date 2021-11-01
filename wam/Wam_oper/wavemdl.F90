@@ -110,7 +110,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWFRED  , ONLY : FR
       USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWICE   , ONLY : FLMIN
-      USE YOWMAP   , ONLY : BLK2GLO  ,ZDELLO   ,IQGAUSS,   AMONOP, IFROMIJ ,JFROMIJ
+      USE YOWMAP   , ONLY : BLK2GLO  ,BLK2LOC  ,ZDELLO   ,IQGAUSS,   AMONOP
       USE YOWMEAN  , ONLY : INTFLDS
       USE YOWNEMOFLDS , ONLY : WAM2NEMO, NEMO2WAM
       USE YOWMPP   , ONLY : IRANK    ,NPROC
@@ -426,7 +426,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
         CALL INITMDL (NADV,                                    &
      &                IREAD,                                   &
-     &                BLK2GLO,                                 &
+     &                BLK2GLO, BLK2LOC,                        &
      &                WVENVI, WVPRPT, FF_NOW,                  &
      &                FL1,                                     &
      &                NFIELDS, NGPTOTG, NC, NR,                &
@@ -554,7 +554,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-        CALL PREWIND (IJS, IJL, IFROMIJ, JFROMIJ,        &
+        CALL PREWIND (IJS, IJL, BLK2LOC,                 &
      &                WVENVI, FF_NOW, FF_NEXT,           &
      &                LLINIT, LLALLOC_FIELDG_ONLY,       &
      &                IREAD,                             &

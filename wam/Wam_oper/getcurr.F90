@@ -137,7 +137,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,   &
                 DO JKGLO = IJS, IJL, NPROMA
                   KIJS=JKGLO
                   KIJL=MIN(KIJS+NPROMA-1,IJL)
-                  CALL WAMCUR (UCUR(KIJS), VCUR(KIJS), KIJS, KIJL)
+                  CALL WAMCUR (KIJS, KIJL, IFROMIJ(KIJS), JFROMIJ(KIJS), UCUR(KIJS), VCUR(KIJS))
                 ENDDO
 !$OMP           END PARALLEL DO
                 CALL GSTATS(1444,1)
