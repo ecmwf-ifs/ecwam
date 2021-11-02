@@ -118,7 +118,9 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
       LLALLOC_ONLY=.FALSE.
       LLINIALL=.TRUE.
       LLOCAL=.TRUE.
-      CALL INIT_FIELDG(LLALLOC_ONLY,LLINIALL,LLOCAL)
+      CALL INIT_FIELDG(IJS, IJL, BLK2LOC,                      &
+     &                 LLALLOC_ONLY, LLINIALL, LLOCAL)
+
 
 !     1.1 GET ATMOSPHERIC MODEL FORCINGS FIELDS 
 !         -------------------------------------
@@ -174,6 +176,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
         IPARAM=245
         LLONLYPOS=.TRUE.
         CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, IJS, IJL,         &
+     &                 IFROMIJ, JFROMIJ,                              &
      &                 WSWAVE, KZLEVUWAVE, LLONLYPOS, IREAD)
 
         WRITE(IU06,*) ' '
@@ -255,6 +258,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
         FILNM='cdwavein'
 !       !!!! CD was initialised above !!!!
         CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, IJS, IJL,         &
+     &                 IFROMIJ, JFROMIJ,                              &
      &                 CD, KZLEVCD, LLONLYPOS, IREAD)
 
 !       TEST REFERENCE LEVEL FOR UWAVE AND CD

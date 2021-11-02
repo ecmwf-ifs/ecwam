@@ -31,16 +31,6 @@
 !     GATHERED MDEL FREQUENCIES AT A TIME
 !     AND KDEL DIRECTIONS AT A TIME.
 
-!     EXTERNALS.
-!     ----------
-!     GETENV
-!     GRSTNAME
-!     MPGATHERFL
-!     WRITEFL
-
-!     REFERENCE.
-!     ----------
-!     NONE
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
@@ -71,7 +61,6 @@
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: IUNIT
-      INTEGER(KIND=JWIM) :: IFCST 
       INTEGER(KIND=JWIM) :: IRECV, MLOOP, KLOOP, MINF, MSUP, KINF, KSUP 
       INTEGER(KIND=JWIM) :: LNAME
 
@@ -88,8 +77,7 @@
 
       LOUNIT = .TRUE.
 
-      IFCST = 0
-      CALL GRSTNAME(CDTPRO,CDATEF,IFCST,'BLS',ICPLEN,CPATH,FILENAME)
+      CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
 
       IF (LRSTPARALW) THEN
 !        RESTART FILES FROM ALL PS's

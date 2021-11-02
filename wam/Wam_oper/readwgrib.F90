@@ -1,6 +1,7 @@
 !-----------------------------------------------------------------------
 
       SUBROUTINE READWGRIB(IU06, FILNM, IPARAM, CDATE, IJS, IJL,      &
+     &                     IFROMIJ, JFROMIJ,                          &
      &                     FIELD, KZLEV, LLONLYPOS, IREAD )
 
 !-----------------------------------------------------------------------
@@ -28,6 +29,8 @@
 !      *CDATE*     CHARACTER DATE OF THE REQUESTED FIELD 
 !      *IJS*       INDEX OF FIRST GRIDPOINT
 !      *IJL*       INDEX OF LAST GRIDPOINT
+!      *IFROMIJ*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!      *JFROMIJ*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !      *FIELD*     REAL      WAVE FIELD IN BLOCK FORMAT 
 !      *KZLEV*     INTEGER   REFERENCE LEVEL IN full METER
 !                           (SHOULD BE 0 EXCEPT FOR 233, 245 AND 249 WHERE IT
@@ -67,7 +70,6 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWGRID  , ONLY : NLONRGG
-      USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWPCONS , ONLY : ZMISS
@@ -81,16 +83,16 @@
 #include "abort1.intfb.h"
 #include "inwgrib.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, IREAD, IPARAM
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), INTENT(INOUT) :: KZLEV
-
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: FIELD 
-
-      CHARACTER(LEN=14), INTENT(IN) :: CDATE
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU06
       CHARACTER(LEN=24), INTENT(IN) :: FILNM
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: IPARAM
+      CHARACTER(LEN=14), INTENT(IN) :: CDATE
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: FIELD 
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: KZLEV
       LOGICAL, INTENT(IN) :: LLONLYPOS
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
 
 
       INTEGER(KIND=JWIM) :: KPARAM

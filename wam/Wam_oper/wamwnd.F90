@@ -1,4 +1,5 @@
       SUBROUTINE WAMWND (KIJS, KIJL,                &
+     &                   IFROMIJ, JFROMIJ,          &
      &                   UCUR, VCUR,                &
      &                   U10, US,                   &
      &                   THW, ADS, WSTAR, CITH,     &
@@ -25,10 +26,15 @@
 !     ----------
 
 !       *CALL WAMWND (KIJS, KIJL,
+!                     IFROMIJ, JFROMIJ,
 !                     UCUR, VCUR,
 !                     U10, US,
 !                     THW, ADS, WSTAR, CITH,
 !                     LWCUR, ICODE_WND)
+!          *KIJS*     INDEX OF FIRST GRIDPOINT
+!          *KIJL*     INDEX OF LAST GRIDPOINT
+!          *IFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!          *JFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !          *UCUR* - U-COMPONENT OF THE SURFACE CURRENT
 !          *VCUR* - V-COMPONENT OF THE SURFACE CURRENT
 !          *U10*  - INTERPOLATED WINDS AT ALL POINTS AND BLOCKS.
@@ -64,7 +70,6 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWPCONS , ONLY : G        ,ZPI      ,ZMISS    ,EPSUS
       USE YOWPHYS  , ONLY : XKAPPA
       USE YOWSTAT  , ONLY : IREFRA   ,LRELWIND
@@ -79,6 +84,7 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
       INTEGER(KIND=JWIM), INTENT(IN) :: ICODE_WND
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(IN) :: UCUR, VCUR 
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(INOUT) :: U10, US

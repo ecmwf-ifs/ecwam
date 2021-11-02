@@ -39,18 +39,6 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,   &
 !     THEN 
 !     SET LLCHKCFLA=.TRUE. TO CHECK ON THE CFL CRITERIA.
 
-!     EXTERNALS.
-!     ----------
-
-!       *INCDATE*
-!       *ABORT1*
-!       *CURRENT2WAM*
-
-!     REFERENCES.
-!     ----------- 
-
-!       NONE
-
 ! ------------------------------------------------------------------- 
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
@@ -196,7 +184,9 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,   &
      &                        ' FOR DATE ',CDTCUR
                 CALL FLUSH(IU06)
 
-                CALL CURRENT2WAM (FILNM, IREAD, CDATEIN, IJS, IJL, UCUR, VCUR)
+                CALL CURRENT2WAM (FILNM, IREAD, CDATEIN,        &
+     &                            IJS, IJL, IFROMIJ, JFROMIJ,   &
+     &                            UCUR, VCUR)
                 
 
                 IF (CDATEIN /= CDTCUR) THEN

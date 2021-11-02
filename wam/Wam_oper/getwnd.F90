@@ -234,6 +234,7 @@
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
           CALL WAMWND (KIJS, KIJL,                                       &
+     &                 IFROMIJ(KIJS), JFROMIJ(KIJS),                     &
      &                 UCUR(KIJS), VCUR(KIJS),                           &
      &                 U10(KIJS), US(KIJS),                              &
      &                 THW(KIJS), ADS(KIJS), WSTAR(KIJS), CITHICK(KIJS), &

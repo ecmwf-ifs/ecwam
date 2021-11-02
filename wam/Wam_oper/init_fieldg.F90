@@ -1,4 +1,5 @@
-      SUBROUTINE INIT_FIELDG(LLALLOC_ONLY, LLINIALL, LLOCAL)
+SUBROUTINE INIT_FIELDG(IJS, IJL, BLK2LOC,                      &
+ &                     LLALLOC_ONLY, LLINIALL, LLOCAL)
 
 ! ----------------------------------------------------------------------
 
@@ -13,6 +14,7 @@
 !     ----------
 
 !     *CALL* *INIT_FIELDG(LLALLOC_ONLY,LLINIALL,LLOCAL)*
+
 !          LLALLOC_ONLY LOGICAL : IF TRUE THEN ONLY ALLOCATION OF FIELDG IS DONE.
 !          LLINIALL  LOGICAL : IF TRUE ALL STRUCTURE IS INITIALISED
 !                               OTHERWISE ONLY XLON and YLAT
@@ -28,18 +30,17 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDLOC
 
-      USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO  ,     &
-     &            IFROMIJ  ,JFROMIJ
+      USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWPCONS , ONLY : ZMISS    ,ROAIR    ,WSTAR0
-      USE YOWMPP   , ONLY : IRANK
       USE YOWWIND  , ONLY : FIELDG   ,NXFF     ,NYFF    ,WSPMIN
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
       USE YOWSTAT  , ONLY : NPROMA_WAM
-      USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWUNPOOL ,ONLY : LLUNSTR
       USE YOWPD    , ONLY : MNP=>npa , XP=>x, YP=>y
+
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -47,6 +48,8 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      TYPE(WVGRIDLOC), DIMENSION(IJS:IJL), INTENT(IN) :: BLK2LOC
       LOGICAL, INTENT(IN) :: LLALLOC_ONLY, LLINIALL, LLOCAL
 
 
@@ -58,15 +61,15 @@
       LOGICAL :: LLOCAL_EXIST
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('INIT_FIELDG',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('INIT_FIELDG',0,ZHOOK_HANDLE)
 
-      IF(ALLOCATED(FIELDG)) DEALLOCATE(FIELDG)
+      IF (ALLOCATED(FIELDG)) DEALLOCATE(FIELDG)
       ALLOCATE(FIELDG(NXFF,NYFF))
 
       IF (.NOT.LLALLOC_ONLY) THEN
 
       CALL GSTATS(1501,0)
-      IF(LLINIALL) THEN
+      IF (LLINIALL) THEN
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JY,IX)
         DO JY=1,NYFF
           DO IX=1,NXFF
@@ -104,19 +107,19 @@
       ENDIF
 
 !     COORDINATES OF THE POINTS IN FIELDG THAT ARE NEEDED
-      LLOCAL_EXIST=LLOCAL.AND.ALLOCATED(IFROMIJ).AND.ALLOCATED(JFROMIJ)
+      LLOCAL_EXIST=LLOCAL
 
-      IF(LLOCAL_EXIST) THEN
+      IF (LLOCAL_EXIST) THEN
         NPROMA=NPROMA_WAM
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY,JSN)
-        DO JKGLO=NSTART(IRANK),NEND(IRANK),NPROMA
+        DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
           DO IJ=KIJS,KIJL
-            IX = IFROMIJ(IJ)
-            JY = JFROMIJ(IJ)
-            JSN=NYFF-JY+1
-            IF(LLUNSTR) THEN
+            IX = BLK2LOC(IJ)%IFROMIJ
+            JY = BLK2LOC(IJ)%JFROMIJ
+            JSN= BLK2LOC(IJ)%KFROMIJ
+            IF (LLUNSTR) THEN
               FIELDG(IX,JY)%XLON = XP(IJ)
               FIELDG(IX,JY)%YLAT = YP(IJ)
             ELSE
@@ -128,11 +131,10 @@
 !$OMP   END PARALLEL DO
 
       ELSE
-        IF(LLUNSTR) THEN
+        IF (LLUNSTR) THEN
 !!!!
-
-      write(*,*) 'In INIT_FIELDG : not yet ready for unstructured grid '
-      call abort1
+          write(*,*) 'In INIT_FIELDG : not yet ready for unstructured grid '
+          call abort1
 
         ELSE
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JY,IX,JSN)
@@ -151,6 +153,6 @@
 
       ENDIF ! LLALLOC_ONLY
 
-      IF (LHOOK) CALL DR_HOOK('INIT_FIELDG',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('INIT_FIELDG',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE INIT_FIELDG
+END SUBROUTINE INIT_FIELDG

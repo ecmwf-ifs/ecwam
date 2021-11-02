@@ -175,15 +175,15 @@
           XFRE = REAL(NFRE)
           DO NGOU=1,IERS
               IJ = IJERS(NGOU)                                         
-              XLON = AMOWEP + REAL(BLK2GLO(IJ)%IXLG-1)*ZDELLO(KXLT(IJ))
-              XLAT = AMOSOP + REAL(BLK2GLO(IJ)%KXLT-1)*XDELLA               
+              XLON = AMOWEP + (BLK2GLO(IJ)%IXLG-1)*ZDELLO(BLK2GLO(IJ)%KXLT)
+              XLAT = AMOSOP + (BLK2GLO(IJ)%KXLT-1)*XDELLA               
 
 !*    1.1 WRITE INFORMATION TO FILE IU92.                               
 !         -------------------------------                               
 
               WRITE(IU92) XLON, XLAT, CDTPRO, XANG, XFRE,               &
      &                    TH(1), FR(1), FRATIO
-              IF (EMPTS(NGOU) > 0.0 ) THEN
+              IF (EMPTS(NGOU) > 0.0_JWRB ) THEN
                 WRITE(IU92) 4.0_JWRB*SQRT(EMPTS(NGOU)), DEG*THQPTS(NGOU), &
      &                    FMPTS(NGOU), USPTS(NGOU), DEG*THWPTS(NGOU),     &
      &                    U10PTS(NGOU)

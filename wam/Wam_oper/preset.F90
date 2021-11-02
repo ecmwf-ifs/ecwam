@@ -533,7 +533,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         CALL MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,             &
      &              IJS, IJL, FL1, FF_NOW(IJS:IJL)%WSWAVE, FF_NOW(IJS:IJL)%WDWAVE)
       ELSE
-        CALL MSWELL (IJS, IJL, FL1)
+        CALL MSWELL (IJS, IJL, BLK2LOC, FL1)
 
         IF (LLUNSTR) THEN
 !         reset points with no flux out of the boundary to 0

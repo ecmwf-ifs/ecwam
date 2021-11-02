@@ -472,7 +472,7 @@
         K = BLK2GLO(IP)%KXLT
         XLON = REAL(I-1)*ZDELLO(K)
 
-        IF (K > 1. THEN
+        IF (K > 1) THEN
 !         CLOSEST GRID POINT IN SW CORNER
           XL=XLON-XDELLA
           XMIN = XL/ZDELLO(K-1)

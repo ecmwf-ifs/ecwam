@@ -1,4 +1,4 @@
-      SUBROUTINE MSWELL (IJS, IJL, FL1)
+      SUBROUTINE MSWELL (IJS, IJL, BLK2LOC, FL1)
 ! ----------------------------------------------------------------------
 
 !**** *MSWELL* - MAKES START SWELL FIELDS FOR WAMODEL.
@@ -13,7 +13,8 @@
 !**   INTERFACE.
 !     ----------
 
-!   *CALL* *MSWELL (IJS, IJL, FL1)
+!   *CALL* *MSWELL (IJS, IJL, BLK2LOC, FL1)
+!      *BLK2LOC*             POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !      *FL1*      REAL      2-D SPECTRUM FOR EACH GRID POINT 
 
 !     METHOD.
@@ -106,9 +107,9 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDLOC
 
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,RAD      ,R       ,ZMISS
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -121,6 +122,7 @@
 #include "init_fieldg.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL 
+      TYPE(WVGRIDLOC), DIMENSION(IJS:IJL), INTENT(IN) :: BLK2LOC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(OUT) :: FL1
 
       INTEGER(KIND=JWIM), PARAMETER :: NLOC=4 ! TOTAL NUMBER OF SWELL SYSTEMS
@@ -156,7 +158,8 @@
         LLALLOC_ONLY=.FALSE.
         LLINIALL=.FALSE.
         LLOCAL=.TRUE.
-        CALL INIT_FIELDG(LLALLOC_ONLY,LLINIALL,LLOCAL)
+        CALL INIT_FIELDG(IJS, IJL, BLK2LOC,                      &
+     &                   LLALLOC_ONLY, LLINIALL, LLOCAL)
 
 !       DEFINE THE SWELL SYSTEMS
         H0(1)=2.0_JWRB
@@ -241,8 +244,8 @@
         ENDDO
 
         DO IJ = IJS, IJL
-          IX = IFROMIJ(IJ)
-          JY = JFROMIJ(IJ)
+          IX = BLK2LOC(IJ)%IFROMIJ
+          JY =  BLK2LOC(IJ)%JFROMIJ
           XLO=FIELDG(IX,JY)%XLON
           YLA=FIELDG(IX,JY)%YLAT
           IF(YLA.EQ.ZMISS .OR. XLO.EQ.ZMISS) CYCLE 
