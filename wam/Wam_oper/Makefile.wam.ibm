@@ -4,65 +4,16 @@ include ../config.$(ARCH)
 include ../options.$(ARCH)
 
 SOURCE	=\
-              abort1.F         \
-              adjust.F         \
-              aki.F            \
-              check.F          \
-              class_wgrib.F    \
-              difdate.F        \
-              dummy_mp.F       \
-              expand_string.F  \
-              findb.F          \
-              fldinter.F       \
-              gsfile_new.F     \
-              incdate.F        \
-              iniwcst.F        \
-              intspec.F        \
-              jafu.F           \
-              jonswap.F        \
-              llalloc_grdfld.F \
-              mblock.F         \
-              mbounc.F         \
-              mbounf.F         \
-              mboxb.F          \
-              mcout.F          \
-              mfredir.F        \
-              mgrid.F          \
-              mintf.F          \
-              mpclose_unit.F   \
-              mtabs.F          \
-              mubuf.F          \
-              nlweigt.F        \
-              outpp.F          \
-              outnam.F         \
-              packi.F          \
-              packr.F          \
-              prspp.F          \
-              prspps.F         \
-              readcur.F        \
-              readsta.F        \
-              rotspec.F        \
-              savrest.F        \
-              secondhh.F       \
-              stress.F         \
-              tauhf.F          \
-              topoar.F         \
-              uiprep.F         \
-              vmin.F           \
-              vplus.F          \
-              wam_user_clock.F \
-              wposnam.F        \
-              writsta.F        \
-              wstream_strg.F
+              difdate.F90        \
+              incdate.F90
 
-
-OBJECTS	=	$(SOURCE:.F=.o)
+OBJECTS	=	$(SOURCE:.F90=.o)
 
 .SUFFIXES:
-.SUFFIXES:	.o .F
+.SUFFIXES:	.o .F90
 
-.F.o :
-	$(FC) -c $(FFLAGS) $(CP_OPT) $*.F
+.F90.o :
+	$(FC) -c $(FFLAGS) $(CP_OPT) $*.F90
 
 all:	$(OBJECTS)
 	touch Wam_oper.a
