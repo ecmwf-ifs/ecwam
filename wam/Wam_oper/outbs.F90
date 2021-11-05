@@ -43,6 +43,7 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS, WVPRPT,         &
      &                         INTGT_PARAM_FIELDS, OCEAN2WAVE
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,NIPRMOUT    ,BOUT
+      USE YOWCOUP  , ONLY : LLNORMWAMOUT
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : NPROMA_WAM
@@ -52,6 +53,7 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS, WVPRPT,         &
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "outblock.intfb.h"
+#include "outwnorm.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
@@ -67,6 +69,8 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS, WVPRPT,         &
       INTEGER(KIND=JWIM) :: M, IJ, JKGLO, KIJS, KIJL, NPROMA
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+
+      LOGICAL :: LDREPROD
 
 ! ----------------------------------------------------------------------
 
@@ -93,6 +97,12 @@ SUBROUTINE OUTBS (IJS, IJL, MIJ, FL1, XLLWS, WVPRPT,         &
       ENDDO
 !$OMP END PARALLEL DO
       CALL GSTATS(1502,1)
+
+!     PRINT OUT NORMS
+!!!1 to do: decide if there are cases where we might want LDREPROD false
+      LDREPROD=.TRUE.
+      IF (LLNORMWAMOUT) CALL OUTWNORM(LDREPROD)
+
 
       IF (LHOOK) CALL DR_HOOK('OUTBS',1,ZHOOK_HANDLE)
 

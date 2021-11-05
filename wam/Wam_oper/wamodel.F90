@@ -186,10 +186,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 !       BLOCKS OVERLAP OVER TWO LATITUDE LINES,TO COMPUTE NORTH-SOUTH
 !       ADVECTION TERMS, SEE ALSO COMMON GRIDPAR AND UBUF.
 
-!       THE WIND FILES FOR THE BLOCKED WINDS CREATED BY PREWIND ARE
-!       READ AND DELETED IN SUB IMPLSCH (IU17 AND IU18).
-
-
 !       ALL PARAMETERS HAVE TO BE THE VALUES GIVEN AT THE END OF THE
 !       PREPROC OUTPUT IN COLUMN 'REQUIRED'.
 
@@ -226,7 +222,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC    ,GBOUNC  , IPOGBO  ,    &
      &            CBCPREF
-      USE YOWCOUP  , ONLY : LWCOU    ,LLNORMWAMOUT,                     &
+      USE YOWCOUP  , ONLY : LWCOU    ,                                  &
      &                      LWNEMOCOU, NEMONTAU,                        &
      &                      NEMOWSTEP, NEMOFRCO     ,                   &
      &                      NEMOCSTEP, NEMONSTEP
@@ -286,20 +282,15 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #include "abort1.intfb.h"
 #include "bouinpt.intfb.h"
 #include "chesig.intfb.h"
-#include "closend.intfb.h"
 #include "difdate.intfb.h"
 #include "gsfile_new.intfb.h"
 #include "headbc.intfb.h"
-#include "implsch.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "incdate.intfb.h"
-#include "newwind.intfb.h"
 #include "outbc.intfb.h"
 #include "outbs.intfb.h"
 #include "outint.intfb.h"
-#include "outwnorm.intfb.h"
 #include "outspec.intfb.h"
-#include "propag_wam.intfb.h"
 #include "savspec.intfb.h"
 #include "savstress.intfb.h"
 #include "setice.intfb.h"
@@ -338,8 +329,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 
       LOGICAL :: LLFLUSH
       LOGICAL :: LSV, LRST, LOUT
-      LOGICAL :: LDREPROD
-      LOGICAL :: LLNEWREAD
       LOGICAL, SAVE :: LLNEWFILE
       LOGICAL :: LLNONASSI
       LOGICAL :: LL2NDCALL
@@ -474,14 +463,10 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
              LRSTST0=.TRUE.
           ENDIF
 
-!         COMPUTE OUTPUT PARAMETERS
+!         COMPUTE OUTPUT PARAMETERS AND PRINT OUT NORMS
           IF (NIPRMOUT > 0) THEN
             CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS,                    &
      &                  WVPRPT, WVENVI, FF_NOW, INTFLDS, NEMO2WAM)
-!           PRINT OUT NORMS
-            !!!1 to do: decide if there are cases where we might want LDREPROD false
-            LDREPROD=.TRUE.
-            CALL OUTWNORM(LDREPROD)
           ENDIF
 
           IF ( .NOT. LRESTARTED ) THEN
@@ -570,110 +555,21 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
         IF ((IBOUNC == 1 .OR. IBOUNF == 1) .AND. CDTBC < CDTPRO) CALL INCDATE(CDTBC,IDELBC)
 
 
-!*    1.5.5 SET TIME COUNTER.
-!           -----------------
+!*        SET TIME COUNTER.
+!         -----------------
           CDATE   = CDTPRA
           CDATEWH = CDATEWO    
-          LLNEWREAD = .FALSE.
-
- 1550     CONTINUE                       
-
-!*    1.5.5.2 COMPUTATION OF PROPAGATION
-!*            INTEGRATION OF SOURCE TERMS OVER SUB TIME STEPS BETWEEN
-!*            PROPAGATION TIME STEPS.
-!             -------------------------------------------------------
-
-! IF CDATE CORRESPONDS TO A PROPAGATION TIME
-          IF (CDATE == CDTPRA) THEN
-            CALL PROPAG_WAM(IJS, IJL, BLK2GLO, WVENVI, WVPRPT, FL1)
-            CDATE=CDTPRO   
-          ENDIF
-
-!*        RETRIEVING NEW FORCING FIELDS FROM TEMPORARY STORAGE IF NEEDED.
-!         ---------------------------------------------------------------
-          CALL NEWWIND(IJS, IJL, CDTIMP, CDATEWH,               &
-     &                 LLNEWREAD, LLNEWFILE,                    &
-     &                 WVPRPT, FF_NOW, FF_NEXT)
-
-!         IT IS TIME TO INTEGRATE THE SOURCE TERMS
-!         ----------------------------------------
-          IF (CDATE >= CDTIMPNEXT) THEN
-!           COMPUTE UPDATE DUE TO SOURCE TERMS
-            CALL GSTATS(1431,0)
-            IF (LLSOURCE) THEN
-!$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-              DO JKGLO=IJS,IJL,NPROMA
-                KIJS=JKGLO
-                KIJL=MIN(KIJS+NPROMA-1,IJL)
-                CALL IMPLSCH (KIJS, KIJL, FL1(KIJS:KIJL,:,:),       &
-     &                        WVPRPT(KIJS:KIJL,:),                  &
-     &                        WVENVI(KIJS), FF_NOW(KIJS),           &
-     &                        INTFLDS(KIJS), WAM2NEMO(KIJS),        &
-     &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:) )
-
-              ENDDO
-!$OMP       END PARALLEL DO
-
-              IF (LWNEMOCOU) NEMONTAU = NEMONTAU + 1
-
-            ELSE
-!             NO SOURCE TERM CONTRIBUTION
-!$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)  
-              DO JKGLO=IJS,IJL,NPROMA
-                KIJS=JKGLO
-                KIJL=MIN(KIJS+NPROMA-1,IJL)
-                DO IJ=KIJS,KIJL
-                  MIJ(IJ) = NFRE
-                  DO K=1,NANG
-                    DO M=1,NFRE
-                      FL1(IJ,K,M) = MAX(FL1(IJ,K,M),EPSMIN)
-                      XLLWS(IJ,K,M) = 0.0_JWRB
-                    ENDDO
-                  ENDDO
-                ENDDO
-              ENDDO
-!$OMP         END PARALLEL DO
-            ENDIF
-            CALL GSTATS(1431,1)
 
 
-!*          COPY AND CLOSE FILES IF NEEDED.
-!           -------------------------------
+!*       COMPUTATION OF PROPAGATION
+!*       INTEGRATION OF SOURCE TERMS OVER SUB TIME STEPS BETWEEN
+!*       PROPAGATION TIME STEPS.
+!        -------------------------------------------------------
+         DO WHILE (CDTIMPNEXT.LE.CDTPRO)
+call wamintgr......
 
-            CALL CLOSEND(CDTIMP,CDATEWH, LLNEWREAD, LLNEWFILE)
-
-            CDTIMP=CDTIMPNEXT
-            CALL INCDATE(CDTIMPNEXT,IDELT)   
-
-          ENDIF
-
-!*    1.5.5.4 UPDATE TIME;IF TIME LEFT BRANCH BACK TO 1.5.5 
-!             ---------------------------------------------
-          IF (CDTIMPNEXT.LE.CDTPRO) GO TO 1550
-
-!        END OF TIME LOOP ALL TIME STEPS DONE
-
-!NEST
-!*    1.5.7 INPUT OF BOUNDARY VALUES.
-!           -------------------------
-
-          CALL GSTATS(1909,0)
-          IF (IBOUNF == 1) THEN
-            CALL BOUINPT (IU02, FL1, IJS, IJL, NBLKS, NBLKE)
-          ENDIF
-!NEST
-
-
-!*    1.5.9 OUTPUT OF BOUNDARY POINTS.
-!           --------------------------
-
-          IF (IBOUNC == 1) THEN
-            CALL OUTBC (FL1, IJS, IJL, IU19)
-          ENDIF
-!NEST
-
-!*    1.5.10 MODEL OUTPUT INTEGRATED DATA ARE SAVED
-!            --------------------------------------
+         ENDDO
+!        END OF TIME LOOP OVER ALL PHYSICS TIME STEPS AND ONE ADVECTION TIME STEP
 
 #ifdef ECMWF
           IF (.NOT.LWCOU .AND. .NOT. LDSTOP) THEN
@@ -683,6 +579,28 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
             CALL CHESIG (IU06, ITEST, IRANK, NPROC, LDSTOP, LDWRRE)
           ENDIF
 #endif
+
+
+!NEST (not used at ECMWF)
+!*    1.5.7 INPUT OF BOUNDARY VALUES.
+!           -------------------------
+
+          CALL GSTATS(1909,0)
+          IF (IBOUNF == 1) THEN
+            CALL BOUINPT (IU02, FL1, IJS, IJL, NBLKS, NBLKE)
+          ENDIF
+
+!*    1.5.9 OUTPUT OF BOUNDARY POINTS.
+!           --------------------------
+
+          IF (IBOUNC == 1) THEN
+            CALL OUTBC (FL1, IJS, IJL, IU19)
+          ENDIF
+!NEST
+
+
+!*    1.5.10 MODEL OUTPUT INTEGRATED DATA ARE SAVED
+!            --------------------------------------
 
           LRST=(LDWRRE .AND. KADV == NADV )
           IF (LRST) THEN
@@ -706,23 +624,17 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
               CALL OUTWPSP (IJS, IJL, FL1, FF_NOW)
             ENDIF
 
-!           COMPUTE OUTPUT PARAMETERS
+!           COMPUTE OUTPUT PARAMETERS AND PRINT OUT NORMS
             IF (NIPRMOUT > 0) THEN
               CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS,                   &
      &                    WVPRPT, WVENVI, FF_NOW, INTFLDS, NEMO2WAM)
-
-!!!1 to do: decide if there are cases where we might want LDREPROD false
-              LDREPROD=.TRUE.
-              IF (LLNORMWAMOUT) CALL OUTWNORM(LDREPROD)
-
             ENDIF
 
           ENDIF
 
 
-
-!*    1.7 ONE PROPAGATION TIMESTEP DONE FOR ALL BLOCKS.
-!         ---------------------------------------------
+!*    1.7 ONE PROPAGATION TIMESTEP DONE
+!         -----------------------------
 
         WRITE(IU06,*) ' !!!!!!!!!!!!!! WAVE FIELDS INTEGRATED FOR DATE : ', CDTPRO
 
@@ -902,6 +814,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
         ENDIF
 
 !       SAVE BOUNDARY VALUE FILE.
+!NEST
         IF (CDTBC == CDTPRO) THEN
           IF (IBOUNC == 1 .AND. IRANK == 1 ) THEN
             DO II=1,GBOUNC
@@ -913,6 +826,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
             ENDDO
           ENDIF
         ENDIF
+!NEST
  
 
 !*      WAM-NEMO COUPLING (!!!!! WHEN NO atmospheric model !!!!!!)
