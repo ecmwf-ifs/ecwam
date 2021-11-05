@@ -73,6 +73,7 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, BLK2GLO, WVENVI, WVPRPT, FL1)
 !     But limited to NFRE_RED frequencies
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NANG, NFRE_RED) :: FL1_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED) :: WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1) :: DELLAM1_EXT, COSPHM1_EXT 
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1) :: DEPTH_EXT, UCUR_EXT, VCUR_EXT
 
       LOGICAL :: L1STCALL
@@ -83,7 +84,9 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, BLK2GLO, WVENVI, WVPRPT, FL1)
 
 IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
-ASSOCIATE(DEPTH => WVENVI%DEPTH, &
+ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
+ &        COSPHM1 => WVENVI%COSPHM1, &
+ &        DEPTH => WVENVI%DEPTH, &
  &        UCUR => WVENVI%UCUR, &
  &        VCUR => WVENVI%VCUR, &
  &        WAVNUM => WVPRPT%WAVNUM, &
@@ -137,8 +140,10 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !            NEED HALO VALUES
              CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
 &                              WAVNUM, CGROUP, OMOSNH2KD,             &
+&                              DELLAM1, COSPHM1,                      & 
 &                              DEPTH, UCUR, VCUR,                     &
 &                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+&                              DELLAM1_EXT, COSPHM1_EXT,              & 
 &                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
 
 
@@ -152,7 +157,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
                CALL PROPDOT(KIJS, KIJL, NINF, NSUP,                                     &
      &                      BLK2GLO,                                                    &
      &                      WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT,                      &
-     &                      DEPTH_EXT, UCUR_EXT, VCUR_EXT,                              &
+     &                      COSPHM1_EXT, DEPTH_EXT, UCUR_EXT, VCUR_EXT,                 &
      &                      THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
              ENDDO
 !$OMP        END PARALLEL DO
@@ -172,15 +177,17 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !              NEED HALO VALUES
                CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
 &                                WAVNUM, CGROUP, OMOSNH2KD,             &
+&                                DELLAM1, COSPHM1,                      & 
 &                                DEPTH, UCUR, VCUR,                     &
 &                                WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+&                                DELLAM1_EXT, COSPHM1_EXT,              & 
 &                                DEPTH_EXT, UCUR_EXT, VCUR_EXT )
 
 !              COMPUTES ADVECTION WEIGTHS AND CHECK CFL CRITERIA
-               CALL CTUWUPDT(IJS, IJL, NINF, NSUP,       &
-&                            BLK2GLO,                    &
-&                            CGROUP_EXT, OMOSNH2KD_EXT,  &
-&                            DEPTH_EXT, UCUR_EXT, VCUR_EXT )
+               CALL CTUWUPDT(IJS, IJL, NINF, NSUP,                        &
+&                            BLK2GLO,                                     &
+&                            CGROUP_EXT, OMOSNH2KD_EXT,                   &
+&                            COSPHM1_EXT, DEPTH_EXT, UCUR_EXT, VCUR_EXT )
 
                LUPDTWGHT=.FALSE.
              ENDIF
@@ -203,8 +210,10 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !            NEED HALO VALUES
              CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
 &                              WAVNUM, CGROUP, OMOSNH2KD,             &
+&                              DELLAM1, COSPHM1,                      & 
 &                              DEPTH, UCUR, VCUR,                     &
 &                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+&                              DELLAM1_EXT, COSPHM1_EXT,              & 
 &                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
 
              NPROMA=NPROMA_WAM
@@ -216,6 +225,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 &                            BLK2GLO,                                        &
 &                            DEPTH,                                          &
 &                            CGROUP_EXT, OMOSNH2KD_EXT,                      &
+&                            DELLAM1_EXT, COSPHM1_EXT,                       &
 &                            UCUR_EXT, VCUR_EXT,                             &
 &                            L1STCALL)
              ENDDO
@@ -227,8 +237,10 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !            NEED HALO VALUES
              CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
 &                              WAVNUM, CGROUP, OMOSNH2KD,             &
+&                              DELLAM1, COSPHM1,                      & 
 &                              DEPTH, UCUR, VCUR,                     &
 &                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
+&                              DELLAM1_EXT, COSPHM1_EXT,              & 
 &                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
 
              NPROMA=NPROMA_WAM
@@ -240,6 +252,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 &                           BLK2GLO,                                        &
 &                           DEPTH,                                          &
 &                           CGROUP_EXT, OMOSNH2KD_EXT,                      &
+&                           DELLAM1_EXT, COSPHM1_EXT,                       &
 &                           UCUR_EXT, VCUR_EXT,                             &
 &                           L1STCALL)
              ENDDO

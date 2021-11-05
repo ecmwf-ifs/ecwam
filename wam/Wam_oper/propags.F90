@@ -2,6 +2,7 @@ SUBROUTINE PROPAGS (F1, F3, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
  &                  BLK2GLO,                                  & 
  &                  DEPTH,                                    &
  &                  CGROUP_EXT, OMOSNH2KD_EXT,                &
+ &                  DELLAM1_EXT, COSPHM1_EXT,                 &
  &                  U_EXT, V_EXT,                             &
  &                  L1STCALL)
 
@@ -74,8 +75,7 @@ SUBROUTINE PROPAGS (F1, F3, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
       USE YOWCURR  , ONLY : LLCHKCFL
       USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,FRATIO   ,    &
      &            COSTH    ,SINTH
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM1  ,SINPH    ,COSPH    ,    &
-     &            COSPHM1
+      USE YOWGRID  , ONLY : DELPHI   ,SINPH    ,COSPH
       USE YOWMAP   , ONLY : IRGG
       USE YOWPARAM , ONLY : NIBLO    , NANG     ,NFRE     ,NFRE_RED
       USE YOWPCONS , ONLY : PI       ,ZPI      ,R
@@ -101,6 +101,8 @@ SUBROUTINE PROPAGS (F1, F3, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN):: DEPTH
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: CGROUP_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: OMOSNH2KD_EXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: DELLAM1_EXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: COSPHM1_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: U_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: V_EXT
       LOGICAL, INTENT(INOUT) :: L1STCALL
@@ -167,8 +169,8 @@ ASSOCIATE(KXLT => BLK2GLO%KXLT)
 
         DELLA0(NLAND) = 0.0_JWRB
         DO IJ = NINF,NSUP
-          DCO(IJ) = COSPHM1(IJ)
-          DELLA0(IJ) = DELPRO*DELLAM1(IJ)
+          DCO(IJ) = COSPHM1_EXT(IJ)
+          DELLA0(IJ) = DELPRO*DELLAM1_EXT(IJ)
         ENDDO
 
 !*    0.2.1.2 COMPUTE COS PHI FACTOR FOR ADJOINING GRID POINT.
@@ -209,7 +211,7 @@ ASSOCIATE(KXLT => BLK2GLO%KXLT)
 
         DELLA0(NLAND) = 0.0_JWRB
         DO IJ = NINF,NSUP
-          DELLA0(IJ) = DELPRO*DELLAM1(IJ)
+          DELLA0(IJ) = DELPRO*DELLAM1_EXT(IJ)
         ENDDO
 
 !*    0.2.2.1 BRANCH TO 2. IF DEPTH AND CURRENT REFRACTION.

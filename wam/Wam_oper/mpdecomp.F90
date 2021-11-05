@@ -87,8 +87,6 @@
 !    1-D SEA POINT ARRAY OF THE LOCAL PE. THE OTHER POINTS ARE STORED IN
 !    SUCCESSIVE ORDER FROM THAT IJSTART. THE ARRAYS KLON, KLAT,
 !    KRLAT, KRLON,
-!    DEPTH, DELLAM1, COSPHM1 ARE LOCALLY REDEFINED
-!    TO CORRECTLY POINT TO THOSE HALO POINTS IN THE PADDING BUFFERS.
 !    BY CONVENTION, CONTRIBUTIONS FROM PE WITH PE NUMBER LESS THAN
 !    THE LOCAL ONE (IRANK) ARE PUT IN THE BOTTOM BUFFER
 !    (I.E. THEIR IJ'S ARE LESS THAN NSTART) AND THOSE CONTRIBUTIONS WITH
@@ -112,7 +110,7 @@
       USE YOWFRED  , ONLY : FR       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : IJS      ,IJL      ,                        &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,                  &
-     &            DELLAM   ,DELLAM1  ,COSPH    ,COSPHM1  ,DELPHI   ,    &
+     &            DELLAM   ,COSPH    ,DELPHI   ,                        &
      &            CDR      ,SDR      ,PRQRT    ,NLONRGG
       USE YOWMAP   , ONLY : BLK2GLO  ,BLK2LOC  ,KXLTMIN  ,KXLTMAX  ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
@@ -1365,14 +1363,8 @@ ELSE
         ENDDO
       ENDIF
 
-!     DETERMINE DELLAM1 COSPHM1
 !     CDR AND SDR ARE ALSO USED IN PROPAGS1.
 !     Note that they all will be defined locally for the halo points !!!
-
-      IF (ALLOCATED(DELLAM1)) DEALLOCATE(DELLAM1)
-      ALLOCATE(DELLAM1(NINF:NSUP+1))
-      IF (ALLOCATED(COSPHM1)) DEALLOCATE(COSPHM1)
-      ALLOCATE(COSPHM1(NINF:NSUP+1))
 
       IF (IPROPAGS == 1) THEN
         IF (ALLOCATED(CDR)) DEALLOCATE(CDR)
@@ -1386,27 +1378,6 @@ ELSE
 
       SQRT2O2=SIN(0.25_JWRB*PI)
 
-      DELLAM1(NLAND) = 0.0_JWRB
-      IF ( NPR > 1 ) THEN
-        DO IJ=NSTART(IRANK),NEND(IRANK)
-          JH = BLK2GLO(IJ)%KXLT
-          DELLAM1(IJ)=1.0_JWRB/DELLAM(JH)
-          COSPHM1(IJ)=1.0_JWRB/COSPH(JH)
-        ENDDO 
-        DO IH=1,NLENHALO(IRANK)
-          IJ=IJFROMPE(IH,IRANK)
-          JH = BLK2GLO(IJ)%KXLT
-          IJ=IJHALO(IH)
-          DELLAM1(IJ)=1.0_JWRB/DELLAM(JH)
-          COSPHM1(IJ)=1.0_JWRB/COSPH(JH)
-        ENDDO
-      ELSE
-        DO IJ=NINF,NSUP
-          JH = BLK2GLO(IJ)%KXLT
-          DELLAM1(IJ)=1.0_JWRB/DELLAM(JH)
-          COSPHM1(IJ)=1.0_JWRB/COSPH(JH)
-        ENDDO 
-      ENDIF
 
       IF (IPROPAGS == 1) THEN
         DO K=1,NANG
@@ -1667,10 +1638,14 @@ ELSE
 
       ENDIF
 
-!     ONLY KEEP THE RELEVANT PART OF THE WATER DEPTH.
+!     ONLY KEEP THE RELEVANT PARTS
       ALLOCATE(WVENVI(NSTART(IRANK):NEND(IRANK)))
 
       DO IJ=NSTART(IRANK),NEND(IRANK)
+        JH = BLK2LOC(IJ)%KFROMIJ
+        WVENVI(IJ)%COSPHM1 = 1.0_JWRB/COSPH(JH) 
+        WVENVI(IJ)%DELLAM1 = 1.0_JWRB/DELLAM(JH) 
+ 
         WVENVI(IJ)%DEPTH = DEPTH_INPUT(IJ)
 
 !!!!   when this is moved to reading depth as an input field, wvenvi should be allocated and intialised in wvalloc !!!

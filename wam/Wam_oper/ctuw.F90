@@ -1,7 +1,7 @@
 SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
  &               BLK2GLO,                                 &
  &               CGROUP_EXT, OMOSNH2KD_EXT,               &
- &               DEPTH_EXT, U_EXT, V_EXT )
+ &               COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT )
 ! ----------------------------------------------------------------------
 
 !**** *CTUW* - COMPUTATION OF THE CONER TRANSPORT SCHEME WEIGHTS.
@@ -20,7 +20,7 @@ SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
 
       USE YOWCURR  , ONLY : LLCFLCUROFF
       USE YOWFRED  , ONLY : FR       ,DELTH    ,FRATIO   ,COSTH    ,SINTH
-      USE YOWGRID  , ONLY : SINPH    ,COSPH    ,COSPHM1
+      USE YOWGRID  , ONLY : SINPH    ,COSPH
       USE YOWMAP   , ONLY : IRGG    ,IPER     ,                                   &
      &                      XDELLA   ,ZDELLO   ,AMOWEP   ,AMOSOP 
       USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE_RED ,NGY
@@ -50,6 +50,7 @@ SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
       LOGICAL, DIMENSION(KIJS:KIJL), INTENT(INOUT) :: LCFLFAIL ! TRUE IF CFL CRITERION WAS VIOLATED.
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: CGROUP_EXT  ! GROUP VELOCITY
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: OMOSNH2KD_EXT ! OMEGA / SINH(2KD)
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: COSPHM1_EXT ! 1/COSPH
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: DEPTH_EXT ! WATER DEPTH
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: U_EXT ! U-COMPONENT OF SURFACE CURRENT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: V_EXT ! V-COMPONENT OF SURFACE CURRENT
@@ -206,7 +207,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
               KY=KXLT(IJ)
               KK=KY+2*IC-3
               KKM=MAX(1,MIN(KK,NGY))
-              DP(IJ,IC) = COSPH(KKM)*COSPHM1(IJ)
+              DP(IJ,IC) = COSPH(KKM)*COSPHM1_EXT(IJ)
             ENDDO
           ENDDO
 
@@ -227,7 +228,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                   DO IJ=KIJS,KIJL
                     CGX(IJ,IC)=                                              &
      &                 0.5_JWRB*(CGROUP_EXT(IJ,M)+CGROUP_EXT(KLON(IJ,IC),M)) &
-     &                    *SINTH(K)*COSPHM1(IJ)
+     &                    *SINTH(K)*COSPHM1_EXT(IJ)
 !                   IRREGULAR GRID
                     IF (IRGG == 1) THEN
                       CGYP=WLAT(IJ,IC)*CGROUP_EXT(KLAT(IJ,IC,1),M)+          &
@@ -252,7 +253,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                 DO IC=1,2
 
                   IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
-                    UU=U_EXT(IJ)*COSPHM1(IJ)
+                    UU=U_EXT(IJ)*COSPHM1_EXT(IJ)
                     UREL=CGX(IJ,IC)+UU
                     ISSU(IC)=ISAMESIGN(UREL,CGX(IJ,IC))
                     VV=V_EXT(IJ)*0.5_JWRB*(1.0_JWRB+DP(IJ,IC))

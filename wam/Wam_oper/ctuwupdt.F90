@@ -1,7 +1,7 @@
-SUBROUTINE CTUWUPDT (IJS, IJL, NINF, NSUP,       &
- &                   BLK2GLO,                    &
- &                   CGROUP_EXT, OMOSNH2KD_EXT,  &
- &                   DEPTH_EXT, U_EXT, V_EXT )
+SUBROUTINE CTUWUPDT (IJS, IJL, NINF, NSUP,                  &
+ &                   BLK2GLO,                               &
+ &                   CGROUP_EXT, OMOSNH2KD_EXT,             &
+ &                   COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT )
 
 
 ! ----------------------------------------------------------------------
@@ -43,6 +43,7 @@ INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP ! GRID POINT WITH HALO EXTEND NINF:
 TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO  ! BLOCK TO GRID TRANSFORMATION
 REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: CGROUP_EXT  ! GROUP VELOCITY
 REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: OMOSNH2KD_EXT ! OMEGA / SINH(2KD)
+REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: COSPHM1_EXT ! 1/COSPH
 REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: DEPTH_EXT ! WATER DEPTH
 REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: U_EXT ! U-COMPONENT OF SURFACE CURRENT
 REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: V_EXT ! V-COMPONENT OF SURFACE CURRENT
@@ -166,7 +167,7 @@ DO JKGLO=IJS,IJL,NPROMA
   CALL CTUW(KIJS, KIJL, NINF, NSUP, LCFLFAIL(KIJS), ICALL, &
 &           BLK2GLO,                                       &
 &           CGROUP_EXT, OMOSNH2KD_EXT,                     &
-&           DEPTH_EXT, U_EXT, V_EXT )
+&           COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT )
 
 
 ! WHEN SURFACE CURRENTS ARE USED AND LLCFLCUROFF IS TRUE
@@ -185,7 +186,7 @@ DO JKGLO=IJS,IJL,NPROMA
        CALL CTUW(KIJS, KIJL, NINF, NSUP, LCFLFAIL(KIJS), ICALL, &
 &                BLK2GLO,                                       &
 &                CGROUP_EXT, OMOSNH2KD_EXT,                     &
-&                DEPTH_EXT, U_EXT, V_EXT )
+&                COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT )
     ENDIF
   ENDIF
 ENDDO

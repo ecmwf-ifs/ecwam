@@ -1,7 +1,7 @@
       SUBROUTINE PROPDOT(KIJS, KIJL, NINF, NSUP,                &
      &                   BLK2GLO,                               &
      &                   WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
-     &                   DEPTH_EXT, U_EXT, V_EXT,               & 
+     &                   COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT,  & 
      &                   THDC, THDD, SDOT)
 
 ! ----------------------------------------------------------------------
@@ -59,10 +59,6 @@
       USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
       USE YOWFRED  , ONLY : COSTH    ,SINTH
-
-      USE YOWGRID  , ONLY : COSPHM1
-!!!!!!!!!! debile                  ???????
-
       USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE_RED
       USE YOWSTAT  , ONLY : ICASE    ,IREFRA
 
@@ -77,7 +73,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, NINF, NSUP
       TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: DEPTH_EXT, U_EXT, V_EXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(OUT) :: THDC, THDD
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE_RED), INTENT(OUT) :: SDOT
 
@@ -110,7 +106,7 @@
 
         IF (ICASE == 1) THEN
           DO IJ = KIJS,KIJL
-            DCO(IJ) = COSPHM1(IJ)
+            DCO(IJ) = COSPHM1_EXT(IJ)
           ENDDO
         ELSE
           DO IJ = KIJS,KIJL

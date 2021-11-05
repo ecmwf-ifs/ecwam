@@ -26,13 +26,15 @@
       END TYPE WVGRIDLOC 
 
 
-!*    **  *VARIABLES DEPENDENT ON DEPTH or CURRENTS (but not frequency or direction
+!*    **  *VARIABLES DEPENDENT ON EARTH GEOMETRY, DEPTH or CURRENTS (but not frequency or direction
 !          i.e. the environment in which the waves evolve 
 
       TYPE ENVIRONMENT
         INTEGER(KIND=JWIM) :: INDEP   ! DEPTH INDEX FOR A BLOCK.
         INTEGER(KIND=JWIM) :: IODP    ! 0 OVER LAND, 1 OVER SEA.
         INTEGER(KIND=JWIM) :: IOBND   ! 0 OVER BOUNDARY POINTS, 1 OTHERWISE.
+        REAL(KIND=JWRB) :: DELLAM1    ! 1./DELLAM AT BLOCK POINTS.
+        REAL(KIND=JWRB) :: COSPHM1    ! 1./COSPH AT BLOCK POINTS.
         REAL(KIND=JWRB) :: DEPTH      ! WATER DEPTH IN METRES. 
         REAL(KIND=JWRB) :: EMAXDPT    ! MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
                                       ! EMAXDPT=0.0625*(GAM_B_J*DEPTH)**2
