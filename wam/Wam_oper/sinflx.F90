@@ -135,7 +135,8 @@ CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, EMEANWS, FMEANWS)
 CALL FRCUTINDEX(KIJS, KIJL, FMEAN, FMEANWS, UFRIC, CICOVER, MIJ, RHOWGDFTH)
 
 ! UPDATE TAUW
-CALL STRESSO (KIJS, KIJL, FL1, SL, SPOS,           &
+CALL STRESSO (KIJS, KIJL, MIJ, RHOWGDFTH,          &
+&             FL1, SL, SPOS,                       &
 &             CINV,                                &
 &             WDWAVE, UFRIC, Z0M, AIRD, RNFAC,     &
 &             TAUW, TAUWDIR, PHIWA, LLPHIWA) 

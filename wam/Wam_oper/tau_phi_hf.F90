@@ -1,5 +1,5 @@
-       SUBROUTINE TAU_PHI_HF(KIJS, KIJL, LTAUWSHELTER, UFRIC, Z0M, &
-     &                       FL1, WDWAVE, AIRD, RNFAC,             &
+       SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
+     &                       FL1, WDWAVE, AIRD, RNFAC,                  &
      &                       UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
@@ -18,15 +18,16 @@
 !**   INTERFACE.
 !     ---------
 
-!       *CALL* *TAU_PHI_HF(KIJS, KIJL, LTAUWSHELTER, UFRIC, UST, Z0M,
+!       *CALL* *TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, UST, Z0M,
 !                          FL1, WDWAVE, AIRD, RNFAC, &
 !                          UST, TAUHF, PHIHF, LLPHIHF)
 !          *KIJS*         - INDEX OF FIRST GRIDPOINT
 !          *KIJL*         - INDEX OF LAST GRIDPOINT
+!          *MIJ*          - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !          *LTAUWSHELTER* - if true then TAUWSHELTER 
 !          *FL1*          - WAVE SPECTRUM.
 !          *WDWAVE*       - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
-!          *AIRD*       - AIR DENSITY IN KG/M**3.
+!          *AIRD*         - AIR DENSITY IN KG/M**3.
 !          *RNFAC*        - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !          *UFRIC*        - FRICTION VELOCITY
 !          *UST*          - REDUCED FRICTION VELOCITY DUE TO SHELTERING
@@ -72,6 +73,7 @@
 #include "omegagc.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(KIJS:KIJL)
       LOGICAL, INTENT(IN) :: LTAUWSHELTER
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, Z0M
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, AIRD, RNFAC
@@ -92,7 +94,7 @@
       REAL(KIND=JWRB) :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
       REAL(KIND=JWRB) :: FNC, FNC2
       REAL(KIND=JWRB) :: GAMNORMA ! RENORMALISATION FACTOR OF THE GROWTH RATE
-      REAL(KIND=JWRB) :: ZN1, ZN2, GAMCFR5
+      REAL(KIND=JWRB) :: ZN1, ZN2, CONFG
       REAL(KIND=JWRB) :: COSW, FCOSW2 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SQRTZ0OG, ZSUP, ZINF, DELZ
@@ -116,7 +118,7 @@
 
       DO IJ=KIJS,KIJL
         XLOGGZ0(IJ) = LOG(G*Z0M(IJ))
-        OMEGACC = MAX(ZPIFR(NFRE), X0G/UST(IJ))
+        OMEGACC = MAX(ZPIFR(MIJ(IJ)), X0G/UST(IJ))
         SQRTZ0OG(IJ)  = SQRT(Z0M(IJ)*GM1)
         SQRTGZ0(IJ) = 1.0_JWRB/SQRTZ0OG(IJ)
         YC = OMEGACC*SQRTZ0OG(IJ)
@@ -124,26 +126,26 @@
       ENDDO
 
       DO IJ=KIJS,KIJL
-        CONSTTAU(IJ) = ZPI4GM2*FR5(NFRE)
+        CONSTTAU(IJ) = ZPI4GM2*FR5(MIJ(IJ))
       ENDDO
 
       K=1
       DO IJ=KIJS,KIJL
         COSW     = MAX(COS(TH(K)-WDWAVE(IJ)),0.0_JWRB)
-        FCOSW2   = FL1(IJ,K,NFRE)*COSW**2
+        FCOSW2   = FL1(IJ,K,MIJ(IJ))*COSW**2
         F1DCOS3(IJ) = FCOSW2*COSW
         F1DCOS2(IJ) = FCOSW2
-        F1DSIN2(IJ) = FL1(IJ,K,NFRE)*SIN(TH(K)-WDWAVE(IJ))**2
-        F1D(IJ) = FL1(IJ,K,NFRE)
+        F1DSIN2(IJ) = FL1(IJ,K,MIJ(IJ))*SIN(TH(K)-WDWAVE(IJ))**2
+        F1D(IJ) = FL1(IJ,K,MIJ(IJ))
       ENDDO
       DO K=2,NANG
         DO IJ=KIJS,KIJL
           COSW     = MAX(COS(TH(K)-WDWAVE(IJ)),0.0_JWRB)
-          FCOSW2   = FL1(IJ,K,NFRE)*COSW**2
+          FCOSW2   = FL1(IJ,K,MIJ(IJ))*COSW**2
           F1DCOS3(IJ) = F1DCOS3(IJ) + FCOSW2*COSW
           F1DCOS2(IJ) = F1DCOS2(IJ) + FCOSW2 
-          F1DSIN2(IJ) = F1DSIN2(IJ) + FL1(IJ,K,NFRE)*SIN(TH(K)-WDWAVE(IJ))**2
-          F1D(IJ) = F1D(IJ) + FL1(IJ,K,NFRE)
+          F1DSIN2(IJ) = F1DSIN2(IJ) + FL1(IJ,K,MIJ(IJ))*SIN(TH(K)-WDWAVE(IJ))**2
+          F1D(IJ) = F1D(IJ) + FL1(IJ,K,MIJ(IJ))
         ENDDO
       ENDDO
       DO IJ=KIJS,KIJL
@@ -154,10 +156,10 @@
       ENDDO
 
       IF (LLNORMAGAM) THEN
-        GAMCFR5 = GAMNCONST*FR5(NFRE)
         DO IJ=KIJS,KIJL
-          CONST1(IJ) = GAMCFR5*RNFAC(IJ)*F1DSIN2(IJ)*SQRTGZ0(IJ)
-          CONST2(IJ) = GAMCFR5*RNFAC(IJ)*F1D(IJ)*SQRTGZ0(IJ)
+          CONFG = GAMNCONST*FR5(MIJ(IJ))*RNFAC(IJ)*SQRTGZ0(IJ)
+          CONST1(IJ) = CONFG*F1DSIN2(IJ)
+          CONST2(IJ) = CONFG*F1D(IJ)
         ENDDO
       ELSE
         CONST1(:) = 0.0_JWRB
@@ -237,7 +239,7 @@
       ENDDO
 
       DO IJ=KIJS,KIJL
-        CONSTPHI(IJ) = AIRD(IJ)*ZPI4GM1*FR5(NFRE)
+        CONSTPHI(IJ) = AIRD(IJ)*ZPI4GM1*FR5(MIJ(IJ))
       ENDDO
 
      ! Intergrals are integrated following a change of variable : Z=LOG(Y)

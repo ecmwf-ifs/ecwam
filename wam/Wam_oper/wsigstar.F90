@@ -60,7 +60,14 @@
       REAL(KIND=JWRB), PARAMETER :: ONETHIRD = 1.0_JWRB/3.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: SIG_NMAX = 0.1_JWRB ! MAX OF RELATIVE STANDARD DEVIATION OF USTAR 
 
+      REAL(KIND=JWRB), PARAMETER :: LOG10 = LOG(10.0_JWRB)
+      REAL(KIND=JWRB), PARAMETER :: C1 = 1.03E-3_JWRB
+      REAL(KIND=JWRB), PARAMETER :: C2 = 0.04E-3_JWRB
+      REAL(KIND=JWRB), PARAMETER :: P1 = 1.48_JWRB
+      REAL(KIND=JWRB), PARAMETER :: P2 = -0.21_JWRB
+
       REAL(KIND=JWRB) :: ZCHAR, C_D, DC_DDU, SIG_CONV
+      REAL(KIND=JWRB) :: XKAPPAD, U10, C2U10P1, U10P2
       REAL(KIND=JWRB) :: BCD, U10M1, ZN, Z0VIS
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
@@ -70,24 +77,48 @@
 
       IF (LLGCBZ0) THEN
         ZN = RNUM
-      ELSE
+
+        DO IJ=KIJS,KIJL
+          U10M1=1.0_JWRB/MAX(WSWAVE(IJ),WSPMIN)
+          ! CHARNOCK:
+          Z0VIS = ZN/MAX(UFRIC(IJ),EPSUS)
+          ZCHAR=G*(Z0M(IJ)-Z0VIS)/MAX(UFRIC(IJ)**2,EPSUS)
+          ZCHAR=MAX(MIN(ZCHAR,ALPHAMAX),ALPHAMIN)
+
+          BCD = BCDLIN*SQRT(ZCHAR)
+          C_D = ACDLIN + BCD * WSWAVE(IJ)
+          DC_DDU = BCD
+          SIG_CONV = 1.0_JWRB + 0.5_JWRB*WSWAVE(IJ)/C_D * DC_DDU
+          SIG_N(IJ) = MIN(SIG_NMAX, SIG_CONV * U10M1*(BG_GUST*UFRIC(IJ)**3 + &
+     &                    0.5_JWRB*XKAPPA*WSTAR(IJ)**3)**ONETHIRD )
+        ENDDO
+
+       ELSE
         ZN = 0.0_JWRB
+
+
+!!! for consistency I have kept the old method, even though the new method above could be used,
+!!! but until LLGCBZ0 is the default, keep the old scheme whe it is not...
+!
+!       IN THE FOLLOWING U10 IS ESTIMATED ASSUMING EVERYTHING IS
+!       BASED ON U*
+!
+        XKAPPAD=1.0_JWRB/XKAPPA
+        DO IJ=KIJS,KIJL
+          U10 = UFRIC(IJ)*XKAPPAD*(LOG10-LOG(Z0M(IJ)))
+          U10 = MAX(U10,WSPMIN)
+          U10M1=1.0_JWRB/U10
+          C2U10P1=C2*U10**P1
+          U10P2=U10**P2
+          C_D = (C1 + C2U10P1)*U10P2
+          DC_DDU = (P2*C1+(P1+P2)*C2U10P1)*U10P2*U10M1
+          SIG_CONV = 1.0_JWRB + 0.5_JWRB*U10/C_D*DC_DDU
+          SIG_N(IJ) = MIN(SIG_NMAX, SIG_CONV * U10M1*(BG_GUST*UFRIC(IJ)**3 + &
+     &                    0.5_JWRB*XKAPPA*WSTAR(IJ)**3)**ONETHIRD )
+        ENDDO
+
+
       ENDIF
-
-      DO IJ=KIJS,KIJL
-        U10M1=1.0_JWRB/MAX(WSWAVE(IJ),WSPMIN)
-        ! CHARNOCK:
-        Z0VIS = ZN/MAX(UFRIC(IJ),EPSUS)
-        ZCHAR=G*(Z0M(IJ)-Z0VIS)/MAX(UFRIC(IJ)**2,EPSUS)
-        ZCHAR=MAX(MIN(ZCHAR,ALPHAMAX),ALPHAMIN)
-
-        BCD = BCDLIN*SQRT(ZCHAR)
-        C_D = ACDLIN + BCD * WSWAVE(IJ)
-        DC_DDU = BCD
-        SIG_CONV = 1.0_JWRB + 0.5_JWRB*WSWAVE(IJ)/C_D * DC_DDU
-        SIG_N(IJ) = MIN(SIG_NMAX, SIG_CONV * U10M1*(BG_GUST*UFRIC(IJ)**3 + &
-     &                  0.5_JWRB*XKAPPA*WSTAR(IJ)**3)**ONETHIRD )
-      ENDDO
 
       IF (LHOOK) CALL DR_HOOK('WSIGSTAR',1,ZHOOK_HANDLE)
 
