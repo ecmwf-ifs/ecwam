@@ -106,15 +106,6 @@ SUBROUTINE INITMDL (NADV,                                 &
 !                      TO IU13 AND IU14 ARE INTERCHANGED.
 !           *IU14*   - OUTPUT UNIT SECOND LATITUDES (SEE IU13).
 !           *IU15*   - OUTPUT UNIT LAST WINDFIELDS.
-!REFRA
-!           *IU16*   - INPUT/OUTPUT UNIT OF MODULE YOWREFD.
-!REFRA
-!           *IU17*   - INPUT  UNIT OF BLOCKED WINDS.
-!                      THIS FILE IS DYNAMICALLY ASSIGNED IN SUB
-!                      IMPLSCH.
-!           *IU18*   - INPUT  UNIT OF BLOCKED WINDS.
-!                      THIS FILE IS DYNAMICALLY ASSIGNED IN SUB
-!                      IMPLSCH.
 !NEST
 !           *IU19*   - OUTPUT UNIT OF BOUNDARY VALUES IF
 !                      THIS IS A FINE GRID RUN.
@@ -123,56 +114,6 @@ SUBROUTINE INITMDL (NADV,                                 &
 !           *IU20*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
 !                      OF THE TOTAL SPECTRUM (FIRST GUESS).
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'MAP'
-!ASSI
-!           *IU22*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
-!                      OF THE TOTAL SPECTRUM (ANALYSED).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'AMP'
-!           *IU23*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
-!                      OF SWELL AND WIND WAVES (ANALYSED)
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'ASS'
-!           *IU27*   - OUTPUT UNIT OF SPECTRA AT CERTAIN GRID POINTS
-!                      (ANALYSED).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'AUT'
-!           *IU28*   - OUTPUT UNIT OF SWELL SPECTRA AT CERTAIN POINTS
-!                      (ANALYSED).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'ASW'
-!ASSI
-!           *IUVELO* - OUTPUT UNIT OF BLOCKED WINDFILEDS.
-!                      FILES ARE DYNAMICALLY ASSIGNED IN SUB
-!                      NOTIM
-
-!___PACK  THESE UNITS ARE USED FOR FILES CONTAINING GRIB DATA.
-
-!         (IN CASE OF SPECTRA ALL SPECTRA OF THE MODEL ARE WRITTEN)
-!           *IU30*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
-!                      OF THE TOTAL SPECTRUM (FIRST GUESS).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'MPP'
-!           *IU31*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
-!                      OF SWELL AND WIND WAVES (FIRST GUESS).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'SWP'
-!ASSI
-!           *IU32*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
-!                      OF THE TOTAL SPECTRUM (ANALYSED).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'APP'
-!           *IU33*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
-!                      OF SWELL AND WIND WAVES (ANALYSED)
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'AWP'
-!ASSI
-!           *IU35*   - OUTPUT UNIT OF SPECTRA AT ALL GRID POINTS
-!                      (FIRST GUESS).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'OUP'
-!           *IU36*   - OUTPUT UNIT OF SWELL SPECTRA AT ALL POINTS
-!                      (FIRST GUESS).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'WSP'
-!ASSI
-!           *IU37*   - OUTPUT UNIT OF SPECTRA AT ALL GRID POINTS
-!                      (ANALYSED).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'AUP'
-!           *IU38*   - OUTPUT UNIT OF SWELL SPECTRA AT ALL POINTS
-!                      (ANALYSED).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'ASP'
-!ASSI
-!___PACK
 
 !          FOR A START THE RESTART FILES WILL DYNAMICALLY BE ASSIGNED
 !          AND COPIED TO THE *OUTPUT* UNITS (IU12, IU14, IU15).
@@ -180,10 +121,6 @@ SUBROUTINE INITMDL (NADV,                                 &
 !          IN REGULAR INTERVALS FROM THE UNIT ALIAS FILES OF IU11 OR
 !          IU12, IU13 OR IU14, AND IU15 TO THE PREMANENT RESTART FILES.
 !          FOR DETAILS OF THE FILE NAMES SEE SUB GSFILE.
-
-!          SUB NOTIM OPENS FILES AND ASSIGNS THEM TO UNIT
-!          IUVELO FOR THE BLOCKED WINDS. THESE FILES ARE READ AND
-!          DELETED IN SUB IMPLSCH (IU17 AND IU18).
 
 !          THE PROGRAM CLOSES AND DELETES ALL WORK FILES.
 
@@ -202,10 +139,6 @@ SUBROUTINE INITMDL (NADV,                                 &
 !            -  DOES SOME GENERAL BOOKEEPING REGARDING
 !               DATES, INTEGRATION TIME STEPS AND OUTPUT TIME STEPS.
 !            -  READ MODULE YOWUBUF AND SPECTRA IF ONE BLOCK VERSION.
-!REFRA
-!            -  PRECOMPUTES AND WRITES TO IU16 REFRACTION TERMS.
-!REFRA
-!            -  OPENS THE FIRST RESULT FILES.
 
 !     REFERENCE
 !     ---------
@@ -265,12 +198,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWWNDG  , ONLY : ICODE
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE YOWUNIT  , ONLY : IU02     ,IU11     ,IU12     ,              &
-     &            IU13     ,IU14     ,IU15     ,IU16     ,IU17     ,    &
-     &            IU18     ,IU19     ,IU20     ,IU22     ,              &
-     &            IU23     ,IU27     ,IU28     ,                        &
-     &            IUVELO   ,IU30     ,IU31     ,                        &
-     &            IU32     ,IU33     ,IU35     ,IU36     ,IU37     ,    &
-     &            IU38
+     &            IU13     ,IU14     ,IU15     ,IU19     ,IU20
       USE YOWWAMI  , ONLY : CBPLTDT
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
      &            LLNEWCURR,LLWSWAVE ,LLWDWAVE ,FF_NEXT
@@ -413,39 +341,11 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
         IU15 = 15
       ENDIF
 
-
       IU13 = 13
       IU14 = 14
-!REFRA
-      IU16 = 16
-!REFRA
-      IU17 = 17
-      IU18 = 18
 
       IU20 = 20
-!ASSI
-      IU22 = 22
-      IU23 = 23
-      IU27 = 27
-      IU28 = 28
-!ASSI
 
-!__PACK
-      IU30 = 30
-      IU31 = 31
-!ASSI
-      IU32 = 32
-      IU33 = 33
-!ASSI
-      IU35 = 35
-      IU36 = 36
-!ASSI
-      IU37 = 37
-      IU38 = 38
-!ASSI
-!__PACK
-
-      IUVELO = 39
 
       LOUTINT=.FALSE.
 

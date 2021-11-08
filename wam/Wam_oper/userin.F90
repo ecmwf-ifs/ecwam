@@ -132,7 +132,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,   &
      &            PATH     ,CPATH    ,CWI
-      USE YOWUNIT  , ONLY : IU04     ,IU20     ,IU30     ,IU32
       USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LVECTOR, IVECTOR   ,    &
      &            LLUNBINOUT
       USE YOWWAMI  , ONLY : CBEGDT   ,CENDDT   ,CBPLTDT  ,CEPLTDT  ,    &
@@ -150,7 +149,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 #include "initgc.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "mpcrtbl.intfb.h"
-#include "outxt.intfb.h"
 #include "readsta.intfb.h"
 #include "set_wflags.intfb.h"
 #include "wam_u2l1cr.intfb.h"
@@ -170,6 +168,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       INTEGER(KIND=JWIM) :: IUWDFILE
       INTEGER(KIND=JWIM) :: IWTIME, IWTIME_old
       INTEGER(KIND=JWIM) :: NPROC_RST
+      INTEGER(KIND=JWIM) :: IU04
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: WSPEED, WTHETA
@@ -989,8 +988,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,'(6(2X,A14))') (COUTT(I),I=1,NOUTT)
         WRITE(IU06,*) '  '
       ENDIF
-      IF (FFLAG20) CALL OUTXT(IU06,IU20,IU30,IU20,IU32,IDELINT,IASSI,    &
-     & NOUTT,'IU20','IU30','IU20','IU32')
 
       IF (LSECONDORDER) THEN
         WRITE(IU06,*) ' SECOND ORDER CORRECTION WILL BE APPLIED TO ',   &
