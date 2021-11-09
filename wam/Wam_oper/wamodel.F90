@@ -156,8 +156,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
      &                      NEMOWSTEP, NEMOFRCO     ,                   &
      &                      NEMOCSTEP, NEMONSTEP
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,GFLAG20  ,    &
-     &            JPPFLAG  ,FFLAG    ,GFLAG    ,                        &
-     &            IRCD     ,IRU10    , IRALTHS  ,IRALTHSC  ,IRALTRC ,   &
+     &            FFLAG    ,GFLAG    ,                                  &
      &            NGOUT    ,LLOUTERS ,                                  &
      &            NIPRMOUT ,                                            &
      &            LFDB     ,NOUTT    ,NOUTS    ,                        &
@@ -181,8 +180,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
      &            IASSI    ,                                            &
      &            CDTBC    ,IDELBC   ,                                  &
      &            IPROPAGS ,                                            &
-     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,                        &
-     &            NMETNB   ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,    &
+     &            CDATEA   ,MARSTYPE ,                                  &
      &            LLSOURCE ,                                            &
      &            LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE
       USE YOWSPEC, ONLY   : NBLKS    ,NBLKE
@@ -192,8 +190,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,    &
      &            IDELWIN  ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CDATEWO
-      USE UNWAM, ONLY : EXCHANGE_FOR_FL1
-      USE YOWUNPOOL ,ONLY : LLUNSTR, LLUNBINOUT
 
       USE MPL_MODULE
       USE FDBSUBS_MOD, ONLY : IFLUSHFDBSUBS
@@ -220,12 +216,10 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #include "outstep0.intfb.h"
 #include "savspec.intfb.h"
 #include "savstress.intfb.h"
-#include "setice.intfb.h"
 #include "unsetice.intfb.h"
 #include "updnemofields.intfb.h"
 #include "updnemostress.intfb.h"
 #include "wamintgr.intfb.h"
-#include "wdfluxes.intfb.h"
 #include "writsta.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NADV
@@ -253,15 +247,11 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 
       CHARACTER(LEN= 2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, CZERO
-      CHARACTER(LEN=14) :: CDTINTTBAK
       CHARACTER(LEN=14) :: CDATE, CDTPRA, CDTIMP, CDTIMPNEXT, CDTRCF
 
       LOGICAL :: LLFLUSH
       LOGICAL :: LSV, LRST, LOUT
       LOGICAL :: LLNONASSI
-      LOGICAL :: LL2NDCALL
-      LOGICAL :: FFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
-      LOGICAL, ALLOCATABLE,DIMENSION(:) :: LCFLFAIL
 
 ! ----------------------------------------------------------------------
 
@@ -313,10 +303,8 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !     0.2 OUTPUT INITIAL CONDITION AND/OR FORECAST STEP 0
 !         -----------------------------------------------
       IF (CDTPRO == CDATEA .OR. CDTPRO == CDATEF) THEN
-
-debile
-call outstep0
-
+         CALL OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
+ &                      WAM2NEMO, NEMO2WAM, FL1)
       ENDIF
 
 
