@@ -1,4 +1,4 @@
-      SUBROUTINE OUTGRID
+      SUBROUTINE OUTGRID(IJS, IJL, BOUT)
 ! ----------------------------------------------------------------------
 
 !**** *OUTGRID* - OUTPUT OF WAVE ENERGY,MEAN ANGLE, MEAN FREQUENCY
@@ -14,7 +14,10 @@
 !**   INTERFACE.
 !     ----------
 
-!        *CALL* *OUTGRID
+!        *CALL* *OUTGRID(IJS, IJL, BOUT)
+!          *IJS:IJL* - FIRST DIMENSION OF ARRAY BOUT
+!          *BOUT*    - OUTPUT PARAMETERS BUFFER
+
 
 !     EXTERNALS.
 !     ----------
@@ -35,7 +38,7 @@
       
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL ,NIPRMOUT ,ITOBOUT  ,BOUT
+      USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL ,NIPRMOUT ,ITOBOUT
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
       USE YOWINTP  , ONLY : GOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH ,KTAG
@@ -55,6 +58,10 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "makegrid.intfb.h"
+
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(IN) :: BOUT
+
 
       INTEGER(KIND=JWIM) :: IJ, ITT, ICT, ITG, IFLD, IR, IPR, ICOUNT
       INTEGER(KIND=JWIM) :: NFLDTOT, NFLDPPEMAX
@@ -105,7 +112,23 @@
         IRECVCOUNTS(IPR)=NFLDPPE(IRANK)*(NBLKE(IPR)-NBLKS(IPR)+1)
       ENDDO
 
-      IF ((.NOT.LLUNSTR) .OR. (OUT_METHOD == 1)) THEN
+      IF (.NOT.LLUNSTR) THEN
+      
+!     LOADING THE COMMUNICATION BUFFER
+        ALLOCATE(ZSENDBUF(NFLDPPEMAX * MPMAXLENGTH,NPROC))
+
+        ICNT(:)=0
+        DO ICT=1,JPPFLAG
+          IPR=IPFGTBL(ICT)
+          IF (IPR > 0) THEN 
+            DO IJ=IJS,IJL
+              ICNT(IPR) = ICNT(IPR) + 1
+              ZSENDBUF(ICNT(IPR),IPR) = BOUT(IJ,ITOBOUT(ICT))
+            ENDDO
+          ENDIF
+        ENDDO
+
+      ELSEIF (OUT_METHOD == 1) THEN
       
 !     LOADING THE COMMUNICATION BUFFER
         ALLOCATE(ZSENDBUF(NFLDPPEMAX * MPMAXLENGTH,NPROC))
@@ -127,7 +150,7 @@
         WRITE(0,*) '!!! ********************************* !!'
         CALL ABORT1
 
-        CALL SET_UP_ARR_OUT_RECV(IJSLOC, IJLLOC, BOUT, NFLDPPE)
+        CALL SET_UP_ARR_OUT_RECV(IJSLOC, IJLLOC, BOUT(IJSLOC:IJLLOC,:), NFLDPPE)
       END IF
 
 

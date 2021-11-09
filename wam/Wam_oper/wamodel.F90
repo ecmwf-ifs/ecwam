@@ -4,93 +4,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 
 ! ----------------------------------------------------------------------
 
-!**** *WAMODEL* - 3-G WAM MODEL - TIME INTEGRATION OF WAVE FIELDS.
+!**** *WAMODEL* - 3-G WAM MODEL - WRAPPER FOR TIME INTEGRATION OF WAVE FIELDS
 !                                 AND OUTPUTS
-
-!     S.D. HASSELMANN  MPI       1.12.85
-
-!     G. KOMEN         KNMI         6.86  MODIFIED FOR SHALLOW WATER
-!     P. JANSSEN                          ASPECTS.
-
-!     S.D. HASSELMANN  MPI       15.2.87  MODIFIED FOR CYBER 205.
-
-!     P. LIONELLO      ISDGM      6.3.87  MODIFIED TO OUTPUT SWELL.
-
-!     S.D. HASSELMANN  MPI        1.6.87  ALL VERSIONS COMBINED INTO
-!                                         ONE MODEL. DEEP AND SHALLOW
-!                                         WATER , CRAY AND CYBER 205
-!                                         VERSION.
-
-!     CYCLE_2 MODICIFATIONS:
-!     ----------------------
-
-!     L. ZAMBRESKY     GKSS        10.87  OPTIMIZED FOR CRAY, CYBER 205
-!     H. GUNTHER
-
-!     A. SPEIDEL       MPI          4.88  VARIABLE DIMENSIONS, INTERNAL
-!                                         CHECKS (CFL-CRITERION).
-
-!     A. SPEIDEL       MPI         11.88  CHANGES FOR CRAY-2.
-
-!     K. HUBBERT       POL          6.89  DEPTH AND CURRENT REFRACTION.
-!                                         PRECALCULATION OF TERMS IN
-!                                         *PROPDOT*.
-!                                         SOLVE WAVE ACTION EQUATION
-!                                         FOR CURRENT REFRACTION.
-
-!     CYCLE_3 MODICIFATIONS:
-!     ----------------------
-
-!     R. PORTZ , S.D. HASSELMANN   MPI          1990
-
-!      - RESTRUCTURE MODEL TO CALL THE ACTUAL INTEGRATION IN TIME
-!        AS A SUBROUTINE: WAMODEL. A SHELL PROGRAM "WAMSHELL" READS
-!        OUTPUT FROM PREPROC AND COMPUTES THE WIND ARRAYS FOR THE
-!        INTEGRATION PERIOD FROM PREWIND, WHICH HAS BEEN INCORPORATED
-!        AS A SUBROUTINE.
-!      - ALL INTERMEDIATE AND RESTART I/O IS DONE IN THE SUBROUTINE
-!        WAMODEL AND INPREST.
-!      - THE YOWMON BLOCK IN THE PREPROCESSOR AND MODEL ARE MADE
-!        COMPATIBLE.
-!      - THE YOWPUTATION OF SEVERAL PARAMETERS HAS BEEN TRANSFERRED
-!        FROM THE MODEL TO PREPROC.
-!      - DEPTH AND CURRENT REFRACTION HAS BEEN INCORPORATED INTO THE
-!        MODEL.
-!      - OPEN BOUNDARIES ARE INCORPORATED IN THE MODEL.
-!      - SEVERAL MINOR ERRORS HAVE BEEN REMOVED.
-!      - THE BUFFERED I/O FOR THE CYBER 205 HAS BEEN CHANGED INTO A
-!        BINARY READ AND WRITE.
-
-!     CYCLE_4 MODICIFATIONS:
-!     ----------------------
-
-!     L. ZAMBRESKY   GKSS/ECMWF   6.89  ECMWF SUB VERSION
-!                                       BASED ON CYCLE_2.
-
-!     H. GUNTHER     GKSS/ECMWF 10.89  ECMWF SUB VERSION REORGANIZED.
-!                                      - COMMON BLOCK STRUCTURE.
-!                                      - BLOCKING STRUCTURE.
-!                                      - TIME COUNTING.
-!                                      - GRIDDED OUTPUT FIELDS.
-!                                      - HEADERS ADDED TO OUTPUT FILES.
-!                                      - ERRORS IN PROPAGATION CORRECTED
-
-!     P.A.E.M. JANSSEN KNMI      1990  COUPLED MODEL.
-
-!     H. GUNTHER     GKSS/ECMWF  8.91  LOGARITHMIC DEPTH TABLES.
-!                                      MPI CYCLE_3 AND ECMWF VERSIONS
-!                                      COMBINED INTO CYCLE_4.
-
-!     J. BIDLOT ECMWF 1996   MESSAGE PASSING
-!     J. DOYLE  ECMWF OCTOBER 1996   ATMOSPHERIC COUPLING
-!     J. BIDLOT ECMWF FEBRUARY 1997   MODULE
-!     J. BIDLOT ECMWF MARCH 1997  ADD SAVSTRESS AND SAVSPEC 
-!     B. HANSEN ECMWF MARCH 1997  SIGNAL HANDLING.
-!          LDSTOP* - SET .TRUE. IF STOP SIGNAL RECEIVED.
-!          LDWRRE* - SET .TRUE. IF RESTART SIGNAL RECEIVED.
-!     S. ABDALLA  ECMWF  OCTOBER 2000  INCLUDE AIR DENSITY & Zi/L
-!                                      & CALL OUTBETA MOVED TO WAVEMDL
-!
 
 !*    PURPOSE.
 !     --------
@@ -118,77 +33,44 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 !        *WAM2NEMO*  WAVE FIELDS PASSED TO NEMO
 !        *NEMO2WAM*  FIELDS FRON OCEAN MODEL to WAM
 
-!     REFERENCE.
-!     ----------
-
-!       SNYDER, R.L., F.W. DOBSON, J.A. ELLIOT, AND R.B. LONG:
-!          ARRAY MEASUREMENTS OF ATMOSPHERIC PRESSURE FLUCTUATIONS
-!          ABOVE SURFACE GRAVITY WAVES. J.FLUID MECH. 102, 1-59 ,1981.
-!       G. KOMEN, S. HASSELMANN, K. HASSELMANN:
-!          ON THE EXISTENCE OF A FULLY DEVELOPED WIND SEA SPECTRUM.
-!          JPO,1984.
-!       S. HASSELMANN, K. HASSELMANN, J.H. ALLENDER, T.P. BARNETT:
-!          IMPROVED METHODS OF COMPUTING AND PARAMETERIZING THE
-!          NONLINEAR ENERGY TRANSFER IN A GRAVITY WAVE SPECTRUM.
-!          JPO, 1985.
-!       S. HASSELMANN, K. HASSELMANN: A GLOBAL WAVE MODEL,
-!          WAM REPORT,JUNE,30/1985.
-!       P. JANSSEN, G. KOMEN: A SHALLOW WATER EXTENSION OF THE
-!          3-G WAM-MODEL. WAM REPORT 1985.
-!       THE WAMDI GROUP: THE WAM MODEL - A THIRD GENERATION OCEAN
-!          WAVE PREDICTION MODEL. JPO, VOL. 18, NO. 12, 1988.
-!       P.A.E.M JANSSEN: JPO, 1989 AND 1991.
-!       K. HASSELMANN: TRANSPORT EQUATION OF FINITE DEPTH SURFACE
-!          WAVE SPECTRUM IN TIME DEPENDANT CURRENT AND DEPTH FIELD USING
-!          NONCANONICAL SPATIAL (SPHERICAL) AND WAVE NUMBER (FRQUENCY-
-!          DIRECTION) COORDINATES. WAM REPORT 1988.
-
 ! -------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : WVGRIDGLO, ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN, OCEAN2WAVE
 
-      USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC    ,GBOUNC  , IPOGBO  ,    &
-     &            CBCPREF
+      USE YOWCPBO  , ONLY : IBOUNC   ,GBOUNC  , IPOGBO  , CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,                                  &
      &                      LWNEMOCOU,                                  &
      &                      NEMOWSTEP, NEMOFRCO     ,                   &
      &                      NEMOCSTEP, NEMONSTEP
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,GFLAG20  ,    &
-     &            FFLAG    ,GFLAG    ,                                  &
-     &            NGOUT    ,LLOUTERS ,                                  &
-     &            NIPRMOUT ,                                            &
-     &            LFDB     ,NOUTT    ,NOUTS    ,                        &
-     &            CASS     ,NASS     ,LOUTINT  ,                        &
-     &            LRSTPARALW, LRSTINFDAT,                               &
-     &            LRSTST0  ,LWAMANOUT
+     &                      NGOUT    ,LLOUTERS ,                        &
+     &                      NIPRMOUT ,                                  &
+     &                      LFDB     ,NOUTT    ,NOUTS    ,              &
+     &                      CASS     ,NASS     ,LOUTINT  ,              &
+     &                      LRSTPARALW, LRSTINFDAT,                     &
+     &                      LRSTST0  ,LWAMANOUT
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRIBHD, ONLY : LGRHDIFS 
-      USE YOWGRID  , ONLY : IJS      ,IJL       ,                       &
-     &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
+      USE YOWGRID  , ONLY : IJS      ,IJL       ,IJSLOC   ,IJLLOC
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,LWAVEWIND 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
       USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE
-      USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSMIN
-      USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
-     &            CDATER   ,CDATES   ,CDTINTT  ,IDELPRO  ,IDELT    ,    &
-     &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &
-     &            IASSI    ,                                            &
-     &            CDTBC    ,IDELBC   ,                                  &
-     &            IPROPAGS ,                                            &
-     &            CDATEA   ,MARSTYPE ,                                  &
-     &            LLSOURCE ,                                            &
-     &            LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE
+      USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
+     &                      CDATER   ,CDATES   ,CDTINTT  ,IDELPRO  ,IDELT    ,    &
+     &                      IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &
+     &                      CDTBC    ,IDELBC   ,                                  &
+     &                      IASSI    ,MARSTYPE ,                                  &
+     &                      LLSOURCE ,LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE
       USE YOWSPEC, ONLY   : NBLKS    ,NBLKE
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
       USE YOWUNIT  , ONLY : IU02     ,IU19     ,IU20
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,    &
-     &            IDELWIN  ,NFCST    ,ISTAT
+     &                      IDELWIN  ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CDATEWO
 
       USE MPL_MODULE
@@ -243,6 +125,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MIJ
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,MAX(NIPRMOUT,1)) :: BOUT
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 
       CHARACTER(LEN= 2) :: MARSTYPEBAK
@@ -366,21 +249,21 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
          CDATE   = CDTPRA
          CDATEWH = CDATEWO
 
-         DO WHILE (CDTIMPNEXT <= CDTPRO)
-           CALL WAMINTGR (IJS, IJL, BLK2GLO,                          &
- &                        CDTPRA, CDATE, CDATEWH, CDTIMP, CDTIMPNEXT, &
- &                        WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,   &
- &                        WAM2NEMO, MIJ, FL1, XLLWS)
-         ENDDO
+        DO WHILE (CDTIMPNEXT <= CDTPRO)
+          CALL WAMINTGR (IJS, IJL, BLK2GLO,                          &
+ &                       CDTPRA, CDATE, CDATEWH, CDTIMP, CDTIMPNEXT, &
+ &                       WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,   &
+ &                       WAM2NEMO, MIJ, FL1, XLLWS)
+        ENDDO
 
 
 
 #ifdef ECMWF
         IF (.NOT.LWCOU .AND. .NOT. LDSTOP) THEN
 !!!!      the call to CHESIG is a signal handeling facility which is
-!!!!      specific to running WAM at ECMWF, it can be ignored when
+!!!!      specific to running standalone WAM at ECMWF, it can be ignored when
 !!!!      WAM is not run at ECMWF.
-            CALL CHESIG (IU06, ITEST, IRANK, NPROC, LDSTOP, LDWRRE)
+            CALL CHESIG (IU06, IRANK, NPROC, LDSTOP, LDWRRE)
         ENDIF
 #endif
 
@@ -422,8 +305,9 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !       1.6 COMPUTE OUTPUT PARAMETERS FIELDS AND PRINT OUT NORMS
 !           ----------------------------------------------------
         IF ( (CDTINTT == CDTPRO .OR. LRST) .AND. NIPRMOUT > 0 ) THEN
-            CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS,                   &
-     &                  WVPRPT, WVENVI, FF_NOW, INTFLDS, NEMO2WAM)
+          CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS,                   &
+     &                WVPRPT, WVENVI, FF_NOW, INTFLDS, NEMO2WAM,   &
+     &                BOUT)
         ENDIF
 
 
@@ -567,7 +451,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
             MARSTYPE='an'
           ENDIF
 
-          CALL OUTWINT
+          CALL OUTWINT(IJS, IJL, BOUT)
           LLFLUSH = .TRUE.
 
           MARSTYPE=MARSTYPEBAK

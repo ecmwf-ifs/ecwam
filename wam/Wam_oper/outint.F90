@@ -1,4 +1,4 @@
-      SUBROUTINE OUTINT(CDATE, IFCST)
+      SUBROUTINE OUTINT(CDATE, IFCST, IJS, IJL, BOUT)
 
 ! ----------------------------------------------------------------------
 
@@ -9,9 +9,12 @@
 
 !**   INTERFACE.
 !     ----------
-!       *CALL* *OUTINT(CDATE, IFCST)
-!          *CDATE*   DATE AND TIME.
-!          *IFCST*   FORECAST STEP IN HOURS.
+!       *CALL* *OUTINT(CDATE, IFCST, IJS, IJL, BOUT)
+!          *CDATE*   - DATE AND TIME.
+!          *IFCST*   - FORECAST STEP IN HOURS.
+!          *IJS:IJL* - FIRST DIMENSION OF ARRAY BOUT
+!          *BOUT*    - OUTPUT PARAMETERS BUFFER
+
 
 !     EXTERNALS.
 !     ----------
@@ -31,7 +34,7 @@
 
       USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,GFLAG    ,GFLAG20  ,    &
      &            JPPFLAG  ,LFDB     ,IPFGTBL  ,ITOBOUT  ,INFOBOUT ,    &
-     &            LOUTINT
+     &            LOUTINT  ,NIPRMOUT
       USE YOWGRID  , ONLY : NLONRGG  ,DELPHI
       USE YOWINTP  , ONLY : GOUT
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
@@ -56,6 +59,9 @@
 
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       INTEGER(KIND=JWIM), INTENT(IN) :: IFCST
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(IN) :: BOUT
+
 
       INTEGER(KIND=JWIM) :: I, J, ITG, IFLAG, IT
       INTEGER(KIND=JWIM) :: ICOUNT      ! Field counter
@@ -78,7 +84,7 @@
 !     1. COLLECT INTEGRATED PARAMETERS FOR OUTPUT ON SELECTED PE's 
 !        i.e BOUT => GOUT
 !        ---------------------------------------------------------
-      CALL OUTGRID
+      CALL OUTGRID(IJS, IJL, BOUT)
 
 
 !     2. ONE GRID POINT OUTPUT

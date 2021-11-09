@@ -15,11 +15,10 @@ SUBROUTINE WAMINTGR (IJS, IJL, BLK2GLO,                           &
 !       GRID POINTS FOR A GIVEN INITIAL SPECTRUM AND FORCING SURFACE
 !       STRESS FIELD.
 
-!**   INTERFACE.
+!     REFERENCE.
 !     ----------
 
-!     METHOD.
-!     -------
+!         IFS DOCUMENTATION, part VII 
 
 ! -------------------------------------------------------------------
 

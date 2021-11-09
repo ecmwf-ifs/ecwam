@@ -118,7 +118,6 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "iwam_get_unit.intfb.h"
-#include "mpcrtbl.intfb.h"
 #include "wposnam.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU05
