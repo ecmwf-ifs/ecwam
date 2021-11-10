@@ -1,4 +1,4 @@
-      SUBROUTINE FNDPRT (IJS, IJL, NPMAX,                               &
+      SUBROUTINE FNDPRT (KIJS, KIJL, NPMAX,                             &
      &                   NPEAK, MIJ, NTHP, NFRP,                        &
      &                   FLLOW, LLCOSDIFF, FLNOISE,                     &
      &                   FL1, SWM,                                      &
@@ -22,14 +22,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FNDPRT (IJS, IJL, NPMAX,
+!       *CALL* *FNDPRT (KIJS, KIJL, NPMAX,
 !     &                 NPEAK, MIJ, NTHP, NFRP,
 !     &                 FLLOW, LLCOSDIFF, FLNOISE,
 !     &                 FL1, SWM,
 !     &                 ENE, DIR, PER)
 
-!          *IJS*    - INDEX OF FIRST GRIDPOINT
-!          *IJL*    - INDEX OF LAST GRIDPOINT
+!          *KIJS*    - INDEX OF FIRST GRIDPOINT
+!          *KIJL*    - INDEX OF LAST GRIDPOINT
 !          *NPMAX*  - MAXIMUM NUMBER OF PARTITIONS
 !          *NPEAK*  - NUMBER OF PEAKS
 !          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
@@ -65,6 +65,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
+
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -72,34 +73,35 @@
       IMPLICIT NONE
 #include "parmean.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, NPMAX
-      INTEGER(KIND=JWIM), INTENT(IN), DIMENSION(IJS:IJL) :: MIJ
-      INTEGER(KIND=JWIM), INTENT(INOUT), DIMENSION(IJS:IJL) :: NPEAK
-      INTEGER(KIND=JWIM), INTENT(IN), DIMENSION(IJS:IJL,NPMAX) :: NTHP, NFRP
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, NPMAX
+      INTEGER(KIND=JWIM), INTENT(IN), DIMENSION(KIJS:KIJL) :: MIJ
+      INTEGER(KIND=JWIM), INTENT(INOUT), DIMENSION(KIJS:KIJL) :: NPEAK
+      INTEGER(KIND=JWIM), INTENT(IN), DIMENSION(KIJS:KIJL,NPMAX) :: NTHP, NFRP
 
-      REAL(KIND=JWRB), INTENT(IN), DIMENSION(IJS:IJL) :: FLNOISE
-      REAL(KIND=JWRB), INTENT(IN), DIMENSION(IJS:IJL,NANG,NFRE) :: FLLOW, FL1
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: SWM
-      REAL(KIND=JWRB), INTENT(OUT), DIMENSION(IJS:IJL,0:NPMAX) :: DIR, PER, ENE
+      REAL(KIND=JWRB), INTENT(IN), DIMENSION(KIJS:KIJL) :: FLNOISE
+      REAL(KIND=JWRB), INTENT(IN), DIMENSION(KIJS:KIJL,NANG,NFRE) :: FLLOW, FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: SWM
+      REAL(KIND=JWRB), INTENT(OUT), DIMENSION(KIJS:KIJL,0:NPMAX) :: DIR, PER, ENE
 
-      LOGICAL, INTENT(IN), DIMENSION(IJS:IJL,NANG) :: LLCOSDIFF
+      LOGICAL, INTENT(IN), DIMENSION(KIJS:KIJL,NANG) :: LLCOSDIFF
+
 
       INTEGER(KIND=JWIM) :: ITHC, IFRC
       INTEGER(KIND=JWIM) :: IJ, M, K, IP, NITT
       INTEGER(KIND=JWIM) :: NANGH, KK, KKMIN, KKMAX
       INTEGER(KIND=JWIM) :: IFRL, ITHL, ITHR
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MMIN, MMAX
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL) :: MMIN, MMAX
       INTEGER(KIND=JWIM), DIMENSION(1-NANG:2*NANG) :: KLOC
 
       REAL(KIND=JWRB) :: HALF_SECTOR
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: W2
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: W1
-      REAL(KIND=JWRB), DIMENSION(NANG,NFRE,NPMAX,IJS:IJL) :: SPEC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: W1
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE,NPMAX,KIJS:KIJL) :: SPEC
 
       LOGICAL :: LLCHANGE, LLADD
       LOGICAL :: LLADDPART
-      LOGICAL, DIMENSION(IJS:IJL,NANG,NFRE) :: LLW3
+      LOGICAL, DIMENSION(KIJS:KIJL,NANG,NFRE) :: LLW3
 
 ! ----------------------------------------------------------------------
 
@@ -114,14 +116,14 @@
 
 !     POINTS BELOW THE MINIMUM LEVEL BELONG TO THE WINDSEA PART
 !     AND CAN BE EXCLUDED FROM THE PARTITIONS OF THE SWELL SPECTRUM
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         MMIN(IJ)=NFRE
         MMAX(IJ)=0
       ENDDO
       DO M=1,NFRE
         DO K=1,NANG
-          DO IJ=IJS,IJL
-            IF(FL1(IJ,K,M).LE.FLLOW(IJ,K,M)) THEN
+          DO IJ=KIJS,KIJL
+            IF (FL1(IJ,K,M) <= FLLOW(IJ,K,M)) THEN
               W1(IJ,K,M) = 1._JWRB
               LLW3(IJ,K,M) = .FALSE.
             ELSE
@@ -136,7 +138,7 @@
 
 
 !     MAIN LOOP ON GRID POINTS
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         DO IP=1,NPEAK(IJ)
           ITHC=NTHP(IJ,IP)
           IFRC=NFRP(IJ,IP)
@@ -160,17 +162,17 @@
             ITHL = 1 + MOD(NANG+K-1,NANG)
             DO M=IFRC-1, IFRC+1
               IFRL = MAX(1,MIN(NFRE,M))
-              IF (W1(IJ,ITHL,IFRL) .LE. 0.5_JWRB) W2(ITHL,IFRL)=0.5_JWRB
+              IF (W1(IJ,ITHL,IFRL) <= 0.5_JWRB) W2(ITHL,IFRL)=0.5_JWRB
             ENDDO
           ENDDO
 
-          IF (W1(IJ,ITHC,IFRC) .LT. 0.25_JWRB) W2(ITHC,IFRC)=1.0_JWRB
+          IF (W1(IJ,ITHC,IFRC) < 0.25_JWRB) W2(ITHC,IFRC)=1.0_JWRB
 
 !         FIND IF MORE HIGH FREQUENCY BINS HAVE BECOME EXCLUDED
           OUT0: DO M=MMAX(IJ),MMIN(IJ),-1
             DO KK=KKMIN,KKMAX
               K=KLOC(KK)
-              IF (W1(IJ,K,M) .LT. 1.0_JWRB) THEN
+              IF (W1(IJ,K,M) < 1.0_JWRB) THEN
                 MMAX(IJ)=M
                 EXIT OUT0
               ENDIF
@@ -197,14 +199,14 @@
               K = KLOC(KK)
 
               IF (LLW3(IJ,K,M)) THEN
-                IF (W2(K,M).EQ.0.5_JWRB .AND.                           &
-     &              W1(IJ,K,M).LT.0.5_JWRB    ) THEN
+                IF (W2(K,M) == 0.5_JWRB .AND.                           &
+     &              W1(IJ,K,M) < 0.5_JWRB    ) THEN
                   LLADD = .TRUE.
                   OUT1: DO ITHR=K-1, K+1
                     ITHL = 1 + MOD(NANG+ITHR-1,NANG)
                     DO IFRL=MAX(1,M-1), MIN(NFRE,M+1)
-                      IF (W2 (ITHL,IFRL).EQ.0.0_JWRB .AND.             &
-     &                    FL1(IJ,ITHL,IFRL).GT.FL1(IJ,K,M)) THEN
+                      IF (W2 (ITHL,IFRL) == 0.0_JWRB .AND.             &
+     &                    FL1(IJ,ITHL,IFRL) > FL1(IJ,K,M)) THEN
                         LLADD = .FALSE.
                         EXIT OUT1
                       ENDIF
@@ -226,12 +228,12 @@
             DO KK=KKMIN,KKMAX
               K=KLOC(KK)
 
-              IF (LLW3(IJ,K,M) .AND. W1(IJ,K,M).LT.1.0_JWRB) THEN
-                IF (W2(K,M).EQ.0.0_JWRB) THEN
+              IF (LLW3(IJ,K,M) .AND. W1(IJ,K,M) < 1.0_JWRB) THEN
+                IF (W2(K,M) == 0.0_JWRB) THEN
                   OUT2: DO ITHR=K-1, K+1
                     ITHL = 1 + MOD(NANG+ITHR-1,NANG)
                     DO IFRL=MAX(1,M-1), MIN(NFRE,M+1)
-                      IF (W2(ITHL,IFRL).EQ.1.0_JWRB) THEN
+                      IF (W2(ITHL,IFRL) == 1.0_JWRB) THEN
                         W2(K,M) = 0.5_JWRB
                         LLCHANGE = .TRUE.
                         EXIT OUT2
@@ -246,7 +248,7 @@
 
 !*        2.d Branch back ?
 
-          IF ( LLCHANGE .AND. NITT.LT.25 ) GOTO 200
+          IF ( LLCHANGE .AND. NITT < 25 ) GOTO 200
 
 
 !*        3   UPDATE THE OVERALL MAP
@@ -268,11 +270,11 @@
 !       CHECK THAT UNASSIGNED BINS ARE IN THE WIND SECTOR, OTHERWISE THEY SHOULD BE
 !       ADDED AS A PARTITION IF ABOVE NOISE LEVEL
         LLADDPART = .FALSE.
-        IF(NPEAK(IJ).LT.NPMAX) THEN
+        IF (NPEAK(IJ) < NPMAX) THEN
           DO K=1,NANG
             DO M=1,NFRE
-              IF(LLCOSDIFF(IJ,K) .AND. W1(IJ,K,M).LE.0.0_JWRB .AND.     &
-     &           FL1(IJ,K,M) .GT. FLNOISE(IJ) ) THEN
+              IF (LLCOSDIFF(IJ,K) .AND. W1(IJ,K,M) <= 0.0_JWRB .AND.     &
+     &           FL1(IJ,K,M) > FLNOISE(IJ) ) THEN
                 W2(K,M) = 1.0_JWRB
                 W1(IJ,K,M) = 1.0_JWRB
                 LLADDPART = .TRUE.
@@ -283,7 +285,7 @@
           ENDDO
         ENDIF
 
-        IF(LLADDPART) THEN
+        IF (LLADDPART) THEN
           NPEAK(IJ) = NPEAK(IJ)+1
           IP=NPEAK(IJ)
           DO M=1,NFRE
@@ -295,7 +297,7 @@
 
       ENDDO ! loop IJ
 
-      CALL PARMEAN(IJS, IJL, NPMAX, NPEAK,                              &
+      CALL PARMEAN(KIJS, KIJL, NPMAX, NPEAK,                              &
      &             SPEC,                                                &
      &             ENE, DIR, PER)
 
@@ -303,8 +305,8 @@
 !     UPDATE SWELL MASK (IF IN THE WIND DIRECTION)
       DO M=1,NFRE
         DO K=1,NANG
-          DO IJ=IJS,IJL
-            IF(.NOT.LLCOSDIFF(IJ,K)) THEN
+          DO IJ=KIJS,KIJL
+            IF (.NOT.LLCOSDIFF(IJ,K)) THEN
               SWM(IJ,K,M) = SWM(IJ,K,M)*MAX(W1(IJ,K,M),1.0_JWRB)
             ENDIF
           ENDDO

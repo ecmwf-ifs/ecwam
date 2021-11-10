@@ -244,7 +244,7 @@
 
        ! Intergrals are integrated following a change of variable : Z=LOG(Y)
         IF( LTAUWSHELTER ) THEN
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             DO J=1,JTOT_TAUHF
               Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
               OMEGA     = Y*SQRTGZ0(IJ)
@@ -265,7 +265,7 @@
             PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*PHIHF(IJ)
           ENDDO
         ELSE
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             DO J=1,JTOT_TAUHF
               Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
               OMEGA     = Y*SQRTGZ0(IJ)

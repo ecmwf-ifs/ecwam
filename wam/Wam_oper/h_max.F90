@@ -1,4 +1,4 @@
-      SUBROUTINE H_MAX(C3,C4,XNSLC,IJS,IJL,AA,BB,HMAXN,SIG_HM)
+      SUBROUTINE H_MAX(C3,C4,XNSLC,KIJS,KIJL,AA,BB,HMAXN,SIG_HM)
  
 !***  DETERMINE EXPECTED MAXIMUM WAVE HEIGHT, NORMALISED WITH
 !     SIGNIFICANT WAVE HEIGHT.
@@ -21,8 +21,8 @@
 !     C_3            REAL         SKEWNESS
 !     C_4            REAL         KURTOSIS
 !     XNSLC          REAL         NUMBER OF SIGNIFICANT LEVEL CROSSINGS
-!     IJS            INTEGER      FIRST INDEX
-!     IJL            INTEGER      LAST INDEX
+!     KIJS            INTEGER      FIRST INDEX
+!     KIJL            INTEGER      LAST INDEX
 !     AA             REAL         FIRST PARAMETER OF RESIDORI PDF
 !     BB             REAL         =2(AA+1)
  
@@ -41,16 +41,17 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPCONS , ONLY : PI
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: C3, C4, XNSLC
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: C3, C4, XNSLC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: AA, BB, HMAXN, SIG_HM
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: AA, BB, HMAXN, SIG_HM
 
       INTEGER(KIND=JWIM), PARAMETER :: NITER = 5
       INTEGER(KIND=JWIM) :: IJ, I
@@ -69,7 +70,7 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: ZEPSILON
       REAL(KIND=JWRB) :: TWOG1, G2, AE, BE, F, Z0, EMIN, EMAX, EVAL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL):: E, BBM1, DFNORMA
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL):: E, BBM1, DFNORMA
 
 !----------------------------------------------------------------------
 
@@ -87,13 +88,13 @@
       EMIN = 2._JWRB*H_C_MIN**2
       EMAX = 2._JWRB*H_C_MAX**2
       EVAL = 2._JWRB*H_C**2
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         E(IJ) = EVAL
       ENDDO
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         DFNORMA(IJ)=C4(IJ)*AE+C3(IJ)**2*BE
-        IF (XNSLC(IJ).GT.0._JWRB .AND. ABS(DFNORMA(IJ)).GT.ZEPSILON) THEN
+        IF (XNSLC(IJ) > 0._JWRB .AND. ABS(DFNORMA(IJ)).GT.ZEPSILON) THEN
           F  = LOG(MAX(1._JWRB+DFNORMA(IJ),FLOGMIN))
 
           AA(IJ) = MIN(((EB-F)**2-2._JWRB*EB)/(2._JWRB*F),AA_MAX)
