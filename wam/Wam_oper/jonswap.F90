@@ -16,12 +16,12 @@
 
 !       *CALL* *JONSWAP (ALPHAJ, ZGAMMA, SA, SB, FP, KIJS, KIJL, ET)*
 !        *ALPHAJ*  -  OVERALL ENERGY LEVEL OF JONSWAP SPECTRUM
-!        *ZGAMMA*   -  OVERSHOOT FACTOR.
+!        *ZGAMMA*  -  OVERSHOOT FACTOR.
 !        *SA*      -  LEFT PEAK WIDTH.
 !        *SB*      -  RIGHT PEAK WIDTH.
 !        *FP*      -  PEAK FREQUENCY.
-!        *KIJS*     -  FIRST POINT IN BLOCK.
-!        *KIJL*     -  LAST  POINT IN BLOCK.
+!        *KIJS*    -  FIRST POINT IN BLOCK.
+!        *KIJL*    -  LAST  POINT IN BLOCK.
 !        *ET*      -  JOSWAP SPECTRUM AT DISCRETISED FRQUENCY BINS.
 
 

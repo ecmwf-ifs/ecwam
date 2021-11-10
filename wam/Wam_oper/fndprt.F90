@@ -28,8 +28,8 @@
 !     &                 FL1, SWM,
 !     &                 ENE, DIR, PER)
 
-!          *KIJS*    - INDEX OF FIRST GRIDPOINT
-!          *KIJL*    - INDEX OF LAST GRIDPOINT
+!          *KIJS*   - INDEX OF FIRST GRIDPOINT
+!          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *NPMAX*  - MAXIMUM NUMBER OF PARTITIONS
 !          *NPEAK*  - NUMBER OF PEAKS
 !          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.

@@ -156,12 +156,13 @@ ASSOCIATE(UCUR => WVENVI%UCUR, &
             TAUW(IJ)=RFIELD(IJ,4)
             TAUWDIR(IJ)=RFIELD(IJ,5)
             Z0M(IJ)=RFIELD(IJ,6)
-            AIRD(IJ)=RFIELD(IJ,7)
-            WSTAR(IJ)=RFIELD(IJ,8)
-            CICOVER(IJ)=RFIELD(IJ,9)
-            CITHICK(IJ)=RFIELD(IJ,10)
-            UCUR(IJ)=RFIELD(IJ,11)
-            VCUR(IJ)=RFIELD(IJ,12)
+            Z0B(IJ)=RFIELD(IJ,7)
+            AIRD(IJ)=RFIELD(IJ,8)
+            WSTAR(IJ)=RFIELD(IJ,9)
+            CICOVER(IJ)=RFIELD(IJ,10)
+            CITHICK(IJ)=RFIELD(IJ,11)
+            UCUR(IJ)=RFIELD(IJ,12)
+            VCUR(IJ)=RFIELD(IJ,13)
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO

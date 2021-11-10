@@ -10,8 +10,8 @@
 !     ----------
 
 !       *CALL* *FRCUTINDEX (KIJS, KIJL, FM, FMWS, CICOVER, MIJ, RHOWGDFTH)
-!          *KIJS*    - INDEX OF FIRST GRIDPOINT
-!          *KIJL*    - INDEX OF LAST GRIDPOINT
+!          *KIJS*   - INDEX OF FIRST GRIDPOINT
+!          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FM*     - MEAN FREQUENCY
 !          *FMWS*   - MEAN FREQUENCY OF WINDSEA
 !          *UFRIC*  - FRICTION VELOCITY IN M/S
