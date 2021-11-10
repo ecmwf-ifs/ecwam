@@ -50,7 +50,7 @@
 !    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,WSTARNEW,
 !    &                    USTOKES, VSTOKES, STRNMS,                     &
 !    &                    MIJ,  XLLWS)
-!          *FL1*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
+!          *FL1*    - SPECTRUM(INPUT AND OUTPUT).
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
 !          *IG*     - BLOCK NUMBER
