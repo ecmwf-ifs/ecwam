@@ -642,12 +642,19 @@ module yowpdlibMain
 
 
     if(debugParmetis .and. myrank == 0) write(*,*) "Run ParMETIS now..."
-    call ParMETIS_V3_PartGeomKway(vtxdist, xadj, adjncy, &
-                                  vwgt, & !vwgt - ignore weights
-                                  adjwgt, & ! adjwgt - ignore weights
-                                  wgtflag, &
-                              numflag,ndims,xyz,ncon,nparts,tpwgts,ubvec,options, &
-                              edgecut,part, comm)
+
+       write(*,*) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+       write(*,*) !!!!!!!!!!!!!!!!  call to ParMETIS_V3_PartGeomKway was disabled !!!!
+       write(*,*) !!!!!!!!!!!!!!!!  until work with unstructured grid is continued !!!!
+       write(*,*) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!! unwam not available for use !!!!!
+!!!    call ParMETIS_V3_PartGeomKway(vtxdist, xadj, adjncy, &
+!!!                                  vwgt, & !vwgt - ignore weights
+!!!                                  adjwgt, & ! adjwgt - ignore weights
+!!!                                  wgtflag, &
+!!!                              numflag,ndims,xyz,ncon,nparts,tpwgts,ubvec,options, &
+!!!                              edgecut,part, comm)
 
 
   ! write(*,*) myrank, "edge cuted", edgecut

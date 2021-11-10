@@ -1,4 +1,4 @@
-      SUBROUTINE OUTWNORM(LDREPROD)
+      SUBROUTINE OUTWNORM(LDREPROD, IJS, IJL, BOUT)
 
 ! ----------------------------------------------------------------------
 
@@ -17,6 +17,8 @@
 !                 .FALSE. ==> let MPI_ALLREDUCE do the summation.
 !                 NOTE that it is overuled when global norms have been reuested
 !                 see namelist LLNORMWAMOUT_GLOBAL
+!    *IJS:IJL  - FIRST DIMENSION OF ARRAYS MIJ, FL1, XLLWS, BOUT.
+!    *BOUT*    - OUTPUT PARAMETERS BUFFER
 
 !     METHOD.
 !     -------
@@ -27,10 +29,10 @@
       USE YOWCOUT  , ONLY : NFLAG, NFLAGALL, JPPFLAG,                   &
      &                      COUTNAME, ITOBOUT ,NIPRMOUT
       USE YOWCOUP  , ONLY : LLNORMWAMOUT_GLOBAL
-      USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
       USE YOWMPP   , ONLY : IRANK   ,NPROC
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06
+
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK, DR_HOOK
 
@@ -39,6 +41,8 @@
 #include "mpminmaxavg.intfb.h"
 
       LOGICAL, INTENT(IN) :: LDREPROD
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(IN) :: BOUT
 
       INTEGER(KIND=JWIM) :: ITG, IT, I, IRECV, INFO
 
@@ -50,18 +54,18 @@
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('OUTWNORM',0,ZHOOK_HANDLE)
 
-      IF(NFLAGALL .AND. NIPRMOUT > 0) THEN
+      IF (NFLAGALL .AND. NIPRMOUT > 0) THEN
 
         IRECV=1
-        CALL MPMINMAXAVG(LLNORMWAMOUT_GLOBAL, IRECV, LDREPROD, WNORM)
+        CALL MPMINMAXAVG(LLNORMWAMOUT_GLOBAL, IRECV, LDREPROD, IJS, IJL, BOUT, WNORM)
 
         WRITE(IU06,*) ' ' 
         WRITE(IU06,*) '  WAMNORM ON ',CDTPRO
 
-        IF(LLNORMWAMOUT_GLOBAL) THEN
+        IF (LLNORMWAMOUT_GLOBAL) THEN
           CINFO='IRECV'
           INFO=IRECV
-          IF(IRANK.EQ.IRECV) THEN
+          IF (IRANK == IRECV) THEN
             WRITE(IU06,*) '  !!!!!!!!! REPRODUCIBLE NORMS !!!!!!'
           ELSE
             WRITE(IU06,*) '  !!!!!!!!! SEE LOG PE ', IRECV,' FOR NORMS'
@@ -69,7 +73,7 @@
         ELSE
           CINFO='NPROC'
           INFO=NPROC
-          IF(LDREPROD) THEN
+          IF (LDREPROD) THEN
             WRITE(IU06,*) '  !!!!!!!!! REPRODUCIBLE ONLY IF SAME NPROC!'
           ELSE
              WRITE(IU06,*) '  !!!!!!!!! NON reproducible WAMNORM !!!'
@@ -81,7 +85,7 @@
 
 !       WRITE NORM TO LOGFILE
         DO ITG=1,JPPFLAG
-          IF(NFLAG(ITG)) THEN
+          IF (NFLAG(ITG)) THEN
             IT = ITOBOUT(ITG)
             WRITE(IU06,*) '  WAMNORM FOR ',COUTNAME(ITG)
             WRITE(IU06,*) '  ',(WNORM(I,IT),I=1,3),INT(WNORM(4,IT)),INFO

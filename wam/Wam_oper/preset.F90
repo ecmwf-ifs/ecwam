@@ -1,4 +1,4 @@
-      PROGRAM preset
+PROGRAM preset
 
 ! ----------------------------------------------------------------------
 
@@ -65,30 +65,6 @@
 !       (UNITS IU12,IU14, AND IU15) TO PERMANENT FILES.
 
 
-!     EXTERNALS.
-!     ----------
-!       *ABORT1*    - TERMINATES PROCESSING.
-!       *BUILDSTRESS- RECONSTRUCT THE LAW FILE FROM WINDS AND CD. 
-!       *GRSTNAME*  - BUILD NAME FOR INPUT/OUTPUT FILES 
-!       *GSFILE*    - GETS OR SAVES FILES (COMPUTER DEPENDENT).
-!       *INCDATE*   - UPDATES A DATE TINE GROUP.
-!       *INIWCST*   - SETS GLOBAL CONSTANTS.
-!       *LOCINT*    - INTERPOLATES TO MODEL GRID.
-!       *MSTART*    - GENERATES THE RESTART FILES.
-!       *NOTIM*     - CONTROLS WIND GENERATION (NO TIME INTERPOLATION).
-!       *PEAK*      - COMPUTES PARAMETERS BY FETCH LAWS.
-!       *PREWIND*   - PREPARES WINDS.
-!       *SAVSPEC*   - SAVES THE RESTART SPECTRA.
-!       *SAVSTRESS* - SAVES THE RESTART WIND AND STRESS FIELDS.
-!       *SPECTRA*   - COMPUTES SPECTRA FROM PARAMETERS.
-!       *SPR*       - DIRECTIONAL DISTRIBUTION.
-!       *READPRE*   - READS PREPROC OUTPUT.
-!       *READWIND*   - READS A WIND FIELD.
-!       *TIMIN*     - CONTROLS WIND GENERATION (TIME INTERPOLATION).
-
-!     REFERENCES
-!     ----------
-!       NONE.
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
@@ -98,29 +74,29 @@
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,    &
      &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
-      USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJS, IJL, IJLT    ,     &
+      USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJS      , IJL,         &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
-      USE YOWICE   , ONLY : CICOVER  ,CITHICK
       USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,    &
      &            SB       ,THETAQ
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,    &
+      USE YOWMAP   , ONLY : BLK2GLO   ,IRGG     ,AMOWEP   ,             &
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,    &
-     &            IFROMIJ  ,JFROMIJ
+     &            BLK2LOC 
+      USE YOWNEMOFLDS , ONLY : NEMO2WAM
       USE YOWMESPAS, ONLY : LMESSPASS,LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG     ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
-     &            NBLO     ,NIBLO    ,SWAMPWIND,CLDOMAIN ,LL1D
+     &            NIBLO    ,SWAMPWIND,CLDOMAIN ,LL1D
       USE YOWPCONS , ONLY : G        ,RAD      ,DEG      ,ZMISS    ,    &
      &            ROAIR
+      USE YOWSHAL  , ONLY : DEPTH_INPUT, WVENVI
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,    &
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,    &
      &            IDELPRO  ,IDELWI   ,IDELWO   ,                        &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NPROMA_WAM,   &
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,    &
-     &            USOLD    ,Z0OLD    ,TAUW     ,TAUWDIR  ,FL1      ,    &
-     &            ROAIRO   ,ZIDLOLD  ,NBLKS    ,NBLKE
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1      ,    &
+     &            NBLKS    ,NBLKE
       USE YOWTABL  , ONLY :  FAC0     ,FAC1     ,FAC2     ,FAC3    ,    &
      &            FAK      ,FRHF      ,DFIMHF    , OMEGA   ,THH     ,   &
      &            DFDTH    ,IM_P      ,IM_M     ,TA       ,TB      ,    &
@@ -130,20 +106,20 @@
       USE YOWTEXT  , ONLY : ICPLEN   ,USERID   ,RUNID    ,PATH     ,    &
      &            CPATH
       USE YOWUNPOOL ,ONLY : LLUNSTR  ,LPREPROC
-      USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15     ,              &
-     &            IUSCR
-      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
-     &            LLNEWCURR,NXFF     ,NYFF     ,WSPMIN    
-      USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE UNWAM, ONLY : USE_DIRECT_WIND_FILE
+      USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15
+      USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
+     &            LLNEWCURR,NXFF     ,NYFF     ,WSPMIN   ,FF_NEXT
       USE UNSTRUCT_BOUND, ONLY : IOBPD
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
 
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE 
 #include "abort1.intfb.h"
 #include "cigetdeac.intfb.h"
+#include "iwam_get_unit.intfb.h"
 #include "iniwcst.intfb.h"
 #include "mstart.intfb.h"
 #include "mswell.intfb.h"
@@ -159,12 +135,10 @@
       INTEGER(KIND=JWIM), PARAMETER :: NGPTOTG=NC*NR
       INTEGER(KIND=JWIM), PARAMETER :: NFIELDS=1
       INTEGER(KIND=JWIM) :: ILEN, IREAD, IOPTI
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: IU05, IU07 
       INTEGER(KIND=JWIM) :: I4(2)
       INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
-      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
 
       REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JWRB) :: THETA, FETCH, FRMAX 
@@ -189,7 +163,6 @@
      &          IOPTI, ITEST, ITESTB,                                   &
      &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH, SWAMPWIND ,      &
      &          USERID, RUNID, PATH, CPATH,                             &
-     &          USE_DIRECT_WIND_FILE,                                   &
      &          CDATEA, IDELWI, CLTUNIT,                                &
      &          LLUNSTR, LPREPROC,                                      &
      &          LGRIBOUT,                                               &
@@ -218,7 +191,7 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       CALL MPL_INIT(KOUTPUT=1)
 
@@ -307,7 +280,7 @@
 
       READ (IU05, NALINE)
 
-      IF (CLTUNIT .EQ. 'H') IDELWI = IDELWI*3600
+      IF (CLTUNIT == 'H') IDELWI = IDELWI*3600
       CDATEF = CDATEA
       CDATER = '000000000000'
       CDATES = '000000000000'
@@ -336,82 +309,86 @@
       NINF=1
       NSUP=NIBLO
 
-      IF(ALLOCATED(IFROMIJ)) DEALLOCATE(IFROMIJ)
-      ALLOCATE(IFROMIJ(NINF-1:NSUP,NBLO))
-      IF(ALLOCATED(JFROMIJ)) DEALLOCATE(JFROMIJ)
-      ALLOCATE(JFROMIJ(NINF-1:NSUP,NBLO))
-
       IF (LLUNSTR) THEN
 
-        IJS(1) = 1
-        IJL(1) = NIBLO
-        IJLT(1)= NIBLO
+        IJS = 1
+        IJL = NIBLO
         NXFF=NIBLO
         NYFF=1
         NSTART=1
-        NEND=IJL(1)
+        NEND=IJL
         IJSLOC=1
-        IJLLOC=IJL(1)
+        IJLLOC=IJL
         IJGLOBAL_OFFSET=0
         NBLKS=NSTART
         NBLKE=NEND
-        IFROMIJ(NINF-1,:)=0
-        JFROMIJ(NINF-1,:)=0
-        DO IJ = 1,NSUP
-          IFROMIJ(IJ,:)=IJ
-          JFROMIJ(IJ,:)=1
+        IF (ALLOCATED(BLK2LOC)) DEALLOCATE(BLK2LOC)
+        ALLOCATE(BLK2LOC(IJSLOC:IJLLOC))
+        DO IJ = IJSLOC, IJLLOC 
+          BLK2LOC(IJ)%IFROMIJ=IJ
+          BLK2LOC(IJ)%KFROMIJ=1
+          BLK2LOC(IJ)%JFROMIJ=1
         ENDDO
       ELSE
         NXFF=NGX
         NYFF=NGY
         NSTART=1
-        NEND=IJL(1)
+        NEND=IJL
         IJSLOC=1
-        IJLLOC=IJL(1)
+        IJLLOC=IJL
         IJGLOBAL_OFFSET=0
         NBLKS=NSTART
         NBLKE=NEND
-        IFROMIJ(NINF-1,:)=0
-        JFROMIJ(NINF-1,:)=0
-        IG=1
-        DO IJ=NSTART(IRANK),NEND(IRANK)
-          IFROMIJ(IJ,IG)=IXLG(IJ,IG)
-          JFROMIJ(IJ,IG)=NGY-KXLT(IJ,IG)+1
+        IF (ALLOCATED(BLK2LOC)) DEALLOCATE(BLK2LOC)
+        ALLOCATE(BLK2LOC(IJSLOC:IJLLOC))
+        DO IJ = IJSLOC, IJLLOC 
+          BLK2LOC(IJ)%IFROMIJ=BLK2GLO(IJ)%IXLG
+          BLK2LOC(IJ)%KFROMIJ=BLK2GLO(IJ)%KXLT
+          BLK2LOC(IJ)%JFROMIJ=NGY-BLK2GLO(IJ)%KXLT+1
         ENDDO
       ENDIF
 
 
-      ALLOCATE(IUSCR(NBLO))
-      DO IG=1,NBLO
-        IUSCR(IG) = 39+IG
+!!!  transfer DEPTH_INPUT to WVENVI
+      ALLOCATE(WVENVI(NSTART(IRANK):NEND(IRANK)))
+
+      DO IJ=NSTART(IRANK),NEND(IRANK)
+        WVENVI(IJ)%DEPTH = DEPTH_INPUT(IJ)
+
+!!!!   when this is moved to reading depth as an input field, wvenvi should be allocated and intialised in wvalloc !!!
+        WVENVI(IJ)%UCUR = 0.0_JWRB
+        WVENVI(IJ)%VCUR = 0.0_JWRB
       ENDDO
+      DEALLOCATE(DEPTH_INPUT)
+
+
 
 !!!   deallocate big arrays that were read in with READPRE
 
-      IF(ALLOCATED(FAC0)) DEALLOCATE(FAC0)
-      IF(ALLOCATED(FAC1)) DEALLOCATE(FAC1)
-      IF(ALLOCATED(FAC2)) DEALLOCATE(FAC2)
-      IF(ALLOCATED(FAC3)) DEALLOCATE(FAC3)
-      IF(ALLOCATED(FAK)) DEALLOCATE(FAK)
-      IF(ALLOCATED(FRHF)) DEALLOCATE(FRHF)
-      IF(ALLOCATED(DFIMHF)) DEALLOCATE(DFIMHF)
+      IF (ALLOCATED(FAC0)) DEALLOCATE(FAC0)
+      IF (ALLOCATED(FAC1)) DEALLOCATE(FAC1)
+      IF (ALLOCATED(FAC2)) DEALLOCATE(FAC2)
+      IF (ALLOCATED(FAC3)) DEALLOCATE(FAC3)
+      IF (ALLOCATED(FAK)) DEALLOCATE(FAK)
+      IF (ALLOCATED(FRHF)) DEALLOCATE(FRHF)
+      IF (ALLOCATED(DFIMHF)) DEALLOCATE(DFIMHF)
 
-      IF(ALLOCATED(OMEGA)) DEALLOCATE(OMEGA)
-      IF(ALLOCATED(THH))   DEALLOCATE(THH)
-      IF(ALLOCATED(DFDTH)) DEALLOCATE(DFDTH)
-      IF(ALLOCATED(IM_P)) DEALLOCATE(IM_P)
-      IF(ALLOCATED(IM_M)) DEALLOCATE(IM_M) 
-      IF(ALLOCATED(TA)) DEALLOCATE(TA)
-      IF(ALLOCATED(TB)) DEALLOCATE(TB)
-      IF(ALLOCATED(TC_QL)) DEALLOCATE(TC_QL)
-      IF(ALLOCATED(TT_4M)) DEALLOCATE(TT_4M)
-      IF(ALLOCATED(TT_4P)) DEALLOCATE(TT_4P)
-      IF(ALLOCATED(TFAKH)) DEALLOCATE(TFAKH)
+      IF (ALLOCATED(OMEGA)) DEALLOCATE(OMEGA)
+      IF (ALLOCATED(THH))   DEALLOCATE(THH)
+      IF (ALLOCATED(DFDTH)) DEALLOCATE(DFDTH)
+      IF (ALLOCATED(IM_P)) DEALLOCATE(IM_P)
+      IF (ALLOCATED(IM_M)) DEALLOCATE(IM_M) 
+      IF (ALLOCATED(TA)) DEALLOCATE(TA)
+      IF (ALLOCATED(TB)) DEALLOCATE(TB)
+      IF (ALLOCATED(TC_QL)) DEALLOCATE(TC_QL)
+      IF (ALLOCATED(TT_4M)) DEALLOCATE(TT_4M)
+      IF (ALLOCATED(TT_4P)) DEALLOCATE(TT_4P)
+      IF (ALLOCATED(TFAKH)) DEALLOCATE(TFAKH)
 
 
 !*    3.* SET GRIB HEADERS FOR INPUTS/OUTPUTS
 !         -----------------------------------
-      IF(.NOT. LGRHDIFS) THEN
+      IF (.NOT. LGRHDIFS) THEN
 !       FOR INTEGRATED PARAMETERS
         CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
 !       FOR SPECTRA 
@@ -428,7 +405,7 @@
 
       WRITE (IU06,*)'  '
       WRITE (IU06,*)' ******************************************'
-      IF(LGRIBOUT) THEN
+      IF (LGRIBOUT) THEN
         WRITE (IU06,*)' THE OUTPUT SPECTRA WILL BE GRIBBED '
         WRITE (IU06,*)' INTO ',NFRE*NANG,' FIELDS'
       ELSE
@@ -437,18 +414,18 @@
       WRITE (IU06,*)' ******************************************'
       WRITE (IU06,*)'  '
 
-      IF (IOPTI.EQ.0) THEN
+      IF (IOPTI == 0) THEN
         WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',            &
      &   '' INPUT PARAMETERS.'')')
-      ELSEIF (IOPTI.EQ.1) THEN
+      ELSEIF (IOPTI == 1) THEN
         WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',            &
      &   '' LOCAL WIND.'')')
         WRITE (IU06,'('' WAVE ENERGY IS ZERO IN CALM WIND AREAS.'')')
-      ELSEIF (IOPTI.EQ.2) THEN
+      ELSEIF (IOPTI == 2) THEN
         WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',            &
      &   '' LOCAL WIND.'')')
         WRITE (IU06,'('' PARAMETERS USED IN CALM WIND AREAS.'')')
-      ELSEIF (IOPTI.EQ.3) THEN
+      ELSEIF (IOPTI == 3) THEN
         WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',            &
      &   '' IMPOSED SWELL SYSTEMS.'')')
       ELSE
@@ -479,7 +456,7 @@
 !*    5. PREPARE WINDFIELD.
 !        ------------------
 
-      CDA = ZERO
+      CDATEWL = ZERO
       CDTPRO  = CDATEA
       CDATEE  = CDATEA
       CDAWIFL = CDATEA
@@ -492,30 +469,27 @@
 
       IREAD=1
 
-      IF(.NOT.ALLOCATED(FL1)) ALLOCATE (FL1(0:NIBLO,NANG,NFRE))
-      IF(.NOT.ALLOCATED(U10OLD)) ALLOCATE(U10OLD(NIBLO,NBLO))
-      IF(.NOT.ALLOCATED(THWOLD)) ALLOCATE(THWOLD(NIBLO,NBLO))
-      IF(.NOT.ALLOCATED(USOLD)) ALLOCATE(USOLD(NIBLO,NBLO))
-      IF(.NOT.ALLOCATED(Z0OLD)) ALLOCATE(Z0OLD(NIBLO,NBLO))
-      IF(.NOT.ALLOCATED(TAUW)) ALLOCATE(TAUW(NIBLO,NBLO))
-      IF(.NOT.ALLOCATED(TAUWDIR)) ALLOCATE(TAUWDIR(NIBLO,NBLO))
-      IF(.NOT.ALLOCATED(ROAIRO)) ALLOCATE(ROAIRO(NIBLO,NBLO))
-      IF(.NOT.ALLOCATED(ZIDLOLD)) ALLOCATE(ZIDLOLD(NIBLO,NBLO))
-      IF(.NOT.ALLOCATED(CICOVER)) ALLOCATE(CICOVER(NIBLO,NBLO))
-      IF(.NOT.ALLOCATED(CITHICK)) ALLOCATE(CITHICK(NIBLO,NBLO))
-      U10OLD(:,:) = WSPMIN
-      THWOLD(:,:) = 0.0_JWRB
-      USOLD(:,:) =  U10OLD(:,:)*0.035847_JWRB
-      TAUW(:,:) = 0.1_JWRB*USOLD(:,:)
-      TAUWDIR(:,:) = THWOLD(:,:)
-      Z0OLD(:,:) = 0.00001_JWRB
-      ROAIRO(:,:) = ROAIR      
-      ZIDLOLD(:,:) = 0.0_JWRB
-      CICOVER(:,:) = 0.0_JWRB
-      CITHICK(:,:) = 0.0_JWRB
 
+      IF (.NOT.ALLOCATED(FL1)) ALLOCATE (FL1(NIBLO,NANG,NFRE))
 
-      IF (IOPTI.GT.0 .AND. IOPTI.NE.3) THEN
+      IF (.NOT.ALLOCATED(FF_NOW)) ALLOCATE(FF_NOW(NIBLO))
+
+      FF_NOW(:)%WSWAVE = WSPMIN
+      FF_NOW(:)%WDWAVE = 0.0_JWRB
+      FF_NOW(:)%UFRIC =  FF_NOW(:)%WSWAVE*0.035847_JWRB
+      FF_NOW(:)%TAUW = 0.1_JWRB*FF_NOW(:)%UFRIC
+      FF_NOW(:)%TAUWDIR = 0.0_JWRB 
+      FF_NOW(:)%Z0M = 0.00001_JWRB
+      FF_NOW(:)%AIRD = ROAIR      
+      FF_NOW(:)%WSTAR = 0.0_JWRB
+      FF_NOW(:)%CICOVER = 0.0_JWRB
+      FF_NOW(:)%CITHICK = 0.0_JWRB
+
+      IF (.NOT.ALLOCATED(FF_NEXT)) ALLOCATE(FF_NEXT(NIBLO))
+
+      IF (.NOT.ALLOCATED(NEMO2WAM)) ALLOCATE(NEMO2WAM(NIBLO))
+
+      IF (IOPTI > 0 .AND. IOPTI /= 3) THEN
 
 !!!! might need to restict call when needed !!!
 !!! remove that call in 40R3
@@ -524,20 +498,16 @@
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=.FALSE.
 
-        CALL PREWIND (U10OLD,THWOLD,USOLD,Z0OLD,                        &
-     &                ROAIRO, ZIDLOLD,                                  &
-     &                CICOVER, CITHICK,                                 &
-     &                LLINIT, LLALLOC_FIELDG_ONLY,                      &
-     &                IREAD,                                            &
-     &                NFIELDS, NGPTOTG, NC, NR,                         &
-     &                FIELDS, LWCUR, MASK_IN)
+        CALL PREWIND (IJS, IJL, BLK2LOC,                 &
+     &                WVENVI, FF_NOW, FF_NEXT,           &
+     &                LLINIT, LLALLOC_FIELDG_ONLY,       &
+     &                IREAD,                             &
+     &                NFIELDS, NGPTOTG, NC, NR,          &
+     &                FIELDS, LWCUR, MASK_IN,            &
+     &                NEMO2WAM)
 
-      TAUW(:,:) = 0.1_JWRB * USOLD(:,:)**2
+      FF_NOW(:)%TAUW = 0.1_JWRB * FF_NOW(:)%UFRIC**2
 
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. PREWIND DONE'
-
-      ELSE
-        IF (ITEST.GT.0) WRITE (IU06,*) ' WIND SET TO LOW DEFAULTS'
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -546,9 +516,9 @@
 !        ----------------------------------------
 
 
-      IF (FETCH.LT.0.1E-5_JWRB) FETCH = 0.5_JWRB*DELPHI
+      IF (FETCH < 0.1E-5_JWRB) FETCH = 0.5_JWRB*DELPHI
       FRMAX = FM
-      IF (IOPTI.NE.0 .AND. IOPTI.NE.3) THEN
+      IF (IOPTI /= 0 .AND. IOPTI /= 3) THEN
         WRITE (IU06,*) ' FETCH USED (METRES)       : ', FETCH
         WRITE (IU06,*) ' MAXIMUM PEAK FREQUENCY IS : ', FRMAX
       ENDIF
@@ -558,13 +528,12 @@
 !*    7. GENERATE AND WRITE START FILES.
 !        -------------------------------
 
-      IF(IOPTI.NE.3) THEN
+      IF (IOPTI /= 3) THEN
         THETAQ = THETA * RAD
         CALL MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,             &
-     &              FL1,U10OLD,THWOLD)
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. MSTART DONE'
+     &              IJS, IJL, FL1, FF_NOW(IJS:IJL)%WSWAVE, FF_NOW(IJS:IJL)%WDWAVE)
       ELSE
-        CALL MSWELL (FL1)
+        CALL MSWELL (IJS, IJL, BLK2LOC, FL1)
 
         IF (LLUNSTR) THEN
 !         reset points with no flux out of the boundary to 0
@@ -585,25 +554,10 @@
 !        --------------------
 
 !     STRESS RELATED FIELDS :
-      WRITE(IU06,*) 'MINVAL OF U10OLD = ',MINVAL(U10OLD)
-      WRITE(IU06,*) 'MAXVAL OF U10OLD = ',MAXVAL(U10OLD)
       IF (.NOT.LGRIBOUT) THEN
-        CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD,     &
-     &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK,               &
-     &                 NBLKS, NBLKE, CDATEA, CDATEA)
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSTRESS DONE'
+        CALL SAVSTRESS(IJS, IJL, WVENVI, FF_NOW, NBLKS, NBLKE, CDATEA, CDATEA) 
       ENDIF
 
-      IF(ALLOCATED(U10OLD)) DEALLOCATE(U10OLD)
-      IF(ALLOCATED(THWOLD)) DEALLOCATE(THWOLD)
-      IF(ALLOCATED(USOLD)) DEALLOCATE(USOLD)
-      IF(ALLOCATED(Z0OLD)) DEALLOCATE(Z0OLD)
-      IF(ALLOCATED(TAUW)) DEALLOCATE(TAUW)
-      IF(ALLOCATED(TAUWDIR)) DEALLOCATE(TAUWDIR)
-      IF(ALLOCATED(ROAIRO)) DEALLOCATE(ROAIRO)
-      IF(ALLOCATED(ZIDLOLD)) DEALLOCATE(ZIDLOLD)
-      IF(ALLOCATED(CICOVER)) DEALLOCATE(CICOVER)
-      IF(ALLOCATED(CITHICK)) DEALLOCATE(CITHICK)
 
       WRITE (IU06,*) ' SAVING SPECTRA '
 
@@ -612,11 +566,9 @@
       IF (LGRIBOUT) THEN
 !       THE COLD START SPECTRA WILL BE SAVED AS GRIB FILES.
         CDTPRO  = CDATEA
-        CALL OUTSPEC(FL1, CICOVER)
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. OUTSPEC DONE'
+        CALL OUTSPEC(IJS, IJL, FL1,  FF_NOW(IJS:IJL)%CICOVER)
       ELSE
-        CALL SAVSPEC(FL1,NBLKS,NBLKE,CDATEA,CDATEA,CDUM)
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSPEC DONE'
+        CALL SAVSPEC(IJS, IJL, FL1, NBLKS, NBLKE, CDATEA, CDATEA, CDUM)
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -629,6 +581,6 @@
 
       CALL MPL_END()
 
-      IF (LHOOK) CALL DR_HOOK('PRESET',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('PRESET',1,ZHOOK_HANDLE)
 
-      END
+END PROGRAM preset

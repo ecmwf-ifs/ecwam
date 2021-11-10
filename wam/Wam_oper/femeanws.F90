@@ -1,4 +1,4 @@
-      SUBROUTINE FEMEANWS (F, IJS, IJL, EM, FM, XLLWS)
+      SUBROUTINE FEMEANWS (KIJS, KIJL, FL1, XLLWS, EM, FM)
 
 ! ----------------------------------------------------------------------
 
@@ -15,10 +15,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FEMEANWS (F, IJS, IJL, EM, FM)*
-!              *F*      - SPECTRUM.
-!              *IJS*    - INDEX OF FIRST GRIDPOINT
-!              *IJL*    - INDEX OF LAST GRIDPOINT
+!       *CALL* *FEMEANWS (KIJS, KIJL, FL1, XLLWS, EM, FM)*
+!              *KIJS*   - INDEX OF FIRST GRIDPOINT
+!              *KIJL*   - INDEX OF LAST GRIDPOINT
+!              *FL1*    - SPECTRUM.
+!              *XLLWS* - TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
 !              *EM*     - MEAN WAVE ENERGY (OUTPUT)
 !              *FM*     - MEAN WAVE FREQUENCY (OUTPUT)
 
@@ -43,23 +44,25 @@
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DELTH    ,    &
      &                WETAIL    ,FRTAIL
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM) :: IJ, M, K
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(kIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1, XLLWS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: EM, FM
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: EM, FM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, XLLWS
+
+      INTEGER(KIND=JWIM) :: IJ, M, K
 
       REAL(KIND=JWRB) :: DELT25, DELT2
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP2
 
 ! ----------------------------------------------------------------------
 
@@ -68,7 +71,7 @@
 !*    1. INITIALISE MEAN FREQUENCY ARRAY AND TAIL FACTOR.
 !        ------------------------------------------------
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         EM(IJ) = EPSMIN
         FM(IJ) = EPSMIN
       ENDDO
@@ -82,15 +85,15 @@
       
       DO M=1,NFRE
         K = 1
-        DO IJ =IJS,IJL
-           TEMP2(IJ) = XLLWS(IJ,K,M)*F(IJ,K,M)
+        DO IJ =KIJS,KIJL
+           TEMP2(IJ) = XLLWS(IJ,K,M)*FL1(IJ,K,M)
         ENDDO
         DO K=2,NANG
-          DO IJ=IJS,IJL
-            TEMP2(IJ) = TEMP2(IJ)+XLLWS(IJ,K,M)*F(IJ,K,M)
+          DO IJ=KIJS,KIJL
+            TEMP2(IJ) = TEMP2(IJ)+XLLWS(IJ,K,M)*FL1(IJ,K,M)
           ENDDO
         ENDDO
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           EM(IJ) = EM(IJ)+DFIM(M)*TEMP2(IJ)
           FM(IJ) = FM(IJ)+DFIMOFR(M)*TEMP2(IJ)
         ENDDO
@@ -100,7 +103,7 @@
 !*       NORMALIZE WITH TOTAL ENERGY.
 !        ------------------------------------------
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ)
         FM(IJ) = FM(IJ)+DELT2*TEMP2(IJ)
         FM(IJ) = EM(IJ)/FM(IJ)

@@ -1,4 +1,4 @@
-      SUBROUTINE SAVSPEC(FL, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
+      SUBROUTINE SAVSPEC(IJS, IJL, FL, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      MARCH 1997
@@ -11,7 +11,8 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *SAVSPEC(FL,NBLKS,NBLKE,CDTPRO,CDATEF,CDATER)
+!     *CALL* *SAVSPEC(IJS,IJL,FL,NBLKS,NBLKE,CDTPRO,CDATEF,CDATER)
+!      *IJS:IJL - FIRST DIMENSION OF FL
 !     *FL*        ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
 !     *NBLKS*     INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !     *NBLKE*     INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
@@ -30,16 +31,6 @@
 !     GATHERED MDEL FREQUENCIES AT A TIME
 !     AND KDEL DIRECTIONS AT A TIME.
 
-!     EXTERNALS.
-!     ----------
-!     GETENV
-!     GRSTNAME
-!     MPGATHERFL
-!     WRITEFL
-
-!     REFERENCE.
-!     ----------
-!     NONE
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
@@ -47,13 +38,12 @@
       USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL  ,KDEL    ,MDEL      ,    &
      &           LRSTPARALW
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
-     &            NPRECR
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
-      USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -63,12 +53,15 @@
 #include "mpgatherfl.intfb.h"
 #include "writefl.intfb.h"
 
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL
       INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
-      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO, CDATEF, CDATER
+
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: IUNIT
+      INTEGER(KIND=JWIM) :: IFCST
       INTEGER(KIND=JWIM) :: IRECV, MLOOP, KLOOP, MINF, MSUP, KINF, KSUP 
       INTEGER(KIND=JWIM) :: LNAME
 
@@ -85,15 +78,16 @@
 
       LOUNIT = .TRUE.
 
-      CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
+      IFCST = 0
+      CALL GRSTNAME(CDTPRO,CDATEF,IFCST,'BLS',ICPLEN,CPATH,FILENAME)
 
-      IF(LRSTPARALW) THEN
+      IF (LRSTPARALW) THEN
 !        RESTART FILES FROM ALL PS's
          LNAME = LEN_TRIM(FILENAME)
          FILENAME=FILENAME(1:LNAME)//'.%p_%n'
          CALL EXPAND_STRING(IRANK,NPROC,0,0,FILENAME,1)
 
-         CALL WRITEFL(FL, NINF-1, NSUP, 1, NANG, 1, NFRE,               &
+         CALL WRITEFL(FL, IJS, IJL, 1, NANG, 1, NFRE,                  &
      &                FILENAME, IUNIT, LOUNIT, LRSTPARALW)
 
       ELSE
@@ -110,10 +104,9 @@
             KSUP=MIN(KLOOP+KDEL-1,NANG)
 
             LOUNIT = .FALSE.
-            IF(MINF.EQ.1 .AND. KINF.EQ.1) LOUNIT = .TRUE.
+            IF (MINF == 1 .AND. KINF == 1) LOUNIT = .TRUE.
 
-            ALLOCATE(RFL(0:NIBLO,KINF:KSUP,MINF:MSUP))
-            RFL(0,:,:)=0.0_JWRB
+            ALLOCATE(RFL(NIBLO,KINF:KSUP,MINF:MSUP))
             DO M=MINF,MSUP
               DO K=KINF,KSUP
                 DO IJ = IJSLOC, IJLLOC
@@ -124,12 +117,9 @@
 
             CALL MPGATHERFL(IRECV,NBLKS,NBLKE,KINF,KSUP,MINF,MSUP,RFL)
 
-            IF (ITEST.GE.2)                                             &
-     &       WRITE(IU06,*)                                              &
-     &       'SUB. SAVSPEC: RESTART SPECTRUM COLLECTED, :',MLOOP,KLOOP
 
-            IF (IRANK.EQ.IPFGTBL(JPPFLAG+1) .OR. NPROC.EQ.1) THEN
-              CALL WRITEFL(RFL, 0, NIBLO, KINF, KSUP, MINF, MSUP,       &
+            IF (IRANK == IPFGTBL(JPPFLAG+1) .OR. NPROC == 1) THEN
+              CALL WRITEFL(RFL, 1, NIBLO, KINF, KSUP, MINF, MSUP,       &
      &                     FILENAME, IUNIT, LOUNIT, LRSTPARALW)
             ENDIF
             DEALLOCATE(RFL)

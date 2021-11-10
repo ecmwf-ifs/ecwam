@@ -113,7 +113,8 @@
 
       DO I = 1,NBMAX
         IJARF(I) = 0
-        IGARF(I) = 0
+        ! IGARF obsolete
+        IGARF(I) = 1
         IBFL (I) = 0
         IBFR (I) = 0
         BFW  (I) = 0.0_JWRB
@@ -268,7 +269,7 @@
 !        -----------------------------------------
       ListSTART(1)=0
       ListEND(1)=0
-      CALL FINDB (NBMAX, NBOUNF, BLATF, BLNGF, IGARF, IJARF,            &
+      CALL FINDB (NBMAX, NBOUNF, BLATF, BLNGF, IJARF,            &
      &            1, ListSTART, ListEND, 1)
 
 ! ----------------------------------------------------------------------

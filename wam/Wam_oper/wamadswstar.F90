@@ -1,0 +1,65 @@
+SUBROUTINE WAMADSWSTAR(IJS, IJL, BLK2LOC, ADS, WSTAR)
+! ----------------------------------------------------------------------
+
+!*    PURPOSE.
+!     --------
+
+!     RE-INITIALISES ADS AND WSTAR TO THE VALUES PROVIDED BY FIELDG
+!     IF COUPLED !!!!
+
+!**   INTERFACE.
+!     ----------
+!     *CALL* *WAMADSWSTAR*(ADS, WSTAR)
+!     *IJS:IJL - FIRST DIMENSION OF ARRAYS ADS and WSTAR
+!     *BLK2LOC*- POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!     *ADS*      AIR DENSITY IN KG/M3.
+!     *WSTAR*    CONVECTIVE VELOCITy SCALE 
+
+! ----------------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDLOC
+
+      USE YOWCOUP  , ONLY : LWCOU
+      USE YOWSTAT  , ONLY : NPROMA_WAM
+      USE YOWWIND  , ONLY : FIELDG
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      TYPE(WVGRIDLOC), DIMENSION(IJS:IJL), INTENT(IN) :: BLK2LOC
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT):: ADS, WSTAR
+
+
+      INTEGER(KIND=JWIM) :: IJ, IX, JY
+      INTEGER(KIND=JWIM):: JKGLO, KIJS, KIJL, NPROMA
+
+      REAL(KIND=JWRB):: ZHOOK_HANDLE
+
+! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('WAMADSWSTAR',0,ZHOOK_HANDLE)
+
+!     KEEP CORRESPONDING CONTRIBUTION 
+      IF(LWCOU) THEN
+          NPROMA=NPROMA_WAM
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
+          DO JKGLO=IJS,IJL,NPROMA
+            KIJS=JKGLO
+            KIJL=MIN(KIJS+NPROMA-1,IJL)
+            DO IJ=KIJS,KIJL
+              IX = BLK2LOC(IJ)%IFROMIJ
+              JY = BLK2LOC(IJ)%JFROMIJ
+              ADS(IJ) = FIELDG(IX,JY)%AIRD
+              WSTAR(IJ)= FIELDG(IX,JY)%WSTAR
+            ENDDO
+          ENDDO
+!$OMP     END PARALLEL DO
+      ENDIF
+
+IF (LHOOK) CALL DR_HOOK('WAMADSWSTAR',1,ZHOOK_HANDLE)
+ 
+END SUBROUTINE WAMADSWSTAR

@@ -1,4 +1,4 @@
-      SUBROUTINE OUTINT(CDATE, IFCST)
+      SUBROUTINE OUTINT(CDATE, IFCST, IJS, IJL, BOUT)
 
 ! ----------------------------------------------------------------------
 
@@ -9,9 +9,12 @@
 
 !**   INTERFACE.
 !     ----------
-!       *CALL* *OUTINT(CDATE, IFCST)
-!          *CDATE*   DATE AND TIME.
-!          *IFCST*   FORECAST STEP IN HOURS.
+!       *CALL* *OUTINT(CDATE, IFCST, IJS, IJL, BOUT)
+!          *CDATE*   - DATE AND TIME.
+!          *IFCST*   - FORECAST STEP IN HOURS.
+!          *IJS:IJL* - FIRST DIMENSION OF ARRAY BOUT
+!          *BOUT*    - OUTPUT PARAMETERS BUFFER
+
 
 !     EXTERNALS.
 !     ----------
@@ -31,16 +34,17 @@
 
       USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,GFLAG    ,GFLAG20  ,    &
      &            JPPFLAG  ,LFDB     ,IPFGTBL  ,ITOBOUT  ,INFOBOUT ,    &
-     &            LOUTINT
+     &            LOUTINT  ,NIPRMOUT
       USE YOWGRID  , ONLY : NLONRGG  ,DELPHI
       USE YOWINTP  , ONLY : GOUT
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,ZDELLO
       USE YOWMPP   , ONLY : IRANK
       USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN
-      USE YOWSTAT  , ONLY : CDTPRO   ,CDTINTT  ,MARSTYPE
+      USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTINTT  ,MARSTYPE
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWUNIT  , ONLY : IU20     ,IU30
+      USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
+      USE YOWUNIT  , ONLY : IU20
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE GRIB_API_INTERFACE
@@ -48,27 +52,29 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "abort1.intfb.h"
+#include "grstname.intfb.h"
 #include "outgrid.intfb.h"
 #include "out_onegrdpt.intfb.h"
 #include "wgribenout.intfb.h"
 
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       INTEGER(KIND=JWIM), INTENT(IN) :: IFCST
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(IN) :: BOUT
+
 
       INTEGER(KIND=JWIM) :: I, J, ITG, IFLAG, IT
       INTEGER(KIND=JWIM) :: ICOUNT      ! Field counter
       INTEGER(KIND=JWIM) :: IPARAM, ITABLE, IZLEV
       INTEGER(KIND=JWIM) :: IERR
-      INTEGER(KIND=JWIM) :: IUOUT 
+      INTEGER(KIND=JWIM) :: LFILE, IUOUT 
   
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
-      CHARACTER(LEN=24) :: OFILENAME
+      CHARACTER(LEN=3) :: FILEID
+      CHARACTER(LEN=296) :: OUTFILEN
 
-      LOGICAL, SAVE :: FRSTIME30
       LOGICAL :: LLIUOUTOPEN
-
-      DATA FRSTIME30 / .TRUE. /
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('OUTINT',0,ZHOOK_HANDLE)
@@ -78,7 +84,7 @@
 !     1. COLLECT INTEGRATED PARAMETERS FOR OUTPUT ON SELECTED PE's 
 !        i.e BOUT => GOUT
 !        ---------------------------------------------------------
-      CALL OUTGRID
+      CALL OUTGRID(IJS, IJL, BOUT)
 
 
 !     2. ONE GRID POINT OUTPUT
@@ -86,7 +92,7 @@
       IF(CLDOMAIN.EQ.'s') CALL OUT_ONEGRDPT(IU06)
 
 
-!*    3. OUTPUT IN PURE BINARY FORM
+!*    3. OUTPUT IN PURE BINARY FORM (obsolete)
 !        --------------------------
       IF(FFLAG20 .AND. CDTINTT.EQ.CDTPRO ) THEN
         DO IFLAG=1,JPPFLAG
@@ -105,14 +111,18 @@
 
 !       DEFINE OUTPUT FILE FOR GRIB DATA (if not written to FDB)
         IF(.NOT.LFDB .AND.(IRANK.EQ.1)) THEN
-            LLIUOUTOPEN=.TRUE.
-            WRITE(OFILENAME,'(A,I2)') 'fort.',IU30
-            IF (FRSTIME30) THEN
-              CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'w')
-              FRSTIME30=.FALSE.
-            ELSE
-              CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'a')
-            ENDIF
+       !  output to file should only take place on one PE
+         IF(MARSTYPE == 'fg') THEN
+           ! fg only exist in uncoupled anlysis experiments
+           FILEID = 'MFG'
+         ELSE
+           FILEID = 'MPP'
+         ENDIF
+         CALL GRSTNAME(CDATE,CDATEF,IFCST,FILEID,ICPLEN,CPATH,OUTFILEN)
+         LFILE=LEN_TRIM(OUTFILEN)
+         CALL IGRIB_OPEN_FILE(IUOUT,OUTFILEN(1:LFILE),'w')
+         WRITE(IU06,*) '  INTEGRATED PARAMETERS WRITTEN TO FILE ',OUTFILEN(1:LFILE)
+         LLIUOUTOPEN=.TRUE.
         ELSE
           LLIUOUTOPEN=.FALSE.
           IUOUT=0

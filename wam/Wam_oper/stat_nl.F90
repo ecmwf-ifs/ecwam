@@ -33,13 +33,16 @@
  
 !----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : G        ,PI       ,DKMAX
       USE YOWSHAL  , ONLY : XKDMIN
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !----------------------------------------------------------------------
 
       IMPLICIT NONE 
+#include "transf_r.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: XM0, XK0, BF2, XNU, SIG_TH, DPTH
@@ -66,7 +69,6 @@
       REAL(KIND=JWRB) :: DELTA_2D,C_0,C_S_SQ,V_G,V_G_SQ,ZFAC,ZFAC1,ZFAC2
       REAL(KIND=JWRB) :: XKAPPA1,ALPHA,XJ
       REAL(KIND=JWRB) :: ZEPSILON, ZSQREPSILON
-      REAL(KIND=JWRB) :: TRANSF_R
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TRANSF
 
 !-----------------------------------------------------------------------
@@ -91,7 +93,7 @@
 
       DO IJ = IJS,IJL
         D   = DPTH(IJ)
-        IF (XM0(IJ).GT.ZEPSILON .AND. D.GT.0._JWRB .AND. XK0(IJ).GT.0._JWRB) THEN
+        IF (XM0(IJ) > ZEPSILON .AND. D > 0._JWRB .AND. XK0(IJ) > 0._JWRB) THEN
           XK  = MAX(XK0(IJ),XKDMIN/D)
           X   = XK*D
           T0  = TANH(X)
@@ -101,9 +103,9 @@
           GAM = -0.5_JWRB*ALPH**2
           C_0      = OM/XK
           C_S_SQ   = G*D
-          IF(X .GT. DKMAX) THEN
+          IF (X > DKMAX) THEN
             V_G = 0.5_JWRB*C_0
-          ELSE IF(X .LT. EPS) THEN
+          ELSEIF (X < EPS) THEN
             V_G = C_0
           ELSE
             V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
@@ -142,7 +144,7 @@
  
           R(IJ) = MAX(MIN(TRANSF(IJ)*(SIG_TH(IJ)/XNU(IJ))**2,RMAX),RMIN)
           ZR    = R(IJ)
-          IF (ZR.GT.1._JWRB) THEN
+          IF (ZR > 1._JWRB) THEN
             XJ =-C4_CONST/ZR*(1._JWRB-ZC1/SQRT(ZR)+ZC2/ZR+ZC3/ZR**2)
           ELSE
             XJ = C4_CONST*(1._JWRB-ZC1*SQRT(ZR)+ZC2*ZR+ZC3*ZR**2)

@@ -1,4 +1,4 @@
-SUBROUTINE GRIB2WGRID (IU06, ITEST, KPROMA_WAM,                   &
+SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
      &                 KGRIB_HANDLE, KGRIB, ISIZE,                &
      &                 LLUNSTR,                                   &
      &                 NXFF, NYFF, KLONRGG_LOC,                   &
@@ -35,14 +35,13 @@ SUBROUTINE GRIB2WGRID (IU06, ITEST, KPROMA_WAM,                   &
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!      *CALL GRIB2WGRID* (IU06, ITEST, KPROMA_WAM,
+!      *CALL GRIB2WGRID* (IU06, KPROMA_WAM,
 !    &                    KGRIB_HANDLE, KGRIB, ISIZE,
 !    &                    NXFF, NYFF, KRGG, KLONRGG_LOC, XDELLA, ZDELLO,
 !    &                    PMISS, PPREC, PPEPS,
 !    &                    CDATE, IFORP, IPARAM, KZLEV, KKK, MMM, FIELD)
 
 !        *IU06*   - OUTPUT UNIT.
-!        *ITEST*  - TEST MESSAGE LEVEL.
 !        *KPROMA_WAM* -IF OPENMP IS USED THEN IT WILL BE THE
 !                     NUMBER OF GRID POINTS THREADS. OTHERWISE IT CAN BE USED
 !                     TO SPLIT THE GRID POINTS INTO CHUNCKS
@@ -101,7 +100,7 @@ SUBROUTINE GRIB2WGRID (IU06, ITEST, KPROMA_WAM,                   &
 #include "incdate.intfb.h"
 #include "wstream_strg.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, KPROMA_WAM, KGRIB_HANDLE,ISIZE
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, KPROMA_WAM, KGRIB_HANDLE,ISIZE
       INTEGER(KIND=JWIM), INTENT(IN) :: NXFF, NYFF, KRGG
       INTEGER(KIND=JWIM), INTENT(IN) :: KGRIB(ISIZE)
       INTEGER(KIND=JWIM), INTENT(IN) :: KLONRGG_LOC(NYFF)
@@ -186,7 +185,7 @@ SUBROUTINE GRIB2WGRID (IU06, ITEST, KPROMA_WAM,                   &
       PMOSOP=0.0_JWRB
       PMOEAP=0.0_JWRB
       PMONOP=0.0_JWRB
-      GOUT: DO K=1,NYFF
+      OUTDM: DO K=1,NYFF
         JSN=NYFF-K+1
         DO I=1,KLONRGG_LOC(JSN)
           IF (YLAT(I,K).EQ.PMISS .OR. XLON(I,K).EQ.PMISS) CYCLE
@@ -194,9 +193,9 @@ SUBROUTINE GRIB2WGRID (IU06, ITEST, KPROMA_WAM,                   &
           PMOSOP=YLAT(I,K)
           PMOEAP=XLON(I,K)
           PMONOP=YLAT(I,K)
-          EXIT GOUT
+          EXIT OUTDM
         ENDDO
-      ENDDO GOUT
+      ENDDO OUTDM
       DO K=1,NYFF
         JSN=NYFF-K+1
         DO I=1,KLONRGG_LOC(JSN)
@@ -249,7 +248,6 @@ SUBROUTINE GRIB2WGRID (IU06, ITEST, KPROMA_WAM,                   &
       ENDIF
       IF (ILOC.EQ.4) THEN
         WRITE(IU06,*) '   OCEAN MODEL DATA DECODED, PARAM= ',IPARAM
-        IF (ITEST.GT.0) CALL FLUSH(IU06)
 
         LLOCEAN=.TRUE.
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'flagForNormalOrStaggeredGrid',ISTAG)
@@ -587,16 +585,6 @@ SUBROUTINE GRIB2WGRID (IU06, ITEST, KPROMA_WAM,                   &
       ITOP=0
       IF (KPMONOP.GT.KRMONOP) THEN
         IF (KPARFRSTT.NE.IPARAM) THEN
-          IF (ITEST.GT.0) THEN
-            WRITE(IU06,*) '*                                         *'
-            WRITE(IU06,*) '*  THE MODEL NORTHERN BOUNDARY IS OUTSIDE *'
-            WRITE(IU06,*) '*  THE INPUT DOMAIN FOR PARAMETER         *'
-            WRITE(IU06,*) '  ',IPARAM 
-            WRITE(IU06,*) '*  MISSING DATA WILL BE ASSUMED FOR THE   *'
-            WRITE(IU06,*) '*  AREA IN BETWEEN.'
-            WRITE(IU06,*) '*                                         *'
-            WRITE(IU06,*) '*  PMONOP: ', PMONOP, 'RMONOP : ',RMONOP
-          ENDIF
           KPARFRSTT=IPARAM
         ENDIF
         ITOP=INT((PMONOP-RMONOP)/DELLA)+2
@@ -604,17 +592,6 @@ SUBROUTINE GRIB2WGRID (IU06, ITEST, KPROMA_WAM,                   &
       IBOT=0
       IF (KPMOSOP.LT.KRMOSOP) THEN
         IF (KPARFRSTB.NE.IPARAM) THEN
-          IF (ITEST.GT.0) THEN
-            WRITE(IU06,*) '*                                         *'
-            WRITE(IU06,*) '*  THE MODEL SOUTHERN BOUNDARY IS OUTSIDE *'
-            WRITE(IU06,*) '*  THE INPUT DOMAIN FOR PARAMETER         *'
-            WRITE(IU06,*) '  ',IPARAM 
-            WRITE(IU06,*) '*  MISSING DATA WILL BE ASSUMED FOR THE   *'
-            WRITE(IU06,*) '*  AREA IN BETWEEN.'
-            WRITE(IU06,*) '*                                         *'
-            WRITE(IU06,*) '*  PMOSOP: ', PMOSOP, 'RMOSOP : ',RMOSOP
-            WRITE(IU06,*) '*                                         *'
-          ENDIF
           KPARFRSTB=IPARAM
         ENDIF
         IBOT=INT((RMOSOP-PMOSOP)/DELLA)+2
@@ -739,12 +716,6 @@ SUBROUTINE GRIB2WGRID (IU06, ITEST, KPROMA_WAM,                   &
 !       REARRANGE DATA FIELD.
 !       --------------------
 
-        IF (ITEST.GT.0) THEN
-          WRITE(IU06,*) ' '
-          WRITE(IU06,*) ' THE FIELD WITH GRIB PARAMETER ',IPARAM
-          WRITE(IU06,*) ' IS TRANSFERRED ONTO THE WAVE MODEL GRID '
-          WRITE(IU06,*) ' '
-        ENDIF
         L = 0                                                          
         DO K=1,NYFF                                                
           JSN=NYFF-K+1
@@ -795,32 +766,6 @@ SUBROUTINE GRIB2WGRID (IU06, ITEST, KPROMA_WAM,                   &
           ELSE
             LLNEAREST=.TRUE.
           ENDIF
-        ENDIF
-        IF (ITEST.GT.0) THEN
-          WRITE(IU06,*) ' '
-          WRITE(IU06,*) ' THE FIELD WITH GRIB PARAMETER ',IPARAM
-          IF (LLOCEAN .AND. ISTAG.EQ.0) THEN
-            WRITE(IU06,*) ' ON NORMAL OCEAN LATITUDE/LONGITUDE GRID '
-          ELSEIF (LLOCEAN .AND. ISTAG.EQ.1) THEN
-            WRITE(IU06,*) ' ON STAGGERED OCEAN LATITUDE/LONGITUDE GRID '
-          ELSEIF (IREPR.EQ.0 .AND. JRGG.EQ.0) THEN
-            WRITE(IU06,*) ' ON A REGULAR LATITUDE/LONGITUDE GRID '
-          ELSEIF (IREPR.EQ.0 .AND. JRGG.EQ.1) THEN
-            WRITE(IU06,*) ' ON A REDUCED LATITUDE/LONGITUDE GRID '
-          ELSEIF (IREPR.EQ.4 .AND. JRGG.EQ.0) THEN
-            WRITE(IU06,*) ' ON A REGULAR GAUSSIAN GRID '
-          ELSE
-            WRITE(IU06,*) ' ON A REDUCED GAUSSIAN GRID '
-          ENDIF
-          WRITE(IU06,*) ' IS INTERPOLATED ONTO THE WAVE MODEL GRID '
-            IF (LLNEAREST) THEN
-              WRITE(IU06,*) ' USING THE CLOSEST GRID POINT '
-              WRITE(IU06,*) ' IF MISSING DATA ARE PRESENT '
-              WRITE(IU06,*) ' OTHERWISE USING A BILINEAR INTERPOLATION '
-            ELSE
-              WRITE(IU06,*) ' USING A BILINEAR INTERPOLATION '
-            ENDIF
-          WRITE(IU06,*) ' '
         ENDIF
 
         KKMIN=1-ITOP

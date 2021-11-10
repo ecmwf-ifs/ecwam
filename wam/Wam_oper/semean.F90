@@ -1,4 +1,4 @@
-      SUBROUTINE SEMEAN (F3, IJS, IJL, EM, LLEPSMIN)
+      SUBROUTINE SEMEAN (F3, KIJS, KIJL, EM, LLEPSMIN)
 
 ! ----------------------------------------------------------------------
 
@@ -15,11 +15,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEMEAN(F3, IJS, IJL, EM)*
-!          *F3*  - SPECTRUM.
-!          *IJS* - INDEX OF FIRST GRIDPOINT
-!          *IJL* - INDEX OF LAST GRIDPOINT
-!          *EM*  - MEAN ENERGY
+!       *CALL* *SEMEAN(F3, KIJS, KIJL, EM, LLEPSMIN)*
+!          *F3*   - SPECTRUM.
+!          *KIJS* - LOCAL INDEX OF FIRST GRIDPOINT
+!          *KIJL* - LOCAL  INDEX OF LAST GRIDPOIN
+!          *EM*   - MEAN VARIANCE 
 !          *LLEPSMIN* - TRUE IF THE WAVE ENERGY IS AT LEAST = EPSMIN
 
 !     METHOD.
@@ -44,23 +44,24 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,WETAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM) :: IJ, M, K
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: F3
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: EM
+      LOGICAL, INTENT(IN) :: LLEPSMIN
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: EM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
+
+      INTEGER(KIND=JWIM) :: IJ, M, K
 
       REAL(KIND=JWRB) :: DELT25
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP
-
-      LOGICAL, INTENT(IN) :: LLEPSMIN
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP
 
 ! ----------------------------------------------------------------------
 
@@ -70,11 +71,11 @@
 !        ------------------------
 
       IF(LLEPSMIN) THEN
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           EM(IJ) = EPSMIN
         ENDDO
       ELSE
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           EM(IJ) = 0.0_JWRB
         ENDDO
       ENDIF
@@ -86,15 +87,15 @@
 
       DO M=1,NFRE
         K=1
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           TEMP(IJ) = F3(IJ,K,M)
         ENDDO
         DO K=2,NANG
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             TEMP(IJ) = TEMP(IJ)+F3(IJ,K,M)
           ENDDO
         ENDDO
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           EM(IJ) = EM(IJ)+DFIM(M)*TEMP(IJ)
         ENDDO
       ENDDO
@@ -105,7 +106,7 @@
 !        ----------------
 
       DELT25 = WETAIL*FR(NFRE)*DELTH
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         EM(IJ) = EM(IJ)+DELT25*TEMP(IJ)
       ENDDO
 

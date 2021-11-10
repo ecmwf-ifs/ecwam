@@ -1,10 +1,6 @@
-      SUBROUTINE NEWWIND (IJS, IJL, IG, IGL, CDATE, CDATEWH,            &
-     &                    NEWREAD, NEWFILE,                             &
-     &                    U10OLD, THWOLD, U10NEW, THWNEW,               &
-     &                    USOLD, USNEW,                                 &
-     &                    ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,             &
-     &                    CICOVER, CITHICK, CIWA,                       &
-     &                    TAUW, BETAOLD)
+SUBROUTINE NEWWIND (IJS, IJL, CDATE, CDATEWH,             &
+ &                  LLNEWFILE,                            &
+ &                  WVPRPT, FF_NOW, FF_NEXT)
 ! ----------------------------------------------------------------------
 
 !**** *NEWWIND* - HANDLING OF WINDS OUTSIDE MULTITASKED AREA    
@@ -23,38 +19,15 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *NEWWIND (IJS, IJL, IG, IGL, CDATE, NEWREAD, NEWFILE,
-!                        U10OLD,THWOLD,U10NEW,THWNEW, 
-!                        USOLD, USNEW,
-!                        ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
-!                        CICOVER, CITHICK, CIWA,
-!                        TAUW, BETAOLD)
+!       *CALL* *NEWWIND (IJS, IJL, CDATE, LLNEWFILE,
+!                        WVPRPT, FF_NOW, FF_NEXT,
 !      *IJS*     - INDEX OF FIRST GRIDPOINT
 !      *IJL*     - INDEX OF LAST GRIDPOINT
-!      *IG*      - BLOCK NUMBER
-!      *IGL*     - NUMBER OF BLOCKS
 !      *CDATE*   - START DATE OF SOURCE FUNCTION INTEGRATION
-!      *NEWREAD* - TRUE IF NEW WINDS HAVE BEEN READ
-!      *NEWFILE* - TRUE IF NEW WIND FILE HAS BEEN OPENED
-!      *U10NEW*  - NEW WIND SPEED IN M/S.
-!      *U10OLD*  - INTERMEDIATE STORAGE OF MODULUS OF WIND
-!                  VELOCITY.
-!      *THWNEW*  - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
-!                  NOTATION (POINTING ANGLE OF WIND VECTOR,
-!                  CLOCKWISE FROM NORTH).
-!      *THWOLD*  - INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
-!                  WIND VELOCITY.
-!      *USOLD*   - INTERMEDIATE STORAGE OF FRICTIOn VELOCITY
-!      *USNEW*   - NEW FRICTIOn VELOCITY
-!      *ROAIRN*  - AIR DENSITY IN KG/M3.
-!      *ROAIRO*  - INTERMEDIATE STORAGE OF AIR DENSITY.
-!      *ZIDLNEW* - Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
-!      *ZIDLOLD* - INTERMEDIATE STORAGE OF Zi/L.
-!      *CICOVER* - SEA ICE COVER. 
-!      *CITHICK* - SEA ICE THICKNESS. 
-!      *CIWA*    - SEA ICE WAVE ATTENUATION FACTOR.
-!      *TAUW*    - WAVE STRESS
-!      *BETAOLD* - CHARNOCK PARAMETER 
+!      *LLNEWFILE* TRUE IF NEW WIND FILE HAS BEEN OPENED
+!      *WVPRPT*  - WAVE PROPERTIES FIELDS
+!      *FF_NOW*  - DATA STRUCTURE WITH THE CURRENT FORCING FIELDS
+!      *FF_NEXT* - DATA STRUCTURE WITH THE NEXT FORCING FIELDS
 
 !     METHOD.
 !     -------
@@ -76,19 +49,19 @@
 !*    *PARAMETER*  FOR ARRAY DIMENSIONS.
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FREQUENCY, FORCING_FIELDS
 
       USE YOWPCONS , ONLY : ACD      ,BCD      ,EPSMIN
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWPARAM , ONLY : NFRE     ,NBLO
-      USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWPARAM , ONLY : NFRE
       USE YOWPHYS  , ONLY : ALPHA
       USE YOWSTAT  , ONLY : IDELWO   ,NPROMA_WAM
-      USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,    &
-     &            NSTORE   ,FF_NEXT  ,WSPMIN_RESET_TAUW  ,              &
-     &            USTMIN_RESET_TAUW
+      USE YOWTEST  , ONLY : IU06
+      USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,    &
+     &            NSTORE   ,WSPMIN_RESET_TAUW  ,USTMIN_RESET_TAUW
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -98,25 +71,13 @@
 #include "incdate.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), INTENT(IN) :: IG, IGL
-
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD, THWOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: USOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: ROAIRO, ZIDLOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: TAUW
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN)    :: BETAOLD 
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: U10NEW, THWNEW
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: USNEW
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: ROAIRN, ZIDLNEW
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: CICOVER, CITHICK 
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NFRE,NBLO), INTENT(INOUT) :: CIWA
-
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       CHARACTER(LEN=14), INTENT(INOUT) :: CDATEWH
+      LOGICAL, INTENT(INOUT) :: LLNEWFILE
+      TYPE(FREQUENCY), DIMENSION(IJS:IJL,NFRE), INTENT(INOUT) :: WVPRPT
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(IN) :: FF_NEXT
 
-      LOGICAL, INTENT(INOUT) :: NEWREAD, NEWFILE
-
-      INTEGER(KIND=JWIM), SAVE :: ISTORE = 0
 
       INTEGER(KIND=JWIM) :: ICODE_WND
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, IJ
@@ -126,11 +87,23 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
+
+ASSOCIATE(CGROUP => WVPRPT%CGROUP, &
+ &        CIWA => WVPRPT%CIWA, &
+ &        WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        UFRIC => FF_NOW%UFRIC, &
+ &        TAUW => FF_NOW%TAUW, &
+ &        CHNK => FF_NOW%CHNK, &
+ &        AIRD => FF_NOW%AIRD, &
+ &        WSTAR => FF_NOW%WSTAR, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        CITHICK => FF_NOW%CITHICK)
 
       NPROMA=NPROMA_WAM
 
-      IF(LWCOU) THEN
+      IF (LWCOU) THEN
         ICODE_WND = ICODE_CPL
       ELSE
         ICODE_WND = ICODE
@@ -138,51 +111,18 @@
 
       WGHT=1.0_JWRB/MAX(WSPMIN_RESET_TAUW,EPSMIN)
 
-!*    1. WINDS ARE TAKEN FROM INTERMEDIATE STORAGE.
-!        ------------------------------------------
-      IF (CDATE.LT.CDATEWH) THEN
-        CALL GSTATS(1492,0)
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
-        DO JKGLO=IJS,IJL,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL)
-          DO IJ = KIJS, KIJL
-            U10NEW(IJ) = U10OLD(IJ,IG)
-            USNEW(IJ) = USOLD(IJ,IG)
-            THWNEW(IJ) = THWOLD(IJ,IG)
-            ROAIRN(IJ) = ROAIRO(IJ,IG)
-            ZIDLNEW(IJ) = ZIDLOLD(IJ,IG)
-          ENDDO
-        ENDDO
-!$OMP   END PARALLEL DO
-        CALL GSTATS(1492,1)
-      ELSE
+      IF (CDATE >= CDATEWH) THEN
+
 !*    2. NEW WIND INPUT.
 !        ---------------
-        IF (CDATE.GE.CDATEFL) THEN
-          IF (IG.EQ.1) THEN
-            NEWFILE = .TRUE.
-            ISTORE=1
-            IF (ITEST.GE.2) THEN
-              WRITE(IU06,*) '      SUB. NEWWIND: NEW WIND ',            &
-     &         ' AT CDATE = ', CDATE
-            ENDIF
-          ENDIF
+        IF (CDATE >= CDATEFL) THEN
+            LLNEWFILE = .TRUE.
         ENDIF
 
 !*    2.2 NEW WINDS ARE READ IN.
 !         ----------------------
-        IF (ISTORE.GT.NSTORE) THEN
-          WRITE(IU06,*) ' ********************************************'
-          WRITE(IU06,*) '      FATAL ERROR IN SUB. NEWWIND:           '
-          WRITE(IU06,*) '      ISTORE > NSTORE !!!                    '
-          WRITE(IU06,*) '      ISTORE = ',ISTORE 
-          WRITE(IU06,*) '      NSTORE = ',NSTORE 
-          WRITE(IU06,*) ' ********************************************'
-          CALL ABORT1
-        ENDIF
 
-        CDA=CDTNEXT(ISTORE)
+        CDATEWL = CDTNEXT
 
         CALL GSTATS(1492,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,TLWMAX)
@@ -191,45 +131,46 @@
           KIJL=MIN(KIJS+NPROMA-1,IJL)
           IF (ICODE_WND == 3 ) THEN
             DO IJ = KIJS, KIJL
-              U10NEW(IJ)=FF_NEXT(IJ,ISTORE)%WSWAVE
+              WSWAVE(IJ)=FF_NEXT(IJ)%WSWAVE
 ! adapt first estimate of wave induced stress for low winds
 ! to a fraction of the simple relation u*^2 = Cd(U10) * U10^2
 ! where this fraction varies from 0 for U10=0 to 1 for U10=WSPMIN_RESET_TAUW
-              IF(U10NEW(IJ).LT.WSPMIN_RESET_TAUW) THEN
-                TLWMAX=WGHT*(ACD+BCD*U10NEW(IJ))*U10NEW(IJ)**3
-                TAUW(IJ,IG)=MIN(TAUW(IJ,IG),TLWMAX)
+              IF (WSWAVE(IJ) < WSPMIN_RESET_TAUW) THEN
+                TLWMAX=WGHT*(ACD+BCD*WSWAVE(IJ))*WSWAVE(IJ)**3
+                TAUW(IJ)=MIN(TAUW(IJ),TLWMAX)
               ENDIF
             ENDDO
           ELSE
             DO IJ = KIJS, KIJL
-              USNEW(IJ)=FF_NEXT(IJ,ISTORE)%USTAR
+              UFRIC(IJ)=FF_NEXT(IJ)%UFRIC
 ! update the estimate of TAUW
-              TAUW(IJ,IG)=USNEW(IJ)**2*(1.0_JWRB-(ALPHA/BETAOLD(IJ))**2)
+              TAUW(IJ)=UFRIC(IJ)**2*(1.0_JWRB-(ALPHA/CHNK(IJ))**2)
 ! adapt first estimate of wave induced stress for low winds
-              IF (USNEW(IJ).LT.USTMIN_RESET_TAUW) TAUW(IJ,IG)=0.0_JWRB
+              IF (UFRIC(IJ) < USTMIN_RESET_TAUW) TAUW(IJ)=0.0_JWRB
             ENDDO
           ENDIF
+
           DO IJ = KIJS, KIJL
-            THWNEW(IJ)=FF_NEXT(IJ,ISTORE)%WDWAVE
-            ROAIRN(IJ)=FF_NEXT(IJ,ISTORE)%AIRD
-            ZIDLNEW(IJ)=FF_NEXT(IJ,ISTORE)%ZIDL
-            CICOVER(IJ,IG)=FF_NEXT(IJ,ISTORE)%CIFR
-            CITHICK(IJ,IG)=FF_NEXT(IJ,ISTORE)%CITH
+            WDWAVE(IJ)=FF_NEXT(IJ)%WDWAVE
+            AIRD(IJ)=FF_NEXT(IJ)%AIRD
+            WSTAR(IJ)=FF_NEXT(IJ)%WSTAR
+            CICOVER(IJ)=FF_NEXT(IJ)%CICOVER
+            CITHICK(IJ)=FF_NEXT(IJ)%CITHICK
           ENDDO
+
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1492,1)
 
-        ISTORE=ISTORE+1
 
         CALL INCDATE(CDATEWH, IDELWO)
-        NEWREAD = .TRUE.   
 
 !       UPDATE THE SEA ICE REDUCTION FACTOR
-        CALL CIREDUCE (CICOVER, CITHICK, CIWA)
+        CALL CIREDUCE (IJS, IJL, CGROUP, CICOVER, CITHICK, CIWA)
 
       ENDIF
 
-      IF (LHOOK) CALL DR_HOOK('NEWWIND',1,ZHOOK_HANDLE)
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('NEWWIND',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE NEWWIND
+END SUBROUTINE NEWWIND

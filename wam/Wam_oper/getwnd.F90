@@ -1,10 +1,12 @@
-      SUBROUTINE GETWND (MIJS, MIJL,                                    &
-     &                   U10, US,                                       &
-     &                   THW,                                           &
-     &                   ADS, ZIDL,                                     &
-     &                   CICVR, CITH,                                   &
-     &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,            &
-     &                   LWCUR, ICODE_WND)
+      SUBROUTINE GETWND (IJS, IJL, IFROMIJ, JFROMIJ,            &
+     &                   UCUR, VCUR,                            &
+     &                   U10, US,                               &
+     &                   THW,                                   &
+     &                   ADS, WSTAR,                            &
+     &                   CICOVER, CITHICK,                      &
+     &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,    &
+     &                   LWCUR, NEMOCICOVER, NEMOCITHICK,       &
+     &                   ICODE_WND)
 
 ! ----------------------------------------------------------------------
 
@@ -21,18 +23,24 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GETWND (MIJS, MIJL,
-!                       U10, THW, ADS, ZIDL, CICVR, CITH,
+!       *CALL* *GETWND (IJS, IJL, IFROMIJ, JFROMIJ,
+!                       UCUR, VCUR,
+!                       U10, THW, ADS, WSTAR, CICOVER, CITHICK,
 !                       CDTWIS, LWNDFILE, LCLOSEWND,
-!                       LWCUR, ICODE_WND)*
-!         *MIJS*    - INDEX OF FIRST GRIDPOINT
-!         *MIJL*    - INDEX OF LAST GRIDPOINT
+!                       LWCUR, NEMOCICOVER, NEMOCITHICK, 
+!                       ICODE_WND)*
+!         *IJS*    - INDEX OF FIRST GRIDPOINT
+!         *IJL*    - INDEX OF LAST GRIDPOINT
+!         *IFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!         *JFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!         *UCUR*   - U-COMPONENT OF THE SURFACE CURRENT
+!         *VCUR*   - V-COMPONENT OF THE SURFACE CURRENT
 !         *U10*    - MAGNITUDE OF 10m WIND AT EACH POINT AND BLOCK.
 !         *THW*    - DIRECTION OF 10m WIND AT EACH POINT AND BLOCK.
 !         *ADS*    - AIR DENSITY AT EACH POINT AND BLOCK.
-!         *ZIDL*   - Zi/L  AT EACH POINT AND BLOCK.
-!         *CICVR*  - SEA ICE COVER.
-!         *CITH*   - SEA ICE THICKNESS.
+!         *WSTAR*  - CONVECTIVE VELOCITY.
+!         *CICOVER*  - SEA ICE COVER.
+!         *CITHICK*   - SEA ICE THICKNESS.
 !         *CDTWIS* - DATE OF WIND FIELD TO BE LOOKED FOR.
 !         *LWNDFILE - FLAG USED TO DETERMINE WHETHER WINDS ARE READ FROM
 !                     FILE OR ARE AVAILABLE IN ARRAY FIELDG (SEE *IFSTOWAM).
@@ -41,6 +49,8 @@
 !         *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                    (IF NEEDED)
 !         *LWCUR*  -  LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
+!         *NEMOCICOVER  NEMO SEA ICE COVER (if used)
+!         *NEMOCITHICK  NEMO SEA ICE THICKNESS (if used)
 !         *ICODE_WND* SPECIFIES WHICH OF U10 OR US HAS BEEN UPDATED:
 !                     U10: ICODE_WND=3
 !                     US:  ICODE_WND=1 OR 2
@@ -81,19 +91,18 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWNEMOP , ONLY : NEMODP
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWICE   , ONLY : IPARAMCI
       USE YOWMPP   , ONLY : IRANK
       USE YOWPARAM , ONLY : CLDOMAIN , LWDINTS
       USE YOWSTAT  , ONLY : NPROMA_WAM 
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : WSPMIN   ,IUNITW
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
+
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWUNPOOL, ONLY : LLUNSTR
-      USE UNWAM, ONLY : USE_DIRECT_WIND_FILE
-      USE UNSTRUCT_WIND, ONLY : SET_WIND_UNSTRUCTURED
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
@@ -104,19 +113,19 @@
 #include "readwind.intfb.h"
 #include "wamwnd.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
-      INTEGER(KIND=JWIM), INTENT(OUT) :: ICODE_WND
-
-      REAL(KIND=JWRB), DIMENSION (MIJS:MIJL), INTENT(INOUT) :: U10, US 
-      REAL(KIND=JWRB), DIMENSION (MIJS:MIJL), INTENT(OUT) :: THW
-      REAL(KIND=JWRB), DIMENSION (MIJS:MIJL), INTENT(OUT) :: ADS, ZIDL
-      REAL(KIND=JWRB), DIMENSION (MIJS:MIJL), INTENT(OUT) :: CICVR, CITH
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(IN) :: UCUR, VCUR
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(INOUT) :: U10, US 
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: THW
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: ADS, WSTAR
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: CICOVER, CITHICK
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS
-
-      LOGICAL, INTENT(IN) :: LWNDFILE, LCLOSEWND, LWCUR
-
+      LOGICAL, INTENT(IN) :: LWNDFILE, LCLOSEWND
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
+      LOGICAL, INTENT(IN) :: LWCUR
+      REAL(KIND=NEMODP), DIMENSION (IJS:IJL), INTENT(IN) :: NEMOCICOVER, NEMOCITHICK
+      INTEGER(KIND=JWIM), INTENT(OUT) :: ICODE_WND
 
       INTEGER(KIND=JWIM) :: JKGLO,KIJS,KIJL,NPROMA
       INTEGER(KIND=JWIM) :: I, J
@@ -125,7 +134,6 @@
 
       LOGICAL :: LLNOTOPENED
       LOGICAL, SAVE :: LONLYONCE
-      LOGICAL :: IsAssigned
 
       CHARACTER(LEN=14) :: CDTWIR
       CHARACTER(LEN=24) :: FILNM
@@ -144,7 +152,7 @@
 
  1000 CONTINUE
 
-      IF(IUNITW.EQ.0) THEN
+      IF (IUNITW == 0) THEN
         LLNOTOPENED=.TRUE.
       ELSE
         LLNOTOPENED=.FALSE.
@@ -154,31 +162,18 @@
 
 !     GET FORCING FIELDS FROM INPUT FILES (if needed)
 !     -----------------------------------
-      IsAssigned=.FALSE.
-      IF (LLUNSTR .and. USE_DIRECT_WIND_FILE) THEN
-        IsAssigned=.TRUE.
-        CALL SET_WIND_UNSTRUCTURED
-      END IF
 
-
-      IF(LWNDFILE .AND. (IsAssigned .EQV. .FALSE.)) THEN
+      IF (LWNDFILE) THEN
         CALL READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD)
 
         ICODE_WND = ICODE
 
 !       CHECK WIND FIELD DATE
 
-        IF (CDTWIR.LT.CDTWIS) THEN
+        IF (CDTWIR < CDTWIS) THEN
 !         DATE OF INPUT FIELD IS BEFORE REQUESTED DATE
 !         TRY AGAIN
-          IF(LWNDFILE) THEN
-            IF (ITEST.GT.1) THEN
-              WRITE(IU06,*) ' SUB. GETWND - BEFORE REQUESTED DATE '
-              WRITE(IU06,*) ' CDTWIR= ',CDTWIR
-              WRITE(IU06,*) ' CDTWIS= ',CDTWIS
-              WRITE(IU06,*) ' SUB. GETWND - CALLING READWIND AGAIN'
-              CALL FLUSH(IU06)
-            ENDIF
+          IF (LWNDFILE) THEN
             GOTO 1000
           ELSE
             WRITE (IU06,*) ' ****************************************'
@@ -194,7 +189,7 @@
             WRITE (IU06,*) ' ****************************************'
             CALL ABORT1
           ENDIF
-        ELSEIF (CDTWIR.GT.CDTWIS) THEN
+        ELSEIF (CDTWIR > CDTWIS) THEN
 
 !         DATE OF INPUT FIELD IS LATER THAN REQUESTED DATE
           WRITE (IU06,*) ' ****************************************'
@@ -202,7 +197,7 @@
           WRITE (IU06,*) ' *      FATAL ERROR SUB. GETWND         *'
           WRITE (IU06,*) ' *      =======================         *'
           WRITE (IU06,*) ' * WIND DATE IS LATER THAN EXPECTED     *'
-          IF(LWNDFILE) THEN
+          IF (LWNDFILE) THEN
             WRITE (IU06,*) ' * DATE READ IS    CDTWIR = ', CDTWIR
           ELSE
             WRITE (IU06,*) ' * DECODED DATE IS CDTWIR = ', CDTWIR
@@ -216,12 +211,11 @@
         ENDIF
 
         IF (LCLOSEWND .AND. LWNDFILE .AND.                              &
-     &     .NOT.(CLDOMAIN.EQ.'s' .OR. LWDINTS) ) THEN
-          IF(IRANK.EQ.IREAD) THEN
+     &     .NOT.(CLDOMAIN == 's' .OR. LWDINTS) ) THEN
+          IF (IRANK == IREAD) THEN
             CALL IGRIB_CLOSE_FILE(IUNITW)
             LLNOTOPENED = .TRUE.
             IUNITW=0
-            IF (ITEST.GT.1) WRITE(IU06,*) ' SUB. GETWND - CLOSE ', FILNM
           ENDIF
         ENDIF
 
@@ -236,18 +230,20 @@
 ! Mod for OPENMP
         CALL GSTATS(1444,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=MIJS,MIJL,NPROMA
+        DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,MIJL)
-          CALL WAMWND (KIJS, KIJL,                                      &
-     &                 U10(KIJS), US(KIJS),                             &
-     &                 THW(KIJS), ADS(KIJS), ZIDL(KIJS), CITH(KIJS),    &
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
+          CALL WAMWND (KIJS, KIJL,                                       &
+     &                 IFROMIJ(KIJS), JFROMIJ(KIJS),                     &
+     &                 UCUR(KIJS), VCUR(KIJS),                           &
+     &                 U10(KIJS), US(KIJS),                              &
+     &                 THW(KIJS), ADS(KIJS), WSTAR(KIJS), CITHICK(KIJS), &
      &                 LWCUR, ICODE_WND)
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)
 
-        IF(LONLYONCE) THEN
+        IF (LONLYONCE) THEN
           WRITE (IU06,*) ' '
           WRITE (IU06,*) ' SUB. GETWND : '
           WRITE (IU06,*) ' '
@@ -263,10 +259,11 @@
         CALL GSTATS(1444,0)
 ! Mod for OPENMP
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=MIJS,MIJL,NPROMA
+        DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,MIJL)
-          CALL MICEP(IPARAMCI, CICVR(KIJS), CITH(KIJS), KIJS, KIJL)
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
+          CALL MICEP(IPARAMCI, KIJS, KIJL, IFROMIJ(KIJS), JFROMIJ(KIJS),                &
+     &               CICOVER(KIJS), CITHICK(KIJS), NEMOCICOVER(KIJS), NEMOCITHICK(KIJS))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)

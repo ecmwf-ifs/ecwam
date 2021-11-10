@@ -1,4 +1,4 @@
-      SUBROUTINE OUTERS (FL1, IJS, IJL, CDTPRO)
+      SUBROUTINE OUTERS (FL1, IJS, IJL, CDTPRO, WSWAVE, WDWAVE, UFRIC)
 ! -----------------------------------------------------------------     
 
 !**** *OUTERS* -  OUTPUT OF SATELLITE COLOCATION SPECTRA.
@@ -11,9 +11,12 @@
 !*** INTERFACE.                                                         
 !    ----------                                                         
 
-!       *CALL  OUTERS (FL1, CDTPRO)
+!       *CALL  OUTERS (FL1, CDTPRO, WSWAVE, WDWAVE, UFRIC)
 !          *FL1*    -   SPECTRUM.                                       
 !          *CDTPRO* -   MODEL PROPAGATION TIME.                         
+!          *WSWAVE* - WIND SPEED
+!          *WDWAVE* - WIND DIRECTION 
+!          *UFRIC*  - FRICTION VELOCITY
 
 !    EXTERNALS.                                                         
 !    ----------                                                         
@@ -37,14 +40,13 @@
       USE YOWCOER  , ONLY : NERS     ,CDTERS   ,IERS     ,IJERS    ,    &
      &            IGERS
       USE YOWFRED  , ONLY : FR       ,TH       ,FRATIO
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,    &
-     &            XDELLA   ,ZDELLO
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
+      USE YOWMAP   , ONLY : BLK2GLO  ,AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWPCONS , ONLY : DEG      ,ZMISS
-      USE YOWSPEC, ONLY   : NSTART   ,NEND     ,                        &
-     &            U10NEW   ,THWNEW   ,USNEW
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWSPEC, ONLY   : NSTART   ,NEND
+      USE YOWTEST  , ONLY : IU06
+
       USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
@@ -56,8 +58,8 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: WSWAVE, WDWAVE, UFRIC
 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: NGOU, KCOUNT, IJ, K, M 
       INTEGER(KIND=JWIM) :: IU91, IU92, ITAG
       INTEGER(KIND=JWIM) :: KBUFRLENGTH
@@ -75,34 +77,32 @@
       IU91 = 91                                                         
       IU92 = 92                                                         
 
-      IG = 1
-
         CALL ERSFILE (IU91, IU92, .false.)
 
-        IF(NPROC.GT.1.AND.CDTPRO.EQ.CDTERS) THEN
+        IF (NPROC > 1 .AND. CDTPRO == CDTERS) THEN
 
 !*  EXCHANGE THE VALUE OF NERS, IERS,IGERS, AND IJERS WITH THE OTHER PE
 
           ITAG=92
           ALLOCATE(IBUFF(2))
 
-          IF(IRANK.EQ.1) THEN
+          IF (IRANK == 1) THEN
             IBUFF(1) = NERS
             IBUFF(2) = IERS
           ENDIF
           CALL MPL_BROADCAST(IBUFF,KROOT=1,KTAG=ITAG,CDSTRING='OUTERS:')
           ITAG=ITAG+1
-          IF(IRANK.NE.1) THEN
+          IF (IRANK /= 1) THEN
             NERS = IBUFF(1)
             IERS = IBUFF(2)
           ENDIF
           DEALLOCATE(IBUFF)
 
-          IF(IERS.GT.0.) THEN
+          IF (IERS > 0.) THEN
             KBUFRLENGTH=2*NERS
             ALLOCATE(IBUFF(KBUFRLENGTH))
 
-            IF(IRANK.EQ.1) THEN
+            IF (IRANK == 1) THEN
               KCOUNT=0
               DO NGOU=1,NERS
                 KCOUNT=KCOUNT+1
@@ -117,7 +117,7 @@
             CALL MPL_BROADCAST(IBUFF(1:KBUFRLENGTH),KROOT=1,KTAG=ITAG,  &
      &       CDSTRING='OUTERS 1:')
 
-            IF(IRANK.NE.1) THEN
+            IF (IRANK /= 1) THEN
               ALLOCATE(IGERS(NERS))
               ALLOCATE(IJERS(NERS))
 
@@ -140,11 +140,11 @@
 !*   1. LOOP OVER OUTPUT POINTS.                                        
 !       ------------------------                                        
 
-      IF (CDTPRO.EQ.CDTERS.AND.IERS.GT.0) THEN                          
+      IF (CDTPRO == CDTERS .AND. IERS > 0) THEN
 
 !       COMPUTE MEAN PARAMETERS
-        CALL FEMEAN (FL1, IJS, IJL, EM, FM)
-        CALL STHQ (FL1, IJS, IJL, THQ)
+        CALL FEMEAN (IJS, IJL, FL1, EM, FM)
+        CALL STHQ (IJS, IJL, FL1, THQ)
 
 !       COLLECT NECESSARY FIELDS TO PROCESS 1
 
@@ -162,32 +162,30 @@
 
           ALLOCATE(FLPTS(NSPFLD,IERS,NANG,NFRE))
 
-          CALL MPGATHERERSFILE(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD,    &
-     &                         IJS, IJL, FL1,FLPTS,                     &
-     &                         U10NEW(IJS),THWNEW(IJS),USNEW(IJS),      &
-     &                         EM, FM, THQ,                             &
-     &                         EMPTS,FMPTS,THQPTS,U10PTS,THWPTS,USPTS)
+          CALL MPGATHERERSFILE(IRECV,ITAG,NSTART,NEND,NSPFLD,   &
+     &                         NSCFLD,                          &
+     &                         IJS, IJL, FL1, FLPTS,            &
+     &                         EM, FM, THQ,                     &
+     &                         WSWAVE, WDWAVE, UFRIC,           &
+     &                         EMPTS, FMPTS, THQPTS,            &
+     &                         U10PTS, THWPTS, USPTS)
 
-        IF(IRANK.EQ.1) THEN
+        IF (IRANK == 1) THEN
           XANG = REAL(NANG)
           XFRE = REAL(NFRE)
           DO NGOU=1,IERS
               IJ = IJERS(NGOU)                                         
-              XLON = AMOWEP + REAL(IXLG(IJ,IG)-1)*ZDELLO(KXLT(IJ,IG))
-              XLAT = AMOSOP + REAL(KXLT(IJ,IG)-1)*XDELLA               
+              XLON = AMOWEP + (BLK2GLO(IJ)%IXLG-1)*ZDELLO(BLK2GLO(IJ)%KXLT)
+              XLAT = AMOSOP + (BLK2GLO(IJ)%KXLT-1)*XDELLA               
 
 !*    1.1 WRITE INFORMATION TO FILE IU92.                               
 !         -------------------------------                               
 
-              IF (ITEST.GE.3) THEN
-                WRITE(IU06,*)' SUB : outers  LOOP 1002 ngou=', ngou
-                CALL FLUSH (IU06)
-              ENDIF
               WRITE(IU92) XLON, XLAT, CDTPRO, XANG, XFRE,               &
      &                    TH(1), FR(1), FRATIO
-              IF (EMPTS(NGOU) .GT. 0.0 ) THEN
-                WRITE(IU92) 4.*SQRT(EMPTS(NGOU)), DEG*THQPTS(NGOU),     &
-     &                    FMPTS(NGOU), USPTS(NGOU), DEG*THWPTS(NGOU),   &
+              IF (EMPTS(NGOU) > 0.0_JWRB ) THEN
+                WRITE(IU92) 4.0_JWRB*SQRT(EMPTS(NGOU)), DEG*THQPTS(NGOU), &
+     &                    FMPTS(NGOU), USPTS(NGOU), DEG*THWPTS(NGOU),     &
      &                    U10PTS(NGOU)
               ELSE
                 WRITE(IU92) ZMISS, ZMISS, ZMISS, ZMISS, ZMISS, ZMISS
@@ -197,18 +195,18 @@
         ENDIF
       ENDIF                                                             
 
-      IF (CDTPRO.EQ.CDTERS) THEN
+      IF (CDTPRO == CDTERS) THEN
          CALL ERSFILE (IU91, IU92, .true.)
       ENDIF
 
-      IF(ALLOCATED(IJERS))  DEALLOCATE (IJERS)
-      IF(ALLOCATED(IGERS))  DEALLOCATE (IGERS)
-      IF(ALLOCATED(EMPTS)) DEALLOCATE (EMPTS)
-      IF(ALLOCATED(FMPTS)) DEALLOCATE (FMPTS)
-      IF(ALLOCATED(THQPTS)) DEALLOCATE (THQPTS)
-      IF(ALLOCATED(U10PTS)) DEALLOCATE (U10PTS)
-      IF(ALLOCATED(THWPTS)) DEALLOCATE (THWPTS)
-      IF(ALLOCATED(USPTS)) DEALLOCATE (USPTS)
-      IF(ALLOCATED (FLPTS)) DEALLOCATE (FLPTS)
+      IF (ALLOCATED(IJERS))  DEALLOCATE (IJERS)
+      IF (ALLOCATED(IGERS))  DEALLOCATE (IGERS)
+      IF (ALLOCATED(EMPTS)) DEALLOCATE (EMPTS)
+      IF (ALLOCATED(FMPTS)) DEALLOCATE (FMPTS)
+      IF (ALLOCATED(THQPTS)) DEALLOCATE (THQPTS)
+      IF (ALLOCATED(U10PTS)) DEALLOCATE (U10PTS)
+      IF (ALLOCATED(THWPTS)) DEALLOCATE (THWPTS)
+      IF (ALLOCATED(USPTS)) DEALLOCATE (USPTS)
+      IF (ALLOCATED (FLPTS)) DEALLOCATE (FLPTS)
 
       END SUBROUTINE OUTERS

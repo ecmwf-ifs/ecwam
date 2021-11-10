@@ -1,5 +1,5 @@
       SUBROUTINE MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,         &
-     &                   FL1, U10OLD, THWOLD)
+     &                   IJS, IJL, FL1, WSWAVE, WDWAVE)
 ! ----------------------------------------------------------------------
 
 !**** *MSTART* - MAKES START FIELDS FOR WAMODEL.
@@ -19,7 +19,7 @@
 !     ----------
 
 !   *CALL* *MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,
-!    1              FL1,U10OLD,THWOLD)*
+!    1              FL1,WSWAVE,WDWAVE)*
 !      *IU12*   INTEGER    OUTPUT UNIT BLOCKS OF SPECTRA.
 !      *IU14*   INTEGER    OUTPUT UNIT SECOND LAT OF BLOCKS.
 !      *IU15*   INTEGER    OUTPUT UNIT LAST WINDFIELDS.
@@ -30,15 +30,10 @@
 !      *FETCH*  REAL       FETCH IN METERS.
 !      *FRMAX*  REAL       MAXIMUM PEAK FREQUENCY IN HERTZ.
 !      *FL1*      REAL      2-D SPECTRUM FOR EACH GRID POINT 
-!      *U10NEW*    NEW WIND SPEED IN M/S.
-!      *U10OLD*    INTERMEDIATE STORAGE OF MODULUS OF WIND
+!      *WSWAVE*    INTERMEDIATE STORAGE OF MODULUS OF WIND
 !                  VELOCITY.
-!      *THWNEW*    WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
-!                  NOTATION (POINTING ANGLE OF WIND VECTOR,
-!                  CLOCKWISE FROM NORTH).
-!      *THWOLD*    INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
+!      *WDWAVE*    INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
 !                  WIND VELOCITY.
-!      *USNEW*     NEW FRICTION VELOCITY IN M/S.
 
 !     METHOD.
 !     -------
@@ -61,15 +56,13 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,NBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWPCONS , ONLY : DEG
-      USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL2     ,IJL
+      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWJONS  , ONLY : FP       ,ALPHJ    ,THES     ,FM       ,    &
      &            ALFA     ,GAMMA    ,SA       ,SB       ,THETAQ
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : CDTPRO
-      USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
+      USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
 
 ! ----------------------------------------------------------------------
@@ -79,12 +72,12 @@
 #include "spectra.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU12, IU14, IU15, IOPTI
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
       REAL(KIND=JWRB), INTENT(IN) :: FETCH, FRMAX
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD, THWOLD
-      REAL(KIND=JWRB),DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL1
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: WSWAVE, WDWAVE
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL1
 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: M, K, IJ, NGOU
 
       CHARACTER(LEN=14), PARAMETER :: ZERO='              '
@@ -101,22 +94,11 @@
 !*    1. DEFINE SPECTRUM FOR LAND POINTS AND WRITE OUTPUT.
 !        -------------------------------------------------
 
-      DO M=1,NFRE
-        DO K=1,NANG
-          FL1(NINF-1,K,M) = 0.0_JWRB
-        ENDDO
-      ENDDO
-
       WRITE (IU06,'(1X,/,1X,''  PARAMETER AT OUTPUT SITES:'')')
-      WRITE (IU06,'(1X,''  NGOU    IG    IJ     U10    UDIR'',          &
+      WRITE (IU06,'(1X,''  NGOU    IJ     U10    UDIR'',          &
      &            ''      FP   ALPHAJONS   GAMMA      SA      SB'')')
 
 ! ----------------------------------------------------------------------
-
-!*    2. LOOP FOR BLOCKS.
-!        ----------------
-
-      DO IG=1,IGL
 
 !*    2.1 COMPUTE PEAK FREQUENCIES AND ALPHAJONS PARAMETERS.
 !         ----------------------------------------------
@@ -125,24 +107,24 @@
 !*    2.1.1 INITIAL VALUES DUE TO OPTION.
 !           -----------------------------
 
-        IF (IOPTI.EQ.1) THEN
-          DO IJ = IJS(IG), IJL(IG)
+        IF (IOPTI == 1) THEN
+          DO IJ = IJS, IJL
             FP(IJ) = 0.0_JWRB
             ALPHJ(IJ) = 0.0_JWRB
-            THES(IJ) = THWOLD(IJ,IG)
+            THES(IJ) = WDWAVE(IJ)
           ENDDO
-        ELSE IF (IOPTI.EQ.0) THEN
-          DO IJ = IJS(IG), IJL(IG)
+        ELSE IF (IOPTI == 0) THEN
+          DO IJ = IJS, IJL
             FP(IJ) = FM
             ALPHJ(IJ) = ALFA
             THES(IJ) = THETAQ
           ENDDO
         ELSE
-          DO IJ = IJS(IG), IJL(IG)
+          DO IJ = IJS, IJL
             FP(IJ) = FM
             ALPHJ(IJ) = ALFA
-            IF (U10OLD(IJ,IG) .GT. 0.1E-08_JWRB) THEN
-              THES(IJ) = THWOLD(IJ,IG)
+            IF (WSWAVE(IJ) > 0.1E-08_JWRB) THEN
+              THES(IJ) = WDWAVE(IJ)
             ELSE
               THES(IJ) = 0.0_JWRB
             ENDIF
@@ -152,36 +134,24 @@
 !*    2.1.2 PEAK FREQUENCY AND ALPHAJONS FROM FETCH LAW.
 !           --------------------------------------------
 
-        IF (IOPTI.NE.0) THEN
-          CALL PEAK (IJS(IG), IJL(IG), IG, FETCH, FRMAX, U10OLD)
-        ENDIF
-        IF (ITEST.GT.1) THEN
-          IF (IG.LE.ITESTB) WRITE (IU06,*) '    SUB. PEAK DONE'
+        IF (IOPTI /= 0) THEN
+          CALL PEAK (IJS, IJL, FETCH, FRMAX, WSWAVE)
         ENDIF
 
 !*    2.1.3 PRINT PARAMETERS AT OUTPUT POINTS.
 !           ----------------------------------
 
         DO NGOU = 1, NGOUT
-          IF (IG.EQ.IGAR(NGOU)) THEN
             IJ = IJAR(NGOU)
-            WRITE (IU06,'(1X,3I6,F8.2,F8.2,5F8.4)')  NGOU, IG, IJ,      &
-     &       U10OLD(IJ,IG), THWOLD(IJ,IG)*DEG, FP(IJ), ALPHJ(IJ),       &
+            WRITE (IU06,'(1X,2I6,F8.2,F8.2,5F8.4)')  NGOU, IJ,          &
+     &       WSWAVE(IJ), WDWAVE(IJ)*DEG, FP(IJ), ALPHJ(IJ),             &
      &       GAMMA, SA, SB
-          ENDIF
         ENDDO
 
 !*    2.2 COMPUTE SPECTRA FROM PARAMETERS.
 !         --------------------------------
 
-        CALL SPECTRA (IJS(IG), IJL(IG), IG, FL1)
-        IF (ITEST.GT.1) THEN
-          IF (IG.LE.ITESTB) WRITE (IU06,*) '    SUB. SPECTRA DONE'
-        ENDIF
-
-!*    BRANCHING BACK TO 2. FOR NEXT BLOCK.
-
-      ENDDO
+        CALL SPECTRA (IJS, IJL, FL1)
 
 ! ----------------------------------------------------------------------
 

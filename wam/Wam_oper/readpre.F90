@@ -1,4 +1,4 @@
-      SUBROUTINE READPRE (IU07)
+SUBROUTINE READPRE (IU07)
 
 ! ----------------------------------------------------------------------
 
@@ -16,6 +16,8 @@
 !                          YOU ALSO HAVE TO CHANGE OUTCOM.
 ! ALSO CHECK
 !            READPREB in Alt
+!  and
+!            ... /nemo/tools/interpolate/wambingrid.F90
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !*    PURPOSE.
@@ -48,25 +50,24 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
+      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
-     &            NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJLS     ,    &
-     &            IJL      ,IJLT
+     &            NLONRGG  ,IJS      ,IJL
       USE YOWINDN  , ONLY : KFRH     ,IKP      ,IKP1     ,IKM      ,    &
      &            IKM1     ,K1W      ,K2W      ,K11W     ,K21W     ,    &
      &            AF11     ,FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,    &
      &            ACL1     ,ACL2     ,CL11     ,CL21     ,DAL1     ,    &
      &            DAL2     ,FRH      ,MFRSTLW  ,MLSTHG
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,    &
+      USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,              &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
-     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,    &
-     &            IMDLGRDID 
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
+     &            NGX      ,NGY      ,                                  &
+     &            NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,IMDLGRDID
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH_INPUT,DEPTHA   ,DEPTHD   ,  &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST  ,TOOSHALLOW
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
      &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,              &
@@ -87,7 +88,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU07
       INTEGER(KIND=JWIM) :: IREAD
-      INTEGER(KIND=JWIM) :: IDUM, KIBLD, KBLD, KIBLC, KBLC
+      INTEGER(KIND=JWIM) :: IDUM, KIBLD, KIBLC
       INTEGER(KIND=JWIM) :: KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
       INTEGER(KIND=JWIM) :: NKIND !Precision of file when reading
 
@@ -162,21 +163,15 @@
         IF(.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
         IF(.NOT.ALLOCATED(SINPH)) ALLOCATE(SINPH(NGY))
         IF(.NOT.ALLOCATED(COSPH)) ALLOCATE(COSPH(NGY))
-        IF(.NOT.ALLOCATED(IJS)) ALLOCATE(IJS(NBLO))
-        IF(.NOT.ALLOCATED(IJL2)) ALLOCATE(IJL2(NBLO))
-        IF(.NOT.ALLOCATED(IJLS)) ALLOCATE(IJLS(NBLO))
-        IF(.NOT.ALLOCATED(IJL)) ALLOCATE(IJL(NBLO))
-        IF(.NOT.ALLOCATED(IJLT)) ALLOCATE(IJLT(NBLO))
 
         CALL READREC(4)
 
 !*    3. READ MODULE YOWMAP (LONG. AND LAT. INDICES OF GRID POINTS).
 !        --------------------------------------------------------
 
-        IF(ALLOCATED(IXLG)) DEALLOCATE(IXLG)
-        ALLOCATE(IXLG(NIBLO,NBLO))
-        IF(ALLOCATED(KXLT)) DEALLOCATE(KXLT)
-        ALLOCATE(KXLT(NIBLO,NBLO))
+        IF(ALLOCATED(BLK2GLO)) DEALLOCATE(BLK2GLO)
+        ALLOCATE(BLK2GLO(NIBLO))
+
         IF(.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
 
         CALL READREC(5)
@@ -217,7 +212,6 @@
 
         CALL READREC(12)
         IF(NGOUT.GT.0) THEN
-          IF(.NOT.ALLOCATED(IGAR)) ALLOCATE(IGAR(NGOUT))
           IF(.NOT.ALLOCATED(IJAR)) ALLOCATE(IJAR(NGOUT))
           CALL READREC(13)
         ENDIF
@@ -226,9 +220,9 @@
 !        ----------------------------------------------------
 
         CALL READREC(14)
-!!!   note that the size of DEPTH will be readjusted in mpdecomp !!!
-        IF(ALLOCATED(DEPTH)) DEALLOCATE(DEPTH)
-        ALLOCATE(DEPTH(NIBLO,NBLO))
+!!!   note that the size of DEPTH_INPUT will be readjusted in mpdecomp !!!
+        IF(ALLOCATED(DEPTH_INPUT)) DEALLOCATE(DEPTH_INPUT)
+        ALLOCATE(DEPTH_INPUT(NIBLO))
         IF(.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
         IF(.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
         IF(.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
@@ -270,11 +264,6 @@
 
         CALL READREC(18)
 
-!*      10. READ MODULE YOWCURR.
-!           --------------------
-
-!       THE OCEAN CURRENTS ARE INPUT IN INITMDL
-
 !       THE UNSTRUCTURED BITS (if pre-computed by PREPROC)
         IF (LLUNSTR .AND. LPREPROC) THEN
           CALL SET_UNWAM_HANDLES
@@ -310,7 +299,6 @@
       IMPLICIT NONE
       INTEGER(KIND=JWIM), INTENT(IN) :: KREC
       INTEGER(KIND=JWIM) :: ISTAT
-      !REAL(KIND=8) ::                     &
       REAL(KIND=JWRU) ::                                                &
      & R8_ACL1,R8_ACL2,                                                 &
      & R8_AMOEAP,R8_AMONOP,R8_AMOSOP,R8_AMOWEP,                         &
@@ -333,16 +321,14 @@
      &     R8_OMEGA,                                                    &
      &     R8_THH,                                                      &
      &     R8_DFDTH,                                                    &
+     &     R8_DEPTH_INPUT,                                              &
      &     R8_FAK                
-      !REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) ::                   &
-     &     R8_DEPTH,                                                    &
      &     R8_TCGOND,                                                   &
      &     R8_TFAK,                                                     &
      &     R8_TSIHKD,                                                   &
      &     R8_TFAC_ST,                                                  &
      &     R8_TFAKH
-      !REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:,:,:) ::
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:,:,:) ::               &
      &     R8_FAC0,                                                     &
      &     R8_FAC1,                                                     &
@@ -374,9 +360,9 @@
  1002    FORMAT(2X,A,I0,A,I0,A,L1)
       CASE(2)
          READ(IU07,IOSTAT=ISTAT)                                        &
-     &        NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,                 &
+     &        NANG, NFRE, NFRE_RED, NGX, NGY, NIBLO, NOVER,             &
      &        KFRH, MFRSTLW, MLSTHG,                                    &
-     &        NIBL1, IDUM, KIBLD, KBLD, KIBLC, KBLC, CLDOMAIN
+     &        NIBL1, IDUM, KIBLD, KIBLC, CLDOMAIN
          IF (ISTAT /= 0) GOTO 1000
       CASE(3)
          IF (LLR8TOR4) THEN
@@ -409,7 +395,7 @@
 
             READ(IU07,IOSTAT=ISTAT) R8_DELPHI, R8_DELLAM, NLONRGG,      &
      &           R8_SINPH, R8_COSPH,                                    &
-     &           IGL, IJS, IJL2, IJLS, IJL, IJLT
+     &           IJS, IJL
             IF (ISTAT /= 0) GOTO 1000
 
             DELPHI = R8_DELPHI
@@ -420,16 +406,16 @@
          ELSE
             READ(IU07,IOSTAT=ISTAT) DELPHI, DELLAM, NLONRGG,            &
      &           SINPH, COSPH,                                          &
-     &           IGL, IJS, IJL2, IJLS, IJL, IJLT
+     &           IJS, IJL
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
       CASE(5)
          IF (LLR8TOR4) THEN
             ALLOCATE(R8_ZDELLO(NGY))
 
-            READ(IU07,IOSTAT=ISTAT) IXLG, KXLT, NX, NY, IPER,           &
-     &           R8_AMOWEP, R8_AMOSOP, R8_AMOEAP, R8_AMONOP,            &
-     &           R8_XDELLA, R8_XDELLO,                                  &
+            READ(IU07,IOSTAT=ISTAT) BLK2GLO%IXLG, BLK2GLO%KXLT, NX, NY, IPER, &
+     &           R8_AMOWEP, R8_AMOSOP, R8_AMOEAP, R8_AMONOP,                  &
+     &           R8_XDELLA, R8_XDELLO,                                        &
      &           R8_ZDELLO, IRGG
             IF (ISTAT /= 0) GOTO 1000
 
@@ -443,9 +429,9 @@
 
             DEALLOCATE(R8_ZDELLO)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) IXLG, KXLT, NX, NY, IPER,           &
-     &           AMOWEP, AMOSOP, AMOEAP, AMONOP,                        &
-     &           XDELLA, XDELLO,                                        &
+            READ(IU07,IOSTAT=ISTAT) BLK2GLO%IXLG, BLK2GLO%KXLT, NX, NY, IPER, &
+     &           AMOWEP, AMOSOP, AMOEAP, AMONOP,                              &
+     &           XDELLA, XDELLO,                                              &
      &           ZDELLO, IRGG
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
@@ -496,7 +482,7 @@
          READ(IU07,IOSTAT=ISTAT) NGOUT
          IF (ISTAT /= 0) GOTO 1000
       CASE(13)
-         READ(IU07,IOSTAT=ISTAT) IGAR, IJAR
+         READ(IU07,IOSTAT=ISTAT) IJAR
          IF (ISTAT /= 0) GOTO 1000
       CASE(14)
          IF (LLR8TOR4) THEN
@@ -510,27 +496,27 @@
          ENDIF
       CASE(15)
          IF (LLR8TOR4) THEN
-            ALLOCATE(R8_DEPTH(NIBLO,NBLO))
+            ALLOCATE(R8_DEPTH_INPUT(NIBLO))
             ALLOCATE(R8_TCGOND(NDEPTH,NFRE))
             ALLOCATE(R8_TFAK(NDEPTH,NFRE))
             ALLOCATE(R8_TSIHKD(NDEPTH,NFRE))
             ALLOCATE(R8_TFAC_ST(NDEPTH,NFRE))
-            READ(IU07,IOSTAT=ISTAT) R8_DEPTH, R8_TCGOND,                &
+            READ(IU07,IOSTAT=ISTAT) R8_DEPTH_INPUT, R8_TCGOND,          &
      &           R8_TFAK, R8_TSIHKD, R8_TFAC_ST
             IF (ISTAT /= 0) GOTO 1000
-            DEPTH = R8_DEPTH
+            DEPTH_INPUT(:) = R8_DEPTH_INPUT(:)
             TCGOND = R8_TCGOND
             TFAK = R8_TFAK
             TSIHKD = R8_TSIHKD
             TFAC_ST = R8_TFAC_ST
 
-            DEALLOCATE(R8_DEPTH)
+            DEALLOCATE(R8_DEPTH_INPUT)
             DEALLOCATE(R8_TCGOND)
             DEALLOCATE(R8_TFAK)
             DEALLOCATE(R8_TSIHKD)
             DEALLOCATE(R8_TFAC_ST)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) DEPTH, TCGOND,                      &
+            READ(IU07,IOSTAT=ISTAT) DEPTH_INPUT, TCGOND,                &
      &           TFAK, TSIHKD, TFAC_ST
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
@@ -644,4 +630,4 @@
 
       END
 
-      END SUBROUTINE READPRE
+END SUBROUTINE READPRE

@@ -1,5 +1,5 @@
-      SUBROUTINE RECVNEMOFIELDS(LREST,LINIT)
-
+SUBROUTINE RECVNEMOFIELDS(IJS, IJL, BLK2LOC,                      &
+ &                        WVENVI, NEMO2WAM, FF_NOW, LREST, LINIT)
 
 !****  *RECVNEMOFIELDS* - UPDATE FIELDS WAVE FIELDS WITH NEMO INFORMATION
 
@@ -37,67 +37,76 @@
 ! -------------------------------------------------------------------   
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDLOC, ENVIRONMENT, FORCING_FIELDS, OCEAN2WAVE
 
-! MODULES NEED FOR GRID DEFINTION      
-      USE YOWGRID  , ONLY : IJS, IJL
 ! MODULES NEEDED FOR LAKE MASK HANDLING
-      USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWWIND  , ONLY : FIELDG   ,LLNEWCURR 
 ! MPP INFORMATION
       USE YOWMPP   , ONLY : IRANK, NPROC
       USE MPL_DATA_MODULE, ONLY : MPL_COMM
       USE MPL_MODULE
-! DR. HOOK
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 ! COUPLING INFORMATION
       USE YOWCOUP  , ONLY : LWCOU, LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR
 ! ICE AND CURRENT INFORMATION 
-      USE YOWICE   , ONLY : CITHICK, CICOVER
-      USE YOWCURR  , ONLY : U        ,V        , CURRENT_MAX
+      USE YOWCURR  , ONLY : CURRENT_MAX
 ! OUTPUT FORTRAN UNIT
       USE YOWTEST  , ONLY : IU06
 ! NEMO FIELDS ON WAVE GRID
-      USE YOWNEMOFLDS,ONLY: NEMOSST, NEMOCICOVER, NEMOCITHICK,          &
-     &                      NEMOUCUR, NEMOVCUR, LNEMOCITHICK,           &
-     &                      LNEMOICEREST
+      USE YOWNEMOFLDS,ONLY: LNEMOCITHICK, LNEMOICEREST  
+! DR. HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! -------------------------------------------------------------------   
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
+
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL ! GRID POINT INDEX
+      TYPE(WVGRIDLOC), DIMENSION(IJS:IJL), INTENT(IN) :: BLK2LOC
+      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
+      TYPE(OCEAN2WAVE), DIMENSION(IJS:IJL), INTENT(INOUT) :: NEMO2WAM
+      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW ! FORCING FIELDS
       LOGICAL, INTENT(IN) :: LREST ! RESTART SO UPDATE FROM RESTART VALUES
-      LOGICAL, INTENT(IN) :: LINIT ! UPDATE CICOVER, CITHICK, And U and V CURRENTS AT INITIAL TIME
+      LOGICAL, INTENT(IN) :: LINIT ! UPDATE CICOVER, CITHICK, UCUR, VCUR AT INITIAL TIME
                                    ! IF NEEDED.
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      INTEGER(KIND=JWIM) :: IG
+
       INTEGER(KIND=JWIM) :: IX, IY, IJ 
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+
 ! -------------------------------------------------------------------   
 
-      IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
 
-      IG=1
+ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
+ &        JFROMIJ => BLK2LOC%JFROMIJ, &
+ &        UCUR => WVENVI%UCUR, &
+ &        VCUR => WVENVI%VCUR, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        CITHICK => FF_NOW%CITHICK, &
+ &        NEMOSST => NEMO2WAM%NEMOSST, &
+ &        NEMOCICOVER => NEMO2WAM%NEMOCICOVER, &
+ &        NEMOCITHICK => NEMO2WAM%NEMOCITHICK, &
+ &        NEMOUCUR => NEMO2WAM%NEMOUCUR, &
+ &        NEMOVCUR => NEMO2WAM%NEMOVCUR)
+
+
       ! IF WE ARE IN RESTART JUST COPY THE RESTART FILE INFO.
       IF (LREST) THEN
-        NEMOCICOVER(IJS(IG):IJL(IG))=CICOVER(IJS(IG):IJL(IG),IG)
-        NEMOCITHICK(IJS(IG):IJL(IG))=CITHICK(IJS(IG):IJL(IG),IG)
-        IF(ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
-          NEMOUCUR(IJS(IG):IJL(IG))=U(IJS(IG):IJL(IG),IG)
-          NEMOVCUR(IJS(IG):IJL(IG))=V(IJS(IG):IJL(IG),IG)
-        ELSE
-          NEMOUCUR(IJS(IG):IJL(IG))=0.0_JWRB
-          NEMOVCUR(IJS(IG):IJL(IG))=0.0_JWRB
-        ENDIF
+        NEMOCICOVER(IJS:IJL)=CICOVER(IJS:IJL)
+        NEMOCITHICK(IJS:IJL)=CITHICK(IJS:IJL)
+        NEMOUCUR(IJS:IJL)=UCUR(IJS:IJL)
+        NEMOVCUR(IJS:IJL)=VCUR(IJS:IJL)
         LNEMOICEREST=.TRUE.
         LNEMOCITHICK=.TRUE.
       ELSE
 #ifdef WITH_NEMO
         CALL NEMOGCMCOUP_WAM_GET( IRANK-1, NPROC, MPL_COMM,             &
-     &                            IJL(IG)-IJS(IG)+1,                    &
-     &                            NEMOSST(IJS(IG):IJL(IG)),             &
-     &                            NEMOCICOVER(IJS(IG):IJL(IG)),         &
-     &                            NEMOCITHICK(IJS(IG):IJL(IG)),         &
-     &                            NEMOUCUR(IJS(IG):IJL(IG)),            &
-     &                            NEMOVCUR(IJS(IG):IJL(IG)),            &
+     &                            IJL-IJS+1,                    &
+     &                            NEMOSST(IJS:IJL),             &
+     &                            NEMOCICOVER(IJS:IJL),         &
+     &                            NEMOCITHICK(IJS:IJL),         &
+     &                            NEMOUCUR(IJS:IJL),            &
+     &                            NEMOVCUR(IJS:IJL),            &
      &                            LNEMOCITHICK )
 
         LLNEWCURR=.TRUE. 
@@ -107,71 +116,65 @@
 
       ENDIF
 
-!     UPDATE CICOVER, CITHICK AND U and V CURRENTS AT INITIAL TIME ONLY !!!!
+!     UPDATE CICOVER, CITHICK UCUR AND VCUR AT INITIAL TIME ONLY !!!!
       IF (LINIT) THEN
 
         WRITE(IU06,*)' RECVNEMOFIELDS: INITIALISE OCEAN FIELDS'
 
-        IF(LWCOU) THEN
+        IF (LWCOU) THEN
           IF (LWNEMOCOUCIC) THEN
-            DO IJ = IJS(IG),IJL(IG)
-              IX = IFROMIJ(IJ,IG)
-              IY = JFROMIJ(IJ,IG)
+            DO IJ = IJS,IJL
+              IX = IFROMIJ(IJ)
+              IY = JFROMIJ(IJ)
 !            if lake cover = 0, we assume open ocean point, then get sea ice directly from NEMO
-              IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
-                CICOVER(IJ,IG)=NEMOCICOVER(IJ)
+              IF (FIELDG(IX,IY)%LKFR <= 0.0_JWRB ) THEN
+                CICOVER(IJ)=NEMOCICOVER(IJ)
               ELSE
 !            get ice information from atmopsheric model
-                CICOVER(IJ,IG)=FIELDG(IX,IY)%CIFR 
+                CICOVER(IJ)=FIELDG(IX,IY)%CICOVER 
               ENDIF
             ENDDO
           ENDIF
 
           IF (LWNEMOCOUCIT) THEN
-            DO IJ = IJS(IG),IJL(IG)
-              IX = IFROMIJ(IJ,IG)
-              IY = JFROMIJ(IJ,IG)
+            DO IJ = IJS,IJL
+              IX = IFROMIJ(IJ)
+              IY = JFROMIJ(IJ)
 !            if lake cover = 0, we assume open ocean point, then get sea ice thickness directly from NEMO
-              IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
-                CITHICK(IJ,IG)=NEMOCICOVER(IJ)*NEMOCITHICK(IJ)
+              IF (FIELDG(IX,IY)%LKFR <= 0.0_JWRB ) THEN
+                CITHICK(IJ)=NEMOCICOVER(IJ)*NEMOCITHICK(IJ)
               ELSE
-                CICOVER(IJ,IG)=0.5_JWRB*NEMOCICOVER(IJ)
+                CICOVER(IJ)=0.5_JWRB*NEMOCICOVER(IJ)
               ENDIF
             ENDDO
           ENDIF
 
           IF (LWNEMOCOUCUR) THEN
-            IF(ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
-              DO IJ = IJS(IG),IJL(IG)
-                IX = IFROMIJ(IJ,IG)
-                IY = JFROMIJ(IJ,IG)
+              DO IJ = IJS,IJL
+                IX = IFROMIJ(IJ)
+                IY = JFROMIJ(IJ)
 !              if lake cover = 0, we assume open ocean point, then get currents directly from NEMO
-                IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
-                  U(IJ,IG) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
-                  V(IJ,IG) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
+                IF (FIELDG(IX,IY)%LKFR <= 0.0_JWRB ) THEN
+                  UCUR(IJ) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
+                  VCUR(IJ) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
                 ELSE
-                  U(IJ,IG)=0.0_JWRB
-                  V(IJ,IG)=0.0_JWRB
+                  UCUR(IJ)=0.0_JWRB
+                  VCUR(IJ)=0.0_JWRB
                 ENDIF
               ENDDO
-
-            ENDIF
           ENDIF
 
         ELSE
 
           IF (LWNEMOCOUCIC) THEN
-            CICOVER(IJS(IG):IJL(IG),IG)=NEMOCICOVER(IJS(IG):IJL(IG))
+            CICOVER(IJS:IJL)=NEMOCICOVER(IJS:IJL)
           ENDIF
           IF (LWNEMOCOUCIT) THEN
-            CITHICK(IJS(IG):IJL(IG),IG)=NEMOCICOVER(IJS(IG):IJL(IG))*     &
-     &                                  NEMOCITHICK(IJS(IG):IJL(IG))
+            CITHICK(IJS:IJL)=NEMOCICOVER(IJS:IJL)*NEMOCITHICK(IJS:IJL)
           ENDIF
           IF (LWNEMOCOUCUR) THEN
-             IF(ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
-               U(IJS(IG):IJL(IG),IG)=NEMOUCUR(IJS(IG):IJL(IG))
-                V(IJS(IG):IJL(IG),IG)=NEMOVCUR(IJS(IG):IJL(IG))
-             ENDIF
+             UCUR(IJS:IJL)=NEMOUCUR(IJS:IJL)
+             VCUR(IJS:IJL)=NEMOVCUR(IJS:IJL)
           ENDIF
         ENDIF
 
@@ -185,6 +188,7 @@
         CALL ABORT1
       ENDIF
 
-      IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',1,ZHOOK_HANDLE)
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE RECVNEMOFIELDS
+END SUBROUTINE RECVNEMOFIELDS

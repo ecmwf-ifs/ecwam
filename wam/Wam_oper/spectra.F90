@@ -1,4 +1,4 @@
-      SUBROUTINE SPECTRA (IJS, IJL, IG, FL1)
+      SUBROUTINE SPECTRA (IJS, IJL, FL1)
 
 ! ----------------------------------------------------------------------
 
@@ -16,10 +16,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SPECTRA (IJS, IJL, IG, FL1)*
+!       *CALL* *SPECTRA (IJS, IJL, FL1)*
 !          *IJS*     INTEGER  FIRST POINT IN BLOCK.
 !          *IJL*     INTEGER  LAST  POINT IN BLOCK.
-!          *IG*      INTEGER  BLOCK NUMBER.
 !          *FL1*      REAL      2-D SPECTRUM FOR EACH GRID POINT
 
 !     METHOD.
@@ -49,7 +48,6 @@
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWJONS  , ONLY : FP       ,ALPHJ    ,THES     ,GAMMA    ,    &
      &            SA       ,SB
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI
 
@@ -60,8 +58,7 @@
 #include "spr.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), INTENT(IN) :: IG
-      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(OUT):: FL1
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT):: FL1
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 

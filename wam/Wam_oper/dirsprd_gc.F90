@@ -1,4 +1,4 @@
-FUNCTION DIRSPRD_GC (USTAR)
+REAL(KIND=JWRB) FUNCTION DIRSPRD_GC (USTAR)
 
 ! ----------------------------------------------------------------------
 
@@ -20,8 +20,6 @@ USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-
-      REAL(KIND=JWRB) :: DIRSPRD_GC
 
       REAL(KIND=JWRB), INTENT(IN) :: USTAR
 

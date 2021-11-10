@@ -101,13 +101,8 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,   &
      &            PATH     ,CPATH    ,CWI
-      USE YOWUNIT  , ONLY : IU20     ,IU23     ,                        &
-     &            IU27     ,IU28     ,IU04     ,IU30     ,              &
-     &            IU31     ,IU32     ,IU33     ,IU35     ,IU36     ,    &
-     &            IU37     ,IU38
       USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LVECTOR, IVECTOR
       USE UNSTRUCT_BOUND , ONLY : LBCWA
-      USE UNWAM    , ONLY : USE_DIRECT_WIND_FILE
       USE UNWAM    , ONLY : LIMPLICIT, JGS_DIFF_SOLVERTHR,              &
      &            SOURCE_IMPL, WAE_SOLVERTHR,                           &
      &            LNONL, BLOCK_GAUSS_SEIDEL,                            &
@@ -122,12 +117,11 @@
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "mpcrtbl.intfb.h"
+#include "iwam_get_unit.intfb.h"
 #include "wposnam.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU05
       INTEGER(KIND=JWIM) :: ISAT, IC, II
-      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
@@ -183,7 +177,6 @@
      &   LNSESTART,                                                     &
      &   LLUNSTR, LPREPROC, LVECTOR, IVECTOR,                           &
      &   WAE_SOLVERTHR, JGS_DIFF_SOLVERTHR,                             &
-     &   USE_DIRECT_WIND_FILE,                                          &
      &   LIMPLICIT,                                                     &
      &   SOURCE_IMPL,                                                   &
      &   LNONL, BLOCK_GAUSS_SEIDEL,                                     &
@@ -358,7 +351,7 @@
 !     LSECONDORDER : IF TRUE THEN SECOND ORDER CORRECTIOn IS APPLIED TO
 !                    OUTPUT INTEGRATED PARAMETERS.
 !     ICASE: 1 FOR SPHERICAL COORDINATES ELSE CARTESIAN COORDINATES.
-!     ISHALLO: 1 FOR DEEP WATER MODE ELSE SHALLOW WATER MODEL.
+!     ISHALLO: THIS OPTION IS DEPRICATED. IT IS ALWAYS SHALLOW WATER FORMULATION
 !     IREFRA: 0 MODEL RUNS WITHOUT REFRACTION.
 !             1 MODEL RUNS WITH DEPTH REFRACTION ONLY.
 !             2 MODEL RUNS WITH CURRENT REFRACTION ONLY.
@@ -510,7 +503,7 @@
 !                IS COMPUTED.
 !     LNSESTART : FLAG CONTROLLING WHETHER OR NOT THE INITIAL SPECTRA ARE
 !                 RESET TO NOISE LEVEL.
-!     LSMSSIG_WAM : .T. = send signals to SMS or ECFLOW (ECMWF supervisor)
+!     LSMSSIG_WAM : .T. = send signals to ECFLOW (ECMWF supervisor)
 !     CMETER :  SMS or ECFLOW meter command (ECMWF supervisor)
 !     CEVENT :  SMS or ECFLOW event command (ECMWF supervisor)
 
@@ -595,7 +588,7 @@
       LRSTINFDAT= .FALSE.
       LODBRALT  = .FALSE.
       ICASE     = 1 
-      ISHALLO   = 0 
+      ISHALLO   = 0   !! depricated 
       IPHYS     = 1
       ISNONLIN  = 1 
       IDAMPING  = 1 
@@ -768,7 +761,6 @@
       LVECTOR=.FALSE.
       IVECTOR=1
       LPREPROC=.FALSE.
-      USE_DIRECT_WIND_FILE=.FALSE.
       JGS_DIFF_SOLVERTHR = 1.E-5_JWRU
       WAE_SOLVERTHR = 1.E-10_JWRU
       LIMPLICIT = .FALSE.
@@ -805,6 +797,7 @@
         CALL ABORT1
       ENDIF
 
+      ! when coupled to IFS, the control will come from it via calls to wavemdl
       IF (LWCOU) LSMSSIG_WAM=.FALSE.
 
 
@@ -918,8 +911,7 @@
 !     RESET CERTAIN FLAGS:
 
 !     WE SHOULD RECEIVE DATA FROM NEMO
-      IF (LWNEMOCOUCIC.OR.LWNEMOCOUCIT.OR.LWNEMOCOUCUR)                 &
-     &   LWNEMOCOURECV = .TRUE.
+      IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT .OR. LWNEMOCOUCUR) LWNEMOCOURECV = .TRUE.
 
 
 ! Here we set LL1D = .TRUE. for the case of LLUNSTR in order to omit the mapping for the parallel strucutured grid

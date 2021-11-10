@@ -1,36 +1,14 @@
-      SUBROUTINE IMPLSCH (FL1, IJS, IJL, IG,                            &
-     &                    THWOLD, USOLD,                                &
-     &                    TAUW, TAUWDIR, Z0OLD,                         &
-     &                    ROAIRO, WSTAROLD,                             &
-     &                    CICVR, CIWA,                                  &
-     &                    U10NEW, THWNEW, USNEW,                        &
-     &                    Z0NEW, Z0B, ROAIRN, WSTARNEW,                 &
-     &                    WSEMEAN, WSFMEAN,                             &
-     &                    USTOKES, VSTOKES, STRNMS,                     &
-     &                    MIJ, XLLWS)
+SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
+ &                  WVPRPT,                                  &
+ &                  WVENVI, FF_NOW,                          &
+ &                  INTFLDS, WAM2NEMO,                       &
+ &                  MIJ, XLLWS)
 
 ! ----------------------------------------------------------------------
 
 !**** *IMPLSCH* - IMPLICIT SCHEME FOR TIME INTEGRATION OF SOURCE
 !****             FUNCTIONS.
 
-!     S.D.HASSELMANN.  MPI
-!     H. GUENTHER AND L. ZAMBRESKY  OPTIMIZATION PERFORMED.
-!     H. GUENTHER      GKSS/ECMWF   OCTOBER 1989  NEW WIND FIELD
-!                                                 INTERFACE AND
-!                                                 TIME COUNTING
-!     P.A.E.M. JANSSEN KNMI         AUGUST  1990  COUPLED MODEL
-!     H. GUENTHER      GKSS/ECMWF   JUNE    1991  NEW SEPARATION OF
-!                                                  DIAG- AND PROGNOSTIC
-!                                                  PART OF SPECTRUM.
-!     P.A.E.M. JANSSEN ECMWF        FEBRUARY 1995  ADD MINIMUM VALUE
-!                                                  (FLMIN).
-!     J. BIDLOT ECMWF               FEBRUARY 1996 MESSAGE PASSING
-!     J. BIDLOT ECMWF               FEBRUARY 1997 MESSAGE PASSING
-!     J. BIDLOT ECMWF               FEBRUARY 2001 MODIFY CALLING ORDER
-!                                   BETWEEN SINPUT-STRESSO-AIRSEA
-!     S. ABDALLA       ECMWF        OCTOBER 2001
-!                                   INCLUSION OF AIR DENSITY AND Zi/L.
 
 !*    PURPOSE.
 !     --------
@@ -43,43 +21,19 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *IMPLSCH (FL1, FL, IJS, IJL, IG,
-!    1                    THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,
-!    &                    ROAIRO, WSTAROLD, 
-!    &                    CICVR, CIWA,
-!    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,WSTARNEW,
-!    &                    USTOKES, VSTOKES, STRNMS,                     &
-!    &                    MIJ,  XLLWS)
-!          *FL1*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
-!          *IJS*    - INDEX OF FIRST GRIDPOINT
-!          *IJL*    - INDEX OF LAST GRIDPOINT
-!          *IG*     - BLOCK NUMBER
-!      *U10NEW*    NEW WIND SPEED IN M/S.
-!      *THWNEW*    WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
-!                  NOTATION (POINTING ANGLE OF WIND VECTOR,
-!                  CLOCKWISE FROM NORTH).
-!      *THWOLD*    INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
-!                  WIND VELOCITY.
-!      *USNEW*     NEW FRICTION VELOCITY IN M/S.
-!      *USOLD*     INTERMEDIATE STORAGE OF MODULUS OF FRICTION
-!                  VELOCITY.
-!      *Z0NEW*     ROUGHNESS LENGTH IN M.
-!      *Z0B*       BACKGROUND ROUGHNESS LENGTH.
-!      *Z0OLD*     INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
-!                  M.
-!      *TAUW*      WAVE STRESS IN (M/S)**2
-!      *TAUWDIR*   WAVE STRESS DIRECTION. 
-!      *ROAIRN*    AIR DENSITY IN KG/M3.
-!      *ROAIRO*    INTERMEDIATE STORAGE OF AIR DENSITY.
-!      *WSTARNEW*  FREE CONVECTION VELOCITY SCALE (M/S)
-!      *WSTAROLD*   INTERMEDIATE STORAGE OF WSTAR
-!      *CICVR*     SEA ICE COVER.
-!      *CIWA*      SEA ICE WAVE ATTENUATION.
-!      *WSEMEAN*   WINDSEA VARIANCE.
-!      *WSFMEAN*   WINDSEA MEAN FREQUENCY.
-!      *USTOKES*   U-COMP SURFACE STOKES DRIFT.
-!      *VSTOKES*   V-COMP SURFACE STOKES DRIFT.
-!      *STRNMS*    MEAN SQUARE STRAIN INTO THE SEA ICE (only if LWNEMOCOUSTRN).
+!       *CALL* *IMPLSCH (KIJS, KIJL, FL1,
+!    &                   WVPRPT,
+!    &                   WVENVI, FF_NOW,
+!    &                   INTFLDS, WAM2NEMO,
+!    &                   MIJ,  XLLWS)
+!      *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
+!      *KIJL*    - LOCAL INDEX OF LAST GRIDPOINT
+!      *FL1*     - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
+!      *WVPRPT*  - WAVE PROPERTIES FIELDS
+!      *WVENVI*  - WAVE ENVIRONMENT  
+!      *FF_NOW*    FORCING FIELDS
+!      *INTFLDS*   INTEGRATED/DERIVED PARAMETERS
+!      *WAM2NEMO*  WAVE FIELDS PASSED TO NEMO
 !      *MIJ*       LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !      *XLLWS*     TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
 
@@ -97,28 +51,6 @@
 !       SPECTRUM AND FL IS USED AS AN INTERMEDIATE STORAGE FOR THE
 !       DIAGONAL TERM OF THE FUNCTIONAL MATRIX.
 
-!     EXTERNALS.
-!     ---------
-
-!       *INCDATE*   - UPDATE DATE TIME GROUP.
-!SHALLOW
-!       *SBOTTOM*   - COMPUTES BOTTOM DISSIPATION SOURCE TERM AND
-!                     LINEAR CONTRIBUTION TO FUNCTIONAL MATRIX.
-!SHALLOW
-!       *SDISSIP*   - COMPUTATION OF DISSIPATION SOURCE FUNCTION
-!                     AND LINEAR CONTRIBUTION OF DISSIPATION TO
-!                     FUNCTIONAL MATRIX IN IMPLICIT SCHEME.
-!       *SEMEAN*    - COMPUTATION OF TOTAL ENERGY AT EACH GRID POINT.
-!       *SINPUT*    - COMPUTATION OF INPUT SOURCE FUNCTION, AND
-!                     LINEAR CONTRIBUTION OF INPUT SOURCE FUNCTION
-!                     TO FUNCTIONAL MATRIX IN IMPLICIT SCHEME.
-!       *SNONLIN*   - COMPUTATION OF NONLINEAR TRANSFER RATE AND
-!                     DIAGONAL LINEAR CONTRIBUTION OF NONLINEAR SOURCE
-!                     FUNCTION TO  FUNCTIONAL MATRIX.
-!       *STRESSO*   - COMPUTATION NORMALISED WAVE STRESS.
-!           !!!!!!! MAKE SURE THAT SINPUT IS CALLED FIRST, STRESSO
-!           !!!!!!! NEXT, AND THEN THE REST OF THE SOURCE FUNCTIONS.
-!       *IMPHFTAIL*
 
 !     REFERENCE.
 !     ----------
@@ -129,25 +61,24 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,   &
+ &                             INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU, LWNEMOCOUSTRN 
       USE YOWCOUT  , ONLY : LWFLUXOUT 
-      USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4      ,FLMAX
-      USE YOWICE   , ONLY : FLMIN    ,LCIWABR  ,LICERUN     ,LMASKICE
+      USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
+      USE YOWICE   , ONLY : FLMIN    ,LCIWABR  ,LICERUN   ,LMASKICE
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : WSEMEAN_MIN 
-      USE YOWSHAL  , ONLY : DEPTH    ,INDEP    ,                        &
-     &            IODP     ,IOBND    ,CINV     ,EMAXDPT
-      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,CDTPRO   ,LBIWBK
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWSTAT  , ONLY : IDELT    ,CDTPRO   ,LBIWBK
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "imphftail.intfb.h"
 #include "sdepthlim.intfb.h"
 #include "cimsstrn.intfb.h"
 #include "ciwabr.intfb.h"
@@ -159,25 +90,19 @@
 #include "setice.intfb.h"
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
-#include "stokesdrift.intfb.h"
+#include "stokestrn.intfb.h"
 #include "wnfluxes.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IG
-      INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(IJS:IJL)
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
+      TYPE(FREQUENCY), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WVPRPT
+      TYPE(ENVIRONMENT), DIMENSION(KIJS:KIJL), INTENT(IN) :: WVENVI
+      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW 
+      TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
+      TYPE(WAVE2OCEAN), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WAM2NEMO
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(OUT) :: MIJ
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: THWOLD, USOLD, Z0OLD
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: TAUW, TAUWDIR, ROAIRO, WSTAROLD
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: U10NEW, USNEW 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: Z0NEW
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: Z0B
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTARNEW
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: WSEMEAN, WSFMEAN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CIWA
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: ICALL, NCALL
@@ -186,28 +111,52 @@
       REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELFL(NFRE)
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIWA
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DPTHREDUC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEAN, FMEAN
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: F1MEAN, AKMEAN, XKMEAN 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: PHIWA
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DPTHREDUC
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: FLM 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: TEMP
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
-!     *FL*  DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: FLM 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: TEMP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: RHOWGDFTH
+!     *FLD* DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !     *SL*  TOTAL SOURCE FUNCTION ARRAY.
 !     *SPOS* : POSITIVE SINPUT ONLY
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL, SPOS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: CIREDUC 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: FLD, SL, SPOS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: CIREDUC 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: SSOURCE 
 
       LOGICAL :: LCFLX
       LOGICAL :: LUPDTUS
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
+
+ASSOCIATE(DEPTH => WVENVI%DEPTH, &
+ &        INDEP => WVENVI%INDEP, &
+ &        IODP => WVENVI%IODP, &
+ &        IOBND => WVENVI%IOBND, &
+ &        EMAXDPT => WVENVI%EMAXDPT, &
+ &        WAVNUM => WVPRPT%WAVNUM, &
+ &        CINV => WVPRPT%CINV, &
+ &        CGROUP => WVPRPT%CGROUP, &
+ &        STOKFAC => WVPRPT%STOKFAC, &
+ &        CIWA => WVPRPT%CIWA, &
+ &        WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        UFRIC => FF_NOW%UFRIC, &
+ &        Z0M => FF_NOW%Z0M, &
+ &        Z0B => FF_NOW%Z0B, &
+ &        TAUW => FF_NOW%TAUW, &
+ &        TAUWDIR => FF_NOW%TAUWDIR, &
+ &        AIRD => FF_NOW%AIRD, &
+ &        WSTAR => FF_NOW%WSTAR, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        WSEMEAN => INTFLDS%WSEMEAN, &
+ &        WSFMEAN => INTFLDS%WSFMEAN)
+
 
 !*    1. INITIALISATION.
 !        ---------------
@@ -229,28 +178,29 @@
 
 
 !     REDUCE WAVE ENERGY IF LARGER THAN DEPTH LIMITED WAVE HEIGHT
-      IF(ISHALLO.NE.1 .AND. LBIWBK) THEN
-         CALL SDEPTHLIM(IJS,IJL,EMAXDPT(IJS),FL1)
+      IF (LBIWBK) THEN
+         CALL SDEPTHLIM(KIJS, KIJL, EMAXDPT, FL1)
       ENDIF
 
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
-      CALL FKMEAN(FL1, IJS, IJL, EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
+      CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                    &
+     &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
       DO K=1,NANG
-        DO IJ=IJS,IJL
-          FLM(IJ,K)=FLMIN*MAX(0.0_JWRB,COS(TH(K)-THWNEW(IJ)))**2
+        DO IJ=KIJS,KIJL
+          FLM(IJ,K)=FLMIN*MAX(0.0_JWRB,COS(TH(K)-WDWAVE(IJ)))**2
         ENDDO
       ENDDO
 
 !     COMPUTE DAMPING COEFFICIENT DUE TO FRICTION ON BOTTOM OF THE SEA ICE.
 !!! testing sea ice attenuation (might need to restrict usage when needed)
-      IF(LCIWABR) THEN
-        CALL CIWABR(IJS, IJL, CICVR, FL1, CIREDUC)
+      IF (LCIWABR) THEN
+        CALL CIWABR(KIJS, KIJL, CICOVER, FL1, WAVNUM, CGROUP, CIREDUC)
         DO M=1,NFRE
           DO K=1,NANG
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               CIREDUC(IJ,K,M)=CIWA(IJ,M)*CIREDUC(IJ,K,M)
             ENDDO
           ENDDO
@@ -258,7 +208,7 @@
       ELSE
         DO M=1,NFRE
           DO K=1,NANG
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               CIREDUC(IJ,K,M)=CIWA(IJ,M)
             ENDDO
           ENDDO
@@ -276,58 +226,48 @@
       LUPDTUS = .TRUE.
       NCALL = 2
       DO ICALL = 1, NCALL 
-        CALL SINFLX (ICALL, NCALL, IJS, IJL, &
-     &               LUPDTUS, &
-     &               U10NEW, THWNEW, ROAIRN, WSTARNEW, &
-     &               CICVR, &
-     &               FMEANALL, FMEANWS, &
-     &               FLM, FL1, &
-     &               USNEW, TAUW, TAUWDIR, Z0NEW, Z0B, PHIWA, &
-     &               FL, SL, SPOS, &
+        CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                 &
+     &               LUPDTUS,                                  &
+     &               FL1,                                      &
+     &               WAVNUM, CINV, CGROUP,                     &
+     &               WSWAVE, WDWAVE, AIRD, WSTAR, CICOVER,     &
+     &               FMEAN, FMEANWS,                        &
+     &               FLM,                                      &
+     &               UFRIC, TAUW, TAUWDIR, Z0M, Z0B, PHIWA,    &
+     &               FLD, SL, SPOS,                            &
      &               MIJ, RHOWGDFTH, XLLWS)
 
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. IMPLSCH: SINFLX CALLED ', ICALL
-          CALL FLUSH (IU06)
-        ENDIF
       ENDDO
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
 
-      CALL SDISSIP (FL1 ,FL, SL, IJS, IJL,                              &
-     &              EMEANALL, F1MEAN, XKMEAN,                           &
-     &              USNEW, THWNEW, ROAIRN)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
-        CALL FLUSH (IU06)
-      ENDIF
+      CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,  &
+     &              INDEP, WAVNUM, CGROUP,     &
+     &              EMEAN, F1MEAN, XKMEAN,     &
+     &              UFRIC, WDWAVE, AIRD)
 
 !     Save source term contributions relevant for the calculation of ocean fluxes
-      IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
+      IF (LCFLX .AND. .NOT.LWVFLX_SNL) THEN
         DO M=1,NFRE
           DO K=1,NANG
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               SSOURCE(IJ,K,M) = SL(IJ,K,M)
             ENDDO
           ENDDO
         ENDDO
       ENDIF
 
-      CALL SNONLIN (FL1, FL, IJS, IJL, IG, SL, AKMEAN)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
-        CALL FLUSH (IU06)
-      ENDIF
+      CALL SNONLIN (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH, AKMEAN)
 
-      IF(LCFLX .AND. LWVFLX_SNL) THEN
+      IF (LCFLX .AND. LWVFLX_SNL) THEN
 !     Save source term contributions relevant for the calculation of ocean fluxes
 !!!!!!  SL must only contain contributions contributed to fluxes into the oceans
 !       MODULATE SL BY IMPLICIT FACTOR
         DO M=1,NFRE
           DO K=1,NANG
-            DO IJ=IJS,IJL
-              GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
+            DO IJ=KIJS,KIJL
+              GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
               SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
             ENDDO
           ENDDO
@@ -335,12 +275,9 @@
       ENDIF
 
 
-!SHALLOW
-      IF(ISHALLO.NE.1) THEN
-        CALL SDIWBK(IJS, IJL, FL1 ,FL, SL, DEPTH(IJS,1), EMAXDPT(IJS), EMEANALL, F1MEAN)
-        CALL SBOTTOM (IJS, IJL, DEPTH(IJS,1), FL1, FL, SL)
-      ENDIF
-!SHALLOW
+      CALL SDIWBK(KIJS, KIJL, FL1 ,FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)
+
+      CALL SBOTTOM (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH)
 
 ! ----------------------------------------------------------------------
 
@@ -353,74 +290,77 @@
       DO M=1,NFRE
         DELFL(M) = COFRM4(M)*DELT
       ENDDO
-      DO IJ=IJS,IJL
-        USFM(IJ) = USNEW(IJ)*MAX(FMEANWS(IJ),FMEANALL(IJ))
+      DO IJ=KIJS,KIJL
+        USFM(IJ) = UFRIC(IJ)*MAX(FMEANWS(IJ),FMEAN(IJ))
       ENDDO
 
       DO M=1,NFRE
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           TEMP(IJ,M) = USFM(IJ)*DELFL(M)
         ENDDO
       ENDDO
 
       IF (LLUNSTR) THEN
-      DO K=1,NANG
-        DO M=1,NFRE
-          DO IJ=IJS,IJL
-            GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
-            GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
-            FLHAB = ABS(GTEMP2)
-            FLHAB = MIN(FLHAB,TEMP(IJ,M))
-            FL1(IJ,K,M) = FL1(IJ,K,M) + IOBND(IJ)*SIGN(FLHAB,GTEMP2)
-            FL1(IJ,K,M) = MAX(IODP(IJ)*CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
-            SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M) + DELTM * MIN(FLMAX(M)-FL1(IJ,K,M),0.0_JWRB)
-            FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
+        DO K=1,NANG
+          DO M=1,NFRE
+            DO IJ=KIJS,KIJL
+              GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
+              GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
+              FLHAB = ABS(GTEMP2)
+              FLHAB = MIN(FLHAB,TEMP(IJ,M))
+              FL1(IJ,K,M) = FL1(IJ,K,M) + IOBND(IJ)*SIGN(FLHAB,GTEMP2)
+              FL1(IJ,K,M) = MAX(IODP(IJ)*CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
+              SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M) + DELTM * MIN(FLMAX(M)-FL1(IJ,K,M),0.0_JWRB)
+              FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
+            ENDDO
           ENDDO
         ENDDO
-      ENDDO
       ELSE
-      DO K=1,NANG
-        DO M=1,NFRE
-          DO IJ=IJS,IJL
-            GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
-            GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
-            FLHAB = ABS(GTEMP2)
-            FLHAB = MIN(FLHAB,TEMP(IJ,M))
-            FL1(IJ,K,M) = FL1(IJ,K,M) + SIGN(FLHAB,GTEMP2)
-            FL1(IJ,K,M) = MAX(CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
-            SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M) + DELTM * MIN(FLMAX(M)-FL1(IJ,K,M),0.0_JWRB)
-            FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
+        DO K=1,NANG
+          DO M=1,NFRE
+            DO IJ=KIJS,KIJL
+              GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
+              GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
+              FLHAB = ABS(GTEMP2)
+              FLHAB = MIN(FLHAB,TEMP(IJ,M))
+              FL1(IJ,K,M) = FL1(IJ,K,M) + SIGN(FLHAB,GTEMP2)
+              FL1(IJ,K,M) = MAX(CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
+              SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M) + DELTM * MIN(FLMAX(M)-FL1(IJ,K,M),0.0_JWRB)
+              FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
+            ENDDO
           ENDDO
         ENDDO
-      ENDDO
       ENDIF
 
-      IF(LCFLX) THEN
-        CALL WNFLUXES (IJS, IJL,                                        &
-     &                 MIJ, RHOWGDFTH,                                  &
-     &                 SSOURCE, CICVR,                                  &
-     &                 PHIWA,                                           &
-     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
-     &                 USNEW, ROAIRN, .TRUE.)
+      IF (LCFLX) THEN
+        CALL WNFLUXES (KIJS, KIJL,                              &
+     &                 MIJ, RHOWGDFTH,                          &
+     &                 CINV,                                    &
+     &                 SSOURCE, CICOVER,                        &
+     &                 PHIWA,                                   &
+     &                 EMEAN, F1MEAN, WSWAVE, WDWAVE,           &
+     &                 UFRIC, AIRD, INTFLDS, WAM2NEMO,          &
+     &                 .TRUE.)
       ENDIF
 ! ----------------------------------------------------------------------
 
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
 
-      CALL FKMEAN(FL1, IJS, IJL, EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
+      CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                      &
+     &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL1, IJS, IJL, EMEANWS, FMEANWS, XLLWS)
+      CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, EMEANWS, FMEANWS)
 
-      CALL IMPHFTAIL(IJS, IJL, MIJ, FLM, FL1)
+      CALL IMPHFTAIL(KIJS, KIJL, MIJ, FLM, WAVNUM, CGROUP, FL1)
 
 
 !     UPDATE WINDSEA VARIANCE AND MEAN FREQUENCY IF PASSED TO ATMOSPHERE
 !     ------------------------------------------------------------------
-      IF(LWFLUX) THEN
-        DO IJ=IJS,IJL
-          IF(EMEANWS(IJ) < WSEMEAN_MIN) THEN
+      IF (LWFLUX) THEN
+        DO IJ=KIJS,KIJL
+          IF (EMEANWS(IJ) < WSEMEAN_MIN) THEN
             WSEMEAN(IJ) = WSEMEAN_MIN 
             WSFMEAN(IJ) = 2._JWRB*FR(NFRE)
           ELSE
@@ -435,34 +375,18 @@
 !         -----------------------------
 
       IF (LICERUN .AND. LMASKICE) THEN
-        IF (ITEST.GE.1) THEN
-          WRITE(IU06,*) '   SUB. IMPLSCH: SPECTRUM = 0 AT ICE POINTS'
-           CALL FLUSH(IU06)
-        ENDIF
-        CALL SETICE(FL1, IJS, IJL, CICVR, U10NEW, THWNEW)
+        CALL SETICE(KIJS, KIJL, FL1, CICOVER, WSWAVE, WDWAVE)
       ENDIF
 
 
 !*    2.7 SURFACE STOKES DRIFT AND STRAIN IN SEA ICE
 !         ------------------------------------------
 
-      CALL STOKESDRIFT(FL1, IJS, IJL, U10NEW, THWNEW, CICVR, USTOKES, VSTOKES)
-
-      IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL1, IJS, IJL, STRNMS)
-
-
-!*    2.8 SAVE WINDS INTO INTERMEDIATE STORAGE.
-!         -------------------------------------
-
-      DO IJ=IJS,IJL
-        USOLD(IJ) = USNEW(IJ)
-        Z0OLD(IJ) = Z0NEW(IJ)
-        ROAIRO(IJ) = ROAIRN(IJ)
-        WSTAROLD(IJ) = WSTARNEW(IJ)
-      ENDDO
+      CALL STOKESTRN(KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, FF_NOW, INTFLDS, WAM2NEMO)
 
 ! ----------------------------------------------------------------------
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
 
-      IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE IMPLSCH
+END SUBROUTINE IMPLSCH

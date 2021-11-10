@@ -1,4 +1,4 @@
-      SUBROUTINE CHECK (ML, KL, IINPC)
+      SUBROUTINE CHECK (IINPC)
 
 ! ----------------------------------------------------------------------
 
@@ -14,9 +14,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *CHECK (ML, KL, IINPC)*
-!          *ML*      - NUMBER OF FREQUENCIES.
-!          *KL*      - NUMBER OF DIRECTIONS.
+!       *CALL* *CHECK (IINPC)*
 !          *IINPC*   - NUMBER INPUT POINTS FROM A PREVIOUS COARSE GRID.
 
 !     METHOD.
@@ -37,20 +35,16 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
-     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,    &
-     &            NBLD     ,NIBLC    ,NBLC
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
+     &            NGX      ,NGY      ,NIBLO
       USE YOWPCONS , ONLY : DEG
-      USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC
-      USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF   ,IJARF    ,IGARF
-      USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
-      USE YOWCURR  , ONLY : U        ,V
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL2     ,IJLS     ,    &
-     &            IJL      ,IJLT
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,    &
+      USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC
+      USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF   ,IJARF
+      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
+      USE YOWGRID  , ONLY : IJS      ,IJL
+      USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLO
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH
-      USE YOWSTAT  , ONLY : IREFRA
+      USE YOWSHAL  , ONLY : NDEPTH
       USE YOWTEST  , ONLY : IU06, ITEST
 
 ! ----------------------------------------------------------------------
@@ -58,19 +52,17 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: ML, KL, IINPC
+      INTEGER(KIND=JWIM), INTENT(IN) :: IINPC
 
-      INTEGER(KIND=JWIM) :: IG
-      INTEGER(KIND=JWIM) :: IU1, IU2, IO, IO1, IO2
+      INTEGER(KIND=JWIM) :: IO
       INTEGER(KIND=JWIM) :: I, K, IJ, IERR
       INTEGER(KIND=JWIM) :: ILEN, IPAGE, LAST, L, IA, IE
-      INTEGER(KIND=JWIM) :: IJFLAT, IJLLAT, IJMAX, ISEA, IPOI, IOV 
 
       REAL(KIND=JWRB) :: BMOWEP, BMOEAP
-      REAL(KIND=JWRB),  ALLOCATABLE :: GRID(:,:)
+      REAL(KIND=JWRB) :: GRID(NGX,NGY)
 
       CHARACTER(LEN=100) :: TITL
-      CHARACTER(LEN=1), ALLOCATABLE :: LST(:,:)
+      CHARACTER(LEN=1) :: LST(NGX,NGY)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -81,49 +73,6 @@
 
 ! ----------------------------------------------------------------------
 
-      ALLOCATE(LST(NGX,NGY))
-      ALLOCATE(GRID(NGX,NGY))
-
-!*    1. COMPARE LENGTH OF OVERLAPPING LAT.
-!        -----------------------------------
-
-      DO IG=1,IGL-1
-        IU1 = IJS(IG+1)-1
-        IO2 = IJL(IG)-IJLS(IG)+1
-        IF (IU1.NE.IO2) THEN
-          WRITE (IU06,*) ' *****************************************'
-          WRITE (IU06,*) ' *                                       *'
-          WRITE (IU06,*) ' *      FATAL ERROR IN SUB. CHECK        *'
-          WRITE (IU06,*) ' *      =========================        *'
-          WRITE (IU06,*) ' *                                       *'
-          WRITE (IU06,*) ' * LENGTH OF FIRST LAT. IN BLOCK IG+1    *'
-          WRITE (IU06,*) ' * IS NOT EQUAL TO SECOND TO LAST OF     *'
-          WRITE (IU06,*) ' * BLOCK IG                              *'
-          WRITE (IU06,*) ' * BLOCK  NUMBER IS IG = ', IG
-          WRITE (IU06,*) ' * LENGTH IN BLOCK IG   IS IU1 = ', IU1
-          WRITE (IU06,*) ' * LENGTH IN BLOCK IG+1 IS IO2 = ', IO2
-          WRITE (IU06,*) ' *                                       *'
-          WRITE (IU06,*) ' *****************************************'
-        ENDIF
-        IU2 = IJL2(IG+1)-IJS(IG+1)+1
-        IO1 = IJLT(IG)-IJL(IG)
-        IF (IU2.NE.IO1) THEN
-          WRITE (IU06,*) ' *****************************************'
-          WRITE (IU06,*) ' *                                       *'
-          WRITE (IU06,*) ' *      FATAL ERROR IN SUB. CHECK        *'
-          WRITE (IU06,*) ' *      =========================        *'
-          WRITE (IU06,*) ' *                                       *'
-          WRITE (IU06,*) ' * LENGTH OF SECOND LAT. IN BLOCK IG+1   *'
-          WRITE (IU06,*) ' * IS NOT EQUAL TO LAST OF BLOCK IG      *'
-          WRITE (IU06,*) ' * BLOCK  NUMBER IS IG = ', IG
-          WRITE (IU06,*) ' * LENGTH IN BLOCK IG   IS IU2 = ', IU2
-          WRITE (IU06,*) ' * LENGTH IN BLOCK IG+1 IS IO1 = ', IO1
-          WRITE (IU06,*) ' *                                       *'
-          WRITE (IU06,*) ' *****************************************'
-        ENDIF
-      ENDDO
-
-! ----------------------------------------------------------------------
 
 !*    2. GENERATE LAND SEA TABLE FROM INDEX ARRAYS.
 !        ------------------------------------------
@@ -135,37 +84,17 @@
       ENDDO
 
       IERR = 0
-      DO IG=1,IGL
-        DO IJ=IJS(IG),IJL(IG)
-          IF (IXLG(IJ,IG).NE.0.OR.KXLT(IJ,IG).NE.0)                     &
-     &     LST(IXLG(IJ,IG),KXLT(IJ,IG)) = 'S'
-        ENDDO
+      DO IJ=IJS,IJL
+      IF (BLK2GLO(IJ)%IXLG /= 0 .OR. BLK2GLO(IJ)%KXLT /= 0) LST(BLK2GLO(IJ)%IXLG,BLK2GLO(IJ)%KXLT) = 'S'
       ENDDO
 
 !*    2.1 INCLUDE OUTPUT POINTS.
 !         ----------------------
 
-      IF (NGOUT.GT.0) THEN
+      IF (NGOUT > 0) THEN
         DO IO=1,NGOUT
-          IG = IGAR(IO)
           IJ = IJAR(IO)
-          IF (IG.LT.1.OR.IG.GT.IGL) THEN
-            IERR = IERR+1
-            WRITE (IU06,*) ' ***************************************'
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' *      FATAL ERROR IN SUB. CHECK      *'
-            WRITE (IU06,*) ' *      =========================      *'
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' * BLOCK NUMBER OF OUTPUT POINT IS     *'
-            WRITE (IU06,*) ' * OUT OF RANGE.                       *'
-            WRITE (IU06,*) ' * OUTPUT POINT NUMBER IS  IO = ', IO
-            WRITE (IU06,*) ' * BLOCK NUMBER IS         IG = ', IG
-            WRITE (IU06,*) ' * MAX. BLOCK NUMBER IS   IGL = ', IGL
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' ***************************************'
-            IF (IERR.GT.20) CALL ABORT1
-          ENDIF
-          IF (IJ.LT.IJS(IG).OR.IJ.GT.IJL(IG)) THEN
+          IF (IJ < IJS .OR. IJ > IJL) THEN
             IERR = IERR+1
             WRITE (IU06,*) ' ***************************************'
             WRITE (IU06,*) ' *                                     *'
@@ -176,41 +105,23 @@
             WRITE (IU06,*) ' * OUT OF RANGE.                       *'
             WRITE (IU06,*) ' * OUTPUT POINT NUMBER IS IO = ', IO
             WRITE (IU06,*) ' * GRID POINT NUMBER IS   IJ = ', IJ
-            WRITE (IU06,*) ' * MIN. NUMBER IS        IJS = ', IJS(IG)
-            WRITE (IU06,*) ' * MAX. NUMBER IS        IJL = ', IJL(IG)
+            WRITE (IU06,*) ' * MIN. NUMBER IS        IJS = ', IJS
+            WRITE (IU06,*) ' * MAX. NUMBER IS        IJL = ', IJL
             WRITE (IU06,*) ' *                                     *'
             WRITE (IU06,*) ' ***************************************'
-            IF (IERR.GT.20) CALL ABORT1
+            IF (IERR > 20) CALL ABORT1
           ENDIF
-          IF (IXLG(IJ,IG).NE.0.OR.KXLT(IJ,IG).NE.0)                     &
-     &     LST(IXLG(IJ,IG),KXLT(IJ,IG)) = '+'
+     IF (BLK2GLO(IJ)%IXLG /= 0 .OR. BLK2GLO(IJ)%KXLT /= 0) LST(BLK2GLO(IJ)%IXLG,BLK2GLO(IJ)%KXLT) = '+' 
         ENDDO
       ENDIF
 
 !*    2.2 INCLUDE COARSE GRID NEST OUTPUT POINTS.
 !         ---------------------------------------
 
-      IF (IBOUNC.EQ.1) THEN
+      IF (IBOUNC == 1) THEN
         DO IO=1,NBOUNC
-          IG = IGARC(IO)
           IJ = IJARC(IO)
-          IF (IG.LT.1.OR.IG.GT.IGL) THEN
-            IERR = IERR+1
-            WRITE (IU06,*) ' ***************************************'
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' *      FATAL ERROR IN SUB. CHECK      *'
-            WRITE (IU06,*) ' *      =========================      *'
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' * BLOCK NUMBER OF OUTPUT POINT IS     *'
-            WRITE (IU06,*) ' * OUT OF RANGE.                       *'
-            WRITE (IU06,*) ' * COARSE BOUNDARY POINT NUMBER IS IO= ',IO
-            WRITE (IU06,*) ' * BLOCK NUMBER IS         IG = ', IG
-            WRITE (IU06,*) ' * MAX. BLOCK NUMBER IS   IGL = ', IGL
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' ***************************************'
-            IF (IERR.GT.20) CALL ABORT1
-          ENDIF
-          IF (IJ.LT.IJS(IG).OR.IJ.GT.IJL(IG)) THEN
+          IF (IJ < IJS .OR. IJ > IJL) THEN
             IERR = IERR+1
             WRITE (IU06,*) ' ***************************************'
             WRITE (IU06,*) ' *                                     *'
@@ -221,41 +132,24 @@
             WRITE (IU06,*) ' * OUT OF RANGE.                       *'
             WRITE (IU06,*) ' * COARSE BOUNDARY POINT NUMBER IS IO= ',IO
             WRITE (IU06,*) ' * GRID POINT NUMBER IS   IJ = ', IJ
-            WRITE (IU06,*) ' * MIN. NUMBER IS        IJS = ', IJS(IG)
-            WRITE (IU06,*) ' * MAX. NUMBER IS        IJL = ', IJL(IG)
+            WRITE (IU06,*) ' * MIN. NUMBER IS        IJS = ', IJS
+            WRITE (IU06,*) ' * MAX. NUMBER IS        IJL = ', IJL
             WRITE (IU06,*) ' *                                     *'
             WRITE (IU06,*) ' ***************************************'
-            IF (IERR.GT.20) CALL ABORT1
+            IF (IERR > 20) CALL ABORT1
           ENDIF
-          IF (IXLG(IJ,IG).NE.0.OR.KXLT(IJ,IG).NE.0)                     &
-     &     LST(IXLG(IJ,IG),KXLT(IJ,IG)) = '/'
+          IF (BLK2GLO(IJ)%IXLG /= 0 .OR. BLK2GLO(IJ)%KXLT /= 0)                     &
+     &     LST(BLK2GLO(IJ)%IXLG,BLK2GLO(IJ)%KXLT) = '/'
         ENDDO
       ENDIF
 
 !*    2.3 INCLUDE FINE GRID NEST INPUT POINTS.
 !         ------------------------------------
 
-      IF (IBOUNF.EQ.1) THEN
+      IF (IBOUNF == 1) THEN
         DO IO=1,NBOUNF
-          IG = IGARF(IO)
           IJ = IJARF(IO)
-          IF (IG.LT.1.OR.IG.GT.IGL) THEN
-            IERR = IERR+1
-            WRITE (IU06,*) ' ***************************************'
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' *      FATAL ERROR IN SUB. CHECK      *'
-            WRITE (IU06,*) ' *      =========================      *'
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' * BLOCK NUMBER OF OUTPUT POINT IS     *'
-            WRITE (IU06,*) ' * OUT OF RANGE.                       *'
-            WRITE (IU06,*) ' * FINE BOUNDARY POINT NUMBER IS  IO =',IO
-            WRITE (IU06,*) ' * BLOCK NUMBER IS         IG = ', IG
-            WRITE (IU06,*) ' * MAX. BLOCK NUMBER IS   IGL = ', IGL
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' ***************************************'
-            IF (IERR.GT.20) CALL ABORT1
-          ENDIF
-          IF (IJ.LT.IJS(IG).OR.IJ.GT.IJL(IG)) THEN
+          IF (IJ < IJS .OR. IJ > IJL) THEN
             IERR = IERR+1
             WRITE (IU06,*) ' ***************************************'
             WRITE (IU06,*) ' *                                     *'
@@ -266,49 +160,14 @@
             WRITE (IU06,*) ' * OUT OF RANGE.                       *'
             WRITE (IU06,*) ' * FINE BOUNDARY POINT NUMBER IS IO= ', IO
             WRITE (IU06,*) ' * GRID POINT NUMBER IS   IJ = ', IJ
-            WRITE (IU06,*) ' * MIN. NUMBER IS        IJS = ', IJS(IG)
-            WRITE (IU06,*) ' * MAX. NUMBER IS        IJL = ', IJL(IG)
+            WRITE (IU06,*) ' * MIN. NUMBER IS        IJS = ', IJS
+            WRITE (IU06,*) ' * MAX. NUMBER IS        IJL = ', IJL
             WRITE (IU06,*) ' *                                     *'
             WRITE (IU06,*) ' ***************************************'
-            IF (IERR.GT.20) CALL ABORT1
+            IF (IERR > 20) CALL ABORT1
           ENDIF
-          IF (IXLG(IJ,IG).NE.0.OR.KXLT(IJ,IG).NE.0)                     &
-     &     LST(IXLG(IJ,IG),KXLT(IJ,IG)) = 'B'
-        ENDDO
-      ENDIF
-
-!*    2.4 PRINT LAND SEA MAP.
-!         -------------------
-
-
-      IF (ITEST.GE.3) THEN
-        ILEN = 120
-        IPAGE = (NX+ILEN-1)/ILEN
-        IF (IPAGE.GT.1) THEN
-          LAST = (NX-ILEN*(IPAGE-1)+IPAGE-2)/(IPAGE-1)
-          IF (LAST.LE.10) THEN
-            ILEN = ILEN + 10
-            IPAGE = (NX+ILEN-1)/ILEN
-          ENDIF
-        ENDIF
-        DO L=1,IPAGE
-          IA = (L-1)*ILEN
-          IE = MIN(IA+ILEN,NX)
-          IA = IA + 1
-          BMOWEP = AMOWEP +REAL(IA-1)*XDELLO
-          BMOEAP = AMOWEP +REAL(IE-1)*XDELLO
-          WRITE (IU06,'(1H1,'' LAND SEA MAP OF FULL GRID '',            &
-     &     ''   L = LAND  S = SEA  + = OUTPUT POINT'',                  &
-     &     ''                PAGE: '',I2)') L
-          WRITE (IU06,'(2X,''LONGITUDE IS FROM '',F7.2,'' TO '',F7.2)') &
-     &     BMOWEP, BMOEAP
-          WRITE (IU06,'(2X,''LATITUDE  IS FROM '',F7.2,'' TO '',F7.2)') &
-     &     AMONOP, AMOSOP
-          WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
-          DO K=NY,1,-1
-            WRITE (IU06,'(1X,I1,130A1)') MOD(K,10),(LST(I,K),I=IA,IE)
-          ENDDO
-          WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
+          IF (BLK2GLO(IJ)%IXLG /= 0 .OR. BLK2GLO(IJ)%KXLT /= 0)         &
+     &     LST(BLK2GLO(IJ)%IXLG,BLK2GLO(IJ)%KXLT) = 'B'
         ENDDO
       ENDIF
 
@@ -319,26 +178,6 @@
 
  5000 CONTINUE
       WRITE (IU06,'(1H1,'' GRID SUMMERY:'')')
-      WRITE (IU06,*) ' NUMBER OF BLOCKS GENERATED IS IGL ....: ', IGL
-      IJFLAT = 0
-      IJLLAT = 0
-      IJMAX = 0
-      ISEA = 0
-      IPOI = 0
-      DO IG=1,IGL
-        IJFLAT= MAX(IJFLAT,IJS(IG)-1)
-        IJLLAT= MAX(IJLLAT,IJLT(IG)-IJL(IG))
-        IJMAX = MAX(IJMAX,IJLT(IG))
-        IPOI  = IPOI + IJLT(IG)
-        ISEA  = ISEA + IJL(IG)-IJS(IG) + 1
-      ENDDO
-      IOV = IPOI-ISEA
-      WRITE (IU06,*) ' MAXIMUM NUMBER OF POINTS IN A BLOCK ..: ', IJMAX
-      WRITE (IU06,*) ' TOTAL NUMBER OF POINT IN ALL BLOCKS ..: ', IPOI
-      WRITE (IU06,*) ' TOTAL NUMBER OF SEA POINTS ...........: ', ISEA
-      WRITE (IU06,*) ' TOTAL NUMBER OF POINTS IN OVERLAP.....: ', IOV
-      WRITE (IU06,*) ' MAXIMUM LENGTH OF FIRST LAT OF A BLOCK: ', IJFLAT
-      WRITE (IU06,*) ' MAXIMUM LENGTH OF LAST  LAT OF A BLOCK: ', IJLLAT
 
 ! ----------------------------------------------------------------------
 
@@ -350,29 +189,19 @@
       WRITE (IU06,'(''                                     DEFINED'',   &
      &           ''      USED'',''  REQUIRED'')')
       WRITE (IU06,'('' NUMBER OF DIRECTIONS        NANG '', 3I10)')     &
-     &           NANG, KL, KL
+     &           NANG, NANG, NANG 
       WRITE (IU06,'('' NUMBER OF FREQUENCIES       NFRE '', 3I10)')     &
-     &           NFRE, ML, ML
+     &           NFRE, NFRE, NFRE 
+      WRITE (IU06,'('' NUMBER OF FREQUENCIES   NFRE_RED '', 3I10)')     &
+     &           NFRE_RED, NFRE_RED, NFRE_RED 
       WRITE (IU06,'('' NUMBER LONGITUDE GRID POINTS NGX '', 3I10)')     &
      &           NGX, NX, NX
       WRITE (IU06,'('' NUMBER LATITUDE GRID POINTS  NGY '', 3I10)')     &
      &           NGY, NY, NY
-      WRITE (IU06,'('' NUMBER OF BLOCKS            NBLO '', 3I10)')     &
-     &           NBLO, IGL, NBLO
       WRITE (IU06,'('' MAXIMUM BLOCK LENGTH       NIBLO '', 3I10)')     &
-     &           NIBLO, IJMAX, NIBLO
-      WRITE (IU06,'('' NUMBER POINTS IN FIRST LAT NOVER '', 3I10)')     &
-     &           NOVER, MAX(1,IJFLAT), MAX(1,IJFLAT)
+     &           NIBLO
       WRITE (IU06,'('' NUMBER OF OUTPUT POINTS    NGOUT '', 3I10)')     &
      &           NGOUT, MAX(1,NGOUT), NGOUT 
-
-      IF (IGL.EQ.1) THEN
-        WRITE (IU06,'('' 1 BLOCK VERSION            NIBL1 '', 3I10)')   &
-     &   NIBL1, 1, 1
-      ELSE
-        WRITE (IU06,'('' MULTI BLOCK VERSION        NIBL1 '', 3I10)')   &
-     &   NIBL1, IJMAX, NIBLO
-      ENDIF
 
       WRITE (IU06,'('' SHALLOW WATER TABLE LEN.  NDEPTH '', 3I10)')     &
      &           NDEPTH, NDEPTH, NDEPTH
@@ -384,7 +213,5 @@
      &             '' RERUN PREPROC WITH THE DIMENSION'',               &
      &             '' GIVEN AS -USED-'')')
 
-      DEALLOCATE(LST)
-      DEALLOCATE(GRID)
 
       END SUBROUTINE CHECK

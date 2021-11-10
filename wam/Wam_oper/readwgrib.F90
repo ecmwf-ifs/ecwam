@@ -1,6 +1,7 @@
 !-----------------------------------------------------------------------
 
-      SUBROUTINE READWGRIB(IU06, FILNM, IPARAM, CDATE, MIJS, MIJL,      &
+      SUBROUTINE READWGRIB(IU06, FILNM, IPARAM, CDATE, IJS, IJL,      &
+     &                     IFROMIJ, JFROMIJ,                          &
      &                     FIELD, KZLEV, LLONLYPOS, IREAD )
 
 !-----------------------------------------------------------------------
@@ -17,7 +18,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *READWGRIB*(IU06, FILNM, IPARAM, CDATE, MIJS, MIJL,
+!       *CALL* *READWGRIB*(IU06, FILNM, IPARAM, CDATE, IJS, IJL,
 !    &                     FIELD, KZLEV, LLONLYPOS, IREAD )
 
 !*     VARIABLE.   TYPE.     PURPOSE.
@@ -26,8 +27,10 @@
 !      *FILNM*     DATA INPUT FILENAME.
 !      *IPARAM*    INTEGER   PARAMETER IDENTIFIER OF FIELD
 !      *CDATE*     CHARACTER DATE OF THE REQUESTED FIELD 
-!      *MIJS*      INDEX OF FIRST GRIDPOINT
-!      *MIJL*      INDEX OF LAST GRIDPOINT
+!      *IJS*       INDEX OF FIRST GRIDPOINT
+!      *IJL*       INDEX OF LAST GRIDPOINT
+!      *IFROMIJ*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!      *JFROMIJ*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !      *FIELD*     REAL      WAVE FIELD IN BLOCK FORMAT 
 !      *KZLEV*     INTEGER   REFERENCE LEVEL IN full METER
 !                           (SHOULD BE 0 EXCEPT FOR 233, 245 AND 249 WHERE IT
@@ -67,13 +70,12 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWGRID  , ONLY : NLONRGG
-      USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NIBLO
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : NPROMA_WAM 
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !-----------------------------------------------------------------------
 
@@ -81,16 +83,16 @@
 #include "abort1.intfb.h"
 #include "inwgrib.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, IREAD, IPARAM
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
-      INTEGER(KIND=JWIM), INTENT(INOUT) :: KZLEV
-
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(INOUT) :: FIELD 
-
-      CHARACTER(LEN=14), INTENT(IN) :: CDATE
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU06
       CHARACTER(LEN=24), INTENT(IN) :: FILNM
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: IPARAM
+      CHARACTER(LEN=14), INTENT(IN) :: CDATE
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: FIELD 
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: KZLEV
       LOGICAL, INTENT(IN) :: LLONLYPOS
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
 
 
       INTEGER(KIND=JWIM) :: KPARAM
@@ -102,8 +104,7 @@
       REAL(KIND=JWRB) :: WORK(NGX,NGY)
 
       CHARACTER(LEN=14) :: CCDDATE
-      CHARACTER(LEN=40) MSG
-
+      CHARACTER(LEN=40) :: MSG
 
 !-----------------------------------------------------------------------
 
@@ -112,12 +113,12 @@
 
       IF (LHOOK) CALL DR_HOOK('READWGRIB',0,ZHOOK_HANDLE)
 
-      CALL INWGRIB  (FILNM, IREAD, CCDDATE, KPARAM, KZLEV, WORK)
+      CALL INWGRIB(FILNM, IREAD, CCDDATE, KPARAM, KZLEV, WORK)
 
 !*    SIMPLE CHECKS ON THE RETRIEVED DATA 
 !     -----------------------------------
 
-      IF (KPARAM.NE.IPARAM) THEN
+      IF (KPARAM /= IPARAM) THEN
         WRITE(IU06,*)'********************************'
         WRITE(IU06,*)'*                              *'
         WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB *'
@@ -130,7 +131,7 @@
         WRITE(IU06,*)'********************************'
         CALL ABORT1
       ENDIF
-      IF (CCDDATE.NE.CDATE) THEN
+      IF (CCDDATE /= CDATE) THEN
         WRITE(IU06,*)'**********************************'
         WRITE(IU06,*)'*                                *'
         WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB   *'
@@ -151,16 +152,16 @@
 
           NPROMA=NPROMA_WAM
 
-          IF(LLONLYPOS) THEN
+          IF (LLONLYPOS) THEN
             CALL GSTATS(1444,0)
 !$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
-            DO JKGLO=MIJS,MIJL,NPROMA
+            DO JKGLO=IJS,IJL,NPROMA
               KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,MIJL)
+              KIJL=MIN(KIJS+NPROMA-1,IJL)
               DO IJ = KIJS, KIJL
-                IX = IFROMIJ(IJ,1)
-                JY = JFROMIJ(IJ,1)
-                IF(WORK(IX,JY).NE.ZMISS .AND. WORK(IX,JY).GT.0.0_JWRB) FIELD(IJ)=WORK(IX,JY)
+                IX = IFROMIJ(IJ)
+                JY = JFROMIJ(IJ)
+                IF (WORK(IX,JY) /= ZMISS .AND. WORK(IX,JY) > 0.0_JWRB) FIELD(IJ)=WORK(IX,JY)
               ENDDO
             ENDDO
 !$OMP       END PARALLEL DO
@@ -169,13 +170,13 @@
           ELSE
             CALL GSTATS(1444,0)
 !$OMP       PARALLEL DO SCHEDULE(STATIC)  PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
-            DO JKGLO=MIJS,MIJL,NPROMA
+            DO JKGLO=IJS,IJL,NPROMA
               KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,MIJL)
+              KIJL=MIN(KIJS+NPROMA-1,IJL)
               DO IJ = KIJS, KIJL
-                IX = IFROMIJ(IJ,1)
-                JY = JFROMIJ(IJ,1)
-                IF(WORK(IX,JY).NE.ZMISS) FIELD(IJ)=WORK(IX,JY)
+                IX = IFROMIJ(IJ)
+                JY = JFROMIJ(IJ)
+                IF (WORK(IX,JY) /= ZMISS) FIELD(IJ)=WORK(IX,JY)
               ENDDO
             ENDDO
 !$OMP       END PARALLEL DO

@@ -8,32 +8,24 @@
 
       REAL(KIND=JWRB)              :: DELPHI 
       REAL(KIND=JWRB), ALLOCATABLE :: DELLAM(:) 
-      REAL(KIND=JWRB), ALLOCATABLE :: DELLAM1(:,:) 
       REAL(KIND=JWRB), ALLOCATABLE :: SINPH(:) 
       REAL(KIND=JWRB), ALLOCATABLE :: COSPH(:) 
-      REAL(KIND=JWRB), ALLOCATABLE :: COSPHM1(:,:) 
-      REAL(KIND=JWRB), ALLOCATABLE :: CDR(:,:,:) 
-      REAL(KIND=JWRB), ALLOCATABLE :: SDR(:,:,:) 
-      REAL(KIND=JWRB), ALLOCATABLE :: PRQRT(:,:)
+      REAL(KIND=JWRB), ALLOCATABLE :: CDR(:,:) 
+      REAL(KIND=JWRB), ALLOCATABLE :: SDR(:,:) 
+      REAL(KIND=JWRB), ALLOCATABLE :: PRQRT(:)
 
       INTEGER(KIND=JWIM), ALLOCATABLE :: NLONRGG(:) 
-      INTEGER(KIND=JWIM)              :: IGL 
-      INTEGER(KIND=JWIM)              :: IJSLOC, IJLLOC, IJGLOBAL_OFFSET
-      INTEGER(KIND=JWIM), ALLOCATABLE :: IJS(:) 
-      INTEGER(KIND=JWIM), ALLOCATABLE :: IJL2(:) 
-      INTEGER(KIND=JWIM), ALLOCATABLE :: IJLS(:) 
-      INTEGER(KIND=JWIM), ALLOCATABLE :: IJL(:) 
-      INTEGER(KIND=JWIM), ALLOCATABLE :: IJLT(:) 
+      INTEGER(KIND=JWIM) :: IJSLOC, IJLLOC, IJGLOBAL_OFFSET
+      INTEGER(KIND=JWIM) :: IJS
+      INTEGER(KIND=JWIM) :: IJL
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *DELPHI*    REAL      GRID INCREMENT FOR LATITUDE (METRES).
 !      *DELLAM*    REAL      GRID INCREMENT FOR LONGITUDE AT EQUATOR
 !                            IN METRES.
-!      *DELLAM1*   REAL      1./DELLAM AT BLOCK POINTS (IJ's).
 !      *SINPH*     REAL      SIN OF LATITUDE.
 !      *COSPH*     REAL      COS OF LATITUDE.
-!      *COSPHM1*   REAL      1./COSPH AT BLOCK POINTS (IJ's).
 !      *CDR*       REAL      ADVECTION VELOCITY IN SE-NW DIRECTION WHEN
 !                            GRID ROTATED BY 45 DEGREES.
 !      *SDR*       REAL      ADVECTION VELOCITY IN SW-NE DIRECTION WHEN
@@ -42,17 +34,18 @@
 !                            USED FOR THE PROPAGATION (see PROPAGS1).
 !                            IT IS 50% EXCEPT IF FOR STABILITY REASON
 !                            IT HAS TO BE DECREASED ABOVE ~75 DEGREE
-!      *IGL*       INTEGER   NO OF BLOCKS.
+
+!      *IJS*       INTEGER   INDEX OF FIRST POINT ON A GIVEN PROCESSOR
+!      *IJL*       INTEGER   INDEX OF LAST POINT ON A GIVEN PROCESSOR
+
+!!!!!! for the unstructured part of the code, it was coded so that hallo points
+!!!!!! are included as part of the points on a given processor (at the end of the vector of points).
+!!!!!! For output, it was necessary to introduce IJSLOC and IJLLOC to point to the points that are purely local
 !      *IJSLOC*    INTEGER   INDEX OF FIRST LOCAL POINT
 !      *IJLLOC*    INTEGER   INDEX OF LAST LOCAL POINT
-!      *IJGLOBAL_OFFSET INTEGER OFFSET TO PLACE FIRST LOCAL POINT IN
-!                            GLOBAL ARRAY
-!      *IJS*       INTEGER   INDEX OF FIRST POINT OF SECOND LAT.
-!      *IJS*       INTEGER   INDEX OF FIRST POINT OF SECOND LAT.
-!      *IJL2*      INTEGER   INDEX OF LAST POINT OF SECOND LAT.
-!      *IJLS*      INTEGER   INDEX OF FIRST POINT OF LAT BEFORE LAST.
-!      *IJL*       INTEGER   INDEX OF LAST POINT OF LAT BEFORE LAST.
-!      *IJLT*      INTEGER   TOTAL NUMBER OF GRIDPOINTS IN A BLOCK.
+!      *IJGLOBAL_OFFSET INTEGER OFFSET TO PLACE FIRST LOCAL POINT IN GLOBAL ARRAY
+
+!!!!! if not unstructured then IJSLOC = IJS and IJLLOC = IJL
 
 ! ----------------------------------------------------------------------
       END MODULE YOWGRID

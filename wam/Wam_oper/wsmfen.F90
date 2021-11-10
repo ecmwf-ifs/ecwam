@@ -44,15 +44,15 @@
      &            WETAIL   ,WP1TAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,EPSMIN
-      USE YOWSTAT  , ONLY : ISHALLO
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
       REAL(KIND=JWRB), INTENT(IN) :: USTT, DPT
-      REAL(KIND=JWRB), INTENT(IN) :: FSEA(NANG,NFRE)
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN) :: FSEA
       REAL(KIND=JWRB), INTENT(OUT) :: EW, FM
 
       INTEGER(KIND=JWIM) :: M, K
@@ -118,20 +118,16 @@
       XTEMP = FM*USTT/G
 
       ESTAR=EN(FM*USTT/G)
-      IF (ISHALLO.NE.1) THEN
-         DSTAR = DPT*G/USTT**2
-         ESTAR = MIN(EMAX(DSTAR),ESTAR)
-      ENDIF
+      DSTAR = DPT*G/USTT**2
+      ESTAR = MIN(EMAX(DSTAR),ESTAR)
       SPINTDI = USTT**4/G**2 * ESTAR
 
 !*    2.2 MEAN FREQUENCY IS DERIVED FROM THE UNDERESTIMATED ENERGY.     
 !         ---------------------------------------------------------     
 
       ESTAR=EW*G**2/USTT**4
-      IF (ISHALLO.NE.1) THEN
-         DSTAR = DPT*G/USTT**2
-         ESTAR = MIN(EMAX(DSTAR),ESTAR)
-      ENDIF
+      DSTAR = DPT*G/USTT**2
+      ESTAR = MIN(EMAX(DSTAR),ESTAR)
 
       FREQDI = G/USTT * YNU(ESTAR)
 

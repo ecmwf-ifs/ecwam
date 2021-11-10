@@ -1,9 +1,9 @@
-      SUBROUTINE MPGATHERERSFILE(IRECV, ITAG, NSTART, NEND, NSPFLD,     &
-     &                           NSCFLD,                                &
-     &                           IJS, IJL, FL1, FLPTS,                  &
-     &                           EM, FM, THQ,                           &
-     &                           U10, THW, US,                          &
-     &                           EMPTS, FMPTS, THQPTS,                  &
+      SUBROUTINE MPGATHERERSFILE(IRECV, ITAG, NSTART, NEND, NSPFLD,    &
+     &                           NSCFLD,                               &
+     &                           IJS, IJL, FL1, FLPTS,                 &
+     &                           EM, FM, THQ,                          &
+     &                           U10, THW, US,                         &
+     &                           EMPTS, FMPTS, THQPTS,                 &
      &                           U10PTS, THWPTS, USPTS)
 
 !****  *MPGATHERERSFILE* - GATHERS SPECTRUM AND SCALAR FIELDS ONTO 
@@ -80,6 +80,7 @@
       USE YOWCOER  , ONLY : IERS     ,IJERS
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
+
       USE MPL_MODULE
 !----------------------------------------------------------------------
 
@@ -88,15 +89,16 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IRECV, NSPFLD, NSCFLD
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) ::  ITAG
-      INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NSTART,NEND
+      INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NSTART, NEND
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) ::  FL1
       REAL(KIND=JWRB), DIMENSION(NSPFLD,IERS,NANG,NFRE), INTENT(OUT) :: FLPTS
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10,THW,US
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10, THW, US
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: EM, FM, THQ
       REAL(KIND=JWRB), DIMENSION(IERS), INTENT(OUT) :: EMPTS, FMPTS
       REAL(KIND=JWRB), DIMENSION(IERS), INTENT(OUT) :: THQPTS, U10PTS, THWPTS, USPTS
+
 
       INTEGER(KIND=JWIM) :: NGOU, IJ, M, K, KCOUNT, IP
       INTEGER(KIND=JWIM) :: MAXLENGTH
@@ -111,7 +113,7 @@
 
 !     1.0 DEFAULT ACTION IF NO FIELD GATHERING 
 !         ------------------------------------
-      IF (IRECV.EQ.0 .OR. NPROC.EQ.1) THEN
+      IF (IRECV == 0 .OR. NPROC == 1) THEN
         DO NGOU=1,IERS
           IJ=IJERS(NGOU)
           EMPTS(NGOU) = EM(IJ)
@@ -127,7 +129,7 @@
           ENDDO
         ENDDO
 
-      ELSEIF (IRANK.NE.IRECV) THEN
+      ELSEIF (IRANK /= IRECV) THEN
 !     1.1 SEND TO THE PROCESS THAT GATHERS THE WHOLE FIELD
 !         ------------------------------------------------
 
@@ -136,7 +138,7 @@
         DO NGOU=1,IERS
 
           IJ=IJERS(NGOU)
-          IF (IJ.GE.IJS .AND. IJ.LE.IJL) THEN
+          IF (IJ >= IJS .AND. IJ <= IJL) THEN
             KCOUNT=KCOUNT+1
             ZCOMBUF(KCOUNT)=EM(IJ)
             KCOUNT=KCOUNT+1
@@ -170,7 +172,7 @@
         DO IP=1,NPROC-1
           CALL MPL_RECV(ZCOMBUF(1:MAXLENGTH),KTAG=ITAG,KOUNT=KRCOUNT,   &
      &         KFROM=KRFROM,KRECVTAG=KRTAG,CDSTRING='MPGATHERERSFILE:')
-          IF (KRTAG.NE.ITAG) CALL MPL_ABORT                             &
+          IF (KRTAG /= ITAG) CALL MPL_ABORT                             &
      &         ('MPL_RECV ERROR in MPGATHERERSFILE:  MISMATCHED TAGS' )
 
 !  DECODE BUFFER
@@ -178,7 +180,7 @@
 
           DO NGOU=1,IERS
             IJ=IJERS(NGOU)
-            IF (IJ.GE.NSTART(KRFROM) .AND. IJ.LE.NEND(KRFROM)) THEN
+            IF (IJ >= NSTART(KRFROM) .AND. IJ <= NEND(KRFROM)) THEN
               KCOUNT=KCOUNT+1
               EMPTS(NGOU)=ZCOMBUF(KCOUNT)
               KCOUNT=KCOUNT+1
@@ -202,7 +204,7 @@
             ENDIF
           ENDDO
 
-          IF (KRCOUNT.NE.KCOUNT) THEN
+          IF (KRCOUNT /= KCOUNT) THEN
             WRITE(*,*) ' PE: ', IRANK, ' KRCOUNT: ', KRCOUNT,           &
      &          ' KCOUNT: ', KCOUNT, ' IERS: ', IERS, ' KRFROM: ',      &
      &          KRFROM, ' NSTART(KRFROM): ', NSTART(KRFROM),            &
@@ -217,7 +219,7 @@
 
         DO NGOU=1,IERS
           IJ=IJERS(NGOU)
-          IF (IJ.GE.IJS .AND. IJ.LE.IJL)THEN
+          IF (IJ >= IJS .AND. IJ <= IJL)THEN
             EMPTS(NGOU) = EM(IJ)
             FMPTS(NGOU) = FM(IJ)
             THQPTS(NGOU) = THQ(IJ)

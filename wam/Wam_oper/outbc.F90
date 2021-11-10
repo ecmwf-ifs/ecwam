@@ -1,4 +1,4 @@
-      SUBROUTINE OUTBC (FL1, IJS, IJL, IG, IU19)
+      SUBROUTINE OUTBC (FL1, IJS, IJL, IU19)
 
 ! ----------------------------------------------------------------------
 
@@ -15,11 +15,10 @@
 !**   INTERFACE.
 !     ----------
 
-!    *CALL* *OUTBC (FL1, IJS, IJL, IG, IU19)*
+!    *CALL* *OUTBC (FL1, IJS, IJL, IU19)*
 !      *FL1*     - BLOCK OF SPECTRA.
 !      *IJS*     - INDEX OF FIRST GRIDPOINT.
 !      *IJL*     - INDEX OF LAST GRIDPOINT.
-!      *IG*      - BLOCK NUMBER.
 !      *IU19*    - OUTPUT UNIT OF BOUNDARY VALUES.
 
 
@@ -46,15 +45,12 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LL1D
-      USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,IGARC    ,GBOUNC   ,    &
-     &            IPOGBO
+      USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,GBOUNC   ,IPOGBO
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,    &
+      USE YOWMAP   , ONLY : BLK2GLO  ,AMOWEP   ,AMOSOP   ,    &
      &            XDELLA   ,ZDELLO
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWMPP   , ONLY : NINF     ,NSUP     , NPROC  , IRANK
+      USE YOWMPP   , ONLY : NPROC  , IRANK
       USE YOWSTAT  , ONLY : CDTPRO   ,NPROMA_WAM
-      USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWSPEC  , ONLY : IJ2NEWIJ
 
 ! ----------------------------------------------------------------------
@@ -63,10 +59,10 @@
 #include "mpgatherbc.intfb.h"
 #include "sthq.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IG 
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM),DIMENSION(GBOUNC), INTENT(IN) :: IU19
 
-      REAL(KIND=JWRB), INTENT(IN) :: FL1(NINF-1:NSUP,NANG,NFRE)
+      REAL(KIND=JWRB), INTENT(IN) :: FL1(IJS:IJL, NANG, NFRE)
 
       INTEGER(KIND=JWIM), PARAMETER :: NSCFLD=3
 
@@ -93,37 +89,30 @@
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJL)
 
-        CALL FEMEAN (FL1(KIJS:KIJL,:,:), KIJS, KIJL, EM(KIJS),          &
-     &               FM(KIJS))
-        CALL STHQ (FL1(KIJS:KIJL,:,:), KIJS, KIJL, TQ(KIJS))
+        CALL FEMEAN (KIJS, KIJL, FL1(KIJS:KIJL,:,:), EM(KIJS), FM(KIJS) )
+        CALL STHQ (KIJS, KIJL, FL1(KIJS:KIJL,:,:), TQ(KIJS))
       ENDDO
 !$OMP END PARALLEL DO
 
-      IF (ITEST.GE.3) THEN
-        WRITE(IU06,*) '      SUB. OUTBC: INTEGRATED',                   &
-     &   ' PARAMETERS COMPUTED FOR BOUNDARY POINTS OUTPUT'
-        CALL FLUSH(IU06)
-      ENDIF
-
       IRECV=1
       CALL MPGATHERBC(IRECV, IJS, IJL, NSCFLD,                          &
-     &                FL1(IJS:IJL,:,:), EM, TQ, FM,                     &
+     &                FL1, EM, TQ, FM,                                  &
      &                FLPTS, EMPTS, TQPTS, FMPTS)
 
 
 !*    2. WRITE INFORMATION TO FILE(s) IU19.
 !        ----------------------------------
 
-      IF(IRANK.EQ.IRECV) THEN
+      IF (IRANK == IRECV) THEN
         DO II=1,GBOUNC
           DO NGOU=IPOGBO(II-1)+1,IPOGBO(II)
-            IF(LL1D .OR. NPROC.EQ.1) THEN
+            IF (LL1D .OR. NPROC == 1) THEN
               IJ = IJARC(NGOU)
             ELSE
               IJ = IJ2NEWIJ(IJARC(NGOU))
             ENDIF
-            IX = IXLG(IJ,IG)
-            KX = KXLT(IJ,IG)
+            IX = BLK2GLO(IJ)%IXLG 
+            KX = BLK2GLO(IJ)%KXLT 
             XLON = AMOWEP + REAL(IX-1)*ZDELLO(KX)
             XLAT = AMOSOP + REAL(KX-1)*XDELLA
 
