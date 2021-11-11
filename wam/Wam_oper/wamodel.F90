@@ -203,7 +203,6 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 
         CDTPRA = CDTPRO
         CALL INCDATE(CDTPRO,IDELPRO)
-write(*,*) 'debile begin advection ',CDTPRA,CDTPRO
 
 !       UPDATE OUTPUT TIMES.
         IF (NOUTT > 0) THEN
@@ -251,8 +250,6 @@ write(*,*) 'debile begin advection ',CDTPRA,CDTPRO
         CDATEWH = CDATEWO
         ILOOP = 1
         DO WHILE ( ILOOP == 1 .OR. CDTIMPNEXT <= CDTPRO)
-write(*,*) 'debile before wamintgr ',CDTIMPNEXT,CDTPRO
-
           CALL WAMINTGR (IJS, IJL, BLK2GLO,                          &
  &                       CDTPRA, CDATE, CDATEWH, CDTIMP, CDTIMPNEXT, &
  &                       WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,   &
