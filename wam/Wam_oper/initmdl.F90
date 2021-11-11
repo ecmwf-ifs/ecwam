@@ -210,7 +210,6 @@ SUBROUTINE INITMDL (NADV,                                 &
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "wam_nproma.intfb.h"
 #include "abort1.intfb.h"
 #include "cigetdeac.intfb.h"
 #include "cireduce.intfb.h"
@@ -257,7 +256,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       INTEGER(KIND=JWIM) :: JD
       INTEGER(KIND=JWIM) :: IDELWH
       INTEGER(KIND=JWIM) :: IU05, IU09, IU10
-      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL
       INTEGER(KIND=JWIM) :: MTHREADS
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
@@ -295,13 +294,6 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
 
       CALL INIWCST(PRPLRADI)
-
-!     ADJUST NPROMA_WAM
-      MTHREADS=1
-!$    MTHREADS=OMP_GET_MAX_THREADS()
-      NPROMA=NPROMA_WAM
-      CALL WAM_NPROMA(IJS, IJL, MTHREADS, NPROMA)
-      NPROMA_WAM=NPROMA
 
 !*    1. DEFINITION OF MODEL PARAMETERS.
 !        -------------------------------
@@ -581,6 +573,9 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       WRITE(IU06,3003) ' TOTAL NUMBER OF DIRECTIONS .............: ', NANG 
       WRITE(IU06,3003) ' TOTAL NUMBER OF FREQUENCIES I/O & PROPAG: ', NFRE_RED
       WRITE(IU06,3003) ' TOTAL NUMBER OF FREQUENCIES FOR  PHYSICS: ', NFRE
+
+      MTHREADS=1
+!$    MTHREADS=OMP_GET_MAX_THREADS()
 
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' PARALLEL ORGANISATION : '
