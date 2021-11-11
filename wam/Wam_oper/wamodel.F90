@@ -118,7 +118,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, J, IRA, KADV, ICH
-      INTEGER(KIND=JWIM) :: IFIL, IC, ICL, ICR, II
+      INTEGER(KIND=JWIM) :: IFIL, IC, ICL, ICR, II, ILOOP
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER(KIND=JWIM) :: JSTPNEMO, IDATE, ITIME
       INTEGER(KIND=JWIM) :: IU04
@@ -246,17 +246,18 @@ write(*,*) 'debile begin advection ',CDTPRA,CDTPRO
 !*           INTEGRATION OF SOURCE TERMS OVER SUB TIME STEPS BETWEEN
 !*           PROPAGATION TIME STEPS.
 !            -------------------------------------------------------
-!        SET TIME COUNTER.
-         CDATE   = CDTPRA
-         CDATEWH = CDATEWO
-
-        DO WHILE (CDTIMPNEXT <= CDTPRO)
+!       SET TIME COUNTER.
+        CDATE   = CDTPRA
+        CDATEWH = CDATEWO
+        ILOOP = 1
+        DO WHILE ( ILOOP == 1 .OR. CDTIMPNEXT <= CDTPRO)
 write(*,*) 'debile before wamintgr ',CDTIMPNEXT,CDTPRO
 
           CALL WAMINTGR (IJS, IJL, BLK2GLO,                          &
  &                       CDTPRA, CDATE, CDATEWH, CDTIMP, CDTIMPNEXT, &
  &                       WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,   &
  &                       WAM2NEMO, MIJ, FL1, XLLWS)
+          ILOOP = ILOOP +1
         ENDDO
 
 
