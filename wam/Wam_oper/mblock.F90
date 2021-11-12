@@ -42,8 +42,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
-      USE YOWGRID  , ONLY : NLONRGG  ,IJS      ,IJL
-      USE YOWMAP   , ONLY : BLK2GLO  ,NY       ,AMOSOP   ,XDELLA
+      USE YOWGRID  , ONLY : IJS      ,IJL
+      USE YOWMAP   , ONLY : BLK2GLO  ,NY       ,AMOSOP   ,XDELLA, NLONRGG
       USE YOWSHAL  , ONLY : DEPTH_INPUT
       USE YOWTEST  , ONLY : IU06
 
@@ -78,14 +78,14 @@
 !*       ALL OTHER BLOCKS MORE  THAN 3 LATITUDES.
 !        -------------------------------------------------
 
-      IF (KA.EQ.1 .AND. KE.EQ.1 .AND. NY.EQ.1) THEN
+      IF (KA == 1 .AND. KE == 1 .AND. NY == 1) THEN
         WRITE (IU06,*) '**********************************************'
         WRITE (IU06,*) '*                                            *'
         WRITE (IU06,*) '* ALLOWS FOR THE 1 GRID POINT MODEL          *'
         WRITE (IU06,*) '*                                            *'
         WRITE (IU06,*) '**********************************************'
-      ELSEIF ((KE.EQ.1) .OR. (KA.EQ.NY) .OR.                            &
-     &    ((KA.NE.1) .AND. (KE.EQ.NY) .AND. (KE-KA.LT.2))) THEN
+      ELSEIF ((KE == 1) .OR. (KA == NY) .OR.                            &
+     &    ((KA /= 1) .AND. (KE == NY) .AND. (KE-KA < 2))) THEN
         WRITE (IU06,*) '**********************************************'
         WRITE (IU06,*) '*                                            *'
         WRITE (IU06,*) '*        FATAL ERROR IN SUB. MBLOCK          *'
@@ -120,7 +120,7 @@
       IP = 0
       DO K=KA,KE
         DO I=1,NLONRGG(K)
-          IF (BATHY(I,K).GT.-990.0_JWRB) THEN
+          IF (BATHY(I,K) > -990.0_JWRB) THEN
             IP = IP+1
             DEPTH_INPUT(IP) = BATHY(I,K)
             BLK2GLO(IP)%IXLG = I

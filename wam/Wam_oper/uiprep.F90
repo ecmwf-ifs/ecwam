@@ -55,11 +55,10 @@
       USE YOWCOUT  , ONLY : NGOUT
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,FRATIO
-      USE YOWGRID  , ONLY : NLONRGG
 
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,              &
-     &            XDELLA   ,XDELLO   ,LLOBSTRCT,LAQUA
+     &            XDELLA   ,XDELLO   ,NLONRGG  ,LLOBSTRCT,LAQUA
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD 
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWUNPOOL, ONLY : LLUNSTR, LPREPROC, LVECTOR, IVECTOR

@@ -35,10 +35,10 @@
       USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,GFLAG    ,GFLAG20  ,    &
      &                      JPPFLAG  ,LFDB     ,IPFGTBL  ,ITOBOUT  ,    &
      &                      INFOBOUT , LOUTINT  ,NIPRMOUT
-      USE YOWGRID  , ONLY : NLONRGG  ,DELPHI
+      USE YOWGRID  , ONLY : DELPHI
       USE YOWINTP  , ONLY : GOUT
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
-     &                      AMONOP   ,ZDELLO
+     &                      AMONOP   ,ZDELLO   ,NLONRGG
       USE YOWMPP   , ONLY : IRANK
       USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTINTT  ,MARSTYPE

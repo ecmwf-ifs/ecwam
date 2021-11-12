@@ -44,7 +44,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
-     &            NLONRGG  ,IJS      ,IJL
+     &            IJS      ,IJL
       USE YOWINDN  , ONLY : KFRH     ,IKP      ,IKP1     ,IKM      ,    &
      &            IKM1     ,K1W      ,K2W      ,K11W     ,K21W     ,    &
      &            AF11     ,FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,    &
@@ -52,7 +52,8 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
      &            DAL2     ,FRH      ,MFRSTLW  ,MLSTHG
       USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,              &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IQGAUSS
+     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG  ,    &
+     &            IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
      &            NGX      ,NGY      ,                                  &

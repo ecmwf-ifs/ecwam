@@ -50,9 +50,10 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWGRID  , ONLY : NLONRGG  ,IJS      ,IJL
+      USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMAP   , ONLY : BLK2GLO  ,KXLTMIN  ,KXLTMAX   ,IPER    ,   &
-     &            AMOWEP   ,AMOSOP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
+     &            AMOWEP   ,AMOSOP   ,AMONOP   ,XDELLA   ,XDELLO   ,   &
+     &            ZDELLO   ,NLONRGG
       USE YOWPARAM , ONLY : NGY
 
 ! ----------------------------------------------------------------------

@@ -73,7 +73,7 @@ PROGRAM preset
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,    &
      &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
-      USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJS      , IJL,         &
+      USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL,                   &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
       USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,    &
      &            SB       ,THETAQ
@@ -81,7 +81,7 @@ PROGRAM preset
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,    &
      &            BLK2LOC 
       USE YOWNEMOFLDS , ONLY : NEMO2WAM
-      USE YOWMESPAS, ONLY : LMESSPASS,LFDBIOOUT,LGRIBOUT
+      USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG     ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
@@ -222,8 +222,6 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       LLUNSTR  =.FALSE.
       LPREPROC =.FALSE.
-
-      LMESSPASS = .FALSE.
 
       LGRIBOUT = .TRUE.
 

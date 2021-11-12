@@ -65,12 +65,11 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWGRID  , ONLY : NLONRGG
       USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,    &
      &            XOUTN    ,NOUTD
       USE YOWMAP   , ONLY : NX       ,NY       ,AMOWEP   ,AMOSOP   ,    &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
-     &            LLOBSTRCT
+     &            NLONRGG  ,LLOBSTRCT
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,BATHYMAX 
       USE YOWTEST  , ONLY : IU06, ITEST

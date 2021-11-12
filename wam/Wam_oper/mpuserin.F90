@@ -12,8 +12,6 @@
 
 !*    PURPOSE.
 !     --------
-!     READ LMESSPASS AND LFDB FROM USER INPUT SKIPPING ALL THE OTHER
-!     INPUT PARAMETER WHICH WILL BE READ IN WITH USERIN.
 
 !**   INTERFACE.
 !     ----------
@@ -72,8 +70,7 @@
       USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI, LCIWABR  ,  &
      &            LICETH
-      USE YOWMESPAS, ONLY : LMESSPASS,                                  &
-     &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
+      USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
@@ -164,7 +161,7 @@
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
      &   IMDLGRBID_G, IMDLGRBID_M,                                      &
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
-     &   LMESSPASS, LWCOU, LNOCDIN, LODBRALT,                           &
+     &   LWCOU, LNOCDIN, LODBRALT,                                      &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
      &   IBUFRSAT, CSATNAME,                                            &
      &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,                   &
@@ -388,7 +385,6 @@
 !              or MONTHLY FORECAST RUNS
 !     NMETNB : METHOD NUMBER TO BE USED FOR GRIBBING OF SEASONAL DATA.
 !              or MONTHLY FORECAST RUNS
-!     LMESSPASS: TRUE FOR MESSAGE PASSING ARCHITECHTURE.
 !     LWCOU: FALSE FOR UNCOUPLED RUN (see WVWAMINIT1 if coupled to IFS).
 !     NEMO COUPLING FLAGS:
 !     LWNEMOCOU: FALSE FOR NO COUPLING TO NEMO RUN.
@@ -615,7 +611,6 @@
       NTOTENS   = 0
       NSYSNB    = -1
       NMETNB    = -1
-      LMESSPASS = .TRUE.
 
       NOUTT     = 0
 
@@ -925,7 +920,6 @@
       IF (IRANK.EQ.1) THEN
         WRITE(6,*) '==============================================='
         WRITE(6,*) '*** MPUSERIN has read the following settings'
-        WRITE(6,*) '*** LMESSPASS = ',LMESSPASS
         WRITE(6,*) '*** LFDB = ',LFDB
         WRITE(6,*) '*** LRSTPARALW = ',LRSTPARALW
         WRITE(6,*) '*** LRSTPARALR = ',LRSTPARALR

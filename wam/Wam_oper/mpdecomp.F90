@@ -43,8 +43,6 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK)
 !      *NPR*       NUMBER OF SUBDOMAINS (USUALLY THE NUMBER OF PE'S )
 !      *MAXLEN*    MAXIMUM NUMBER OF POINTS IN ANY SUB DOMAIN
 !      *LLIRANK*   IF TRUE THEN SOME OF THE ARRAYS THAT ARE ONLY USED
-!                  IF LMESSPASS IS TRUE ARE GENERATED EVEN IF IT IS NOT
-!                  A MESSAGE PASSING RUN (USED WITH WRITE_MPDECOMP). 
 
 !     METHOD.
 !     -------
@@ -111,7 +109,7 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK)
       USE YOWGRID  , ONLY : IJS      ,IJL      ,NPROMA_WAM, NBLOC,      &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,                  &
      &            DELLAM   ,COSPH    ,DELPHI   ,                        &
-     &            CDR      ,SDR      ,PRQRT    ,NLONRGG
+     &            CDR      ,SDR      ,PRQRT
       USE YOWMAP   , ONLY : BLK2GLO  ,BLK2LOC  ,KXLTMIN  ,KXLTMAX  ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,LLBOUND  ,    &

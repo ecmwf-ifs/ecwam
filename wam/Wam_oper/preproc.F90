@@ -128,15 +128,13 @@
       USE YOWPARAM , ONLY : NIBLO    ,NIBLD    ,NIBLC    ,              &
      &            NANG     ,NFRE     ,NFRE_RED
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
-      USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            TH       ,COSTH    ,SINTH
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
-     &            NLONRGG
+      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
-     &            XDELLO   ,ZDELLO   ,LAQUA
+     &            XDELLO   ,ZDELLO   ,NLONRGG  ,LAQUA
       USE YOWSHAL  , ONLY : BATHYMAX
       USE YOWTEST  , ONLY : IU06
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
@@ -181,7 +179,6 @@
 
 ! ----------------------------------------------------------------------
 
-      LMESSPASS=.FALSE.
       PRPLRADI=1.0_JWRB
 
       CALL INIWCST(PRPLRADI)

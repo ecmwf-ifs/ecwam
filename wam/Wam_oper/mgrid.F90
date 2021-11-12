@@ -39,9 +39,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,              &
-     &            NOVER    ,NIBL1
-      USE YOWGRID  , ONLY : NLONRGG
-      USE YOWMAP   , ONLY : NY
+     &                      NOVER    ,NIBL1
+      USE YOWMAP   , ONLY : NY       ,NLONRGG
 
 ! ----------------------------------------------------------------------
 
@@ -62,13 +61,13 @@
       DO K=1,NY
         IPP(K) = 0
         DO I=1,NLONRGG(K)
-          IF (BATHY(I,K).GT.-990.0_JWRB) THEN
+          IF (BATHY(I,K) > -990.0_JWRB) THEN
             IPP(K) = IPP(K) + 1
           ENDIF
         ENDDO
       ENDDO
 
-      IF (NIBLO.LE.0) THEN
+      IF (NIBLO <= 0) THEN
         NIBLO=0
         DO K=1,NY
           NIBLO=NIBLO+IPP(K)
@@ -84,7 +83,7 @@
       KA = 1
       DO K = 1,NY
         IL = IL + IPP(K)
-        IF (IL.GT.NIBLO) THEN
+        IF (IL > NIBLO) THEN
           KE = K-1
           CALL MBLOCK (BATHY, KA, KE, IPP)
           KA = KE-1

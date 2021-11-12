@@ -50,9 +50,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,NFRE_RED
-      USE YOWGRID  , ONLY : NLONRGG
-      USE YOWMAP   , ONLY : BLK2GLO  ,NY       ,IPER     ,              &
-     &                      XDELLA   ,ZDELLO   ,IRGG     ,LLOBSTRCT
+      USE YOWMAP   , ONLY : BLK2GLO  ,NY       ,IPER     ,IRGG      ,   &
+     &                      XDELLA   ,ZDELLO   ,NLONRGG  ,LLOBSTRCT
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR     ,              &
      &                      KRLAT    ,KRLON    ,                        &
