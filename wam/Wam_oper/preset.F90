@@ -37,8 +37,6 @@ PROGRAM preset
 !       TO INITIALISE ALL FILES REQUESTED BY THE WAMODEL.
 !**   INTERFACE.
 !     ----------
-!       *IU01*   INTEGER    INPUT  UNIT UNBLOCKED WIND FILE.
-!                           (SEE SUB READWIND).
 !       *IU05*   INTEGER    USER INPUT UNIT.
 !       *IU06*   INTEGER    PRINTER OUTPUT.
 !       *IU07*   INTEGER    INPUT  UNIT PREPROC GRID OUTPUT.
@@ -71,6 +69,7 @@ PROGRAM preset
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,TH
+      USE YOWGRID  , ONLY : NPROMA_WAM, NBLOC
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,    &
      &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
@@ -93,7 +92,7 @@ PROGRAM preset
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,    &
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,    &
      &            IDELPRO  ,IDELWI   ,IDELWO   ,                        &
-     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NPROMA_WAM,   &
+     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,              &
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1      ,    &
      &            NBLKS    ,NBLKE
@@ -234,6 +233,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       NPROMA_WAM = 1
       NPROMA_WAM = HUGE(NPROMA_WAM)/2
+      NBLOC = 1
 
 !*    1. DEFINE UNIT NAMES.
 !        ------------------

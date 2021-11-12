@@ -45,7 +45,7 @@
       USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLO
       USE YOWSHAL  , ONLY : NDEPTH
-      USE YOWTEST  , ONLY : IU06, ITEST
+      USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
 

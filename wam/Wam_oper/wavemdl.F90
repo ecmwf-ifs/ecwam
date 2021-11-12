@@ -106,6 +106,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &         IFSTSTEP, IFSNSTEP,                                      &
      &         LIFS_IO_SERV_ENABLED
       USE YOWGRIBHD, ONLY : DATE_TIME_WINDOW_END
+      USE YOWGRID  , ONLY : NPROMA_WAM, NBLOC 
       USE YOWCURR  , ONLY : IDELCUR  ,LLCHKCFL
       USE YOWFRED  , ONLY : FR
       USE YOWGRID  , ONLY : IJS      ,IJL
@@ -120,7 +121,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWPHYS  , ONLY : RNU      ,RNUM     ,ALPHA
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,    &
-     &            LSMSSIG_WAM,CMETER ,CEVENT   ,NPROMA_WAM,             &
+     &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWSHAL  , ONLY : WVENVI   ,WVPRPT
       USE YOWTEST  , ONLY : IU06

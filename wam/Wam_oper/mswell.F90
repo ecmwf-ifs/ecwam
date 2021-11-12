@@ -112,7 +112,6 @@
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,RAD      ,R       ,ZMISS
-      USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : FIELDG   ,NXFF     ,NYFF
       USE UNWAM    , ONLY : SPHERICAL_COORDINATE_DISTANCE
 
@@ -267,10 +266,5 @@
 
         DEALLOCATE(FIELDG)
         
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '    SUB. MSWELL: SWELL SPECTRA GENERATED'
-          CALL FLUSH (IU06)
-        ENDIF
-
       RETURN
       END SUBROUTINE MSWELL

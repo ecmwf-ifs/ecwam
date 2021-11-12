@@ -108,7 +108,7 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK)
       USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,COSTH    ,SINTH
-      USE YOWGRID  , ONLY : IJS      ,IJL      ,                        &
+      USE YOWGRID  , ONLY : IJS      ,IJL      ,NPROMA_WAM, NBLOC,      &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,                  &
      &            DELLAM   ,COSPH    ,DELPHI   ,                        &
      &            CDR      ,SDR      ,PRQRT    ,NLONRGG
@@ -126,8 +126,7 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK)
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,    &
      &            NFROMPE  ,NFROMPEMAX,NTOPE   ,NTOPEMAX ,NIJSTART ,    &
      &            IJTOPE   ,NGBTOPE  ,NTOPELST ,NGBFROMPE,NFROMPELST,   &
-     &            IJ2NEWIJ ,NBLKS    ,NBLKE,                            &
-     &            NPROMA_WAM
+     &            IJ2NEWIJ ,NBLKS    ,NBLKE
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR      ,             &
      &            KRLAT    ,KRLON    ,                                  &
@@ -162,6 +161,7 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK)
       INTEGER(KIND=JWIM) :: ITAG, IREAD 
       INTEGER(KIND=JWIM) :: NLAND 
       INTEGER(KIND=JWIM) :: NPROMA, MTHREADS
+!$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
       INTEGER(KIND=JWIM) :: NTEMP(1)
       INTEGER(KIND=JWIM) :: NLENHALO_MAX
       INTEGER(KIND=JWIM) :: ICOUNTS(NPR)
@@ -2432,6 +2432,11 @@ MTHREADS=1
 NPROMA=NPROMA_WAM
 CALL WAM_NPROMA(IJS, IJL, MTHREADS, NPROMA)
 NPROMA_WAM=NPROMA
+
+!! NUMBER OF BLOCKS OF MAXIMUM NPROMA POINTS:
+
+NBLOC =  (IJL-IJS) / NPROMA_WAM
+IF( NBLOC*NPROMA_WAM < (IJL-IJS) ) NBLOC = NBLOC + 1
 
 
 ! CREATE IFROMIJ, JFROMIJ

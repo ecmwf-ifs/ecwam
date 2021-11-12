@@ -56,9 +56,10 @@
       USE YOWCOER  , ONLY : NERS     ,CDTERS   ,IDELERS  ,IERS     ,    &
      &            IJERS    ,IGERS
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDATEA   ,MARSTYPE
-      USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOWTEST  , ONLY : IU06
       USE YOWMPP   , ONLY : IRANK
+
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -91,18 +92,12 @@
 
       IF (LLOUTPUT) THEN
 
-        IF(ALLOCATED(IJERS)) DEALLOCATE(IJERS)
-        IF(ALLOCATED(IGERS)) DEALLOCATE(IGERS)
+        IF (ALLOCATED(IJERS)) DEALLOCATE(IJERS)
+        IF (ALLOCATED(IGERS)) DEALLOCATE(IGERS)
 
 !       DO NOT DEAL WITH IU91 AND IU92 IF NOT ON PE 1
-        IF(IRANK.EQ.1) THEN
+        IF (IRANK == 1) THEN
           CLOSE (IU92,STATUS='KEEP')
-          IF(ITEST.GT.0) THEN
-          WRITE (IU06,*) '      SUB. ERSFILE: UNIT ',                   &
-     &     IU92, '  CLOSED    '
-          WRITE (IU06,*) '                                      '
-          CALL FLUSH (IU06)
-          ENDIF
         ENDIF
         IERS = 0
         IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
@@ -120,16 +115,11 @@
         IDELERS = 21600
         CDTERS  = CDATEA
         CLH=CDATEA(9:10)
-        IF (CLH.EQ.'09' .OR. CLH.EQ.'15' .OR.                           &
-     &      CLH.EQ.'21' .OR. CLH.EQ.'03'     ) THEN
+        IF (CLH == '09' .OR. CLH == '15' .OR.                           &
+     &      CLH == '21' .OR. CLH == '03'     ) THEN
           CALL INCDATE (CDTERS, -10800)
         ENDIF
         FRSTIME = .FALSE.
-        IF (ITEST.GE.3) THEN
-          WRITE(IU06,*) ' SUB: ERSFILE (for the first time) '//         &
-     &     ' CDATEA=', CDATEA, ' CDTERS=', CDTERS, ' CDATEF=', CDATEF
-          CALL FLUSH (IU06)
-        ENDIF
       ENDIF                                                             
 
       DO WHILE (CDTERS.LT.CDTPRO)
@@ -142,42 +132,33 @@
 !        --------------------                                           
 
 !     DO NOT DEAL WITH IU91 AND IU92 IF NOT ON PE 1
-      IF(IRANK.NE.1) THEN
+      IF (IRANK /= 1) THEN
         IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
         RETURN
       ENDIF
 
-      IF(.NOT.ALLOCATED(IJERS)) ALLOCATE(IJERS(NERS))
-      IF(.NOT.ALLOCATED(IGERS)) ALLOCATE(IGERS(NERS))
+      IF (.NOT.ALLOCATED(IJERS)) ALLOCATE(IJERS(NERS))
+      IF (.NOT.ALLOCATED(IGERS)) ALLOCATE(IGERS(NERS))
 
 !     DO NOT DEAL WITH IU91 AND IU92 IF IT IS NOT COLLOCATION TIME 
-      IF (CDTPRO.NE.CDTERS) THEN
+      IF (CDTPRO /= CDTERS) THEN
         IERS=0
         IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
         RETURN
       ENDIF
 
       IERS = 0
-      IF (CDTERS.LE.CDATEF .OR. MARSTYPE.EQ.'an' .OR.                   &
-     &    MARSTYPE.EQ.'fg' .OR. MARSTYPE.EQ.'4v'      ) THEN
+      IF (CDTERS <= CDATEF .OR. MARSTYPE == 'an' .OR.                   &
+     &    MARSTYPE == 'fg' .OR. MARSTYPE == '4v'      ) THEN
         WRITE(FNAME,'(''COL'',A12)') CDTERS(1:12)
         OPEN (UNIT=IU91, FILE=FNAME, FORM='UNFORMATTED', STATUS='OLD',  &
      &   IOSTAT=IERR)
-        IF (IERR.NE.0) THEN
-          IF(IRANK.EQ.1) THEN
-            IF(ITEST.GT.0) THEN
-            WRITE (IU06,*) '                                     '
-            WRITE (IU06,*) '      SUB. ERSFILE: FILE ',                 &
-     &       FNAME, ' NOT OPENED'
-            WRITE (IU06,*) '                                     ' 
-            CALL FLUSH (IU06)
-            ENDIF
-          ENDIF
+        IF (IERR /= 0) THEN
           IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
           RETURN
         ELSE
           READ(IU91)CL_DATE
-          IF(IRANK.EQ.1) THEN
+          IF (IRANK == 1) THEN
             WRITE (IU06,*) '                                     '
             WRITE (IU06,*) '      SUB. ERSFILE: FILE ',                 &
      &       FNAME, ' OPENED    '
@@ -186,19 +167,14 @@
           WRITE(FNAME,'(''COS'',A12)') CDTERS(1:12)
           OPEN (UNIT=IU92, FILE=FNAME(1:LEN_TRIM(FNAME))//MARSTYPE,     &
      &     FORM='UNFORMATTED', STATUS='UNKNOWN')
-          IF(ITEST.GT.0) THEN
-            WRITE (IU06,*) '      SUB. ERSFILE: FILE ',                 &
-     &       FNAME, ' OPENED'
-            CALL FLUSH (IU06)
-          ENDIF
           WRITE(IU92) CDTPRO
         ENDIF
 
  3001   CONTINUE
         IERS = IERS + 1
 
-        IF (IERS.GT.NERS) THEN
-          IF(IRANK.EQ.1) THEN
+        IF (IERS > NERS) THEN
+          IF (IRANK == 1) THEN
             WRITE (IU06,*) ' +++++++++++++++++++++++++++++++++++++++'
             WRITE (IU06,*) ' +                                     +'
             WRITE (IU06,*) ' +        WARNING SUB ERSFILE.         +'
@@ -233,13 +209,13 @@
 
         READ (IU91, END=3002, ERR=3002, IOSTAT=IOS) CL_TIME,            &
      &   ZLATIS, ZLONGS, ZLATIW, ZLONGW, IGERS(IERS), IJERS(IERS)
-        IF (IGERS(IERS).EQ.0) THEN
+        IF (IGERS(IERS) == 0) THEN
           IERS = IERS-1
           GOTO 3001
         ENDIF
-        IF (IERS.GT.1) THEN
+        IF (IERS > 1) THEN
           DO I=1,IERS-1
-            IF (IGERS(I).EQ.IGERS(IERS) .AND.                           &
+            IF (IGERS(I) == IGERS(IERS) .AND.                           &
      &       IJERS(I).EQ.IJERS(IERS)) THEN
               IERS = IERS-1
               GOTO 3001
@@ -250,14 +226,6 @@
  3002   CONTINUE
         IERS = IERS - 1
         CLOSE (IU91, STATUS='KEEP')
-        IF(IRANK.EQ.1) THEN
-          IF(ITEST.GT.0) THEN
-            WRITE(IU06,*) '      SUB. ERSFILE: NEW OUTPUT',             &
-     &       ' POINTS FOR SATELLITE COLOCATION.  IERS = ', IERS,        &
-     &       ' LAST READ STATUS = ', IOS
-            CALL FLUSH (IU06)
-          ENDIF
-        ENDIF
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)

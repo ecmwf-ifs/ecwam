@@ -14,7 +14,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *WVFRICVELO(IU06,ITEST)*
+!       *CALL* *WVFRICVELO(IU06)*
 !          *IU06*  -  LOGICAL UNIT FOR PRINTER OUTPUT UNIT.
 
 !     METHOD.
@@ -42,7 +42,9 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : C1CD,    C2CD,     P1CD,     P2CD
+
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -81,7 +83,7 @@
           XLOGINV= 1._JWRB/(XLOGZ-LOG(Z0))
           F      = UST-XKU10*XLOGINV
 !         protection in case it fails to converge
-          IF(ABS(F) == ABS(FOLD) ) THEN
+          IF (ABS(F) == ABS(FOLD) ) THEN
             EXIT
           ELSE IF (ABS(F) > ABS(FOLD) ) THEN
             UST=USTFG

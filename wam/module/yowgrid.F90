@@ -15,9 +15,11 @@
       REAL(KIND=JWRB), ALLOCATABLE :: PRQRT(:)
 
       INTEGER(KIND=JWIM), ALLOCATABLE :: NLONRGG(:) 
-      INTEGER(KIND=JWIM) :: IJSLOC, IJLLOC, IJGLOBAL_OFFSET
       INTEGER(KIND=JWIM) :: IJS
       INTEGER(KIND=JWIM) :: IJL
+      INTEGER(KIND=JWIM) :: IJSLOC, IJLLOC, IJGLOBAL_OFFSET
+      INTEGER(KIND=JWIM) :: NPROMA_WAM
+      INTEGER(KIND=JWIM) :: NBLOC
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -38,7 +40,7 @@
 !      *IJS*       INTEGER   INDEX OF FIRST POINT ON A GIVEN PROCESSOR
 !      *IJL*       INTEGER   INDEX OF LAST POINT ON A GIVEN PROCESSOR
 
-!!!!!! for the unstructured part of the code, it was coded so that hallo points
+!!!!!! for the unstructured part of the code, it was coded so that halo points
 !!!!!! are included as part of the points on a given processor (at the end of the vector of points).
 !!!!!! For output, it was necessary to introduce IJSLOC and IJLLOC to point to the points that are purely local
 !      *IJSLOC*    INTEGER   INDEX OF FIRST LOCAL POINT
@@ -46,6 +48,10 @@
 !      *IJGLOBAL_OFFSET INTEGER OFFSET TO PLACE FIRST LOCAL POINT IN GLOBAL ARRAY
 
 !!!!! if not unstructured then IJSLOC = IJS and IJLLOC = IJL
+
+!      FOR OPENMP:
+!      *NPROMA_WAM* INTEGER  MAX NUMBERS OF GRID POINTS PER THREAD
+!      *NBLOC*      INTEGER  NUMBER OF BLOCKS OF MAXIMUM NPROMA_WAM POINTS
 
 ! ----------------------------------------------------------------------
       END MODULE YOWGRID

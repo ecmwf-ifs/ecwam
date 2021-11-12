@@ -33,12 +33,12 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,GFLAG    ,GFLAG20  ,    &
-     &            JPPFLAG  ,LFDB     ,IPFGTBL  ,ITOBOUT  ,INFOBOUT ,    &
-     &            LOUTINT  ,NIPRMOUT
+     &                      JPPFLAG  ,LFDB     ,IPFGTBL  ,ITOBOUT  ,    &
+     &                      INFOBOUT , LOUTINT  ,NIPRMOUT
       USE YOWGRID  , ONLY : NLONRGG  ,DELPHI
       USE YOWINTP  , ONLY : GOUT
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
-     &            AMONOP   ,ZDELLO
+     &                      AMONOP   ,ZDELLO
       USE YOWMPP   , ONLY : IRANK
       USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTINTT  ,MARSTYPE
@@ -89,14 +89,14 @@
 
 !     2. ONE GRID POINT OUTPUT
 !        ---------------------
-      IF(CLDOMAIN.EQ.'s') CALL OUT_ONEGRDPT(IU06)
+      IF (CLDOMAIN == 's') CALL OUT_ONEGRDPT(IU06)
 
 
 !*    3. OUTPUT IN PURE BINARY FORM (obsolete)
 !        --------------------------
-      IF(FFLAG20 .AND. CDTINTT.EQ.CDTPRO ) THEN
+      IF (FFLAG20 .AND. CDTINTT == CDTPRO ) THEN
         DO IFLAG=1,JPPFLAG
-          IF (FFLAG(IFLAG) .AND. IRANK.EQ.IPFGTBL(IFLAG)) THEN
+          IF (FFLAG(IFLAG) .AND. IRANK == IPFGTBL(IFLAG)) THEN
             WRITE (IU20) CDTPRO, NGX, NGY, IRGG
             WRITE (IU20) AMOWEP,AMOSOP,AMOEAP,AMONOP
             WRITE (IU20) ZDELLO, NLONRGG, DELPHI
@@ -107,12 +107,12 @@
 
 !*    4.  PACK INTEGRATED PARAMETERS INTO GRIB AND OUTPUT
 !         -----------------------------------------------
-      IF (GFLAG20 .AND. CDTINTT.EQ.CDTPRO ) THEN
+      IF (GFLAG20 .AND. CDTINTT == CDTPRO ) THEN
 
 !       DEFINE OUTPUT FILE FOR GRIB DATA (if not written to FDB)
-        IF(.NOT.LFDB .AND.(IRANK.EQ.1)) THEN
+        IF (.NOT.LFDB .AND. IRANK == 1 ) THEN
        !  output to file should only take place on one PE
-         IF(MARSTYPE == 'fg') THEN
+         IF (MARSTYPE == 'fg') THEN
            ! fg only exist in uncoupled anlysis experiments
            FILEID = 'MFG'
          ELSE
@@ -132,9 +132,9 @@
         ICOUNT=0
         DO IFLAG=1,JPPFLAG
           IF (GFLAG(IFLAG)) THEN
-            IF (IRANK.EQ.IPFGTBL(IFLAG)) THEN
+            IF (IRANK == IPFGTBL(IFLAG)) THEN
               ICOUNT=ICOUNT+1
-              IF(ICOUNT.GT. SIZE(GOUT,1)) THEN
+              IF (ICOUNT > SIZE(GOUT,1)) THEN
                 WRITE(*,*) ' -------------------------------------'
                 WRITE(*,*) ' ERROR in OUTINT '
                 WRITE(*,*) ' ACCESSING MORE FIELDS THAN AVAILABLE'
@@ -155,14 +155,14 @@
           ENDIF
         ENDDO
 
-        IF(LLIUOUTOPEN) THEN
+        IF (LLIUOUTOPEN) THEN
           CALL IGRIB_CLOSE_FILE(IUOUT)
         ENDIF
 
       ENDIF ! end grib output
 
 !     CLEAN-UP
-      IF(ALLOCATED(GOUT)) DEALLOCATE(GOUT)
+      IF (ALLOCATED(GOUT)) DEALLOCATE(GOUT)
 
 
 ! ----------------------------------------------------------------------

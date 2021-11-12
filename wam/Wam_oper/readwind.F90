@@ -82,7 +82,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWGRID  , ONLY : NLONRGG
+      USE YOWGRID  , ONLY : NLONRGG  ,NPROMA_WAM, NBLOC
       USE YOWICE   , ONLY : LICERUN  ,IPARAMCI ,LICETH
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
@@ -90,8 +90,7 @@
       USE YOWPARAM , ONLY : NIBLO    ,CLDOMAIN ,                        &
      &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,LWDINTS  ,    &
      &            SWAMPCIFR
-      USE YOWSTAT  , ONLY : CDATEA   ,IDELWI   ,LADEN    ,LGUST    ,    &
-     &            NPROMA_WAM
+      USE YOWSTAT  , ONLY : CDATEA   ,IDELWI   ,LADEN    ,LGUST
       USE YOWTEST  , ONLY : IU06
       USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLATN    ,    &
      &            RLONL    ,RLONR    ,KCOL     ,KROW     ,ICODE    ,    &

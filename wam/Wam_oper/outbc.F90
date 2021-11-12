@@ -46,11 +46,11 @@
 
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LL1D
       USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,GBOUNC   ,IPOGBO
-      USE YOWMESPAS, ONLY : LMESSPASS
+      USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWMAP   , ONLY : BLK2GLO  ,AMOWEP   ,AMOSOP   ,    &
-     &            XDELLA   ,ZDELLO
+     &                      XDELLA   ,ZDELLO
       USE YOWMPP   , ONLY : NPROC  , IRANK
-      USE YOWSTAT  , ONLY : CDTPRO   ,NPROMA_WAM
+      USE YOWSTAT  , ONLY : CDTPRO
       USE YOWSPEC  , ONLY : IJ2NEWIJ
 
 ! ----------------------------------------------------------------------

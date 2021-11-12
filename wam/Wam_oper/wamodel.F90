@@ -54,7 +54,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRID  , ONLY : IJS      ,IJL       ,IJSLOC   ,IJLLOC
+      USE YOWGRID  , ONLY : IJS      ,IJL       ,IJSLOC   ,IJLLOC, NPROMA_WAM, NBLOC
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,LWAVEWIND 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
@@ -64,7 +64,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
      &                      IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &
      &                      CDTBC    ,IDELBC   ,                                  &
      &                      IASSI    ,MARSTYPE ,                                  &
-     &                      LLSOURCE ,LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE
+     &                      LLSOURCE ,LANAONLY ,LFRSTFLD ,IREFDATE
       USE YOWSPEC, ONLY   : NBLKS    ,NBLKE
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED

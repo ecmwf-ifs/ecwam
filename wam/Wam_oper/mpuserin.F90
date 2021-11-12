@@ -69,6 +69,7 @@
       USE YOWFRED  , ONLY : XKMSS_CUTOFF 
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G, IMDLGRBID_M
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
+      USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI, LCIWABR  ,  &
      &            LICETH
       USE YOWMESPAS, ONLY : LMESSPASS,                                  &
@@ -93,8 +94,7 @@
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,    &
-     &            LGUST    ,LADEN    ,NPROMA_WAM,LSUBGRID ,LLSOURCE ,   &
-     &            LNSESTART,                                            &
+     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,LNSESTART,    &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            LRELWIND ,                                            &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST

@@ -53,7 +53,7 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTBC   ,IDELBC    ,    &
      &            IDELPRO
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
 
@@ -167,18 +167,6 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
 
         CDTLAST = CDTBC
 
-        IF (ITEST.GT.3) THEN
-          WRITE (IU06,*) ' '
-          WRITE (IU06,*) ' BOUNDARY VALUE INPUT FILE HEADER IS:'
-          WRITE (IU06,*) ' NO. OF DIRECTIONS IS    KL     = ', KL
-          WRITE (IU06,*) ' NO. OF FREQUENCIES IS   ML     = ', ML
-          WRITE (IU06,*) ' FIRST DIRECTION IS      TH0    = ', TH0
-          WRITE (IU06,*) ' FIRST FREQUENCY IS      FR1    = ', FR1
-          WRITE (IU06,*) ' FREQUENCY RATIO IS      CO     = ', CO
-          WRITE (IU06,*) ' NO. OF BOUNDRAY POINTS  NBOINP = ', NBOINP
-          WRITE (IU06,*) ' TIME STEP OF DATA IS    IDELINP= ', IDELINP
-        ENDIF
-
 !*      CHECK CONSISTENCY.
 
         IF (KL.NE.NANG .OR. ML.NE.NFRE .OR.                             &
@@ -253,10 +241,6 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
           READ (IU02, ERR=5002, END=5002)                               &
      &     ((F1(K,M,IJ),K=1,NANG),M=1,NFRE)
         ENDDO
-        IF (ITEST.GT.3) THEN
-          WRITE (IU06,*) ' '
-          WRITE (IU06,*) ' BOUNDARY VALUES READ CDATE1 = ', CDATE1
-        ENDIF
 
 !*    2.2 CHECK DATES.
 !         ------------
@@ -424,9 +408,6 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
 
         ENDIF
       ENDDO
-
-      IF (ITEST.GE.1)                                                   &
-     &   WRITE(IU06,*) '   SUB. BOUINPT: BC SPECTRUM COLLECTED'
 
 ! ----------------------------------------------------------------------
 

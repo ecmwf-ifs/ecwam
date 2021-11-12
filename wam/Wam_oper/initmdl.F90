@@ -80,8 +80,6 @@ SUBROUTINE INITMDL (NADV,                                 &
 !          THE NAMES ARE DEFINED IN SECTION 1. OF THIS PROGRAM,
 !          IF IT IS NOT MENTIONED OTHERWISE.
 
-!           *IU01*   - INPUT  UNIT UNBLOCKED WIND FILE.
-!                      (SEE SUB READWIND).
 !           *IU02*   - INPUT  UNIT OF BOUDARY VALUES FROM A PREVIOUS
 !                      COARSE GRID IF THIS A FINE GRID RUN.
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'FBI'
@@ -168,7 +166,8 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            DFIM_END_L, DFIM_END_U,                               &
      &            WVPRPT_LAND
       USE YOWGRIBHD, ONLY : LGRHDIFS
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IJS     ,IJL      ,COSPH
+      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IJS     ,IJL      ,     &
+    &                       COSPH    ,NPROMA_WAM, NBLOC 
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,                        &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            KMNOP    ,KMSOP    ,IPER
@@ -188,7 +187,6 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            IDELINT  ,                                            &
      &            IREFRA   ,                                            &
      &            IPHYS    ,                                            &
-     &            NPROMA_WAM,                                           &
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,    &
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
@@ -582,6 +580,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       WRITE(IU06,*) ' NPROC      : ', NPROC
       WRITE(IU06,*) ' MTHREADS   : ', MTHREADS
       WRITE(IU06,*) ' NPROMA_WAM : ', NPROMA_WAM
+      WRITE(IU06,*) ' NBLOC      : ', NBLOC
       WRITE(IU06,*) '  '
       CALL FLUSH (IU06)
 
