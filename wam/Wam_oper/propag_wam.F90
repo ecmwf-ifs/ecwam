@@ -197,10 +197,6 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 !$           MTHREADS=OMP_GET_MAX_THREADS()
              NPROMA=(IJL-IJS+1)/MTHREADS + 1
 
-!!!!debile, retest using NPROMA_WAM
-             NPROMA=NPROMA_WAM
-!!!!!debile
-
 !$OMP        PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO,KIJS,KIJL)
              DO JKGLO=IJS,IJL,NPROMA
                KIJS=JKGLO
