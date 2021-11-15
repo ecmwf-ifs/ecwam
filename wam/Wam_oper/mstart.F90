@@ -1,4 +1,5 @@
-      SUBROUTINE MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,         &
+      SUBROUTINE MSTART (IOPTI, FETCH, FRMAX, THETAQ,     &
+     &                   FM, ZGAMMA, SA, SB,              &
      &                   IJS, IJL, FL1, WSWAVE, WDWAVE)
 ! ----------------------------------------------------------------------
 
@@ -7,8 +8,6 @@
 !      H. GUNTHER    ECMWF    MAY 1990
 !      H. GUNTHER    ECMWF    DECEMBER 90  MODIFIED FOR CYCLE_4.
 !      J. BIDLOT     ECMWF    FEBRUARY 96  MESSAGE PASSING
-!      J. BIDLOT     ECMWF    MARCH 97     REMOVE ALL OUTPUT TO IU12
-!                                          and IU15 
 
 !*    PURPOSE.
 !     --------
@@ -18,22 +17,22 @@
 !**   INTERFACE.
 !     ----------
 
-!   *CALL* *MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,
-!    1              FL1,WSWAVE,WDWAVE)*
-!      *IU12*   INTEGER    OUTPUT UNIT BLOCKS OF SPECTRA.
-!      *IU14*   INTEGER    OUTPUT UNIT SECOND LAT OF BLOCKS.
-!      *IU15*   INTEGER    OUTPUT UNIT LAST WINDFIELDS.
-!      *IOPTI*  INTEGER    START FIELD OPTION
-!                          = 0 FROM PARAMETERS.
-!                          = 1 FROM WINDS CALM ENERGY=0.
-!                          = 2 FROM WINDS CALM FROM PARAMETERS.
-!      *FETCH*  REAL       FETCH IN METERS.
-!      *FRMAX*  REAL       MAXIMUM PEAK FREQUENCY IN HERTZ.
-!      *FL1*      REAL      2-D SPECTRUM FOR EACH GRID POINT 
-!      *WSWAVE*    INTERMEDIATE STORAGE OF MODULUS OF WIND
-!                  VELOCITY.
-!      *WDWAVE*    INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
-!                  WIND VELOCITY.
+!   *CALL* *MSTART (IOPTI, FETCH, FRMAX, THETAQ,
+!    &              FM, ZGAMMA, SA, SB, 
+!    &              FL1,WSWAVE,WDWAVE)*
+!      *IOPTI*  INTEGER   START FIELD OPTION
+!                         = 0 FROM PARAMETERS.
+!                         = 1 FROM WINDS CALM ENERGY=0.
+!                         = 2 FROM WINDS CALM FROM PARAMETERS.
+!      *FETCH*  REAL      FETCH IN METERS.
+!      *FRMAX*  REAL      MAXIMUM PEAK FREQUENCY IN HERTZ.
+!      *THETAQ* REAL      MEAN DIRECTION (RAD).
+!      *ZGAMMA* REAL      OVERSHOOT FACTOR.
+!      *SA*     REAL      LEFT PEAK WIDTH.
+!      *SB*     REAL      RIGHT PEAK WIDTH.
+!      *FL1*    REAL      2-D SPECTRUM FOR EACH GRID POINT 
+!      *WSWAVE* REAL      WIND SPEED. 
+!      *WDWAVE* REAL      WIND DIRECTION. 
 
 !     METHOD.
 !     -------
@@ -56,13 +55,9 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : DEG
-      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
-      USE YOWJONS  , ONLY : FP       ,ALPHJ    ,THES     ,FM       ,    &
-     &            ALFA     ,GAMMA    ,SA       ,SB       ,THETAQ
       USE YOWSTAT  , ONLY : CDTPRO
-      USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
 
 ! ----------------------------------------------------------------------
@@ -71,38 +66,24 @@
 #include "peak.intfb.h"
 #include "spectra.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IU12, IU14, IU15, IOPTI
+      INTEGER(KIND=JWIM), INTENT(IN) :: IOPTI
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
-      REAL(KIND=JWRB), INTENT(IN) :: FETCH, FRMAX
+      REAL(KIND=JWRB), INTENT(IN) :: FETCH, FRMAX, THETAQ
+      REAL(KIND=JWRB), INTENT(IN) :: FM, ZGAMMA, SA, SB
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: WSWAVE, WDWAVE
       REAL(KIND=JWRB),DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL1
 
+
       INTEGER(KIND=JWIM) :: M, K, IJ, NGOU
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: FP, ALPHAJ, THES
 
       CHARACTER(LEN=14), PARAMETER :: ZERO='              '
 
 ! ----------------------------------------------------------------------
 
-!     0. ALLOCATE ARRAYS
-!        ---------------
-
-      ALLOCATE(FP(NIBLO))
-      ALLOCATE(ALPHJ(NIBLO))
-      ALLOCATE(THES(NIBLO))
-
 !*    1. DEFINE SPECTRUM FOR LAND POINTS AND WRITE OUTPUT.
 !        -------------------------------------------------
-
-      WRITE (IU06,'(1X,/,1X,''  PARAMETER AT OUTPUT SITES:'')')
-      WRITE (IU06,'(1X,''  NGOU    IJ     U10    UDIR'',          &
-     &            ''      FP   ALPHAJONS   GAMMA      SA      SB'')')
-
-! ----------------------------------------------------------------------
-
-!*    2.1 COMPUTE PEAK FREQUENCIES AND ALPHAJONS PARAMETERS.
-!         ----------------------------------------------
-
 
 !*    2.1.1 INITIAL VALUES DUE TO OPTION.
 !           -----------------------------
@@ -113,7 +94,7 @@
             ALPHJ(IJ) = 0.0_JWRB
             THES(IJ) = WDWAVE(IJ)
           ENDDO
-        ELSE IF (IOPTI == 0) THEN
+        ELSEIF (IOPTI == 0) THEN
           DO IJ = IJS, IJL
             FP(IJ) = FM
             ALPHJ(IJ) = ALFA
@@ -133,34 +114,12 @@
 
 !*    2.1.2 PEAK FREQUENCY AND ALPHAJONS FROM FETCH LAW.
 !           --------------------------------------------
-
         IF (IOPTI /= 0) THEN
-          CALL PEAK (IJS, IJL, FETCH, FRMAX, WSWAVE)
+          CALL PEAK (IJS, IJL, FETCH, FRMAX, WSWAVE, FP, ALPHAJ)
         ENDIF
-
-!*    2.1.3 PRINT PARAMETERS AT OUTPUT POINTS.
-!           ----------------------------------
-
-        DO NGOU = 1, NGOUT
-            IJ = IJAR(NGOU)
-            WRITE (IU06,'(1X,2I6,F8.2,F8.2,5F8.4)')  NGOU, IJ,          &
-     &       WSWAVE(IJ), WDWAVE(IJ)*DEG, FP(IJ), ALPHJ(IJ),             &
-     &       GAMMA, SA, SB
-        ENDDO
 
 !*    2.2 COMPUTE SPECTRA FROM PARAMETERS.
 !         --------------------------------
-
-        CALL SPECTRA (IJS, IJL, FL1)
-
-! ----------------------------------------------------------------------
-
-!*    3. PREPARE OUTPUT OF WIND.
-!        ----------------------
-
-      CDTPRO  = ZERO
-      CDATEWO = ZERO
-      CDAWIFL = ZERO
-      CDATEFL = ZERO
+        CALL SPECTRA (IJS, IJL, ZGAMMA, SA, SB, FP, ALPHAJ, THES, FL1)
 
       END SUBROUTINE MSTART

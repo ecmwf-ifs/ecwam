@@ -1,4 +1,4 @@
-      SUBROUTINE PEAK (IJS, IJL, FETCH, FPMAX, U10)
+      SUBROUTINE PEAK (IJS, IJL, FETCH, FPMAX, U10, FP, ALPHJ)
 
 ! ----------------------------------------------------------------------
 
@@ -18,13 +18,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PEAK (IJL, IJS, FETCH, FPMAX,U10)*
+!       *CALL* *PEAK (IJL, IJS, FETCH, FPMAX, U10, FP, ALPHAJ)*
 !          *IJS*     INTEGER  FIRST POINT IN BLOCK.
 !          *IJL*     INTEGER  LAST  POINT IN BLOCK.
 !          *FETCH*   REAL     FETCH TO BE USED (METRES).
 !          *FPMAX*   REAL     MAXIMUM PEAK FREQUENCY (HERTZ).
-!          *U10*  INTERMEDIATE STORAGE OF MODULUS OF WIND
-!                    VELOCITY.
+!          *U10*     REAL     WIND SPEED.
+!          *FP*      REAL     PEAK FREQUENCY.
+!          *ALPHJ*   REAL     ALPHA PARAMETER.
 
 !     METHOD.
 !     -------
@@ -52,8 +53,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS    ,    &
-     &            FP       ,ALPHJ
+      USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS
       USE YOWPCONS , ONLY : G
 
 ! ----------------------------------------------------------------------
@@ -64,6 +64,8 @@
 
       REAL(KIND=JWRB), INTENT(IN) :: FETCH, FPMAX
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: U10
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(OUT) :: FP
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: ALPHAJ 
 
 
       INTEGER(KIND=JWIM) :: IJ

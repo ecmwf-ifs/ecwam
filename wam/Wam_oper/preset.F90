@@ -75,8 +75,6 @@ PROGRAM preset
      &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
       USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL,                   &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
-      USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,    &
-     &            SB       ,THETAQ
       USE YOWMAP   , ONLY : BLK2GLO   ,IRGG     ,AMOWEP   ,             &
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,    &
      &            BLK2LOC 
@@ -135,22 +133,24 @@ PROGRAM preset
       INTEGER(KIND=JWIM), PARAMETER :: NFIELDS=1
       INTEGER(KIND=JWIM) :: ILEN, IREAD, IOPTI
       INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IPRM, IBLOC
       INTEGER(KIND=JWIM) :: IU05, IU07 
       INTEGER(KIND=JWIM) :: I4(2)
       INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
 
       REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JWRB) :: THETA, FETCH, FRMAX 
+      REAL(KIND=JWRB) :: FM, ALFA, GAMMA, SA, SB, THETAQ
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: X4(2)
       REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
 
       CHARACTER(LEN=1) :: CLTUNIT
-      CHARACTER(LEN=14) :: ZERO, CDUM
       CHARACTER(LEN=70) :: HEADER
       CHARACTER(LEN=120) :: SFILENAME, ISFILENAME
 
-      PARAMETER (ZERO=' ', CDUM='00000000000000')
+      CHARACTER(LEN=14), PARAMETER :: ZERO='              '
+      CHARACTER(LEN=14), PARAMETER :: CDUM='00000000000000'
 
       LOGICAL :: LLINIT
       LOGICAL :: LLALLOC_FIELDG_ONLY
@@ -311,6 +311,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
         IJS = 1
         IJL = NIBLO
+        NPROMA_WAM = IJL-IJS+1
         NXFF=NIBLO
         NYFF=1
         NSTART=1
@@ -320,14 +321,27 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         IJGLOBAL_OFFSET=0
         NBLKS=NSTART
         NBLKE=NEND
-        IF (ALLOCATED(BLK2LOC)) DEALLOCATE(BLK2LOC)
-        ALLOCATE(BLK2LOC(IJSLOC:IJLLOC))
-        DO IJ = IJSLOC, IJLLOC 
-          BLK2LOC(IJ)%IFROMIJ=IJ
-          BLK2LOC(IJ)%KFROMIJ=1
-          BLK2LOC(IJ)%JFROMIJ=1
+        IF (ALLOCATED(IJFROMBLOC)) DEALLOCATE(IJFROMBLOC)
+        ALLOCATE(IJFROMBLOC(NPROMA_WAM,NBLOC))
+        DO IBLOC = 1, NBLOC
+          DO IPRM = 1, NPROMA_WAM 
+            IJ = IJS + IPRM -1 + (IBLOC-1)*NPROMA_WAM 
+            IJFROMBLOC(IPRM,IBLOC) = IJ
+          ENDDO
         ENDDO
+        IF (ALLOCATED(BLK2LOC)) DEALLOCATE(BLK2LOC)
+        ALLOCATE(BLK2LOC(NPROMA_WAM,NBLOC))
+        DO IBLOC = 1, NBLOC
+          DO IPRM = 1, NPROMA_WAM 
+            IJ = IJFROMBLOC(IPRM,IBLOC)
+            BLK2LOC(IPRM,IBLOC)%IFROMIJ=IJ
+            BLK2LOC(IPRM,IBLOC)%KFROMIJ=1
+            BLK2LOC(IPRM,IBLOC)%JFROMIJ=1
+          ENDDO
+        ENDDO
+
       ELSE
+        NPROMA_WAM = IJL-IJS+1
         NXFF=NGX
         NYFF=NGY
         NSTART=1
@@ -337,28 +351,42 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         IJGLOBAL_OFFSET=0
         NBLKS=NSTART
         NBLKE=NEND
-        IF (ALLOCATED(BLK2LOC)) DEALLOCATE(BLK2LOC)
-        ALLOCATE(BLK2LOC(IJSLOC:IJLLOC))
-        DO IJ = IJSLOC, IJLLOC 
-          BLK2LOC(IJ)%IFROMIJ=BLK2GLO(IJ)%IXLG
-          BLK2LOC(IJ)%KFROMIJ=BLK2GLO(IJ)%KXLT
-          BLK2LOC(IJ)%JFROMIJ=NGY-BLK2GLO(IJ)%KXLT+1
+        IF (ALLOCATED(IJFROMBLOC)) DEALLOCATE(IJFROMBLOC)
+        ALLOCATE(IJFROMBLOC(NPROMA_WAM,NBLOC))
+        DO IBLOC = 1, NBLOC
+          DO IPRM = 1, NPROMA_WAM 
+            IJ = IJS + IPRM -1 + (IBLOC-1)*NPROMA_WAM 
+            IJFROMBLOC(IPRM,IBLOC) = IJ
+          ENDDO
         ENDDO
+
+        IF (ALLOCATED(BLK2LOC)) DEALLOCATE(BLK2LOC)
+        ALLOCATE(BLK2LOC(NPROMA_WAM,NBLOC))
+
+        DO IBLOC = 1, NBLOC
+          DO IPRM = 1, NPROMA_WAM 
+            IJ = IJFROMBLOC(IPRM,IBLOC)
+              BLK2LOC(IPRM,IBLOC)%IFROMIJ=BLK2GLO(IJ)%IXLG
+              BLK2LOC(IPRM,IBLOC)%KFROMIJ=BLK2GLO(IJ)%KXLT
+              BLK2LOC(IPRM,IBLOC)%JFROMIJ=NGY-BLK2GLO(IJ)%KXLT+1
+          ENDDO
+        ENDDO
+
       ENDIF
 
+      IF (ALLOCATED(WVENVI)) DEALLOCATE(WVENVI)
+      ALLOCATE(WVENVI(NPROMA_WAM,NBLOC))
 
-!!!  transfer DEPTH_INPUT to WVENVI
-      ALLOCATE(WVENVI(NSTART(IRANK):NEND(IRANK)))
-
-      DO IJ=NSTART(IRANK),NEND(IRANK)
-        WVENVI(IJ)%DEPTH = DEPTH_INPUT(IJ)
-
-!!!!   when this is moved to reading depth as an input field, wvenvi should be allocated and intialised in wvalloc !!!
-        WVENVI(IJ)%UCUR = 0.0_JWRB
-        WVENVI(IJ)%VCUR = 0.0_JWRB
+      DO IBLOC = 1, NBLOC
+        DO IPRM = 1, NPROMA_WAM 
+          IJ = IJFROMBLOC(IPRM,IBLOC)
+            WVENVI(IPRM,IBLOC)%DEPTH = DEPTH_INPUT(IJ)
+            WVENVI(IPRM,IBLOC)%UCUR = 0.0_JWRB
+            WVENVI(IPRM,IBLOC)%VCUR = 0.0_JWRB
+        ENDDO
       ENDDO
-      DEALLOCATE(DEPTH_INPUT)
 
+      DEALLOCATE(DEPTH_INPUT)
 
 
 !!!   deallocate big arrays that were read in with READPRE
@@ -467,25 +495,24 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       IREAD=1
 
+      IF (.NOT.ALLOCATED(FL1)) ALLOCATE (FL1(NPROMA_WAM,NANG,NFRE,NBLOC))
 
-      IF (.NOT.ALLOCATED(FL1)) ALLOCATE (FL1(NIBLO,NANG,NFRE))
+      IF (.NOT.ALLOCATED(FF_NOW)) ALLOCATE(FF_NOW(NPROMA_WAM,NBLOC))
 
-      IF (.NOT.ALLOCATED(FF_NOW)) ALLOCATE(FF_NOW(NIBLO))
+      FF_NOW(:,:)%WSWAVE = WSPMIN
+      FF_NOW(:,:)%WDWAVE = 0.0_JWRB
+      FF_NOW(:,:)%UFRIC =  FF_NOW(:,:)%WSWAVE*0.035847_JWRB
+      FF_NOW(:,:)%TAUW = 0.1_JWRB*FF_NOW(:,:)%UFRIC
+      FF_NOW(:,:)%TAUWDIR = 0.0_JWRB 
+      FF_NOW(:,:)%Z0M = 0.00001_JWRB
+      FF_NOW(:,:)%AIRD = ROAIR      
+      FF_NOW(:,:)%WSTAR = 0.0_JWRB
+      FF_NOW(:,:)%CICOVER = 0.0_JWRB
+      FF_NOW(:,:)%CITHICK = 0.0_JWRB
 
-      FF_NOW(:)%WSWAVE = WSPMIN
-      FF_NOW(:)%WDWAVE = 0.0_JWRB
-      FF_NOW(:)%UFRIC =  FF_NOW(:)%WSWAVE*0.035847_JWRB
-      FF_NOW(:)%TAUW = 0.1_JWRB*FF_NOW(:)%UFRIC
-      FF_NOW(:)%TAUWDIR = 0.0_JWRB 
-      FF_NOW(:)%Z0M = 0.00001_JWRB
-      FF_NOW(:)%AIRD = ROAIR      
-      FF_NOW(:)%WSTAR = 0.0_JWRB
-      FF_NOW(:)%CICOVER = 0.0_JWRB
-      FF_NOW(:)%CITHICK = 0.0_JWRB
+      IF (.NOT.ALLOCATED(FF_NEXT)) ALLOCATE(FF_NEXT(NPROMA_WAM,NBLOC))
 
-      IF (.NOT.ALLOCATED(FF_NEXT)) ALLOCATE(FF_NEXT(NIBLO))
-
-      IF (.NOT.ALLOCATED(NEMO2WAM)) ALLOCATE(NEMO2WAM(NIBLO))
+      IF (.NOT.ALLOCATED(NEMO2WAM)) ALLOCATE(NEMO2WAM(NPROMA_WAM,NBLOC))
 
       IF (IOPTI > 0 .AND. IOPTI /= 3) THEN
 
@@ -504,7 +531,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
      &                FIELDS, LWCUR, MASK_IN,            &
      &                NEMO2WAM)
 
-      FF_NOW(:)%TAUW = 0.1_JWRB * FF_NOW(:)%UFRIC**2
+      FF_NOW(:,:)%TAUW = 0.1_JWRB * FF_NOW(:,:)%UFRIC**2
 
       ENDIF
 
@@ -528,17 +555,28 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       IF (IOPTI /= 3) THEN
         THETAQ = THETA * RAD
-        CALL MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,             &
-     &              IJS, IJL, FL1, FF_NOW(IJS:IJL)%WSWAVE, FF_NOW(IJS:IJL)%WDWAVE)
+        CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,             &
+     &               FM, GAMMA, SA, SB,                       &
+     &               IJS, IJL, FL1, FF_NOW(IJS:IJL)%WSWAVE, FF_NOW(IJS:IJL)%WDWAVE)
+
+debile to finish ....
+
+        CDTPRO  = ZERO
+        CDATEWO = ZERO
+        CDAWIFL = ZERO
+        CDATEFL = ZERO
+
       ELSE
         CALL MSWELL (IJS, IJL, BLK2LOC, FL1)
 
         IF (LLUNSTR) THEN
 !         reset points with no flux out of the boundary to 0
-          DO M=1,NFRE
-            DO K=1,NANG
-              DO IJ=1,NIBLO
-                FL1(IJ,K,M) = FL1(IJ,K,M)*IOBPD(K,IJ)
+          DO IBLOC = 1, NBLOC
+            DO M=1,NFRE
+              DO K=1,NANG
+                DO IPRM = 1, NPROMA_WAM 
+                  FL1(IPRM,K,M,IBLOC) = FL1(IPRM,K,M,IBLOC)*IOBPD(K,IJ)
+                ENDDO
               ENDDO
             ENDDO
           ENDDO
