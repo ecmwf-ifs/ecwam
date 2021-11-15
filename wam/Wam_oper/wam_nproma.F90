@@ -44,4 +44,9 @@
         NPROMA=MIN(NPROMA+1,NPROMA_MAX)
       ENDIF
 
+
+!!1debile, just try
+             NPROMA=(IJL-IJS+1)/MTHREADS + 1
+
+
       END SUBROUTINE WAM_NPROMA
