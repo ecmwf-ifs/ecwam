@@ -1,4 +1,4 @@
-SUBROUTINE SPECTRA (IJS, IJL, ZGAMMA, SA, SB, FP, ALPHAJ, THES, FL1)
+SUBROUTINE SPECTRA (KIJS, KIJL, ZGAMMA, SA, SB, FP, ALPHAJ, THES, FL1)
 
 ! ----------------------------------------------------------------------
 
@@ -15,9 +15,9 @@ SUBROUTINE SPECTRA (IJS, IJL, ZGAMMA, SA, SB, FP, ALPHAJ, THES, FL1)
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SPECTRA (IJS, IJL, ZGAMMA, SA, SB, FP, ALPHAJ, THES, FL1)
-!          *IJS*     INTEGER  FIRST POINT IN BLOCK.
-!          *IJL*     INTEGER  LAST  POINT IN BLOCK.
+!       *CALL* *SPECTRA (KIJS, KIJL, ZGAMMA, SA, SB, FP, ALPHAJ, THES, FL1)
+!          *KIJS*    INTEGER  FIRST POINT IN BLOCK.
+!          *KIJL*    INTEGER  LAST  POINT IN BLOCK.
 !          *ZGAMMA*  REAL      OVERSHOOT FACTOR.
 !          *SA*      REAL      LEFT PEAK WIDTH.
 !          *SB*      REAL      RIGHT PEAK WIDTH.
@@ -63,17 +63,17 @@ SUBROUTINE SPECTRA (IJS, IJL, ZGAMMA, SA, SB, FP, ALPHAJ, THES, FL1)
 #include "jonswap.intfb.h"
 #include "spr.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), INTENT(IN)  :: ZGAMMA, SA, SB
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN):: FP, ALPHAJ, THES
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT):: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN):: FP, ALPHAJ, THES
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT):: FL1
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NANG) :: STH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: ST
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: ET
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: ST
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: ET
 
 ! ----------------------------------------------------------------------
 
@@ -82,14 +82,14 @@ IF (LHOOK) CALL DR_HOOK('SPECTRA',0,ZHOOK_HANDLE)
 !*    1. COMPUTE JONSWAP SPECTRUM.
 !        -------------------------
 
-      CALL JONSWAP (ALPHJ, ZGAMMA, SA, SB, FP, IJS, IJL, ET) 
+      CALL JONSWAP (ALPHJ, ZGAMMA, SA, SB, FP, KIJS, KIJL, ET) 
 
 ! ----------------------------------------------------------------------
 
 !*    2. COMPUTATION OF SPREADING FUNCTION.
 !        ----------------------------------
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         CALL SPR (NANG, THES(IJ), TH, STH)
         DO K=1,NANG
           ST(IJ,K) = STH(K)
@@ -103,7 +103,7 @@ IF (LHOOK) CALL DR_HOOK('SPECTRA',0,ZHOOK_HANDLE)
 
       DO M=1,NFRE
         DO K=1,NANG
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             FL1(IJ,K,M) = ET(IJ,M)*ST(IJ,K)
           ENDDO
         ENDDO

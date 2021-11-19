@@ -18,7 +18,7 @@ PROGRAM preset
 !     RENATE PORTZ       MPI      JUNE 1990 COMPUTATION OF INITIAL
 !                                           JONSWAP SPECTRA FROM
 !                                           INITIAL WIND FIELD.
-!     CYCLE_4 MODICIFATIONS:
+!     CYCLE_4 MODIFICATIONS:
 !     ----------------------
 !     H. GUNTHER  GKSS/ECMWF  DECEMBER 1990
 !     J. BIDLOT    ECMWF   FEBRUARY 1996  MESSAGE PASSING
@@ -69,11 +69,11 @@ PROGRAM preset
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRID  , ONLY : NPROMA_WAM, NBLOC
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,    &
      &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
       USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL,                   &
+     &            NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK,             & 
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
       USE YOWMAP   , ONLY : BLK2GLO   ,IRGG     ,AMOWEP   ,             &
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,    &
@@ -118,6 +118,7 @@ PROGRAM preset
 #include "cigetdeac.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "iniwcst.intfb.h"
+#include "mchunk.intfb.h"
 #include "mstart.intfb.h"
 #include "mswell.intfb.h"
 #include "outspec.intfb.h"
@@ -133,7 +134,7 @@ PROGRAM preset
       INTEGER(KIND=JWIM), PARAMETER :: NFIELDS=1
       INTEGER(KIND=JWIM) :: ILEN, IREAD, IOPTI
       INTEGER(KIND=JWIM) :: IJ, K, M
-      INTEGER(KIND=JWIM) :: IPRM, IBLOC
+      INTEGER(KIND=JWIM) :: IPRM, ICHNK, KIJS, KIJL
       INTEGER(KIND=JWIM) :: IU05, IU07 
       INTEGER(KIND=JWIM) :: I4(2)
       INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
@@ -229,9 +230,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       YCLASS   = 'rd'
       YEXPVER  = USERID//'a'
 
-      NPROMA_WAM = 1
-      NPROMA_WAM = HUGE(NPROMA_WAM)/2
-      NBLOC = 1
+      NPROMA_WAM = 0
 
 !*    1. DEFINE UNIT NAMES.
 !        ------------------
@@ -311,7 +310,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
         IJS = 1
         IJL = NIBLO
-        NPROMA_WAM = IJL-IJS+1
+        IF(NPROMA == 0 ) NPROMA_WAM = IJL-IJS+1
         NXFF=NIBLO
         NYFF=1
         NSTART=1
@@ -321,27 +320,28 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         IJGLOBAL_OFFSET=0
         NBLKS=NSTART
         NBLKE=NEND
-        IF (ALLOCATED(IJFROMBLOC)) DEALLOCATE(IJFROMBLOC)
-        ALLOCATE(IJFROMBLOC(NPROMA_WAM,NBLOC))
-        DO IBLOC = 1, NBLOC
-          DO IPRM = 1, NPROMA_WAM 
-            IJ = IJS + IPRM -1 + (IBLOC-1)*NPROMA_WAM 
-            IJFROMBLOC(IPRM,IBLOC) = IJ
-          ENDDO
-        ENDDO
+
+        CALL MCHUNK
+
         IF (ALLOCATED(BLK2LOC)) DEALLOCATE(BLK2LOC)
-        ALLOCATE(BLK2LOC(NPROMA_WAM,NBLOC))
-        DO IBLOC = 1, NBLOC
+        ALLOCATE(BLK2LOC(NPROMA_WAM,NCHNK))
+        DO ICHNK = 1, NCHNK
           DO IPRM = 1, NPROMA_WAM 
-            IJ = IJFROMBLOC(IPRM,IBLOC)
-            BLK2LOC(IPRM,IBLOC)%IFROMIJ=IJ
-            BLK2LOC(IPRM,IBLOC)%KFROMIJ=1
-            BLK2LOC(IPRM,IBLOC)%JFROMIJ=1
+            IJ = IJFROMCHNK(IPRM,ICHNK)
+            IF (IJ > 0) THEN
+              BLK2LOC(IPRM,ICHNK)%IFROMIJ=IJ
+              BLK2LOC(IPRM,ICHNK)%KFROMIJ=1
+              BLK2LOC(IPRM,ICHNK)%JFROMIJ=1
+            ELSE
+              BLK2LOC(IPRM,ICHNK)%IFROMIJ=IJ
+              BLK2LOC(IPRM,ICHNK)%KFROMIJ=1
+              BLK2LOC(IPRM,ICHNK)%JFROMIJ=1
+            ENDIF
           ENDDO
         ENDDO
 
       ELSE
-        NPROMA_WAM = IJL-IJS+1
+        IF(NPROMA == 0 ) NPROMA_WAM = IJL-IJS+1
         NXFF=NGX
         NYFF=NGY
         NSTART=1
@@ -351,38 +351,37 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         IJGLOBAL_OFFSET=0
         NBLKS=NSTART
         NBLKE=NEND
-        IF (ALLOCATED(IJFROMBLOC)) DEALLOCATE(IJFROMBLOC)
-        ALLOCATE(IJFROMBLOC(NPROMA_WAM,NBLOC))
-        DO IBLOC = 1, NBLOC
-          DO IPRM = 1, NPROMA_WAM 
-            IJ = IJS + IPRM -1 + (IBLOC-1)*NPROMA_WAM 
-            IJFROMBLOC(IPRM,IBLOC) = IJ
-          ENDDO
-        ENDDO
+
+        CALL MCHUNK
 
         IF (ALLOCATED(BLK2LOC)) DEALLOCATE(BLK2LOC)
-        ALLOCATE(BLK2LOC(NPROMA_WAM,NBLOC))
-
-        DO IBLOC = 1, NBLOC
+        ALLOCATE(BLK2LOC(NPROMA_WAM,NCHNK))
+        DO ICHNK = 1, NCHNK
           DO IPRM = 1, NPROMA_WAM 
-            IJ = IJFROMBLOC(IPRM,IBLOC)
-              BLK2LOC(IPRM,IBLOC)%IFROMIJ=BLK2GLO(IJ)%IXLG
-              BLK2LOC(IPRM,IBLOC)%KFROMIJ=BLK2GLO(IJ)%KXLT
-              BLK2LOC(IPRM,IBLOC)%JFROMIJ=NGY-BLK2GLO(IJ)%KXLT+1
+            IJ = IJFROMCHNK(IPRM,ICHNK)
+            IF (IJ > 0) THEN
+              BLK2LOC(IPRM,ICHNK)%IFROMIJ=BLK2GLO(IJ)%IXLG
+              BLK2LOC(IPRM,ICHNK)%KFROMIJ=BLK2GLO(IJ)%KXLT
+              BLK2LOC(IPRM,ICHNK)%JFROMIJ=NGY-BLK2GLO(IJ)%KXLT+1
+            ELSE
+              BLK2LOC(IPRM,ICHNK)%IFROMIJ=1
+              BLK2LOC(IPRM,ICHNK)%KFROMIJ=1
+              BLK2LOC(IPRM,ICHNK)%JFROMIJ=NGY
+            ENDIF
           ENDDO
         ENDDO
 
       ENDIF
 
       IF (ALLOCATED(WVENVI)) DEALLOCATE(WVENVI)
-      ALLOCATE(WVENVI(NPROMA_WAM,NBLOC))
+      ALLOCATE(WVENVI(NPROMA_WAM,NCHNK))
 
-      DO IBLOC = 1, NBLOC
+      DO ICHNK = 1, NCHNK
         DO IPRM = 1, NPROMA_WAM 
-          IJ = IJFROMBLOC(IPRM,IBLOC)
-            WVENVI(IPRM,IBLOC)%DEPTH = DEPTH_INPUT(IJ)
-            WVENVI(IPRM,IBLOC)%UCUR = 0.0_JWRB
-            WVENVI(IPRM,IBLOC)%VCUR = 0.0_JWRB
+          IJ = IJFROMCHNK(IPRM,ICHNK)
+          WVENVI(IPRM,ICHNK)%DEPTH = DEPTH_INPUT(IJ)
+          WVENVI(IPRM,ICHNK)%UCUR = 0.0_JWRB
+          WVENVI(IPRM,ICHNK)%VCUR = 0.0_JWRB
         ENDDO
       ENDDO
 
@@ -462,7 +461,6 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       WRITE(IU06,*) '  '
 
       WRITE (IU06,*) ' TEST OUTPUT LEVEL IS .......... ITEST = ', ITEST
-      WRITE (IU06,*) ' TEST OUTPUT IN BLOCK LOOP UPTO ITESTB = ', ITESTB
 
       WRITE (IU06,'('' JONSWAP PARAMETERS  :'',/)')
       WRITE (IU06,'('' ALFA : '',F10.5,'' FM : '',F10.5,'' GAMMA : '',  &
@@ -495,9 +493,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       IREAD=1
 
-      IF (.NOT.ALLOCATED(FL1)) ALLOCATE (FL1(NPROMA_WAM,NANG,NFRE,NBLOC))
+      IF (.NOT.ALLOCATED(FL1)) ALLOCATE (FL1(NPROMA_WAM,NANG,NFRE,NCHNK))
 
-      IF (.NOT.ALLOCATED(FF_NOW)) ALLOCATE(FF_NOW(NPROMA_WAM,NBLOC))
+      IF (.NOT.ALLOCATED(FF_NOW)) ALLOCATE(FF_NOW(NPROMA_WAM,NCHNK))
 
       FF_NOW(:,:)%WSWAVE = WSPMIN
       FF_NOW(:,:)%WDWAVE = 0.0_JWRB
@@ -510,9 +508,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       FF_NOW(:,:)%CICOVER = 0.0_JWRB
       FF_NOW(:,:)%CITHICK = 0.0_JWRB
 
-      IF (.NOT.ALLOCATED(FF_NEXT)) ALLOCATE(FF_NEXT(NPROMA_WAM,NBLOC))
+      IF (.NOT.ALLOCATED(FF_NEXT)) ALLOCATE(FF_NEXT(NPROMA_WAM,NCHNK))
 
-      IF (.NOT.ALLOCATED(NEMO2WAM)) ALLOCATE(NEMO2WAM(NPROMA_WAM,NBLOC))
+      IF (.NOT.ALLOCATED(NEMO2WAM)) ALLOCATE(NEMO2WAM(NPROMA_WAM,NCHNK))
 
       IF (IOPTI > 0 .AND. IOPTI /= 3) THEN
 
@@ -555,9 +553,14 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       IF (IOPTI /= 3) THEN
         THETAQ = THETA * RAD
-        CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,             &
-     &               FM, GAMMA, SA, SB,                       &
-     &               IJS, IJL, FL1, FF_NOW(IJS:IJL)%WSWAVE, FF_NOW(IJS:IJL)%WDWAVE)
+        DO ICHNK = 1, NCHNK
+          KIJS = 1
+          KIJL = KIJL4CHNK(ICHNK)
+          CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,                      &
+     &                 FM, GAMMA, SA, SB,                                &
+     &                 KIJS, KIJL, FL1(:,:,:,ICHNK),                     &
+     &                 FF_NOW(:,ICHNK)%WSWAVE, FF_NOW(:,ICHNK)%WDWAVE)
+        ENDDO
 
 debile to finish ....
 
@@ -571,11 +574,11 @@ debile to finish ....
 
         IF (LLUNSTR) THEN
 !         reset points with no flux out of the boundary to 0
-          DO IBLOC = 1, NBLOC
+          DO ICHNK = 1, NCHNK
             DO M=1,NFRE
               DO K=1,NANG
-                DO IPRM = 1, NPROMA_WAM 
-                  FL1(IPRM,K,M,IBLOC) = FL1(IPRM,K,M,IBLOC)*IOBPD(K,IJ)
+                DO IPRM = 1, KIJL4CHNK(ICHNK)
+                  FL1(IPRM,K,M,ICHNK) = FL1(IPRM,K,M,ICHNK)*IOBPD(K,IJ)
                 ENDDO
               ENDDO
             ENDDO

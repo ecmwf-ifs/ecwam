@@ -1,6 +1,7 @@
       SUBROUTINE MSTART (IOPTI, FETCH, FRMAX, THETAQ,     &
      &                   FM, ZGAMMA, SA, SB,              &
-     &                   IJS, IJL, FL1, WSWAVE, WDWAVE)
+     &                   KIJS, KIJL, FL1,                 &
+     &                   WSWAVE, WDWAVE) 
 ! ----------------------------------------------------------------------
 
 !**** *MSTART* - MAKES START FIELDS FOR WAMODEL.
@@ -19,6 +20,7 @@
 
 !   *CALL* *MSTART (IOPTI, FETCH, FRMAX, THETAQ,
 !    &              FM, ZGAMMA, SA, SB, 
+!    &              NPROMA, KIJS, KIJL,
 !    &              FL1,WSWAVE,WDWAVE)*
 !      *IOPTI*  INTEGER   START FIELD OPTION
 !                         = 0 FROM PARAMETERS.
@@ -30,6 +32,7 @@
 !      *ZGAMMA* REAL      OVERSHOOT FACTOR.
 !      *SA*     REAL      LEFT PEAK WIDTH.
 !      *SB*     REAL      RIGHT PEAK WIDTH.
+
 !      *FL1*    REAL      2-D SPECTRUM FOR EACH GRID POINT 
 !      *WSWAVE* REAL      WIND SPEED. 
 !      *WDWAVE* REAL      WIND DIRECTION. 
@@ -55,6 +58,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : DEG
       USE YOWSTAT  , ONLY : CDTPRO
@@ -67,16 +71,16 @@
 #include "spectra.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IOPTI
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
       REAL(KIND=JWRB), INTENT(IN) :: FETCH, FRMAX, THETAQ
       REAL(KIND=JWRB), INTENT(IN) :: FM, ZGAMMA, SA, SB
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: WSWAVE, WDWAVE
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL1
+      REAL(KIND=JWRB),DIMENSION(NPROMA_WAM), INTENT(IN) :: WSWAVE, WDWAVE
+      REAL(KIND=JWRB),DIMENSION(NPROMA_WAM, NANG, NFRE), INTENT(INOUT) :: FL1
 
 
       INTEGER(KIND=JWIM) :: M, K, IJ, NGOU
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: FP, ALPHAJ, THES
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL) :: FP, ALPHAJ, THES
 
       CHARACTER(LEN=14), PARAMETER :: ZERO='              '
 
@@ -89,19 +93,19 @@
 !           -----------------------------
 
         IF (IOPTI == 1) THEN
-          DO IJ = IJS, IJL
+          DO IJ = KIJS, KIJL
             FP(IJ) = 0.0_JWRB
             ALPHJ(IJ) = 0.0_JWRB
             THES(IJ) = WDWAVE(IJ)
           ENDDO
         ELSEIF (IOPTI == 0) THEN
-          DO IJ = IJS, IJL
+          DO IJ = KIJS, KIJL
             FP(IJ) = FM
             ALPHJ(IJ) = ALFA
             THES(IJ) = THETAQ
           ENDDO
         ELSE
-          DO IJ = IJS, IJL
+          DO IJ = KIJS, KIJL
             FP(IJ) = FM
             ALPHJ(IJ) = ALFA
             IF (WSWAVE(IJ) > 0.1E-08_JWRB) THEN
@@ -115,11 +119,11 @@
 !*    2.1.2 PEAK FREQUENCY AND ALPHAJONS FROM FETCH LAW.
 !           --------------------------------------------
         IF (IOPTI /= 0) THEN
-          CALL PEAK (IJS, IJL, FETCH, FRMAX, WSWAVE, FP, ALPHAJ)
+          CALL PEAK (KIJS, KIJL, FETCH, FRMAX, WSWAVE, FP, ALPHAJ)
         ENDIF
 
 !*    2.2 COMPUTE SPECTRA FROM PARAMETERS.
 !         --------------------------------
-        CALL SPECTRA (IJS, IJL, ZGAMMA, SA, SB, FP, ALPHAJ, THES, FL1)
+        CALL SPECTRA (KIJS, KIJL, ZGAMMA, SA, SB, FP, ALPHAJ, THES, FL1)
 
       END SUBROUTINE MSTART

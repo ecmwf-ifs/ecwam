@@ -1,4 +1,4 @@
-      SUBROUTINE PEAK (IJS, IJL, FETCH, FPMAX, U10, FP, ALPHJ)
+      SUBROUTINE PEAK (KIJS, KIJL, FETCH, FPMAX, U10, FP, ALPHJ)
 
 ! ----------------------------------------------------------------------
 
@@ -18,9 +18,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PEAK (IJL, IJS, FETCH, FPMAX, U10, FP, ALPHAJ)*
-!          *IJS*     INTEGER  FIRST POINT IN BLOCK.
-!          *IJL*     INTEGER  LAST  POINT IN BLOCK.
+!       *CALL* *PEAK (KIJL, KIJS, FETCH, FPMAX, U10, FP, ALPHAJ)*
+!          *KIJS*    INTEGER  FIRST POINT IN BLOCK.
+!          *KIJL*    INTEGER  LAST  POINT IN BLOCK.
 !          *FETCH*   REAL     FETCH TO BE USED (METRES).
 !          *FPMAX*   REAL     MAXIMUM PEAK FREQUENCY (HERTZ).
 !          *U10*     REAL     WIND SPEED.
@@ -60,12 +60,12 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
       REAL(KIND=JWRB), INTENT(IN) :: FETCH, FPMAX
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: U10
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(OUT) :: FP
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(INOUT) :: ALPHAJ 
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: U10
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(OUT) :: FP
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(INOUT) :: ALPHAJ 
 
 
       INTEGER(KIND=JWIM) :: IJ
@@ -77,7 +77,7 @@
 !        -------------------------------
 
       GX = G * FETCH
-      DO IJ = IJS, IJL
+      DO IJ = KIJS, KIJL
         IF (U10(IJ) > 0.1E-08_JWRB) THEN
           GXU = GX/(U10(IJ)*U10(IJ))
           UG = G/U10(IJ)
