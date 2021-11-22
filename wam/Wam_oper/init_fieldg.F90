@@ -1,5 +1,4 @@
-SUBROUTINE INIT_FIELDG(IJS, IJL, BLK2LOC,                      &
- &                     LLALLOC_ONLY, LLINIALL, LLOCAL)
+SUBROUTINE INIT_FIELDG(BLK2LOC, LLALLOC_ONLY, LLINIALL, LLOCAL) 
 
 ! ----------------------------------------------------------------------
 
@@ -47,8 +46,7 @@ SUBROUTINE INIT_FIELDG(IJS, IJL, BLK2LOC,                      &
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      TYPE(WVGRIDLOC), DIMENSION(IJS:IJL), INTENT(IN) :: BLK2LOC
+      TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: BLK2LOC
       LOGICAL, INTENT(IN) :: LLALLOC_ONLY, LLINIALL, LLOCAL
 
 

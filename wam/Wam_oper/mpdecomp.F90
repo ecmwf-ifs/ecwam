@@ -106,7 +106,7 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK)
       USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,COSTH    ,SINTH
-      USE YOWGRID  , ONLY : IJS      ,IJL      ,NPROMA_WAM, NCHNK,      &
+      USE YOWGRID  , ONLY : IJS, IJL, NTOTIJ, NPROMA_WAM, NCHNK,      &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,                  &
      &            IJFROMCHNK,                                           &
      &            DELLAM   ,COSPH    ,DELPHI   ,                        &
@@ -244,6 +244,7 @@ IF (LLUNSTR) THEN
 ! NEW MAPPINGS BASED ON THE DECOMPOSITION ...
         IJS = 1
         IJL = MNP
+        NTOTIJ = MNP
 
         IF (ALLOCATED(NSTART)) DEALLOCATE(NSTART)
         ALLOCATE (NSTART(NPR))
@@ -288,7 +289,7 @@ ELSE
 !     FIND KNMOP AND KMSOP
       KMNOP=1
       KMSOP=NGY
-      DO IJ = IJS,IJL
+      DO IJ = IJS, IJL
         KMNOP=MAX(BLK2GLO(IJ)%KXLT,KMNOP)
         KMSOP=MIN(BLK2GLO(IJ)%KXLT,KMSOP)
       ENDDO
@@ -2386,6 +2387,7 @@ ELSE
 ! SPECIFY THE LIMITS OF THE SEGMENT OVER WHICH THE PE HAS DIRECT ACCESS
       IJS = NSTART(IRANK)
       IJL = NEND(IRANK)
+      NTOTIJ = IJL-IJS+1
 
       IJSLOC = NSTART(IRANK)
       IJLLOC = NEND(IRANK)

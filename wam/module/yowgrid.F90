@@ -16,6 +16,7 @@
 
       INTEGER(KIND=JWIM) :: IJS
       INTEGER(KIND=JWIM) :: IJL
+      INTEGER(KIND=JWIM) :: NTOTIJ
       INTEGER(KIND=JWIM) :: IJSLOC, IJLLOC, IJGLOBAL_OFFSET
       INTEGER(KIND=JWIM) :: NPROMA_WAM
       INTEGER(KIND=JWIM) :: NCHNK
@@ -40,6 +41,7 @@
 
 !      *IJS*       INTEGER   INDEX OF FIRST POINT ON A GIVEN PROCESSOR
 !      *IJL*       INTEGER   INDEX OF LAST POINT ON A GIVEN PROCESSOR
+!      *NTOTIJ*    INTEGER   TOTAL NUMBER OF GRID POINTS PER PRECESSOR (IJL-IJS+1)
 
 !!!!!! for the unstructured part of the code, it was coded so that halo points
 !!!!!! are included as part of the points on a given processor (at the end of the vector of points).

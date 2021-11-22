@@ -854,8 +854,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       LLINIT=.NOT.LRESTARTED
       LLALLOC_FIELDG_ONLY=.FALSE.
 
-      CALL PREWIND (IJS, IJL, BLK2LOC,                   &
-     &              WVENVI, FF_NOW, FF_NEXT,             &
+      CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,    &
      &              LLINIT, LLALLOC_FIELDG_ONLY,         &
      &              IREAD,                               &
      &              NFIELDS, NGPTOTG, NC, NR,            &

@@ -72,7 +72,7 @@ PROGRAM preset
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,    &
      &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
-      USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL,                   &
+      USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL     , NTOTIJ  ,    &
      &            NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK,             & 
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
       USE YOWMAP   , ONLY : BLK2GLO   ,IRGG     ,AMOWEP   ,             &
@@ -312,7 +312,8 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
         IJS = 1
         IJL = NIBLO
-        IF(NPROMA == 0 ) NPROMA_WAM = IJL-IJS+1
+        NTOTIJ = IJL-IJS+1
+        IF(NPROMA == 0 ) NPROMA_WAM = NTOTIJ
         NXFF=NIBLO
         NYFF=1
         NSTART=1
@@ -335,15 +336,16 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
               BLK2LOC(IPRM,ICHNK)%KFROMIJ=1
               BLK2LOC(IPRM,ICHNK)%JFROMIJ=1
             ELSE
-              BLK2LOC(IPRM,ICHNK)%IFROMIJ=IJ
-              BLK2LOC(IPRM,ICHNK)%KFROMIJ=1
-              BLK2LOC(IPRM,ICHNK)%JFROMIJ=1
+              BLK2LOC(IPRM,ICHNK)%IFROMIJ=0
+              BLK2LOC(IPRM,ICHNK)%KFROMIJ=0
+              BLK2LOC(IPRM,ICHNK)%JFROMIJ=0
             ENDIF
           ENDDO
         ENDDO
 
       ELSE
-        IF(NPROMA == 0 ) NPROMA_WAM = IJL-IJS+1
+        NTOTIJ = IJL-IJS+1
+        IF(NPROMA == 0 ) NPROMA_WAM = NTOTIJ
         NXFF=NGX
         NYFF=NGY
         NSTART=1
@@ -366,9 +368,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
               BLK2LOC(IPRM,ICHNK)%KFROMIJ=BLK2GLO(IJ)%KXLT
               BLK2LOC(IPRM,ICHNK)%JFROMIJ=NGY-BLK2GLO(IJ)%KXLT+1
             ELSE
-              BLK2LOC(IPRM,ICHNK)%IFROMIJ=1
-              BLK2LOC(IPRM,ICHNK)%KFROMIJ=1
-              BLK2LOC(IPRM,ICHNK)%JFROMIJ=NGY
+              BLK2LOC(IPRM,ICHNK)%IFROMIJ=0
+              BLK2LOC(IPRM,ICHNK)%KFROMIJ=0
+              BLK2LOC(IPRM,ICHNK)%JFROMIJ=0
             ENDIF
           ENDDO
         ENDDO
@@ -523,8 +525,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=.FALSE.
 
-        CALL PREWIND (IJS, IJL, BLK2LOC,                 &
-     &                WVENVI, FF_NOW, FF_NEXT,           &
+        CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,  &
      &                LLINIT, LLALLOC_FIELDG_ONLY,       &
      &                IREAD,                             &
      &                NFIELDS, NGPTOTG, NC, NR,          &
@@ -576,14 +577,13 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         LLALLOC_ONLY=.FALSE.
         LLINIALL=.FALSE.
         LLOCAL=.TRUE.
-        CALL INIT_FIELDG(IJS, IJL, BLK2LOC,                      &
-     &                   LLALLOC_ONLY, LLINIALL, LLOCAL)
+        CALL INIT_FIELDG(BLK2LOC, LLALLOC_ONLY, LLINIALL, LLOCAL)
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK,KIJS,KIJL)
         DO ICHNK = 1, NCHNK
           KIJS = 1
           KIJL = NPROMA_WAM 
-          CALL MSWELL (KIJS, KIJL, BLK2LOC(:,ICHNK), FL1(:,:,:,ICHNK) )
+          CALL MSWELL (KIJS, KIJL, KIJL4CHNK(ICHNK), BLK2LOC(:,ICHNK), FL1(:,:,:,ICHNK) )
         ENDDO
 !$OMP END PARALLEL DO
 

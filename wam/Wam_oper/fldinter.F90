@@ -1,6 +1,6 @@
       SUBROUTINE FLDINTER (IU06, NGPTOTG, NC, NR, NFIELDS,FIELDS,       &
      &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,     &
-     &                     IFROMIJ, JFROMIJ, KIJS, KIJL,                &
+     &                     IFROMIJ, JFROMIJ, KIJS, KIJL, KIJLMAX,       &
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,   &
      &                     ILONRGG, IJBLOCK, PMISS,                     &
      &                     LADEN, ROAIR, LGUST, WSTAR0, LLKC, LWCUR,    &
@@ -63,8 +63,8 @@
 !        *ZDELLO* - GRID POINT SPACING PER LATITUDES. 
 !        *IFROMIJ*- INTEGER  !!! LOCAL !!! LONG. GRID INDEX.
 !        *JFROMIJ*- INTEGER  !!! LOCAL !!! LAT. GRID INDEX (NORTH-SOUTH).
-!        *KIJS*    - SMALLEST WAM GRID POINT INDEX USED BY THE PE.
-!        *KIJL*    - LARGEST WAM GRID POINT INDEX USED BY THE PE.
+!        *KIJS:KIJL* DIMENSION OF IFROMIJ AND JFROMIJ
+!        *KIJLMAX*- LARGEST WAM GRID POINT INDEX USED BY THREAD
 !        *AMOWEP* - MOST WESTERN LONGITUDE IN GRID (  1, ? ).           
 !        *AMOSOP* - MOST SOUTHERN LATITUDE IN GRID.( ? ,NGY).           
 !        *AMOEAP* - MOST EASTERN LONGITUDE IN GRID (NGX, ? ).           
@@ -105,7 +105,7 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, NGPTOTG, NC, NR, NFIELDS
-      INTEGER(KIND=JWIM), INTENT(IN) :: NGX, NGY, KRGG, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: NGX, NGY, KRGG, KIJS, KIJL, KIJLMAX
       INTEGER(KIND=JWIM), INTENT(IN) :: IPERIODIC
       INTEGER(KIND=JWIM), DIMENSION(NGY), INTENT(IN) :: KLONRGG, JJM
       INTEGER(KIND=JWIM), DIMENSION(NR), INTENT(IN) :: ILONRGG
@@ -159,7 +159,7 @@
 !       REARRANGE DATA FIELD.
 !       --------------------
 
-          DO IJ = KIJS,KIJL
+          DO IJ = KIJS, KIJLMAX
             I = IFROMIJ(IJ)
             J = JFROMIJ(IJ)
 
@@ -178,14 +178,14 @@
 
           IF (LLNEWCURR) THEN
             IF (LWCUR) THEN
-              DO IJ = KIJS,KIJL
+              DO IJ = KIJS, KIJLMAX
                 I = IFROMIJ(IJ)
                 J = JFROMIJ(IJ)
                 FIELDG(I,J)%UCUR = FIELDS(IJBLOCK(I,J),7)
                 FIELDG(I,J)%VCUR = FIELDS(IJBLOCK(I,J),8)
               ENDDO
             ELSE
-              DO IJ = KIJS,KIJL
+              DO IJ = KIJS, KIJLMAX
                 I = IFROMIJ(IJ)
                 J = JFROMIJ(IJ)
                 FIELDG(I,J)%UCUR = 0.0_JWRB
@@ -199,7 +199,7 @@
 !       INTERPOLATE TO WAVE MODEL GRID
 !       ------------------------------
 
-          DO IJ = KIJS,KIJL 
+          DO IJ = KIJS, KIJLMAX 
             I = IFROMIJ(IJ)
             J = JFROMIJ(IJ)
 
