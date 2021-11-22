@@ -106,7 +106,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &         IFSTSTEP, IFSNSTEP,                                      &
      &         LIFS_IO_SERV_ENABLED
       USE YOWGRIBHD, ONLY : DATE_TIME_WINDOW_END
-      USE YOWGRID  , ONLY : NPROMA_WAM, NBLOC 
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK 
       USE YOWCURR  , ONLY : IDELCUR  ,LLCHKCFL
       USE YOWFRED  , ONLY : FR
       USE YOWGRID  , ONLY : IJS      ,IJL

@@ -167,7 +167,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            WVPRPT_LAND
       USE YOWGRIBHD, ONLY : LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IJS     ,IJL      ,     &
-    &                       COSPH    ,NPROMA_WAM, NBLOC 
+    &                       COSPH    ,NPROMA_WAM, NCHNK 
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,                        &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            KMNOP    ,KMSOP    ,IPER
@@ -580,7 +580,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       WRITE(IU06,*) ' NPROC      : ', NPROC
       WRITE(IU06,*) ' MTHREADS   : ', MTHREADS
       WRITE(IU06,*) ' NPROMA_WAM : ', NPROMA_WAM
-      WRITE(IU06,*) ' NBLOC      : ', NBLOC
+      WRITE(IU06,*) ' NCHNK      : ', NCHNK
       WRITE(IU06,*) '  '
       CALL FLUSH (IU06)
 

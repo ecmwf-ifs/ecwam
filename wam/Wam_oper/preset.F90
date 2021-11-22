@@ -118,6 +118,7 @@ PROGRAM preset
 #include "cigetdeac.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "iniwcst.intfb.h"
+#include "init_fieldg.intfb.h"
 #include "mchunk.intfb.h"
 #include "mstart.intfb.h"
 #include "mswell.intfb.h"
@@ -156,6 +157,7 @@ PROGRAM preset
       LOGICAL :: LLINIT
       LOGICAL :: LLALLOC_FIELDG_ONLY
       LOGICAL :: LWCUR
+      LOGICAL :: LLALLOC_ONLY, LLINIALL, LLOCAL
 
 ! ----------------------------------------------------------------------
 
@@ -553,16 +555,16 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       IF (IOPTI /= 3) THEN
         THETAQ = THETA * RAD
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK,KIJS,KIJL)
         DO ICHNK = 1, NCHNK
           KIJS = 1
-          KIJL = KIJL4CHNK(ICHNK)
+          KIJL = NPROMA_WAM 
           CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,                      &
      &                 FM, GAMMA, SA, SB,                                &
      &                 KIJS, KIJL, FL1(:,:,:,ICHNK),                     &
      &                 FF_NOW(:,ICHNK)%WSWAVE, FF_NOW(:,ICHNK)%WDWAVE)
         ENDDO
-
-debile to finish ....
+!$OMP END PARALLEL DO
 
         CDTPRO  = ZERO
         CDATEWO = ZERO
@@ -570,7 +572,21 @@ debile to finish ....
         CDATEFL = ZERO
 
       ELSE
-        CALL MSWELL (IJS, IJL, BLK2LOC, FL1)
+
+        LLALLOC_ONLY=.FALSE.
+        LLINIALL=.FALSE.
+        LLOCAL=.TRUE.
+        CALL INIT_FIELDG(IJS, IJL, BLK2LOC,                      &
+     &                   LLALLOC_ONLY, LLINIALL, LLOCAL)
+
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK,KIJS,KIJL)
+        DO ICHNK = 1, NCHNK
+          KIJS = 1
+          KIJL = NPROMA_WAM 
+          CALL MSWELL (KIJS, KIJL, BLK2LOC(:,ICHNK), FL1(:,:,:,ICHNK) )
+        ENDDO
+!$OMP END PARALLEL DO
+
 
         IF (LLUNSTR) THEN
 !         reset points with no flux out of the boundary to 0

@@ -30,7 +30,7 @@ SUBROUTINE OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
      &                      LFDB     ,                                            &
      &                      LRSTST0  ,LWAMANOUT
       USE YOWGRIBHD, ONLY : LGRHDIFS 
-      USE YOWGRID  , ONLY : IJS      ,IJL       ,IJSLOC   ,IJLLOC  ,NPROMA_WAM, NBLOC
+      USE YOWGRID  , ONLY : IJS      ,IJL       ,IJSLOC   ,IJLLOC  ,NPROMA_WAM, NCHNK
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE
       USE YOWMESPAS, ONLY : LGRIBOUT ,LNOCDIN  ,LWAVEWIND 
       USE YOWPARAM , ONLY : NANG     ,NFRE

@@ -1,4 +1,4 @@
-      SUBROUTINE MSWELL (IJS, IJL, BLK2LOC, FL1)
+      SUBROUTINE MSWELL (KIJS, KIJL, KIJLMAX, BLK2LOC, FL1)
 ! ----------------------------------------------------------------------
 
 !**** *MSWELL* - MAKES START SWELL FIELDS FOR WAMODEL.
@@ -13,7 +13,7 @@
 !**   INTERFACE.
 !     ----------
 
-!   *CALL* *MSWELL (IJS, IJL, BLK2LOC, FL1)
+!   *CALL* *MSWELL (KIJS, KIJL, KIJLMAX, BLK2LOC, FL1)
 !      *BLK2LOC*             POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !      *FL1*      REAL      2-D SPECTRUM FOR EACH GRID POINT 
 
@@ -118,11 +118,10 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "init_fieldg.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL 
-      TYPE(WVGRIDLOC), DIMENSION(IJS:IJL), INTENT(IN) :: BLK2LOC
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(OUT) :: FL1
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, KIJLMAX
+      TYPE(WVGRIDLOC), DIMENSION(KIJS:KIJL), INTENT(IN) :: BLK2LOC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(OUT) :: FL1
 
       INTEGER(KIND=JWIM), PARAMETER :: NLOC=4 ! TOTAL NUMBER OF SWELL SYSTEMS
       INTEGER(KIND=JWIM) :: IJ, K, M, ILOC, IX, JY
@@ -140,25 +139,17 @@
       REAL(KIND=JWRU) :: XLO, YLA, DIST
       REAL(KIND=JWRU), DIMENSION(NLOC) :: YLAT0, XLON0
 
-      LOGICAL :: LLALLOC_ONLY, LLINIALL, LLOCAL
-
 !----------------------------------------------------------------------
 
         CQ0=16.0_JWRB/(3*ZPI)
 
         DO M=1,NFRE
           DO K=1,NANG
-            DO IJ = IJS, IJL
+            DO IJ = KIJS, KIJL
               FL1(IJ,K,M)=0.0_JWRB
             ENDDO
           ENDDO
         ENDDO
-
-        LLALLOC_ONLY=.FALSE.
-        LLINIALL=.FALSE.
-        LLOCAL=.TRUE.
-        CALL INIT_FIELDG(IJS, IJL, BLK2LOC,                      &
-     &                   LLALLOC_ONLY, LLINIALL, LLOCAL)
 
 !       DEFINE THE SWELL SYSTEMS
         H0(1)=2.0_JWRB
@@ -202,7 +193,7 @@
           COSDIRMAX=COS(TH(K)-THETA0(1))
           DO K=2,NANG
             COSDIR=COS(TH(K)-THETA0(ILOC))
-            IF(COSDIRMAX.LT.COSDIR) THEN
+            IF (COSDIRMAX < COSDIR) THEN
               KLOC(ILOC)=K
               COSDIRMAX=COSDIR
             ENDIF
@@ -213,7 +204,7 @@
           DO M=2,NFRE
             OMEGA=ZPI*FR(M)
             OMEGADIFF=ABS(OMEGA-OMEGAP(ILOC))
-            IF(OMEGADIFF.LT.OMEGADIFFMIN) THEN
+            IF (OMEGADIFF < OMEGADIFFMIN) THEN
               MLOC(ILOC)=M
               OMEGADIFFMIN=OMEGADIFF
             ENDIF
@@ -223,7 +214,7 @@
         DO ILOC=1,NLOC
           DO K=1,NANG
             COSDIR=COS(TH(K)-THETA0(ILOC))
-            IF(COSDIR.GT.0.) THEN
+            IF (COSDIR > 0.0_JWRB) THEN
               Q0(K) = CQ0*COSDIR**4
             ELSE
               Q0(K) = 0. 
@@ -235,24 +226,24 @@
           DO M=1,NFRE
             OMEGA=ZPI*FR(M)
             S0=(CS0/OMEGA**(NSP+1))*EXP(-CEX*(OMEGAP(ILOC)/OMEGA)**NSP)
-            IF(S0.LT.0.001_JWRB) S0=0.0_JWRB
+            IF (S0 < 0.001_JWRB) S0=0.0_JWRB
             DO K=1,NANG
               FL0(ILOC,K,M)= Q0(K)*S0
             ENDDO
           ENDDO
         ENDDO
 
-        DO IJ = IJS, IJL
+        DO IJ = KIJS, KIJLMAX
           IX = BLK2LOC(IJ)%IFROMIJ
-          JY =  BLK2LOC(IJ)%JFROMIJ
+          JY = BLK2LOC(IJ)%JFROMIJ
           XLO=FIELDG(IX,JY)%XLON
           YLA=FIELDG(IX,JY)%YLAT
-          IF(YLA.EQ.ZMISS .OR. XLO.EQ.ZMISS) CYCLE 
+          IF (YLA == ZMISS .OR. XLO == ZMISS) CYCLE 
 
           DO ILOC=1,NLOC
             CALL SPHERICAL_COORDINATE_DISTANCE(XLON0(ILOC),XLO,YLAT0(ILOC),YLA,DIST)
             DIST=2*R*DIST/XL(ILOC)
-            IF(DIST.LT.10.0_JWRU) THEN
+            IF (DIST < 10.0_JWRU) THEN
               SPRD=EXP(-DIST)
               DO M=1,NFRE
                 DO K=1,NANG
@@ -266,5 +257,4 @@
 
         DEALLOCATE(FIELDG)
         
-      RETURN
       END SUBROUTINE MSWELL
