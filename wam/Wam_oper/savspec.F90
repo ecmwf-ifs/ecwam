@@ -53,7 +53,6 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
-      USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15
 
 ! ----------------------------------------------------------------------
 
@@ -69,6 +68,7 @@
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: IUNIT
+      INTEGER(KIND=JWIM) :: IFCST
       INTEGER(KIND=JWIM) :: IRECV, MLOOP, KLOOP, MINF, MSUP, KINF, KSUP 
       INTEGER(KIND=JWIM) :: LNAME
 
@@ -85,7 +85,8 @@
 
       LOUNIT = .TRUE.
 
-      CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
+      IFCST = 0
+      CALL GRSTNAME(CDTPRO,CDATEF,IFCST,'BLS',ICPLEN,CPATH,FILENAME)
 
       IF(LRSTPARALW) THEN
 !        RESTART FILES FROM ALL PS's
