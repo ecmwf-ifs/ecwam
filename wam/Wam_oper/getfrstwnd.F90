@@ -114,7 +114,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
       ENDIF
 
       CDATEWL = CDTWIS
-      CALL GETWND (IJS, IJL, IFROMIJ, JFROMIJ,            &
+      CALL GETWND (IFROMIJ, JFROMIJ,                      &
      &             UCUR, VCUR,                            &
      &             WSWAVE, UFRIC,                         &
      &             WDWAVE,                                &

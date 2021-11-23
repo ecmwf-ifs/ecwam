@@ -132,7 +132,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
 
         CDTNEXT=CDTWIH
 
-        CALL GETWND (IJS, IJL, IFROMIJ, JFROMIJ,            &
+        CALL GETWND (IFROMIJ, JFROMIJ,                      &
      &               UCUR, VCUR,                            &
      &               U10, US,                               &
      &               THW,                                   &

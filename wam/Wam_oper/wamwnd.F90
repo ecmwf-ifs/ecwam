@@ -2,7 +2,8 @@
      &                   IFROMIJ, JFROMIJ,          &
      &                   UCUR, VCUR,                &
      &                   U10, US,                   &
-     &                   THW, ADS, WSTAR, CITH,     &
+     &                   THW, ADS,                  &
+     &                   WSTAR, CITH,               &
      &                   LWCUR, ICODE_WND)
 
 ! ----------------------------------------------------------------------
@@ -31,8 +32,7 @@
 !                     U10, US,
 !                     THW, ADS, WSTAR, CITH,
 !                     LWCUR, ICODE_WND)
-!          *KIJS*     INDEX OF FIRST GRIDPOINT
-!          *KIJL*     INDEX OF LAST GRIDPOINT
+!          *KIJS:KIJL* DIMENSION OF PASSED ARRAYS
 !          *IFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !          *JFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !          *UCUR* - U-COMPONENT OF THE SURFACE CURRENT
@@ -43,8 +43,6 @@
 !          *ADS*  - INTERPOLATED AIR DENSITY AT ALL POINTS.
 !          *WSTAR* - INTERPOLATED CONVECTIVE VELOCITY AT ALL POINTS
 !          *CITH* - SEA ICE THICKNESS. 
-!          *KIJS*    - INDEX OF FIRST GRIDPOINT
-!          *KIJL*    - INDEX OF LAST GRIDPOINT
 !          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 !          *ICODE_WND* - INTEGER INDICATES WHAT IS SAVED IN FIELDG%UWND, and
 !                        FIELDG%VWND
@@ -116,7 +114,7 @@
 !*    2. TRANSFORM GRIDDED WIND INPUT INTO BLOCK
 !        ----------------------------------------
 
-      DO IJ = KIJS,KIJL
+      DO IJ = KIJS, KIJL
         IX = IFROMIJ(IJ)
         JY = JFROMIJ(IJ)
         UU(IJ) = FIELDG(IX,JY)%UWND
@@ -134,7 +132,7 @@
       CASE(3)
 !       USE NEUTRAL WIND SPEED AND DIRECTION FROM A PREVIOUS WAM RUN.
         IF (LLWSWAVE .AND. LLWDWAVE) THEN
-          DO IJ = KIJS,KIJL
+          DO IJ = KIJS, KIJL
             IX = IFROMIJ(IJ)
             JY = JFROMIJ(IJ)
             U10(IJ) = FIELDG(IX,JY)%WSWAVE
@@ -143,7 +141,7 @@
 
 !         THERE MIGHT BE POINTS FOR WHICH NO WAM VALUES ARE AVAILABLE
 !         USE U and V FROM ATMOSPHERE INSTEAD
-          DO IJ = KIJS,KIJL
+          DO IJ = KIJS, KIJL
             IF (U10(IJ) <= 0.0_JWRB) THEN
               WSPEED(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
               IF (WSPEED(IJ) > 0.0_JWRB) THEN
@@ -158,7 +156,7 @@
 
 !         CORRECT FOR RELATIVE WINDS WITH RESPECT TO THE SURFACE CURRENTS.
           IF (LCORREL) THEN
-            DO IJ = KIJS,KIJL
+            DO IJ = KIJS, KIJL
               UU(IJ) = U10(IJ)*SIN(THW(IJ))
               VV(IJ) = U10(IJ)*COS(THW(IJ))
               UU(IJ) = UU(IJ) - RWFAC*UCUR(IJ)
@@ -178,7 +176,7 @@
 !       -----------------------------------------------
         ELSE IF (LLWSWAVE) THEN
 
-          DO IJ = KIJS,KIJL
+          DO IJ = KIJS, KIJL
             IX = IFROMIJ(IJ)
             JY = JFROMIJ(IJ)
 
@@ -194,13 +192,13 @@
           ENDDO
 
           IF (LCORREL) THEN
-            DO IJ = KIJS,KIJL
+            DO IJ = KIJS, KIJL
               UU(IJ) = UU(IJ) + RWFAC*UCUR(IJ)
               VV(IJ) = VV(IJ) + RWFAC*VCUR(IJ)
             ENDDO
           ENDIF
 
-          DO IJ = KIJS,KIJL
+          DO IJ = KIJS, KIJL
             U10(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
             IF (U10(IJ) /= 0.0_JWRB) THEN 
               THW(IJ) = ATAN2(UU(IJ),VV(IJ))
@@ -213,13 +211,13 @@
         ELSE
 
           IF (LCORREL) THEN
-            DO IJ = KIJS,KIJL
+            DO IJ = KIJS, KIJL
               UU(IJ) = UU(IJ) + RWFAC*UCUR(IJ)
               VV(IJ) = VV(IJ) + RWFAC*VCUR(IJ)
             ENDDO
           ENDIF
 
-          DO IJ = KIJS,KIJL
+          DO IJ = KIJS, KIJL
             U10(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
             IF (U10(IJ) /= 0.0_JWRB) THEN 
               THW(IJ) = ATAN2(UU(IJ),VV(IJ))
@@ -231,7 +229,7 @@
         ENDIF
 
 !       IMPOSE A MINIMUM WIND SPEED.
-        DO IJ = KIJS,KIJL
+        DO IJ = KIJS, KIJL
           U10(IJ) = MAX(U10(IJ),WSPMIN)
         ENDDO
 
@@ -240,7 +238,7 @@
 !*    3.2  INPUT IS FRICTION VELOCITY.
 !          ---------------------------
 
-        DO IJ = KIJS,KIJL
+        DO IJ = KIJS, KIJL
           US(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
           IF (US(IJ) /= 0.0_JWRB) THEN 
             THW(IJ) = ATAN2(UU(IJ),VV(IJ))
@@ -255,7 +253,7 @@
 !*    3.3 INPUT WINDS ARE SURFACE STRESSES.
 !         ---------------------------------
 
-        DO IJ = KIJS,KIJL
+        DO IJ = KIJS, KIJL
           US(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
           IF (US(IJ) /= 0.0_JWRB) THEN 
             THW(IJ) = ATAN2(UU(IJ),VV(IJ))
@@ -268,7 +266,7 @@
 
       END SELECT 
 
-      DO IJ = KIJS,KIJL
+      DO IJ = KIJS, KIJL
         IF (THW(IJ) < 0.0_JWRB) THW(IJ) = THW(IJ) + ZPI
       ENDDO
 

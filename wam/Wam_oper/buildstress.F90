@@ -129,7 +129,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
       LWNDFILE=.TRUE.
       LCLOSEWND=.TRUE.
 
-      CALL GETWND (IJS, IJL, IFROMIJ, JFROMIJ,          &
+      CALL GETWND (IFROMIJ, JFROMIJ,                    &
      &             UCUR, VCUR,                          &
      &             WSWAVE, UFRIC,                       &
      &             WDWAVE,                              &
