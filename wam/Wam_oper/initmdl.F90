@@ -654,8 +654,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !        USED). AND READ IN LAST WINDFIELDS FROM RESTARTFILE.
 !        ---------------------------------------------------------------
 
-      CALL GETSTRESS(IJS, IJL, BLK2LOC,                &
-     &               WVENVI, FF_NOW, NEMO2WAM,         &
+      CALL GETSTRESS(BLK2LOC, WVENVI, FF_NOW, NEMO2WAM,   &
      &               NBLKS, NBLKE, IREAD) 
 
       CDATEWL = CDTPRO
