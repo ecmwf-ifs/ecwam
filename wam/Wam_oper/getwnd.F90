@@ -1,12 +1,12 @@
 SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
-     &                   UCUR, VCUR,                            &
-     &                   U10, US,                               &
-     &                   THW,                                   &
-     &                   ADS, WSTAR,                            &
-     &                   CICOVER, CITHICK,                      &
-     &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,    &
-     &                   LWCUR, NEMOCICOVER, NEMOCITHICK,       &
-     &                   ICODE_WND)
+ &                 UCUR, VCUR,                            &
+ &                 U10, US,                               &
+ &                 THW,                                   &
+ &                 ADS, WSTAR,                            &
+ &                 CICOVER, CITHICK,                      &
+ &                 CDTWIS, LWNDFILE, LCLOSEWND, IREAD,    &
+ &                 LWCUR, NEMOCICOVER, NEMOCITHICK,       &
+ &                 ICODE_WND)
 
 ! ----------------------------------------------------------------------
 
@@ -53,39 +53,6 @@ SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
 !                     U10: ICODE_WND=3
 !                     US:  ICODE_WND=1 OR 2
 
-!     METHOD.
-!     -------
-
-!       NONE.
-
-!     EXTERNALS.
-!     ----------
-
-!       *ABORT1*     - TERMINATES PROCESSING.
-!       *READWIND*   - READING WINDS.
-!       *WAMWND*    - CALCULATE WIND IN WAM POINTS.
-
-!     REFERENCE.
-!     ----------
-
-!       NONE.
-
-
-!    MODIFIED BY:
-!    ------------
-!    B. HANSEN    ECMWF 1997
-!                 RESTRUCTURE CALL TO READWIND.
-!
-!    S. ABDALLA   ECMWF OCTOBER 2001
-!                 MODIFICATION THE CALL TO READWIND WAMWND; AND 
-!                 INCLUSION OF AIR DENSITY AND Zi/L.
-!    J. BIDLOT    ECMWF NOVEMEBR 2003
-!                 INTRODUCE openMP
-!    J. BIDLOT    ECMWF AUGUST 2006
-!                 SEA ICE FRACTION IF COUPLED.
-!    J. BIDLOT    ECMWF AUGUST 2008
-!                 READWIND WAS SPLIT BETWEEN READWIND AND IFSTOWAM:
-!                 IN COUPLED RUNS, READWIND IS NOT CALLED 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
@@ -97,7 +64,7 @@ SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
       USE YOWMPP   , ONLY : IRANK
       USE YOWPARAM , ONLY : CLDOMAIN , LWDINTS
       USE YOWTEST  , ONLY : IU06
-      USE YOWWIND  , ONLY : WSPMIN   ,IUNITW
+      USE YOWWIND  , ONLY : IUNITW
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -130,12 +97,9 @@ SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       LOGICAL :: LLNOTOPENED
-      LOGICAL, SAVE :: LONLYONCE
 
       CHARACTER(LEN=14) :: CDTWIR
       CHARACTER(LEN=24) :: FILNM
-
-      DATA LONLYONCE /.TRUE./
 
       SAVE CDTWIR
       SAVE LLNOTOPENED
@@ -146,6 +110,8 @@ SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
 !        ------------------
 
 IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
+
+1000 CONTINUE
 
       IF (IUNITW == 0) THEN
         LLNOTOPENED=.TRUE.
@@ -220,20 +186,8 @@ IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
 !*    3. INTERPOLATE AND BLOCK WINDFIELD
 !        -------------------------------
 
-        IF (LONLYONCE) THEN
-          WRITE (IU06,*) ' '
-          WRITE (IU06,*) ' SUB. GETWND : '
-          WRITE (IU06,*) ' '
-          WRITE (IU06,*) ' WIND SPEEDS LOWER THAN ',WSPMIN, ' M/S'
-          WRITE (IU06,*) ' WERE RESET TO  ',WSPMIN, ' M/S'
-          WRITE (IU06,*) ' '
-          CALL FLUSH(IU06)
-          LONLYONCE=.FALSE.
-        ENDIF
-
-
         CALL GSTATS(1444,0)
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC) PRIVATE(ICHNK, KIJS, KIJL)
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, KIJS, KIJL)
         DO ICHNK = 1, NCHNK
           KIJS=1
           KIJL=NPROMA_WAM

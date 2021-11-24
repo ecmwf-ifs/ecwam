@@ -2438,6 +2438,7 @@ IF (LLUNSTR) THEN
         BLK2LOC(IPRM,ICHNK)%KFROMIJ=1
         BLK2LOC(IPRM,ICHNK)%JFROMIJ=1
       ELSE
+!!!     these are fictious points but will point to the first point in the chunk as it should always exist 
         BLK2LOC(IPRM,ICHNK)%IFROMIJ=BLK2LOC(1,ICHNK)%IFROMIJ
         BLK2LOC(IPRM,ICHNK)%KFROMIJ=BLK2LOC(1,ICHNK)%KFROMIJ
         BLK2LOC(IPRM,ICHNK)%JFROMIJ=BLK2LOC(1,ICHNK)%JFROMIJ
@@ -2469,17 +2470,17 @@ ELSE
         WVENVI(IPRM,ICHNK)%UCUR = 0.0_JWRB
         WVENVI(IPRM,ICHNK)%VCUR = 0.0_JWRB
       ELSE
-!!!     these are fictious points but still need to have realistic values if pointed to.
+!!!     these are fictious points but will point to the first point in the chunk as it should always exist 
         BLK2LOC(IPRM,ICHNK)%IFROMIJ=BLK2LOC(1,ICHNK)%IFROMIJ
         BLK2LOC(IPRM,ICHNK)%KFROMIJ=BLK2LOC(1,ICHNK)%KFROMIJ
         BLK2LOC(IPRM,ICHNK)%JFROMIJ=BLK2LOC(1,ICHNK)%JFROMIJ
-        JH = BLK2LOC(IPRM,ICHNK)%KFROMIJ
-        WVENVI(IPRM,ICHNK)%COSPHM1 = 1.0_JWRB
-        WVENVI(IPRM,ICHNK)%DELLAM1 = 1.0_JWRB/DELLAM(JH) 
+
+        WVENVI(IPRM,ICHNK)%COSPHM1 = WVENVI(1,ICHNK)%COSPHM1 
+        WVENVI(IPRM,ICHNK)%DELLAM1 = WVENVI(1,ICHNK)%DELLAM1 
  
-        WVENVI(IPRM,ICHNK)%DEPTH = BATHYMAX
-        WVENVI(IPRM,ICHNK)%UCUR = 0.0_JWRB
-        WVENVI(IPRM,ICHNK)%VCUR = 0.0_JWRB
+        WVENVI(IPRM,ICHNK)%DEPTH = WVENVI(1,ICHNK)%DEPTH 
+        WVENVI(IPRM,ICHNK)%UCUR = WVENVI(1,ICHNK)%UCUR
+        WVENVI(IPRM,ICHNK)%VCUR = WVENVI(1,ICHNK)%VCUR 
       ENDIF
 
     ENDDO

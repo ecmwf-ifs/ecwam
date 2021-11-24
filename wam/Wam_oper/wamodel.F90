@@ -359,7 +359,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
                 MARSTYPE='an'
               ENDIF
 
-              CALL OUTSPEC(IJS, IJL, FL1, CICOVER)
+              CALL OUTSPEC(FL1, CICOVER)
               LLFLUSH = .TRUE.
 
               MARSTYPE=MARSTYPEBAK
@@ -372,12 +372,12 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !           1.8.2 SAVE RESTART FILES IN PURE BINARY FORM (in needed)
 !                 --------------------------------------
             IF ( .NOT.LGRIBOUT .OR. LDWRRE ) THEN
-              CALL SAVSTRESS(IJS, IJL, WVENVI, FF_NOW, NBLKS, NBLKE, CDTPRO, CDATEF)
+              CALL SAVSTRESS(WVENVI, FF_NOW, NBLKS, NBLKE, CDTPRO, CDATEF)
               WRITE(IU06,*) ' '
               WRITE(IU06,*) '  BINARY STRESS FILE DISPOSED AT........ CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
 
-              CALL SAVSPEC(IJS, IJL, FL1, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
+              CALL SAVSPEC(FL1, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
               WRITE(IU06,*) '  BINARY WAVE SPECTRA DISPOSED AT........ CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
               CALL FLUSH(IU06)

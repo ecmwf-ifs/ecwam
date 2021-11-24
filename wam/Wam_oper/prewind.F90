@@ -225,8 +225,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
         IF (CDATEWL == ZERO) THEN
 !         Initialisation (either first time or following a restart)
           CALL GETFRSTWND (CDTWIS, CDTWIE,                 &
-     &                     IJS, IJL, BLK2LOC,              &
-     &                     WVENVI, FF_NOW,                 &
+     &                     BLK2LOC, WVENVI, FF_NOW,        &
      &                     IREAD, LWCUR, NEMO2WAM,         &
      &                     LLMORE)
         ELSE
@@ -237,8 +236,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
         IF (LLMORE) THEN
 !         Update forcing
           CALL NOTIM (CDTWIS, CDTWIE,             &
-     &                IJS, IJL, BLK2LOC,          &
-     &                WVENVI, FF_NEXT,            &
+     &                BLK2LOC, WVENVI, FF_NEXT,   &
      &                IREAD, LWCUR, NEMO2WAM)
         ENDIF
       ELSE
