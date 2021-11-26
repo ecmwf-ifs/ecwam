@@ -1,4 +1,4 @@
-SUBROUTINE GETSPEC(FL, IJS, IJL, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
+SUBROUTINE GETSPEC(FL, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
 !     J. BIDLOT    ECMWF      MARCH 2010: modified to use gribapi 
@@ -9,7 +9,7 @@ SUBROUTINE GETSPEC(FL, IJS, IJL, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *GETSPEC(FL, IJS, IJL, BLK2GLO, WVENVI,NBLKS,NBLKE,IREAD)
+!     *CALL* *GETSPEC(FL, BLK2GLO, WVENVI,NBLKS,NBLKE,IREAD)
 !     *FL*       ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
 
 !     *BLK2GLO*  BLOCK TO GRID TRANSFORMATION
@@ -53,15 +53,15 @@ SUBROUTINE GETSPEC(FL, IJS, IJL, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
       USE YOWCOUT  , ONLY : KDEL     ,MDEL     ,LRSTPARALR
       USE YOWFRED  , ONLY : FR       ,TH       ,FR5      ,FRM5
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
-      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
       USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,ZDELLO   ,NLONRGG
       USE YOWMESPAS, ONLY : LGRIBIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,                        &
-     &            KTAG     ,NPRECR   ,NPRECI
+     &                      KTAG     ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
-     &            NIBLO    ,CLDOMAIN
+     &                      NIBLO    ,CLDOMAIN
       USE YOWPCONS , ONLY : G        ,DEG      ,R        ,ZMISS    ,    &
-     &            EPSMIN
+     &                      EPSMIN
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,IREFRA  ,LNSESTART
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
@@ -76,6 +76,7 @@ SUBROUTINE GETSPEC(FL, IJS, IJL, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "sdepthlim.intfb.h"
 #include "abort1.intfb.h"
 #include "expand_string.intfb.h"
@@ -86,14 +87,13 @@ SUBROUTINE GETSPEC(FL, IJS, IJL, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 #include "mpdistribfl.intfb.h"
 #include "readfl.intfb.h"
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(OUT) :: FL
       TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
-      TYPE(WVGRIDLOC), DIMENSION(IJS:IJL), INTENT(IN) :: BLK2LOC
-      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(IN) :: WVENVI
-      INTEGER(KIND=JWIM), DIMENSION(NPROC),INTENT(IN) :: NBLKS, NBLKE
+      TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: BLK2LOC
+      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: WVENVI
+      INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
-    
+
 
       INTEGER(KIND=JWIM) :: NBIT
 
@@ -112,7 +112,7 @@ SUBROUTINE GETSPEC(FL, IJS, IJL, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
       INTEGER(KIND=JWIM) :: KRET, IPLENG, ISIZE, KLEN, ILENG, KWORD
       INTEGER(KIND=JWIM) :: IRET
       INTEGER(KIND=JWIM) :: LFILE, KFILE_HANDLE, KGRIB_HANDLE
-      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: JKGLO, ICHNK, KIJS, KIJL, IJSB, IJLB
       INTEGER(KIND=JWIM) :: IPROC, ITAG, IREQ, IST, IEND, KSEND
       INTEGER(KIND=JWIM) :: ISENDREQ(NPROC)
       INTEGER(KIND=JWIM) :: NLONRGG_LOC(NYFF)
@@ -148,8 +148,6 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 
       NBIT=NIBLO+200
 
-      NPROMA=NPROMA_WAM
-
       LOUNIT = .TRUE.
       LCUNIT = .TRUE.
       ISEND=IREAD
@@ -158,14 +156,12 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 !     BY-PASSED INPUT BY STARTING WITH SPECTRA AT NOISE LEVEL
 !     =======================================================
 
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)
-        DO JKGLO=IJS,IJL,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL)
-          DO M=1,NFRE
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                FL(IJ,K,M) = EPSMIN 
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, M, K, IJ)
+        DO ICHNK = 1, NCHNK
+          DO M = 1, NFRE
+            DO K = 1, NANG
+              DO IJ = 1, NPROMA_WAM
+                FL(IJ, K, M, ICHNK) = EPSMIN 
               ENDDO
             ENDDO
           ENDDO
@@ -180,7 +176,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
           FILENAME='specwavein'
           LFILE=LEN_TRIM(FILENAME)
 
-          INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
+          INQUIRE(FILE=FILENAME(1:LFILE), EXIST=LLEXIST)
           IF (.NOT.LLEXIST) THEN
             WRITE(IU06,*)'**************************************'
             WRITE(IU06,*)'*                                    *'
@@ -206,7 +202,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 
 !         CONNECT INPUT PE (IREAD) WITH INPUT FILE
         IF (IRANK == IREAD) THEN
-          CALL IGRIB_OPEN_FILE(KFILE_HANDLE,FILENAME(1:LFILE),'r')
+          CALL IGRIB_OPEN_FILE(KFILE_HANDLE, FILENAME(1:LFILE),'r')
         ENDIF
         IF (.NOT.ALLOCATED(WORK)) ALLOCATE(WORK(NIBLO))
 
@@ -245,8 +241,8 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
             ELSE
               KSEND=IDUM+1
             ENDIF
-            M=(((IC-1)+IDUM-1)/NANG)+1
-            K=(IC-1)+IDUM-(M-1)*NANG
+            M = (((IC-1)+IDUM-1)/NANG)+1
+            K = (IC-1)+IDUM-(M-1)*NANG
 
 !           DATA ARE READ IN ON PE IREAD
 
@@ -436,21 +432,18 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                 CALL ABORT1
               ENDIF
 
-!$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,IY)
-              DO JKGLO=1,NIBLO,NPROMA
+!$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO, KIJS, KIJL, IJ, IX, IY)
+              DO JKGLO = 1, NIBLO, NPROMA_WAM
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,NIBLO)
-                DO IJ=KIJS,KIJL
+                DO IJ = KIJS, KIJL
                   IX = IXLG(IJ)
                   IY = NYFF- KXLT(IJ) +1
-                  IF (FIELD(IX,IY) /= ZMISS) THEN
-                      WORK(IJ) = FIELD(IX,IY)
-                  ELSE
-                    WORK(IJ) = EPSMIN
-                  ENDIF
+                  WORK(IJ) = FIELD(IX,IY)
                 ENDDO
-                ENDDO
+              ENDDO
 !$OMP         END PARALLEL DO
+
 
               DEALLOCATE(FIELD)
 
@@ -500,7 +493,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
           IST=NBLKS(IPROC)
           IEND=NBLKE(IPROC)
           ALLOCATE(ZRECVBUF(IST:IEND))
-          DO IDUM=1,ISTEP_LOCAL
+          DO IDUM = 1, ISTEP_LOCAL
             IF (NPROC == 1) THEN
               KSEND=1
             ELSEIF (IDUM < IREAD) THEN
@@ -514,9 +507,42 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 
             IF (IRANK == KSEND) THEN
 !             SAVE LOCAL CONTRIBUTION
-              DO IJ = NBLKS(IRANK),NBLKE(IRANK) 
-                FL(IJ,K,M)=WORK(IJ)
+
+              IF(NBLKS(IRANK) /= IJFROMCHNK(1,1) .OR. NBLKE(IRANK) /= IJFROMCHNK(NCHNK,KIJL4CHNK(NCHNK)) ) THEN
+                WRITE(IU06,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
+                WRITE(0,*)'*************************************************************************'
+                WRITE(0,*)'* IRANK = ',IRANK
+                WRITE(0,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
+                WRITE(0,*)'* THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
+                WRITE(0,*)'* NBLKS(IRANK) = ', NBLKS(IRANK)
+                WRITE(0,*)'* IJFROMCHNK(1,1) = ',IJFROMCHNK(1,1)
+                WRITE(0,*)'* AND OR THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
+                WRITE(0,*)'* NBLKE(IRANK) = ', NBLKE(IRANK)
+                WRITE(0,*)'* IJFROMCHNK(NCHNK,KIJL4CHNK(NCHNK)) = ', IJFROMCHNK(NCHNK,KIJL4CHNK(NCHNK))
+                WRITE(0,*)'*                                                                       *'
+                WRITE(0,*)'*************************************************************************'
+                CALL ABORT1
+              ENDIF
+
+!$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, IJ) 
+              DO ICHNK = 1, NCHNK
+                KIJS = 1
+                IJSB = IJFROMCHNK(KIJS, ICHNK)
+                KIJL = KIJL4CHNK(ICHNK)
+                IJLB = IJFROMCHNK(KIJL, ICHNK)
+
+                FL(KIJS:KIJL, K, M, ICHNK) = WORK(IJSB:IJLB)
+
+                DO IJ = KIJS, KIJL
+                  IF (FL(IJ, K, M, ICHNK) ==  ZMISS) FL(IJ, K, M, ICHNK) = EPSMIN 
+                ENDDO
+
+                IF(KIJL < NPROMA_WAM) THEN
+                  FL(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL(1, K, M, ICHNK)
+                ENDIF
               ENDDO
+!$OMP         END PARALLEL DO
+
             ELSE
 !             RECEIVE INFORMATION FROM KSEND (that sets M and K)
               CALL MPL_RECV(ZRECVBUF(IST:IEND),                         &
@@ -529,9 +555,10 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
               ELSE
                 ID=KFROM-1
               ENDIF
-              MR=(((IC-1)+ID-1)/NANG)+1
-              KR=(IC-1)+ID-(MR-1)*NANG
-              ITAG=2*NFRE_RED*NANG+(MR-1)*NANG+KR
+              MR = (((IC-1)+ID-1)/NANG)+1
+              KR = (IC-1)+ID-(MR-1)*NANG
+
+              ITAG = 2*NFRE_RED*NANG+(MR-1)*NANG+KR
               IF (KRTAG /= ITAG) THEN
                 WRITE(0,*)'MPL_RECV ERROR in GETSPEC: MISMATCHED TAGS'
                 WRITE(0,*)'IRANK = ',IRANK
@@ -542,9 +569,41 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                 CALL ABORT1
               ENDIF
 
-              DO IJ = IST,IEND 
-                FL(IJ,KR,MR)=ZRECVBUF(IJ) 
+              IF(IST /= IJFROMCHNK(1,1) .OR. IEND /= IJFROMCHNK(NCHNK,KIJL4CHNK(NCHNK)) ) THEN
+                WRITE(IU06,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR NON LOCAL PTS *'
+                WRITE(0,*)'*************************************************************************'
+                WRITE(0,*)'* IRANK = ',IRANK
+                WRITE(0,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION *'
+                WRITE(0,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR NON LOCAL PTS *'
+                WRITE(0,*)'* THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
+                WRITE(0,*)'* IST = ', IST 
+                WRITE(0,*)'* IJFROMCHNK(1,1) = ',IJFROMCHNK(1,1)
+                WRITE(0,*)'* AND OR THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
+                WRITE(0,*)'* IEND = ', IEND 
+                WRITE(0,*)'* IJFROMCHNK(NCHNK,KIJL4CHNK(NCHNK)) = ', IJFROMCHNK(NCHNK,KIJL4CHNK(NCHNK))
+                WRITE(0,*)'*                                                                       *'
+                WRITE(0,*)'*************************************************************************'
+                CALL ABORT1
+              ENDIF
+
+!$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB) 
+              DO ICHNK = 1, NCHNK
+                KIJS = 1
+                IJSB = IJFROMCHNK(KIJS, ICHNK)
+                KIJL = KIJL4CHNK(ICHNK)
+                IJLB = IJFROMCHNK(KIJL, ICHNK)
+
+                FL(KIJS:KIJL, KR, MR, ICHNK) = ZRECVBUF(IJSB:IJLB)
+
+                DO IJ = KIJS, KIJL
+                  IF (FL(IJ, KR, MR, ICHNK) ==  ZMISS) FL(IJ, KR, MR, ICHNK) = EPSMIN 
+                ENDDO
+
+                IF(KIJL < NPROMA_WAM) THEN
+                  FL(KIJL+1:NPROMA_WAM, KR, MR, ICHNK) = FL(1, KR, MR, ICHNK)
+                ENDIF
               ENDDO
+!$OMP         END PARALLEL DO
 
             ENDIF
 
@@ -579,20 +638,17 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 !       FILL MISSING PART (if any) AND
 !       CHECK THAT INPUT SPECTRA ARE CONSISTENT WITH MODEL DEPTH
 !       RESCALE IF NOT
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)
-        DO JKGLO=IJS,IJL,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL)
-
-          DO M=NFRE_RED+1,NFRE
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                FL(IJ,K,M) = FL(IJ,K,NFRE_RED)*FR5(NFRE_RED)*FRM5(M) 
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, M, K, IJ)
+        DO ICHNK = 1, NCHNK
+          DO M = NFRE_RED+1, NFRE
+            DO K = 1, NANG
+              DO IJ = 1, NPROMA_WAM
+                FL(IJ, K, M, ICHNK) = FL(IJ, K, NFRE_RED, ICHNK) * FR5(NFRE_RED)*FRM5(M) 
               ENDDO
             ENDDO
           ENDDO
 
-          CALL SDEPTHLIM(KIJS,KIJL,EMAXDPT(KIJS:KIJL),FL(KIJS:KIJL,:,:))
+          CALL SDEPTHLIM(1, NPROMA_WAM, EMAXDPT(:,ICHNK), FL(:,:,:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
 
@@ -603,14 +659,14 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 !     =============
 
          IFCST = 0
-         CALL GRSTNAME(CDTPRO,CDATEF,IFCST,'BLS',ICPLEN,CPATH,FILENAME)
+         CALL GRSTNAME(CDTPRO,CDATEF,IFCST, 'BLS', ICPLEN, CPATH, FILENAME)
 
          IUNIT=0
 
          IF (LRSTPARALR) THEN
 !          RESTART FILES FROM ALL PE's
            LNAME = LEN_TRIM(FILENAME)
-           FILENAME=FILENAME(1:LNAME)//'.%p_%n'
+           FILENAME = FILENAME(1:LNAME)//'.%p_%n'
            CALL EXPAND_STRING(IRANK,NPROC,0,0,FILENAME,1)
            CALL READFL(FL, IJS, IJL, 1, NANG, 1, NFRE,              &
      &                 FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARALR)
@@ -624,7 +680,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                KINF=KLOOP
                KSUP=MIN(KLOOP+KDEL-1,NANG)
 
-               ALLOCATE(RFL(1:NIBLO,KINF:KSUP,MINF:MSUP))
+               ALLOCATE(RFL(1:NIBLO, KINF:KSUP, MINF:MSUP))
 !              READ RESTART SPECTRA FROM PE ISEND (IREAD) 
                IF (IRANK == ISEND) THEN
                  LOUNIT = .FALSE.
@@ -632,27 +688,37 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                  IF (MINF == 1 .AND. KINF == 1) LOUNIT = .TRUE.
                  IF (MSUP == NFRE .AND. KSUP == NANG) LCUNIT = .TRUE.
 
-                 CALL READFL(RFL, 1, NIBLO, KINF, KSUP, MINF, MSUP,     &
-     &                     FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARALR)
+                 CALL READFL(RFL, 1, NIBLO, KINF, KSUP, MINF, MSUP,       &
+     &                       FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARALR)
                ENDIF
 
-               CALL MPDISTRIBFL(ISEND,KTAG,NBLKS,NBLKE,KINF,KSUP,MINF,MSUP,RFL)
+               CALL MPDISTRIBFL(ISEND, KTAG, NBLKS, NBLKE, KINF, KSUP, MINF, MSUP, RFL)
                KTAG=KTAG+1
 
-!              KEEP CORRESPONDING CONTRIBUTION TO FL
-!$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)
-               DO JKGLO=IJS,IJL,NPROMA
-                 KIJS=JKGLO
-                 KIJL=MIN(KIJS+NPROMA-1,IJL)
-                 DO K=KINF,KSUP
-                   DO M=MINF,MSUP
-                     DO IJ=KIJS,KIJL
-                       FL(IJ,K,M) = RFL(IJ,K,M)
-                     ENDDO
-                   ENDDO
-                 ENDDO
-               ENDDO
-!$OMP       END PARALLEL DO
+!             KEEP CORRESPONDING CONTRIBUTION TO FL
+!$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, K, M)
+              DO ICHNK = 1, NCHNK
+                KIJS = 1
+                IJSB = IJFROMCHNK(KIJS, ICHNK)
+                KIJL = KIJL4CHNK(ICHNK)
+                IJLB = IJFROMCHNK(KIJL, ICHNK)
+
+                DO M = MINF, MSUP
+                  DO K = KINF, KSUP
+                    FL(KIJS:KIJL, K, M, ICHNK) = RFL(IJSB:IJLB, K, M)
+                  ENDDO
+                ENDDO
+
+                IF(KIJL < NPROMA_WAM) THEN
+                  DO M = MINF, MSUP
+                    DO K = KINF, KSUP
+                      FL(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL(1, K, M, ICHNK)
+                    ENDDO
+                  ENDDO
+                ENDIF
+
+              ENDDO
+!$OMP         END PARALLEL DO
 
                DEALLOCATE(RFL)
              ENDDO

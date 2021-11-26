@@ -42,6 +42,7 @@ SUBROUTINE SAVSTRESS(WVENVI, FF_NOW, NBLKS, NBLKE, CDTPRO, CDATEF)
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "expand_string.intfb.h"
 #include "grstname.intfb.h"
 #include "mpgatherscfld.intfb.h"

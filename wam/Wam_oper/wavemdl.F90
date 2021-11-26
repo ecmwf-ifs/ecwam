@@ -139,6 +139,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 ! --------------------------------------------------------------------- 
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "difdate.intfb.h"
 #include "incdate.intfb.h"
@@ -437,11 +438,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
         NPROMA=NPROMA_WAM
         CALL GSTATS(1443,0)
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, KIJS, KIJL)
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
         DO ICHNK = 1, NCHNK
-          KIJS=1
-          KIJL=NPROMA_WAM
-          CALL OUTBETA (KIJS, KIJL, PRCHAR, FF_NOW(:,ICHNK), BETAB(:,ICHNK))
+          CALL OUTBETA (1, NPROMA_WAM, PRCHAR, FF_NOW(:,ICHNK), BETAB(:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1443,1)
@@ -719,12 +718,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL GSTATS(1443,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, KIJS, KIJL, IJSB, IJLB, IFLDOFFSET, IFLD)
         DO ICHNK = 1, NCHNK
-          KIJS = 1
-          KIJL=NPROMA_WAM
-          CALL OUTBETA (KIJS, KIJL, PRCHAR, FF_NOW(:,ICHNK), BETAB(:,ICHNK))
+          CALL OUTBETA (1, NPROMA_WAM, PRCHAR, FF_NOW(:,ICHNK), BETAB(:,ICHNK))
 
-          KIJL = KIJL4CHNK(ICHNK)
+          KIJS = 1
           IJSB = IJFROMCHNK(KIJS,ICHNK)
+          KIJL = KIJL4CHNK(ICHNK)
           IJLB = IJFROMCHNK(KIJL,ICHNK) 
 
           IFLDOFFSET=1

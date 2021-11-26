@@ -67,6 +67,7 @@ SUBROUTINE NEWWIND (IJS, IJL, CDATE, CDATEWH,             &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "cireduce.intfb.h"
 #include "incdate.intfb.h"
@@ -167,7 +168,7 @@ ASSOCIATE(CGROUP => WVPRPT%CGROUP, &
         CALL INCDATE(CDATEWH, IDELWO)
 
 !       UPDATE THE SEA ICE REDUCTION FACTOR
-        CALL CIREDUCE (IJS, IJL, CGROUP, CICOVER, CITHICK, CIWA)
+        CALL CIREDUCE (CGROUP, CICOVER, CITHICK, CIWA)
 
       ENDIF
 

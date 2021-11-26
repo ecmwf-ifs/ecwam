@@ -166,8 +166,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            DFIM_END_L, DFIM_END_U,                               &
      &            WVPRPT_LAND
       USE YOWGRIBHD, ONLY : LGRHDIFS
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IJS     ,IJL      ,     &
-    &                       COSPH    ,NPROMA_WAM, NCHNK 
+      USE YOWGRID  , ONLY : DELPHI, DELLAM, COSPH, NPROMA_WAM, NCHNK 
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,                        &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            KMNOP    ,KMSOP    ,IPER
@@ -208,6 +207,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "cigetdeac.intfb.h"
 #include "cireduce.intfb.h"
@@ -523,7 +523,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !*    2.2.* SET GRIB HEADERS FOR INPUTS/OUTPUTS
 !          ------------------------------------
       LANAONLY=.FALSE.
-      IF ((CDATEA == CDATEE).AND.(CDATEA == CDATEF)) LANAONLY=.TRUE.
+      IF ((CDATEA == CDATEE) .AND. (CDATEA == CDATEF)) LANAONLY=.TRUE.
 
       CALL SETMARSTYPE
 
@@ -634,7 +634,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
           XD = LOG(DEPTH(IJ, ICHNK)/DEPTHA)/LOG(DEPTHD)+1.0_JWRB
           ID = NINT(XD)
           ID = MAX(ID,1)
-          INDEP(IJ, ICHNK) = MIN(ID,NDEPTH)
+          INDEP(IJ, ICHNK) = MIN(ID, NDEPTH)
         ENDDO
 !$OMP    END PARALLEL DO
 
@@ -841,7 +841,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       ENDIF
 
 !     INITIALIZE THE NEMO COUPLING
-      IF (LWNEMOCOU) CALL INITNEMOCPL(IJS, IJL, BLK2LOC)
+      IF (LWNEMOCOU) CALL INITNEMOCPL(BLK2LOC)
 
 
       IF (LLUNSTR) THEN
@@ -875,7 +875,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       CALL CIGETDEAC
 
 !     DETERMINE THE SEA ICE REDUCTION FACTOR
-      CALL CIREDUCE (IJS, IJL, CGROUP, CICOVER, CITHICK, CIWA)
+      CALL CIREDUCE (CGROUP, CICOVER, CITHICK, CIWA)
 
       WRITE(IU06,*) ' SUB. INITMDL: CIREDUCE DONE'                   
 
@@ -884,7 +884,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !*    9.1 READ SPECTRA
 !         ------------
 
-      CALL GETSPEC(FL1, IJS, IJL, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
+      CALL GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 
       WRITE(IU06,*) '    SUB. INITMDL: SPECTRA READ IN'
       CALL FLUSH (IU06)

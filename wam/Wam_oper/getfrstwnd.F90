@@ -44,6 +44,7 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "cdustarz0.intfb.h"
 #include "getwnd.intfb.h"
 #include "incdate.intfb.h"

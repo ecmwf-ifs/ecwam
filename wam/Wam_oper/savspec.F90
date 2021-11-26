@@ -35,7 +35,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL  ,KDEL    ,MDEL      ,    &
-     &           LRSTPARALW
+     &                      LRSTPARALW
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,        &
      &                      NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
       USE YOWMPP   , ONLY : IRANK    ,NPROC
@@ -48,6 +48,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "expand_string.intfb.h"
 #include "grstname.intfb.h"
 #include "mpgatherfl.intfb.h"
@@ -139,7 +140,7 @@
              ENDDO
 !$OMP        END PARALLEL DO
 
-            CALL MPGATHERFL(IRECV,NBLKS,NBLKE,KINF,KSUP,MINF,MSUP,RFL)
+            CALL MPGATHERFL(IRECV, NBLKS, NBLKE, KINF, KSUP, MINF, MSUP, RFL)
 
 
             IF (IRANK == IPFGTBL(JPPFLAG+1) .OR. NPROC == 1) THEN
