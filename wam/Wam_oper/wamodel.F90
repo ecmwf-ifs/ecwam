@@ -299,7 +299,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !           ----------------------------------------
         IF ( NGOUT > 0 .AND. (CDTINTT == CDTPRO .OR. LRST) ) THEN
 !           OUTPUT POINT SPECTRA (not usually used at ECMWF)
-            IF (LLOUTERS) CALL OUTWPSP (IJS, IJL, FL1, FF_NOW)
+            IF (LLOUTERS) CALL OUTWPSP (FL1, BLK2GLO, FF_NOW)
         ENDIF
 
 

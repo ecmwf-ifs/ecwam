@@ -1,22 +1,17 @@
-      SUBROUTINE OUTERS (FL1, IJS, IJL, CDTPRO, WSWAVE, WDWAVE, UFRIC)
+SUBROUTINE OUTERS (FL1, CDTPRO, BLK2GLO, FF_NOW)
 ! -----------------------------------------------------------------     
 
 !**** *OUTERS* -  OUTPUT OF SATELLITE COLOCATION SPECTRA.
 
-!     H. GUNTHER     GKSS/ECMWF            JULY 1991                    
-!     J. BIDLOT      ECMWF           FEBRARY 1996  MESSAGE PASSING
-!     J. BIDLOT      ECMWF           JANUARY 1997  MODIFY DEFINITION
-!                                                  OF TH0 
-
 !*** INTERFACE.                                                         
 !    ----------                                                         
 
-!       *CALL  OUTERS (FL1, CDTPRO, WSWAVE, WDWAVE, UFRIC)
+!       *CALL  OUTERS (FL1, CDTPRO, BLK2GLO, FF_NOW)
 !          *FL1*    -   SPECTRUM.                                       
 !          *CDTPRO* -   MODEL PROPAGATION TIME.                         
-!          *WSWAVE* - WIND SPEED
-!          *WDWAVE* - WIND DIRECTION 
-!          *UFRIC*  - FRICTION VELOCITY
+!          *BLK2GLO*   BLOCK TO GRID TRANSFORMATION
+!          *FF_NOW* - FORCING FIELDS
+
 
 !    EXTERNALS.                                                         
 !    ----------                                                         
@@ -36,11 +31,13 @@
 !---------------------------------------------------------------------- 
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO, FORCING_FIELDS
 
       USE YOWCOER  , ONLY : NERS     ,CDTERS   ,IERS     ,IJERS    ,    &
      &            IGERS
       USE YOWFRED  , ONLY : FR       ,TH       ,FRATIO
-      USE YOWMAP   , ONLY : BLK2GLO  ,AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK
+      USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWPCONS , ONLY : DEG      ,ZMISS
@@ -52,13 +49,15 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "ersfile.intfb.h"
 #include "mpgatherersfile.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL1
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: WSWAVE, WDWAVE, UFRIC
+      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
+      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: FF_NOW
+
 
       INTEGER(KIND=JWIM) :: NGOU, KCOUNT, IJ, K, M 
       INTEGER(KIND=JWIM) :: IU91, IU92, ITAG
@@ -68,11 +67,19 @@
 
       REAL(KIND=JWRB) :: XANG, XFRE, XLAT, XLON
       REAL(KIND=JWRB),ALLOCATABLE :: FLPTS(:,:,:,:)
+
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EM, FM, THQ
+
       REAL(KIND=JWRB),ALLOCATABLE,DIMENSION(:) :: EMPTS, FMPTS, THQPTS, &
      &                                U10PTS, THWPTS, USPTS
 
 ! ----------------------------------------------------------------------
+
+ASSOCIATE(IXLG => BLK2GLO%IXLG, &
+ &        KXLT => BLK2GLO%KXLT, &
+ &        WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        UFRIC => FF_NOW%UFRIC)
 
       IU91 = 91                                                         
       IU92 = 92                                                         
@@ -175,8 +182,8 @@
           XFRE = REAL(NFRE)
           DO NGOU=1,IERS
               IJ = IJERS(NGOU)                                         
-              XLON = AMOWEP + (BLK2GLO(IJ)%IXLG-1)*ZDELLO(BLK2GLO(IJ)%KXLT)
-              XLAT = AMOSOP + (BLK2GLO(IJ)%KXLT-1)*XDELLA               
+              XLON = AMOWEP + (IXLG(IJ)-1)*ZDELLO(KXLT(IJ))
+              XLAT = AMOSOP + (KXLT(IJ)-1)*XDELLA               
 
 !*    1.1 WRITE INFORMATION TO FILE IU92.                               
 !         -------------------------------                               
@@ -209,4 +216,6 @@
       IF (ALLOCATED(USPTS)) DEALLOCATE (USPTS)
       IF (ALLOCATED (FLPTS)) DEALLOCATE (FLPTS)
 
-      END SUBROUTINE OUTERS
+END ASSOCIATE
+
+END SUBROUTINE OUTERS
