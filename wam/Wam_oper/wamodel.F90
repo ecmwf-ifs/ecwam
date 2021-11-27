@@ -45,7 +45,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
      &                      NEMOWSTEP, NEMOFRCO     ,                   &
      &                      NEMOCSTEP, NEMONSTEP
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,GFLAG20  ,    &
-     &                      NGOUT    ,LLOUTERS ,                        &
+     &                      NGOUT    ,                                  &
      &                      NIPRMOUT ,                                  &
      &                      LFDB     ,NOUTT    ,NOUTS    ,              &
      &                      CASS     ,NASS     ,LOUTINT  ,              &
@@ -299,7 +299,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !           ----------------------------------------
         IF ( NGOUT > 0 .AND. (CDTINTT == CDTPRO .OR. LRST) ) THEN
 !           OUTPUT POINT SPECTRA (not usually used at ECMWF)
-            IF (LLOUTERS) CALL OUTWPSP (FL1, FF_NOW)
+            CALL OUTWPSP (FL1, FF_NOW)
         ENDIF
 
 

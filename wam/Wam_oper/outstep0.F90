@@ -25,7 +25,7 @@ SUBROUTINE OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,              & 
      &                      IRCD     ,IRU10    , IRALTHS  ,IRALTHSC  ,IRALTRC ,   &
-     &                      NGOUT    ,LLOUTERS ,                                  &
+     &                      NGOUT    ,                                            &
      &                      NIPRMOUT ,                                            &
      &                      LFDB     ,                                            &
      &                      LRSTST0  ,LWAMANOUT
@@ -139,7 +139,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 
 !     2.0 OUTPUT POINT SPECTRA (not usually used at ECMWF)
 !         -----------------------------------------------
-      IF (NGOUT > 0 .OR. LLOUTERS) CALL OUTWPSP (IJS, IJL, FL1, FF_NOW)
+      IF (NGOUT > 0 ) CALL OUTWPSP (FL1, FF_NOW)
 
 
 !*    3.0 SAVE INITIAL INTEGRATED FIELDS (if needed)
