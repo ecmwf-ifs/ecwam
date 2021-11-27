@@ -1,4 +1,4 @@
-      SUBROUTINE OUTWNORM(LDREPROD, IJS, IJL, BOUT)
+      SUBROUTINE OUTWNORM(LDREPROD, BOUT)
 
 ! ----------------------------------------------------------------------
 
@@ -17,7 +17,6 @@
 !                 .FALSE. ==> let MPI_ALLREDUCE do the summation.
 !                 NOTE that it is overuled when global norms have been reuested
 !                 see namelist LLNORMWAMOUT_GLOBAL
-!    *IJS:IJL  - FIRST DIMENSION OF ARRAYS MIJ, FL1, XLLWS, BOUT.
 !    *BOUT*    - OUTPUT PARAMETERS BUFFER
 
 !     METHOD.
@@ -29,6 +28,7 @@
       USE YOWCOUT  , ONLY : NFLAG, NFLAGALL, JPPFLAG,                   &
      &                      COUTNAME, ITOBOUT ,NIPRMOUT
       USE YOWCOUP  , ONLY : LLNORMWAMOUT_GLOBAL
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWMPP   , ONLY : IRANK   ,NPROC
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06
@@ -38,11 +38,11 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+
 #include "mpminmaxavg.intfb.h"
 
       LOGICAL, INTENT(IN) :: LDREPROD
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(IN) :: BOUT
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK), INTENT(IN) :: BOUT
 
       INTEGER(KIND=JWIM) :: ITG, IT, I, IRECV, INFO
 

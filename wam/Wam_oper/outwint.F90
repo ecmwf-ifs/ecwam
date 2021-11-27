@@ -1,4 +1,4 @@
-      SUBROUTINE OUTWINT(IJS, IJL, BOUT)
+      SUBROUTINE OUTWINT(BOUT)
 
 ! ----------------------------------------------------------------------
 
@@ -11,7 +11,6 @@
 !**   INTERFACE.
 !     ----------
 
-!      *IJS:IJL  - FIRST DIMENSION OF ARRAY BOUT
 !      *BOUT*    - OUTPUT PARAMETERS BUFFER
 
 !     METHOD.
@@ -26,24 +25,25 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWCOUT  , ONLY : JPPFLAG ,NIPRMOUT , NINFOBOUT,              &
      &                      INFOBOUT,LWAM_USE_IO_SERV
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, IJFROMCHNK, KIJL4CHNK
       USE YOWSTAT  , ONLY : CDATEA, CDATEF, CDTPRO, MARSTYPE
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK, DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+
 #include "outint_io_serv.intfb.h"
 #include "abort1.intfb.h"
 #include "difdate.intfb.h"
 #include "incdate.intfb.h"
 #include "outint.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(IN) :: BOUT
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK), INTENT(IN) :: BOUT
 
 
       INTEGER(KIND=JWIM) :: IFCST, INHOUR, ISHIFT
-      INTEGER(KIND=JWIM) :: IY,IM,ID,IH,IMN,ISS
+      INTEGER(KIND=JWIM) :: IY, IM, ID, IH, IMN, ISS
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
@@ -105,7 +105,7 @@
       ! Use IFS IO server?
       IF (LWCOU .AND. LIFS_IO_SERV_ENABLED .AND. LWAM_USE_IO_SERV) THEN
           IF (.NOT.ASSOCIATED(OUTINT_IO_SERV_HANDLER)) CALL ABOR1('OUTINT_IO_SERV_HANDLER IS NOT INITIALIZED')
-          CALL OUTINT_IO_SERV_HANDLER(NIPRMOUT, IJS, IJL, BOUT, INFOBOUT, MARSTYPE, CDATE, IFCST)
+          CALL OUTINT_IO_SERV_HANDLER(NIPRMOUT, BOUT, INFOBOUT, MARSTYPE, CDATE, IFCST)
       ELSE
           CALL OUTINT(CDATE, IFCST, IJS, IJL, BOUT)
       ENDIF

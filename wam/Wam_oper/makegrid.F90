@@ -53,6 +53,7 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+
 #include "unblkrord.intfb.h"
 
       REAL(KIND=JWRB), DIMENSION(NIBLO_OUT), INTENT(INOUT) :: BLOCK

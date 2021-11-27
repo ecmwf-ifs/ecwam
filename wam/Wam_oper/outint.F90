@@ -1,4 +1,4 @@
-      SUBROUTINE OUTINT(CDATE, IFCST, IJS, IJL, BOUT)
+      SUBROUTINE OUTINT(CDATE, IFCST, BOUT)
 
 ! ----------------------------------------------------------------------
 
@@ -9,10 +9,9 @@
 
 !**   INTERFACE.
 !     ----------
-!       *CALL* *OUTINT(CDATE, IFCST, IJS, IJL, BOUT)
+!       *CALL* *OUTINT(CDATE, IFCST, BOUT)
 !          *CDATE*   - DATE AND TIME.
 !          *IFCST*   - FORECAST STEP IN HOURS.
-!          *IJS:IJL* - FIRST DIMENSION OF ARRAY BOUT
 !          *BOUT*    - OUTPUT PARAMETERS BUFFER
 
 
@@ -35,7 +34,7 @@
       USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,GFLAG    ,GFLAG20  ,    &
      &                      JPPFLAG  ,LFDB     ,IPFGTBL  ,ITOBOUT  ,    &
      &                      INFOBOUT , LOUTINT  ,NIPRMOUT
-      USE YOWGRID  , ONLY : DELPHI
+      USE YOWGRID  , ONLY : DELPHI   ,NPROMA_WAM, NCHNK
       USE YOWINTP  , ONLY : GOUT
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &                      AMONOP   ,ZDELLO   ,NLONRGG
@@ -51,6 +50,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "grstname.intfb.h"
 #include "outgrid.intfb.h"
@@ -59,8 +59,7 @@
 
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       INTEGER(KIND=JWIM), INTENT(IN) :: IFCST
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(IN) :: BOUT
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK), INTENT(IN) :: BOUT
 
 
       INTEGER(KIND=JWIM) :: I, J, ITG, IFLAG, IT
@@ -84,7 +83,7 @@
 !     1. COLLECT INTEGRATED PARAMETERS FOR OUTPUT ON SELECTED PE's 
 !        i.e BOUT => GOUT
 !        ---------------------------------------------------------
-      CALL OUTGRID(IJS, IJL, BOUT)
+      CALL OUTGRID(BOUT)
 
 
 !     2. ONE GRID POINT OUTPUT

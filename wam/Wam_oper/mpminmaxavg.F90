@@ -1,4 +1,4 @@
-      SUBROUTINE MPMINMAXAVG(LLGLOBAL, IRECV, LDREPROD, IJS, IJL, BOUT, WNORM)
+SUBROUTINE MPMINMAXAVG(LLGLOBAL, IRECV, LDREPROD, BOUT, WNORM)
 ! ----------------------------------------------------------------------
 
 !****  *MPMINMAXAVG* - FIND GLOBAL MIN, MAX AND AVERAGE OF BOUT
@@ -13,7 +13,6 @@
 !                       2) Provided and .TRUE. ==> Use home-written binary tree
 !                          No MPI_ALLREDUCE used.
 !                       3) Provided, but .FALSE. ==> let MPI_ALLREDUCE do the summation.
-!           *IJS:IJL  - FIRST DIMENSION OF ARRAYS MIJ, FL1, XLLWS, BOUT.
 !           *BOUT*    - OUTPUT PARAMETERS BUFFER
 !           *WNORM(1,:) : MINIMUM
 !           *WNORM(2,:) : MAXIMUM
@@ -28,37 +27,43 @@
       USE YOWMPP    , ONLY : IRANK    ,NPROC
       USE YOWPARAM  , ONLY : NIBLO    ,LL1D
       USE YOWPCONS  , ONLY : ZMISS
+      USE YOWGRID   , ONLY : NPROMA_WAM, NCHNK, IJFROMCHNK, KIJL4CHNK
       USE YOWSPEC   , ONLY : NBLKS    ,NBLKE   ,IJ2NEWIJ
       USE YOWTEST   , ONLY : IU06
-      USE YOWUNPOOL, ONLY : LLUNSTR
+      USE YOWUNPOOL , ONLY : LLUNSTR
 
       USE MPL_MODULE, ONLY : MPL_ALLREDUCE
       USE YOMHOOK   , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "mpgatherscfld.intfb.h"
 
       LOGICAL, INTENT(IN) :: LLGLOBAL
       INTEGER(KIND=JWIM), INTENT(IN) :: IRECV
       LOGICAL, INTENT(IN) :: LDREPROD
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(IN) :: BOUT
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK), INTENT(IN) :: BOUT
       REAL(KIND=JWRB),DIMENSION(4,NIPRMOUT), INTENT(OUT) :: WNORM
 
       INTEGER(KIND=JWIM) :: IJ, IJOLD, I, IP, ITG, IT
+      INTEGER(KIND=JWIM) :: IJSG, IJLG, IJSB, IJLB, KIJS, KIJL, ICHNK, IPRM
 
       REAL(KIND=JWRB),DIMENSION(NIPRMOUT) :: ZMIN, ZMAX
       REAL(KIND=JWRB),DIMENSION(2*NIPRMOUT) :: ZSUM
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE :: ZGLOBAL(:)
 !     -------------------------------------------------------------------------
-      IF (LHOOK) CALL DR_HOOK('MPMINMAXAVG',0,ZHOOK_HANDLE)
 
-      ZSUM(:)=0.0_JWRB
-      ZMIN(:)=HUGE(ZMIN(:))
-      ZMAX(:)=-HUGE(ZMAX(:))
+IF (LHOOK) CALL DR_HOOK('MPMINMAXAVG',0,ZHOOK_HANDLE)
+
+      IJSG = IJFROMCHNK(1,1)
+      IJLG = IJSG + SUM(KIJL4CHNK) - 1
+
+      ZSUM(:) = 0.0_JWRB
+      ZMIN(:) = HUGE(ZMIN(:))
+      ZMAX(:) = -HUGE(ZMAX(:))
 
       IF (LLGLOBAL) THEN
 
@@ -75,17 +80,17 @@
         ENDIF
 
 
-        WNORM(:,:)=0.0_JWRB
+        WNORM(:,:) = 0.0_JWRB
 
-        IF (IJS /= NBLKS(IRANK) .OR. IJL /= NBLKE(IRANK) ) THEN
+        IF (IJSG /= NBLKS(IRANK) .OR. IJLG /= NBLKE(IRANK) ) THEN
           WRITE(IU06,*) '************************************'
           WRITE(IU06,*) '*                                  *'
           WRITE(IU06,*) '*  FATAL ERROR IN SUB. MPMINMAXAVG *'
           WRITE(IU06,*) '*                                  *'
-          WRITE(IU06,*) '* IJS.NE.NBLKS(IRANK) .OR.      *'
-          WRITE(IU06,*)  IJS, NBLKS(IRANK)
-          WRITE(IU06,*) '* IJL.NE.NBLKE(IRANK)           *'
-          WRITE(IU06,*)  IJL, NBLKE(IRANK)
+          WRITE(IU06,*) '* IJS /= NBLKS(IRANK) .OR.      *'
+          WRITE(IU06,*)  IJSG, NBLKS(IRANK)
+          WRITE(IU06,*) '* IJL /= NBLKE(IRANK)           *'
+          WRITE(IU06,*)  IJLG, NBLKE(IRANK)
           WRITE(IU06,*) '*                                  *'
           WRITE(IU06,*) '* THIS SHOULD NOT HAPPEN  !        *'
           WRITE(IU06,*) '************************************'
@@ -98,13 +103,22 @@
         DO ITG=1,JPPFLAG
           IF (NFLAG(ITG)) THEN
             IT = ITOBOUT(ITG)
-            DO IJ=IJS,IJL
-              ZGLOBAL(IJ)=BOUT(IJ,IT)
+
+!$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB)
+            DO ICHNK = 1, NCHNK
+              KIJS = 1
+              IJSB = IJFROMCHNK(KIJS,ICHNK)
+              KIJL = KIJL4CHNK(ICHNK)
+              IJLB = IJFROMCHNK(KIJL,ICHNK)
+
+              ZGLOBAL(IJSB:IJLB) = BOUT(KIJS:KIJL, IT, ICHNK)
             ENDDO
+!$OMP       END PARALLEL DO
+
             CALL MPGATHERSCFLD(IRECV, NBLKS, NBLKE, ZGLOBAL, NIBLO)
 
             IF (IRANK == IRECV) THEN
-              DO IJOLD=1,NIBLO
+              DO IJOLD = 1, NIBLO
                 IF (LL1D .OR. LLUNSTR) THEN
                   IJ=IJOLD
                 ELSE
@@ -126,21 +140,24 @@
         ENDDO
 
         DEALLOCATE(ZGLOBAL)
+
       ELSE
+
         DO I=1,NIPRMOUT
-          DO IJ=IJS,IJL
-            IF (BOUT(IJ,I) /= ZMISS) THEN
-              ZSUM(I) = ZSUM(I) + BOUT(IJ,I)
-              ZSUM(NIPRMOUT+I) = ZSUM(NIPRMOUT+I) + 1.0_JWRB
-              ZMIN(I) = MIN(ZMIN(I), BOUT(IJ,I))
-              ZMAX(I) = MAX(ZMAX(I), BOUT(IJ,I))
-            ENDIF
+          DO ICHNK = 1, NCHNK
+            DO IPRM = 1, KIJL4CHNK(ICHNK) 
+              IF (BOUT(IPRM, I, ICHNK) /= ZMISS) THEN
+                ZSUM(I) = ZSUM(I) + BOUT(IPRM, I, ICHNK)
+                ZSUM(NIPRMOUT+I) = ZSUM(NIPRMOUT+I) + 1.0_JWRB
+                ZMIN(I) = MIN(ZMIN(I), BOUT(IPRM, I, ICHNK))
+                ZMAX(I) = MAX(ZMAX(I), BOUT(IPRM, I, ICHNK))
+              ENDIF
+            ENDDO
           ENDDO
         ENDDO
 
         IF (NPROC > 1) THEN
-          CALL MPL_ALLREDUCE(ZSUM,'SUM',LDREPROD=LDREPROD,                &
-     &                     CDSTRING='MPMINMAXAVG:')
+          CALL MPL_ALLREDUCE(ZSUM,'SUM',LDREPROD=LDREPROD, CDSTRING='MPMINMAXAVG:')
           CALL MPL_ALLREDUCE(ZMIN,'MIN',CDSTRING='MPMINMAXAVG VALMIN:')
           CALL MPL_ALLREDUCE(ZMAX,'MAX',CDSTRING='MPMINMAXAVG VALMAX:')
         ENDIF
@@ -158,6 +175,6 @@
 
       ENDIF
      
-      IF (LHOOK) CALL DR_HOOK('MPMINMAXAVG',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('MPMINMAXAVG',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE MPMINMAXAVG
+END SUBROUTINE MPMINMAXAVG

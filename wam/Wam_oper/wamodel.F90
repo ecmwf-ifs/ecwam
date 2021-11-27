@@ -306,7 +306,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !       1.6 COMPUTE OUTPUT PARAMETERS FIELDS AND PRINT OUT NORMS
 !           ----------------------------------------------------
         IF ( (CDTINTT == CDTPRO .OR. LRST) .AND. NIPRMOUT > 0 ) THEN
-          CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS,                   &
+          CALL OUTBS (MIJ, FL1, XLLWS,                             &
      &                WVPRPT, WVENVI, FF_NOW, INTFLDS, NEMO2WAM,   &
      &                BOUT)
         ENDIF
@@ -452,7 +452,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
             MARSTYPE='an'
           ENDIF
 
-          CALL OUTWINT(IJS, IJL, BOUT)
+          CALL OUTWINT(BOUT)
           LLFLUSH = .TRUE.
 
           MARSTYPE=MARSTYPEBAK

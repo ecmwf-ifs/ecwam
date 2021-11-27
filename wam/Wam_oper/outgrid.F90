@@ -1,45 +1,23 @@
-      SUBROUTINE OUTGRID(IJS, IJL, BOUT)
+      SUBROUTINE OUTGRID(BOUT)
 ! ----------------------------------------------------------------------
-
-!**** *OUTGRID* - OUTPUT OF WAVE ENERGY,MEAN ANGLE, MEAN FREQUENCY
-!****             FRICTION VELOCITY AND WIND DIRECTION IN GRIDDED
-!****             FORMAT.
 
 !*    PURPOSE.
 !     --------
 
-!       OUTPUT OF WAVE AND WIND FIELDS INTO COMMON BLOCK.
-
+!    BOUT (output of integrated parameters per block)  => GOUT (global ready for output) 
 
 !**   INTERFACE.
 !     ----------
 
-!        *CALL* *OUTGRID(IJS, IJL, BOUT)
-!          *IJS:IJL* - FIRST DIMENSION OF ARRAY BOUT
+!        *CALL* *OUTGRID(BOUT)
 !          *BOUT*    - OUTPUT PARAMETERS BUFFER
-
-
-!     EXTERNALS.
-!     ----------
-
-!       *MAKEGRID*  - GENERATES GRIDDED FIELDS.
-
-!     METHOD.
-!     -------
-
-!       NONE.
-
-!     REFERENCE.
-!     ----------
-
-!       NONE.
 
 ! ----------------------------------------------------------------------
       
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL ,NIPRMOUT ,ITOBOUT
-      USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
+      USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC  ,NPROMA_WAM, NCHNK, KIJL4CHNK
       USE YOWINTP  , ONLY : GOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH ,KTAG
       USE YOWPARAM , ONLY : NIBLO    ,NGX      ,NGY
@@ -56,14 +34,15 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "makegrid.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(IN) :: BOUT
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK), INTENT(IN) :: BOUT
 
 
       INTEGER(KIND=JWIM) :: IJ, ITT, ICT, ITG, IFLD, IR, IPR, ICOUNT
+      INTEGER(KIND=JWIM) :: ICHNK, IPRM
       INTEGER(KIND=JWIM) :: NFLDTOT, NFLDPPEMAX
       INTEGER(KIND=JWIM), DIMENSION(NPROC) :: ICNT, NFLDPPE
       INTEGER(KIND=JWIM), DIMENSION(NPROC+JPPFLAG) :: IREQ
@@ -76,6 +55,7 @@
 
       LOGICAL, SAVE :: HaveMPI_arrays = .FALSE.
 !----------------------------------------------------------------------
+
       IF (LHOOK) CALL DR_HOOK('OUTGRID',0,ZHOOK_HANDLE)
 
 !     FIND THE NUMBER OF FIELDS EACH PE HAS TO DEAL WITH
@@ -118,39 +98,49 @@
         ALLOCATE(ZSENDBUF(NFLDPPEMAX * MPMAXLENGTH,NPROC))
 
         ICNT(:)=0
-        DO ICT=1,JPPFLAG
-          IPR=IPFGTBL(ICT)
-          IF (IPR > 0) THEN 
-            DO IJ=IJS,IJL
-              ICNT(IPR) = ICNT(IPR) + 1
-              ZSENDBUF(ICNT(IPR),IPR) = BOUT(IJ,ITOBOUT(ICT))
-            ENDDO
-          ENDIF
+
+        DO ICHNK = 1, NCHNK
+          DO ICT = 1, JPPFLAG
+            IPR = IPFGTBL(ICT)
+            IF (IPR > 0) THEN 
+              DO IPRM = 1, KIJL4CHNK(ICHNK)
+                ICNT(IPR) = ICNT(IPR) + 1
+                ZSENDBUF(ICNT(IPR), IPR) = BOUT(IPRM, ITOBOUT(ICT), NCHNK)
+              ENDDO
+            ENDIF
+          ENDDO
         ENDDO
 
       ELSEIF (OUT_METHOD == 1) THEN
       
-!     LOADING THE COMMUNICATION BUFFER
-        ALLOCATE(ZSENDBUF(NFLDPPEMAX * MPMAXLENGTH,NPROC))
-
-        ICNT(:)=0
-        DO ICT=1,JPPFLAG
-          IPR=IPFGTBL(ICT)
-          IF (IPR > 0) THEN 
-            DO IJ=IJSLOC,IJLLOC
-              ICNT(IPR) = ICNT(IPR) + 1
-              ZSENDBUF(ICNT(IPR),IPR) = BOUT(IJ,ITOBOUT(ICT))
-            ENDDO
-          ENDIF
-        ENDDO
-      ELSE
 !!!!! this will need to be adapted to use BOUT
         WRITE(0,*) '!!! ********************************* !!'
         WRITE(0,*) '!!! in outgrid. Not yet ready !!!' 
         WRITE(0,*) '!!! ********************************* !!'
         CALL ABORT1
 
-        CALL SET_UP_ARR_OUT_RECV(IJSLOC, IJLLOC, BOUT(IJSLOC:IJLLOC,:), NFLDPPE)
+!     LOADING THE COMMUNICATION BUFFER
+        ALLOCATE(ZSENDBUF(NFLDPPEMAX * MPMAXLENGTH,NPROC))
+
+!        ICNT(:)=0
+!        DO ICT=1,JPPFLAG
+!          IPR=IPFGTBL(ICT)
+!          IF (IPR > 0) THEN 
+!            DO IJ=IJSLOC,IJLLOC
+!              ICNT(IPR) = ICNT(IPR) + 1
+!              ZSENDBUF(ICNT(IPR),IPR) = BOUT(IJ,ITOBOUT(ICT))
+!            ENDDO
+!          ENDIF
+!        ENDDO
+      ELSE
+
+!!!!! this will need to be adapted to use BOUT
+        WRITE(0,*) '!!! ********************************* !!'
+        WRITE(0,*) '!!! in outgrid. Not yet ready !!!' 
+        WRITE(0,*) '!!! ********************************* !!'
+        CALL ABORT1
+
+!!!        CALL SET_UP_ARR_OUT_RECV(IJSLOC, IJLLOC, BOUT(IJSLOC:IJLLOC,:), NFLDPPE)
       END IF
 
 
@@ -221,7 +211,7 @@
             GTEMP=ARR_OUT_RECV(LocalPosICT(ICT),:)
           END IF
 
-          CALL MAKEGRID (GTEMP,GOUT(IFLD,:,:),ZMISS)
+          CALL MAKEGRID (GTEMP, GOUT(IFLD,:,:), ZMISS)
           IFLD=IFLD+1
 
         ENDIF ! (IPFGTBL) 
