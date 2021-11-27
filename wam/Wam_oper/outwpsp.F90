@@ -1,4 +1,4 @@
-SUBROUTINE OUTWPSP (FL1, BLK2GLO, FF_NOW)
+SUBROUTINE OUTWPSP (FL1, FF_NOW)
 ! ----------------------------------------------------------------------
 
 !**** *OUTWPSP* - MODEL OUTPUT OF SPECTRA AT GIVEN LOCATIONS 
@@ -13,7 +13,6 @@ SUBROUTINE OUTWPSP (FL1, BLK2GLO, FF_NOW)
 !     ----------
 !      *CALL*OUTWPSP (FL1, FF_NOW) 
 !      *FL1*    - INPUT SPECTRUM.
-!      *BLK2GLO*   BLOCK TO GRID TRANSFORMATION
 !      *FF_NOW* - FORCING FIELDS
 
 !     EXTERNALS.
@@ -34,11 +33,11 @@ SUBROUTINE OUTWPSP (FL1, BLK2GLO, FF_NOW)
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : WVGRIDGLO, FORCING_FIELDS
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK
-      USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE     ,CLDOMAIN
-      USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,MARSTYPE
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
+      USE YOWSTAT  , ONLY : CDTPRO
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -47,10 +46,8 @@ SUBROUTINE OUTWPSP (FL1, BLK2GLO, FF_NOW)
       IMPLICIT NONE
 
 #include "out_onegrdpt_sp.intfb.h"
-#include "outers.intfb.h"
 
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL1
-      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
       TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: FF_NOW
 
 
@@ -63,7 +60,6 @@ IF (LHOOK) CALL DR_HOOK('OUTWPSP',0,ZHOOK_HANDLE)
 
 ASSOCIATE(UFRIC => FF_NOW%UFRIC)
 
-
 !*    OUTPUT OF SPECTRA FOR ONE GRID POINT SIMULATION
 !     -----------------------------------------------
 
@@ -73,15 +69,6 @@ ASSOCIATE(UFRIC => FF_NOW%UFRIC)
             CALL OUT_ONEGRDPT_SP(FL1(IJ:IJ,:,:,ICHNK), UFRIC(IJ,ICHNK), CDTPRO)
           ENDDO
         ENDDO
-      ENDIF
-
-!*    OUTPUT OF SPECTRA FOR SATELLITE COLLOCATION.
-!     --------------------------------------------
-
-      IF (MARSTYPE == 'an' .OR. MARSTYPE == 'fg' .OR. MARSTYPE == '4v') THEN
-        IF (CDTPRO /= CDATEA) THEN
-          CALL OUTERS (FL1, CDTPRO, BLK2GLO, FF_NOW)
-        ENDIF
       ENDIF
 
 END ASSOCIATE
