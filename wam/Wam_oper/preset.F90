@@ -135,7 +135,7 @@ PROGRAM preset
       INTEGER(KIND=JWIM), PARAMETER :: NFIELDS=1
       INTEGER(KIND=JWIM) :: ILEN, IREAD, IOPTI
       INTEGER(KIND=JWIM) :: IJ, K, M
-      INTEGER(KIND=JWIM) :: IPRM, ICHNK, KIJS, KIJL
+      INTEGER(KIND=JWIM) :: IPRM, ICHNK
       INTEGER(KIND=JWIM) :: IU05, IU07 
       INTEGER(KIND=JWIM) :: I4(2)
       INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
@@ -560,13 +560,11 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       IF (IOPTI /= 3) THEN
         THETAQ = THETA * RAD
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK,KIJS,KIJL)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
         DO ICHNK = 1, NCHNK
-          KIJS = 1
-          KIJL = NPROMA_WAM 
           CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,                      &
-     &                 FM, GAMMA, SA, SB,                                &
-     &                 KIJS, KIJL, FL1(:,:,:,ICHNK),                     &
+     &                 FM, ALFA, GAMMA, SA, SB,                          &
+     &                 1, NPROMA_WAM, FL1(:,:,:,ICHNK),                     &
      &                 FF_NOW(:,ICHNK)%WSWAVE, FF_NOW(:,ICHNK)%WDWAVE)
         ENDDO
 !$OMP END PARALLEL DO
@@ -583,11 +581,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         LLOCAL=.TRUE.
         CALL INIT_FIELDG(BLK2LOC, LLALLOC_ONLY, LLINIALL, LLOCAL)
 
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK,KIJS,KIJL)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
         DO ICHNK = 1, NCHNK
-          KIJS = 1
-          KIJL = NPROMA_WAM 
-          CALL MSWELL (KIJS, KIJL, BLK2LOC(:,ICHNK), FL1(:,:,:,ICHNK) )
+          CALL MSWELL (1, NPROMA_WAM, BLK2LOC(:,ICHNK), FL1(:,:,:,ICHNK) )
         ENDDO
 !$OMP END PARALLEL DO
 

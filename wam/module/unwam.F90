@@ -329,14 +329,17 @@ END INTERFACE
 !**********************************************************************
       SUBROUTINE SET_CURTXY
       USE YOWUNPOOL, ONLY : LCALC
-      USE YOWSHAL, ONLY : WVENVI
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
+      USE YOWSHAL  , ONLY : WVENVI, DEPTH_INPUT
       IMPLICIT NONE
-      INTEGER(KIND=JWIM) :: IP, IG
-      IG=1
-      DO IP=1,MNP
-        CURTXY(1,IP)=REAL(WVENVI(IP)%UCUR,JWRU)
-        CURTXY(2,IP)=REAL(WVENVI(IP)%VCUR,JWRU)
-      END DO
+      INTEGER(KIND=JWIM) :: IP, ICHNK, IPRM
+      DO ICHNK = 1, NCHNK
+        DO IPRM = 1, KIJL4CHNK(ICHNK)
+          IP = IJFROMCHNK(IPRM, ICHNK)
+          CURTXY(1,IP)=REAL(WVENVI(IPRM, ICHNK)%UCUR,JWRU)
+          CURTXY(2,IP)=REAL(WVENVI(IPRM, ICHNK)%VCUR,JWRU)
+        ENDDO
+      ENDDO
       LCALC=.TRUE.
       END SUBROUTINE SET_CURTXY
 !**********************************************************************
@@ -1514,6 +1517,7 @@ END INTERFACE
       USE MPL_MPIF
       USE YOWUNPOOL, ONLY : DEGRAD, REARTH
       USE YOWUNPOOL, ONLY : BND, DBG, GRID, FILEDEF
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
       USE YOWSHAL  , ONLY : WVENVI, DEPTH_INPUT, DEPTHA    ,TOOSHALLOW
       USE YOWPARAM , ONLY : NIBLO
       USE yowpd, only: z, comm, np_global, initPD, setDimSize
@@ -1521,7 +1525,7 @@ END INTERFACE
       USE YOWFRED, ONLY : DELTH
       USE YOWSTAT  , ONLY : IDELPRO
       IMPLICIT NONE
-      INTEGER(KIND=JWIM) :: IERR, IP
+      INTEGER(KIND=JWIM) :: IERR, IP, ICHNK, IPRM
       INTEGER(KIND=JWIM) :: eNext, ePrev, ID, istat
       CALL setDimSize(NFRE, NANG)
       CALL SET_UNWAM_HANDLES ! set file handles
@@ -1536,10 +1540,12 @@ END INTERFACE
 
 
 !!    Transfer the water depth to array it is used by the wave physics
-      DO IP = 1, MNP 
-        WVENVI(IP)%DEPTH = DEPTH_INPUT(IP)
-     ENDDO
-
+      DO ICHNK = 1, NCHNK
+        DO IPRM = 1, KIJL4CHNK(ICHNK)
+          IP = IJFROMCHNK(IPRM, ICHNK)
+          WVENVI(IPRM, ICHNK)%DEPTH = DEPTH_INPUT(IP)
+        ENDDO
+      ENDDO
 
       DDIR = DELTH
 !
@@ -2259,12 +2265,13 @@ END INTERFACE
 !     --------------------------------------------------------------
 
         USE YOWUNPOOL
+        USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
         USE YOWSHAL  , ONLY : WVENVI, DEPTH_INPUT
         IMPLICIT NONE
 
         INTEGER(KIND=JWIM), INTENT(IN) :: IHANDLE
 
-        INTEGER(KIND=JWIM) :: IP
+        INTEGER(KIND=JWIM) :: IP, ICHNK, IPRM
 ! 
 !         READ(IHANDLE) MNP, MNE, MSC, MDC
 
@@ -2283,9 +2290,12 @@ END INTERFACE
         READ(IHANDLE) IOBWB
 
 !!      Transfer the water depth to array it is used by the wave physics
-        DO IP = 1, MNP 
-          WVENVI(IP)%DEPTH = DEPTH_INPUT(IP)
-       ENDDO
+        DO ICHNK = 1, NCHNK
+          DO IPRM = 1, KIJL4CHNK(ICHNK)
+            IP = IJFROMCHNK(IPRM, ICHNK)
+            WVENVI(IPRM, ICHNK)%DEPTH = DEPTH_INPUT(IP)
+          ENDDO
+        ENDDO
 
       END SUBROUTINE UNWAM_IN
 !**********************************************************************
@@ -3005,6 +3015,7 @@ END INTERFACE
       SUBROUTINE ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
       USE YOWUNPOOL, ONLY : LSPHE
       USE YOWFRED,  ONLY : DELTH, FRATIO, FR
+      USE YOWGRID , ONLY : NPROMA_WAM, NCHNK, ICHNKFROMIJ, IPRMFROMIJ
       USE YOWSTAT,  ONLY : IDELPRO, IREFRA
       USE YOWGRID,  ONLY : DELPHI, IJS, IJL
       USE YOWPCONS, ONLY : PI, ZPI
@@ -3017,7 +3028,7 @@ END INTERFACE
       REAL(KIND=JWRU) SS, SC, CC, SD, CD
       REAL(KIND=JWRU) DELPH0, DELTH0, DELFR0, DELPRO
       REAL(KIND=JWRU) DRCP(NANG), DRCM(NANG), DRDP(NANG), DRDM(NANG)
-      INTEGER(KIND=JWIM) :: IP, IJ, K, M, KM1, KP1, MP1, MM1
+      INTEGER(KIND=JWIM) :: IP, IJ, K, M, KM1, KP1, MP1, MM1, IPRM, IK
       REAL(KIND=JWRU) DFP, DFM
       REAL(KIND=JWRU) DTHP, DTHM
       REAL(KIND=JWRU) CASS(0:NFRE+1)
@@ -3036,6 +3047,8 @@ END INTERFACE
         IF (IREFRA.NE.0) THEN
           DO IP=1,NP_RES
             IJ = IP
+            IK = ICHNKFROMIJ(IJ)
+            IPRM = IPRMFROMIJ(IJ)
 
             DO K=1,NANG
               KP1 = K+1
@@ -3064,9 +3077,8 @@ END INTERFACE
                 DFM = DELFR0/FR(MM1)
                 !
 
-                DTHP = REAL(WVPRPT(IJ,M)%OMOSNH2KD,JWRU)*DRDP(K) + DRCP(K)
-                DTHM = REAL(WVPRPT(IJ,M)%OMOSNH2KD,JWRU)*DRDM(K) + DRCM(K)
-
+                DTHP = REAL(WVPRPT(IPRM,M,IK)%OMOSNH2KD,JWRU)*DRDP(K) + DRCP(K)
+                DTHM = REAL(WVPRPT(IPRM,M,IK)%OMOSNH2KD,JWRU)*DRDM(K) + DRCM(K)
 
 
                 ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)

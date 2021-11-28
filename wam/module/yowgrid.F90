@@ -74,7 +74,7 @@
 
 !       IJFROMCHNK MAPS  (IPRM, ICHNK)  to IJ
 !       ICHNKFROMIJ MAPS IJ to ICHNK
-!       IPRMFROMIJ MPAS IJ to IPRM
+!       IPRMFROMIJ MAPS IJ to IPRM
 
 
 ! ----------------------------------------------------------------------

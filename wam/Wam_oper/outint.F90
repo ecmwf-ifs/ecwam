@@ -49,6 +49,7 @@
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
 #include "abort1.intfb.h"
@@ -94,7 +95,7 @@
 !*    3. OUTPUT IN PURE BINARY FORM (obsolete)
 !        --------------------------
       IF (FFLAG20 .AND. CDTINTT == CDTPRO ) THEN
-        DO IFLAG=1,JPPFLAG
+        DO IFLAG = 1, JPPFLAG
           IF (FFLAG(IFLAG) .AND. IRANK == IPFGTBL(IFLAG)) THEN
             WRITE (IU20) CDTPRO, NGX, NGY, IRGG
             WRITE (IU20) AMOWEP,AMOSOP,AMOEAP,AMONOP
@@ -129,7 +130,7 @@
 
 !       OUTPUT:
         ICOUNT=0
-        DO IFLAG=1,JPPFLAG
+        DO IFLAG = 1, JPPFLAG
           IF (GFLAG(IFLAG)) THEN
             IF (IRANK == IPFGTBL(IFLAG)) THEN
               ICOUNT=ICOUNT+1

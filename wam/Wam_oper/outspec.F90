@@ -1,4 +1,4 @@
-SUBROUTINE OUTSPEC (FL, FF_NOW)
+SUBROUTINE OUTSPEC (FL1, FF_NOW)
 
 !----------------------------------------------------------------------
 
@@ -15,11 +15,11 @@ SUBROUTINE OUTSPEC (FL, FF_NOW)
 !**   INTERFACE.
 !     ----------
 
-!     SUBROUTINE OUTSPEC (FL, CICOVER)
+!     SUBROUTINE OUTSPEC (FL1, CICOVER)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
-!      *FL*        REAL      LOCAL SPECTRA OF CURRENT PE.
+!      *FL1*       REAL      LOCAL SPECTRA OF CURRENT PE.
 !      *FF_NOW*    REAL      FOR SEA ICE COVER.
 
 !     METHOD.
@@ -39,6 +39,7 @@ SUBROUTINE OUTSPEC (FL, FF_NOW)
 !-------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCOUP  , ONLY : LWCOU, LIFS_IO_SERV_ENABLED,                &
      &                      OUTWSPEC_IO_SERV_HANDLER
@@ -52,14 +53,15 @@ SUBROUTINE OUTSPEC (FL, FF_NOW)
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
 
 !-----------------------------------------------------------------------
+
       IMPLICIT NONE
 
 #include "outwspec_io_serv.intfb.h"
 #include "outwspec.intfb.h"
 #include "difdate.intfb.h"
 
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: FF_NOW 
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL1
+      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FF_NOW
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M
@@ -76,16 +78,16 @@ SUBROUTINE OUTSPEC (FL, FF_NOW)
 IF (LHOOK) CALL DR_HOOK('OUTSPEC',0,ZHOOK_HANDLE)
 
 ASSOCIATE(CICOVER => FF_NOW%CICOVER)
-      
+
       CALL GSTATS(2080,0)
 
       IJSG = IJFROMCHNK(1,1)
       IJLG = IJSG + SUM(KIJL4CHNK) - 1
-      ALLOCATE(SPEC(IJSG:IJLG,NANG,NFRE))
+      ALLOCATE(SPEC(IJSG:IJLG, NANG, NFRE))
 
 !*    APPLY SEA ICE MASK TO THE OUTPUT SPECTRA (IF NEEDED)
       IF (LICERUN .AND. LLSOURCE) THEN
-!$OMP    PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, KIJS, KIJL, IJSB, IJLB, ZMASK)
+!$OMP    PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, KIJS, KIJL, IJSB, IJLB, ZMASK, K, M)
          DO ICHNK = 1, NCHNK
 
            DO IJ = 1, KIJL4CHNK(ICHNK)
@@ -101,7 +103,11 @@ ASSOCIATE(CICOVER => FF_NOW%CICOVER)
            KIJL = KIJL4CHNK(ICHNK)
            IJLB = IJFROMCHNK(KIJL, ICHNK)
 
-           SPEC(IJSB:IJLB, :, :) = (1.0_JWRB - ZMASK(KIJS:KIJL)) * FL(KIJS:KIJL, :, :, ICHNK) + ZMASK(KIJS:KIJL) * FLMIN
+           DO M = 1, NFRE
+             DO K = 1, NANG
+               SPEC(IJSB:IJLB,K,M) = (1.0_JWRB - ZMASK(KIJS:KIJL)) * FL1(KIJS:KIJL,K,M,ICHNK) + ZMASK(KIJS:KIJL)*FLMIN
+             ENDDO
+           ENDDO
          ENDDO
 !$OMP    END PARALLEL DO
 
@@ -114,7 +120,7 @@ ASSOCIATE(CICOVER => FF_NOW%CICOVER)
            KIJL = KIJL4CHNK(ICHNK)
            IJLB = IJFROMCHNK(KIJL, ICHNK)
 
-           SPEC(IJSB:IJLB, :, :) = FL(KIJS:KIJL, :, :, ICHNK)
+           SPEC(IJSB:IJLB, :, :) = FL1(KIJS:KIJL, :, :, ICHNK)
          ENDDO
 !$OMP    END PARALLEL DO
       ENDIF

@@ -1,4 +1,4 @@
-SUBROUTINE GETSPEC(FL, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
+SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
 !     J. BIDLOT    ECMWF      MARCH 2010: modified to use gribapi 
@@ -9,8 +9,8 @@ SUBROUTINE GETSPEC(FL, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *GETSPEC(FL, BLK2GLO, WVENVI,NBLKS,NBLKE,IREAD)
-!     *FL*       ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
+!     *CALL* *GETSPEC(FL1, BLK2GLO, WVENVI,NBLKS,NBLKE,IREAD)
+!     *FL1       ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
 
 !     *BLK2GLO*  BLOCK TO GRID TRANSFORMATION
 !     *BLK2LOC*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
@@ -87,7 +87,7 @@ SUBROUTINE GETSPEC(FL, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 #include "mpdistribfl.intfb.h"
 #include "readfl.intfb.h"
 
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(OUT) :: FL
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(OUT) :: FL1
       TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
       TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: BLK2LOC
       TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: WVENVI
@@ -161,7 +161,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
           DO M = 1, NFRE
             DO K = 1, NANG
               DO IJ = 1, NPROMA_WAM
-                FL(IJ, K, M, ICHNK) = EPSMIN 
+                FL1(IJ, K, M, ICHNK) = EPSMIN 
               ENDDO
             ENDDO
           ENDDO
@@ -531,14 +531,14 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                 KIJL = KIJL4CHNK(ICHNK)
                 IJLB = IJFROMCHNK(KIJL, ICHNK)
 
-                FL(KIJS:KIJL, K, M, ICHNK) = WORK(IJSB:IJLB)
+                FL1(KIJS:KIJL, K, M, ICHNK) = WORK(IJSB:IJLB)
 
                 DO IJ = KIJS, KIJL
-                  IF (FL(IJ, K, M, ICHNK) ==  ZMISS) FL(IJ, K, M, ICHNK) = EPSMIN 
+                  IF (FL1(IJ, K, M, ICHNK) ==  ZMISS) FL1(IJ, K, M, ICHNK) = EPSMIN 
                 ENDDO
 
                 IF(KIJL < NPROMA_WAM) THEN
-                  FL(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL(1, K, M, ICHNK)
+                  FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)
                 ENDIF
               ENDDO
 !$OMP         END PARALLEL DO
@@ -593,14 +593,14 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                 KIJL = KIJL4CHNK(ICHNK)
                 IJLB = IJFROMCHNK(KIJL, ICHNK)
 
-                FL(KIJS:KIJL, KR, MR, ICHNK) = ZRECVBUF(IJSB:IJLB)
+                FL1(KIJS:KIJL, KR, MR, ICHNK) = ZRECVBUF(IJSB:IJLB)
 
                 DO IJ = KIJS, KIJL
-                  IF (FL(IJ, KR, MR, ICHNK) ==  ZMISS) FL(IJ, KR, MR, ICHNK) = EPSMIN 
+                  IF (FL1(IJ, KR, MR, ICHNK) ==  ZMISS) FL1(IJ, KR, MR, ICHNK) = EPSMIN 
                 ENDDO
 
                 IF(KIJL < NPROMA_WAM) THEN
-                  FL(KIJL+1:NPROMA_WAM, KR, MR, ICHNK) = FL(1, KR, MR, ICHNK)
+                  FL1(KIJL+1:NPROMA_WAM, KR, MR, ICHNK) = FL1(1, KR, MR, ICHNK)
                 ENDIF
               ENDDO
 !$OMP         END PARALLEL DO
@@ -643,12 +643,12 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
           DO M = NFRE_RED+1, NFRE
             DO K = 1, NANG
               DO IJ = 1, NPROMA_WAM
-                FL(IJ, K, M, ICHNK) = FL(IJ, K, NFRE_RED, ICHNK) * FR5(NFRE_RED)*FRM5(M) 
+                FL1(IJ, K, M, ICHNK) = FL1(IJ, K, NFRE_RED, ICHNK) * FR5(NFRE_RED)*FRM5(M) 
               ENDDO
             ENDDO
           ENDDO
 
-          CALL SDEPTHLIM(1, NPROMA_WAM, EMAXDPT(:,ICHNK), FL(:,:,:,ICHNK))
+          CALL SDEPTHLIM(1, NPROMA_WAM, EMAXDPT(:,ICHNK), FL1(:,:,:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
 
@@ -668,7 +668,8 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
            LNAME = LEN_TRIM(FILENAME)
            FILENAME = FILENAME(1:LNAME)//'.%p_%n'
            CALL EXPAND_STRING(IRANK,NPROC,0,0,FILENAME,1)
-           CALL READFL(FL, IJS, IJL, 1, NANG, 1, NFRE,              &
+???debile 
+           CALL READFL(FL1, IJS, IJL, 1, NANG, 1, NFRE,              &
      &                 FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARALR)
 
          ELSE
@@ -695,7 +696,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                CALL MPDISTRIBFL(ISEND, KTAG, NBLKS, NBLKE, KINF, KSUP, MINF, MSUP, RFL)
                KTAG=KTAG+1
 
-!             KEEP CORRESPONDING CONTRIBUTION TO FL
+!             KEEP CORRESPONDING CONTRIBUTION TO FL1
 !$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, K, M)
               DO ICHNK = 1, NCHNK
                 KIJS = 1
@@ -705,14 +706,14 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 
                 DO M = MINF, MSUP
                   DO K = KINF, KSUP
-                    FL(KIJS:KIJL, K, M, ICHNK) = RFL(IJSB:IJLB, K, M)
+                    FL1(KIJS:KIJL, K, M, ICHNK) = RFL(IJSB:IJLB, K, M)
                   ENDDO
                 ENDDO
 
                 IF(KIJL < NPROMA_WAM) THEN
                   DO M = MINF, MSUP
                     DO K = KINF, KSUP
-                      FL(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL(1, K, M, ICHNK)
+                      FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)
                     ENDDO
                   ENDDO
                 ENDIF

@@ -1,4 +1,4 @@
-      SUBROUTINE PEAK (KIJS, KIJL, FETCH, FPMAX, U10, FP, ALPHJ)
+      SUBROUTINE PEAK (KIJS, KIJL, FETCH, FPMAX, U10, FP, ALPHAJ)
 
 ! ----------------------------------------------------------------------
 
@@ -25,7 +25,7 @@
 !          *FPMAX*   REAL     MAXIMUM PEAK FREQUENCY (HERTZ).
 !          *U10*     REAL     WIND SPEED.
 !          *FP*      REAL     PEAK FREQUENCY.
-!          *ALPHJ*   REAL     ALPHA PARAMETER.
+!          *ALPHAJ*  REAL     ALPHA PARAMETER.
 
 !     METHOD.
 !     -------
@@ -33,8 +33,8 @@
 !       FP = A * (G*FETCH/U_10**2)**D    A = 2.84
 !       FP = MAX [FP, 0.13]              D = -3./10.
 !       FP = MIN [FP, FRMAX*U_10/G]      b = 0.033
-!       ALPHJ = B * FP-**2/3             B = 0.033
-!       ALPHJ = MAX [ALPHJ, 0.0081]
+!       ALPHAJ = B * FP-**2/3            B = 0.033
+!       ALPHAJ = MAX [ALPHAJ, 0.0081]
 !       FP = G/U_10*FP
 
 !     EXTERNALS.
@@ -84,8 +84,8 @@
           FP(IJ) = AJONS * GXU ** DJONS
           FP(IJ) = MAX(0.13_JWRB, FP(IJ))
           FP(IJ) = MIN(FP(IJ), FPMAX/UG)
-          ALPHJ(IJ) = BJONS * FP(IJ)** EJONS
-          ALPHJ(IJ) = MAX(ALPHJ(IJ), 0.0081_JWRB)
+          ALPHAJ(IJ) = BJONS * FP(IJ)**EJONS
+          ALPHAJ(IJ) = MAX(ALPHAJ(IJ), 0.0081_JWRB)
           FP(IJ) = FP(IJ)*UG
         ELSE
           FP(IJ) = 0.0_JWRB

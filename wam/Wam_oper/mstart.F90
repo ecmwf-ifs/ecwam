@@ -1,5 +1,5 @@
       SUBROUTINE MSTART (IOPTI, FETCH, FRMAX, THETAQ,     &
-     &                   FM, ZGAMMA, SA, SB,              &
+     &                   FM, ALFA, ZGAMMA, SA, SB,        &
      &                   KIJS, KIJL, FL1,                 &
      &                   WSWAVE, WDWAVE) 
 ! ----------------------------------------------------------------------
@@ -19,7 +19,7 @@
 !     ----------
 
 !   *CALL* *MSTART (IOPTI, FETCH, FRMAX, THETAQ,
-!    &              FM, ZGAMMA, SA, SB, 
+!    &              FM, ALFA, ZGAMMA, SA, SB, 
 !    &              NPROMA, KIJS, KIJL,
 !    &              FL1,WSWAVE,WDWAVE)*
 !      *IOPTI*  INTEGER   START FIELD OPTION
@@ -29,6 +29,7 @@
 !      *FETCH*  REAL      FETCH IN METERS.
 !      *FRMAX*  REAL      MAXIMUM PEAK FREQUENCY IN HERTZ.
 !      *THETAQ* REAL      MEAN DIRECTION (RAD).
+!      *ALFA*   REAL      ALPHA PARAMETER
 !      *ZGAMMA* REAL      OVERSHOOT FACTOR.
 !      *SA*     REAL      LEFT PEAK WIDTH.
 !      *SB*     REAL      RIGHT PEAK WIDTH.
@@ -73,7 +74,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
       REAL(KIND=JWRB), INTENT(IN) :: FETCH, FRMAX, THETAQ
-      REAL(KIND=JWRB), INTENT(IN) :: FM, ZGAMMA, SA, SB
+      REAL(KIND=JWRB), INTENT(IN) :: FM, ALFA, ZGAMMA, SA, SB
       REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: WSWAVE, WDWAVE
       REAL(KIND=JWRB),DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(OUT) :: FL1
 
@@ -94,19 +95,19 @@
         IF (IOPTI == 1) THEN
           DO IJ = KIJS, KIJL
             FP(IJ) = 0.0_JWRB
-            ALPHJ(IJ) = 0.0_JWRB
+            ALPHAJ(IJ) = 0.0_JWRB
             THES(IJ) = WDWAVE(IJ)
           ENDDO
         ELSEIF (IOPTI == 0) THEN
           DO IJ = KIJS, KIJL
             FP(IJ) = FM
-            ALPHJ(IJ) = ALFA
+            ALPHAJ(IJ) = ALFA
             THES(IJ) = THETAQ
           ENDDO
         ELSE
           DO IJ = KIJS, KIJL
             FP(IJ) = FM
-            ALPHJ(IJ) = ALFA
+            ALPHAJ(IJ) = ALFA
             IF (WSWAVE(IJ) > 0.1E-08_JWRB) THEN
               THES(IJ) = WDWAVE(IJ)
             ELSE

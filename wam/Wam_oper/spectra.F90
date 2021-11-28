@@ -60,6 +60,7 @@ SUBROUTINE SPECTRA (KIJS, KIJL, ZGAMMA, SA, SB, FP, ALPHAJ, THES, FL1)
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "jonswap.intfb.h"
 #include "spr.intfb.h"
 
@@ -82,7 +83,7 @@ IF (LHOOK) CALL DR_HOOK('SPECTRA',0,ZHOOK_HANDLE)
 !*    1. COMPUTE JONSWAP SPECTRUM.
 !        -------------------------
 
-      CALL JONSWAP (ALPHJ, ZGAMMA, SA, SB, FP, KIJS, KIJL, ET) 
+      CALL JONSWAP (ALPHAJ, ZGAMMA, SA, SB, FP, KIJS, KIJL, ET) 
 
 ! ----------------------------------------------------------------------
 

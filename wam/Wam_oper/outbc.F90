@@ -77,8 +77,8 @@ SUBROUTINE OUTBC (FL1, BLK2GLO, IU19)
 !$OMP END PARALLEL DO
 
       IRECV=1
-      CALL MPGATHERBC(IRECV, IJS, IJL, NSCFLD,                          &
-     &                FL1, EM, TQ, FM,                                  &
+      CALL MPGATHERBC(IRECV, NSCFLD,                   &
+     &                FL1, EM, TQ, FM,                 &
      &                FLPTS, EMPTS, TQPTS, FMPTS)
 
 

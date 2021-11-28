@@ -44,6 +44,7 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,              &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "getwnd.intfb.h"
 #include "incdate.intfb.h"

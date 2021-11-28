@@ -222,7 +222,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IFROMIJ, JFROMIJ,   &
                   EXIT OUT
                 ENDIF 
               ENDDO
-            ENDDO
+            ENDDO OUT
 
             IF (NPROC > 1) THEN
               CALL MPL_ALLREDUCE(KUPDATE,'MAX',CDSTRING='GETCURR KUPDATE:')
