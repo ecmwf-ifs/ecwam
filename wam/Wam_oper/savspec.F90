@@ -1,4 +1,4 @@
-      SUBROUTINE SAVSPEC(NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
+      SUBROUTINE SAVSPEC(FL1, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      MARCH 1997
@@ -11,8 +11,8 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *SAVSPEC(FL,NBLKS,NBLKE,CDTPRO,CDATEF,CDATER)
-!     *FL*        ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
+!     *CALL* *SAVSPEC(FL1, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
+!     *FL1*       ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
 !     *NBLKS*     INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !     *NBLKE*     INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *CDTPRO*    CHAR*14   END DATE OF PROPAGATION.
@@ -54,7 +54,7 @@
 #include "mpgatherfl.intfb.h"
 #include "writefl.intfb.h"
 
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL1
       INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO, CDATEF, CDATER
 
@@ -90,7 +90,7 @@
 
          IJSG = IJFROMCHNK(1,1)
          IJLG = IJSG + SUM(KIJL4CHNK) - 1
-         ALLOCATE(RFL(IJSG:IJLG,1:NANG,1:NFRE))
+         ALLOCATE(RFL(IJSG:IJLG, NANG, NFRE))
 !$OMP    PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, KIJL, IJSB, IJLB)
          DO ICHNK = 1, NCHNK
            KIJS = 1
@@ -98,7 +98,7 @@
            KIJL = KIJL4CHNK(ICHNK)
            IJLB = IJFROMCHNK(KIJL, ICHNK)
 
-           RFL(IJSB:IJLB, :, :) = FL(KIJS:KIJL, :, :, ICHNK)
+           RFL(IJSB:IJLB, :, :) = FL1(KIJS:KIJL, :, :, ICHNK)
          ENDDO
 !$OMP    END PARALLEL DO
 
@@ -122,7 +122,7 @@
             LOUNIT = .FALSE.
             IF (MINF == 1 .AND. KINF == 1) LOUNIT = .TRUE.
 
-            ALLOCATE(RFL(NIBLO,KINF:KSUP,MINF:MSUP))
+            ALLOCATE(RFL(NIBLO, KINF:KSUP, MINF:MSUP))
 
 !$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, M, K, IPRM, IJ)
             DO ICHNK = 1, NCHNK
@@ -132,7 +132,7 @@
                     IJ = IJFROMCHNK(IPRM,ICHNK)
                     IF (IJ >= IJSLOC .AND. IJ <= IJLLOC) THEN
                       IJ = IJ + IJGLOBAL_OFFSET 
-                      RFL(IJ, K, M) = FL(IPRM, K, M, ICHNK)
+                      RFL(IJ, K, M) = FL1(IPRM, K, M, ICHNK)
                     ENDIF
                   ENDDO
                  ENDDO

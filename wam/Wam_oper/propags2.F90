@@ -1,4 +1,4 @@
-      SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, IJS, IJL, KIJS, KIJL)
+SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL)
 
 ! ----------------------------------------------------------------------
 
@@ -12,11 +12,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PROPAGS2(F1, F3, NINF, NSUP, IJS, IJL, KIJS, KIJL)*
+!       *CALL* *PROPAGS2(F1, F3, NINF, NSUP, KIJS, KIJL)*
 !          *F1*          - SPECTRUM AT TIME T (with exchange halo).
-!          *F3*          - SPECTRUM AT TIME T+DELT (without halo).
-!          *NINF:NSUP+1* - 1st DIMENSION OF F1
-!          *IJS:IJL*     - 1st DIMENSION OF F3 
+!          *F3*          - SPECTRUM AT TIME T+DELT
+!          *NINF:NSUP+1* - 1st DIMENSION OF F1 and F3
 !          *KIJS*        - ACTIVE INDEX OF FIRST POINT
 !          *KIJL*        - ACTIVE INDEX OF LAST POINT
 
@@ -39,7 +38,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : COSTH    ,SINTH
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED
       USE YOWSTAT  , ONLY : ICASE    ,IREFRA
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR      ,             &
@@ -53,13 +52,12 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1,NANG,NFRE_RED), INTENT(IN) :: F1
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: F3 
-!     it has to be INOUT because only part of F3 will be updated if NFRE > NFRE_RED
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, NFRE_RED), INTENT(IN) :: F1
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, NFRE_RED), INTENT(OUT) :: F3
       INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
 
@@ -73,7 +71,7 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
 !*    SPHERICAL OR CARTESIAN GRID?
 !     ----------------------------
@@ -92,7 +90,7 @@
             JJY=JYO(K,1)
             JJK=KCR(K,1)
             DO M=1,NFRE_RED
-              DO IJ=KIJS,KIJL
+              DO IJ = KIJS, KIJL
                 FJ1(IJ)= F1(KLON(IJ,JJX)  ,K  ,M)
                 FJ2(IJ)= F1(KLAT(IJ,JJY,1),K  ,M)
                 FJ3(IJ)= F1(KLAT(IJ,JJY,2),K  ,M)
@@ -102,7 +100,7 @@
 !JFH Loop split to enhance vectorisation
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
-              DO IJ=KIJS,KIJL
+              DO IJ = KIJS, KIJL
                 F3(IJ,K,M) =                                            &
      &                (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ           ,K  ,M) &
 !    &         + WLONN(IJ,K,M,JXO(K,1)) * F1(KLON(IJ,JXO(K,1))  ,K  ,M) &
@@ -124,7 +122,7 @@
 
               DO IC=-1,1,2
                 IF (LLWKPMN(K,M,IC)) THEN
-                  DO IJ=KIJS,KIJL
+                  DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M)                             &
      &         +      WKPMN(IJ,K,M,IC)* F1(IJ,KPM(K,IC),M)
                   ENDDO
@@ -141,13 +139,13 @@
           DO M=1,NFRE_RED
             DO K=1,NANG
 
-              DO IJ=KIJS,KIJL
+              DO IJ = KIJS, KIJL
                 F3(IJ,K,M) = (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ,K,M)
               ENDDO
               
               DO IC=1,2
                 IF (LLWLONN(K,M,IC)) THEN
-                  DO IJ=KIJS,KIJL
+                  DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M)                             &
      &           +      WLONN(IJ,K,M,IC)*F1(KLON(IJ,IC) ,K,M)
                   ENDDO
@@ -157,7 +155,7 @@
               DO ICL=1,2
                 DO IC=1,2
                   IF (LLWLATN(K,M,IC,ICL)) THEN
-                    DO IJ=KIJS,KIJL
+                    DO IJ = KIJS, KIJL
                       F3(IJ,K,M) = F3(IJ,K,M)                           &
      &         +        WLATN(IJ,K,M,IC,ICL)*F1(KLAT(IJ,IC,ICL) ,K,M)
                     ENDDO
@@ -168,7 +166,7 @@
               DO ICL=1,2
                 DO ICR=1,4
                   IF (LLWCORN(K,M,ICR,ICL)) THEN
-                    DO IJ=KIJS,KIJL
+                    DO IJ = KIJS, KIJL
                       F3(IJ,K,M) = F3(IJ,K,M)                           &
      &         +   WCORN(IJ,K,M,ICR,ICL)*F1(KCOR(IJ,KCR(K,ICR),ICL),K,M)
                     ENDDO
@@ -178,7 +176,7 @@
 
               DO IC=-1,1,2
                 IF (LLWKPMN(K,M,IC)) THEN
-                  DO IJ=KIJS,KIJL
+                  DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M)                             &
      &         +      WKPMN(IJ,K,M,IC)* F1(IJ,KPM(K,IC),M)
                   ENDDO
@@ -188,7 +186,7 @@
 
               DO IC=-1,1,2
                 IF (LLWMPMN(K,M,IC)) THEN
-                  DO IJ=KIJS,KIJL
+                  DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M)                             &
      &         +      WMPMN(IJ,K,M,IC)* F1(IJ,K  ,MPM(M,IC))
                   ENDDO
@@ -236,6 +234,6 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('PROPAGS2',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('PROPAGS2',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE PROPAGS2 
+END SUBROUTINE PROPAGS2 

@@ -54,6 +54,7 @@ USE GRIB_API_INTERFACE
 
 !-----------------------------------------------------------------------
       IMPLICIT NONE
+
 #include "wgribencode_model.intfb.h"
 #include "abort1.intfb.h"
 #include "grstname.intfb.h"
@@ -197,10 +198,10 @@ DO IC=1,NN,ISTEP
 
         CALL GSTATS(1496,0)
         NPROMA=NPROMA_WAM
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,IY)
-        DO JKGLO=1,NEND(NPROC),NPROMA
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO, KIJS, KIJL, IJ, IX, IY)
+        DO JKGLO = 1, NEND(NPROC), NPROMA
           KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,NEND(NPROC))
+          KIJL=MIN(KIJS+NPROMA-1, NEND(NPROC))
           DO IJ=KIJS,KIJL
             IX = BLK2GLO(IJ)%IXLG 
             IY = NGY- BLK2GLO(IJ)%KXLT +1

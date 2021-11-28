@@ -1,4 +1,4 @@
-SUBROUTINE PROPAG_WAM (IJS, IJL, BLK2GLO, WVENVI, WVPRPT, FL1)
+SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
 
 ! ----------------------------------------------------------------------
 
@@ -12,9 +12,7 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, BLK2GLO, WVENVI, WVPRPT, FL1)
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *PROPAG_WAM (IJS, IJL, BLK2GLO, WVENVI, WVPRPT, FL1)
-!          *IJS*       - INDEX OF FIRST GRIDPOINT.
-!          *IJL*       - INDEX OF LAST GRIDPOINT.
+!     *CALL* *PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
 !          *BLK2GLO*   - BLOCK TO GRID TRANSFORMATION
 !          *WVENVI*    - WAVE ENVIRONMENT FIELDS
 !          *WVPRPT*    - WAVE PROPERTIES FIELDS
@@ -34,7 +32,7 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, BLK2GLO, WVENVI, WVPRPT, FL1)
       USE YOWDRVTYPE  , ONLY : WVGRIDGLO, ENVIRONMENT, FREQUENCY
 
       USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
-      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NIBLO
       USE YOWREFD  , ONLY : LLUPDTTD ,THDD     ,THDC     ,SDOT
@@ -49,6 +47,7 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, BLK2GLO, WVENVI, WVPRPT, FL1)
 
       IMPLICIT NONE
 
+#include "abort1.intfb.h"
 #include "ctuwupdt.intfb.h"
 #include "mpexchng.intfb.h"
 #include "proenvhalo.intfb.h"
@@ -57,22 +56,23 @@ SUBROUTINE PROPAG_WAM (IJS, IJL, BLK2GLO, WVENVI, WVPRPT, FL1)
 #include "propags2.intfb.h"
 #include "propdot.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
-      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(IN) :: WVENVI
-      TYPE(FREQUENCY), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: WVPRPT
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL1
+      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: WVENVI
+      TYPE(FREQUENCY), DIMENSION(NPROMA_WAM, NFRE, NCHNK), INTENT(IN) :: WVPRPT
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, J
-      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, MTHREADS
+      INTEGER(KIND=JWIM) :: JKGLO, NPROMA, MTHREADS
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
+      INTEGER(KIND=JWIM) :: IJSG, IJLG, ICHNK, KIJS, KIJL, IJSB, IJLB
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 !     Spectra extended with the halo exchange for the propagation
 !     But limited to NFRE_RED frequencies
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NANG, NFRE_RED) :: FL1_EXT
+!!! the advection schemes are still written in block structure
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NANG, NFRE_RED) :: FL1_EXT, FL3_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED) :: WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1) :: DELLAM1_EXT, COSPHM1_EXT 
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1) :: DEPTH_EXT, UCUR_EXT, VCUR_EXT
@@ -97,16 +97,24 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 
       IF (NIBLO > 1) THEN
 
-        NPROMA=NPROMA_WAM
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,K,M,IJ) 
-        DO JKGLO=IJS,IJL,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL)
-          DO M=1,NFRE_RED
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                FL1_EXT(IJ,K,M) = FL1(IJ,K,M)
-              ENDDO
+        IJSG = IJFROMCHNK(1,1)
+        IJLG = IJSG + SUM(KIJL4CHNK) - 1
+
+        MTHREADS=1
+!$      MTHREADS=OMP_GET_MAX_THREADS()
+        NPROMA=(IJLG-IJSG+1)/MTHREADS + 1
+
+
+!!! the advection schemes are still written in block structure
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K)
+        DO ICHNK = 1, NCHNK
+          KIJS = 1
+          IJSB = IJFROMCHNK(KIJS, ICHNK)
+          KIJL = NPROMA_WAM
+          IJLB = IJFROMCHNK(KIJL, ICHNK)
+          DO M = 1, NFRE_RED
+            DO K = 1, NANG
+              FL1_EXT(IJSB:IJLB, K, M) = FL1(KIJS:KIJL, K, M, ICHNK)
             ENDDO
           ENDDO
         ENDDO
@@ -118,14 +126,20 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 
         IF (LLUNSTR) THEN 
 
-           CALL PROPAG_UNWAM(FL1_EXT, FL1)
+        WRITE(0,*) '!!! ********************************* !!'
+        WRITE(0,*) '!!! in PROPAG_WAM Not yet ready !!!' 
+        WRITE(0,*) '!!! PROPAG_UNWAM will need to be adapted to new FL1 structure !!!' 
+        WRITE(0,*) '!!! ********************************* !!'
+        CALL ABORT1
+
+!!!!!           CALL PROPAG_UNWAM(FL1_EXT, FL1)
 
         ELSE
 
 
 !          OBTAIN INFORMATION AT NEIGHBORING GRID POINTS (HALO)
 !          ----------------------------------------------------
-           CALL MPEXCHNG(FL1_EXT,NANG,NFRE_RED)
+           CALL MPEXCHNG(FL1_EXT, NANG, NFRE_RED)
 
 
            CALL GSTATS(1430,0)
@@ -134,12 +148,12 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 !          ---------------------
 
            IF (LLUPDTTD) THEN
-             IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS:IJL,NANG))
-             IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS:IJL,NANG))
-             IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS:IJL,NANG,NFRE_RED))
+             IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS:IJL, NANG))
+             IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS:IJL, NANG))
+             IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS:IJL, NANG, NFRE_RED))
 
 !            NEED HALO VALUES
-             CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
+             CALL  PROENVHALO (NINF, NSUP,                            &
 &                              WAVNUM, CGROUP, OMOSNH2KD,             &
 &                              DELLAM1, COSPHM1,                      & 
 &                              DEPTH, UCUR, VCUR,                     &
@@ -150,11 +164,10 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 
 !            DOT THETA TERM:
 
-             NPROMA=NPROMA_WAM
-!$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-             DO JKGLO = IJS, IJL, NPROMA
+!$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
+             DO JKGLO = IJSG, IJLG, NPROMA
                KIJS=JKGLO
-               KIJL=MIN(KIJS+NPROMA-1,IJL)
+               KIJL=MIN(KIJS+NPROMA-1, IJLG)
                CALL PROPDOT(KIJS, KIJL, NINF, NSUP,                                     &
      &                      BLK2GLO,                                                    &
      &                      WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT,                      &
@@ -176,7 +189,7 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 
              IF (LUPDTWGHT) THEN
 !              NEED HALO VALUES
-               CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
+               CALL  PROENVHALO (NINF, NSUP,                            &
 &                                WAVNUM, CGROUP, OMOSNH2KD,             &
 &                                DELLAM1, COSPHM1,                      & 
 &                                DEPTH, UCUR, VCUR,                     &
@@ -185,7 +198,7 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 &                                DEPTH_EXT, UCUR_EXT, VCUR_EXT )
 
 !              COMPUTES ADVECTION WEIGTHS AND CHECK CFL CRITERIA
-               CALL CTUWUPDT(IJS, IJL, NINF, NSUP,                        &
+               CALL CTUWUPDT(IJSG, IJLG, NINF, NSUP,                      &
 &                            BLK2GLO,                                     &
 &                            CGROUP_EXT, OMOSNH2KD_EXT,                   &
 &                            COSPHM1_EXT, DEPTH_EXT, UCUR_EXT, VCUR_EXT )
@@ -193,15 +206,11 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
                LUPDTWGHT=.FALSE.
              ENDIF
 
-             MTHREADS=1
-!$           MTHREADS=OMP_GET_MAX_THREADS()
-             NPROMA=(IJL-IJS+1)/MTHREADS + 1
-
-!$OMP        PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-             DO JKGLO=IJS,IJL,NPROMA
+!$OMP        PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
+             DO JKGLO = IJSG, IJLG, NPROMA
                KIJS=JKGLO
-               KIJL=MIN(KIJS+NPROMA-1,IJL)
-               CALL PROPAGS2(FL1_EXT, FL1, NINF, NSUP, IJS, IJL, KIJS, KIJL)
+               KIJL=MIN(KIJS+NPROMA-1, IJLG)
+               CALL PROPAGS2(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL)
              ENDDO
 !$OMP        END PARALLEL DO
 
@@ -210,7 +219,7 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
              IF (L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
 
 !            NEED HALO VALUES
-             CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
+             CALL  PROENVHALO (NINF, NSUP,                            &
 &                              WAVNUM, CGROUP, OMOSNH2KD,             &
 &                              DELLAM1, COSPHM1,                      & 
 &                              DEPTH, UCUR, VCUR,                     &
@@ -218,14 +227,13 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 &                              DELLAM1_EXT, COSPHM1_EXT,              & 
 &                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
 
-             NPROMA=NPROMA_WAM
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-             DO JKGLO=IJS,IJL,NPROMA
+             DO JKGLO = IJSG, IJLG, NPROMA
                KIJS=JKGLO
-               KIJL=MIN(KIJS+NPROMA-1,IJL)
-               CALL PROPAGS1(FL1_EXT, FL1, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
+               KIJL=MIN(KIJS+NPROMA-1, IJLG)
+               CALL PROPAGS1(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL,       &
 &                            BLK2GLO,                                        &
-&                            DEPTH,                                          &
+&                            DEPTH_EXT,                                      &
 &                            CGROUP_EXT, OMOSNH2KD_EXT,                      &
 &                            DELLAM1_EXT, COSPHM1_EXT,                       &
 &                            UCUR_EXT, VCUR_EXT,                             &
@@ -237,7 +245,7 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
              IF (L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
 
 !            NEED HALO VALUES
-             CALL  PROENVHALO (IJS, IJL, NINF, NSUP,                  &
+             CALL  PROENVHALO (NINF, NSUP,                            &
 &                              WAVNUM, CGROUP, OMOSNH2KD,             &
 &                              DELLAM1, COSPHM1,                      & 
 &                              DEPTH, UCUR, VCUR,                     &
@@ -245,14 +253,13 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 &                              DELLAM1_EXT, COSPHM1_EXT,              & 
 &                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
 
-             NPROMA=NPROMA_WAM
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-             DO JKGLO=IJS,IJL,NPROMA
+             DO JKGLO = IJSG, IJLG, NPROMA
                KIJS=JKGLO
-               KIJL=MIN(KIJS+NPROMA-1,IJL)
-               CALL PROPAGS(FL1_EXT, FL1, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
+               KIJL=MIN(KIJS+NPROMA-1, IJLG)
+               CALL PROPAGS(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL,       &
 &                           BLK2GLO,                                        &
-&                           DEPTH,                                          &
+&                           DEPTH_EXT,                                      &
 &                           CGROUP_EXT, OMOSNH2KD_EXT,                      &
 &                           DELLAM1_EXT, COSPHM1_EXT,                       &
 &                           UCUR_EXT, VCUR_EXT,                             &
@@ -260,6 +267,24 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
              ENDDO
 !$OMP        END PARALLEL DO
            END SELECT 
+
+
+!!! the advection schemes are still written in block structure
+!!!  So need to convert back to the nproma_wam chuncks
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K)
+          DO ICHNK = 1, NCHNK
+            KIJS = 1
+            IJSB = IJFROMCHNK(KIJS, ICHNK)
+            KIJL = NPROMA_WAM
+            IJLB = IJFROMCHNK(KIJL, ICHNK)
+            DO M = 1, NFRE_RED
+              DO K = 1, NANG
+                FL1(KIJS:KIJL, K, M, ICHNK) = FL3_EXT(IJSB:IJLB, K, M)
+              ENDDO
+            ENDDO
+
+          ENDDO
+!$OMP     END PARALLEL DO
 
 
            CALL GSTATS(1430,1)

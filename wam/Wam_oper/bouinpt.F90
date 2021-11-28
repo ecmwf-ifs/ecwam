@@ -1,4 +1,4 @@
-SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
+SUBROUTINE BOUINPT (IU02, FL1, NSTART, NEND)
 
 ! ----------------------------------------------------------------------
 
@@ -47,27 +47,30 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFPBO  , ONLY : NBOUNF   ,IJARF    ,IBFL     ,              &
-     &            IBFR     ,BFW
+     &                      IBFR     ,BFW
       USE YOWFRED  , ONLY : FR       ,TH
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, ICHNKFROMIJ, IPRMFROMIJ
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTBC   ,IDELBC    ,    &
-     &            IDELPRO
+     &                      IDELPRO
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "gsfile_new.intfb.h"
 #include "intspec.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(INOUT) :: IU02
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL1
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
       INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NSTART, NEND
-      INTEGER(KIND=JWIM) :: I, M, K, IP, IJ, IJF, IC, KL, ML, IDELINP
+
+
+      INTEGER(KIND=JWIM) :: I, M, K, IP, IK, IJ, IJF, IC, KL, ML, IDELINP
       INTEGER(KIND=JWIM), SAVE :: NBOINP
       INTEGER(KIND=JWIM) :: ISEND, IREQ
       INTEGER(KIND=JWIM) :: ICOUNT, NZCOMBUF, NINTFLD
@@ -112,7 +115,7 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
           LLBC(IP)=.FALSE.
           DO I=1,NBOUNF
             IJF=IJARF(I)
-            IF(IJF.GE.NSTART(IP) .AND. IJF.LE.NEND(IP)) THEN
+            IF (IJF >= NSTART(IP) .AND. IJF <= NEND(IP)) THEN
               LLBC(IP)=.TRUE.
               EXIT
             ENDIF
@@ -123,7 +126,7 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
         NIJB=0 
         DO I=1,NBOUNF
           IJF=IJARF(I)
-          IF(IJF.GE.NSTART(IRANK) .AND. IJF.LE.NEND(IRANK)) THEN
+          IF (IJF >= NSTART(IRANK) .AND. IJF <= NEND(IRANK)) THEN
             NIJB=NIJB+1 
             IBND(NIJB)=I
             IJB(NIJB)=IJF
@@ -137,11 +140,11 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
 
 !*    1.2 HAS A NEW BOUNDARY VALUE INPUT FILE TO BE FETCH?
 !         ------------------------------------------------
-      IF (CDTLAST.LT.CDTBC) THEN
+      IF (CDTLAST < CDTBC) THEN
 
         NZCOMBUF=7
         ALLOCATE(ZCOMBUFS(NZCOMBUF))
-        IF(IRANK.EQ.ISEND)THEN
+        IF (IRANK == ISEND)THEN
 !*        FETCH INPUT FILE.
           CALL GSFILE (IU06, IU02, 0, CDTBC, CDTBC, 'FBI', 'G')
 !*        READ BOUNDARY FILE HEADER.
@@ -169,9 +172,8 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
 
 !*      CHECK CONSISTENCY.
 
-        IF (KL.NE.NANG .OR. ML.NE.NFRE .OR.                             &
-     &     FR1.NE.FR(1) .OR. TH0.NE.TH(1) .OR. MOD(IDELINP,IDELPRO)     &
-     &     .NE. 0 .OR. IDELINP.LT.IDELPRO) THEN
+        IF (KL /= NANG .OR. ML /= NFRE .OR. FR1 /= FR(1) .OR.                               &
+     &      TH0 /= TH(1) .OR. MOD(IDELINP,IDELPRO) /= 0 .OR. IDELINP < IDELPRO) THEN
           WRITE (IU06,*) '****************************************'
           WRITE (IU06,*) '*                                      *'
           WRITE (IU06,*) '*    FATAL ERROR SUB. BOUINP           *'
@@ -201,7 +203,7 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
       ENDIF
 
       NINTFLD=0
-      IF(LLBC(IRANK) .OR. IRANK.EQ.ISEND) THEN
+      IF (LLBC(IRANK) .OR. IRANK == ISEND) THEN
         ALLOCATE(F1(NANG,NFRE,0:NBOINP))
         ALLOCATE(FL(NANG,NFRE))
         NINTFLD=NINTFLD+1
@@ -214,12 +216,12 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
 !*     INITIALISE FOR LANDPOINTS.
         DO M=1,NFRE
           DO K=1,NANG
-            F1(K,M,0) = 0.
+            F1(K,M,0) = 0.0_JWRB
           ENDDO
         ENDDO
-        FMEAN1(0) = 0.
-        EMEAN1(0) = 0.
-        THQ1(0) = 0.
+        FMEAN1(0) = 0.0_JWRB
+        EMEAN1(0) = 0.0_JWRB
+        THQ1(0) = 0.0_JWRB
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -227,24 +229,21 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
 !*    2.1 READ BOUNDARY SPECTRA.
 !         ----------------------
 
-      IF(LLBC(IRANK) .OR. IRANK.EQ.ISEND) THEN
-        NZCOMBUF=NBOINP*(NINTFLD+NANG*NFRE)
+      IF (LLBC(IRANK) .OR. IRANK == ISEND) THEN
+        NZCOMBUF = NBOINP*(NINTFLD+NANG*NFRE)
         ALLOCATE(ZCOMBUFS(NZCOMBUF))
       ENDIF
 
-      IF(IRANK.EQ.ISEND)THEN
+      IF (IRANK == ISEND)THEN
  2100   CONTINUE
         DO IJ=1,NBOINP
-          READ (IU02, ERR=5001, END=5001)                               &
-     &     XLON, XLAT, CDATE1,                                          &
-     &     EMEAN1(IJ), THQ1(IJ), FMEAN1(IJ)
-          READ (IU02, ERR=5002, END=5002)                               &
-     &     ((F1(K,M,IJ),K=1,NANG),M=1,NFRE)
+          READ (IU02, ERR=5001, END=5001) XLON, XLAT, CDATE1, EMEAN1(IJ), THQ1(IJ), FMEAN1(IJ)
+          READ (IU02, ERR=5002, END=5002) ((F1(K,M,IJ),K=1,NANG),M=1,NFRE)
         ENDDO
 
 !*    2.2 CHECK DATES.
 !         ------------
-        IF (CDATE1.LT.CDTPRO) THEN
+        IF (CDATE1 < CDTPRO) THEN
           WRITE (IU06,*) '****************************************'
           WRITE (IU06,*) '*                                      *'
           WRITE (IU06,*) '*    WARNING ERROR SUB. BOUINP         *'
@@ -258,7 +257,7 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
           WRITE (IU06,*) '*                                      *'
           WRITE (IU06,*) '****************************************'
           GOTO 2100
-        ELSEIF (CDATE1.GT.CDTPRO) THEN
+        ELSEIF (CDATE1 > CDTPRO) THEN
           WRITE (IU06,*) '****************************************'
           WRITE (IU06,*) '*                                      *'
           WRITE (IU06,*) '*    FATAL ERROR SUB. BOUINP           *'
@@ -276,7 +275,7 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
 
 !     SEND INFORMATION TO OTHER PE'S
       IREQ=0
-      IF(IRANK.EQ.ISEND)THEN
+      IF (IRANK == ISEND)THEN
         ICOUNT=0
         DO IJ=1,NBOINP
           ICOUNT=ICOUNT+1
@@ -292,7 +291,7 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
             ENDDO
           ENDDO
         ENDDO
-        IF(ICOUNT.NE.NZCOMBUF) THEN
+        IF (ICOUNT /= NZCOMBUF) THEN
           WRITE (IU06,*) '***************************************'
           WRITE (IU06,*) '*    ERROR SUB. BOUINP                *'
           WRITE (IU06,*) '*    =================                *'
@@ -306,7 +305,7 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
 
 !       SEND BUFFER
         DO IP=1,NPROC
-          IF(LLBC(IP)) THEN
+          IF (LLBC(IP)) THEN
             IREQ=IREQ+1
             CALL GSTATS(673,0)
             CALL MPL_SEND(ZCOMBUFS(1:NZCOMBUF),KDEST=IP,KTAG=KTAG,      &
@@ -319,7 +318,7 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
 
       ENDIF
 !
-      IF(LLBC(IRANK)) THEN
+      IF (LLBC(IRANK)) THEN
         CALL GSTATS(673,0)
         ALLOCATE(ZCOMBUFR(NZCOMBUF))
         CALL MPL_RECV(ZCOMBUFR(1:NZCOMBUF),                             &
@@ -327,7 +326,7 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
      &                KOUNT=KRCOUNT, KRECVTAG=KRTAG,                    &
      &                KMP_TYPE=JP_BLOCKING_STANDARD,                    &
      &                CDSTRING='BOUINPT:')
-        IF(KRCOUNT.NE.NZCOMBUF) CALL MPL_ABORT                          &
+        IF (KRCOUNT /= NZCOMBUF) CALL MPL_ABORT                          &
      &    ('MPL_RECV ERROR in BOUINPT: WRONG MESSAGE LENGTH')
 
         CALL GSTATS(673,1)
@@ -348,7 +347,7 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
           ENDDO
         ENDDO
         DEALLOCATE(ZCOMBUFR)
-        IF(ICOUNT.NE.NZCOMBUF) THEN
+        IF (ICOUNT /= NZCOMBUF) THEN
           WRITE (IU06,*) '***************************************'
           WRITE (IU06,*) '*    ERROR SUB. BOUINP                *'
           WRITE (IU06,*) '*    =================                *'
@@ -361,7 +360,7 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
         ENDIF
       ENDIF
 
-      IF( IREQ .GT. 0 )THEN
+      IF( IREQ > 0 )THEN
         CALL GSTATS(673,0)
         CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ),                        &
      &                CDSTRING='BOUINPT: WAIT MPL_SEND')
@@ -375,10 +374,14 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
 !*    3. LOOP OVER BOUNDARY POINTS.
 !        --------------------------
 
-      DEL12 = 1.
+      DEL12 = 1.0_JWRB
 
       DO ILOC=1,NIJB
+
         IJF=IJB(ILOC)
+        IK = ICHNKFROMIJ(IJF)
+        IP = IPRMFROMIJ(IJF)
+
         I=IBND(ILOC)
         IBCL = IBFL(I)
         IBCR = IBFR(I)
@@ -388,21 +391,21 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
 !*    3.2 CHECK INTERPOLATION WEIGHT.
 !         ---------------------------
 
-        IF (DEL1L.GT.0.) THEN
+        IF (DEL1L > 0.0_JWRB ) THEN
 
 !*    3.2.1. WEIGHT IS GT ZERO, INTERPOLATE.
 !            -------------------------------
           CALL INTSPEC (NFRE, NANG, NFRE, NANG, FR, DEL12, DEL1L,       &
      &       F1(1,1,IBCL), FMEAN1(IBCL), EMEAN1(IBCL), THQ1(IBCL),      &
      &       F1(1,1,IBCR), FMEAN1(IBCR), EMEAN1(IBCR), THQ1(IBCR),      &
-     &       FL1(IJF,:,:), FMEAN, EMEAN, THQ)
+     &       FL1(IP, :, :, IK), FMEAN, EMEAN, THQ)
         ELSE
 
 !*    3.2.2. WEIGHT IS ZERO COPY LEFT POINT.
 !            -------------------------------
           DO M=1,NFRE
             DO K=1,NANG
-              FL1(IJF,K,M)=F1(K,M,IBCL)
+              FL1(IP, K, M, IK) = F1(K,M,IBCL)
             ENDDO
           ENDDO
 
@@ -414,12 +417,12 @@ SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
 !*    4. RETURN TO CALLING PROG.
 !        -----------------------
 
-      IF(ALLOCATED(ZCOMBUFS)) DEALLOCATE(ZCOMBUFS)
-      IF(ALLOCATED(F1)) DEALLOCATE(F1)
-      IF(ALLOCATED(FL)) DEALLOCATE(FL)
-      IF(ALLOCATED(FMEAN1)) DEALLOCATE(FMEAN1)
-      IF(ALLOCATED(EMEAN1)) DEALLOCATE(EMEAN1)
-      IF(ALLOCATED(THQ1)) DEALLOCATE(THQ1)
+      IF (ALLOCATED(ZCOMBUFS)) DEALLOCATE(ZCOMBUFS)
+      IF (ALLOCATED(F1)) DEALLOCATE(F1)
+      IF (ALLOCATED(FL)) DEALLOCATE(FL)
+      IF (ALLOCATED(FMEAN1)) DEALLOCATE(FMEAN1)
+      IF (ALLOCATED(EMEAN1)) DEALLOCATE(EMEAN1)
+      IF (ALLOCATED(THQ1)) DEALLOCATE(THQ1)
 
       RETURN
 

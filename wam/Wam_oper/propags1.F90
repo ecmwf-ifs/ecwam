@@ -1,6 +1,6 @@
-SUBROUTINE PROPAGS1 (F1, F3, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
+SUBROUTINE PROPAGS1 (F1, F3, NINF, NSUP, KIJS, KIJL,           &
  &                   BLK2GLO,                                  &
- &                   DEPTH,                                    &
+ &                   DEPTH_EXT,                                &
  &                   CGROUP_EXT, OMOSNH2KD_EXT,                &
  &                   DELLAM1_EXT, COSPHM1_EXT,                 &
  &                   U_EXT, V_EXT,                             &
@@ -42,20 +42,19 @@ SUBROUTINE PROPAGS1 (F1, F3, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PROPAGS1(F1, F3, NINF, NSUP, IJS, IJL, KIJS, KIJL,
+!       *CALL* *PROPAGS1(F1, F3, NINF, NSUP, KIJS, KIJL,
 !                        BLK2GLO,
-!                        DEPTH,
+!                        DEPTH_EXT,
 !                        CGROUP_EXT, OMOSNH2KD_EXT, 
 !                        U_EXT, V_EXT, 
 !                        L1STCALL)
 !          *F1*          - SPECTRUM AT TIME T (with exchange halo).
 !          *F3*          - SPECTRUM AT TIME T+DELT (without halo).
-!          *NINF:NSUP+1* - 1st DIMENSION OF F1
-!          *IJS:IJL*     - 1st DIMENSION OF F3 
+!          *NINF:NSUP+1* - 1st DIMENSION OF F1 and F3
 !          *KIJS*        - ACTIVE INDEX OF FIRST POINT
 !          *KIJL*        - ACTIVE INDEX OF LAST POINT
 !          *BLK2GLO*     - BLOCK TO GRID TRANSFORMATION
-!          *DEPTH*       - WATER at ACTIVE GRID POINTS
+!          *DEPTH_EXT*   - WATER DEPTH 
 !          *CGROUP_EXT*  - GROUP VELOCITY
 !          *OMOSNH2KD_EXT- OMEGA / SINH(2KD)
 !          *U_EXT        - U-COMPONENT OF SURFACE CURRENT
@@ -101,13 +100,12 @@ SUBROUTINE PROPAGS1 (F1, F3, NINF, NSUP, IJS, IJL, KIJS, KIJL, &
       IMPLICIT NONE
 #include "checkcfl.intfb.h"
 
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1,NANG,NFRE_RED), INTENT(IN) :: F1
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT):: F3
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, NFRE_RED), INTENT(IN) :: F1
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, NFRE_RED), INTENT(OUT) :: F3
       INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN):: DEPTH
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN):: DEPTH_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: DELLAM1_EXT 
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: COSPHM1_EXT 
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: CGROUP_EXT
@@ -867,7 +865,7 @@ ASSOCIATE(KXLT => BLK2GLO%KXLT)
                 CFLNO(IJ) = CFLNO(IJ)*CGOMFULL
                 DTC(IJ) = CFLEA(IJ)+CFLNO(IJ)+CFLTP(IJ)+CFLTM(IJ)
               ENDDO
-              CALL CHECKCFL(KIJS, KIJL, DEPTH(KIJS), DTC,         &
+              CALL CHECKCFL(KIJS, KIJL, DEPTH_EXT(KIJS), DTC,     &
      &                      CFLEA,CFLEA,CFLNO,CFLNO,CFLNO,        &
      &                      CFLNO,CFLTP,CFLTM,CFLTP,CFLTM)
             ENDIF
@@ -1089,7 +1087,7 @@ ASSOCIATE(KXLT => BLK2GLO%KXLT)
 !         TEST THE STABILITY OF THE ADVECTION SCHEME
 !         ------------------------------------------
           IF (LLCHKCFL .AND. M == 1) THEN
-            CALL CHECKCFL(KIJS, KIJL, DEPTH(KIJS), DTC,          &
+            CALL CHECKCFL(KIJS, KIJL, DEPTH_EXT(KIJS), DTC,      &
      &                    CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2,        &
      &                    CFLSO2,CFLTP,CFLTM,CFLOP,CFLOM)
           ENDIF
