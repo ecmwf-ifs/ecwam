@@ -54,7 +54,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRID  , ONLY : IJS      ,IJL       ,IJSLOC   ,IJLLOC, NPROMA_WAM, NCHNK
+      USE YOWGRID  , ONLY : IJS      ,IJL       , NPROMA_WAM, NCHNK
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,LWAVEWIND 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
@@ -80,7 +80,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "mpcrtbl.intfb.h"
+
 #include "outwint.intfb.h"
 #include "outwpsp.intfb.h"
 #include "abort1.intfb.h"
@@ -93,7 +93,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #include "incdate.intfb.h"
 #include "outbc.intfb.h"
 #include "outbs.intfb.h"
-#include "outint.intfb.h"
 #include "outspec.intfb.h"
 #include "outstep0.intfb.h"
 #include "savspec.intfb.h"
@@ -104,29 +103,29 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #include "wamintgr.intfb.h"
 #include "writsta.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: NADV
-      LOGICAL, INTENT(INOUT) :: LDSTOP, LDWRRE
-      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
-      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
-      TYPE(FREQUENCY), DIMENSION(IJS:IJL,NFRE), INTENT(INOUT) :: WVPRPT
-      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
-      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(IN) :: FF_NEXT
-      TYPE(INTGT_PARAM_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: INTFLDS
-      TYPE(WAVE2OCEAN), DIMENSION(IJS:IJL), INTENT(INOUT) :: WAM2NEMO
-      TYPE(OCEAN2WAVE), DIMENSION(IJS:IJL), INTENT(IN) :: NEMO2WAM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
+      INTEGER(KIND=JWIM), INTENT(IN)                                           :: NADV
+      LOGICAL, INTENT(INOUT)                                                   :: LDSTOP, LDWRRE
+      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN)                            :: BLK2GLO
+      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)           :: WVENVI
+      TYPE(FREQUENCY), DIMENSION(NPROMA_WAM, NFRE, NCHNK), INTENT(INOUT)       :: WVPRPT
+      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)        :: FF_NOW
+      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)           :: FF_NEXT
+      TYPE(INTGT_PARAM_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)    :: INTFLDS
+      TYPE(WAVE2OCEAN), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)            :: WAM2NEMO
+      TYPE(OCEAN2WAVE), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)               :: NEMO2WAM
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, J, IRA, KADV, ICH
       INTEGER(KIND=JWIM) :: IFIL, IC, ICL, ICR, II, ILOOP
-      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: ICHNK
       INTEGER(KIND=JWIM) :: JSTPNEMO, IDATE, ITIME
       INTEGER(KIND=JWIM) :: IU04
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MIJ
+      INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK) :: MIJ
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,MAX(NIPRMOUT,1)) :: BOUT
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, MAX(NIPRMOUT,1), NCHNK) :: BOUT
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK) :: XLLWS
 
       CHARACTER(LEN= 2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, CZERO
@@ -140,28 +139,19 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 
 IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 
-ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
- &        WDWAVE => FF_NOW%WDWAVE, &
- &        CICOVER => FF_NOW%CICOVER, &
- &        USTOKES => INTFLDS%USTOKES, &
- &        VSTOKES => INTFLDS%VSTOKES, &
- &        STRNMS  => INTFLDS%STRNMS )
-
-
 !     0.0 INITIALISATION
 !         --------------
 
       CZERO = ' '
       LLFLUSH = .FALSE.
-      KTAG=200
-      LRSTST0=.FALSE.
-      NPROMA=NPROMA_WAM
+      KTAG = 200
+      LRSTST0 = .FALSE.
 
 !     TIME FOR THE NEXT SOURCE TERM INTEGRATION
-      CDTIMPNEXT=CDTPRO
-      CALL INCDATE(CDTIMPNEXT,IDELT)   
+      CDTIMPNEXT = CDTPRO
+      CALL INCDATE(CDTIMPNEXT, IDELT)   
 !     TIME FOR WIND INPUT UPDATE (SEE NEWWIND)
-      CDTIMP=CDTPRO
+      CDTIMP = CDTPRO
 
 !     0.1 MINIMUM ENERGY
 !         --------------
@@ -172,11 +162,9 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !       IT ALSO RESETS THE MIMIMUM ENERGY LEVEL THAT MIGHT HAVE BEEN LOST
 !       WHEN GETTING THE DATA FROM GRIB.
         CALL GSTATS(1236,0)
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=IJS,IJL,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL UNSETICE(KIJS, KIJL, WVENVI(KIJS), FF_NOW(KIJS), FL1(KIJS:KIJL,:,:))  
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
+        DO ICHNK = 1, NCHNK
+          CALL UNSETICE(1, NPROMA_WAM, WVENVI(:,ICHNK), FF_NOW(:,ICHNK), FL1(:,:,:,ICHNK) )  
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1236,1)
@@ -202,7 +190,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !           -------------------------------------------------------
 
         CDTPRA = CDTPRO
-        CALL INCDATE(CDTPRO,IDELPRO)
+        CALL INCDATE(CDTPRO, IDELPRO)
 
 !       UPDATE OUTPUT TIMES.
         IF (NOUTT > 0) THEN
@@ -213,7 +201,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
             ENDIF
           ENDDO
         ELSE
-          IF ((FFLAG20.OR.GFLAG20) .AND. CDTINTT.LT.CDTPRO) CALL INCDATE (CDTINTT,IDELINT)
+          IF ((FFLAG20.OR.GFLAG20) .AND. CDTINTT.LT.CDTPRO) CALL INCDATE (CDTINTT, IDELINT)
         ENDIF
 
 !       UPDATE SPECTRA OUTPUT DATE
@@ -230,11 +218,11 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
             ENDIF
           ENDDO
         ELSE
-          IF (CDTRES < CDTPRO) CALL INCDATE(CDTRES,IDELRES)
+          IF (CDTRES < CDTPRO) CALL INCDATE(CDTRES, IDELRES)
         ENDIF
 
 !NEST (not used at ECMWF)
-        IF ((IBOUNC == 1 .OR. IBOUNF == 1) .AND. CDTBC < CDTPRO) CALL INCDATE(CDTBC,IDELBC)
+        IF ((IBOUNC == 1 .OR. IBOUNF == 1) .AND. CDTBC < CDTPRO) CALL INCDATE(CDTBC, IDELBC)
 !NEST
 
 
@@ -250,8 +238,8 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
         CDATEWH = CDATEWO
         ILOOP = 1
         DO WHILE ( ILOOP == 1 .OR. CDTIMPNEXT <= CDTPRO)
-          CALL WAMINTGR (IJS, IJL, BLK2GLO,                          &
- &                       CDTPRA, CDATE, CDATEWH, CDTIMP, CDTIMPNEXT, &
+          CALL WAMINTGR (CDTPRA, CDATE, CDATEWH, CDTIMP, CDTIMPNEXT, &
+ &                       BLK2GLO,                                    &
  &                       WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,   &
  &                       WAM2NEMO, MIJ, FL1, XLLWS)
           ILOOP = ILOOP +1
@@ -270,7 +258,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 
 !       1.3 CHECK WHETHER OUTPUT(s) NEEDED
 !           ------------------------------
-        LRST=(LDWRRE .AND. KADV == NADV )
+        LRST = (LDWRRE .AND. KADV == NADV )
         IF (LRST) THEN
           WRITE(IU06,*) ' '
           WRITE(IU06,*) '  ******************************************'
@@ -359,7 +347,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
                 MARSTYPE='an'
               ENDIF
 
-              CALL OUTSPEC(FL1, CICOVER)
+              CALL OUTSPEC(FL1, FF_NOW)
               LLFLUSH = .TRUE.
 
               MARSTYPE=MARSTYPEBAK
@@ -372,6 +360,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !           1.8.2 SAVE RESTART FILES IN PURE BINARY FORM (in needed)
 !                 --------------------------------------
             IF ( .NOT.LGRIBOUT .OR. LDWRRE ) THEN
+
               CALL SAVSTRESS(WVENVI, FF_NOW, NBLKS, NBLKE, CDTPRO, CDATEF)
               WRITE(IU06,*) ' '
               WRITE(IU06,*) '  BINARY STRESS FILE DISPOSED AT........ CDTPRO  = ', CDTPRO
@@ -388,16 +377,16 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !                 -----------------------------------
             IF (LRST .AND. IRANK == 1) THEN
               ICH = 7 
-              CALL DIFDATE (CDATEF,CDATEE,IFOREPD)
+              CALL DIFDATE (CDATEF, CDATEE, IFOREPD)
               IF (CDTPRO <= CDATEF) THEN
-                CALL DIFDATE (CDTPRO,CDATEF,IANALPD)
+                CALL DIFDATE (CDTPRO, CDATEF, IANALPD)
                 CBPLTDT = CDTPRO
                 NFCST = 1
               ELSE
                 NFCST = 0
                 IANALPD = 0
                 CBPLTDT = CDATEF
-                CALL DIFDATE (CDTPRO,CDATEE,IFOREPD)
+                CALL DIFDATE (CDTPRO, CDATEE, IFOREPD)
               ENDIF
               ISTAT(:) = 0
               IF (CDATE == CDATEE) ISTAT(1) = 1
@@ -413,17 +402,15 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
      &                      LRSTPARALW, NPROC)
  
               CLOSE (IU04)
-              WRITE(IU06,*) ' WAMINFO FILE WRITTEN FOR RESTART...',     &
-     &         ' CDTPRO  = ', CDTPRO
-              WRITE(IU06,*) '                                    ',     &
-     &         ' CDATEF  = ', CDATEF
+              WRITE(IU06,*) ' WAMINFO FILE WRITTEN FOR RESTART... CDTPRO  = ', CDTPRO
+              WRITE(IU06,*) '                                     CDATEF  = ', CDATEF
               WRITE(IU06,*) ' TO ', CWI(1:ICPLEN+8)
               CALL FLUSH(IU06)
 
               IF (LRSTINFDAT) THEN
 !               WRITE AN ADDITIONAL wamfile WITH DATE/TIME INFO added to filename
                 CDTRCF=CDTPRO
-                CALL INCDATE(CDTRCF,IDELPRO)
+                CALL INCDATE(CDTRCF, IDELPRO)
                 IU04 =  IWAM_GET_UNIT (IU06,CWI(1:ICPLEN+8)//'.'//      &
      &                              CDTRCF(1:8)//'_'//CDTRCF(9:14),     &
      &                              'w', 'f', 0)
@@ -515,13 +502,13 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
             CALL UPDNEMOSTRESS
 
 #ifdef WITH_NEMO
-            DO JSTPNEMO=NEMOCSTEP,NEMOCSTEP+NEMONSTEP-1
+            DO JSTPNEMO = NEMOCSTEP, NEMOCSTEP+NEMONSTEP-1
                ! Advance the NEMO model 1 time step
                CALL NEMOGCMCOUP_STEP( JSTPNEMO, IDATE, ITIME )
                WRITE(IU06,*)'NEMO TIME IS : ',JSTPNEMO, IDATE, ITIME
             ENDDO
 #endif
-            NEMOCSTEP=NEMOCSTEP+NEMONSTEP
+            NEMOCSTEP = NEMOCSTEP + NEMONSTEP
           ENDIF
         ENDIF
 
@@ -529,7 +516,6 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !*    BRANCHING BACK TO 1.0 FOR NEXT PROPAGATION STEP.
       ENDDO ADVECTION
 
-END ASSOCIATE
 IF (LHOOK) CALL DR_HOOK('WAMODEL',1,ZHOOK_HANDLE)
 
 END SUBROUTINE WAMODEL

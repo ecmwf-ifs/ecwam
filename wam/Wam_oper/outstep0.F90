@@ -103,11 +103,11 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
         DO ICHNK = 1, NCHNK
           CALL WDFLUXES (1, NPROMA_WAM,                          &
-     &                   MIJ(:, ICHNK),                          &
+     &                   MIJ(:,ICHNK),                           &
      &                   FL1(:,:,:,ICHNK), XLLWS(:,:,:,ICHNK),   &
      &                   WVPRPT(:,:,ICHNK),                      &
-     &                   WVENVI(:, ICHNK), FF_NOW(:, ICHNK),     &
-     &                   INTFLDS(:, ICHNK), WAM2NEMO(:, ICHNK) )
+     &                   WVENVI(:,ICHNK), FF_NOW(:,ICHNK),       &
+     &                   INTFLDS(:,ICHNK), WAM2NEMO(:,ICHNK) )
         ENDDO
 !$OMP   END PARALLEL DO
 
@@ -193,7 +193,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 
         IF ( .NOT. LRESTARTED ) THEN
           IF (IREST == 1 .AND. MARSTYPE /= 'an' .AND. LGRIBOUT) THEN
-            CALL OUTSPEC(FL1, CICOVER)
+            CALL OUTSPEC(FL1, FF_NOW)
             LLFLUSH = .TRUE.
           ENDIF
 
