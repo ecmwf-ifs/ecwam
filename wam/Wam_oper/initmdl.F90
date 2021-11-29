@@ -149,11 +149,12 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWDRVTYPE  , ONLY : WVGRIDGLO, WVGRIDLOC,                    &
      &                         ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, OCEAN2WAVE
+
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC,        &
-     &            GBOUNC  , IPOGBO   ,CBCPREF
+     &                      GBOUNC  , IPOGBO   ,CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,LWNEMOCOU
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,GFLAG20  ,    &
-     &            NGOUT    ,IJAR     ,NOUTT    ,LOUTINT
+     &                      NGOUT    ,IJAR     ,NOUTT    ,LOUTINT
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
@@ -166,16 +167,17 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            DFIM_END_L, DFIM_END_U,                               &
      &            WVPRPT_LAND
       USE YOWGRIBHD, ONLY : LGRHDIFS
-      USE YOWGRID  , ONLY : DELPHI, DELLAM, COSPH, NPROMA_WAM, NCHNK 
+      USE YOWGRID  , ONLY : DELPHI, DELLAM, COSPH,                      &
+     &                      NPROMA_WAM, NCHNK, IJFROMCHNK  
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,                        &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            KMNOP    ,KMSOP    ,IPER
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
-     &            NGX      ,NGY      ,                                  &
-     &            NIBLO    ,NIBLD    ,NIBLC
+     &                      NGX      ,NGY      ,                        &
+     &                      NIBLO    ,NIBLD    ,NIBLC
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
-     &            RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
+     &                      RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
       USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
       USE YOWREFD  , ONLY : LLUPDTTD
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,TOOSHALLOW
@@ -189,16 +191,17 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,    &
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
-     &            FAK      ,FRHF     ,DFIMHF
+     &                      FAK      ,FRHF     ,DFIMHF
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWWNDG  , ONLY : ICODE
       USE YOWUBUF  , ONLY : LUPDTWGHT
-      USE YOWUNIT  , ONLY : IU02     ,IU11     ,IU12     ,              &
-     &            IU13     ,IU14     ,IU15     ,IU19     ,IU20
+      USE YOWUNIT  , ONLY : IU02     ,IU11     ,IU12     ,IU13     ,     &
+     &                      IU14     ,IU15     ,IU19     ,IU20
       USE YOWWAMI  , ONLY : CBPLTDT
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
-     &            LLNEWCURR,LLWSWAVE ,LLWDWAVE ,FF_NEXT
+     &                      LLNEWCURR,LLWSWAVE ,LLWDWAVE ,FF_NEXT
+
       USE YOWUNPOOL, ONLY : LLUNSTR, OUT_METHOD
       USE UNSTRUCT_BOUND , ONLY : IOBP
       USE OUTPUT_STRUCT, ONLY : INITIAL_OUTPUT_INITS
@@ -254,7 +257,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       INTEGER(KIND=JWIM) :: JD
       INTEGER(KIND=JWIM) :: IDELWH
       INTEGER(KIND=JWIM) :: IU05, IU09, IU10
-      INTEGER(KIND=JWIM) :: ICHNK, KIJS, KIJL
+      INTEGER(KIND=JWIM) :: ICHNK, IPRM, KIJS, KIJL
       INTEGER(KIND=JWIM) :: MTHREADS
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
@@ -598,45 +601,47 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !*    3.1 COMPUTE SHALLOW WATER TABLE INDICES.
 !         ------------------------------------
 
-!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, KIJL, IJ, XD, ID)
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, KIJL, IPRM, IJ, XD, ID)
       DO ICHNK = 1, NCHNK
         KIJS = 1
         KIJL = NPROMA_WAM
 
 !       BUILD DEPTH POINTER AND RESET DEPTH TO ALL POSITIVE
-        DO IJ = KIJS, KIJL
-          IF (DEPTH(IJ, ICHNK) <= TOOSHALLOW) THEN
-            IODP(IJ, ICHNK) = 0
+        DO IPRM = KIJS, KIJL
+          IF (DEPTH(IPRM, ICHNK) <= TOOSHALLOW) THEN
+            IODP(IPRM, ICHNK) = 0
           ELSE
-            IODP(IJ, ICHNK) = 1
+            IODP(IPRM, ICHNK) = 1
           ENDIF
         ENDDO
 
         IF (.NOT. LLUNSTR) THEN
           IOBND(KIJS:KIJL, ICHNK) = 1
         ELSE
-          DO IJ = KIJS, KIJL
-            IF (IOBP(IJ, ICHNK) /= 0) THEN
-              IOBND(IJ, ICHNK) = 0
+          DO IPRM = KIJS, KIJL
+            IJ = IJFROMCHNK(IPRM, ICHNK)
+            IF (IOBP(IJ) /= 0) THEN
+              IOBND(IPRM, ICHNK) = 0
             ELSE
-              IOBND(IJ, ICHNK) = 1
+              IOBND(IPRM, ICHNK) = 1
             ENDIF
           ENDDO
         ENDIF
 
 !       SET DEPTH MINIMUM
-        DO IJ = KIJS, KIJL
-          DEPTH(IJ, ICHNK) = MAX(DEPTH(IJ, ICHNK),DEPTHA)
+        DO IPRM = KIJS, KIJL
+          DEPTH(IPRM, ICHNK) = MAX(DEPTH(IPRM, ICHNK), DEPTHA)
         ENDDO
 
 !       COMPUTE INDEP
-         DO IJ = KIJS, KIJL
-          XD = LOG(DEPTH(IJ, ICHNK)/DEPTHA)/LOG(DEPTHD)+1.0_JWRB
+         DO IPRM = KIJS, KIJL
+          XD = LOG(DEPTH(IPRM, ICHNK)/DEPTHA)/LOG(DEPTHD)+1.0_JWRB
           ID = NINT(XD)
           ID = MAX(ID,1)
-          INDEP(IJ, ICHNK) = MIN(ID, NDEPTH)
-        ENDDO
-!$OMP    END PARALLEL DO
+          INDEP(IPRM, ICHNK) = MIN(ID, NDEPTH)
+         ENDDO
+      ENDDO
+!$OMP END PARALLEL DO
 
 
 !     INITIALISE GRID POINT FIELDS DEPENDENT ON WATER DEPTH AND FREQUENCY
@@ -828,9 +833,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !     INITIALISE CDTCUR
       CDTCUR=CDATECURA
       IF (.NOT.LWCOU .AND. .NOT.LRESTARTED) THEN
-        IF (IREFRA == 2 .OR. IREFRA == 3) THEN
-          CALL INCDATE(CDTCUR,-IDELCUR)
-        ENDIF
+        IF (IREFRA == 2 .OR. IREFRA == 3) CALL INCDATE(CDTCUR,-IDELCUR)
       ENDIF
 
 !     COMPUTE BOTTOM REFRACTION TERMS (SEE *PROPAGS_WAM*)
@@ -856,7 +859,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !     BEFORE A CALL TO GETSPEC DUE TO THE TRANSFORMATION FROM
 !     ABSOLUTE TO RELATIVE FRAME OF REFERENCE. 
 
-      LLINIT=.NOT.LRESTARTED
+      LLINIT = .NOT.LRESTARTED
       LLALLOC_FIELDG_ONLY=.FALSE.
 
       CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,    &

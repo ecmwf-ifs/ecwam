@@ -1,4 +1,4 @@
-      SUBROUTINE STAT_NL(IJS, IJL,                                      &
+      SUBROUTINE STAT_NL(KIJS, KIJL,                                      &
      &                   XM0, XK0, BF2, XNU, SIG_TH, DPTH,              &
      &                   C3, C4, ETA_M, R, C4_B, C4_DYN)
  
@@ -42,13 +42,14 @@
 !----------------------------------------------------------------------
 
       IMPLICIT NONE 
+
 #include "transf_r.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: XM0, XK0, BF2, XNU, SIG_TH, DPTH
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(OUT) :: C3, C4, ETA_M, R, C4_B, C4_DYN
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: XM0, XK0, BF2, XNU, SIG_TH, DPTH
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(OUT) :: C3, C4, ETA_M, R, C4_B, C4_DYN
 
-      REAL(KIND=JWRB), PARAMETER :: EPS=0.0001_JWRB
+      REAL(KIND=JWRB), PARAMETER :: EPS = 0.0001_JWRB
       REAL(KIND=JWRB), PARAMETER :: RMIN = 0._JWRB
       REAL(KIND=JWRB), PARAMETER :: RMAX = 16.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: C3MIN = 0._JWRB
@@ -69,7 +70,7 @@
       REAL(KIND=JWRB) :: DELTA_2D,C_0,C_S_SQ,V_G,V_G_SQ,ZFAC,ZFAC1,ZFAC2
       REAL(KIND=JWRB) :: XKAPPA1,ALPHA,XJ
       REAL(KIND=JWRB) :: ZEPSILON, ZSQREPSILON
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TRANSF
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TRANSF
 
 !-----------------------------------------------------------------------
 
@@ -87,11 +88,11 @@
 
 !     RESULTS FOR A NARROW BAND WAVE TRAIN
   
-      DO IJ = IJS,IJL
-        TRANSF(IJ) = TRANSF_R(XK0(IJ),DPTH(IJ))
+      DO IJ = KIJS,KIJL
+        TRANSF(IJ) = TRANSF_R(XK0(IJ), DPTH(IJ))
       ENDDO
 
-      DO IJ = IJS,IJL
+      DO IJ = KIJS,KIJL
         D   = DPTH(IJ)
         IF (XM0(IJ) > ZEPSILON .AND. D > 0._JWRB .AND. XK0(IJ) > 0._JWRB) THEN
           XK  = MAX(XK0(IJ),XKDMIN/D)

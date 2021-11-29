@@ -436,7 +436,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                NEMO2WAM) 
 
 
-        NPROMA=NPROMA_WAM
         CALL GSTATS(1443,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
         DO ICHNK = 1, NCHNK
@@ -714,7 +713,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
                                        ! THE WAVE MODEL ICE FREE SEA POINTS.
         ENDIF
 
-        NPROMA=NPROMA_WAM
         CALL GSTATS(1443,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, KIJS, KIJL, IJSB, IJLB, IFLDOFFSET, IFLD)
         DO ICHNK = 1, NCHNK
@@ -781,17 +779,16 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
           N_MASK_OUT_GLOBAL=NLATW*NLONW
           CALL GSTATS(1443,0)
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JF,J,I)
-          DO IFLD=1,NWVFIELDS
-            JF=IFLD
-            FAVG(JF)=0.
-            FMIN(JF)=WVFLDG(1,1,JF)
-            FMAX(JF)=WVFLDG(1,1,JF)
-            DO J=1,NLATW
-              DO I=1,NLONW
-                FAVG(JF)=FAVG(JF)+WVFLDG(I,J,JF)
-                FMIN(JF)=MIN(FMIN(JF),WVFLDG(I,J,JF))
-                FMAX(JF)=MAX(FMAX(JF),WVFLDG(I,J,JF))
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JF, J, I)
+          DO JF = 1, NWVFIELDS
+            FAVG(JF) = 0._JWRB
+            FMIN(JF) = WVFLDG(1,1,JF)
+            FMAX(JF) = WVFLDG(1,1,JF)
+            DO J=1, NLATW
+              DO I=1, NLONW
+                FAVG(JF) = FAVG(JF) + WVFLDG(I,J,JF)
+                FMIN(JF) = MIN(FMIN(JF), WVFLDG(I,J,JF))
+                FMAX(JF) = MAX(FMAX(JF), WVFLDG(I,J,JF))
               ENDDO
             ENDDO
             FAVG(JF)=FAVG(JF)/N_MASK_OUT_GLOBAL
@@ -799,7 +796,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !$OMP     END PARALLEL DO
           CALL GSTATS(1443,1)
 
-          DO IFLD=1,NWVFIELDS
+          DO IFLD = 1, NWVFIELDS
             WRITE(IU06,*) FLABEL(IFLD), FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),N_MASK_OUT_GLOBAL
             WRITE(IU06,111) FAVG(IFLD),FMIN(IFLD),FMAX(IFLD)
           ENDDO
@@ -839,19 +836,23 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           ENDIF
 
 !         COMPUTE local NORMS
-          DO JF=1,NWVFIELDS
-            VAL=WVFLDG(I_MASK_OUT(1),J_MASK_OUT(1),JF)
-            FAVG(JF)=VAL
-            FMIN(JF)=VAL
-            FMAX(JF)=VAL
-            DO IC=2,N_MASK_OUT
-              VAL=WVFLDG(I_MASK_OUT(IC),J_MASK_OUT(IC),JF)
-              FAVG(JF)=FAVG(JF)+VAL
-              FMIN(JF)=MIN(FMIN(JF),VAL)
-              FMAX(JF)=MAX(FMAX(JF),VAL)
+          CALL GSTATS(1443,0)
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JF, VAL, IC)
+          DO JF = 1, NWVFIELDS
+            VAL = WVFLDG(I_MASK_OUT(1), J_MASK_OUT(1),JF)
+            FAVG(JF) = VAL
+            FMIN(JF) = VAL
+            FMAX(JF) = VAL
+            DO IC = 2, N_MASK_OUT
+              VAL = WVFLDG(I_MASK_OUT(IC), J_MASK_OUT(IC),JF)
+              FAVG(JF) = FAVG(JF) + VAL
+              FMIN(JF) = MIN(FMIN(JF), VAL)
+              FMAX(JF) = MAX(FMAX(JF), VAL)
             ENDDO
-            FAVG(JF)=FAVG(JF)/MAX(N_MASK_OUT,1)
+            FAVG(JF) = FAVG(JF)/MAX(N_MASK_OUT,1)
           ENDDO
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1443,1)
 
 !         FOR PRIMARY PE (IRECV), COLLECT ALL THE NORMS TO PRODUCE A
 !         PSEUDO GLOBAL NORM.

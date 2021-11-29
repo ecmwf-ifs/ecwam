@@ -15,7 +15,7 @@ SUBROUTINE OUTSPEC (FL1, FF_NOW)
 !**   INTERFACE.
 !     ----------
 
-!     SUBROUTINE OUTSPEC (FL1, CICOVER)
+!     SUBROUTINE OUTSPEC (FL1, FF_NOW)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------

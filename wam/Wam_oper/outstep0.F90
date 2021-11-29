@@ -23,14 +23,11 @@ SUBROUTINE OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
       USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN, OCEAN2WAVE
 
-      USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,              & 
+      USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,                        & 
      &                      IRCD     ,IRU10    , IRALTHS  ,IRALTHSC  ,IRALTRC ,   &
-     &                      NGOUT    ,                                            &
-     &                      NIPRMOUT ,                                            &
-     &                      LFDB     ,                                            &
-     &                      LRSTST0  ,LWAMANOUT
+     &                      NGOUT    ,NIPRMOUT , LFDB     ,LRSTST0  ,LWAMANOUT
       USE YOWGRIBHD, ONLY : LGRHDIFS 
-      USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC  ,NPROMA_WAM, NCHNK
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE
       USE YOWMESPAS, ONLY : LGRIBOUT ,LNOCDIN  ,LWAVEWIND 
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -66,8 +63,7 @@ SUBROUTINE OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
 
 
-      INTEGER(KIND=JWIM) :: IJ
-      INTEGER(KIND=JWIM) :: ICHNK, KIJS, KIJL
+      INTEGER(KIND=JWIM) :: IJ, ICHNK, KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK) :: MIJ
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -134,7 +130,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
         CALL GSTATS(1439,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
         DO ICHNK = 1, NCHNK
-          CALL SETICE(1, NPROMA, FL1(:,:,:,ICHNK) ,                          &
+          CALL SETICE(1, NPROMA_WAM, FL1(:,:,:,ICHNK) ,                          &
      &                CICOVER(:, ICHNK), WSWAVE(:, ICHNK), WDWAVE(:, ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
@@ -198,7 +194,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
           ENDIF
 
           IF (NIPRMOUT > 0 ) THEN
-            CALL OUTWINT(IJS, IJL, BOUTST0)
+            CALL OUTWINT(BOUTST0)
             LLFLUSH = .TRUE.
           ENDIF
 
