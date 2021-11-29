@@ -620,10 +620,12 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
         ELSE
           DO IPRM = KIJS, KIJL
             IJ = IJFROMCHNK(IPRM, ICHNK)
-            IF (IOBP(IJ) /= 0) THEN
-              IOBND(IPRM, ICHNK) = 0
-            ELSE
-              IOBND(IPRM, ICHNK) = 1
+            IF (IJ /= 0) THEN
+              IF (IOBP(IJ) /= 0) THEN
+                IOBND(IPRM, ICHNK) = 0
+              ELSE
+                IOBND(IPRM, ICHNK) = 1
+              ENDIF
             ENDIF
           ENDDO
         ENDIF

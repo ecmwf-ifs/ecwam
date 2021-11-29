@@ -509,17 +509,17 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
             IF (IRANK == KSEND) THEN
 !             SAVE LOCAL CONTRIBUTION
 
-              IF(NBLKS(IRANK) /= IJFROMCHNK(1,1) .OR. NBLKE(IRANK) /= IJFROMCHNK(NCHNK,KIJL4CHNK(NCHNK)) ) THEN
-                WRITE(IU06,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
+              IF(NBLKS(IRANK) /= IJFROMCHNK(1,1) .OR. NBLKE(IRANK) /= IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) ) THEN
+                WRITE(IU06,*)'* GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
                 WRITE(0,*)'*************************************************************************'
                 WRITE(0,*)'* IRANK = ',IRANK
-                WRITE(0,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
+                WRITE(0,*)'* GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
                 WRITE(0,*)'* THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
                 WRITE(0,*)'* NBLKS(IRANK) = ', NBLKS(IRANK)
                 WRITE(0,*)'* IJFROMCHNK(1,1) = ',IJFROMCHNK(1,1)
                 WRITE(0,*)'* AND OR THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
                 WRITE(0,*)'* NBLKE(IRANK) = ', NBLKE(IRANK)
-                WRITE(0,*)'* IJFROMCHNK(NCHNK,KIJL4CHNK(NCHNK)) = ', IJFROMCHNK(NCHNK,KIJL4CHNK(NCHNK))
+                WRITE(0,*)'* IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) = ', IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK)
                 WRITE(0,*)'*                                                                       *'
                 WRITE(0,*)'*************************************************************************'
                 CALL ABORT1
@@ -570,7 +570,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                 CALL ABORT1
               ENDIF
 
-              IF(IST /= IJFROMCHNK(1,1) .OR. IEND /= IJFROMCHNK(NCHNK,KIJL4CHNK(NCHNK)) ) THEN
+              IF(IST /= IJFROMCHNK(1,1) .OR. IEND /= IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) ) THEN
                 WRITE(IU06,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR NON LOCAL PTS *'
                 WRITE(0,*)'*************************************************************************'
                 WRITE(0,*)'* IRANK = ',IRANK
@@ -581,7 +581,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                 WRITE(0,*)'* IJFROMCHNK(1,1) = ',IJFROMCHNK(1,1)
                 WRITE(0,*)'* AND OR THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
                 WRITE(0,*)'* IEND = ', IEND 
-                WRITE(0,*)'* IJFROMCHNK(NCHNK,KIJL4CHNK(NCHNK)) = ', IJFROMCHNK(NCHNK,KIJL4CHNK(NCHNK))
+                WRITE(0,*)'* IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) = ', IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK)
                 WRITE(0,*)'*                                                                       *'
                 WRITE(0,*)'*************************************************************************'
                 CALL ABORT1
