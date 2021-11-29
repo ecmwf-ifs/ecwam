@@ -9,7 +9,7 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *SDEPTHLIM((KIJS, KIJL, EMAXDPT, FL)
+!     *CALL* *SDEPTHLIM((KIJS, KIJL, EMAXDPT, FL1)
 !          *KIJS*   - LOCAL INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - LOCAL  INDEX OF LAST GRIDPOIN
 !          *EMAXDPT - MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
@@ -36,11 +36,12 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+
 #include "semean.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EMAXDPT
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(INOUT) :: FL1
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -55,7 +56,7 @@
       CALL SEMEAN (FL1, KIJS, KIJL, EM, LLEPSMIN)
 
       DO IJ=KIJS,KIJL
-        EM(IJ)=MIN(EMAXDPT(IJ)/EM(IJ),1.0_JWRB)
+        EM(IJ)=MIN(EMAXDPT(IJ)/EM(IJ), 1.0_JWRB)
       ENDDO
 
       DO M=1,NFRE

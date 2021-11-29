@@ -509,7 +509,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
             IF (IRANK == KSEND) THEN
 !             SAVE LOCAL CONTRIBUTION
 
-              IF(NBLKS(IRANK) /= IJFROMCHNK(1,1) .OR. NBLKE(IRANK) /= IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) ) THEN
+              IF (NBLKS(IRANK) /= IJFROMCHNK(1,1) .OR. NBLKE(IRANK) /= IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) ) THEN
                 WRITE(IU06,*)'* GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
                 WRITE(0,*)'*************************************************************************'
                 WRITE(0,*)'* IRANK = ',IRANK
@@ -538,7 +538,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                   IF (FL1(IJ, K, M, ICHNK) ==  ZMISS) FL1(IJ, K, M, ICHNK) = EPSMIN 
                 ENDDO
 
-                IF(KIJL < NPROMA_WAM) THEN
+                IF (KIJL < NPROMA_WAM) THEN
                   FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)
                 ENDIF
               ENDDO
@@ -570,7 +570,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                 CALL ABORT1
               ENDIF
 
-              IF(IST /= IJFROMCHNK(1,1) .OR. IEND /= IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) ) THEN
+              IF (IST /= IJFROMCHNK(1,1) .OR. IEND /= IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) ) THEN
                 WRITE(IU06,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR NON LOCAL PTS *'
                 WRITE(0,*)'*************************************************************************'
                 WRITE(0,*)'* IRANK = ',IRANK
@@ -600,7 +600,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                   IF (FL1(IJ, KR, MR, ICHNK) ==  ZMISS) FL1(IJ, KR, MR, ICHNK) = EPSMIN 
                 ENDDO
 
-                IF(KIJL < NPROMA_WAM) THEN
+                IF (KIJL < NPROMA_WAM) THEN
                   FL1(KIJL+1:NPROMA_WAM, KR, MR, ICHNK) = FL1(1, KR, MR, ICHNK)
                 ENDIF
               ENDDO
@@ -613,8 +613,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 
 !         ENSURE ALL SENDS ARE FINISHED.
           IF (IREQ > 0) THEN
-            CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ),                    &
-     &                    CDSTRING='GETSPEC: WAIT SENDING WORK')
+            CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ), CDSTRING='GETSPEC: WAIT SENDING WORK')
           ENDIF
           CALL GSTATS(623,1)
 
@@ -686,7 +685,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 
              FL1(KIJS:KIJL, :, :, ICHNK) = RFL(IJSB:IJLB, :, :)
 
-             IF(KIJL < NPROMA_WAM) THEN
+             IF (KIJL < NPROMA_WAM) THEN
                 DO M = 1, NFRE 
                   DO K = 1, NANG 
                     FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)
@@ -736,7 +735,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                   ENDDO
                 ENDDO
 
-                IF(KIJL < NPROMA_WAM) THEN
+                IF (KIJL < NPROMA_WAM) THEN
                   DO M = MINF, MSUP
                     DO K = KINF, KSUP
                       FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)

@@ -106,11 +106,12 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 
 
 !!! the advection schemes are still written in block structure
+!!! mapping chuncks to block ONLY for actual grid points !!!!
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K)
         DO ICHNK = 1, NCHNK
           KIJS = 1
           IJSB = IJFROMCHNK(KIJS, ICHNK)
-          KIJL = NPROMA_WAM
+          KIJL = KIJL4CHNK(ICHNK)
           IJLB = IJFROMCHNK(KIJL, ICHNK)
           DO M = 1, NFRE_RED
             DO K = 1, NANG
@@ -275,13 +276,22 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
           DO ICHNK = 1, NCHNK
             KIJS = 1
             IJSB = IJFROMCHNK(KIJS, ICHNK)
-            KIJL = NPROMA_WAM
+            KIJL = KIJL4CHNK(ICHNK)
             IJLB = IJFROMCHNK(KIJL, ICHNK)
             DO M = 1, NFRE_RED
               DO K = 1, NANG
                 FL1(KIJS:KIJL, K, M, ICHNK) = FL3_EXT(IJSB:IJLB, K, M)
               ENDDO
             ENDDO
+
+            IF (KIJL < NPROMA_WAM) THEN
+              !!! make sure fictious points keep values of the first point in the chunk
+              DO M = 1, NFRE_RED
+                DO K = 1, NANG
+                  FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)
+                ENDDO
+              ENDDO
+            ENDIF
 
           ENDDO
 !$OMP     END PARALLEL DO

@@ -21,7 +21,7 @@ SUBROUTINE PROENVHALO (NINF, NSUP,                            &
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : WVPRPT_LAND
-      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, IJFROMCHNK
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
       USE YOWPARAM , ONLY : NFRE     , NFRE_RED
       USE YOWSHAL  , ONLY : BATHYMAX
 
@@ -63,11 +63,12 @@ SUBROUTINE PROENVHALO (NINF, NSUP,                            &
 
 IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
 
+!!! mapping chuncks to block ONLY for actual grid points !!!!
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M)
       DO ICHNK = 1, NCHNK
         KIJS = 1
         IJSB = IJFROMCHNK(KIJS, ICHNK)
-        KIJL = NPROMA_WAM
+        KIJL = KIJL4CHNK(ICHNK)
         IJLB = IJFROMCHNK(KIJL, ICHNK)
 
         WAVNUM_EXT(IJSB:IJLB, 1:NFRE_RED) = WAVNUM(KIJS:KIJL, 1:NFRE_RED, ICHNK)
@@ -82,7 +83,7 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
       ENDDO
 !$OMP END PARALLEL DO
 
-!!    should be combine into one single data exchange, when we start using this option.... !!!
+!!    should be combined into one single data exchange, when we start using this option.... !!!
       CALL MPEXCHNG(WAVNUM_EXT, NFRE_RED, 1)
       WAVNUM_EXT(NSUP+1,1:NFRE_RED) = WVPRPT_LAND(1:NFRE_RED)%WAVNUM
 

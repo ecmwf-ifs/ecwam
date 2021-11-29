@@ -1,4 +1,4 @@
-      SUBROUTINE SEMEAN (F3, KIJS, KIJL, EM, LLEPSMIN)
+      SUBROUTINE SEMEAN (FL1, KIJS, KIJL, EM, LLEPSMIN)
 
 ! ----------------------------------------------------------------------
 
@@ -15,8 +15,8 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEMEAN(F3, KIJS, KIJL, EM, LLEPSMIN)*
-!          *F3*   - SPECTRUM.
+!       *CALL* *SEMEAN(FL1, KIJS, KIJL, EM, LLEPSMIN)*
+!          *FL1*  - SPECTRUM.
 !          *KIJS* - LOCAL INDEX OF FIRST GRIDPOINT
 !          *KIJL* - LOCAL  INDEX OF LAST GRIDPOIN
 !          *EM*   - MEAN VARIANCE 
@@ -51,7 +51,7 @@
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: F3
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(IN) :: FL1
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: EM
       LOGICAL, INTENT(IN) :: LLEPSMIN
@@ -88,15 +88,15 @@
       DO M=1,NFRE
         K=1
         DO IJ=KIJS,KIJL
-          TEMP(IJ) = F3(IJ,K,M)
+          TEMP(IJ) = FL1(IJ,K,M)
         ENDDO
         DO K=2,NANG
           DO IJ=KIJS,KIJL
-            TEMP(IJ) = TEMP(IJ)+F3(IJ,K,M)
+            TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,M)
           ENDDO
         ENDDO
         DO IJ=KIJS,KIJL
-          EM(IJ) = EM(IJ)+DFIM(M)*TEMP(IJ)
+          EM(IJ) = EM(IJ) + DFIM(M)*TEMP(IJ)
         ENDDO
       ENDDO
 
@@ -107,7 +107,7 @@
 
       DELT25 = WETAIL*FR(NFRE)*DELTH
       DO IJ=KIJS,KIJL
-        EM(IJ) = EM(IJ)+DELT25*TEMP(IJ)
+        EM(IJ) = EM(IJ) + DELT25*TEMP(IJ)
       ENDDO
 
       IF (LHOOK) CALL DR_HOOK('SEMEAN',1,ZHOOK_HANDLE)

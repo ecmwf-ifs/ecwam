@@ -79,12 +79,13 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "sdepthlim.intfb.h"
+
 #include "cimsstrn.intfb.h"
 #include "ciwabr.intfb.h"
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
 #include "sbottom.intfb.h"
+#include "sdepthlim.intfb.h"
 #include "sdissip.intfb.h"
 #include "sdiwbk.intfb.h"
 #include "setice.intfb.h"
@@ -190,7 +191,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-          FLM(IJ,K)=FLMIN*MAX(0.0_JWRB,COS(TH(K)-WDWAVE(IJ)))**2
+          FLM(IJ,K)=FLMIN*MAX(0.0_JWRB, COS(TH(K)-WDWAVE(IJ)))**2
         ENDDO
       ENDDO
 
