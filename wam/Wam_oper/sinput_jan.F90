@@ -1,4 +1,4 @@
-      SUBROUTINE SINPUT_JAN (NGST, KIJS, KIJL, FL1 ,         &
+      SUBROUTINE SINPUT_JAN (NGST, LLSNEG, KIJS, KIJL, FL1 , &
      &                       WAVNUM, CINV, CGROUP,           &
      &                       WDWAVE, WSWAVE, UFRIC, Z0M,     &
      &                       AIRD, WSTAR, RNFAC,             &
@@ -46,13 +46,14 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT_JAN (NGST, KIJS, KIJL, FL1,
+!     *CALL* *SINPUT_JAN (NGST, LLSNEG, KIJS, KIJL, FL1,
 !    &                    WAVNUM, CINV, CGROUP,
 !    &                    WDWAVE, WSWAVE, UFRIC, Z0M,
 !    &                    AIRD, WSTAR, RNFAC,
 !    &                    FLD, SL, SPOS, XLLWS)
 !         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
 !                - IF = 2 THEN GUSTINESS PARAMETERISATION
+!         *LLSNEG- IF TRUE THEN THE NEGATIVE SINPUT (SWELL DAMPING) WILL BE COMPUTED
 !         *KIJS* - INDEX OF FIRST GRIDPOINT.
 !         *KIJL* - INDEX OF LAST GRIDPOINT.
 !          *FL1* - SPECTRUM.
@@ -118,7 +119,8 @@
 #include "abort1.intfb.h"
 #include "wsigstar.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: NGST 
+      INTEGER(KIND=JWIM), INTENT(IN) :: NGST
+      LOGICAL, INTENT(IN) :: LLSNEG
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
@@ -133,7 +135,7 @@
 
       REAL(KIND=JWRB) :: CONST1, CONST3, XKAPPAD
       REAL(KIND=JWRB) :: CONSTN
-      REAL(KIND=JWRB) :: ZN1, ZN2
+      REAL(KIND=JWRB) :: ZNZ
       REAL(KIND=JWRB) :: RWINV
       REAL(KIND=JWRB) :: X, ZLOG, ZLOG2X, ZBETA
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -349,9 +351,8 @@
             ENDDO
 
             DO IJ=KIJS,KIJL
-              ZN2 = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)*SUMF(IJ)
-              ZN1 = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)*SUMFSIN2(IJ)
-              GAMNORMA(IJ,IGST) = (1.0_JWRB + ZN1)/(1.0_JWRB + ZN2)
+              ZNZ = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)
+              GAMNORMA(IJ,IGST) = (1.0_JWRB + ZNZ*SUMFSIN2(IJ)) / (1.0_JWRB + ZNZ*SUMF(IJ))
             ENDDO
 
           ENDDO

@@ -88,7 +88,7 @@
 
       SELECT CASE (IPHYS)
       CASE(0)
-        CALL SINPUT_JAN (NGST, KIJS, KIJL, FL1,          &
+        CALL SINPUT_JAN (NGST, LLSNEG, KIJS, KIJL, FL1,  &
      &                   WAVNUM, CINV, CGROUP,           &
      &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
      &                   AIRD, WSTAR, RNFAC,             &
