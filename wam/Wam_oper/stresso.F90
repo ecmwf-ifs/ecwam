@@ -145,9 +145,9 @@
           ENDDO
         ENDDO
         DO IJ=KIJS,KIJL
-          CMRHOWGDFTH(IJ) = CINV(IJ,M)*RHOWGDFTH(IJ,M)
-          XSTRESS(IJ) = XSTRESS(IJ) + SUMX(IJ)*CMRHOWGDFTH(IJ)
-          YSTRESS(IJ) = YSTRESS(IJ) + SUMY(IJ)*CMRHOWGDFTH(IJ)
+          CMRHOWGDFTH(IJ) = RHOWGDFTH(IJ,M)*CINV(IJ,M)
+          XSTRESS(IJ) = XSTRESS(IJ) + CMRHOWGDFTH(IJ)*SUMX(IJ)
+          YSTRESS(IJ) = YSTRESS(IJ) + CMRHOWGDFTH(IJ)*SUMY(IJ)
         ENDDO
       ENDDO
 
@@ -170,7 +170,7 @@
             ENDDO
           ENDDO
           DO IJ=KIJS,KIJL
-            PHIWA(IJ) = PHIWA(IJ) + SUMT(IJ)*RHOWGDFTH(IJ,M)
+            PHIWA(IJ) = PHIWA(IJ) + RHOWGDFTH(IJ,M)*SUMT(IJ)
           ENDDO
         ENDDO
       ENDIF
@@ -182,7 +182,7 @@
         US2(IJ)=UFRIC(IJ)**2
       ENDDO
 
-      IF ( IPHYS.EQ.0 .OR. TAUWSHELTER == 0.0_JWRB) THEN
+      IF ( IPHYS == 0 .OR. TAUWSHELTER == 0.0_JWRB) THEN
         LTAUWSHELTER = .FALSE.
         DO IJ=KIJS,KIJL
           USDIRP(IJ)=WDWAVE(IJ)
@@ -211,12 +211,13 @@
         TAUW(IJ) = MAX(TAUW(IJ),0.0_JWRB)
         TAUWDIR(IJ) = ATAN2(XSTRESS(IJ),YSTRESS(IJ))
       ENDDO
+
       IF ( .NOT. LLGCBZ0) THEN
         TAUTOUS2 = 1.0_JWRB/(1.0_JWRB+EPS1)
         DO IJ=KIJS,KIJL
           TAUW(IJ) = MIN(TAUW(IJ),US2(IJ)*TAUTOUS2)
         ENDDO
-     ENDIF
+      ENDIF
 
       IF ( LLPHIWA ) THEN
         DO IJ=KIJS,KIJL

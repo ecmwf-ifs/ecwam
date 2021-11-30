@@ -1,6 +1,6 @@
-       SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
-     &                       FL1, WDWAVE, AIRD, RNFAC,                  &
-     &                       UST, TAUHF, PHIHF, LLPHIHF)
+SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
+ &                    FL1, WDWAVE, AIRD, RNFAC,                  &
+ &                    UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
 
@@ -94,7 +94,7 @@
       REAL(KIND=JWRB) :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
       REAL(KIND=JWRB) :: FNC, FNC2
       REAL(KIND=JWRB) :: GAMNORMA ! RENORMALISATION FACTOR OF THE GROWTH RATE
-      REAL(KIND=JWRB) :: ZN1, ZN2, CONFG
+      REAL(KIND=JWRB) :: ZNZ, CONFG
       REAL(KIND=JWRB) :: COSW, FCOSW2 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SQRTZ0OG, ZSUP, ZINF, DELZ
@@ -106,7 +106,7 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
 
 !     See INIT_X0TAUHF
       X0G=X0TAUHF*G
@@ -195,9 +195,8 @@
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
-            ZN1       = CONST1(IJ)*ZBETA*UST(IJ)*Y
-            ZN2       = CONST2(IJ)*ZBETA*UST(IJ)*Y
-            GAMNORMA  = (1.0_JWRB + ZN1)/(1.0_JWRB + ZN2)
+            ZNZ       = ZBETA*UST(IJ)*Y
+            GAMNORMA  = (1.0_JWRB + CONST1(IJ)*ZNZ) / (1.0_JWRB + CONST2(IJ)*ZNZ)
             FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
             TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
 
@@ -217,9 +216,8 @@
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             FNC2      = ZBETA*WTAUHF(J)
-            ZN1       = CONST1(IJ)*ZBETA*UST(IJ)*Y
-            ZN2       = CONST2(IJ)*ZBETA*UST(IJ)*Y
-            GAMNORMA  = (1.0_JWRB + ZN1)/(1.0_JWRB + ZN2)
+            ZNZ       = ZBETA*UST(IJ)*Y
+            GAMNORMA  = (1.0_JWRB + CONST1(IJ)*ZNZ) / (1.0_JWRB + CONST2(IJ)*ZNZ)
             TAUHF(IJ) = TAUHF(IJ) + FNC2 * GAMNORMA
           ENDDO
           TAUHF(IJ) = F1DCOS3(IJ)*CONSTTAU(IJ) * TAUL(IJ)*TAUHF(IJ)*DELZ(IJ)
@@ -254,9 +252,8 @@
               ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
               ZLOG      = MIN(ZLOG,0.0_JWRB)
               ZBETA     = EXP(ZLOG)*ZLOG**4
-              ZN1       = CONST1(IJ)*ZBETA*UST(IJ)*Y
-              ZN2       = CONST2(IJ)*ZBETA*UST(IJ)*Y
-              GAMNORMA  = (1.0_JWRB + ZN1)/(1.0_JWRB + ZN2)
+              ZNZ       = ZBETA*UST(IJ)*Y
+              GAMNORMA  = (1.0_JWRB + CONST1(IJ)*ZNZ) / (1.0_JWRB + CONST2(IJ)*ZNZ)
               FNC2      = ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
               TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*F1DCOS3(IJ)*CONSTTAU(IJ)*FNC2,0.0_JWRB)
               USTPH(IJ)   = SQRT(TAUL(IJ))
@@ -275,9 +272,8 @@
               ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
               ZLOG      = MIN(ZLOG,0.0_JWRB)
               ZBETA     = EXP(ZLOG)*ZLOG**4
-              ZN1       = CONST1(IJ)*ZBETA*UST(IJ)*Y
-              ZN2       = CONST2(IJ)*ZBETA*UST(IJ)*Y
-              GAMNORMA  = (1.0_JWRB + ZN1)/(1.0_JWRB + ZN2)
+              ZNZ       = ZBETA*UST(IJ)*Y
+              GAMNORMA  = (1.0_JWRB + CONST1(IJ)*ZNZ) / (1.0_JWRB + CONST2(IJ)*ZNZ)
               FNC2      = ZBETA*WTAUHF(J) * GAMNORMA
               PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
             ENDDO
@@ -286,6 +282,6 @@
         ENDIF
       ENDIF
 
-      IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE TAU_PHI_HF
+END SUBROUTINE TAU_PHI_HF

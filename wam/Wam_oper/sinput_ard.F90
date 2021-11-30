@@ -1,8 +1,8 @@
-      SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
-     &                       WAVNUM, CINV, CGROUP,          &
-     &                       WDWAVE, WSWAVE, UFRIC, Z0M,    &
-     &                       AIRD, WSTAR, RNFAC,            &
-     &                       FLD, SL, SPOS, XLLWS)
+SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
+ &                     WAVNUM, CINV, CGROUP,          &
+ &                     WDWAVE, WSWAVE, UFRIC, Z0M,    &
+ &                     AIRD, WSTAR, RNFAC,            &
+ &                     FLD, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT_ARD* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -38,7 +38,7 @@
 !    &                    FLD, SL, SPOS, XLLWS)
 !         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
 !                - IF = 2 THEN GUSTINESS PARAMETERISATION
-!         *LLSNEG- IF TRUE THEN THE NEGATIVE SINPUT WILL BE COMPUTED
+!         *LLSNEG- IF TRUE THEN THE NEGATIVE SINPUT (SWELL DAMPING) WILL BE COMPUTED
 !         *KIJS* - INDEX OF FIRST GRIDPOINT.
 !         *KIJL* - INDEX OF LAST GRIDPOINT.
 !          *FL1* - SPECTRUM.
@@ -84,6 +84,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "wsigstar.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NGST
@@ -103,7 +104,7 @@
       REAL(KIND=JWRB) :: CONSTN 
       REAL(KIND=JWRB) :: AVG_GST, ABS_TAUWSHELTER 
       REAL(KIND=JWRB) :: CONST1
-      REAL(KIND=JWRB) :: ZN1, ZN2 
+      REAL(KIND=JWRB) :: ZNZ
       REAL(KIND=JWRB) :: X1, X2, ZLOG, ZLOG1, ZLOG2, ZLOG2X, XV1, XV2, ZBETA1, ZBETA2
       REAL(KIND=JWRB) :: XI, X, DELI1, DELI2
       REAL(KIND=JWRB) :: FU,FUD, NU_AIR,SMOOTH, HFTSWELLF6,Z0TUB
@@ -134,19 +135,12 @@
       LOGICAL :: LTAUWSHELTER
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 
       ROG = ROWATER*G
       AVG_GST = 1.0_JWRB/NGST
       CONST1  = BETAMAXOXKAPPA2/ROWATER
-      NU_AIR = RNU
-      FAC_NU_AIR= RNUM
-      FACM1_NU_AIR=4.0_JWRB/NU_AIR
       CONSTN = DELTH*ROWATER/(XKAPPA*ZPI) 
-
-      FU=ABS(SWELLF3)
-      FUD=SWELLF2
-      DELABM1= REAL(IAB)/(ABMAX-ABMIN)
 
       ABS_TAUWSHELTER=ABS(TAUWSHELTER)
       IF (ABS_TAUWSHELTER == 0.0_JWRB ) THEN
@@ -192,90 +186,98 @@
       ENDDO
 
 
-!!!! only for the negative sinput
       IF (LLSNEG) THEN
+!!!!  only for the negative sinput
+         NU_AIR = RNU
+         FACM1_NU_AIR = 4.0_JWRB/NU_AIR
 
-! computation of Uorb and Aorb
-      DO IJ=KIJS,KIJL
-        UORBT(IJ) = EPSMIN 
-        AORB(IJ) = EPSMIN
-      ENDDO
+         FAC_NU_AIR = RNUM
 
-      DO M=1,NFRE
-        COEF(M) =-SWELLF*16._JWRB*SIG2(M)/(G*ROWATER)
-        COEF5(M)=-SWELLF5*2._JWRB*SQRT(2._JWRB*NU_AIR*SIG(M))/ROWATER
+         FU=ABS(SWELLF3)
+         FUD=SWELLF2
+         DELABM1= REAL(IAB)/(ABMAX-ABMIN)
 
-        K=1
+
+!       computation of Uorb and Aorb
         DO IJ=KIJS,KIJL
-          TEMP(IJ) = FL1(IJ,K,M)
+          UORBT(IJ) = EPSMIN 
+          AORB(IJ) = EPSMIN
         ENDDO
-        DO K=2,NANG
+
+        DO M=1,NFRE
+          COEF(M) =-SWELLF*16._JWRB*SIG2(M)/(G*ROWATER)
+          COEF5(M)=-SWELLF5*2._JWRB*SQRT(2._JWRB*NU_AIR*SIG(M))/ROWATER
+
+          K=1
           DO IJ=KIJS,KIJL
-            TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,M)
+            TEMP(IJ) = FL1(IJ,K,M)
+          ENDDO
+          DO K=2,NANG
+            DO IJ=KIJS,KIJL
+              TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,M)
+            ENDDO
+          ENDDO
+
+          DO IJ=KIJS,KIJL
+            UORBT(IJ) = UORBT(IJ)+DFIM_SIG2(M)*TEMP(IJ)
+            AORB(IJ) = AORB(IJ)+DFIM(M)*TEMP(IJ)
           ENDDO
         ENDDO
 
         DO IJ=KIJS,KIJL
-          UORBT(IJ) = UORBT(IJ)+DFIM_SIG2(M)*TEMP(IJ)
-          AORB(IJ) = AORB(IJ)+DFIM(M)*TEMP(IJ)
+          UORBT(IJ) = 2.0_JWRB*SQRT(UORBT(IJ))  ! this is the significant orbital amplitude
+          AORB(IJ)  = 2.0_JWRB*SQRT(AORB(IJ))   ! this 1/2 Hs
+          RE(IJ)    = FACM1_NU_AIR*UORBT(IJ)*AORB(IJ) ! this is the Reynolds number 
+          Z0VIS(IJ) = FAC_NU_AIR/MAX(UFRIC(IJ),0.0001_JWRB)
+          Z0TUB = Z0RAT*MIN(Z0TUBMAX,Z0M(IJ))
+          Z0NOZ(IJ) = MAX(Z0VIS(IJ),Z0TUB)
+          ZORB(IJ)  = AORB(IJ)/Z0NOZ(IJ)
+
+!         compute fww
+          XI=(LOG10(MAX(ZORB(IJ),3.0_JWRB))-ABMIN)*DELABM1
+          IND  = MIN (IAB-1, INT(XI))
+          DELI1= MIN (1.0_JWRB ,XI-REAL(IND,JWRB))
+          DELI2= 1.0_JWRB - DELI1
+          FWW(IJ)= SWELLFT(IND)*DELI2+SWELLFT(IND+1)*DELI1
+          TEMP2(IJ) = FWW(IJ)*UORBT(IJ)
         ENDDO
-      ENDDO
 
-      DO IJ=KIJS,KIJL
-        UORBT(IJ) = 2.0_JWRB*SQRT(UORBT(IJ))  ! this is the significant orbital amplitude
-        AORB(IJ)  = 2.0_JWRB*SQRT(AORB(IJ))   ! this 1/2 Hs
-        RE(IJ)    = FACM1_NU_AIR*UORBT(IJ)*AORB(IJ) ! this is the Reynolds number 
-        Z0VIS(IJ) = FAC_NU_AIR/MAX(UFRIC(IJ),0.0001_JWRB)
-        Z0TUB = Z0RAT*MIN(Z0TUBMAX,Z0M(IJ))
-        Z0NOZ(IJ) = MAX(Z0VIS(IJ),Z0TUB)
-        ZORB(IJ)  = AORB(IJ)/Z0NOZ(IJ)
+!       Define the critical Reynolds number
+        IF ( SWELLF6 == 1.0_JWRB) THEN
+          DO IJ=KIJS,KIJL
+            RE_C(IJ) = SWELLF4
+          ENDDO
+        ELSE
+          HFTSWELLF6=1.0_JWRB-SWELLF6
+          DO IJ=KIJS,KIJL
+            RE_C(IJ) = SWELLF4*(2.0_JWRB/AORB(IJ))**HFTSWELLF6
+          ENDDO
+        ENDIF
 
-! compute fww
-        XI=(LOG10(MAX(ZORB(IJ),3.0_JWRB))-ABMIN)*DELABM1
-        IND  = MIN (IAB-1, INT(XI))
-        DELI1= MIN (1.0_JWRB ,XI-REAL(IND,JWRB))
-        DELI2= 1.0_JWRB - DELI1
-        FWW(IJ)= SWELLFT(IND)*DELI2+SWELLFT(IND+1)*DELI1
-        TEMP2(IJ) = FWW(IJ)*UORBT(IJ)
-      ENDDO
+!       Swell damping weight between viscous and turbulent boundary layer
+        IF (SWELLF7 > 0.0_JWRB) THEN
+          DO IJ=KIJS,KIJL
+            SMOOTH=0.5_JWRB*TANH((RE(IJ)-RE_C(IJ))/SWELLF7)
+            PTURB(IJ)=0.5_JWRB+SMOOTH
+            PVISC(IJ)=0.5_JWRB-SMOOTH
+          ENDDO
+        ELSE
+          DO IJ=KIJS,KIJL
+            IF (RE(IJ) <= RE_C(IJ)) THEN
+              PTURB(IJ)=0.0_JWRB
+              PVISC(IJ)=0.5_JWRB
+            ELSE
+              PTURB(IJ)=0.5_JWRB
+              PVISC(IJ)=0.0_JWRB
+            ENDIF
+          ENDDO
+        ENDIF
 
-! Define the critical Reynolds number
-      IF ( SWELLF6 == 1.0_JWRB) THEN
         DO IJ=KIJS,KIJL
-          RE_C(IJ) = SWELLF4
+          AIRD_PVISC(IJ) = AIRD(IJ)*PVISC(IJ)
         ENDDO
-      ELSE
-        HFTSWELLF6=1.0_JWRB-SWELLF6
-        DO IJ=KIJS,KIJL
-          RE_C(IJ) = SWELLF4*(2.0_JWRB/AORB(IJ))**HFTSWELLF6
-        ENDDO
-      ENDIF
-
-! Swell damping weight between viscous and turbulent boundary layer
-      IF (SWELLF7 > 0.0_JWRB) THEN
-        DO IJ=KIJS,KIJL
-          SMOOTH=0.5_JWRB*TANH((RE(IJ)-RE_C(IJ))/SWELLF7)
-          PTURB(IJ)=0.5_JWRB+SMOOTH
-          PVISC(IJ)=0.5_JWRB-SMOOTH
-        ENDDO
-      ELSE
-        DO IJ=KIJS,KIJL
-          IF (RE(IJ) <= RE_C(IJ)) THEN
-            PTURB(IJ)=0.0_JWRB
-            PVISC(IJ)=0.5_JWRB
-          ELSE
-            PTURB(IJ)=0.5_JWRB
-            PVISC(IJ)=0.0_JWRB
-          ENDIF
-        ENDDO
-      ENDIF
-
-      DO IJ=KIJS,KIJL
-        AIRD_PVISC(IJ) = AIRD(IJ)*PVISC(IJ)
-      ENDDO
 
       ENDIF
-!!!!
 
 
 
@@ -337,6 +339,15 @@
 
 !*    2. MAIN LOOP OVER FREQUENCIES.
 !        ---------------------------
+
+      IF ( .NOT. LLNORMAGAM) THEN
+        GAMNORMA(:,:) = 1.0_JWRB
+      ENDIF
+
+      IF ( .NOT. LLSNEG) THEN
+        DSTAB(:,:,:) = 0.0_JWRB
+      ENDIF
+
       DO M=1,NFRE
 
         IF (LTAUWSHELTER) THEN
@@ -422,21 +433,17 @@
           ENDDO
 
           DO IJ=KIJS,KIJL
-            ZN2 = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)*SUMF(IJ)
-            ZN1 = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)*SUMFSIN2(IJ)
-            GAMNORMA(IJ,IGST) = (1.0_JWRB + ZN1)/(1.0_JWRB + ZN2)
+            ZNZ = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)
+            GAMNORMA(IJ,IGST) = (1.0_JWRB + ZNX*SUMFSIN2(IJ)) / (1.0_JWRB + ZNZ*SUMF(IJ))
           ENDDO
 
         ENDDO
 
-      ELSE
-        GAMNORMA(:,:) = 1.0_JWRB
       ENDIF
 
 
-!       SWELL DAMPING:
-
         IF (LLSNEG) THEN
+!       SWELL DAMPING:
           DO IJ=KIJS,KIJL
             DSTAB1(IJ) = COEF5(M)*AIRD_PVISC(IJ)*WAVNUM(IJ,M)
             TEMP1(IJ) = COEF(M)*AIRD(IJ)
@@ -450,8 +457,6 @@
               ENDDO
             ENDDO
           ENDDO
-        ELSE
-          DSTAB(:,:,:) = 0.0_JWRB
         ENDIF
 
 
@@ -513,6 +518,6 @@
 
       ENDDO ! END LOOP OVER FREQUENCIES
 
-      IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE SINPUT_ARD
+END SUBROUTINE SINPUT_ARD

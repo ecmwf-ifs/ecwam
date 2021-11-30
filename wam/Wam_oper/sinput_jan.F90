@@ -181,7 +181,7 @@
       DO K=1,NANG
         DO IJ=KIJS,KIJL
           COSD(IJ,K) = COS(TH(K)-WDWAVE(IJ))
-          IF(COSD(IJ,K) > 0.01_JWRB) THEN
+          IF (COSD(IJ,K) > 0.01_JWRB) THEN
             LZ(IJ,K) = .TRUE.
             TEMPD(IJ,K) = XKAPPA/COSD(IJ,K)
           ELSE
@@ -191,7 +191,7 @@
         ENDDO
       ENDDO
 
-      IF(LLNORMAGAM) THEN
+      IF (LLNORMAGAM) THEN
         CSTRNFAC(:) = CONSTN * RNFAC(:)
         DO M=1,NFRE
           DO IJ=KIJS,KIJL
@@ -211,13 +211,13 @@
 
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
-      IF(NGST > 1) CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N)
+      IF (NGST > 1) CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N)
 
 
 !     DEFINE WHERE SINPUT WILL BE EVALUATED IN RELATIVE TERM WRT USTAR
 !     DEFINE ALSO THE RELATIVE WEIGHT OF EACH.
 
-      IF(NGST == 1) THEN
+      IF (NGST == 1) THEN
         WSIN(1) = 1.0_JWRB 
         DO IJ=KIJS,KIJL
           SIGDEV(IJ,1) = 1.0_JWRB
@@ -242,7 +242,7 @@
       ENDIF
 
 
-      IF(NGST == 1) THEN
+      IF (NGST == 1) THEN
         DO IJ=KIJS,KIJL
           US(IJ,1) = UFRIC(IJ)
           Z0(IJ,1) = Z0M(IJ)
@@ -270,6 +270,13 @@
 !*    2. LOOP OVER FREQUENCIES.
 !        ----------------------
 
+      IF ( .NOT. LLNORMAGAM) THEN
+        GAMNORMA(:,:) = 1.0_JWRB
+      ENDIF
+
+      IF ( .NOT. LLSNEG) THEN
+        UFAC2(:,:) = 0.0_JWRB
+      ENDIF
 
       DO M=1,NFRE
 
@@ -328,7 +335,7 @@
         ENDDO
 
 
-        IF(LLNORMAGAM) THEN
+        IF (LLNORMAGAM) THEN
 
           DO IGST=1,NGST
 
@@ -349,9 +356,8 @@
 
           ENDDO
 
-        ELSE
-          GAMNORMA(:,:) = 1.0_JWRB
         ENDIF
+
 
         DO K=1,NANG
           DO IJ=KIJS,KIJL
@@ -364,28 +370,30 @@
           ENDDO
         ENDDO
 
-!       SWELL DAMPING:
-        DO K=1,NANG
-          DO IGST=1,1
-            DO IJ=KIJS,KIJL
-              ZBETA = CONST3_UCN2(IJ,IGST)*(COSD(IJ,K)-XVD(IJ,IGST))
-              UFAC2(IJ,K) = WSIN(IGST)*ZBETA
+        IF (LLSNEG) THEN
+!         SWELL DAMPING:
+          DO K=1,NANG
+            DO IGST=1,1
+              DO IJ=KIJS,KIJL
+                ZBETA = CONST3_UCN2(IJ,IGST)*(COSD(IJ,K)-XVD(IJ,IGST))
+                UFAC2(IJ,K) = WSIN(IGST)*ZBETA
+              ENDDO
+            ENDDO
+            DO IGST=2,NGST
+              DO IJ=KIJS,KIJL
+                ZBETA = CONST3_UCN2(IJ,IGST)*(COSD(IJ,K)-XVD(IJ,IGST))
+                UFAC2(IJ,K) = UFAC2(IJ,K)+WSIN(IGST)*ZBETA
+              ENDDO
             ENDDO
           ENDDO
-          DO IGST=2,NGST
-            DO IJ=KIJS,KIJL
-              ZBETA = CONST3_UCN2(IJ,IGST)*(COSD(IJ,K)-XVD(IJ,IGST))
-              UFAC2(IJ,K) = UFAC2(IJ,K)+WSIN(IGST)*ZBETA
-            ENDDO
-          ENDDO
-        ENDDO
+        ENDIF
 
 !*    2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
 !         ------------------------------------------------
 
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            FLD(IJ,K,M) = UFAC1(IJ,K) + CNSN(IJ)*UFAC2(IJ,K)
+            FLD(IJ,K,M) = UFAC1(IJ,K) + UFAC2(IJ,K)*CNSN(IJ)
             SPOS(IJ,K,M) = UFAC1(IJ,K)*FL1(IJ,K,M)
             SL(IJ,K,M) = FLD(IJ,K,M)*FL1(IJ,K,M)
           ENDDO

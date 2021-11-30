@@ -42,7 +42,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE,    NFRE_RED
       USE YOWSTAT  , ONLY : LBIWBK
 
       USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK
@@ -94,7 +94,7 @@
            ENDIF
         ENDDO 
       
-        DO M=1,NFRE
+        DO M = 1, NFRE_RED
            DO K=1,NANG
               DO IJ=KIJS,KIJL
                 IF(DEPTH(IJ) < DEPTHTRS) THEN

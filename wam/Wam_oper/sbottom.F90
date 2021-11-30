@@ -41,7 +41,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE    ,NFRE_RED
       USE YOWPCONS , ONLY : GM1
       USE YOWSHAL  , ONLY : BATHYMAX
 
@@ -68,7 +68,7 @@
       IF (LHOOK) CALL DR_HOOK('SBOTTOM',0,ZHOOK_HANDLE)
 
       CONST = -2.0_JWRB*0.038_JWRB*GM1
-      DO M=1,NFRE
+      DO M = 1, NFRE_RED
         DO IJ=KIJS,KIJL
           IF(DEPTH(IJ) < BATHYMAX) THEN
             ARG = 2.0_JWRB* DEPTH(IJ)*WAVNUM(IJ,M)
@@ -80,7 +80,7 @@
         ENDDO
       ENDDO
 
-      DO M=1,NFRE
+      DO M = 1, NFRE_RED
         DO K=1,NANG
           DO IJ=KIJS,KIJL
             SL(IJ,K,M) = SL(IJ,K,M)+SBO(IJ,M)*FL1(IJ,K,M)
