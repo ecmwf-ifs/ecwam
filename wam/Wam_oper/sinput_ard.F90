@@ -1,4 +1,4 @@
-      SUBROUTINE SINPUT_ARD (NGST, KIJS, KIJL, FL1,         &
+      SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
      &                       WAVNUM, CINV, CGROUP,          &
      &                       WDWAVE, WSWAVE, UFRIC, Z0M,    &
      &                       AIRD, WSTAR, RNFAC,            &
@@ -31,13 +31,14 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT_ARD (NGST, KIJS, KIJL, FL1,
+!     *CALL* *SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1,
 !    &                    WAVNUM, CINV, CGROUP,
 !    &                    WSWAVE, WDWAVE, UFRIC, Z0M,
 !    &                    AIRD, WSTAR, RNFAC,
 !    &                    FLD, SL, SPOS, XLLWS)
 !         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
 !                - IF = 2 THEN GUSTINESS PARAMETERISATION
+!         *LLSNEG- IF TRUE THEN THE NEGATIVE SINPUT WILL BE COMPUTED
 !         *KIJS* - INDEX OF FIRST GRIDPOINT.
 !         *KIJL* - INDEX OF LAST GRIDPOINT.
 !          *FL1* - SPECTRUM.
@@ -86,6 +87,7 @@
 #include "wsigstar.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NGST
+      LOGICAL, INTENT(IN) :: LLSNEG
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
@@ -180,12 +182,6 @@
       IF (NGST > 1) CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N)
 
 ! ----------------------------------------------------------------------
-! computation of Uorb and Aorb
-
-      DO IJ=KIJS,KIJL
-        UORBT(IJ) = EPSMIN 
-        AORB(IJ) = EPSMIN
-      ENDDO
 
       DO M=1,NFRE
         SIG(M) = ZPIFR(M)
@@ -193,6 +189,19 @@
         SIG2(M) = SIG(M)**2
         DFIM_SIG2(M)=DFIM(M)*SIG2(M)
         CONST(M)=SIG(M)*CONST1
+      ENDDO
+
+
+!!!! only for the negative sinput
+      IF (LLSNEG) THEN
+
+! computation of Uorb and Aorb
+      DO IJ=KIJS,KIJL
+        UORBT(IJ) = EPSMIN 
+        AORB(IJ) = EPSMIN
+      ENDDO
+
+      DO M=1,NFRE
         COEF(M) =-SWELLF*16._JWRB*SIG2(M)/(G*ROWATER)
         COEF5(M)=-SWELLF5*2._JWRB*SQRT(2._JWRB*NU_AIR*SIG(M))/ROWATER
 
@@ -205,6 +214,7 @@
             TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,M)
           ENDDO
         ENDDO
+
         DO IJ=KIJS,KIJL
           UORBT(IJ) = UORBT(IJ)+DFIM_SIG2(M)*TEMP(IJ)
           AORB(IJ) = AORB(IJ)+DFIM(M)*TEMP(IJ)
@@ -259,6 +269,14 @@
           ENDIF
         ENDDO
       ENDIF
+
+      DO IJ=KIJS,KIJL
+        AIRD_PVISC(IJ) = AIRD(IJ)*PVISC(IJ)
+      ENDDO
+
+      ENDIF
+!!!!
+
 
 
 ! Initialisation
@@ -316,11 +334,6 @@
       DO IJ=KIJS,KIJL
         ROGOROAIR(IJ) = ROG*AIRDM(IJ)
       ENDDO
-
-      DO IJ=KIJS,KIJL
-        AIRD_PVISC(IJ) = AIRD(IJ)*PVISC(IJ)
-      ENDDO
-
 
 !*    2. MAIN LOOP OVER FREQUENCIES.
 !        ---------------------------
@@ -423,19 +436,23 @@
 
 !       SWELL DAMPING:
 
-        DO IJ=KIJS,KIJL
-          DSTAB1(IJ) = COEF5(M)*AIRD_PVISC(IJ)*WAVNUM(IJ,M)
-          TEMP1(IJ) = COEF(M)*AIRD(IJ)
-        ENDDO
+        IF (LLSNEG) THEN
+          DO IJ=KIJS,KIJL
+            DSTAB1(IJ) = COEF5(M)*AIRD_PVISC(IJ)*WAVNUM(IJ,M)
+            TEMP1(IJ) = COEF(M)*AIRD(IJ)
+          ENDDO
 
-        DO IGST=1,NGST
-          DO K=1,NANG
-            DO IJ=KIJS,KIJL
-              DSTAB2 = TEMP1(IJ)*(TEMP2(IJ)+(FU+FUD*COSLP(IJ,K,IGST))*USTP(IJ,IGST))
-              DSTAB(IJ,K,IGST) = DSTAB1(IJ)+PTURB(IJ)*DSTAB2
+          DO IGST=1,NGST
+            DO K=1,NANG
+              DO IJ=KIJS,KIJL
+                DSTAB2 = TEMP1(IJ)*(TEMP2(IJ)+(FU+FUD*COSLP(IJ,K,IGST))*USTP(IJ,IGST))
+                DSTAB(IJ,K,IGST) = DSTAB1(IJ)+PTURB(IJ)*DSTAB2
+              ENDDO
             ENDDO
           ENDDO
-        ENDDO
+        ELSE
+          DSTAB(:,:,:) = 0.0_JWRB
+        ENDIF
 
 
 !*    2.2 UPDATE THE SHELTERING STRESS (in any),

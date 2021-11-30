@@ -1,4 +1,4 @@
-      SUBROUTINE SINPUT (NGST, KIJS, KIJL, FL1,         & 
+      SUBROUTINE SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, & 
      &                   WAVNUM, CINV, CGROUP,          &
      &                   WDWAVE, WSWAVE, UFRIC, Z0M,    &
      &                   AIRD, WSTAR, RNFAC,            &
@@ -11,12 +11,13 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT (NGST, KIJS, KIJL, FL1,
+!     *CALL* *SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1,
 !    &                WAVNUM, CINV, CGROUP,
 !    &                WDWAVE, UFRIC, Z0M,
 !    &                AIRD, WSTAR, FLD, SL, SPOS, XLLWS)
 !         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
 !                - IF = 2 THEN GUSTINESS PARAMETERISATION
+!         *LLSNEG* - IF TRUE THEN THE NEGATIVE SINPUT WILL BE COMPUTED
 !         *KIJS* - INDEX OF FIRST GRIDPOINT.
 !         *KIJL* - INDEX OF LAST GRIDPOINT.
 !          *FL1* - SPECTRUM.
@@ -66,6 +67,7 @@
 #include "sinput_jan.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NGST
+      LOGICAL, INTENT(IN) :: LLSNEG
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
@@ -92,7 +94,7 @@
      &                   AIRD, WSTAR, RNFAC,             &
      &                   FLD, SL, SPOS, XLLWS)
       CASE(1) 
-        CALL SINPUT_ARD (NGST, KIJS, KIJL, FL1,          &
+        CALL SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1,  &
      &                   WAVNUM, CINV, CGROUP,           &
      &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
      &                   AIRD, WSTAR, RNFAC,             &
