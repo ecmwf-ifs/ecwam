@@ -143,6 +143,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "difdate.intfb.h"
 #include "initgc.intfb.h"

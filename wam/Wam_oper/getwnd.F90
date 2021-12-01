@@ -73,6 +73,7 @@ SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "micep.intfb.h"
 #include "readwind.intfb.h"
