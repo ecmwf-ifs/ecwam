@@ -77,11 +77,13 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "adjust.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU01
       REAL(KIND=JWRB), DIMENSION(NGX,NGY), INTENT(OUT) :: BATHY
+
 
       INTEGER(KIND=JWIM) :: I, J, K, JH, L, IX, IAA, IS
       INTEGER(KIND=JWIM) :: KLONRGG  
@@ -119,7 +121,7 @@
       REWIND (UNIT=IU01)
 !     DETERMINE WHICH TYPE OF FILE IS USED
       READ (IU01,'(a14)') CHEADER 
-      IF(CHEADER.EQ.'WAM BATHYMETRY') THEN
+      IF (CHEADER == 'WAM BATHYMETRY') THEN
 !       REAL BATHYMETRY INPUT
         LLREALIN=.TRUE.
         WRITE (IU06,*) ' BATHYMETRY FROM REAL INPUT DATA' 
@@ -130,7 +132,7 @@
       ENDIF
       REWIND (UNIT=IU01)
 
-      IF(LLREALIN) THEN
+      IF (LLREALIN) THEN
         READ (IU01,'(a14)') CHEADER 
         READ (IU01,'(6F13.8)') XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
       ELSE
@@ -146,18 +148,18 @@
 
       BATHY(:,:) = 999.0_JWRB
 
-      IF(LLOBSTRCT) THEN
+      IF (LLOBSTRCT) THEN
 !     NEW TREATMENT OF BATHYMETRY INPUT
 !     ---------------------------------
         WRITE (IU06,*) '  NEW TREATMENT OF BATHYMETRY INPUT '
         WRITE (IU06,*) ' '
 !       TEST DOMAIN
-        IF(NINT(10000*XDELA).NE.NINT(10000*XDELLA) .OR.                 &
-     &     NINT(10000*XDELO).NE.NINT(10000*XDELLO) .OR.                 &
-     &     NINT(10000*XLAS).NE.NINT(10000*AMOSOP) .OR.                  &
-     &     NINT(10000*XLAN).NE.NINT(10000*AMONOP) .OR.                  &
-     &     NINT(10000*XLOW).NE.NINT(10000*AMOWEP) .OR.                  &
-     &     NINT(1000*XLOE).NE.NINT(1000*AMOEAP) ) THEN
+        IF (NINT(10000*XDELA) /= NINT(10000*XDELLA) .OR.                 &
+     &      NINT(10000*XDELO) /= NINT(10000*XDELLO) .OR.                 &
+     &      NINT(10000*XLAS) /= NINT(10000*AMOSOP) .OR.                  &
+     &      NINT(10000*XLAN) /= NINT(10000*AMONOP) .OR.                  &
+     &      NINT(10000*XLOW) /= NINT(10000*AMOWEP) .OR.                  &
+     &      NINT(1000*XLOE) /= NINT(1000*AMOEAP) ) THEN
           WRITE (IU06,*) ' *******************************************'
           WRITE (IU06,*) ' *                                         *'
           WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR        *'
@@ -181,7 +183,7 @@
 !       READ THE NUMBER OF POINTS PER LATITUDE
           READ (IU01,*) KLONRGG  
 
-          IF(KLONRGG.NE.NLONRGG(K)) THEN
+          IF (KLONRGG /= NLONRGG(K)) THEN
             WRITE (IU06,*) ' ******************************************'
             WRITE (IU06,*) ' *                                        *'
             WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR       *'
@@ -204,7 +206,7 @@
         CX='     '
         FORMT='          ' 
         DO K=1,NY
-          IF(LLREALIN) THEN
+          IF (LLREALIN) THEN
             WRITE(CX,'(I5.5)') NLONRGG(1)
             FORMT='('//CX//'F9.2)'
             DO IS = 1,NLONRGG(K),NLONRGG(1)
@@ -240,7 +242,7 @@
       NLAT=0
 1005  CONTINUE
       NLAT=NLAT+1
-      IF (NLAT.GT.NLATMAX) THEN
+      IF (NLAT > NLATMAX) THEN
         WRITE (IU06,*) ' ******************************************'
         WRITE (IU06,*) ' *                                        *'
         WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR       *'
@@ -260,23 +262,23 @@
       DO K=1,KMAX
         N1 = 12*(K-1)+1
         N2 = MIN(12*K,MLON)
-        IF(LLREALIN) THEN
+        IF (LLREALIN) THEN
           READ (IU01, '(12(F9.2))', END=1017) (XA1(IAA,NLAT),IAA=N1,N2)
         ELSE
           READ (IU01, '(12(I5,A1))', END=1017) (IA1(IAA,NLAT),AX(IAA),IAA=N1,N2)
         ENDIF
       ENDDO
 
-      IF (XLAT+0.5_JWRB*XDELA.LE.AMOSOP) GO TO 1010
-      IF(NLAT.EQ.1) XLAG=XLAT
-      IF(.NOT.LLREALIN) THEN
+      IF (XLAT+0.5_JWRB*XDELA <= AMOSOP) GO TO 1010
+      IF (NLAT == 1) XLAG=XLAT
+      IF (.NOT.LLREALIN) THEN
       DO I=1,MLON
-          IF (AX(I).EQ.'E'.AND.IA1(I,NLAT).LT.0) IA1(I,NLAT)=-IA1(I,NLAT)
-          IF (AX(I).EQ.'D'.AND.IA1(I,NLAT).GT.0) IA1(I,NLAT)=-IA1(I,NLAT)
-          IF (AX(I).EQ.'E'.AND.IA1(I,NLAT).EQ.0) IA1(I,NLAT)=1
+          IF (AX(I) == 'E' .AND. IA1(I,NLAT) < 0) IA1(I,NLAT)=-IA1(I,NLAT)
+          IF (AX(I) == 'D' .AND. IA1(I,NLAT) > 0) IA1(I,NLAT)=-IA1(I,NLAT)
+          IF (AX(I) == 'E' .AND. IA1(I,NLAT) == 0) IA1(I,NLAT)=1
         ENDDO
       ENDIF
-      IF(XLAT+0.5_JWRB*XDELA.GT.AMONOP) GO TO 1020
+      IF (XLAT+0.5_JWRB*XDELA > AMONOP) GO TO 1020
       GO TO 1005
 1017  CONTINUE
       NLAT=NLAT-1
@@ -311,16 +313,16 @@
         IH=ILW
         DO I=1,NLON
           IH=IH+1
-          IF(IH.LE.0) IH=IH+MLON
-          IF(IH.GT.MLON) IH=IH-MLON
-          IF(LLREALIN) THEN
+          IF (IH <= 0) IH=IH+MLON
+          IF (IH > MLON) IH=IH-MLON
+          IF (LLREALIN) THEN
             XA2H(I) =XA1(IH,J)
           ELSE
             IA2H(I) =IA1(IH,J)
           ENDIF
         ENDDO
         DO I=1,NLON
-          IF(LLREALIN) THEN
+          IF (LLREALIN) THEN
             XA1(I,J)=XA2H(I)
           ELSE
             XA1(I,J)=REAL(IA2H(I),JWRB)
@@ -348,9 +350,9 @@
       DO J=1,NLAT
         XLAG=XLAG+XDELA
  3010   CONTINUE
-        IF(XLA.LT.XLAG-0.5_JWRB*XDELA.OR.XLA.GE.XLAG+0.5_JWRB*XDELA) GO TO 3070
+        IF (XLA < XLAG-0.5_JWRB*XDELA .OR. XLA >= XLAG+0.5_JWRB*XDELA) GO TO 3070
         NJ=NJ+1
-        IF(NJ.GT.NGY) THEN
+        IF (NJ > NGY) THEN
           WRITE (IU06,*) ' ******************************************'
           WRITE (IU06,*) ' *                                        *'
           WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR       *'
@@ -373,16 +375,16 @@
         NL=0
         XLOH = XLOW + (REAL(ILW,JWRB)-1.5_JWRB)*XDELO+720.0_JWRB
         XLO=AMOWEP
-        IF(XLO .LT.0.0_JWRB) XLO =XLO +360.0_JWRB
+        IF (XLO < 0.0_JWRB) XLO =XLO +360.0_JWRB
         DO I=1,NLON
           XLO = MOD(XLO+720.0_JWRB,360.0_JWRB)
           XLOG = MOD(XLOH + REAL(I,JWRB)*XDELO,360.0_JWRB)
  3030     CONTINUE
-          IF (XLO.LT.XLOG) XLO  = XLO  + 360.0_JWRB
+          IF (XLO < XLOG) XLO  = XLO  + 360.0_JWRB
 
-          IF (XLO.LE.XLOG+XDELO) THEN
+          IF (XLO <= XLOG+XDELO) THEN
             NL=NL+1
-            IF (NL.GT.NGX) THEN
+            IF (NL > NGX) THEN
               WRITE (IU06,*) ' **************************************'
               WRITE (IU06,*) ' *                                    *'
               WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR   *'
@@ -407,7 +409,7 @@
             XLO = AMOWEP + REAL(NL,JWRB)*ZDELLO(JRGG)
             KXLO=NINT(XLO*100.0_JWRB)
             KAMOEAP=NINT(AMOEAP*100.0_JWRB)
-            IF (KXLO.LE.KAMOEAP) THEN
+            IF (KXLO <= KAMOEAP) THEN
               XLO = MOD(XLO+720.0_JWRB,360.0_JWRB)
               GOTO 3030
             ENDIF
@@ -417,7 +419,7 @@
         JJ=JJ+1
         XLA=AMOSOP+REAL(JJ,JWRB)*XDELLA
 
-        IF((XLA-0.5_JWRB*XDELLA).GT.AMONOP) THEN
+        IF ((XLA-0.5_JWRB*XDELLA) > AMONOP) THEN
           GOTO 3080
         ELSE
           GOTO 3010
@@ -425,7 +427,7 @@
  3070   CONTINUE
       ENDDO
  3080 CONTINUE
-      IF (NJ.NE.NY .OR. NL.GT.NX) THEN
+      IF (NJ /= NY .OR. NL > NX) THEN
         WRITE (IU06,*) ' *****************************************'
         WRITE (IU06,*) ' *                                       *'
         WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR      *'
@@ -454,7 +456,7 @@
 
       DO J=1,NY
         DO I=1,NX
-          IF (BATHY(I,J).LT.0.0_JWRB) THEN
+          IF (BATHY(I,J) < 0.0_JWRB) THEN
             BATHY(I,J) = -BATHY(I,J)
           ELSE
             BATHY(I,J) = -999.0_JWRB
@@ -466,13 +468,13 @@
       NMINADJT=0
       DO J=1,NY
         DO I=1,NX
-          IF (BATHY(I,J).GT.0.0_JWRB .AND. BATHY(I,J).LT. DEPTHA ) THEN
+          IF (BATHY(I,J) > 0.0_JWRB .AND. BATHY(I,J) < DEPTHA ) THEN
             BATHY(I,J) = DEPTHA 
             NMINADJT=NMINADJT+1
           ENDIF
         ENDDO
       ENDDO
-      IF(NMINADJT.GT.0) THEN
+      IF (NMINADJT > 0) THEN
         WRITE (IU06,*) ' ' 
         WRITE (IU06,*) ' *******************************************'
         WRITE (IU06,*) ' *                                         *'
@@ -495,7 +497,7 @@
         ENDDO
       ENDDO
       TABLEMAX=DEPTHA*DEPTHD**(NDEPTH-1)
-      IF(BATHYMAX_LOC.GT.TABLEMAX) THEN
+      IF (BATHYMAX_LOC > TABLEMAX) THEN
         WRITE (IU06,*) ' ******************************************'
         WRITE (IU06,*) ' *                                        *'
         WRITE (IU06,*) ' *      WARNING ERROR IN SUB. TOPOAR      *'
@@ -517,20 +519,20 @@
 !*    5. MANUAL ADJUSTMENT OF TOPOGRAPHY.
 !        --------------------------------
 
-      IF (NOUT.NE.0) THEN
+      IF (NOUT /= 0) THEN
         XLAT=AMOSOP-XDELLA
         DO J=1,NY
           XLAT=XLAT+XDELLA
           XLON=AMOWEP-ZDELLO(J)
-          IF (XLON.LT.0.0_JWRB) XLON=360.0_JWRB+XLON
+          IF (XLON < 0.0_JWRB) XLON=360.0_JWRB+XLON
           DO I=1,NX
             XLON=XLON+ZDELLO(J)
-            IF (XLON.GE.360.0_JWRB) XLON=XLON-360.0_JWRB
+            IF (XLON >= 360.0_JWRB) XLON=XLON-360.0_JWRB
             DO JH = 1,NOUT
-              IF (XLON.LT.XOUTW(JH)) XLON=XLON+360.0_JWRB
-              IF (XLON.GT.XOUTE(JH)) XLON=XLON-360.0_JWRB
-              IF (XLON.GE.XOUTW(JH) .AND. XLAT.GE.XOUTS(JH) .AND.       &
-     &         XLON.LE.XOUTE(JH) .AND. XLAT.LE.XOUTN(JH))               &
+              IF (XLON < XOUTW(JH)) XLON=XLON+360.0_JWRB
+              IF (XLON > XOUTE(JH)) XLON=XLON-360.0_JWRB
+              IF (XLON >= XOUTW(JH) .AND. XLAT >= XOUTS(JH) .AND.       &
+     &         XLON <= XOUTE(JH) .AND. XLAT <= XOUTN(JH))               &
      &         BATHY(I,J) = REAL(NOUTD(JH),JWRB)
             ENDDO
           ENDDO
@@ -553,45 +555,11 @@
      &     '('' LONGITUDE INCREMENT AS FUNCTION OF LATITUDE IS'')')
       WRITE (IU06,'(10F8.3)') ZDELLO
 
-      IF (ITEST.GE.3) THEN
-        ILEN = 120
-        IPAGE = (NX+ILEN-1)/ILEN
-        IF (IPAGE.GT.1) THEN
-          LAST = (NX-ILEN*(IPAGE-1)+IPAGE-2)/(IPAGE-1)
-          IF (LAST.LE.10) THEN
-            ILEN = ILEN + 10
-            IPAGE = (NX+ILEN-1)/ILEN
-          ENDIF
-        ENDIF
-
-        ALLOCATE(AXX(NGX))
-
-        DO L=1,IPAGE
-          IA = (L-1)*ILEN
-          IE = MIN(IA+ILEN,NX)
-          IA = IA+1
-          WRITE (IU06,'(''0UNBLOCKED GRID               N'',            &
-     &     40X,''PAGE'',I2)') L
-          WRITE (IU06,'(''   L = LAND               W -   - E'')')
-          WRITE (IU06,'(''   S = SEA                    S'',/)')
-          WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
-          DO JH =NY,1,-1
-            DO I=IA,IE
-              IF (BATHY(I,JH).EQ.-999) AXX(I)='L'
-              IF (BATHY(I,JH).NE.-999) AXX(I)='S'
-            ENDDO
-            WRITE (IU06,'(1X,I1,130A1)') MOD(JH,10),(AXX(I),I=IA,IE)
-            WRITE (54,'(1X,I1,130A1)') MOD(JH,10),(AXX(I),I=IA,IE)
-          ENDDO
-          WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
-        ENDDO
-      ENDIF
-
-      IF(ALLOCATED(AX)) DEALLOCATE(AX)
-      IF(ALLOCATED(AXX)) DEALLOCATE(AXX)
-      IF(ALLOCATED(IA2H)) DEALLOCATE(IA2H)
-      IF(ALLOCATED(XA2H)) DEALLOCATE(XA2H)
-      IF(ALLOCATED(IA1)) DEALLOCATE(IA1)
-      IF(ALLOCATED(XA1)) DEALLOCATE(XA1)
+      IF (ALLOCATED(AX)) DEALLOCATE(AX)
+      IF (ALLOCATED(AXX)) DEALLOCATE(AXX)
+      IF (ALLOCATED(IA2H)) DEALLOCATE(IA2H)
+      IF (ALLOCATED(XA2H)) DEALLOCATE(XA2H)
+      IF (ALLOCATED(IA1)) DEALLOCATE(IA1)
+      IF (ALLOCATED(XA1)) DEALLOCATE(XA1)
 
       END SUBROUTINE TOPOAR

@@ -1,4 +1,4 @@
-      SUBROUTINE OUTBC (FL1, IJS, IJL, IU19)
+SUBROUTINE OUTBC (FL1, BLK2GLO, IU19)
 
 ! ----------------------------------------------------------------------
 
@@ -15,10 +15,9 @@
 !**   INTERFACE.
 !     ----------
 
-!    *CALL* *OUTBC (FL1, IJS, IJL, IU19)*
+!    *CALL* *OUTBC (FL1, BLK2GLO, IU19)*
 !      *FL1*     - BLOCK OF SPECTRA.
-!      *IJS*     - INDEX OF FIRST GRIDPOINT.
-!      *IJL*     - INDEX OF LAST GRIDPOINT.
+!      *BLK2GLO* - BLOCK TO GRID TRANSFORMATION
 !      *IU19*    - OUTPUT UNIT OF BOUNDARY VALUES.
 
 
@@ -27,76 +26,59 @@
 
 !       SEQUENCIAL UNFORMATED WRITE TO UNIT(s).
 
-!     EXTERNALS.
-!     ----------
-
-!       *FEMEAN*    - COMPUTATION OF MEAN FREQUENCY AT EACH GRID POINT.
-!       *SEMEAN*    - COMPUTATION OF TOTAL ENERGY AT EACH GRID POINT.
-!       *STHQ*      - COMPUTATION OF MEAN WAVE DIRECTION AT EACH
-!                     GRID POINT.
-
-!     REFERENCE.
-!     ----------
-
-!       NONE.
-
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,LL1D
+      USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE     ,LL1D
       USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,GBOUNC   ,IPOGBO
-      USE YOWGRID  , ONLY : NPROMA_WAM
-      USE YOWMAP   , ONLY : BLK2GLO  ,AMOWEP   ,AMOSOP   ,    &
-     &                      XDELLA   ,ZDELLO
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
+      USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO
       USE YOWMPP   , ONLY : NPROC  , IRANK
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWSPEC  , ONLY : IJ2NEWIJ
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+
 #include "femean.intfb.h"
 #include "mpgatherbc.intfb.h"
 #include "sthq.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL1
+      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN)                         :: BLK2GLO
       INTEGER(KIND=JWIM),DIMENSION(GBOUNC), INTENT(IN) :: IU19
 
-      REAL(KIND=JWRB), INTENT(IN) :: FL1(IJS:IJL, NANG, NFRE)
 
       INTEGER(KIND=JWIM), PARAMETER :: NSCFLD=3
-
-      INTEGER(KIND=JWIM):: IJ, II, NGOU, IX, KX, K ,M 
-      INTEGER(KIND=JWIM):: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: IJ, II, NGOU, IX, KX, K ,M 
+      INTEGER(KIND=JWIM) :: ICHNK 
       INTEGER(KIND=JWIM) :: IRECV
 
       REAL(KIND=JWRB) :: XLON, XLAT
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: EM, FM, TQ
+      REAL(KIND=JWRB),DIMENSION(NPROMA_WAM, NCHNK) :: EM, FM, TQ
       REAL(KIND=JWRB),DIMENSION(NBOUNC) :: EMPTS, FMPTS, TQPTS
-      REAL(KIND=JWRB),DIMENSION(NBOUNC,NANG,NFRE) :: FLPTS
+      REAL(KIND=JWRB),DIMENSION(NBOUNC, NANG, NFRE) :: FLPTS
 
 
 ! ----------------------------------------------------------------------
 
-      NPROMA=NPROMA_WAM
 
 
 !*    1. COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-      DO JKGLO=IJS,IJL,NPROMA
-        KIJS=JKGLO
-        KIJL=MIN(KIJS+NPROMA-1,IJL)
-
-        CALL FEMEAN (KIJS, KIJL, FL1(KIJS:KIJL,:,:), EM(KIJS), FM(KIJS) )
-        CALL STHQ (KIJS, KIJL, FL1(KIJS:KIJL,:,:), TQ(KIJS))
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
+      DO ICHNK = 1, NCHNK
+        CALL FEMEAN (1, NPROMA_WAM, FL1(:,:,:, ICHNK), EM(:, ICHNK), FM(:, ICHNK) )
+        CALL STHQ (1, NPROMA_WAM, FL1(:,:,:, ICHNK), TQ(:, ICHNK))
       ENDDO
 !$OMP END PARALLEL DO
 
       IRECV=1
-      CALL MPGATHERBC(IRECV, IJS, IJL, NSCFLD,                          &
-     &                FL1, EM, TQ, FM,                                  &
+      CALL MPGATHERBC(IRECV, NSCFLD,                   &
+     &                FL1, EM, TQ, FM,                 &
      &                FLPTS, EMPTS, TQPTS, FMPTS)
 
 
@@ -123,4 +105,4 @@
         ENDDO
       ENDIF
 
-      END SUBROUTINE OUTBC
+END SUBROUTINE OUTBC

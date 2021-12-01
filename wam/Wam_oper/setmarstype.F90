@@ -49,20 +49,20 @@
 
       IF (LHOOK) CALL DR_HOOK('SETMARSTYPE',0,ZHOOK_HANDLE)
 
-      IF (IASSI .EQ. 0 ) THEN
+      IF (IASSI == 0 ) THEN
         MARSTYPE = 'an'
       ELSE
-        IF(L4VTYPE) THEN
+        IF (L4VTYPE) THEN
           MARSTYPE = '4v'
         ELSE
           MARSTYPE = 'fg'
         ENDIF
       ENDIF
 
-      IF (CDTPRO.GE.CDATEF .OR. CDATEA.EQ.CDATEF) THEN
+      IF (CDTPRO >= CDATEF .OR. CDATEA == CDATEF) THEN
         CALL WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,MARSTYPE,     &
      &                    KSTREAM, LASTREAM)
-        IF(CSTREAM.EQ.'****') THEN
+        IF (CSTREAM == '****') THEN
           WRITE(IU06,*) '*****************************************' 
           WRITE(IU06,*) ''
           WRITE(IU06,*) ' ERROR IN SETMARSTYPE !!!!' 
@@ -75,8 +75,8 @@
         ENDIF
       ENDIF
 
-      IF(LANAONLY) THEN
-        IF (IASSI .EQ. 0 ) THEN
+      IF (LANAONLY) THEN
+        IF (IASSI == 0 ) THEN
           MARSTYPE = 'an'
         ELSE
           MARSTYPE = 'fg'

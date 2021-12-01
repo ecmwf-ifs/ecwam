@@ -1,4 +1,4 @@
-SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
+SUBROUTINE GRIB2WGRID (IU06, KPROMA,                              &
      &                 KGRIB_HANDLE, KGRIB, ISIZE,                &
      &                 LLUNSTR,                                   &
      &                 NXFF, NYFF, KLONRGG_LOC,                   &
@@ -35,16 +35,16 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!      *CALL GRIB2WGRID* (IU06, KPROMA_WAM,
+!      *CALL GRIB2WGRID* (IU06, KPROMA,
 !    &                    KGRIB_HANDLE, KGRIB, ISIZE,
 !    &                    NXFF, NYFF, KRGG, KLONRGG_LOC, XDELLA, ZDELLO,
 !    &                    PMISS, PPREC, PPEPS,
 !    &                    CDATE, IFORP, IPARAM, KZLEV, KKK, MMM, FIELD)
 
 !        *IU06*   - OUTPUT UNIT.
-!        *KPROMA_WAM* -IF OPENMP IS USED THEN IT WILL BE THE
-!                     NUMBER OF GRID POINTS THREADS. OTHERWISE IT CAN BE USED
-!                     TO SPLIT THE GRID POINTS INTO CHUNCKS
+!        *KPROMA* - IF OPENMP IS USED THEN IT WILL BE THE
+!                   NUMBER OF GRID POINTS THREADS. OTHERWISE IT CAN BE USED
+!                   TO SPLIT THE GRID POINTS INTO CHUNCKS
 !        *KGRIB_HANDLE GRIB API HANDLE TO THE DATA
 !        *KGRIB*  - GRIB CODED DATA ARRAY
 !        *ISIZE*  - SIZE OF KGRIB
@@ -95,12 +95,13 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "adjust.intfb.h"
 #include "incdate.intfb.h"
 #include "wstream_strg.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, KPROMA_WAM, KGRIB_HANDLE,ISIZE
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, KPROMA, KGRIB_HANDLE,ISIZE
       INTEGER(KIND=JWIM), INTENT(IN) :: NXFF, NYFF, KRGG
       INTEGER(KIND=JWIM), INTENT(IN) :: KGRIB(ISIZE)
       INTEGER(KIND=JWIM), INTENT(IN) :: KLONRGG_LOC(NYFF)
@@ -116,7 +117,8 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
 
       LOGICAL, INTENT(IN) :: LLUNSTR
 
-      INTEGER(KIND=JWIM) :: NPROMA, LL, LS, LE
+
+      INTEGER(KIND=JWIM) :: LL, LS, LE
       INTEGER(KIND=JWIM) :: ITABLE
       INTEGER(KIND=JWIM) :: NC, NR, I, J, JSN, K, L, JRGG, IREPR, IR, IVAL, IDUM
       INTEGER(KIND=JWIM) :: IRET, ILEN1, IEN
@@ -185,10 +187,11 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
       PMOSOP=0.0_JWRB
       PMOEAP=0.0_JWRB
       PMONOP=0.0_JWRB
+
       OUTDM: DO K=1,NYFF
         JSN=NYFF-K+1
         DO I=1,KLONRGG_LOC(JSN)
-          IF (YLAT(I,K).EQ.PMISS .OR. XLON(I,K).EQ.PMISS) CYCLE
+          IF (YLAT(I,K) == PMISS .OR. XLON(I,K) == PMISS) CYCLE
           PMOWEP=XLON(I,K)
           PMOSOP=YLAT(I,K)
           PMOEAP=XLON(I,K)
@@ -199,7 +202,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
       DO K=1,NYFF
         JSN=NYFF-K+1
         DO I=1,KLONRGG_LOC(JSN)
-          IF (YLAT(I,K).EQ.PMISS .OR. XLON(I,K).EQ.PMISS) CYCLE
+          IF (YLAT(I,K) == PMISS .OR. XLON(I,K) == PMISS) CYCLE
           PMOWEP=MIN(PMOWEP,XLON(I,K))
           PMOSOP=MIN(PMOSOP,YLAT(I,K))
           PMOEAP=MAX(PMOEAP,XLON(I,K))
@@ -214,9 +217,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
       NR=NRFULL
 
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'jScansPositively',ISCAN)
-      IF (ISCAN.EQ.0) THEN
+      IF (ISCAN == 0) THEN
         LLSCANNS=.TRUE.
-      ELSEIF (ISCAN.EQ.1) THEN
+      ELSEIF (ISCAN == 1) THEN
         LLSCANNS=.FALSE.
       ELSE
         WRITE(IU06,*) '***********************************'
@@ -236,9 +239,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'editionNumber',IEN)
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'section1Length',ILEN1)
 
-      IF ((IEN.EQ.1 .AND. ILEN1.GT.28) .OR. IEN.NE.1) THEN
+      IF ((IEN == 1 .AND. ILEN1 > 28) .OR. IEN /= 1) THEN
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'localDefinitionNumber',ILOC,KRET=IRET)
-        IF (IRET.NE.JPGRIB_SUCCESS) THEN
+        IF (IRET /= JPGRIB_SUCCESS) THEN
           WRITE(IU06,*) '   Data do not contain localDefinitionNumber !'
           WRITE(IU06,*) '   The program will continue wihtout it.'
           ILOC=-1
@@ -246,12 +249,12 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
       ELSE
         ILOC=-1
       ENDIF
-      IF (ILOC.EQ.4) THEN
+      IF (ILOC == 4) THEN
         WRITE(IU06,*) '   OCEAN MODEL DATA DECODED, PARAM= ',IPARAM
 
         LLOCEAN=.TRUE.
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'flagForNormalOrStaggeredGrid',ISTAG)
-        IF (ISTAG.NE.1 .AND. ISTAG.NE.0) THEN 
+        IF (ISTAG /= 1 .AND. ISTAG /= 0) THEN 
           WRITE(IU06,*) '***************************************'
           WRITE(IU06,*) '*                                     *'
           WRITE(IU06,*) '*  FATAL ERROR IN SUB. GRIB2WGRID     *'
@@ -268,7 +271,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
         ENDIF
 
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'flagForIrregularGridCoordinateList',ICRLST)
-        IF (ICRLST.NE.2) THEN
+        IF (ICRLST /= 2) THEN
           WRITE(IU06,*) '***************************************'
           WRITE(IU06,*) '*                                     *'
           WRITE(IU06,*) '*  FATAL ERROR IN SUB. GRIB2WGRID     *'
@@ -286,7 +289,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
 
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'coordinate3Flag',ICFG3)
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'coordinate4Flag',ICFG4)
-        IF (ICFG3.NE.3 .OR. ICFG4.NE.4) THEN
+        IF (ICFG3 /= 3 .OR. ICFG4 /= 4) THEN
           WRITE(IU06,*) '***************************************'
           WRITE(IU06,*) '*                                     *'
           WRITE(IU06,*) '*  FATAL ERROR IN SUB. GRIB2WGRID     *'
@@ -328,7 +331,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
         CALL ABORT1
       ENDIF
 
-      IF (JRGG.EQ.1) THEN
+      IF (JRGG == 1) THEN
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'PLPresent',IPLPRESENT)
         IF (IPLPRESENT == 1) THEN
           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberOfPointsAlongAMeridian',NB_PL)
@@ -344,11 +347,11 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
         ENDDO
         IR=0
         DO J=1,NB_PL
-          IF (PL(J).NE.0) IR=IR+1
+          IF (PL(J) /= 0) IR=IR+1
         ENDDO
         NR=IR
 
-      ELSEIF (JRGG.EQ.0) THEN
+      ELSEIF (JRGG == 0) THEN
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Ni',IVAL)
         NC=IVAL
       ELSE
@@ -357,7 +360,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
       ENDIF
 
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'levtype',ILEVTYPE)
-      IF (ILOC.GE.0) THEN
+      IF (ILOC >= 0) THEN
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'stream',ISTREAM)
       ELSE
         ISTREAM=0
@@ -365,15 +368,15 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
       IDUM=0
       CALL WSTREAM_STRG(ISTREAM,CSTREAM,IDUM,IDUM,CDUM,IDUM,LASTREAM)
 
-      IF (CSTREAM.EQ.'****' .OR.                                        &
-     &   (LASTREAM .AND. ILEVTYPE.NE.209 .AND. ILEVTYPE.NE.212 .AND.    &
+      IF (CSTREAM == '****' .OR.                                        &
+     &   (LASTREAM .AND. ILEVTYPE /= 209 .AND. ILEVTYPE /= 212 .AND.    &
      &    .NOT.LLOCEAN) ) THEN 
         LLNONWAVE=.TRUE.
       ELSE
         LLNONWAVE=.FALSE.
       ENDIF
 
-      IF (IREPR.NE.0 .AND. IREPR.NE.4) THEN
+      IF (IREPR /= 0 .AND. IREPR /= 4) THEN
         WRITE(IU06,*) '***************************************'
         WRITE(IU06,*) '*                                     *'
         WRITE(IU06,*) '*  FATAL ERROR IN SUB. GRIB2WGRID     *'
@@ -388,7 +391,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
         CALL ABORT1
       ENDIF
 
-      IF (ILEVTYPE.EQ.105 .OR. ILEVTYPE.EQ.160) THEN
+      IF (ILEVTYPE == 105 .OR. ILEVTYPE == 160) THEN
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'level',KZLEV)
       ELSE
         KZLEV=0
@@ -398,7 +401,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
 !     --------------------------------------------
 
 !     START DATE. 
-      IF (ILOC.EQ.11) THEN
+      IF (ILOC == 11) THEN
 !       Supplementary data used by the analysis:
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'dateOfAnalysis',IYYYYMMDD)
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'timeOfAnalysis',IHHMM)
@@ -413,13 +416,13 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'stepType',CSTEPTYPE)
 
 !     FORECAST STEP (in seconds)
-      IF (CSTEPTYPE(1:7) .EQ. 'instant') THEN
+      IF (CSTEPTYPE(1:7) == 'instant') THEN
         CALL IGRIB_SET_VALUE(KGRIB_HANDLE,'stepUnits','s')
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'step',STEP)
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'startStep',START_STEP)
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'endStep',END_STEP)
 !       THE DATA ARE VALID BETWEEN TWO TIMES. TAKE THE MIDDLE POINT
-        IF (START_STEP.NE.END_STEP) THEN
+        IF (START_STEP /= END_STEP) THEN
           STEP=(END_STEP-START_STEP)/2
         ENDIF
         IFORP=STEP
@@ -437,7 +440,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
 !     --------------------------                                    
 
       ALLOCATE(RLONRGG(NR))
-      RLONRGG=0
+      RLONRGG(:)=0
       ALLOCATE(RDELLO(NR))
       ALLOCATE(RLAT(NR))
 
@@ -460,7 +463,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
 !!!   THE AMBIGOUS DEFINITION FOR IRREGULAR GRIDS. FOR NON WAVE FIELDS,
 !!!   A GAUSSIAN GRID IMPLIES THAT THE GRID IS GLOBAL, THEREFORE
 !!!   RMOEAP IS IMPLICITLY KNOWN.
-        IF (IREPR.EQ.4 .AND. LLNONWAVE) THEN
+        IF (IREPR == 4 .AND. LLNONWAVE) THEN
           DELLO = 360.0_JWRB/MAX(1,NC)
           RMOEAP = RMOWEP+360.0_JWRB - DELLO
           IPERIODIC = 1
@@ -470,7 +473,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
           CALL ADJUST (RMOWEP, RMOEAP)
           IPERIODIC = 0
           DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
-          IF (RMOEAP-RMOWEP+1.5_JWRB*DELLO.GE.360.0_JWRB) IPERIODIC = 1
+          IF (RMOEAP-RMOWEP+1.5_JWRB*DELLO >= 360.0_JWRB) IPERIODIC = 1
         ENDIF
 
       ELSE
@@ -503,15 +506,15 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
         RMOEAP = IVAL*1.E-6_JWRB
       ENDIF
 
-      IF (JRGG.EQ.1) THEN
+      IF (JRGG == 1) THEN
         ISTART=1
-        DO WHILE(PL(ISTART).EQ.0 .AND. ISTART.LT.NB_PL)
+        DO WHILE(PL(ISTART) == 0 .AND. ISTART < NB_PL)
            ISTART=ISTART+1
         ENDDO
         ISTART=ISTART-1
 
         ISTOP=0
-        DO WHILE(PL(NB_PL-ISTOP).EQ.0 .AND. ISTOP.LT.NB_PL)
+        DO WHILE(PL(NB_PL-ISTOP) == 0 .AND. ISTOP < NB_PL)
           ISTOP=ISTOP+1
         ENDDO
 
@@ -530,7 +533,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                              &
      &                      'latitudeOfLastGridPointInDegrees',YLAST)
 
-        IF (ISTART.NE.0 .OR. ISTOP.NE.0) THEN
+        IF (ISTART /= 0 .OR. ISTOP /= 0) THEN
           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                            &
      &                       'jDirectionIncrementInDegrees',DELLA)
 
@@ -547,8 +550,8 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
         ENDIF
 
 
-      ELSEIF (JRGG.EQ.0) THEN
-        RLONRGG=NC
+      ELSEIF (JRGG == 0) THEN
+        RLONRGG(:)=NC
       ELSE
         WRITE(IU06,*) ' SUB GRIB2WGRID : REPRESENTATION OF THE FIELD NOT KNOWN'
         CALL ABORT1
@@ -567,7 +570,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
       KRMONOP=NINT(RMONOP*100.0_JWRB)
       KRMOSOP=NINT(RMOSOP*100.0_JWRB)
 
-      IF (IPERIODIC.EQ.1) THEN
+      IF (IPERIODIC == 1) THEN
         DELLO=360.0_JWRB/MAX(1,NC)
         DO J=1,NR
           JSN=NR-J+1
@@ -583,21 +586,21 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
 
 
       ITOP=0
-      IF (KPMONOP.GT.KRMONOP) THEN
-        IF (KPARFRSTT.NE.IPARAM) THEN
+      IF (KPMONOP > KRMONOP) THEN
+        IF (KPARFRSTT /= IPARAM) THEN
           KPARFRSTT=IPARAM
         ENDIF
         ITOP=INT((PMONOP-RMONOP)/DELLA)+2
       ENDIF
       IBOT=0
-      IF (KPMOSOP.LT.KRMOSOP) THEN
-        IF (KPARFRSTB.NE.IPARAM) THEN
+      IF (KPMOSOP < KRMOSOP) THEN
+        IF (KPARFRSTB /= IPARAM) THEN
           KPARFRSTB=IPARAM
         ENDIF
         IBOT=INT((RMOSOP-PMOSOP)/DELLA)+2
       ENDIF
 
-      IF (KPMONOP.LT.KRMOSOP .OR. KPMOSOP.GT.KRMONOP) THEN
+      IF (KPMONOP < KRMOSOP .OR. KPMOSOP > KRMONOP) THEN
          WRITE(IU06,*) '***********************************'
          WRITE(IU06,*) '*                                 *'
          WRITE(IU06,*) '*  FATAL ERROR IN SUB. GRIB2WGRID *'
@@ -619,10 +622,10 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
          CALL ABORT1
       ENDIF
 
-      IF ((JRGG.EQ.0 .AND. IREPR.NE.4 .AND. IPERIODIC.NE.1              &
-     &     .AND. KPMOWEP.LT.KRMOWEP) .OR.                               &
-     &    (JRGG.EQ.0 .AND. IREPR.NE.4 .AND. IPERIODIC.NE.1              &
-     &     .AND. KPMOEAP.GT.NINT((RMOEAP+DELLO)*100.0_JWRB))) THEN
+      IF ((JRGG == 0 .AND. IREPR /= 4 .AND. IPERIODIC /= 1              &
+     &     .AND. KPMOWEP < KRMOWEP) .OR.                                &
+     &    (JRGG == 0 .AND. IREPR /= 4 .AND. IPERIODIC /= 1              &
+     &     .AND. KPMOEAP > NINT((RMOEAP+DELLO)*100.0_JWRB))) THEN
 
          WRITE(IU06,*) '***********************************'
          WRITE(IU06,*) '*                                 *'
@@ -653,15 +656,15 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
       ELSE
         LLINTERPOL=.TRUE.
 
-        IF (KPMONOP.EQ.KRMONOP .AND. KPMOSOP.EQ.KRMOSOP .AND.           &
-     &      KPMOWEP.EQ.KRMOWEP .AND. KPMOEAP.EQ.KRMOEAP       ) THEN
-           IF (JRGG.EQ.KRGG .AND. NC.EQ.NXFF .AND. NR.EQ.NYFF) THEN
+        IF (KPMONOP == KRMONOP .AND. KPMOSOP == KRMOSOP .AND.           &
+     &      KPMOWEP == KRMOWEP .AND. KPMOEAP == KRMOEAP       ) THEN
+           IF (JRGG == KRGG .AND. NC == NXFF .AND. NR == NYFF) THEN
 
               LLINTERPOL=.FALSE.
 
-              IF (KRGG.EQ.1) THEN
+              IF (KRGG == 1) THEN
                 DO J=1,NYFF
-                  IF (RLONRGG(J).NE.KLONRGG_LOC(J)) THEN
+                  IF (RLONRGG(J) /= KLONRGG_LOC(J)) THEN
                     LLINTERPOL=.TRUE.
                     EXIT
                   ENDIF
@@ -689,17 +692,16 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
 !     TRANSFORM WAVE SPECTRAL VALUE TO THEIR ACTUAL SCALE
       KKK=0
       MMM=0
-      IF (IPARAM.EQ.251 .AND. CSTREAM.NE.'****') THEN
+      IF (IPARAM == 251 .AND. CSTREAM /= '****') THEN
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'directionNumber',KKK)
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'frequencyNumber',MMM)
 
-        NPROMA=KPROMA_WAM
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(LL,LS,LE,L)
-        DO LL=1,NUMBEROFVALUES,NPROMA
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(LL, LS, LE, L)
+        DO LL = 1, NUMBEROFVALUES, KPROMA
           LS=LL
-          LE=MIN(LS+NPROMA-1,NUMBEROFVALUES)
+          LE=MIN(LS+KPROMA-1, NUMBEROFVALUES)
           DO L=LS,LE
-            IF (VALUES(L).NE.PMISS) THEN
+            IF (VALUES(L) /= PMISS) THEN
               VALUES(L) = 10.0_JWRB**(VALUES(L)-ABS(PPREC))- PPEPS
             ELSE
               VALUES(L) = PMISS
@@ -731,10 +733,10 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
 !       INTERPOLATE TO WAVE MODEL GRID
 !       ------------------------------
 
-        IF ((IPARAM.EQ.230 .OR. IPARAM.EQ.235 .OR. IPARAM.EQ.238 .OR.   &
-     &       IPARAM.EQ.242 .OR. IPARAM.EQ.249 .OR. IPARAM.EQ.122 .OR.   &
-     &       IPARAM.EQ.125 .OR. IPARAM.EQ.128 .OR. IPARAM.EQ.113) .AND. &
-     &       CSTREAM.NE.'****') THEN
+        IF ((IPARAM == 230 .OR. IPARAM == 235 .OR. IPARAM == 238 .OR.   &
+     &       IPARAM == 242 .OR. IPARAM == 249 .OR. IPARAM == 122 .OR.   &
+     &       IPARAM == 125 .OR. IPARAM == 128 .OR. IPARAM == 113) .AND. &
+     &       CSTREAM /= '****') THEN
 
 !         WE HAVE ASSUMED THAT THE FIELDS ARE GIVEN IN DEGREES !!!
           LLDIRFLD=.TRUE.
@@ -748,20 +750,20 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
 !         FOR WAVE DATA ALWAYS USE THE CLOSEST GRID POINT IF
 !         CORNER DATA ARE MISSING.
           LLNEAREST=.TRUE.
-        ELSEIF (ITOP.NE.0 .OR. IBOT.NE.0) THEN
+        ELSEIF (ITOP /= 0 .OR. IBOT /= 0) THEN
 !         MISSING DATA ARE USED TO PAD THE INPUT DATA
           LLNEAREST=.TRUE.
         ELSE
 !         FOR NON WAVE DATA USE THE CLOSEST GRID POINT IF
 !         CORNER DATA ARE FOUND TO BE MISSING.
           L=1
-          IF (L.LE.NUMBEROFVALUES) THEN
-            DO WHILE(VALUES(L).NE.PMISS)
+          IF (L <= NUMBEROFVALUES) THEN
+            DO WHILE(VALUES(L) /= PMISS)
               L=L+1
-              IF (L.GT.NUMBEROFVALUES) EXIT
+              IF (L > NUMBEROFVALUES) EXIT
             ENDDO
           ENDIF
-          IF (L.GT.NUMBEROFVALUES) THEN
+          IF (L > NUMBEROFVALUES) THEN
             LLNEAREST=.FALSE.
           ELSE
             LLNEAREST=.TRUE.
@@ -795,7 +797,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
               JSN=NR-KK+1
               DO II=1,RLONRGG(JSN)
                 L = L+1
-                IF (VALUES(L).NE.PMISS) THEN
+                IF (VALUES(L) /= PMISS) THEN
                   WORK(II,KK,1) = SIN(RAD*VALUES(L))
                   WORK(II,KK,2) = COS(RAD*VALUES(L))
                 ELSE
@@ -820,7 +822,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
               JSN=KK
               DO II=1,RLONRGG(JSN)
                 L = L+1
-                IF (VALUES(L).NE.PMISS) THEN
+                IF (VALUES(L) /= PMISS) THEN
                   WORK(II,KK,1) = SIN(RAD*VALUES(L))
                   WORK(II,KK,2) = COS(RAD*VALUES(L))
                 ELSE
@@ -842,7 +844,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
 
         DEALLOCATE(VALUES)
 
-        IF (IPERIODIC.EQ.1) THEN
+        IF (IPERIODIC == 1) THEN
           DO ID=1,NDIM
             DO KK=1,NR                                                
             JSN=NR-KK+1
@@ -859,7 +861,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
           DO I=1,KLONRGG_LOC(JSN)
 
 !           skip all missing points !
-            IF (YLAT(I,K).EQ.PMISS .OR. XLON(I,K).EQ.PMISS) CYCLE 
+            IF (YLAT(I,K) == PMISS .OR. XLON(I,K) == PMISS) CYCLE 
 
             LLSKIP=.FALSE.
             IF (.NOT.LLOCEAN) THEN
@@ -878,7 +880,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
             ELSE
               KK=1
               XK = YLAT(I,K)
-              DO WHILE (RLAT(KK).GT.XK.AND.KK.LE.NR) 
+              DO WHILE (RLAT(KK) > XK .AND. KK <= NR) 
                 KK=KK+1
               ENDDO
               KK=MAX(KK-1,1)
@@ -918,7 +920,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
             KSN1LIM=MIN(MAX(KSN1,1),NR)
             XIIP = XI/RDELLO(KSN1LIM)+1.0_JWRB
             IIP = INT(XIIP)
-            IF (IIP<1-IPERIODIC .OR. IIP>RLONRGG(KSN1LIM)) LLSKIP=.TRUE.
+            IF (IIP < 1-IPERIODIC .OR. IIP > RLONRGG(KSN1LIM)) LLSKIP=.TRUE.
             IIP = MIN(MAX(1-IPERIODIC,IIP),RLONRGG(KSN1LIM))
             IIP1 = IIP+1
             IF (IIP1 > RLONRGG(KSN1LIM)+IPERIODIC) THEN
@@ -933,22 +935,22 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
             ELSE IF (LLNEAREST .OR. LLNEAREST_LOC) THEN
 !             DETERMINE WHETHER ANY OF THE 4 CONERS HAS A MISSING DATA
 !             IF SO USE THE CLOSEST GRID POINT VALUE.
-              IF (WORK(II,  KK, 1).EQ.PMISS.OR.                        &
-     &            WORK(II1, KK, 1).EQ.PMISS.OR.                        &
-     &            WORK(IIP, KK1,1).EQ.PMISS.OR.                        &
-     &            WORK(IIP1,KK1,1).EQ.PMISS    ) THEN
+              IF (WORK(II,  KK, 1) == PMISS .OR.                        &
+     &            WORK(II1, KK, 1) == PMISS .OR.                        &
+     &            WORK(IIP, KK1,1) == PMISS .OR.                        &
+     &            WORK(IIP1,KK1,1) == PMISS    ) THEN
 
-                IF (DK1.LE.0.5_JWRB) THEN
+                IF (DK1 <= 0.5_JWRB) THEN
                   KCL=KK
                   ICL=II1
-                  IF (DII1.LE.0.5_JWRB) ICL=II
+                  IF (DII1 <= 0.5_JWRB) ICL=II
                 ELSE
                   KCL=KK1
                   ICL=IIP1
-                  IF (DIIP1.LE.0.5_JWRB) ICL=IIP
+                  IF (DIIP1 <= 0.5_JWRB) ICL=IIP
                 ENDIF
                 IF (LLDIRFLD) THEN
-                  IF (WORK(ICL,KCL,2).NE.PMISS) THEN
+                  IF (WORK(ICL,KCL,2) /= PMISS) THEN
                     FIELD(I,K)=DEG*ATAN2(WORK(ICL,KCL,1),WORK(ICL,KCL,2))
                   ELSE
                     FIELD(I,K)=PMISS
@@ -959,26 +961,26 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA_WAM,                          &
 
 !               FOR NON WAVE FIELD, NON MISSING VALUE OVER SEA IS NEEDED
                 IF (LLNONWAVE) THEN
-                  IF (FIELD(I,K).EQ.PMISS) THEN
+                  IF (FIELD(I,K) == PMISS) THEN
                     NCOUNT=0
                     FIELD(I,K)=0.0_JWRB
-                    IF (WORK(II,KK,1).NE.PMISS) THEN
+                    IF (WORK(II,KK,1) /= PMISS) THEN
                       FIELD(I,K)=FIELD(I,K)+WORK(II,KK,1)
                       NCOUNT=NCOUNT+1
                     ENDIF
-                    IF (WORK(II1,KK,1).NE.PMISS) THEN
+                    IF (WORK(II1,KK,1) /= PMISS) THEN
                       FIELD(I,K)=FIELD(I,K)+WORK(II1,KK,1)
                       NCOUNT=NCOUNT+1
                     ENDIF
-                    IF (WORK(IIP,KK1,1).NE.PMISS) THEN
+                    IF (WORK(IIP,KK1,1) /= PMISS) THEN
                       FIELD(I,K)=FIELD(I,K)+WORK(IIP,KK1,1)
                       NCOUNT=NCOUNT+1
                     ENDIF
-                    IF (WORK(IIP1,KK1,1).NE.PMISS) THEN
+                    IF (WORK(IIP1,KK1,1) /= PMISS) THEN
                       FIELD(I,K)=FIELD(I,K)+WORK(IIP1,KK1,1)
                       NCOUNT=NCOUNT+1
                     ENDIF
-                    IF (NCOUNT.GT.0) THEN
+                    IF (NCOUNT > 0) THEN
                       FIELD(I,K)=FIELD(I,K)/NCOUNT
                     ENDIF
                   ENDIF

@@ -53,6 +53,7 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+
 #include "unblkrord.intfb.h"
 
       REAL(KIND=JWRB), DIMENSION(NIBLO_OUT), INTENT(INOUT) :: BLOCK
@@ -94,7 +95,7 @@
 !     ---------------------
 
       IF (LLUNSTR) THEN
-        IF (OUT_METHOD .EQ. 1) THEN
+        IF (OUT_METHOD == 1) THEN
           ALLOCATE(BLOCK_G(NIBLO_OUT))
           CALL UNBLKRORD(1, 1, NIBLO, 1, 1, 1, 1, BLOCK(1), BLOCK_G(1))
 !!! I believe one could have an openmp loop here !!!!
@@ -104,17 +105,17 @@
               XLO = REAL(AMOWEP+REAL(IX-1,JWRB)*ZDELLO(IY),JWRU)
 !!debile
 !!! need to find out unstructured grid left longitude (I assume -180 for now)
-              IF (XLO.GE.180.0_JWRU) XLO=MAX(XLO-IPER*360.0_JWRU,-180.0_JWRU)
+              IF (XLO >= 180.0_JWRU) XLO=MAX(XLO-IPER*360.0_JWRU,-180.0_JWRU)
 
               IE=IE_OUTPTS(IX,IY)
-              IF (IE.NE.-1) THEN
+              IF (IE /= -1) THEN
 !!! this is not very efficient
                 LLCLST=.FALSE.
                 NI = INE_GLOBAL(:,IE)
                 XYELE(1,:)=NODES(NI)%X
                 XYELE(2,:)=NODES(NI)%Y
                 SKALAR(:)=BLOCK_G(NI)
-                IF (ANY(BLOCK_G(NI).EQ.PMISS)) LLCLST=.TRUE.
+                IF (ANY(BLOCK_G(NI) == PMISS)) LLCLST=.TRUE.
                 CALL INTELEMENT_IPOL(LLCLST, XYELE, SKALAR, XLO, XLA, IE, PMS8, GRID8)
                 GRID(IX,IY)=GRID8
               ENDIF
@@ -122,7 +123,7 @@
           ENDDO
           DEALLOCATE(BLOCK_G)
         ENDIF
-        IF (OUT_METHOD .EQ. 2) THEN
+        IF (OUT_METHOD == 2) THEN
           DO iNode=1,NIBLO_OUT
             IX=IXarr(iNode)
             IY=IYarr(iNode)

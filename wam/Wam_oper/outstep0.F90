@@ -23,21 +23,18 @@ SUBROUTINE OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
       USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN, OCEAN2WAVE
 
-      USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,              & 
+      USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,                        & 
      &                      IRCD     ,IRU10    , IRALTHS  ,IRALTHSC  ,IRALTRC ,   &
-     &                      NGOUT    ,LLOUTERS ,                                  &
-     &                      NIPRMOUT ,                                            &
-     &                      LFDB     ,                                            &
-     &                      LRSTST0  ,LWAMANOUT
+     &                      NGOUT    ,NIPRMOUT , LFDB     ,LRSTST0  ,LWAMANOUT
       USE YOWGRIBHD, ONLY : LGRHDIFS 
-      USE YOWGRID  , ONLY : IJS      ,IJL       ,IJSLOC   ,IJLLOC  ,NPROMA_WAM, NBLOC
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE
       USE YOWMESPAS, ONLY : LGRIBOUT ,LNOCDIN  ,LWAVEWIND 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : CDTPRO   ,CDTINTT  ,IREST   , MARSTYPE ,    &
      &                      LLSOURCE , LANAONLY ,LFRSTFLD
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE UNWAM, ONLY : EXCHANGE_FOR_FL1
+      USE UNWAM    , ONLY : EXCHANGE_FOR_FL1
       USE YOWUNPOOL ,ONLY : LLUNSTR
 
       USE FDBSUBS_MOD, ONLY : IFLUSHFDBSUBS
@@ -46,6 +43,8 @@ SUBROUTINE OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
+#include "abort1.intfb.h"
 #include "mpcrtbl.intfb.h"
 #include "outwint.intfb.h"
 #include "outwpsp.intfb.h"
@@ -55,28 +54,27 @@ SUBROUTINE OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
 #include "setice.intfb.h"
 #include "wdfluxes.intfb.h"
 
-      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
-      TYPE(FREQUENCY), DIMENSION(IJS:IJL,NFRE), INTENT(INOUT) :: WVPRPT
-      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
-      TYPE(INTGT_PARAM_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: INTFLDS
-      TYPE(WAVE2OCEAN), DIMENSION(IJS:IJL), INTENT(INOUT) :: WAM2NEMO
-      TYPE(OCEAN2WAVE), DIMENSION(IJS:IJL), INTENT(IN) :: NEMO2WAM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
+      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)           :: WVENVI
+      TYPE(FREQUENCY), DIMENSION(NPROMA_WAM, NFRE, NCHNK), INTENT(INOUT)       :: WVPRPT
+      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)        :: FF_NOW
+      TYPE(INTGT_PARAM_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)    :: INTFLDS
+      TYPE(WAVE2OCEAN), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)            :: WAM2NEMO
+      TYPE(OCEAN2WAVE), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)               :: NEMO2WAM
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
 
 
-      INTEGER(KIND=JWIM) :: IJ
-      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MIJ
+      INTEGER(KIND=JWIM) :: IJ, ICHNK, KIJS, KIJL
+      INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK) :: MIJ
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: BOUTST0
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:) :: BOUTST0
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK) :: XLLWS
 
       CHARACTER(LEN= 2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDTINTTBAK
 
       LOGICAL :: LLFLUSH
-      LOGICAL :: FFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
+      LOGICAL, DIMENSION(JPPFLAG) :: FFLAGBAK, GFLAGBAK
 
 ! ----------------------------------------------------------------------
 
@@ -90,9 +88,6 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
       LLFLUSH = .FALSE.
       LRSTST0=.FALSE.
 
-      NPROMA=NPROMA_WAM
-
-
       CDTINTTBAK=CDTINTT
       CDTINTT=CDTPRO
 
@@ -101,45 +96,51 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !          ----------------------------
       IF (LLSOURCE) THEN
 
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=IJS,IJL,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL WDFLUXES (KIJS, KIJL,                                 &
-     &                   MIJ(KIJS),                                  &
-     &                   FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),   &
-     &                   WVPRPT(KIJS:KIJL,:),                        &
-     &                   WVENVI(KIJS), FF_NOW(KIJS),                 &
-     &                   INTFLDS(KIJS), WAM2NEMO(KIJS) )
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
+        DO ICHNK = 1, NCHNK
+          CALL WDFLUXES (1, NPROMA_WAM,                          &
+     &                   MIJ(:,ICHNK),                           &
+     &                   FL1(:,:,:,ICHNK), XLLWS(:,:,:,ICHNK),   &
+     &                   WVPRPT(:,:,ICHNK),                      &
+     &                   WVENVI(:,ICHNK), FF_NOW(:,ICHNK),       &
+     &                   INTFLDS(:,ICHNK), WAM2NEMO(:,ICHNK) )
         ENDDO
 !$OMP   END PARALLEL DO
 
-        IF (LLUNSTR) CALL EXCHANGE_FOR_FL1(FL1)
+        IF (LLUNSTR) THEN
+!!!!! this will need to be adapted to use FL1 
+!!! is it still needed ?
+        WRITE(0,*) '!!! ********************************* !!'
+        WRITE(0,*) '!!! in outstep0. Not yet ready !!!' 
+        WRITE(0,*) '!!! ********************************* !!'
+        CALL ABORT1
+!!!!           CALL EXCHANGE_FOR_FL1(FL1)
+        ENDIF
 
       ELSE
-        MIJ(:) = NFRE
-        XLLWS(:,:,:) = 0.0_JWRB
+        MIJ(:,:) = NFRE
+        XLLWS(:,:,:,:) = 0.0_JWRB
       ENDIF
 
 
 !     1.2 SET SPECTRA ON ICE POINTS TO ZERO
 !         ---------------------------------
       IF (LICERUN .AND. LMASKICE .AND. LLSOURCE) THEN
+
         CALL GSTATS(1439,0)
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=IJS,IJL,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL SETICE(KIJS, KIJL, FL1(KIJS:KIJL,:,:) ,            &
-     &                CICOVER(KIJS:KIJL), WSWAVE(KIJS:KIJL), WDWAVE(KIJS:KIJL))
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
+        DO ICHNK = 1, NCHNK
+          CALL SETICE(1, NPROMA_WAM, FL1(:,:,:,ICHNK) ,                          &
+     &                CICOVER(:, ICHNK), WSWAVE(:, ICHNK), WDWAVE(:, ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1439,1)
+
       ENDIF
 
 !     2.0 OUTPUT POINT SPECTRA (not usually used at ECMWF)
 !         -----------------------------------------------
-      IF (NGOUT > 0 .OR. LLOUTERS) CALL OUTWPSP (IJS, IJL, FL1, FF_NOW)
+      IF (NGOUT > 0 ) CALL OUTWPSP (FL1, FF_NOW)
 
 
 !*    3.0 SAVE INITIAL INTEGRATED FIELDS (if needed)
@@ -147,7 +148,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
       IF ((MARSTYPE == 'cf' .OR. MARSTYPE == 'pf' .OR.                 &
      &     MARSTYPE == 'fc' .OR. MARSTYPE == '4v' .OR.                 &
      &     LANAONLY         .OR. LFRSTFLD             )                &
-     &   .AND. LWAMANOUT) THEN
+     &    .AND. LWAMANOUT) THEN
 
         IF (LFRSTFLD) THEN
           FFLAGBAK=FFLAG
@@ -169,7 +170,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
           ENDIF
 
 !         change the output flags need to reset mapping
-            CALL MPCRTBL
+          CALL MPCRTBL
 
         ENDIF
 
@@ -180,20 +181,20 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 
 !       COMPUTE OUTPUT PARAMETERS AND PRINT OUT NORMS
         IF (NIPRMOUT > 0) THEN
-          ALLOCATE(BOUTST0(IJS:IJL,NIPRMOUT))
-          CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS,                   &
+          ALLOCATE(BOUTST0(NPROMA_WAM, NIPRMOUT, NCHNK))
+          CALL OUTBS (MIJ, FL1, XLLWS,                             &
      &                WVPRPT, WVENVI, FF_NOW, INTFLDS, NEMO2WAM,   &
      &                BOUTST0)
         ENDIF
 
         IF ( .NOT. LRESTARTED ) THEN
           IF (IREST == 1 .AND. MARSTYPE /= 'an' .AND. LGRIBOUT) THEN
-            CALL OUTSPEC(IJS, IJL, FL1, CICOVER)
+            CALL OUTSPEC(FL1, FF_NOW)
             LLFLUSH = .TRUE.
           ENDIF
 
           IF (NIPRMOUT > 0 ) THEN
-            CALL OUTWINT(IJS, IJL, BOUTST0)
+            CALL OUTWINT(BOUTST0)
             LLFLUSH = .TRUE.
           ENDIF
 

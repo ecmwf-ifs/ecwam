@@ -18,7 +18,7 @@ PROGRAM preset
 !     RENATE PORTZ       MPI      JUNE 1990 COMPUTATION OF INITIAL
 !                                           JONSWAP SPECTRA FROM
 !                                           INITIAL WIND FIELD.
-!     CYCLE_4 MODICIFATIONS:
+!     CYCLE_4 MODIFICATIONS:
 !     ----------------------
 !     H. GUNTHER  GKSS/ECMWF  DECEMBER 1990
 !     J. BIDLOT    ECMWF   FEBRUARY 1996  MESSAGE PASSING
@@ -69,14 +69,12 @@ PROGRAM preset
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRID  , ONLY : NPROMA_WAM, NBLOC
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,    &
      &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
-      USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL,                   &
+      USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL     , NTOTIJ  ,    &
+     &            NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK,             & 
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
-      USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,    &
-     &            SB       ,THETAQ
       USE YOWMAP   , ONLY : BLK2GLO   ,IRGG     ,AMOWEP   ,             &
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,    &
      &            BLK2LOC 
@@ -88,7 +86,7 @@ PROGRAM preset
      &            NIBLO    ,SWAMPWIND,CLDOMAIN ,LL1D
       USE YOWPCONS , ONLY : G        ,RAD      ,DEG      ,ZMISS    ,    &
      &            ROAIR
-      USE YOWSHAL  , ONLY : DEPTH_INPUT, WVENVI
+      USE YOWSHAL  , ONLY : DEPTH_INPUT, WVENVI, BATHYMAX
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,    &
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,    &
      &            IDELPRO  ,IDELWI   ,IDELWO   ,                        &
@@ -120,6 +118,8 @@ PROGRAM preset
 #include "cigetdeac.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "iniwcst.intfb.h"
+#include "init_fieldg.intfb.h"
+#include "mchunk.intfb.h"
 #include "mstart.intfb.h"
 #include "mswell.intfb.h"
 #include "outspec.intfb.h"
@@ -135,26 +135,29 @@ PROGRAM preset
       INTEGER(KIND=JWIM), PARAMETER :: NFIELDS=1
       INTEGER(KIND=JWIM) :: ILEN, IREAD, IOPTI
       INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IPRM, ICHNK
       INTEGER(KIND=JWIM) :: IU05, IU07 
       INTEGER(KIND=JWIM) :: I4(2)
       INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
 
       REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JWRB) :: THETA, FETCH, FRMAX 
+      REAL(KIND=JWRB) :: FM, ALFA, GAMMA, SA, SB, THETAQ
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: X4(2)
       REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
 
       CHARACTER(LEN=1) :: CLTUNIT
-      CHARACTER(LEN=14) :: ZERO, CDUM
       CHARACTER(LEN=70) :: HEADER
       CHARACTER(LEN=120) :: SFILENAME, ISFILENAME
 
-      PARAMETER (ZERO=' ', CDUM='00000000000000')
+      CHARACTER(LEN=14), PARAMETER :: ZERO='              '
+      CHARACTER(LEN=14), PARAMETER :: CDUM='00000000000000'
 
       LOGICAL :: LLINIT
       LOGICAL :: LLALLOC_FIELDG_ONLY
       LOGICAL :: LWCUR
+      LOGICAL :: LLALLOC_ONLY, LLINIALL, LLOCAL
 
 ! ----------------------------------------------------------------------
 
@@ -229,9 +232,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       YCLASS   = 'rd'
       YEXPVER  = USERID//'a'
 
-      NPROMA_WAM = 1
-      NPROMA_WAM = HUGE(NPROMA_WAM)/2
-      NBLOC = 1
+      NPROMA_WAM = 0
 
 !*    1. DEFINE UNIT NAMES.
 !        ------------------
@@ -311,6 +312,8 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
         IJS = 1
         IJL = NIBLO
+        NTOTIJ = IJL-IJS+1
+        IF(NPROMA_WAM == 0 ) NPROMA_WAM = NTOTIJ
         NXFF=NIBLO
         NYFF=1
         NSTART=1
@@ -320,14 +323,29 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         IJGLOBAL_OFFSET=0
         NBLKS=NSTART
         NBLKE=NEND
+
+        CALL MCHUNK
+
         IF (ALLOCATED(BLK2LOC)) DEALLOCATE(BLK2LOC)
-        ALLOCATE(BLK2LOC(IJSLOC:IJLLOC))
-        DO IJ = IJSLOC, IJLLOC 
-          BLK2LOC(IJ)%IFROMIJ=IJ
-          BLK2LOC(IJ)%KFROMIJ=1
-          BLK2LOC(IJ)%JFROMIJ=1
+        ALLOCATE(BLK2LOC(NPROMA_WAM, NCHNK))
+        DO ICHNK = 1, NCHNK
+          DO IPRM = 1, NPROMA_WAM 
+            IJ = IJFROMCHNK(IPRM, ICHNK)
+            IF (IJ > 0) THEN
+              BLK2LOC(IPRM, ICHNK)%IFROMIJ=IJ
+              BLK2LOC(IPRM, ICHNK)%KFROMIJ=1
+              BLK2LOC(IPRM, ICHNK)%JFROMIJ=1
+            ELSE
+              BLK2LOC(IPRM, ICHNK)%IFROMIJ=BLK2LOC(1,ICHNK)%IFROMIJ
+              BLK2LOC(IPRM, ICHNK)%KFROMIJ=BLK2LOC(1,ICHNK)%KFROMIJ
+              BLK2LOC(IPRM, ICHNK)%JFROMIJ=BLK2LOC(1,ICHNK)%JFROMIJ
+            ENDIF
+          ENDDO
         ENDDO
+
       ELSE
+        NTOTIJ = IJL-IJS+1
+        IF(NPROMA_WAM == 0 ) NPROMA_WAM = NTOTIJ
         NXFF=NGX
         NYFF=NGY
         NSTART=1
@@ -337,28 +355,45 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         IJGLOBAL_OFFSET=0
         NBLKS=NSTART
         NBLKE=NEND
+
+        CALL MCHUNK
+
         IF (ALLOCATED(BLK2LOC)) DEALLOCATE(BLK2LOC)
-        ALLOCATE(BLK2LOC(IJSLOC:IJLLOC))
-        DO IJ = IJSLOC, IJLLOC 
-          BLK2LOC(IJ)%IFROMIJ=BLK2GLO(IJ)%IXLG
-          BLK2LOC(IJ)%KFROMIJ=BLK2GLO(IJ)%KXLT
-          BLK2LOC(IJ)%JFROMIJ=NGY-BLK2GLO(IJ)%KXLT+1
+        ALLOCATE(BLK2LOC(NPROMA_WAM, NCHNK))
+        DO ICHNK = 1, NCHNK
+          DO IPRM = 1, NPROMA_WAM 
+            IJ = IJFROMCHNK(IPRM, ICHNK)
+            IF (IJ > 0) THEN
+              BLK2LOC(IPRM, ICHNK)%IFROMIJ=BLK2GLO(IJ)%IXLG
+              BLK2LOC(IPRM, ICHNK)%KFROMIJ=BLK2GLO(IJ)%KXLT
+              BLK2LOC(IPRM, ICHNK)%JFROMIJ=NGY-BLK2GLO(IJ)%KXLT+1
+            ELSE
+              BLK2LOC(IPRM, ICHNK)%IFROMIJ=BLK2LOC(1,ICHNK)%IFROMIJ
+              BLK2LOC(IPRM, ICHNK)%KFROMIJ=BLK2LOC(1,ICHNK)%KFROMIJ
+              BLK2LOC(IPRM, ICHNK)%JFROMIJ=BLK2LOC(1,ICHNK)%JFROMIJ
+            ENDIF
+          ENDDO
         ENDDO
+
       ENDIF
 
+      IF (ALLOCATED(WVENVI)) DEALLOCATE(WVENVI)
+      ALLOCATE(WVENVI(NPROMA_WAM,NCHNK))
 
-!!!  transfer DEPTH_INPUT to WVENVI
-      ALLOCATE(WVENVI(NSTART(IRANK):NEND(IRANK)))
-
-      DO IJ=NSTART(IRANK),NEND(IRANK)
-        WVENVI(IJ)%DEPTH = DEPTH_INPUT(IJ)
-
-!!!!   when this is moved to reading depth as an input field, wvenvi should be allocated and intialised in wvalloc !!!
-        WVENVI(IJ)%UCUR = 0.0_JWRB
-        WVENVI(IJ)%VCUR = 0.0_JWRB
+      DO ICHNK = 1, NCHNK
+        DO IPRM = 1, NPROMA_WAM 
+          IJ = IJFROMCHNK(IPRM,ICHNK)
+          IF (IJ > 0 ) THEN
+            WVENVI(IPRM,ICHNK)%DEPTH = DEPTH_INPUT(IJ)
+          ELSE
+            WVENVI(IPRM,ICHNK)%DEPTH = BATHYMAX
+          ENDIF
+          WVENVI(IPRM,ICHNK)%UCUR = 0.0_JWRB
+          WVENVI(IPRM,ICHNK)%VCUR = 0.0_JWRB
+        ENDDO
       ENDDO
-      DEALLOCATE(DEPTH_INPUT)
 
+      DEALLOCATE(DEPTH_INPUT)
 
 
 !!!   deallocate big arrays that were read in with READPRE
@@ -434,7 +469,6 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       WRITE(IU06,*) '  '
 
       WRITE (IU06,*) ' TEST OUTPUT LEVEL IS .......... ITEST = ', ITEST
-      WRITE (IU06,*) ' TEST OUTPUT IN BLOCK LOOP UPTO ITESTB = ', ITESTB
 
       WRITE (IU06,'('' JONSWAP PARAMETERS  :'',/)')
       WRITE (IU06,'('' ALFA : '',F10.5,'' FM : '',F10.5,'' GAMMA : '',  &
@@ -467,25 +501,24 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       IREAD=1
 
+      IF (.NOT.ALLOCATED(FL1)) ALLOCATE (FL1(NPROMA_WAM,NANG,NFRE,NCHNK))
 
-      IF (.NOT.ALLOCATED(FL1)) ALLOCATE (FL1(NIBLO,NANG,NFRE))
+      IF (.NOT.ALLOCATED(FF_NOW)) ALLOCATE(FF_NOW(NPROMA_WAM,NCHNK))
 
-      IF (.NOT.ALLOCATED(FF_NOW)) ALLOCATE(FF_NOW(NIBLO))
+      FF_NOW(:,:)%WSWAVE = WSPMIN
+      FF_NOW(:,:)%WDWAVE = 0.0_JWRB
+      FF_NOW(:,:)%UFRIC =  FF_NOW(:,:)%WSWAVE*0.035847_JWRB
+      FF_NOW(:,:)%TAUW = 0.1_JWRB*FF_NOW(:,:)%UFRIC
+      FF_NOW(:,:)%TAUWDIR = 0.0_JWRB 
+      FF_NOW(:,:)%Z0M = 0.00001_JWRB
+      FF_NOW(:,:)%AIRD = ROAIR      
+      FF_NOW(:,:)%WSTAR = 0.0_JWRB
+      FF_NOW(:,:)%CICOVER = 0.0_JWRB
+      FF_NOW(:,:)%CITHICK = 0.0_JWRB
 
-      FF_NOW(:)%WSWAVE = WSPMIN
-      FF_NOW(:)%WDWAVE = 0.0_JWRB
-      FF_NOW(:)%UFRIC =  FF_NOW(:)%WSWAVE*0.035847_JWRB
-      FF_NOW(:)%TAUW = 0.1_JWRB*FF_NOW(:)%UFRIC
-      FF_NOW(:)%TAUWDIR = 0.0_JWRB 
-      FF_NOW(:)%Z0M = 0.00001_JWRB
-      FF_NOW(:)%AIRD = ROAIR      
-      FF_NOW(:)%WSTAR = 0.0_JWRB
-      FF_NOW(:)%CICOVER = 0.0_JWRB
-      FF_NOW(:)%CITHICK = 0.0_JWRB
+      IF (.NOT.ALLOCATED(FF_NEXT)) ALLOCATE(FF_NEXT(NPROMA_WAM,NCHNK))
 
-      IF (.NOT.ALLOCATED(FF_NEXT)) ALLOCATE(FF_NEXT(NIBLO))
-
-      IF (.NOT.ALLOCATED(NEMO2WAM)) ALLOCATE(NEMO2WAM(NIBLO))
+      IF (.NOT.ALLOCATED(NEMO2WAM)) ALLOCATE(NEMO2WAM(NPROMA_WAM,NCHNK))
 
       IF (IOPTI > 0 .AND. IOPTI /= 3) THEN
 
@@ -496,15 +529,14 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=.FALSE.
 
-        CALL PREWIND (IJS, IJL, BLK2LOC,                 &
-     &                WVENVI, FF_NOW, FF_NEXT,           &
+        CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,  &
      &                LLINIT, LLALLOC_FIELDG_ONLY,       &
      &                IREAD,                             &
      &                NFIELDS, NGPTOTG, NC, NR,          &
      &                FIELDS, LWCUR, MASK_IN,            &
      &                NEMO2WAM)
 
-      FF_NOW(:)%TAUW = 0.1_JWRB * FF_NOW(:)%UFRIC**2
+      FF_NOW(:,:)%TAUW = 0.1_JWRB * FF_NOW(:,:)%UFRIC**2
 
       ENDIF
 
@@ -528,17 +560,43 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       IF (IOPTI /= 3) THEN
         THETAQ = THETA * RAD
-        CALL MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,             &
-     &              IJS, IJL, FL1, FF_NOW(IJS:IJL)%WSWAVE, FF_NOW(IJS:IJL)%WDWAVE)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
+        DO ICHNK = 1, NCHNK
+          CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,                      &
+     &                 FM, ALFA, GAMMA, SA, SB,                          &
+     &                 1, NPROMA_WAM, FL1(:,:,:,ICHNK),                     &
+     &                 FF_NOW(:,ICHNK)%WSWAVE, FF_NOW(:,ICHNK)%WDWAVE)
+        ENDDO
+!$OMP END PARALLEL DO
+
+        CDTPRO  = ZERO
+        CDATEWO = ZERO
+        CDAWIFL = ZERO
+        CDATEFL = ZERO
+
       ELSE
-        CALL MSWELL (IJS, IJL, BLK2LOC, FL1)
+
+        LLALLOC_ONLY=.FALSE.
+        LLINIALL=.FALSE.
+        LLOCAL=.TRUE.
+        CALL INIT_FIELDG(BLK2LOC, LLALLOC_ONLY, LLINIALL, LLOCAL)
+
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
+        DO ICHNK = 1, NCHNK
+          CALL MSWELL (1, NPROMA_WAM, BLK2LOC(:,ICHNK), FL1(:,:,:,ICHNK) )
+        ENDDO
+!$OMP END PARALLEL DO
+
 
         IF (LLUNSTR) THEN
 !         reset points with no flux out of the boundary to 0
-          DO M=1,NFRE
-            DO K=1,NANG
-              DO IJ=1,NIBLO
-                FL1(IJ,K,M) = FL1(IJ,K,M)*IOBPD(K,IJ)
+          DO ICHNK = 1, NCHNK
+            DO M=1,NFRE
+              DO K=1,NANG
+                DO IPRM = 1, KIJL4CHNK(ICHNK)
+                  IJ = IJFROMCHNK(IPRM, ICHNK)
+                  FL1(IPRM, K, M, ICHNK) = FL1(IPRM, K, M, ICHNK) * IOBPD(K,IJ)
+                ENDDO
               ENDDO
             ENDDO
           ENDDO
@@ -553,20 +611,20 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
 !     STRESS RELATED FIELDS :
       IF (.NOT.LGRIBOUT) THEN
-        CALL SAVSTRESS(IJS, IJL, WVENVI, FF_NOW, NBLKS, NBLKE, CDATEA, CDATEA) 
+        CALL SAVSTRESS(WVENVI, FF_NOW, NBLKS, NBLKE, CDATEA, CDATEA) 
       ENDIF
 
 
-      WRITE (IU06,*) ' SAVING SPECTRA '
-
-      CALL FLUSH(IU06)
 !     SPECTRA :
+      WRITE (IU06,*) ' SAVING SPECTRA '
+      CALL FLUSH(IU06)
       IF (LGRIBOUT) THEN
 !       THE COLD START SPECTRA WILL BE SAVED AS GRIB FILES.
         CDTPRO  = CDATEA
-        CALL OUTSPEC(IJS, IJL, FL1,  FF_NOW(IJS:IJL)%CICOVER)
+        CALL OUTSPEC(FL1, FF_NOW)
+
       ELSE
-        CALL SAVSPEC(IJS, IJL, FL1, NBLKS, NBLKE, CDATEA, CDATEA, CDUM)
+        CALL SAVSPEC(FL1, NBLKS, NBLKE, CDATEA, CDATEA, CDUM)
       ENDIF
 
 ! ----------------------------------------------------------------------

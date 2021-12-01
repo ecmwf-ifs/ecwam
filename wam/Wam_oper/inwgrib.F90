@@ -36,7 +36,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWGRID  , ONLY : NPROMA_WAM, NBLOC
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWPARAM , ONLY : NIBLO
       USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,ZDELLO,   NLONRGG
@@ -54,6 +54,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "grib2wgrid.intfb.h"
 #include "kgribsize.intfb.h"

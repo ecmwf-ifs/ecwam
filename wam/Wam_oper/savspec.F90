@@ -1,4 +1,4 @@
-      SUBROUTINE SAVSPEC(IJS, IJL, FL, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
+      SUBROUTINE SAVSPEC(FL1, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      MARCH 1997
@@ -11,9 +11,8 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *SAVSPEC(IJS,IJL,FL,NBLKS,NBLKE,CDTPRO,CDATEF,CDATER)
-!      *IJS:IJL - FIRST DIMENSION OF FL
-!     *FL*        ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
+!     *CALL* *SAVSPEC(FL1, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
+!     *FL1*       ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
 !     *NBLKS*     INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !     *NBLKE*     INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *CDTPRO*    CHAR*14   END DATE OF PROPAGATION.
@@ -36,8 +35,9 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL  ,KDEL    ,MDEL      ,    &
-     &           LRSTPARALW
-      USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
+     &                      LRSTPARALW
+      USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,        &
+     &                      NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWTEST  , ONLY : IU06
@@ -48,18 +48,19 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "expand_string.intfb.h"
 #include "grstname.intfb.h"
 #include "mpgatherfl.intfb.h"
 #include "writefl.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL1
       INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO, CDATEF, CDATER
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IJSG, IJLG, IJSB, IJLB, KIJS, KIJL, IPRM, ICHNK
       INTEGER(KIND=JWIM) :: IUNIT
       INTEGER(KIND=JWIM) :: IFCST
       INTEGER(KIND=JWIM) :: IRECV, MLOOP, KLOOP, MINF, MSUP, KINF, KSUP 
@@ -87,35 +88,59 @@
          FILENAME=FILENAME(1:LNAME)//'.%p_%n'
          CALL EXPAND_STRING(IRANK,NPROC,0,0,FILENAME,1)
 
-         CALL WRITEFL(FL, IJS, IJL, 1, NANG, 1, NFRE,                  &
+         IJSG = IJFROMCHNK(1,1)
+         IJLG = IJSG + SUM(KIJL4CHNK) - 1
+         ALLOCATE(RFL(IJSG:IJLG, NANG, NFRE))
+!$OMP    PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, KIJL, IJSB, IJLB)
+         DO ICHNK = 1, NCHNK
+           KIJS = 1
+           IJSB = IJFROMCHNK(KIJS, ICHNK)
+           KIJL = KIJL4CHNK(ICHNK)
+           IJLB = IJFROMCHNK(KIJL, ICHNK)
+
+           RFL(IJSB:IJLB, :, :) = FL1(KIJS:KIJL, :, :, ICHNK)
+         ENDDO
+!$OMP    END PARALLEL DO
+
+         CALL WRITEFL(RFL, IJSG, IJLG, 1, NANG, 1, NFRE,               &
      &                FILENAME, IUNIT, LOUNIT, LRSTPARALW)
 
+         DEALLOCATE(RFL)
       ELSE
 
 !       COLLECT THE DIFFERENT CONTRIBUTIONS AND PROCEED TO THE OUTPUT OF
 !       SPECTRUM FROM PE IPFGTBL(JPPFLAG+1)
         IRECV=IPFGTBL(JPPFLAG+1)
 
-        DO MLOOP=1,NFRE,MDEL
+        DO MLOOP= 1, NFRE, MDEL
           MINF=MLOOP
           MSUP=MIN(MLOOP+MDEL-1,NFRE)
-          DO KLOOP=1,NANG,KDEL
+          DO KLOOP = 1, NANG, KDEL
             KINF=KLOOP
             KSUP=MIN(KLOOP+KDEL-1,NANG)
 
             LOUNIT = .FALSE.
             IF (MINF == 1 .AND. KINF == 1) LOUNIT = .TRUE.
 
-            ALLOCATE(RFL(NIBLO,KINF:KSUP,MINF:MSUP))
-            DO M=MINF,MSUP
-              DO K=KINF,KSUP
-                DO IJ = IJSLOC, IJLLOC
-                  RFL(IJ+IJGLOBAL_OFFSET,K,M) = FL(IJ,K,M)
-                ENDDO
-              ENDDO
-            ENDDO
+            ALLOCATE(RFL(NIBLO, KINF:KSUP, MINF:MSUP))
 
-            CALL MPGATHERFL(IRECV,NBLKS,NBLKE,KINF,KSUP,MINF,MSUP,RFL)
+!$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, M, K, IPRM, IJ)
+            DO ICHNK = 1, NCHNK
+              DO M = MINF, MSUP
+                DO K = KINF, KSUP 
+                  DO IPRM = 1, KIJL4CHNK(ICHNK)
+                    IJ = IJFROMCHNK(IPRM,ICHNK)
+                    IF (IJ >= IJSLOC .AND. IJ <= IJLLOC) THEN
+                      IJ = IJ + IJGLOBAL_OFFSET 
+                      RFL(IJ, K, M) = FL1(IPRM, K, M, ICHNK)
+                    ENDIF
+                  ENDDO
+                 ENDDO
+               ENDDO
+             ENDDO
+!$OMP        END PARALLEL DO
+
+            CALL MPGATHERFL(IRECV, NBLKS, NBLKE, KINF, KSUP, MINF, MSUP, RFL)
 
 
             IF (IRANK == IPFGTBL(JPPFLAG+1) .OR. NPROC == 1) THEN
@@ -127,8 +152,7 @@
         ENDDO
       ENDIF
 
-      WRITE(IU06,*) ' SPECTRUM FILE DISPOSED AT........',               &
-     &                ' CDTPRO  = ', CDTPRO
+      WRITE(IU06,*) ' SPECTRUM FILE DISPOSED AT........ CDTPRO  = ', CDTPRO
 
       IF (LHOOK) CALL DR_HOOK('SAVSPEC',1,ZHOOK_HANDLE)
 

@@ -1,4 +1,4 @@
-      SUBROUTINE MEANSQS_GC(XKMSS, IJS, IJL, HALPHAP, U10, USTAR, XMSSCG, FRGC)
+      SUBROUTINE MEANSQS_GC(XKMSS, KIJS, KIJL, HALPHAP, U10, USTAR, XMSSCG, FRGC)
 
 !***  DETERMINE MSS FOR GRAV-CAP WAVES UP TO WAVE NUMBER XKMSS
 
@@ -26,17 +26,17 @@
 
 #include "omegagc.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
       REAL(KIND=JWRB), INTENT(IN) :: XKMSS ! WAVE NUMBER CUT-OFF
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: HALPHAP  ! 1/2 Phillips parameter
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10 ! 10m wind speed
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR ! friction velocity
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: XMSSCG  ! mean square slope for gravity-capillary waves
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: FRGC  ! Frequency from which the gravity-capillary spectrum is approximated
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: HALPHAP  ! 1/2 Phillips parameter
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: U10 ! 10m wind speed
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USTAR ! friction velocity
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: XMSSCG  ! mean square slope for gravity-capillary waves
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: FRGC  ! Frequency from which the gravity-capillary spectrum is approximated
 
       INTEGER(KIND=JWIM) :: IJ, I, NE
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: NS
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL) :: NS
       REAL(KIND=JWRB) :: XKS, OMS, COEF
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
    
@@ -49,7 +49,7 @@
 
       NE = MIN(MAX(NINT(LOG(XKMSS/XK_GC(1))/(LOG(KRATIO_GC))),1),NWAV_GC)
 
-      DO IJ = IJS, IJL
+      DO IJ = KIJS, KIJL
         CALL OMEGAGC(USTAR(IJ), NS(IJ), XKS, OMS)
         FRGC(IJ) = OMS/ZPI
         IF(XKS > XKMSS) THEN
@@ -60,7 +60,7 @@
         ENDIF
       ENDDO
 
-      DO IJ = IJS, IJL
+      DO IJ = KIJS, KIJL
         DO I = NS(IJ)+1, NE 
 !         ANALYTICAL FORM INERTIAL SUB RANGE F(k) = k**(-4)*BB
 !         BB = COEF*SQRT(VG_GC(I))/C_GC(I)**2

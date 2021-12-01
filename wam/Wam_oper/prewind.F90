@@ -1,5 +1,4 @@
-SUBROUTINE PREWIND (IJS, IJL, BLK2LOC,                      &
- &                  WVENVI, FF_NOW, FF_NEXT,                &
+SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
  &                  LLINIT, LLALLOC_FIELDG_ONLY,            &
  &                  IREAD,                                  &
  &                  NFIELDS, NGPTOTG, NC, NR,               &
@@ -18,16 +17,13 @@ SUBROUTINE PREWIND (IJS, IJL, BLK2LOC,                      &
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *PREWIND (IJS, IJL, BLK2LOC, 
-!    &                 WVENVI, FF_NOW, FF_NEXT,
+!     *CALL* *PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT, 
 !    &                 LLINIT, LLALLOC_FIELDG_ONLY,
 !    &                 IREAD,
 !    &                 NFIELDS, NGPTOTG, NC, NR,
 !    &                 FIELDS, LWCUR, MASK_IN,
 !    &                 NEMO2WAM)*
 
-!      *IJS*                 INDEX OF FIRST GRIDPOINT.
-!      *IJL*                 INDEX OF LAST GRIDPOINT.
 !      *BLK2LOC*             POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !      *WVENVI*              WAVE ENVIRONMENT.
 !      *FF_NOW*    REAL      DATA STRUCTURE WITH THE CURRENT FORCING FIELDS
@@ -80,6 +76,7 @@ SUBROUTINE PREWIND (IJS, IJL, BLK2LOC,                      &
       USE YOWDRVTYPE  , ONLY : WVGRIDLOC, ENVIRONMENT, FORCING_FIELDS, OCEAN2WAVE
 
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOUSAMEGRID, LWNEMOCOU, LWNEMOCOURECV
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,    &
      &            IDELWO   ,LANAONLY, IDELT
@@ -103,11 +100,10 @@ SUBROUTINE PREWIND (IJS, IJL, BLK2LOC,                      &
 #include "recvnemofields.intfb.h"
 #include "wamadswstar.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      TYPE(WVGRIDLOC), DIMENSION(IJS:IJL), INTENT(IN) :: BLK2LOC
-      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
-      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
-      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NEXT
+      TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)         :: BLK2LOC
+      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)    :: WVENVI
+      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FF_NOW
+      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FF_NEXT
       LOGICAL, INTENT(IN) :: LLINIT
       LOGICAL, INTENT(IN) :: LLALLOC_FIELDG_ONLY
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
@@ -115,10 +111,10 @@ SUBROUTINE PREWIND (IJS, IJL, BLK2LOC,                      &
       INTEGER(KIND=JWIM), INTENT(IN) :: NGPTOTG
       INTEGER(KIND=JWIM), INTENT(IN) :: NC
       INTEGER(KIND=JWIM), INTENT(IN) :: NR
-      REAL(KIND=JWRB),DIMENSION(NGPTOTG,NFIELDS), INTENT(IN) :: FIELDS
+      REAL(KIND=JWRB),DIMENSION(NGPTOTG, NFIELDS), INTENT(IN) :: FIELDS
       LOGICAL, INTENT(IN) :: LWCUR
       INTEGER(KIND=JWIM),DIMENSION(NGPTOTG), INTENT(INOUT)  :: MASK_IN
-      TYPE(OCEAN2WAVE), DIMENSION(IJS:IJL), INTENT(INOUT) :: NEMO2WAM
+      TYPE(OCEAN2WAVE), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: NEMO2WAM
 
 
 
@@ -163,8 +159,8 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
         CDTWIS = CDATEA
       ELSE
         CDTWIS = CDAWIFL
-        IDELWH = -MAX(IDELPRO,IDELWI)+IDELWO
-        CALL INCDATE (CDTWIS,IDELWH)
+        IDELWH = -MAX(IDELPRO, IDELWI)+IDELWO
+        CALL INCDATE (CDTWIS, IDELWH)
       ENDIF
 
       IF (CDAWIFL < CDATEE) THEN
@@ -182,15 +178,14 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
       LLINIALL=.TRUE.
       LLOCAL=.TRUE.
 
-      CALL INIT_FIELDG(IJS, IJL, BLK2LOC,                      &
-     &                 LLALLOC_FIELDG_ONLY, LLINIALL, LLOCAL)
+      CALL INIT_FIELDG(BLK2LOC, LLALLOC_FIELDG_ONLY, LLINIALL, LLOCAL)
 
 
 !     2.1 IN COUPLED RUNS, TRANSFORM INPUT FORCING FIELDS TO WAM GRID.
 !         -----------------------------------------------------------
 
       IF (LWCOU) THEN
-        CALL IFSTOWAM (IJS, IJL, BLK2LOC,          &
+        CALL IFSTOWAM (BLK2LOC,                    &
  &                     NFIELDS, NGPTOTG, NC, NR,   &
  &                     FIELDS, LWCUR, MASK_IN)
       ELSE
@@ -201,22 +196,21 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
 !           -------------------------------------
  
       IF (LWNEMOCOU .AND. LWNEMOCOURECV) THEN
-        LLNREST = LLFRSTNEMO.AND.LRESTARTED
-        LLNINIT = LLFRSTNEMO.AND..NOT.LRESTARTED
-        CALL RECVNEMOFIELDS(IJS, IJL, BLK2LOC,                          &
-     &                      WVENVI, NEMO2WAM, FF_NOW, LLNREST, LLNINIT)
+        LLNREST = LLFRSTNEMO .AND. LRESTARTED
+        LLNINIT = LLFRSTNEMO .AND. .NOT.LRESTARTED
+        CALL RECVNEMOFIELDS(BLK2LOC, WVENVI, NEMO2WAM, FF_NOW, LLNREST, LLNINIT)
         LLFRSTNEMO=.FALSE.
       ENDIF
 
 !!!   WHEN COUPLED, IT IS ALSO NEEDED TO INITIALISE THE AIR DENSITY AND
 !!!   THE CONVECTIVE VELOCITY SCALE ARRAYS SINCE THESE ARE NOT (YET) PROVIDED
 !!!   AS PART OF THE GRIB RESTART FILES.
-      IF (LLINIT) CALL WAMADSWSTAR(IJS, IJL, BLK2LOC, AIRD, WSTAR)
+      IF (LLINIT .AND. LWCOU) CALL WAMADSWSTAR(BLK2LOC, AIRD, WSTAR)
 
 !     2.2 GET SURFACE CURRENTS TO WAM BLOCK STRUCTURE (if needed) 
 !         -------------------------------------------
 
-      CALL GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ ,JFROMIJ, &
+      CALL GETCURR(LWCUR, IREAD, IFROMIJ ,JFROMIJ, &
      &             NEMOUCUR, NEMOVCUR, UCUR, VCUR)
 
 
@@ -231,8 +225,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
         IF (CDATEWL == ZERO) THEN
 !         Initialisation (either first time or following a restart)
           CALL GETFRSTWND (CDTWIS, CDTWIE,                 &
-     &                     IJS, IJL, BLK2LOC,              &
-     &                     WVENVI, FF_NOW,                 &
+     &                     BLK2LOC, WVENVI, FF_NOW,        &
      &                     IREAD, LWCUR, NEMO2WAM,         &
      &                     LLMORE)
         ELSE
@@ -243,8 +236,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
         IF (LLMORE) THEN
 !         Update forcing
           CALL NOTIM (CDTWIS, CDTWIE,             &
-     &                IJS, IJL, BLK2LOC,          &
-     &                WVENVI, FF_NEXT,            &
+     &                BLK2LOC, WVENVI, FF_NEXT,   &
      &                IREAD, LWCUR, NEMO2WAM)
         ENDIF
       ELSE

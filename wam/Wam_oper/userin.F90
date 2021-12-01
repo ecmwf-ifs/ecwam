@@ -136,13 +136,14 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWWAMI  , ONLY : CBEGDT   ,CENDDT   ,CBPLTDT  ,CEPLTDT  ,    &
      &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,    &
      &            IASSIM   ,NFCST    ,ISTAT
-      USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC
+      USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC, WSPMIN
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "difdate.intfb.h"
 #include "initgc.intfb.h"
@@ -780,12 +781,19 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         IF (LLWDWAVE .AND. .NOT. LWCOU) THEN
           WRITE(IU06,*) ' WIND DIRECTION FROM WAVE MODEL USED AS WELL.'
         ENDIF
+
+        WRITE (IU06,*) ' '
+        WRITE (IU06,*) ' WIND SPEEDS LOWER THAN ',WSPMIN, ' M/S'
+        WRITE (IU06,*) ' WILL BE RESET TO  ',WSPMIN, ' M/S'
+        WRITE (IU06,*) ' '
+
         IF (LGUST) THEN
           WRITE(IU06,*) ' GUSTINESS EFFECT IS INCLUDED.'
         ENDIF
         IF (LADEN) THEN
           WRITE(IU06,*) ' VARIABLE AIR DENSITY EFFECT IS INCLUDED.'
         ENDIF
+
         IF ( (LWCOU .AND. LWCUR) .OR.                                   &
      &        IREFRA == 2 .OR. IREFRA == 3) THEN
           WRITE(IU06,*) ' SURFACE CURRENTS ARE PROVIDED,'

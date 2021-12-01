@@ -1,6 +1,5 @@
 SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
- &                     IJS, IJL, BLK2LOC,              &
- &                     WVENVI, FF_NOW,                 &
+ &                     BLK2LOC, WVENVI, FF_NOW,        &
  &                     IREAD, LWCUR, NEMO2WAM,         & 
  &                     LLMORE)
 
@@ -15,15 +14,12 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
 !     ----------  
 
 !       *CALL* *GETFRSTWND (CDTWIS, CDTWIE,
-!                      IJS, IJL,  IFROMIJ, JFROMIJ,
-!                      WVENVI, FF_NOW,
+!                      BLK2LOC, WVENVI, FF_NOW,
 !                      IREAD, LWCUR, NEMO2WAM,
 !                      LLMORE)
 !          *CDTWIS*   - DATE OF FIRST WIND FIELD.
 !          *CDTWIE*   - DATE OF LAST FIRST WIND FIELD.
-!          *IJS:IJL   - ARRAYS DIMENSION
-!          *IFROMIJ*  - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
-!          *JFROMIJ*  - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!          *BLK2LOC*  - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !          *WVENVI*   - WAVE ENVIRONMENT.
 !          *FF_NOW*   - DATA STRUCTURE WITH THE CURRENT FORCING FIELDS
 !          *IREAD*    - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
@@ -38,10 +34,9 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
       USE YOWDRVTYPE  , ONLY : WVGRIDLOC, ENVIRONMENT, FORCING_FIELDS, OCEAN2WAVE
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWGRID  , ONLY : NPROMA_WAM, NBLOC
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWSTAT  , ONLY : IDELWO
       USE YOWPHYS  , ONLY : XNLEV
-      USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDATEWL
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -49,29 +44,29 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "cdustarz0.intfb.h"
 #include "getwnd.intfb.h"
 #include "incdate.intfb.h"
 
       CHARACTER(LEN=14), INTENT(INOUT) :: CDTWIS
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIE
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      TYPE(WVGRIDLOC), DIMENSION(IJS:IJL), INTENT(IN) :: BLK2LOC
-      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
-      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NOW
-      TYPE(OCEAN2WAVE), DIMENSION(IJS:IJL), INTENT(INOUT) :: NEMO2WAM
+      TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: BLK2LOC
+      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: WVENVI
+      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FF_NOW
+      TYPE(OCEAN2WAVE), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: NEMO2WAM
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR
       LOGICAL, INTENT(OUT) :: LLMORE 
 
 
-      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: ICHNK, KIJS, KIJL
       INTEGER(KIND=JWIM) :: IJ
       INTEGER(KIND=JWIM) :: ICODE_WND
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: CD
+      REAL(KIND=JWRB),DIMENSION(NPROMA_WAM, NCHNK) :: CD
 
       CHARACTER(LEN=14) :: CDTWIH, ZERO
 
@@ -104,8 +99,6 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
       ZERO = ' '
       CDTWIH = CDTWIS
 
-      NPROMA=NPROMA_WAM
-
       LCLOSEWND=.FALSE.
       IF (LWCOU) THEN
         LWNDFILE=.FALSE.
@@ -114,7 +107,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
       ENDIF
 
       CDATEWL = CDTWIS
-      CALL GETWND (IJS, IJL, IFROMIJ, JFROMIJ,            &
+      CALL GETWND (IFROMIJ, JFROMIJ,                      &
      &             UCUR, VCUR,                            &
      &             WSWAVE, UFRIC,                         &
      &             WDWAVE,                                &
@@ -125,16 +118,16 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
      &             ICODE_WND)
 
 
-        CALL GSTATS(1493,0)
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=IJS,IJL,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL CDUSTARZ0 (KIJS, KIJL, WSWAVE(KIJS:KIJL), XNLEV,            &
-     &                    CD(KIJS), UFRIC(KIJS:KIJL), Z0M(KIJS:KIJL))
+        CALL GSTATS(1444,0)
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, KIJS, KIJL)
+        DO ICHNK = 1, NCHNK
+          KIJS=1
+          KIJL=NPROMA_WAM
+          CALL CDUSTARZ0 (KIJS, KIJL, WSWAVE(:,ICHNK), XNLEV,            &
+     &                    CD(:,ICHNK), UFRIC(:,ICHNK), Z0M(:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
-        CALL GSTATS(1493,1)
+        CALL GSTATS(1444,1)
 
       IF (CDATEWL == CDTWIE) THEN
         LLMORE = .FALSE.

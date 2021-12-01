@@ -1,4 +1,4 @@
-SUBROUTINE GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,   &
+SUBROUTINE GETCURR(LWCUR, IREAD, IFROMIJ, JFROMIJ,   &
  &                 NEMOUCUR, NEMOVCUR, UCUR, VCUR)
 
 !****  *GETCURR* - READS SURFACE CURRENTS FROM FILE (IF UNCOUPLED)
@@ -13,14 +13,12 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,   &
 !*    INTERFACE.
 !     ----------
 
-!     CALL *GETCURR*(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,
+!     CALL *GETCURR*(LWCUR, IREAD, IFROMIJ, JFROMIJ,
 !                    NEMOUCUR, NEMOVCUR, UCUR, VCUR)
 
 !     *LWCUR*  - LOGICAL CONTROLLING THE PRESENCE OF MEANINGFUL
 !                SURFACE CURRENTS IN ARRAY FORCING_FIELDS DATA STRUCTURE   
 !     *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK IF NEEDED).
-!     *IJS*    - INDEX OF FIRST GRIDPOINT
-!     *IJL*    - INDEX OF LAST GRIDPOINT
 !     *IFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !     *JFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !     *NEMOUCUR* U-COMPONENT OF CURRENT FROM NEMO (if used)
@@ -47,7 +45,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,   &
       USE YOWCOUP  , ONLY : LWCOU, LWNEMOCOUCUR
 
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  , LLCHKCFLA, CURRENT_MAX
-      USE YOWGRID  , ONLY : NPROMA_WAM, NBLOC
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK
       USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE_RED
       USE YOWREFD  , ONLY : LLUPDTTD
@@ -69,18 +67,17 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,   &
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
-      REAL(KIND=NEMODP), DIMENSION (IJS:IJL), INTENT(IN) :: NEMOUCUR, NEMOVCUR
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(INOUT) :: UCUR, VCUR
+      INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      REAL(KIND=NEMODP), DIMENSION (NPROMA_WAM, NCHNK), INTENT(IN) :: NEMOUCUR, NEMOVCUR
+      REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(INOUT) :: UCUR, VCUR
 
 
       INTEGER(KIND=JWIM) :: LIU
-      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, IJ, IX, IY
+      INTEGER(KIND=JWIM) :: ICHNK, KIJS, KIJL, IJ, IX, JY
       INTEGER(KIND=JWIM) :: KUPDATE
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: OLDUCUR, OLDVCUR
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NCHNK) :: OLDUCUR, OLDVCUR
 
       CHARACTER(LEN=14) :: CDATEIN, CDTNEWCUR
       CHARACTER(LEN=24) :: FILNM
@@ -107,8 +104,8 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,   &
 
           IF (CDTPRO >= CDTNEWCUR) THEN
 
-            OLDUCUR(:)=UCUR(:)
-            OLDVCUR(:)=VCUR(:)
+            OLDUCUR(:,:)=UCUR(:,:)
+            OLDVCUR(:,:)=VCUR(:,:)
 
             LLCURRENT=.FALSE.
 
@@ -119,14 +116,12 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,   &
 !             --------------------------------
               IF (LWCUR .AND. .NOT.LWNEMOCOUCUR) THEN
 
-! Mod for OPENMP
                 CALL GSTATS(1444,0)
-                NPROMA=NPROMA_WAM
-!$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-                DO JKGLO = IJS, IJL, NPROMA
-                  KIJS=JKGLO
-                  KIJL=MIN(KIJS+NPROMA-1,IJL)
-                  CALL WAMCUR (KIJS, KIJL, IFROMIJ(KIJS), JFROMIJ(KIJS), UCUR(KIJS), VCUR(KIJS))
+!$OMP           PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, KIJL)
+                DO ICHNK = 1, NCHNK
+                  KIJS=1
+                  KIJL=NPROMA_WAM
+                  CALL WAMCUR (KIJS, KIJL, IFROMIJ(:,ICHNK), JFROMIJ(:,ICHNK), UCUR(:,ICHNK), VCUR(:,ICHNK))
                 ENDDO
 !$OMP           END PARALLEL DO
                 CALL GSTATS(1444,1)
@@ -137,22 +132,19 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,   &
                 WRITE(IU06,*)' NEMO CURRENTS OBTAINED'!
 
                 CALL GSTATS(1444,0)
-                NPROMA=NPROMA_WAM
-!$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,IX,IY)
-                DO JKGLO = IJS, IJL, NPROMA
-                  KIJS=JKGLO
-                  KIJL=MIN(KIJS+NPROMA-1,IJL)
-                  DO IJ=KIJS,KIJL
-                    IX = IFROMIJ(IJ)
-                    IY = JFROMIJ(IJ)
-                    IF (FIELDG(IX,IY)%LKFR <=  0.0_JWRB ) THEN
+!$OMP           PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
+                DO ICHNK = 1, NCHNK
+                  DO IJ = 1, NPROMA_WAM
+                    IX = IFROMIJ(IJ,ICHNK)
+                    JY = JFROMIJ(IJ,ICHNK)
+                    IF (FIELDG(IX,JY)%LKFR <=  0.0_JWRB ) THEN
 !                     if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
-                      UCUR(IJ) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
-                      VCUR(IJ) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
+                      UCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMOUCUR(IJ,ICHNK)),CURRENT_MAX),NEMOUCUR(IJ,ICHNK))
+                      VCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMOVCUR(IJ,ICHNK)),CURRENT_MAX),NEMOVCUR(IJ,ICHNK))
                     ELSE
 !                     no currents over lakes and land
-                      UCUR(IJ) = 0.0_JWRB
-                      VCUR(IJ) = 0.0_JWRB
+                      UCUR(IJ,ICHNK) = 0.0_JWRB
+                      VCUR(IJ,ICHNK) = 0.0_JWRB
                     ENDIF
                   ENDDO
                 ENDDO
@@ -160,8 +152,8 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,   &
                 CALL GSTATS(1444,1)
 
               ELSE
-                UCUR(:)=0.0_JWRB
-                VCUR(:)=0.0_JWRB
+                UCUR(:,:)=0.0_JWRB
+                VCUR(:,:)=0.0_JWRB
                 WRITE(IU06,*)' '
                 WRITE(IU06,*)'    ****************************'
                 WRITE(IU06,*)'     IREFRA = ',IREFRA
@@ -186,7 +178,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,   &
                 CALL FLUSH(IU06)
 
                 CALL CURRENT2WAM (FILNM, IREAD, CDATEIN,        &
-     &                            IJS, IJL, IFROMIJ, JFROMIJ,   &
+     &                            IFROMIJ, JFROMIJ,             &
      &                            UCUR, VCUR)
                 
 
@@ -204,8 +196,8 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,   &
                 CALL ABORT1
                 ENDIF
               ELSE
-                UCUR(:)=0.0_JWRB
-                VCUR(:)=0.0_JWRB
+                UCUR(:,:)=0.0_JWRB
+                VCUR(:,:)=0.0_JWRB
                 WRITE(IU06,*)' '
                 WRITE(IU06,*)'    ****************************'
                 WRITE(IU06,*)'     FILE ',FILNM,' NOT FOUND '
@@ -222,13 +214,15 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IJS, IJL, IFROMIJ, JFROMIJ,   &
 !           CHECK IF UPDATE IS NEEDED
             LLUPDATE = .FALSE.
             KUPDATE = 0
-            DO IJ = IJS, IJL
-              IF ( UCUR(IJ) /= OLDUCUR(IJ) .OR. VCUR(IJ) /= OLDVCUR(IJ) ) THEN
-                LLUPDATE=.TRUE.
-                KUPDATE = 1
-                EXIT
-              ENDIF 
-            ENDDO
+            OUT: DO ICHNK = 1, NCHNK
+              DO IJ = 1, KIJL4CHNK(ICHNK)
+                IF ( UCUR(IJ,ICHNK) /= OLDUCUR(IJ,ICHNK) .OR. VCUR(IJ,ICHNK) /= OLDVCUR(IJ,ICHNK) ) THEN
+                  LLUPDATE=.TRUE.
+                  KUPDATE = 1
+                  EXIT OUT
+                ENDIF 
+              ENDDO
+            ENDDO OUT
 
             IF (NPROC > 1) THEN
               CALL MPL_ALLREDUCE(KUPDATE,'MAX',CDSTRING='GETCURR KUPDATE:')

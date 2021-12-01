@@ -39,6 +39,7 @@ SUBROUTINE UNSETICE(KIJS, KIJL, WVENVI, FF_NOW, FL1)
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "sdepthlim.intfb.h"
 #include "jonswap.intfb.h"
 
@@ -137,7 +138,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
               ALPHAV(IJ) = MAX(ALPHAV(IJ), 0.0081_JWRB)
               FPK(IJ) = FPK(IJ)*UG
             ELSE
-              FPK(IJ)=0.
+              FPK(IJ)=0.0_JWRB
               ALPHAV(IJ)=0.0_JWRB
             ENDIF
           ELSE

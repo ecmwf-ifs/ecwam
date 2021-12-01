@@ -1,4 +1,4 @@
-SUBROUTINE INITDPTHFLDS(IJS, IJL, WVENVI, WVPRPT, WVPRPT_LAND)
+SUBROUTINE INITDPTHFLDS(WVENVI, WVPRPT, WVPRPT_LAND)
 ! ----------------------------------------------------------------------
 
 !**** *INITDPTHFLDS* - 
@@ -15,25 +15,24 @@ SUBROUTINE INITDPTHFLDS(IJS, IJL, WVENVI, WVPRPT, WVPRPT_LAND)
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY
 
-      USE YOWGRID  , ONLY : NPROMA_WAM, NBLOC
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWFRED  , ONLY : ZPIFR
       USE YOWPARAM , ONLY : NFRE
-      USE YOWSHAL  , ONLY : NDEPTH,                             &
-     &                      TFAK, TCGOND, TSIHKD, TFAC_ST,      &
-     &                      GAM_B_J
+      USE YOWSHAL  , ONLY : NDEPTH,                                &
+     &                      TFAK, TCGOND, TSIHKD, TFAC_ST, GAM_B_J
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
-      TYPE(FREQUENCY), DIMENSION(IJS:IJL,NFRE), INTENT(OUT) :: WVPRPT
+      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: WVENVI
+      TYPE(FREQUENCY), DIMENSION(NPROMA_WAM, NFRE, NCHNK), INTENT(OUT) :: WVPRPT
       TYPE(FREQUENCY), DIMENSION(NFRE), INTENT(OUT) :: WVPRPT_LAND
 
 
-      INTEGER(KIND=JWIM) :: M, IJ, JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: M, IJ, ICHNK, KIJS, KIJL
 
       REAL(KIND=JWRB) :: GAM
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -53,34 +52,32 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
 
       CALL GSTATS(1502,0)
-      NPROMA=NPROMA_WAM
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,M,IJ,GAM)
-      DO JKGLO = IJS, IJL, NPROMA
-        KIJS=JKGLO
-        KIJL=MIN(KIJS+NPROMA-1,IJL)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, KIJS, KIJL, IJ, M, GAM)
+      DO ICHNK = 1, NCHNK
+        KIJS = 1
+        KIJL = NPROMA_WAM
 
 !       COMPUTE THE MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
         DO IJ = KIJS, KIJL
 !         REDUCE GAMMA FOR SMALL DEPTH ( < 4m)
 !         (might need to be revisted when grid is fine resolution)
-          IF (DEPTH(IJ) < 4.0_JWRB) THEN
-            GAM=GAM_B_J*DEPTH(IJ)/4.0_JWRB
+          IF (DEPTH(IJ, ICHNK) < 4.0_JWRB) THEN
+            GAM=GAM_B_J*DEPTH(IJ, ICHNK)/4.0_JWRB
           ELSE
             GAM=GAM_B_J
           ENDIF
-          EMAXDPT(IJ) = 0.0625_JWRB*(GAM*DEPTH(IJ))**2
+          EMAXDPT(IJ, ICHNK) = 0.0625_JWRB*(GAM*DEPTH(IJ, ICHNK))**2
         ENDDO
 
-        DO M=1,NFRE
-          DO IJ=KIJS,KIJL
-            INDEP(IJ) = INDEP(IJ)
-            WAVNUM(IJ,M) = TFAK(INDEP(IJ),M)
-            CINV(IJ,M)   = WAVNUM(IJ,M)/ZPIFR(M)
-            CGROUP(IJ,M) = TCGOND(INDEP(IJ),M)
-            OMOSNH2KD(IJ,M) = TSIHKD(INDEP(IJ),M)
-            STOKFAC(IJ,M) = TFAC_ST(INDEP(IJ),M)
+        DO M= 1, NFRE
+          DO IJ = KIJS, KIJL
+            WAVNUM(IJ, M, ICHNK) = TFAK(INDEP(IJ, ICHNK), M)
+            CINV(IJ, M, ICHNK)   = WAVNUM(IJ, M, ICHNK)/ZPIFR(M)
+            CGROUP(IJ, M, ICHNK) = TCGOND(INDEP(IJ, ICHNK), M)
+            OMOSNH2KD(IJ, M, ICHNK) = TSIHKD(INDEP(IJ, ICHNK), M)
+            STOKFAC(IJ, M, ICHNK) = TFAC_ST(INDEP(IJ, ICHNK), M)
 
-            CIWA(IJ,M) = 1.0_JWRB
+            CIWA(IJ,M, ICHNK) = 1.0_JWRB
           ENDDO
         ENDDO
 

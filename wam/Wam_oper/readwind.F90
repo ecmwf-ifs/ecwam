@@ -82,7 +82,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWGRID  , ONLY : NPROMA_WAM, NBLOC
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWICE   , ONLY : LICERUN  ,IPARAMCI ,LICETH
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG
@@ -108,6 +108,7 @@
 ! --------------------------------------------------------------------- 
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "grib2wgrid.intfb.h"
 #include "incdate.intfb.h"

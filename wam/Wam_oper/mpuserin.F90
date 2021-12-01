@@ -56,7 +56,6 @@
      &            LRSTPARALW,LRSTPARALR,LRSTINFDAT,                     &
      &            NTRAIN   ,                                            &
      &            IPFGTBL  ,                                            &
-     &            LLOUTERS ,                                            &
      &            LWAMANOUT,                                            &
      &            NWRTOUTWAM,                                           &
      &            LSECONDORDER,                                         &
@@ -141,7 +140,6 @@
      &   CLOTSU, CDATER, CDATES,                                        &
      &   FFLAG,  GFLAG, NFLAG,                                          &
      &   XKMSS_CUTOFF,                                                  &
-     &   LLOUTERS,                                                      &
      &   LFDB, LGRIBIN, LGRIBOUT, LFDBIOOUT,                            &
      &   LRSTPARALW, LRSTPARALR, LRSTINFDAT,                            &
      &   LWAMANOUT,                                                     &
@@ -249,7 +247,6 @@
 !     XKMSS_CUTOFF: IF DIFFERENT FROM 0., SETS THE MAXIMUM WAVE NUMBER TO BE USED IN
 !                   THE CALCULATION OF THE MEAN SQUARE SLOPE.
 !                   OTHERWISE, USE XK_GC(NWAV_GC)
-!     LLOUTERS : IF TRUE CALL OUTERS: OUTPUT OF SATELLITE COLOCATION SPECTRA
 !     TYPE OF INTEGRATED PARAMETERS IN FFLAG GFLAG (see OUTINT) :
 !     1  : WAVE HEIGHT (M)
 !     2  : MEAN WAVE DIRECTION (DEG.)
@@ -569,8 +566,6 @@
       NFLAG(IRU10) = .TRUE. 
 
       XKMSS_CUTOFF = 0.0_JWRB
-
-      LLOUTERS = .FALSE.
 
       LSECONDORDER = .TRUE.
 

@@ -1,6 +1,5 @@
 SUBROUTINE NOTIM (CDTWIS, CDTWIE,              &
- &                IJS, IJL, BLK2LOC,           &
- &                WVENVI, FF_NEXT,             &
+ &                BLK2LOC, WVENVI, FF_NEXT,    &
  &                IREAD, LWCUR, NEMO2WAM)
 
 ! ----------------------------------------------------------------------
@@ -16,12 +15,10 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,              &
 !     ----------  
 
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,
-!    &                 IJS, IJL, BLK2LOC, 
-!                      WVENVI, FF_NEXT,
+!                      BLK2LOC, WVENVI, FF_NEXT,  
 !                      IREAD, LWCUR, NEMO2WAM)
 !          *CDTWIS*   - DATE OF FIRST WIND FIELD.
 !          *CDTWIE*   - DATE OF LAST FIRST WIND FIELD.
-!          *IJS:IJL   - ARRAYS DIMENSION
 !          *BLK2LOC*  - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !          *WVENVI*   - WAVE ENVIRONMENT.
 !          *FF_NEXT*  - DATA STRUCTURE WITH THE NEXT FORCING FIELDS
@@ -36,8 +33,9 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,              &
       USE YOWDRVTYPE  , ONLY : WVGRIDLOC, ENVIRONMENT, FORCING_FIELDS, OCEAN2WAVE
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWPHYS  , ONLY : XNLEV
+      USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO
       USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDATEWL  ,CDTNEXT
 
@@ -46,18 +44,18 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,              &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "getwnd.intfb.h"
 #include "incdate.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      TYPE(WVGRIDLOC), DIMENSION(IJS:IJL), INTENT(IN) :: BLK2LOC
-      TYPE(ENVIRONMENT), DIMENSION(IJS:IJL), INTENT(INOUT) :: WVENVI
-      TYPE(FORCING_FIELDS), DIMENSION(IJS:IJL), INTENT(INOUT) :: FF_NEXT
+      TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: BLK2LOC
+      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: WVENVI
+      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FF_NEXT
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
       LOGICAL, INTENT(IN) :: LWCUR
-      TYPE(OCEAN2WAVE), DIMENSION(IJS:IJL), INTENT(INOUT) :: NEMO2WAM
+      TYPE(OCEAN2WAVE), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: NEMO2WAM
 
 
       INTEGER(KIND=JWIM) :: ICODE_WND
@@ -132,7 +130,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
 
         CDTNEXT=CDTWIH
 
-        CALL GETWND (IJS, IJL, IFROMIJ, JFROMIJ,            &
+        CALL GETWND (IFROMIJ, JFROMIJ,                      &
      &               UCUR, VCUR,                            &
      &               U10, US,                               &
      &               THW,                                   &

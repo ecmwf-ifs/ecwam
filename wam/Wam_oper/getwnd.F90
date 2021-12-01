@@ -1,12 +1,12 @@
-      SUBROUTINE GETWND (IJS, IJL, IFROMIJ, JFROMIJ,            &
-     &                   UCUR, VCUR,                            &
-     &                   U10, US,                               &
-     &                   THW,                                   &
-     &                   ADS, WSTAR,                            &
-     &                   CICOVER, CITHICK,                      &
-     &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,    &
-     &                   LWCUR, NEMOCICOVER, NEMOCITHICK,       &
-     &                   ICODE_WND)
+SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
+ &                 UCUR, VCUR,                            &
+ &                 U10, US,                               &
+ &                 THW,                                   &
+ &                 ADS, WSTAR,                            &
+ &                 CICOVER, CITHICK,                      &
+ &                 CDTWIS, LWNDFILE, LCLOSEWND, IREAD,    &
+ &                 LWCUR, NEMOCICOVER, NEMOCITHICK,       &
+ &                 ICODE_WND)
 
 ! ----------------------------------------------------------------------
 
@@ -23,14 +23,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GETWND (IJS, IJL, IFROMIJ, JFROMIJ,
+!       *CALL* *GETWND (IFROMIJ, JFROMIJ,
 !                       UCUR, VCUR,
 !                       U10, THW, ADS, WSTAR, CICOVER, CITHICK,
 !                       CDTWIS, LWNDFILE, LCLOSEWND,
 !                       LWCUR, NEMOCICOVER, NEMOCITHICK, 
 !                       ICODE_WND)*
-!         *IJS*    - INDEX OF FIRST GRIDPOINT
-!         *IJL*    - INDEX OF LAST GRIDPOINT
 !         *IFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !         *JFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !         *UCUR*   - U-COMPONENT OF THE SURFACE CURRENT
@@ -55,51 +53,18 @@
 !                     U10: ICODE_WND=3
 !                     US:  ICODE_WND=1 OR 2
 
-!     METHOD.
-!     -------
-
-!       NONE.
-
-!     EXTERNALS.
-!     ----------
-
-!       *ABORT1*     - TERMINATES PROCESSING.
-!       *READWIND*   - READING WINDS.
-!       *WAMWND*    - CALCULATE WIND IN WAM POINTS.
-
-!     REFERENCE.
-!     ----------
-
-!       NONE.
-
-
-!    MODIFIED BY:
-!    ------------
-!    B. HANSEN    ECMWF 1997
-!                 RESTRUCTURE CALL TO READWIND.
-!
-!    S. ABDALLA   ECMWF OCTOBER 2001
-!                 MODIFICATION THE CALL TO READWIND WAMWND; AND 
-!                 INCLUSION OF AIR DENSITY AND Zi/L.
-!    J. BIDLOT    ECMWF NOVEMEBR 2003
-!                 INTRODUCE openMP
-!    J. BIDLOT    ECMWF AUGUST 2006
-!                 SEA ICE FRACTION IF COUPLED.
-!    J. BIDLOT    ECMWF AUGUST 2008
-!                 READWIND WAS SPLIT BETWEEN READWIND AND IFSTOWAM:
-!                 IN COUPLED RUNS, READWIND IS NOT CALLED 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWNEMOP , ONLY : NEMODP
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWGRID  , ONLY : NPROMA_WAM, NBLOC 
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWICE   , ONLY : IPARAMCI
       USE YOWMPP   , ONLY : IRANK
       USE YOWPARAM , ONLY : CLDOMAIN , LWDINTS
       USE YOWTEST  , ONLY : IU06
-      USE YOWWIND  , ONLY : WSPMIN   ,IUNITW
+      USE YOWWIND  , ONLY : IUNITW
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -108,37 +73,34 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "micep.intfb.h"
 #include "readwind.intfb.h"
 #include "wamwnd.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(IN) :: UCUR, VCUR
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(INOUT) :: U10, US 
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: THW
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: ADS, WSTAR
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: CICOVER, CITHICK
+      INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(IN) :: UCUR, VCUR
+      REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(INOUT) :: U10, US 
+      REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(OUT) :: THW
+      REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(OUT) :: ADS, WSTAR
+      REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(OUT) :: CICOVER, CITHICK
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS
       LOGICAL, INTENT(IN) :: LWNDFILE, LCLOSEWND
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR
-      REAL(KIND=NEMODP), DIMENSION (IJS:IJL), INTENT(IN) :: NEMOCICOVER, NEMOCITHICK
+      REAL(KIND=NEMODP), DIMENSION (NPROMA_WAM, NCHNK), INTENT(IN) :: NEMOCICOVER, NEMOCITHICK
       INTEGER(KIND=JWIM), INTENT(OUT) :: ICODE_WND
 
-      INTEGER(KIND=JWIM) :: JKGLO,KIJS,KIJL,NPROMA
+      INTEGER(KIND=JWIM) :: ICHNK, KIJS, KIJL 
       INTEGER(KIND=JWIM) :: I, J
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       LOGICAL :: LLNOTOPENED
-      LOGICAL, SAVE :: LONLYONCE
 
       CHARACTER(LEN=14) :: CDTWIR
       CHARACTER(LEN=24) :: FILNM
-
-      DATA LONLYONCE /.TRUE./
 
       SAVE CDTWIR
       SAVE LLNOTOPENED
@@ -148,17 +110,15 @@
 !*    1. WIND DATA ARE READ
 !        ------------------
 
-      IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
 
- 1000 CONTINUE
+1000 CONTINUE
 
       IF (IUNITW == 0) THEN
         LLNOTOPENED=.TRUE.
       ELSE
         LLNOTOPENED=.FALSE.
       ENDIF
-
-      NPROMA=NPROMA_WAM
 
 !     GET FORCING FIELDS FROM INPUT FILES (if needed)
 !     -----------------------------------
@@ -227,47 +187,27 @@
 !*    3. INTERPOLATE AND BLOCK WINDFIELD
 !        -------------------------------
 
-! Mod for OPENMP
         CALL GSTATS(1444,0)
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=IJS,IJL,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL WAMWND (KIJS, KIJL,                                       &
-     &                 IFROMIJ(KIJS), JFROMIJ(KIJS),                     &
-     &                 UCUR(KIJS), VCUR(KIJS),                           &
-     &                 U10(KIJS), US(KIJS),                              &
-     &                 THW(KIJS), ADS(KIJS), WSTAR(KIJS), CITHICK(KIJS), &
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, KIJS, KIJL)
+        DO ICHNK = 1, NCHNK
+          KIJS=1
+          KIJL=NPROMA_WAM
+          CALL WAMWND (KIJS, KIJL,                          &
+     &                 IFROMIJ(:,ICHNK), JFROMIJ(:,ICHNK),  &
+     &                 UCUR(:,ICHNK), VCUR(:,ICHNK),        &
+     &                 U10(:,ICHNK), US(:,ICHNK),           &
+     &                 THW(:,ICHNK), ADS(:,ICHNK),          &
+     &                 WSTAR(:,ICHNK), CITHICK(:,ICHNK),    &
      &                 LWCUR, ICODE_WND)
+
+
+          CALL MICEP(IPARAMCI, KIJS, KIJL, IFROMIJ(:,ICHNK), JFROMIJ(:,ICHNK),  &
+     &               CICOVER(:,ICHNK), CITHICK(:,ICHNK),                        &
+     &               NEMOCICOVER(:,ICHNK), NEMOCITHICK(:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)
 
-        IF (LONLYONCE) THEN
-          WRITE (IU06,*) ' '
-          WRITE (IU06,*) ' SUB. GETWND : '
-          WRITE (IU06,*) ' '
-          WRITE (IU06,*) ' WIND SPEEDS LOWER THAN ',WSPMIN, ' M/S'
-          WRITE (IU06,*) ' WERE RESET TO  ',WSPMIN, ' M/S'
-          WRITE (IU06,*) ' '
-          CALL FLUSH(IU06)
-          LONLYONCE=.FALSE.
-        ENDIF
+IF (LHOOK) CALL DR_HOOK('GETWND',1,ZHOOK_HANDLE)
 
-!       USE THE SEA ICE FRACTION TO DEFINE THE SEA ICE BOUNDARY
-
-        CALL GSTATS(1444,0)
-! Mod for OPENMP
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=IJS,IJL,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL MICEP(IPARAMCI, KIJS, KIJL, IFROMIJ(KIJS), JFROMIJ(KIJS),                &
-     &               CICOVER(KIJS), CITHICK(KIJS), NEMOCICOVER(KIJS), NEMOCITHICK(KIJS))
-        ENDDO
-!$OMP   END PARALLEL DO
-        CALL GSTATS(1444,1)
-
-      IF (LHOOK) CALL DR_HOOK('GETWND',1,ZHOOK_HANDLE)
-
-      END SUBROUTINE GETWND
+END SUBROUTINE GETWND
