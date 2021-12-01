@@ -108,8 +108,8 @@
                 ICNT(IPR) = ICNT(IPR) + 1
                 ZSENDBUF(ICNT(IPR), IPR) = BOUT(IPRM, ITOBOUT(ICT), ICHNK)
               ENDDO
-            ENDIF
-          ENDDO
+            ENDDO
+          ENDIF
         ENDDO
 
       ELSEIF (OUT_METHOD == 1) THEN
