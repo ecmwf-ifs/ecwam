@@ -108,6 +108,7 @@
 ! --------------------------------------------------------------------- 
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "grib2wgrid.intfb.h"
 #include "incdate.intfb.h"

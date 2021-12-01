@@ -246,7 +246,6 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
         ENDDO
 
 
-
 #ifdef ECMWF
         IF (.NOT.LWCOU .AND. .NOT. LDSTOP) THEN
 !!!!      the call to CHESIG is a signal handeling facility which is
@@ -255,15 +254,6 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
             CALL CHESIG (IU06, IRANK, NPROC, LDSTOP, LDWRRE)
         ENDIF
 #endif
-
-
-!!!debile
-       if ( CDTPRO == '20210527000000' ) then
-          LDWRRE = .true.
-       else
-          LDWRRE = .false.
-       endif
-
 
 !       1.3 CHECK WHETHER OUTPUT(s) NEEDED
 !           ------------------------------

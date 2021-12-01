@@ -174,7 +174,7 @@
 
 !       USE NEUTRAL WIND SPEED FROM A PREVIOUS WAM RUN.
 !       -----------------------------------------------
-        ELSE IF (LLWSWAVE) THEN
+        ELSEIF (LLWSWAVE) THEN
 
           DO IJ = KIJS, KIJL
             IX = IFROMIJ(IJ)

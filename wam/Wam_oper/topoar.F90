@@ -77,11 +77,13 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "adjust.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU01
       REAL(KIND=JWRB), DIMENSION(NGX,NGY), INTENT(OUT) :: BATHY
+
 
       INTEGER(KIND=JWIM) :: I, J, K, JH, L, IX, IAA, IS
       INTEGER(KIND=JWIM) :: KLONRGG  
