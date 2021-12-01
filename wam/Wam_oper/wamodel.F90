@@ -256,6 +256,15 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
         ENDIF
 #endif
 
+
+!!!debile
+       if ( CDTPRO == '20210527000000' ) then
+          LDWRRE = .true.
+       else
+          LDWRRE = .false.
+       endif
+
+
 !       1.3 CHECK WHETHER OUTPUT(s) NEEDED
 !           ------------------------------
         LRST = (LDWRRE .AND. KADV == NADV )
