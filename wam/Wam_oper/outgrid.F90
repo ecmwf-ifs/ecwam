@@ -105,7 +105,7 @@
             IF (IPR > 0) THEN 
               DO IPRM = 1, KIJL4CHNK(ICHNK)
                 ICNT(IPR) = ICNT(IPR) + 1
-                ZSENDBUF(ICNT(IPR), IPR) = BOUT(IPRM, ITOBOUT(ICT), NCHNK)
+                ZSENDBUF(ICNT(IPR), IPR) = BOUT(IPRM, ITOBOUT(ICT), ICHNK)
               ENDDO
             ENDIF
           ENDDO
@@ -159,6 +159,7 @@
      &        CDSTRING='OUTGRID:')
           ENDDO
         ENDIF
+
         DO IPR=1,NPROC
           IF (NFLDPPE(IPR) > 0) THEN
             IR=IR+1
