@@ -1,4 +1,4 @@
-      SUBROUTINE READPRE (IU07)
+SUBROUTINE READPRE (IU07)
 
 ! ----------------------------------------------------------------------
 
@@ -16,6 +16,8 @@
 !                          YOU ALSO HAVE TO CHANGE OUTCOM.
 ! ALSO CHECK
 !            READPREB in Alt
+!  and
+!            ... /nemo/tools/interpolate/wambingrid.F90
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !*    PURPOSE.
@@ -48,25 +50,25 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
+      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
-     &            NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJLS     ,    &
-     &            IJL      ,IJLT
+     &            IJS      ,IJL
       USE YOWINDN  , ONLY : KFRH     ,IKP      ,IKP1     ,IKM      ,    &
      &            IKM1     ,K1W      ,K2W      ,K11W     ,K21W     ,    &
      &            AF11     ,FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,    &
      &            ACL1     ,ACL2     ,CL11     ,CL21     ,DAL1     ,    &
      &            DAL2     ,FRH      ,MFRSTLW  ,MLSTHG
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,    &
+      USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,              &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IQGAUSS
+     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG  ,    &
+     &            IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
-     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,    &
-     &            IMDLGRDID 
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
+     &            NGX      ,NGY      ,                                  &
+     &            NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,IMDLGRDID
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH_INPUT,DEPTHA   ,DEPTHD   ,  &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST  ,TOOSHALLOW
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
      &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,              &
@@ -87,7 +89,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU07
       INTEGER(KIND=JWIM) :: IREAD
-      INTEGER(KIND=JWIM) :: IDUM, KIBLD, KBLD, KIBLC, KBLC
+      INTEGER(KIND=JWIM) :: IDUM, KIBLD, KIBLC
       INTEGER(KIND=JWIM) :: KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
       INTEGER(KIND=JWIM) :: NKIND !Precision of file when reading
 
@@ -102,10 +104,10 @@
       KTAG=1
 
       CALL GSTATS(1771,0)
-      IF(IRANK.EQ.IREAD) THEN
+      IF (IRANK == IREAD) THEN
 !       READ MODEL IDENTIFIERS
         CALL READREC(1)
-        IF(KMDLGRDID.NE.IMDLGRDID) THEN
+        IF (KMDLGRDID /= IMDLGRDID) THEN
           WRITE(IU06,*) '*****************************************'
           WRITE(IU06,*) '*                                       *'
           WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
@@ -121,7 +123,7 @@
           WRITE(IU06,*) '*****************************************'
           CALL ABORT1
         ENDIF
-        IF(NKIND.NE.KIND(DELPHI)) THEN
+        IF (NKIND /= KIND(DELPHI)) THEN
           WRITE(IU06,*) '*****************************************'
           WRITE(IU06,*) '*                                       *'
           WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
@@ -145,47 +147,41 @@
 !*    1. READ MODULE YOWFRED (FREQUENCY DIRECTION GRID).
 !        ----------------------------------------------
 
-        IF(.NOT.ALLOCATED(FR)) ALLOCATE(FR(NFRE))
-        IF(.NOT.ALLOCATED(DFIM)) ALLOCATE(DFIM(NFRE))
-        IF(.NOT.ALLOCATED(GOM)) ALLOCATE(GOM(NFRE))
-        IF(.NOT.ALLOCATED(C)) ALLOCATE(C(NFRE))
-        IF(.NOT.ALLOCATED(TH)) ALLOCATE(TH(NANG))
-        IF(.NOT.ALLOCATED(COSTH)) ALLOCATE(COSTH(NANG))
-        IF(.NOT.ALLOCATED(SINTH)) ALLOCATE(SINTH(NANG))
+        IF (.NOT.ALLOCATED(FR)) ALLOCATE(FR(NFRE))
+        IF (.NOT.ALLOCATED(DFIM)) ALLOCATE(DFIM(NFRE))
+        IF (.NOT.ALLOCATED(GOM)) ALLOCATE(GOM(NFRE))
+        IF (.NOT.ALLOCATED(C)) ALLOCATE(C(NFRE))
+        IF (.NOT.ALLOCATED(TH)) ALLOCATE(TH(NANG))
+        IF (.NOT.ALLOCATED(COSTH)) ALLOCATE(COSTH(NANG))
+        IF (.NOT.ALLOCATED(SINTH)) ALLOCATE(SINTH(NANG))
 
         CALL READREC(3)
 
 !*    2. READ MODULE YOWGRID (GENERAL GRID ORGANISATION).
 !        ------------------------------------------------
 
-        IF(.NOT.ALLOCATED(DELLAM)) ALLOCATE(DELLAM(NGY))
-        IF(.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
-        IF(.NOT.ALLOCATED(SINPH)) ALLOCATE(SINPH(NGY))
-        IF(.NOT.ALLOCATED(COSPH)) ALLOCATE(COSPH(NGY))
-        IF(.NOT.ALLOCATED(IJS)) ALLOCATE(IJS(NBLO))
-        IF(.NOT.ALLOCATED(IJL2)) ALLOCATE(IJL2(NBLO))
-        IF(.NOT.ALLOCATED(IJLS)) ALLOCATE(IJLS(NBLO))
-        IF(.NOT.ALLOCATED(IJL)) ALLOCATE(IJL(NBLO))
-        IF(.NOT.ALLOCATED(IJLT)) ALLOCATE(IJLT(NBLO))
+        IF (.NOT.ALLOCATED(DELLAM)) ALLOCATE(DELLAM(NGY))
+        IF (.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
+        IF (.NOT.ALLOCATED(SINPH)) ALLOCATE(SINPH(NGY))
+        IF (.NOT.ALLOCATED(COSPH)) ALLOCATE(COSPH(NGY))
 
         CALL READREC(4)
 
 !*    3. READ MODULE YOWMAP (LONG. AND LAT. INDICES OF GRID POINTS).
 !        --------------------------------------------------------
 
-        IF(ALLOCATED(IXLG)) DEALLOCATE(IXLG)
-        ALLOCATE(IXLG(NIBLO,NBLO))
-        IF(ALLOCATED(KXLT)) DEALLOCATE(KXLT)
-        ALLOCATE(KXLT(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
+        IF (ALLOCATED(BLK2GLO)) DEALLOCATE(BLK2GLO)
+        ALLOCATE(BLK2GLO(NIBLO))
+
+        IF (.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
 
         CALL READREC(5)
 
 !     DETERMINE IF WE ARE USING A QUASI GAUSSIAN GRID OR 
 !     LAT-LONG GRID (REGULAR OR IRREGULAR).
 
-        IF(IPER.EQ.1 .AND. AMONOP.EQ.ABS(AMOSOP) .AND.                  &
-     &     MOD(NY,2).EQ.0 .AND. IRGG.EQ.1 ) THEN
+        IF (IPER ==1 .AND. AMONOP ==ABS(AMOSOP) .AND.                  &
+     &     MOD(NY,2) == 0 .AND. IRGG == 1 ) THEN
           IQGAUSS=1
         ELSE
           IQGAUSS=0
@@ -194,20 +190,20 @@
 !*    4. READ MODULE YOWINDNL (NON-LINEAR INTERACTION).
 !       -----------------------------------------------
 
-        IF(.NOT.ALLOCATED(IKP)) ALLOCATE(IKP(MFRSTLW:MLSTHG))
-        IF(.NOT.ALLOCATED(IKP1)) ALLOCATE(IKP1(MFRSTLW:MLSTHG))
-        IF(.NOT.ALLOCATED(IKM)) ALLOCATE(IKM(MFRSTLW:MLSTHG))
-        IF(.NOT.ALLOCATED(IKM1)) ALLOCATE(IKM1(MFRSTLW:MLSTHG))
-        IF(.NOT.ALLOCATED(K1W)) ALLOCATE(K1W(NANG,2))
-        IF(.NOT.ALLOCATED(K2W)) ALLOCATE(K2W(NANG,2))
-        IF(.NOT.ALLOCATED(K11W)) ALLOCATE(K11W(NANG,2))
-        IF(.NOT.ALLOCATED(K21W)) ALLOCATE(K21W(NANG,2))
-        IF(.NOT.ALLOCATED(AF11)) ALLOCATE(AF11(MFRSTLW:MLSTHG))
-        IF(.NOT.ALLOCATED(FKLAP)) ALLOCATE(FKLAP(MFRSTLW:MLSTHG))
-        IF(.NOT.ALLOCATED(FKLAP1)) ALLOCATE(FKLAP1(MFRSTLW:MLSTHG))
-        IF(.NOT.ALLOCATED(FKLAM)) ALLOCATE(FKLAM(MFRSTLW:MLSTHG))
-        IF(.NOT.ALLOCATED(FKLAM1)) ALLOCATE(FKLAM1(MFRSTLW:MLSTHG))
-        IF(.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
+        IF (.NOT.ALLOCATED(IKP)) ALLOCATE(IKP(MFRSTLW:MLSTHG))
+        IF (.NOT.ALLOCATED(IKP1)) ALLOCATE(IKP1(MFRSTLW:MLSTHG))
+        IF (.NOT.ALLOCATED(IKM)) ALLOCATE(IKM(MFRSTLW:MLSTHG))
+        IF (.NOT.ALLOCATED(IKM1)) ALLOCATE(IKM1(MFRSTLW:MLSTHG))
+        IF (.NOT.ALLOCATED(K1W)) ALLOCATE(K1W(NANG,2))
+        IF (.NOT.ALLOCATED(K2W)) ALLOCATE(K2W(NANG,2))
+        IF (.NOT.ALLOCATED(K11W)) ALLOCATE(K11W(NANG,2))
+        IF (.NOT.ALLOCATED(K21W)) ALLOCATE(K21W(NANG,2))
+        IF (.NOT.ALLOCATED(AF11)) ALLOCATE(AF11(MFRSTLW:MLSTHG))
+        IF (.NOT.ALLOCATED(FKLAP)) ALLOCATE(FKLAP(MFRSTLW:MLSTHG))
+        IF (.NOT.ALLOCATED(FKLAP1)) ALLOCATE(FKLAP1(MFRSTLW:MLSTHG))
+        IF (.NOT.ALLOCATED(FKLAM)) ALLOCATE(FKLAM(MFRSTLW:MLSTHG))
+        IF (.NOT.ALLOCATED(FKLAM1)) ALLOCATE(FKLAM1(MFRSTLW:MLSTHG))
+        IF (.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
 
         CALL READREC(6)
 
@@ -216,9 +212,8 @@
 !        --------------------------------------------
 
         CALL READREC(12)
-        IF(NGOUT.GT.0) THEN
-          IF(.NOT.ALLOCATED(IGAR)) ALLOCATE(IGAR(NGOUT))
-          IF(.NOT.ALLOCATED(IJAR)) ALLOCATE(IJAR(NGOUT))
+        IF (NGOUT > 0) THEN
+          IF (.NOT.ALLOCATED(IJAR)) ALLOCATE(IJAR(NGOUT))
           CALL READREC(13)
         ENDIF
 
@@ -226,54 +221,49 @@
 !        ----------------------------------------------------
 
         CALL READREC(14)
-!!!   note that the size of DEPTH will be readjusted in mpdecomp !!!
-        IF(ALLOCATED(DEPTH)) DEALLOCATE(DEPTH)
-        ALLOCATE(DEPTH(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
-        IF(.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
-        IF(.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
-        IF(.NOT.ALLOCATED(TFAC_ST)) ALLOCATE(TFAC_ST(NDEPTH,NFRE))
+!!!   note that the size of DEPTH_INPUT will be readjusted in mpdecomp !!!
+        IF (ALLOCATED(DEPTH_INPUT)) DEALLOCATE(DEPTH_INPUT)
+        ALLOCATE(DEPTH_INPUT(NIBLO))
+        IF (.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
+        IF (.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
+        IF (.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
+        IF (.NOT.ALLOCATED(TFAC_ST)) ALLOCATE(TFAC_ST(NDEPTH,NFRE))
 
         CALL READREC(15)
 
 !*    9. READ MODULE YOWTABL (2ND AND 3RD part).
 !        -------------------
 
-        IF(.NOT.ALLOCATED(FAC0)) ALLOCATE(FAC0(NANG,NANG,NFREHF,NFREHF))
-        IF(.NOT.ALLOCATED(FAC1)) ALLOCATE(FAC1(NANG,NANG,NFREHF,NFREHF))
-        IF(.NOT.ALLOCATED(FAC2)) ALLOCATE(FAC2(NANG,NANG,NFREHF,NFREHF))
-        IF(.NOT.ALLOCATED(FAC3)) ALLOCATE(FAC3(NANG,NANG,NFREHF,NFREHF))
-        IF(.NOT.ALLOCATED(FAK)) ALLOCATE(FAK(NFREHF))
-        IF(.NOT.ALLOCATED(FRHF)) ALLOCATE(FRHF(NFREHF))
-        IF(.NOT.ALLOCATED(DFIMHF)) ALLOCATE(DFIMHF(NFREHF))
+        IF (.NOT.ALLOCATED(FAC0)) ALLOCATE(FAC0(NANG,NANG,NFREHF,NFREHF))
+        IF (.NOT.ALLOCATED(FAC1)) ALLOCATE(FAC1(NANG,NANG,NFREHF,NFREHF))
+        IF (.NOT.ALLOCATED(FAC2)) ALLOCATE(FAC2(NANG,NANG,NFREHF,NFREHF))
+        IF (.NOT.ALLOCATED(FAC3)) ALLOCATE(FAC3(NANG,NANG,NFREHF,NFREHF))
+        IF (.NOT.ALLOCATED(FAK)) ALLOCATE(FAK(NFREHF))
+        IF (.NOT.ALLOCATED(FRHF)) ALLOCATE(FRHF(NFREHF))
+        IF (.NOT.ALLOCATED(DFIMHF)) ALLOCATE(DFIMHF(NFREHF))
 
         CALL READREC(16)
 
         CALL READREC(17)
 
-        IF(.NOT.ALLOCATED(OMEGA)) ALLOCATE(OMEGA(NFREH))
-        IF(.NOT.ALLOCATED(THH))   ALLOCATE(THH(NANGH))
-        IF(.NOT.ALLOCATED(DFDTH)) ALLOCATE(DFDTH(NFREH))
-        IF(.NOT.ALLOCATED(TA)) ALLOCATE(TA(NDEPTH,NANGH,NFREH,NFREH))
-        IF(.NOT.ALLOCATED(TB)) ALLOCATE(TB(NDEPTH,NANGH,NFREH,NFREH))
-        IF(.NOT.ALLOCATED(TC_QL))                                       &
+        IF (.NOT.ALLOCATED(OMEGA)) ALLOCATE(OMEGA(NFREH))
+        IF (.NOT.ALLOCATED(THH))   ALLOCATE(THH(NANGH))
+        IF (.NOT.ALLOCATED(DFDTH)) ALLOCATE(DFDTH(NFREH))
+        IF (.NOT.ALLOCATED(TA)) ALLOCATE(TA(NDEPTH,NANGH,NFREH,NFREH))
+        IF (.NOT.ALLOCATED(TB)) ALLOCATE(TB(NDEPTH,NANGH,NFREH,NFREH))
+        IF (.NOT.ALLOCATED(TC_QL))                                       &
      &         ALLOCATE(TC_QL(NDEPTH,NANGH,NFREH,NFREH))
-        IF(.NOT.ALLOCATED(TT_4M))                                       &
+        IF (.NOT.ALLOCATED(TT_4M))                                       &
      &         ALLOCATE(TT_4M(NDEPTH,NANGH,NFREH,NFREH))
-        IF(.NOT.ALLOCATED(TT_4P))                                       &
+        IF (.NOT.ALLOCATED(TT_4P))                                       &
      &         ALLOCATE(TT_4P(NDEPTH,NANGH,NFREH,NFREH))
-        IF(.NOT.ALLOCATED(IM_P))                                        &
+        IF (.NOT.ALLOCATED(IM_P))                                        &
      &         ALLOCATE(IM_P(NFREH,NFREH))
-        IF(.NOT.ALLOCATED(IM_M))                                        &
+        IF (.NOT.ALLOCATED(IM_M))                                        &
      &         ALLOCATE(IM_M(NFREH,NFREH))
-        IF(.NOT.ALLOCATED(TFAKH)) ALLOCATE(TFAKH(NFREH,NDEPTH))
+        IF (.NOT.ALLOCATED(TFAKH)) ALLOCATE(TFAKH(NFREH,NDEPTH))
 
         CALL READREC(18)
-
-!*      10. READ MODULE YOWCURR.
-!           --------------------
-
-!       THE OCEAN CURRENTS ARE INPUT IN INITMDL
 
 !       THE UNSTRUCTURED BITS (if pre-computed by PREPROC)
         IF (LLUNSTR .AND. LPREPROC) THEN
@@ -310,7 +300,6 @@
       IMPLICIT NONE
       INTEGER(KIND=JWIM), INTENT(IN) :: KREC
       INTEGER(KIND=JWIM) :: ISTAT
-      !REAL(KIND=8) ::                     &
       REAL(KIND=JWRU) ::                                                &
      & R8_ACL1,R8_ACL2,                                                 &
      & R8_AMOEAP,R8_AMONOP,R8_AMOSOP,R8_AMOWEP,                         &
@@ -333,16 +322,14 @@
      &     R8_OMEGA,                                                    &
      &     R8_THH,                                                      &
      &     R8_DFDTH,                                                    &
+     &     R8_DEPTH_INPUT,                                              &
      &     R8_FAK                
-      !REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) ::                   &
-     &     R8_DEPTH,                                                    &
      &     R8_TCGOND,                                                   &
      &     R8_TFAK,                                                     &
      &     R8_TSIHKD,                                                   &
      &     R8_TFAC_ST,                                                  &
      &     R8_TFAKH
-      !REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:,:,:) ::
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:,:,:) ::               &
      &     R8_FAC0,                                                     &
      &     R8_FAC1,                                                     &
@@ -374,9 +361,9 @@
  1002    FORMAT(2X,A,I0,A,I0,A,L1)
       CASE(2)
          READ(IU07,IOSTAT=ISTAT)                                        &
-     &        NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,                 &
+     &        NANG, NFRE, NFRE_RED, NGX, NGY, NIBLO, NOVER,             &
      &        KFRH, MFRSTLW, MLSTHG,                                    &
-     &        NIBL1, IDUM, KIBLD, KBLD, KIBLC, KBLC, CLDOMAIN
+     &        NIBL1, IDUM, KIBLD, KIBLC, CLDOMAIN
          IF (ISTAT /= 0) GOTO 1000
       CASE(3)
          IF (LLR8TOR4) THEN
@@ -409,7 +396,7 @@
 
             READ(IU07,IOSTAT=ISTAT) R8_DELPHI, R8_DELLAM, NLONRGG,      &
      &           R8_SINPH, R8_COSPH,                                    &
-     &           IGL, IJS, IJL2, IJLS, IJL, IJLT
+     &           IJS, IJL
             IF (ISTAT /= 0) GOTO 1000
 
             DELPHI = R8_DELPHI
@@ -420,16 +407,16 @@
          ELSE
             READ(IU07,IOSTAT=ISTAT) DELPHI, DELLAM, NLONRGG,            &
      &           SINPH, COSPH,                                          &
-     &           IGL, IJS, IJL2, IJLS, IJL, IJLT
+     &           IJS, IJL
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
       CASE(5)
          IF (LLR8TOR4) THEN
             ALLOCATE(R8_ZDELLO(NGY))
 
-            READ(IU07,IOSTAT=ISTAT) IXLG, KXLT, NX, NY, IPER,           &
-     &           R8_AMOWEP, R8_AMOSOP, R8_AMOEAP, R8_AMONOP,            &
-     &           R8_XDELLA, R8_XDELLO,                                  &
+            READ(IU07,IOSTAT=ISTAT) BLK2GLO%IXLG, BLK2GLO%KXLT, NX, NY, IPER, &
+     &           R8_AMOWEP, R8_AMOSOP, R8_AMOEAP, R8_AMONOP,                  &
+     &           R8_XDELLA, R8_XDELLO,                                        &
      &           R8_ZDELLO, IRGG
             IF (ISTAT /= 0) GOTO 1000
 
@@ -443,9 +430,9 @@
 
             DEALLOCATE(R8_ZDELLO)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) IXLG, KXLT, NX, NY, IPER,           &
-     &           AMOWEP, AMOSOP, AMOEAP, AMONOP,                        &
-     &           XDELLA, XDELLO,                                        &
+            READ(IU07,IOSTAT=ISTAT) BLK2GLO%IXLG, BLK2GLO%KXLT, NX, NY, IPER, &
+     &           AMOWEP, AMOSOP, AMOEAP, AMONOP,                              &
+     &           XDELLA, XDELLO,                                              &
      &           ZDELLO, IRGG
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
@@ -496,7 +483,7 @@
          READ(IU07,IOSTAT=ISTAT) NGOUT
          IF (ISTAT /= 0) GOTO 1000
       CASE(13)
-         READ(IU07,IOSTAT=ISTAT) IGAR, IJAR
+         READ(IU07,IOSTAT=ISTAT) IJAR
          IF (ISTAT /= 0) GOTO 1000
       CASE(14)
          IF (LLR8TOR4) THEN
@@ -510,27 +497,27 @@
          ENDIF
       CASE(15)
          IF (LLR8TOR4) THEN
-            ALLOCATE(R8_DEPTH(NIBLO,NBLO))
+            ALLOCATE(R8_DEPTH_INPUT(NIBLO))
             ALLOCATE(R8_TCGOND(NDEPTH,NFRE))
             ALLOCATE(R8_TFAK(NDEPTH,NFRE))
             ALLOCATE(R8_TSIHKD(NDEPTH,NFRE))
             ALLOCATE(R8_TFAC_ST(NDEPTH,NFRE))
-            READ(IU07,IOSTAT=ISTAT) R8_DEPTH, R8_TCGOND,                &
+            READ(IU07,IOSTAT=ISTAT) R8_DEPTH_INPUT, R8_TCGOND,          &
      &           R8_TFAK, R8_TSIHKD, R8_TFAC_ST
             IF (ISTAT /= 0) GOTO 1000
-            DEPTH = R8_DEPTH
+            DEPTH_INPUT(:) = R8_DEPTH_INPUT(:)
             TCGOND = R8_TCGOND
             TFAK = R8_TFAK
             TSIHKD = R8_TSIHKD
             TFAC_ST = R8_TFAC_ST
 
-            DEALLOCATE(R8_DEPTH)
+            DEALLOCATE(R8_DEPTH_INPUT)
             DEALLOCATE(R8_TCGOND)
             DEALLOCATE(R8_TFAK)
             DEALLOCATE(R8_TSIHKD)
             DEALLOCATE(R8_TFAC_ST)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) DEPTH, TCGOND,                      &
+            READ(IU07,IOSTAT=ISTAT) DEPTH_INPUT, TCGOND,                &
      &           TFAK, TSIHKD, TFAC_ST
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
@@ -644,4 +631,4 @@
 
       END
 
-      END SUBROUTINE READPRE
+END SUBROUTINE READPRE

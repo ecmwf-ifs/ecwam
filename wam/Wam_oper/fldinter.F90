@@ -1,10 +1,10 @@
-      SUBROUTINE FLDINTER (IU06, ITEST, NGPTOTG, NC, NR, NFIELDS,FIELDS, &
-     &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,      &
-     &                     IFROMIJ, JFROMIJ, IJS, IJL,                   &
-     &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,    &
-     &                     ILONRGG, IJBLOCK, PMISS,                      &
-     &                     LADEN, ROAIR, LGUST, WSTAR0, LLKC, LWCUR,     &
-     &                     LLINTERPOL,                                   &
+      SUBROUTINE FLDINTER (IU06, NGPTOTG, NC, NR, NFIELDS,FIELDS,       &
+     &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,     &
+     &                     IFROMIJ, JFROMIJ, KIJS, KIJL, KIJLMAX,       &
+     &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,   &
+     &                     ILONRGG, IJBLOCK, PMISS,                     &
+     &                     LADEN, ROAIR, LGUST, WSTAR0, LLKC, LWCUR,    &
+     &                     LLINTERPOL,                                  &
      &                     DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
 ! ----------------------------------------------------------------------    
 
@@ -31,9 +31,9 @@
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!      *CALL* *FLDINTER* (IU06, ITEST, NGPTOTG, NC, NR, FIELDS,
+!      *CALL* *FLDINTER* (IU06, NGPTOTG, NC, NR, FIELDS,
 !    &                    NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
-!    &                    IFROMIJ ,JFROMIJ, IJS, IJL,
+!    &                    IFROMIJ ,JFROMIJ, KIJS, KIJL,
 !    &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
 !    &                    ILONRGG, IJBLOCK, PMISS,
 !    &                    LADEN, ROAIR, LGUST, WSTAR0,LWCUR, LLKC,
@@ -41,7 +41,6 @@
 !    &                    DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
 !
 !        *IU06*   - OUTPUT UNIT.
-!        *ITEST*  - TEST MESSAGE LEVEL.
 !        ATMOSPHERIC MODEL GRID AND FIELD (INPUT):
 !        *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
 !        *NCA*    - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
@@ -64,8 +63,8 @@
 !        *ZDELLO* - GRID POINT SPACING PER LATITUDES. 
 !        *IFROMIJ*- INTEGER  !!! LOCAL !!! LONG. GRID INDEX.
 !        *JFROMIJ*- INTEGER  !!! LOCAL !!! LAT. GRID INDEX (NORTH-SOUTH).
-!        *IJS*    - SMALLEST WAM GRID POINT INDEX USED BY THE PE.
-!        *IJL*    - LARGEST WAM GRID POINT INDEX USED BY THE PE.
+!        *KIJS:KIJL* DIMENSION OF IFROMIJ AND JFROMIJ
+!        *KIJLMAX*- LARGEST WAM GRID POINT INDEX USED BY THREAD
 !        *AMOWEP* - MOST WESTERN LONGITUDE IN GRID (  1, ? ).           
 !        *AMOSOP* - MOST SOUTHERN LATITUDE IN GRID.( ? ,NGY).           
 !        *AMOEAP* - MOST EASTERN LONGITUDE IN GRID (NGX, ? ).           
@@ -98,18 +97,19 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWWIND  , ONLY : FIELDG    ,LLNEWCURR
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, NGPTOTG, NC, NR, NFIELDS
-      INTEGER(KIND=JWIM), INTENT(IN) :: NGX, NGY, KRGG, IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, NGPTOTG, NC, NR, NFIELDS
+      INTEGER(KIND=JWIM), INTENT(IN) :: NGX, NGY, KRGG, KIJS, KIJL, KIJLMAX
       INTEGER(KIND=JWIM), INTENT(IN) :: IPERIODIC
       INTEGER(KIND=JWIM), DIMENSION(NGY), INTENT(IN) :: KLONRGG, JJM
       INTEGER(KIND=JWIM), DIMENSION(NR), INTENT(IN) :: ILONRGG
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IFROMIJ, JFROMIJ
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IFROMIJ, JFROMIJ
       INTEGER(KIND=JWIM), DIMENSION(0:NC+1,NR), INTENT(IN) :: IJBLOCK
       INTEGER(KIND=JWIM), DIMENSION(NGX,NGY), INTENT(IN) :: IIM, IIPM
       INTEGER(KIND=JWIM), DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
@@ -154,12 +154,12 @@
         ZLLKC=0.0_JWRB
       ENDIF
 
-      IF(.NOT.LLINTERPOL) THEN
+      IF (.NOT.LLINTERPOL) THEN
 
 !       REARRANGE DATA FIELD.
 !       --------------------
 
-          DO IJ = IJS,IJL
+          DO IJ = KIJS, KIJLMAX
             I = IFROMIJ(IJ)
             J = JFROMIJ(IJ)
 
@@ -168,24 +168,24 @@
             FIELDG(I,J)%UWND = FIELDS(IJBLOCK(I,J),1)
             FIELDG(I,J)%VWND = FIELDS(IJBLOCK(I,J),2)
             FIELDG(I,J)%AIRD = ZLADEN*FIELDS(IJBLOCK(I,J),3) + (1.0_JWRB-ZLADEN)*ROAIR
-            FIELDG(I,J)%ZIDL = ZLGUST*FIELDS(IJBLOCK(I,J),4) + (1.0_JWRB-ZLGUST)*WSTAR0
-            FIELDG(I,J)%CIFR = FIELDS(IJBLOCK(I,J),5)
+            FIELDG(I,J)%WSTAR = ZLGUST*FIELDS(IJBLOCK(I,J),4) + (1.0_JWRB-ZLGUST)*WSTAR0
+            FIELDG(I,J)%CICOVER = FIELDS(IJBLOCK(I,J),5)
             FIELDG(I,J)%LKFR = ZLLKC*FIELDS(IJBLOCK(I,J),6)
 
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
-            FIELDG(I,J)%CITH = 0.0_JWRB
+            FIELDG(I,J)%CITHICK = 0.0_JWRB
           ENDDO
 
-          IF(LLNEWCURR) THEN
-            IF(LWCUR) THEN
-              DO IJ = IJS,IJL
+          IF (LLNEWCURR) THEN
+            IF (LWCUR) THEN
+              DO IJ = KIJS, KIJLMAX
                 I = IFROMIJ(IJ)
                 J = JFROMIJ(IJ)
                 FIELDG(I,J)%UCUR = FIELDS(IJBLOCK(I,J),7)
                 FIELDG(I,J)%VCUR = FIELDS(IJBLOCK(I,J),8)
               ENDDO
             ELSE
-              DO IJ = IJS,IJL
+              DO IJ = KIJS, KIJLMAX
                 I = IFROMIJ(IJ)
                 J = JFROMIJ(IJ)
                 FIELDG(I,J)%UCUR = 0.0_JWRB
@@ -199,7 +199,7 @@
 !       INTERPOLATE TO WAVE MODEL GRID
 !       ------------------------------
 
-          DO IJ = IJS,IJL 
+          DO IJ = KIJS, KIJLMAX 
             I = IFROMIJ(IJ)
             J = JFROMIJ(IJ)
 
@@ -245,12 +245,12 @@
               FIELDG(I,J)%AIRD = ROAIR
             ENDIF
             IF (LGUST) THEN
-              FIELDG(I,J)%ZIDL=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),4) +    &
+              FIELDG(I,J)%WSTAR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),4) +   &
      &                         DII1*FIELDS(IJBLOCK(II1,JJ),4) ) +       &
      &                   DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),4) +       &
      &                         DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),4) )
             ELSE
-              FIELDG(I,J)%ZIDL = WSTAR0 
+              FIELDG(I,J)%WSTAR = WSTAR0 
             ENDIF
 
 !           FOR SEA ICE FRACTION
@@ -260,57 +260,57 @@
             F10=FIELDS(IJBLOCK(II1,JJ),5)
             F01=FIELDS(IJBLOCK(IIP,JJ1),5)
             F11=FIELDS(IJBLOCK(IIP1,JJ1),5)
-            IF (F00.EQ.PMISS .OR.                                       &
-     &          F10.EQ.PMISS .OR.                                       &
-     &          F01.EQ.PMISS .OR.                                       &
-     &          F11.EQ.PMISS     ) THEN
-              IF (DJ1.LE.0.5_JWRB) THEN
+            IF (F00 == PMISS .OR.                                       &
+     &          F10 == PMISS .OR.                                       &
+     &          F01 == PMISS .OR.                                       &
+     &          F11 == PMISS     ) THEN
+              IF (DJ1 <= 0.5_JWRB) THEN
                 JCL=JJ
                 ICL=II1
-                IF (DII1.LE.0.5_JWRB) ICL=II
+                IF (DII1 <= 0.5_JWRB) ICL=II
               ELSE
                 JCL=JJ1
                 ICL=IIP1
-                IF (DIIP1.LE.0.5_JWRB) ICL=IIP
+                IF (DIIP1 <= 0.5_JWRB) ICL=IIP
               ENDIF
               CI=FIELDS(IJBLOCK(ICL,JCL),5)
 
 !             NON MISSING VALUE OVER SEA IS NEEDED
-              IF (CI.EQ.PMISS) THEN
+              IF (CI == PMISS) THEN
                 NCOUNT=0
                 CI=0.
-                IF (F00.NE.PMISS) THEN
+                IF (F00 /= PMISS) THEN
                   CI=CI+F00
                   NCOUNT=NCOUNT+1
                 ENDIF
-                IF (F10.NE.PMISS) THEN
+                IF (F10 /= PMISS) THEN
                   CI=CI+F10
                   NCOUNT=NCOUNT+1
                 ENDIF
-                IF (F01.NE.PMISS) THEN
+                IF (F01 /= PMISS) THEN
                   CI=CI+F01
                   NCOUNT=NCOUNT+1
                 ENDIF
-                IF (F11.NE.PMISS) THEN
+                IF (F11 /= PMISS) THEN
                   CI=CI+F11
                   NCOUNT=NCOUNT+1
                 ENDIF
-                IF (NCOUNT.GT.0) THEN
+                IF (NCOUNT > 0) THEN
                   CI=CI/NCOUNT
                 ELSE
                   CI=PMISS
                 ENDIF
               ENDIF
-              FIELDG(I,J)%CIFR=CI
+              FIELDG(I,J)%CICOVER=CI
             ELSE
-              FIELDG(I,J)%CIFR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),5) +    &
+              FIELDG(I,J)%CICOVER=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),5) + &
      &                      DII1*FIELDS(IJBLOCK(II1,JJ),5) ) +          &
      &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),5) +          &
      &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),5) )
             ENDIF
 
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
-            FIELDG(I,J)%CITH = 0.0_JWRB
+            FIELDG(I,J)%CITHICK = 0.0_JWRB
 
 
             IF (LLKC) THEN

@@ -1,7 +1,7 @@
       SUBROUTINE INIT_SDISS_ARDH
 ! ----------------------------------------------------------------------
 
-!**** *INIT_SDISS_ARDH* - INITIALISATION FOR SDISS_ARDH
+!**** *INIT_SDISS_ARDH* - INITIALISATION FOR SDISS_ARD
 
 !     LOTFI AOUF       METEO FRANCE 2013
 !     FABRICE ARDHUIN  IFREMER  2013
@@ -34,18 +34,17 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR, TH, FRATIO, DELTH, GOM, COSTH, SINTH
+      USE YOWFRED  , ONLY : FR, TH, FRATIO, DELTH, COSTH, SINTH
       USE YOWPCONS , ONLY : RAD     ,G        ,ZPI    ,ROWATER
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPHYS  , ONLY : SDSBR   ,ISDSDTH ,ISB     ,IPSAT    ,      &
 &                  SSDSC2  , SSDSC4,  SSDSC6,  MICHE, SSDSC3, SSDSBRF1,&
 &                  BRKPBCOEF  ,SSDSC5, NSDSNTH, NDIKCUMUL,             &
 &                  INDICESSAT, SATWEIGHTS, CUMULW
-      USE YOWSHAL  , ONLY : NDEPTH  ,TFAK , TCGOND
-      USE YOWSTAT  , ONLY : ISHALLO
 
-      USE YOWTEST  , ONLY : IU06    ,ITEST
-      USE YOMHOOK   ,ONLY : LHOOK   ,DR_HOOK
+      USE YOWSHAL  , ONLY : NDEPTH  ,TFAK , TCGOND
+
+      USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -83,19 +82,19 @@
       DELTH_TRUNC=(TH(1)+ISDSDTH*RAD)-(TH(1+NSDSNTH)-0.5*DELTH)
       DELTH_TRUNC=MAX(0.,MIN(DELTH_TRUNC,DELTH))
 
-      IF(ALLOCATED(INDICESSAT)) DEALLOCATE(INDICESSAT)
+      IF (ALLOCATED(INDICESSAT)) DEALLOCATE(INDICESSAT)
       ALLOCATE(INDICESSAT(NANG,NSDSNTH*2+1))
-      IF(ALLOCATED(SATWEIGHTS)) DEALLOCATE(SATWEIGHTS)
+      IF (ALLOCATED(SATWEIGHTS)) DEALLOCATE(SATWEIGHTS)
       ALLOCATE(SATWEIGHTS(NANG,NSDSNTH*2+1))
 
       DO K=1,NANG
         DO I_INT=K-NSDSNTH, K+NSDSNTH
           J_INT=I_INT
-          IF (I_INT.LT.1)  J_INT=I_INT+NANG
-          IF (I_INT.GT.NANG) J_INT=I_INT-NANG
+          IF (I_INT < 1)  J_INT=I_INT+NANG
+          IF (I_INT > NANG) J_INT=I_INT-NANG
           INDICESSAT(K,I_INT-(K-NSDSNTH)+1)=J_INT
 
-          IF(I_INT.EQ.K-NSDSNTH .OR. I_INT.EQ.K+NSDSNTH) THEN
+          IF (I_INT == K-NSDSNTH .OR. I_INT == K+NSDSNTH) THEN
             DELTH_LOC=DELTH_TRUNC
           ELSE
             DELTH_LOC=DELTH
@@ -105,10 +104,10 @@
       END DO
 
 !     COMPUTE CUMULW
-      IF(ALLOCATED(CUMULW)) DEALLOCATE(CUMULW)
+      IF (ALLOCATED(CUMULW)) DEALLOCATE(CUMULW)
       ALLOCATE(CUMULW(NDEPTH,0:NANGD,NFRE,NFRE))
 
-      IF (SSDSC3.NE.0.0_JWRB) THEN
+      IF (SSDSC3 /= 0.0_JWRB) THEN
 !       NDIKCUMUL is the  integer difference in frequency bands
 !       between the "large breakers" and short "wiped-out waves"
 !!! wrong !!???        NDIKCUMUL = NINT(SSDSBRF1/(FRATIO-1.))
@@ -124,17 +123,10 @@
 
         DO JD=1,NDEPTH
 
-          IF (ISHALLO.EQ.0) THEN
-            DO M=1,NFRE
-              C_(M)=SIG(M)/TFAK(JD,M)
-              CGM1(M)=1.0_JWRB/TCGOND(JD,M)
-            ENDDO
-          ELSE
-            DO M=1,NFRE
-              C_(M)=G/SIG(M)  ! Valid in deep water only !!!!!!!!!!!!
-              CGM1(M)=2.0_JWRB/C_(M) ! deep water !
-            ENDDO
-          ENDIF
+          DO M=1,NFRE
+            C_(M)=SIG(M)/TFAK(JD,M)
+            CGM1(M)=1.0_JWRB/TCGOND(JD,M)
+          ENDDO
 
           DO M=1,NFRE
             C_C(M)=C_(M)*C_(M)
@@ -143,7 +135,7 @@
 
           DO M=NDIKCUMUL+1,NFRE
 
-            IF(M-NDIKCUMUL.GE.3) THEN
+            IF (M-NDIKCUMUL >= 3) THEN
               TRPZ_DSIP(1)=0.5_JWRB*DSIP(1)
               DO M2=2,M-NDIKCUMUL-1
                 TRPZ_DSIP(M2)=DSIP(M2)
@@ -165,7 +157,7 @@
         ENDDO ! JD
 
       ELSE
-        CUMULW(:,:,:,:)=0.0_JWRB
+        CUMULW(:,:,:,:) = 0.0_JWRB
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('INIT_SDISS_ARDH',1,ZHOOK_HANDLE)

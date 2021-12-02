@@ -97,20 +97,20 @@
       WRITE(CARD(7), 5) CABDT, CAEDT
     5 FORMAT('ANALYSIS FROM ',A14,' TO ',A14)
                                                                         
-      IF (IASS.EQ.0) THEN                                               
+      IF (IASS == 0) THEN                                               
         CARD(8) = 'ASSIMILATION NO'        
       ELSE                                                              
         CARD(8) = 'ASSIMILATION YES'      
       ENDIF                                                            
                                                                         
-      IF (NF.EQ.0) THEN                                                 
+      IF (NF == 0) THEN                                                 
         CARD(9) = 'NEW FORECAST NO'      
       ELSE                                                              
         CARD(9) = 'NEW FORECAST YES'    
       ENDIF                                                            
                                                                         
       DO I=1,3                                                     
-        IF (ISTAT(I).EQ.0) THEN                                        
+        IF (ISTAT(I) == 0) THEN                                        
           WRITE(CARD(9+I), 6) I                                       
     6     FORMAT('STATUS STORM',I1,'= UNFINISHED')                    
         ELSE                                                           
@@ -127,7 +127,7 @@
       WRITE(CARD(15),10) CCURA
    10 FORMAT('BEGIN DATE FOR USING SURFACE CURRENT = ',A14)
 
-      IF(LRSTPARAL) THEN 
+      IF (LRSTPARAL) THEN 
         CARD(16) = 'PARALLEL RESTART = YES'        
       ELSE
         CARD(16) = 'PARALLEL RESTART = NO'        

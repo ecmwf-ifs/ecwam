@@ -1,4 +1,4 @@
-      FUNCTION CHNKMIN (U10)
+REAL(KIND=JWRB) FUNCTION CHNKMIN (U10)
 
 ! ----------------------------------------------------------------------
 
@@ -38,8 +38,6 @@
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB) :: CHNKMIN
-
       REAL(KIND=JWRB), INTENT(IN) :: U10
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
@@ -51,4 +49,4 @@
 
       IF (LHOOK) CALL DR_HOOK('CHNKMIN',1,ZHOOK_HANDLE)
 
-      END FUNCTION CHNKMIN
+END FUNCTION CHNKMIN

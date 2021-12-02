@@ -1,4 +1,4 @@
-      SUBROUTINE FRCUTINDEX (IJS, IJL, FM, FMWS, USNEW, CICVR,          &
+      SUBROUTINE FRCUTINDEX (KIJS, KIJL, FM, FMWS, UFRIC, CICOVER,     &
      &                       MIJ, RHOWGDFTH)
 
 ! ----------------------------------------------------------------------
@@ -9,13 +9,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FRCUTINDEX (IJS, IJL, FM, FMWS, CICVR, MIJ, RHOWGDFTH)
-!          *IJS*    - INDEX OF FIRST GRIDPOINT
-!          *IJL*    - INDEX OF LAST GRIDPOINT
+!       *CALL* *FRCUTINDEX (KIJS, KIJL, FM, FMWS, CICOVER, MIJ, RHOWGDFTH)
+!          *KIJS*   - INDEX OF FIRST GRIDPOINT
+!          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FM*     - MEAN FREQUENCY
 !          *FMWS*   - MEAN FREQUENCY OF WINDSEA
-!          *USNEW*  - FRICTION VELOCITY IN M/S
-!          *CICVR*  - CICVR 
+!          *UFRIC*  - FRICTION VELOCITY IN M/S
+!          *CICOVER*- CICOVER 
 !          *MIJ*    - LAST FREQUENCY INDEX for imposing high frequency tail
 !          *RHOWGDFTH - WATER DENSITY * G * DF * DTHETA
 !                       FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ) 
@@ -29,23 +29,9 @@
 !*    FREQUENCIES LE 2.5*MAX(FMWS,FM).
 
 
-!!! be aware that if this is not used, for iphys=1, the cumulative dissipation has to be
+!!! be aware that if this is NOT used, for iphys=1, the cumulative dissipation has to be
 !!! re-activated (see module yowphys) !!!
 
-
-!     EXTERNALS.
-!     ---------
-
-!     REFERENCE.
-!     ----------
-
-! ----------------------------------------------------------------------
-
-!     EXTERNALS.
-!     ---------
-
-!     REFERENCE.
-!     ----------
 
 ! ----------------------------------------------------------------------
 
@@ -58,17 +44,18 @@
       USE YOWPARAM , ONLY : NFRE
       USE YOWPCONS , ONLY : G        ,EPSMIN
       USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(IJS:IJL)
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(KIJS:KIJL)
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: FM, FMWS, UFRIC, CICOVER
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL,NFRE), INTENT(OUT) :: RHOWGDFTH 
 
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: FM, FMWS, USNEW, CICVR
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(OUT) :: RHOWGDFTH 
 
       INTEGER(KIND=JWIM) :: IJ, M
 
@@ -88,10 +75,10 @@
       FPMH = TAILFACTOR/FR(1)
       FPPM = TAILFACTOR_PM*G/(FRIC*ZPIFR(1))
 
-      DO IJ=IJS,IJL
-        IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
+      DO IJ=KIJS,KIJL
+        IF (CICOVER(IJ) <= CITHRSH_TAIL) THEN
           FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
-          FPM = FPPM/MAX(USNEW(IJ),EPSMIN)
+          FPM = FPPM/MAX(UFRIC(IJ),EPSMIN)
           FPM4 = MAX(FM2,FPM)
           MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
           MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
@@ -101,11 +88,11 @@
       ENDDO
 
 !     SET RHOWGDFTH
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         DO M=1,MIJ(IJ)
           RHOWGDFTH(IJ,M) = RHOWG_DFIM(M)
         ENDDO
-        IF(MIJ(IJ).NE.NFRE) RHOWGDFTH(IJ,MIJ(IJ))=0.5_JWRB*RHOWGDFTH(IJ,MIJ(IJ))
+        IF (MIJ(IJ) /= NFRE) RHOWGDFTH(IJ,MIJ(IJ))=0.5_JWRB*RHOWGDFTH(IJ,MIJ(IJ))
         DO M=MIJ(IJ)+1,NFRE
           RHOWGDFTH(IJ,M) = 0.0_JWRB
         ENDDO

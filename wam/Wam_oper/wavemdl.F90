@@ -98,51 +98,48 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-#ifdef MODEL_COUPLING_ATM_WAV
-      USE pgmcl_lib_WAM, ONLY : US_coupl, Z0_coupl
-#endif
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU, LWCOU2W, LWCOUHMF, LWFLUX,           &
      &         LWCOUNORMS, LLNORMWAMOUT_GLOBAL, LLNORMWAM2IFS,          &
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,             &
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU,           &
-     &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTK,              &
-     &         LWNEMOCOUSTRN, IFSTSTEP, IFSNSTEP,                       &
-     &         LIFS_IO_SERV_ENABLED,                                    &
-     &         NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
+     &         IFSTSTEP, IFSNSTEP,                                      &
+     &         LIFS_IO_SERV_ENABLED
       USE YOWGRIBHD, ONLY : DATE_TIME_WINDOW_END
-      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK 
       USE YOWCURR  , ONLY : IDELCUR  ,LLCHKCFL
       USE YOWFRED  , ONLY : FR
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
-      USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,FLMIN
-      USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS,   AMONOP
-      USE YOWMEAN  , ONLY : WSEMEAN  ,WSFMEAN  ,TAUOCXD  ,TAUOCYD ,     &
-     &            PHIOCD   ,USTOKES  ,VSTOKES  ,STRNMS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
+      USE YOWGRID  , ONLY : IJS      ,IJL
+      USE YOWICE   , ONLY : FLMIN
+      USE YOWMAP   , ONLY : BLK2GLO  ,BLK2LOC  ,ZDELLO   ,IQGAUSS,   AMONOP
+      USE YOWMEAN  , ONLY : INTFLDS
+      USE YOWNEMOFLDS , ONLY : WAM2NEMO, NEMO2WAM
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE    ,     &
-     &                      NBLO     ,LL1D
+     &                      LL1D
       USE YOWPCONS , ONLY : ZMISS    ,G        ,GM1
       USE YOWPHYS  , ONLY : RNU      ,RNUM     ,ALPHA
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,    &
-     &            LSMSSIG_WAM,CMETER ,CEVENT   ,LSARINV  ,NPROMA_WAM,   &
+     &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWSHAL  , ONLY : WVENVI   ,WVPRPT
+      USE YOWTEST  , ONLY : IU06
       USE YOWWNDG  , ONLY : ICODE_CPL
+      USE YOWWIND  , ONLY : FF_NEXT
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE YOWSPEC, ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,      &
-     &            Z0B    ,BETAOLD  ,ROAIRO   ,ZIDLOLD  ,                &
-     &            NSTART ,NEND     ,FL1
-      USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
-      USE YOWNEMOP , ONLY : NEMODP
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1 
+      USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW   ,CDATEWO  ,CDATEFL
+      USE YOWUNPOOL,ONLY  : LLUNSTR
+
+      USE YOMHOOK , ONLY : LHOOK,   DR_HOOK
+      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE GRIB_API_INTERFACE
-      USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
-      USE YOWUNPOOL,ONLY : LLUNSTR
       USE MPL_MODULE
 ! --------------------------------------------------------------------- 
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "difdate.intfb.h"
 #include "incdate.intfb.h"
@@ -222,19 +219,18 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       REAL(KIND=JWRB), INTENT(IN) :: RNU_ATM 
 !     REDUCED KINEMATIC AIR DENSITY FOR MOEMNTUM TRANSFER
       REAL(KIND=JWRB), INTENT(IN) :: RNUM_ATM 
-!     USED TO SPECIFY THE END OF THE 4DVAr ANALYSIS WINDOW WHEN COUPLED 
+!     USED TO SPECIFY THE END OF THE 4DVAR ANALYSIS WINDOW WHEN COUPLED 
       INTEGER(KIND=JWIM), INTENT(IN) :: IDATE_TIME_WINDOW_END
 !     ATMOSPHERIC NSTEP (CT3)
       INTEGER(KIND=JWIM), INTENT(IN) :: NSTEP
 !     IFS IO SERVER ENABLED
       LOGICAL, INTENT(IN) :: LDIFS_IO_SERV_ENABLED
 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: I, J, K, ICPLEN,ICPLEN_ECF
       INTEGER(KIND=JWIM) :: KDELWI, IDURAT
       INTEGER(KIND=JWIM) :: NDUR, KSTOP_BY, ISTOP
       INTEGER(KIND=JWIM) :: N_MASK_OUT_GLOBAL
-      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: ICHNK, KIJS, KIJL, IJSB, IJLB
       INTEGER(KIND=JWIM) :: IREAD, ISTAT, IRECV
       INTEGER(KIND=JWIM) :: IFLDOFFSET
       INTEGER(KIND=JWIM) :: IYYYYMMDD, IHHMM, ISTEP, IRET, KRET
@@ -251,7 +247,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       REAL(KIND=JWRB), DIMENSION(NWVFIELDS) :: FAVG,FMIN,FMAX
       REAL(KIND=JWRB), DIMENSION(NWVFIELDS) :: DEFVAL
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP) :: BETAB
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NCHNK) :: BETAB
       REAL(KIND=JWRB), ALLOCATABLE :: ZCOMBUFS(:), ZCOMBUFR(:)
       REAL(KIND=JWRB), ALLOCATABLE :: WVBLOCK(:,:)
 
@@ -299,9 +295,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       ICODE_CPL=NATMFLX
 
-      IG=1
-
-      IF(LWCOU) THEN
+      IF (LWCOU) THEN
         IF ( IQGAUSS /= 1 ) THEN
           IF ( AMONOP < 90._JWRB ) THEN
               WRITE (IU06,*) ' *********************************'
@@ -324,14 +318,14 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         NGRIB_HANDLE_IFS=IGRIB_HANDLE
 
 
-        IF(NGRIB_HANDLE_IFS < 0 ) THEN
+        IF (NGRIB_HANDLE_IFS < 0 ) THEN
           WRITE(IU06,*)' SUB: WAVEMDL:  NGRIB_HANDLE_IFS < 0 !'
           WRITE(IU06,*)' CALL ABORT1 '
           WRITE(IU06,*)'  '
           CALL ABORT1
         ENDIF
 
-        IF (LLGRAPI .OR. ITEST.GE.1) THEN
+        IF (LLGRAPI) THEN
            WRITE(IU06,*)'  '
            WRITE (IU06,*) ' WAVEMDL: GRIB HANDLE FROM IFS'
            CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'dataDate',IYYYYMMDD)
@@ -339,7 +333,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
            CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'step',STEP)
            CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'endStep',ISTEP)
            CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'expver',C12,KRET=IRET)
-           IF(IRET.NE.0) THEN
+           IF (IRET /= 0) THEN
              CEXPVER='****'
            ELSE
              CEXPVER=C12(1:4)
@@ -364,27 +358,20 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       KCOUSTEP=KDELWI
 
       IREAD=1
-      IF(NPROC.EQ.1) IREAD=1
+      IF (NPROC == 1) IREAD=1
 
 
       IF (FRSTIME) THEN
 
 !     !!!! FIRST TIME AROUND !!!!
 
-        IF (ITEST.GE.1) THEN
-          WRITE (IU06,*) ' WAVEMDL:'
-          WRITE (IU06,*) ' FRSTIME', FRSTIME
-        ENDIF
-        CALL FLUSH(IU06)
-
-
         LMASK_OUT_NOT_SET=.TRUE.
         LMASK_TASK_STR=.TRUE.
 
-        IF(LWCOU) THEN
+        IF (LWCOU) THEN
           IU06=20
           IL = LEN_TRIM(CBEGDAT)
-          IF(IL.NE.14) THEN
+          IF (IL /= 14) THEN
             WRITE (IU06,*) ' NON-Y2K COMPLIANT DATE IN CALLING WAVEMDL'
             WRITE (IU06,*) ' CBEGDAT =  ',CBEGDAT
             WRITE (IU06,*) ' PROGRAM WILL ABORT '
@@ -437,43 +424,36 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         ENDIF
 
 !       INQUIRE IF IUNITW IS ALREADY OPEN THEN CLOSE IT
-        IF(IUNITW.NE.0) CLOSE(IUNITW)
+        IF (IUNITW /= 0) CLOSE(IUNITW)
 
-        CALL INITMDL (NADV,                                             &
-     &                IREAD,                                            &
-     &                NFIELDS, NGPTOTG, NC, NR,                         &
-     &                FIELDS, LWCUR, MASK_IN, PRPLRADI)
+        CALL INITMDL (NADV,                                    &
+     &                IREAD,                                   &
+     &                BLK2GLO, BLK2LOC,                        &
+     &                WVENVI, WVPRPT, FF_NOW,                  &
+     &                FL1,                                     &
+     &                NFIELDS, NGPTOTG, NC, NR,                &
+     &                FIELDS, LWCUR, MASK_IN, PRPLRADI,        &
+     &                NEMO2WAM) 
 
 
-
-        NPROMA=NPROMA_WAM
         CALL GSTATS(1443,0)
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=IJS(IG),IJL(IG),NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          CALL OUTBETA (KIJS, KIJL, PRCHAR, U10OLD(KIJS,IG),            &
-     &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),                 &
-     &                  Z0B(KIJS),                                      &
-     &                  BETAOLD(KIJS), BETAB(KIJS) ) 
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
+        DO ICHNK = 1, NCHNK
+          CALL OUTBETA (1, NPROMA_WAM, PRCHAR, FF_NOW(:,ICHNK), BETAB(:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1443,1)
 
 #ifdef ECMWF
-        IF(IRANK==1.AND.LSMSSIG_WAM) CALL SIGMASTER()
+        IF(IRANK==1 .AND. LSMSSIG_WAM) CALL SIGMASTER()
 #endif
 
         LLCHKCFL=.FALSE.
 
         FRSTIME = .FALSE.                                              
 
-        IF (ITEST.GE.1) THEN
-          WRITE(IU06,*) ' SUB. WAVEMDL: INITMDL DONE'                 
-        ENDIF
-
-        IF(LWCOU) THEN
-          IF(NLONW.NE.NGX.OR.NLATW.NE.NGY) THEN
+        IF (LWCOU) THEN
+          IF (NLONW /= NGX .OR. NLATW /= NGY) THEN
             WRITE (IU06,*) ' *********************************'
             WRITE (IU06,*) ' *                               *'
             WRITE (IU06,*) ' * PROBLEM IN WAVEMDL..........  *'
@@ -505,8 +485,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !       CHECK IF THE INTERACTION/WIND-INPUT TIME STEP HAS NOT CHANGED
 !       ALSO FOR SURFACE CURRENT INPUT,
 !       OTHERWISE RESET NADV
-        IF(LWCOU) THEN
-          IF(IDELWI.NE.KDELWI) THEN
+        IF (LWCOU) THEN
+          IF (IDELWI /= KDELWI) THEN
             IDELWO = KDELWI
             IDELWI = KDELWI
             IDELCUR= KDELWI
@@ -521,7 +501,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
             WRITE (IU06,*) ' *                                 *'
             WRITE (IU06,*) ' ***********************************'
             CALL FLUSH(IU06)
-            IF(IDELPRO*NADV.NE.IDELWI) THEN
+            IF (IDELPRO*NADV /= IDELWI) THEN
               WRITE (IU06,*) ' ***************************************'
               WRITE (IU06,*) ' *                                     *'
               WRITE (IU06,*) ' * PROBLEM IN WAVEMDL :                *'
@@ -535,10 +515,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
             ENDIF
           ENDIF
         ELSE
-          IF(NDELW_LST.GT.0) THEN
+          IF (NDELW_LST > 0) THEN
             DO IC=1,NDELW_LST
-              IF(CDTPRO.LT.CDTW_LST(IC)) THEN
-                IF(IDELWI.NE.IDELWI_LST(IC) .OR. IDELWO.NE.IDELWO_LST(IC)) THEN
+              IF (CDTPRO < CDTW_LST(IC)) THEN
+                IF (IDELWI /= IDELWI_LST(IC) .OR. IDELWO /= IDELWO_LST(IC)) THEN
 
                   CALL INCDATE(CDATEWO,-IDELWO/2)
                   IDELWI=IDELWI_LST(IC)
@@ -573,18 +553,13 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-        CALL PREWIND (U10OLD, THWOLD, USOLD, Z0OLD,                     &
-     &                ROAIRO, ZIDLOLD,                                  &
-     &                CICOVER, CITHICK,                                 &
-     &                LLINIT, LLALLOC_FIELDG_ONLY,                      &
-     &                IREAD,                                            &
-     &                NFIELDS, NGPTOTG, NC, NR,                         &
-     &                FIELDS, LWCUR, MASK_IN)
+        CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,  &
+     &                LLINIT, LLALLOC_FIELDG_ONLY,       &
+     &                IREAD,                             &
+     &                NFIELDS, NGPTOTG, NC, NR,          &
+     &                FIELDS, LWCUR, MASK_IN,            &
+     &                NEMO2WAM) 
 
-
-        IF (ITEST.GE.1) THEN
-          WRITE(IU06,*) ' SUB. WAVEMDL: PREWIND DONE'                   
-        ENDIF
 
       ENDIF
 
@@ -596,65 +571,40 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       CALL SETMARSTYPE
 
-      CALL WAMODEL (NADV, LDSTOP, LDWRRE)
-
-      IF (ITEST.GE.1) THEN
-        WRITE(IU06,*) ' SUB. WAVEMDL: WAMODEL DONE'
-      ENDIF
+      CALL WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,            &
+     &              WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS, &
+     &              WAM2NEMO, NEMO2WAM, FL1)
 
 
-!*    2.2  DATA ASSIMILATION AND/OR SAR INVERSION.
+!*    2.2  DATA ASSIMILATION
 !*         IF REQUESTED AND MODEL IS IN ANALYSIS PERIOD.
 !          THE DATA ASSIMILATION SOFTWARE IS NOT AVAILABLE
 !          FOR GENERAL DISSIMINATION !
 !          ---------------------------------------------
 
 #ifdef ECMWF
-      IF (IASSI.EQ.1) THEN
+      IF (IASSI == 1) THEN
 
         MARSTYPE = 'an'
 
 !       UPDATE ANALYSIS TIME
         DO J=1,NASS
-          IF(CDTPRO.EQ.CASS(J)) THEN
+          IF (CDTPRO == CASS(J)) THEN
             CDTASS=CDTPRO
             EXIT
           ENDIF
         ENDDO
 
-        IF (NASS.GT.0 ) THEN
-          IF ( CDTPRO.EQ.CDTASS ) THEN
-            CALL WAMASSI (LDSTOP, LDWRRE)
-            IF (ITEST.GE.1) THEN
-              WRITE(IU06,*) ' SUB. WAVEMDL : WAMASSI DONE'
-            ENDIF
+        IF (NASS > 0 ) THEN
+          IF ( CDTPRO == CDTASS ) THEN
+            CALL WAMASSI (LDSTOP, LDWRRE, BLK2GLO,          &
+ &                        WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
+ &                        WAM2NEMO, NEMO2WAM, FL1)
           ENDIF
-        ELSEIF ( (.NOT.LWCOU .AND. CDTPRO.LE.CDATEF ) .OR. (LWCOU .AND. CDTPRO.EQ.CDATEF) ) THEN
-          CALL WAMASSI (LDSTOP, LDWRRE)
-          IF (ITEST.GE.1) THEN
-            WRITE(IU06,*) ' SUB. WAVEMDL: WAMASSI DONE'
-          ENDIF
-        ENDIF
-      ELSE IF (IASSI.NE.1 .AND. LSARINV) THEN
-
-!!!!
-!!!!! we may have to introduce a list for sar inversion time !!!!
-!       UPDATE ANALYSIS TIME (which is now the inversion time)
-        DO J=1,NASS
-          IF(CDTPRO.EQ.CASS(J)) THEN
-            CDTASS=CDTPRO
-            EXIT
-          ENDIF
-        ENDDO
-
-        IF (NASS.GT.0 ) THEN
-          IF ( CDTPRO.EQ.CDTASS ) THEN
-            CALL SARINVERT
-            IF(ITEST.GE.1) WRITE(IU06,*) '   SUB. WAVEMDL: SARINVERT DONE'
-          ENDIF
-        ELSEIF ( (.NOT.LWCOU .AND. CDTPRO.LE.CDATEF ) .OR. (LWCOU .AND. CDTPRO.EQ.CDATEF)) THEN
-          CALL SARINVERT
-          IF(ITEST.GE.1) WRITE(IU06,*) '   SUB. WAVEMDL: SARINVERT done'
+        ELSEIF ( (.NOT.LWCOU .AND. CDTPRO <= CDATEF ) .OR. (LWCOU .AND. CDTPRO == CDATEF) ) THEN
+          CALL WAMASSI (LDSTOP, LDWRRE, BLK2GLO,          &
+ &                      WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
+ &                      WAM2NEMO, NEMO2WAM, FL1)
         ENDIF
       ENDIF
 #endif
@@ -662,13 +612,13 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
 #ifdef ECMWF
 !     SMS METER:
-      IF(LSMSSIG_WAM) THEN
+      IF (LSMSSIG_WAM) THEN
 
         CALL MPL_BARRIER(CDSTRING='WAVEMDL:')
 
         CALL DIFDATE (CDATEF, CDTPRO, IFCST)
         IFCSTEP_HOUR=IFCST/3600
-        IF(IRANK==1) THEN
+        IF (IRANK == 1) THEN
           WRITE(CLSETEV,' (A25,'' step '',I8,''&'') ') CMETER,IFCSTEP_HOUR 
           CLSMSNAME="                                             "
           CLECFNAME="                                             "
@@ -694,9 +644,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !     3. PREPARE FIELDS THAT ARE RETURNED TO IFS (if coupled).
 !        -----------------------------------------------------
 
-      IF(LWCOU) THEN
+      IF (LWCOU) THEN
 
-        ALLOCATE(WVBLOCK(IJS(IG):IJL(IG),NWVFIELDS))
+        ALLOCATE(WVBLOCK(IJS:IJL,NWVFIELDS))
 
 !       GRID LAYOUT
         DO K=1,NLATW
@@ -711,13 +661,13 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
         IFLDOFFSET=1
 
-        IF(LWCOUHMF) THEN
+        IF (LWCOUHMF) THEN
           IFLDOFFSET=IFLDOFFSET+1
           FLABEL(IFLDOFFSET)=' Eqv Chnk'
           DEFVAL(IFLDOFFSET)=PRCHAR-ALPHA
         ENDIF
 
-        IF(LWSTOKES) THEN
+        IF (LWSTOKES) THEN
 !         2. U-STOKESDRIFT
           IFLDOFFSET=IFLDOFFSET+1
           FLABEL(IFLDOFFSET)=' U-Stokes'
@@ -731,7 +681,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
                                        ! THE WAVE MODEL ICE FREE SEA POINTS.
         ENDIF
 
-        IF(LWFLUX) THEN
+        IF (LWFLUX) THEN
 !         4. ENERGY FLUX TO OCEAN (dimensional)
           IFLDOFFSET=IFLDOFFSET+1
           FLABEL(IFLDOFFSET)=' Phi_ocd'
@@ -763,50 +713,49 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
                                        ! THE WAVE MODEL ICE FREE SEA POINTS.
         ENDIF
 
-        NPROMA=NPROMA_WAM
         CALL GSTATS(1443,0)
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,IFLDOFFSET,IFLD)
-        DO JKGLO=IJS(IG),IJL(IG),NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          CALL OUTBETA (KIJS, KIJL, PRCHAR, U10OLD(KIJS,IG),            &
-     &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),                 &
-     &                  Z0B(KIJS),                                      &
-     &                  BETAOLD(KIJS), BETAB(KIJS) ) 
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, KIJS, KIJL, IJSB, IJLB, IFLDOFFSET, IFLD)
+        DO ICHNK = 1, NCHNK
+          CALL OUTBETA (1, NPROMA_WAM, PRCHAR, FF_NOW(:,ICHNK), BETAB(:,ICHNK))
+
+          KIJS = 1
+          IJSB = IJFROMCHNK(KIJS,ICHNK)
+          KIJL = KIJL4CHNK(ICHNK)
+          IJLB = IJFROMCHNK(KIJL,ICHNK) 
 
           IFLDOFFSET=1
-          WVBLOCK(KIJS:KIJL,IFLDOFFSET)=BETAOLD(KIJS:KIJL)
+          WVBLOCK(IJSB:IJLB,IFLDOFFSET)=FF_NOW(KIJS:KIJL,ICHNK)%CHNK
 
-          IF(LWCOUHMF) THEN
+          IF (LWCOUHMF) THEN
             IFLDOFFSET=IFLDOFFSET+1
-            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=BETAB(KIJS:KIJL)
+            WVBLOCK(IJSB:IJLB,IFLDOFFSET)=BETAB(KIJS:KIJL,ICHNK)
           ENDIF
 
 !         SURFACE STOKES DRIFT NEEDED FOR THE IFS
 !         IT MIGHT ALSO BE USED FOR NEMO !!!!!!!!!! 
 
-          IF(LWSTOKES) THEN
+          IF (LWSTOKES) THEN
             IFLDOFFSET=IFLDOFFSET+1
-            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=USTOKES(KIJS:KIJL)
+            WVBLOCK(IJSB:IJLB,IFLDOFFSET)=INTFLDS(KIJS:KIJL,ICHNK)%USTOKES
             IFLDOFFSET=IFLDOFFSET+1
-            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=VSTOKES(KIJS:KIJL)
+            WVBLOCK(IJSB:IJLB,IFLDOFFSET)=INTFLDS(KIJS:KIJL,ICHNK)%VSTOKES
           ENDIF
 
-          IF(LWFLUX) THEN
+          IF (LWFLUX) THEN
             IFLDOFFSET=IFLDOFFSET+1
-            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=PHIOCD(KIJS:KIJL)
+            WVBLOCK(IJSB:IJLB,IFLDOFFSET)=INTFLDS(KIJS:KIJL,ICHNK)%PHIOCD
             IFLDOFFSET=IFLDOFFSET+1
-            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=TAUOCXD(KIJS:KIJL)
+            WVBLOCK(IJSB:IJLB,IFLDOFFSET)=INTFLDS(KIJS:KIJL,ICHNK)%TAUOCXD
             IFLDOFFSET=IFLDOFFSET+1
-            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=TAUOCYD(KIJS:KIJL)
+            WVBLOCK(IJSB:IJLB,IFLDOFFSET)=INTFLDS(KIJS:KIJL,ICHNK)%TAUOCYD
             IFLDOFFSET=IFLDOFFSET+1
-            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=WSEMEAN(KIJS:KIJL)
+            WVBLOCK(IJSB:IJLB,IFLDOFFSET)=INTFLDS(KIJS:KIJL,ICHNK)%WSEMEAN
             IFLDOFFSET=IFLDOFFSET+1
-            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=WSFMEAN(KIJS:KIJL)
+            WVBLOCK(IJSB:IJLB,IFLDOFFSET)=INTFLDS(KIJS:KIJL,ICHNK)%WSFMEAN
           ENDIF
 
           DO IFLD=IFLDOFFSET+1,NWVFIELDS
-            WVBLOCK(KIJS:KIJL,IFLD)=0.0_JWRB
+            WVBLOCK(IJSB:IJLB,IFLD)=0.0_JWRB
           ENDDO
 
         ENDDO
@@ -814,36 +763,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL GSTATS(1443,1)
 
 
-!        GRIDDED FIELDS THAT WILL RETURNED TO NEMO (if coupled).
-!        -----------------------------------------------------
-
-        IF(LWNEMOCOU.AND.LWNEMOCOUSEND.AND.LWCOU) THEN
-          CALL GSTATS(1443,0)
-!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-          DO JKGLO=IJS(IG),IJL(IG),NPROMA
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-            IF(LWNEMOCOUSTK) THEN
-              NEMOUSTOKES(KIJS:KIJL)=USTOKES(KIJS:KIJL)
-              NEMOVSTOKES(KIJS:KIJL)=VSTOKES(KIJS:KIJL)
-            ELSE
-              NEMOUSTOKES(KIJS:KIJL)=0.0_NEMODP
-              NEMOVSTOKES(KIJS:KIJL)=0.0_NEMODP
-            ENDIF
-
-            IF(LWNEMOCOUSTRN) THEN
-              NEMOSTRN(KIJS:KIJL) = STRNMS(KIJS:KIJL)
-            ENDIF
-
-          ENDDO
-!$OMP     END PARALLEL DO
-          CALL GSTATS(1443,1)
-        ENDIF
-
 !       GRIDDED FIELDS ARE NEEDED FOR IFS, GATHERING OF THE NECESSARY 
 !       INFORMATION
-
-        CALL MPFLDTOIFS(IG, IJS(IG), IJL(IG), NWVFIELDS, WVBLOCK,       &
+        CALL MPFLDTOIFS(IJS, IJL, BLK2GLO, NWVFIELDS, WVBLOCK,              &
      &                  WVFLDG, DEFVAL, MASK_OUT, LLGLOBAL_WVFLDG)
 
 
@@ -851,23 +773,22 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
 
 !       COMPUTATION OF THE NORMS OF OUTPUT FIELDS
-        IF(LLGLOBAL_WVFLDG)THEN
+        IF (LLGLOBAL_WVFLDG) THEN
           WRITE(IU06,*) ' '
           WRITE(IU06,*) ' GLOBAL NORM OF FIELDS RETURNED TO IFS :'
 
           N_MASK_OUT_GLOBAL=NLATW*NLONW
           CALL GSTATS(1443,0)
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JF,J,I)
-          DO IFLD=1,NWVFIELDS
-            JF=IFLD
-            FAVG(JF)=0.
-            FMIN(JF)=WVFLDG(1,1,JF)
-            FMAX(JF)=WVFLDG(1,1,JF)
-            DO J=1,NLATW
-              DO I=1,NLONW
-                FAVG(JF)=FAVG(JF)+WVFLDG(I,J,JF)
-                FMIN(JF)=MIN(FMIN(JF),WVFLDG(I,J,JF))
-                FMAX(JF)=MAX(FMAX(JF),WVFLDG(I,J,JF))
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JF, J, I)
+          DO JF = 1, NWVFIELDS
+            FAVG(JF) = 0._JWRB
+            FMIN(JF) = WVFLDG(1,1,JF)
+            FMAX(JF) = WVFLDG(1,1,JF)
+            DO J=1, NLATW
+              DO I=1, NLONW
+                FAVG(JF) = FAVG(JF) + WVFLDG(I,J,JF)
+                FMIN(JF) = MIN(FMIN(JF), WVFLDG(I,J,JF))
+                FMAX(JF) = MAX(FMAX(JF), WVFLDG(I,J,JF))
               ENDDO
             ENDDO
             FAVG(JF)=FAVG(JF)/N_MASK_OUT_GLOBAL
@@ -875,7 +796,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !$OMP     END PARALLEL DO
           CALL GSTATS(1443,1)
 
-          DO IFLD=1,NWVFIELDS
+          DO IFLD = 1, NWVFIELDS
             WRITE(IU06,*) FLABEL(IFLD), FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),N_MASK_OUT_GLOBAL
             WRITE(IU06,111) FAVG(IFLD),FMIN(IFLD),FMAX(IFLD)
           ENDDO
@@ -886,13 +807,13 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         ELSEIF (LLNORMWAM2IFS) THEN
 !         Local NORM OF FIELDS RETURNED TO IFS :
 !         INITIALISE I,J POINTER TO MASK_OUT
-          IF(LFRST) THEN
+          IF (LFRST) THEN
             LFRST=.FALSE.
             JF=1
             N_MASK_OUT=0
             DO J=1,NLATW
               DO I=1,NLONW
-                IF(MASK_OUT(I,J).EQ.1) THEN
+                IF (MASK_OUT(I,J) == 1) THEN
                   N_MASK_OUT=N_MASK_OUT+1
                 ENDIF
               ENDDO
@@ -905,7 +826,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
             IC=0
             DO J=1,NLATW
               DO I=1,NLONW
-                IF(MASK_OUT(I,J).EQ.1) THEN
+                IF (MASK_OUT(I,J) == 1) THEN
                   IC=IC+1
                   I_MASK_OUT(IC)=I
                   J_MASK_OUT(IC)=J
@@ -915,19 +836,23 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           ENDIF
 
 !         COMPUTE local NORMS
-          DO JF=1,NWVFIELDS
-            VAL=WVFLDG(I_MASK_OUT(1),J_MASK_OUT(1),JF)
-            FAVG(JF)=VAL
-            FMIN(JF)=VAL
-            FMAX(JF)=VAL
-            DO IC=2,N_MASK_OUT
-              VAL=WVFLDG(I_MASK_OUT(IC),J_MASK_OUT(IC),JF)
-              FAVG(JF)=FAVG(JF)+VAL
-              FMIN(JF)=MIN(FMIN(JF),VAL)
-              FMAX(JF)=MAX(FMAX(JF),VAL)
+          CALL GSTATS(1443,0)
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JF, VAL, IC)
+          DO JF = 1, NWVFIELDS
+            VAL = WVFLDG(I_MASK_OUT(1), J_MASK_OUT(1),JF)
+            FAVG(JF) = VAL
+            FMIN(JF) = VAL
+            FMAX(JF) = VAL
+            DO IC = 2, N_MASK_OUT
+              VAL = WVFLDG(I_MASK_OUT(IC), J_MASK_OUT(IC),JF)
+              FAVG(JF) = FAVG(JF) + VAL
+              FMIN(JF) = MIN(FMIN(JF), VAL)
+              FMAX(JF) = MAX(FMAX(JF), VAL)
             ENDDO
-            FAVG(JF)=FAVG(JF)/MAX(N_MASK_OUT,1)
+            FAVG(JF) = FAVG(JF)/MAX(N_MASK_OUT,1)
           ENDDO
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1443,1)
 
 !         FOR PRIMARY PE (IRECV), COLLECT ALL THE NORMS TO PRODUCE A
 !         PSEUDO GLOBAL NORM.
@@ -950,7 +875,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
             ZCOMBUFS(ICOUNT)=FMAX(IFLD)
           ENDDO
 
-          IF(IRANK.EQ.IRECV) THEN
+          IF (IRANK == IRECV) THEN
             ALLOCATE(ZCOMBUFR(NCOMBUF))
           ENDIF
           ALLOCATE(ZCOMCNT(NPROC))
@@ -961,7 +886,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           DEALLOCATE(ZCOMCNT)
 
 !         COMPUTE PSEUDO GLOBAL NORM
-          IF(IRANK.EQ.IRECV) THEN
+          IF (IRANK == IRECV) THEN
             WRITE(IU06,*) ' '
             WRITE(IU06,*) ' Local NORM OF global FIELDS RETURNED TO IFS :'
             IST=1+(IRANK-1)*NCOMLOC
@@ -974,7 +899,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
               ICOUNT=ICOUNT+2
             ENDDO
             DO IP=1,NPROC
-              IF(IP.NE.IRECV) THEN
+              IF (IP /= IRECV) THEN
                 IST=1+(IP-1)*NCOMLOC
                 ICOUNT=IST
                 NMASK=ZCOMBUFR(ICOUNT)
@@ -1006,7 +931,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                    IRANK, NPROC, LL1D
             WRITE(IU06,111) FAVG(IFLD),FMIN(IFLD),FMAX(IFLD)
           ENDDO
-          IF (ITEST.GE.1)  CALL FLUSH(IU06)
 
         ENDIF  ! end of norm production
 
@@ -1015,22 +939,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         LDWCOUNORMS=LWCOUNORMS
       ENDIF ! end lwcou
 
-#ifdef MODEL_COUPLING_ATM_WAV
-      Z0_coupl=Z0OLD
-      US_coupl=USOLD
-#endif
-
-
 !     4. END OF RUN ?
 !        -----------
-      IF (CDATEE .EQ. CDTPRO) THEN
+      IF (CDATEE == CDTPRO) THEN
         CALL MPL_BARRIER(CDSTRING='WAVEMDL: END')
         CALL FLUSH(IU06)
-
-        IF (ITEST.GE.1) THEN
-          WRITE(IU06,*) ' SUB. WAVEMDL: END OF WAVE MODEL RUN'
-          CALL FLUSH(IU06)
-        ENDIF
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',1,ZHOOK_HANDLE)

@@ -1,4 +1,4 @@
-      SUBROUTINE STAT_NL(IJS, IJL,                                      &
+      SUBROUTINE STAT_NL(KIJS, KIJL,                                      &
      &                   XM0, XK0, BF2, XNU, SIG_TH, DPTH,              &
      &                   C3, C4, ETA_M, R, C4_B, C4_DYN)
  
@@ -33,19 +33,23 @@
  
 !----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : G        ,PI       ,DKMAX
       USE YOWSHAL  , ONLY : XKDMIN
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !----------------------------------------------------------------------
 
       IMPLICIT NONE 
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: XM0, XK0, BF2, XNU, SIG_TH, DPTH
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(OUT) :: C3, C4, ETA_M, R, C4_B, C4_DYN
+#include "transf_r.intfb.h"
 
-      REAL(KIND=JWRB), PARAMETER :: EPS=0.0001_JWRB
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: XM0, XK0, BF2, XNU, SIG_TH, DPTH
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(OUT) :: C3, C4, ETA_M, R, C4_B, C4_DYN
+
+      REAL(KIND=JWRB), PARAMETER :: EPS = 0.0001_JWRB
       REAL(KIND=JWRB), PARAMETER :: RMIN = 0._JWRB
       REAL(KIND=JWRB), PARAMETER :: RMAX = 16.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: C3MIN = 0._JWRB
@@ -66,8 +70,7 @@
       REAL(KIND=JWRB) :: DELTA_2D,C_0,C_S_SQ,V_G,V_G_SQ,ZFAC,ZFAC1,ZFAC2
       REAL(KIND=JWRB) :: XKAPPA1,ALPHA,XJ
       REAL(KIND=JWRB) :: ZEPSILON, ZSQREPSILON
-      REAL(KIND=JWRB) :: TRANSF_R
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TRANSF
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TRANSF
 
 !-----------------------------------------------------------------------
 
@@ -85,13 +88,13 @@
 
 !     RESULTS FOR A NARROW BAND WAVE TRAIN
   
-      DO IJ = IJS,IJL
-        TRANSF(IJ) = TRANSF_R(XK0(IJ),DPTH(IJ))
+      DO IJ = KIJS,KIJL
+        TRANSF(IJ) = TRANSF_R(XK0(IJ), DPTH(IJ))
       ENDDO
 
-      DO IJ = IJS,IJL
+      DO IJ = KIJS,KIJL
         D   = DPTH(IJ)
-        IF (XM0(IJ).GT.ZEPSILON .AND. D.GT.0._JWRB .AND. XK0(IJ).GT.0._JWRB) THEN
+        IF (XM0(IJ) > ZEPSILON .AND. D > 0._JWRB .AND. XK0(IJ) > 0._JWRB) THEN
           XK  = MAX(XK0(IJ),XKDMIN/D)
           X   = XK*D
           T0  = TANH(X)
@@ -101,9 +104,9 @@
           GAM = -0.5_JWRB*ALPH**2
           C_0      = OM/XK
           C_S_SQ   = G*D
-          IF(X .GT. DKMAX) THEN
+          IF (X > DKMAX) THEN
             V_G = 0.5_JWRB*C_0
-          ELSE IF(X .LT. EPS) THEN
+          ELSEIF (X < EPS) THEN
             V_G = C_0
           ELSE
             V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
@@ -142,7 +145,7 @@
  
           R(IJ) = MAX(MIN(TRANSF(IJ)*(SIG_TH(IJ)/XNU(IJ))**2,RMAX),RMIN)
           ZR    = R(IJ)
-          IF (ZR.GT.1._JWRB) THEN
+          IF (ZR > 1._JWRB) THEN
             XJ =-C4_CONST/ZR*(1._JWRB-ZC1/SQRT(ZR)+ZC2/ZR+ZC3/ZR**2)
           ELSE
             XJ = C4_CONST*(1._JWRB-ZC1*SQRT(ZR)+ZC2*ZR+ZC3*ZR**2)

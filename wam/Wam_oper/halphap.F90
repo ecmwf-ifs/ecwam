@@ -1,4 +1,5 @@
-SUBROUTINE HALPHAP(IJS, IJL, UDIR, FL1, HALP)
+SUBROUTINE HALPHAP(KIJS, KIJL, WAVNUM, UDIR, FL1, HALP)
+
 
 ! ----------------------------------------------------------------------
 
@@ -8,11 +9,12 @@ SUBROUTINE HALPHAP(IJS, IJL, UDIR, FL1, HALP)
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *HALPHAP(IJS, IJL, UDIR, FL1, HALP)
-!          *IJS* - INDEX OF FIRST GRIDPOINT
-!          *IJL* - INDEX OF LAST GRIDPOINT
-!          *UDIR* - WIND SPEED DIRECTION
-!          *FL1*  - SPECTRA
+!       *CALL* *HALPHAP(KIJS, KIJL, WAVNUM, UDIR, FL1, HALP)
+!          *KIJS*   - INDEX OF FIRST GRIDPOINT
+!          *KIJL*   - INDEX OF LAST GRIDPOINT
+!          *WAVNUM* - WAVE NUMBER
+!          *UDIR*   - WIND SPEED DIRECTION
+!          *FL1*    - SPECTRA
 !          *HALP*   - 1/2 PHILLIPS PARAMETER 
 
 !     METHOD.
@@ -26,6 +28,7 @@ SUBROUTINE HALPHAP(IJS, IJL, UDIR, FL1, HALP)
       USE YOWPARAM , ONLY : NANG     , NFRE
       USE YOWPCONS , ONLY : G        , ZPI      ,ZPI4GM2
       USE YOWPHYS  , ONLY : ALPHAPMAX
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -34,19 +37,20 @@ SUBROUTINE HALPHAP(IJS, IJL, UDIR, FL1, HALP)
 #include "femean.intfb.h"
 #include "meansqs_lf.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: UDIR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: HALP
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UDIR
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: HALP
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
       REAL(KIND=JWRB) :: ZLNFRNFRE, F1D
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMSS, EM, FM 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: WD 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FLWD
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ALPHAP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XMSS, EM, FM 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: WD 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: FLWD
 
 ! ----------------------------------------------------------------------
 
@@ -56,24 +60,24 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
       ! Find spectrum in wind direction
       DO K = 1, NANG
-        DO IJ = IJS, IJL
+        DO IJ = KIJS, KIJL
            WD(IJ,K) = 0.5_JWRB + 0.5_JWRB * SIGN(1.0_JWRB, COS(TH(K)-UDIR(IJ)) )
         ENDDO
       ENDDO
 
       DO M = 1, NFRE
         DO K = 1, NANG
-          DO IJ = IJS, IJL
+          DO IJ = KIJS, KIJL
              FLWD(IJ,K,M) = FL1(IJ,K,M) * WD(IJ,K) 
           ENDDO
         ENDDO
       ENDDO
 
-      CALL MEANSQS_LF(NFRE, IJS, IJL, FLWD, XMSS)
-      CALL FEMEAN (FLWD, IJS, IJL, EM, FM)
+      CALL MEANSQS_LF(NFRE, KIJS, KIJL, FLWD, WAVNUM, XMSS)
+      CALL FEMEAN (KIJS, KIJL, FLWD, EM, FM)
 
-      DO IJ = IJS, IJL
-        IF(EM(IJ) > 0.0_JWRB .AND. FM(IJ) < FR(NFRE-2) ) THEN
+      DO IJ = KIJS, KIJL
+        IF (EM(IJ) > 0.0_JWRB .AND. FM(IJ) < FR(NFRE-2) ) THEN
           ALPHAP(IJ) = XMSS(IJ) /(ZLNFRNFRE - LOG(FM(IJ)))
           IF ( ALPHAP(IJ) > ALPHAPMAX ) THEN
             ! some odd cases, revert to tail value

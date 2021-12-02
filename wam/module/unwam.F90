@@ -3,7 +3,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE MPL_MPIF
       USE MPL_MODULE  , ONLY : MPL_ALLREDUCE
-      USE YOWPARAM    , ONLY : NANG, NFRE
+      USE YOWPARAM    , ONLY : NANG, NFRE, NFRE_RED
       USE YOWSTAT     , ONLY : IREFRA
       USE YOWFRED     , ONLY : COSTH, SINTH
       USE yowpd, only: MNE=>ne, INE, MNP=>npa, NP_RES => np
@@ -82,7 +82,6 @@ PUBLIC :: PROPAG_UNWAM, &
 !     SEE *MPUSERIN*
       REAL(KIND=JWRU), PUBLIC :: WAE_SOLVERTHR
       REAL(KIND=JWRU), PUBLIC :: JGS_DIFF_SOLVERTHR
-      LOGICAL, PUBLIC :: USE_DIRECT_WIND_FILE
       LOGICAL, PUBLIC :: LIMPLICIT
       LOGICAL, PUBLIC :: SOURCE_IMPL
       LOGICAL, PUBLIC :: LNONL
@@ -170,8 +169,8 @@ END INTERFACE
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), INTENT(INOUT)  :: FL1(NINF-1:NSUP,NANG,NFRE)
-      REAL(KIND=JWRB), INTENT(OUT)    :: FLNEW(NINF-1:NSUP,NANG,NFRE)
+      REAL(KIND=JWRB), INTENT(INOUT)  :: FL1(NINF-1:NSUP,NANG,NFRE_RED)
+      REAL(KIND=JWRB), INTENT(INOUT)  :: FLNEW(1:MNP,NANG,NFRE)
  
       INTEGER(KIND=JWIM) :: IS, ID, IP
       REAL(KIND=JWRU) :: FLsing(NANG,NFRE)
@@ -330,14 +329,17 @@ END INTERFACE
 !**********************************************************************
       SUBROUTINE SET_CURTXY
       USE YOWUNPOOL, ONLY : LCALC
-      USE YOWCURR, ONLY : U, V
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
+      USE YOWSHAL  , ONLY : WVENVI, DEPTH_INPUT
       IMPLICIT NONE
-      INTEGER(KIND=JWIM) :: IP, IG
-      IG=1
-      DO IP=1,MNP
-        CURTXY(1,IP)=REAL(U(IP,IG),JWRU)
-        CURTXY(2,IP)=REAL(V(IP,IG),JWRU)
-      END DO
+      INTEGER(KIND=JWIM) :: IP, ICHNK, IPRM
+      DO ICHNK = 1, NCHNK
+        DO IPRM = 1, KIJL4CHNK(ICHNK)
+          IP = IJFROMCHNK(IPRM, ICHNK)
+          CURTXY(1,IP)=REAL(WVENVI(IPRM, ICHNK)%UCUR,JWRU)
+          CURTXY(2,IP)=REAL(WVENVI(IPRM, ICHNK)%VCUR,JWRU)
+        ENDDO
+      ENDDO
       LCALC=.TRUE.
       END SUBROUTINE SET_CURTXY
 !**********************************************************************
@@ -1456,11 +1458,11 @@ END INTERFACE
 !     --------------------------------------------------------------
 
       USE YOWUNPOOL 
-      USE YOWSHAL  , ONLY : DEPTH
+      USE YOWSHAL  , ONLY : DEPTH_INPUT
       IMPLICIT NONE
       INTEGER(KIND=JWIM) :: istat
-      IF(ALLOCATED(DEPTH)) DEALLOCATE(DEPTH)
-      ALLOCATE( DEPTH(MNP,1))
+      IF(ALLOCATED(DEPTH_INPUT)) DEALLOCATE(DEPTH_INPUT)
+      ALLOCATE( DEPTH_INPUT(MNP))
       ALLOCATE( CCON(MNP) ); CCON = 0
       ALLOCATE( Jstart(MNP) ); Jstart = 0
       ALLOCATE( SI(MNP) ); SI = 0.0_JWRU
@@ -1515,14 +1517,15 @@ END INTERFACE
       USE MPL_MPIF
       USE YOWUNPOOL, ONLY : DEGRAD, REARTH
       USE YOWUNPOOL, ONLY : BND, DBG, GRID, FILEDEF
-      USE YOWSHAL  , ONLY : DEPTH    ,DEPTHA    ,TOOSHALLOW
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
+      USE YOWSHAL  , ONLY : WVENVI, DEPTH_INPUT, DEPTHA    ,TOOSHALLOW
       USE YOWPARAM , ONLY : NIBLO
       USE yowpd, only: z, comm, np_global, initPD, setDimSize
       USE UNSTRUCT_BOUND, ONLY : INIT_BOUNDARY
       USE YOWFRED, ONLY : DELTH
       USE YOWSTAT  , ONLY : IDELPRO
       IMPLICIT NONE
-      INTEGER(KIND=JWIM) :: IERR, IP
+      INTEGER(KIND=JWIM) :: IERR, IP, ICHNK, IPRM
       INTEGER(KIND=JWIM) :: eNext, ePrev, ID, istat
       CALL setDimSize(NFRE, NANG)
       CALL SET_UNWAM_HANDLES ! set file handles
@@ -1532,8 +1535,18 @@ END INTERFACE
       CALL INIT_UNWAM_ARRAYS
 !JB do not allow negative depth !!!!
       DO IP = 1, MNP 
-        DEPTH(IP,1) = REAL(MAX(DEP(IP),REAL(TOOSHALLOW,JWRU)),JWRB)
+        DEPTH_INPUT(IP) = REAL(MAX(DEP(IP),REAL(TOOSHALLOW,JWRU)),JWRB)
       ENDDO
+
+
+!!    Transfer the water depth to array it is used by the wave physics
+      DO ICHNK = 1, NCHNK
+        DO IPRM = 1, KIJL4CHNK(ICHNK)
+          IP = IJFROMCHNK(IPRM, ICHNK)
+          WVENVI(IPRM, ICHNK)%DEPTH = DEPTH_INPUT(IP)
+        ENDDO
+      ENDDO
+
       DDIR = DELTH
 !
 ! set time step
@@ -2198,13 +2211,13 @@ END INTERFACE
 !     --------------------------------------------------------------
 
         USE YOWUNPOOL
-        USE YOWSHAL  , ONLY : DEPTH
+        USE YOWSHAL  , ONLY : DEPTH_INPUT
         IMPLICIT NONE
         INTEGER(KIND=JWIM), INTENT(IN) :: IHANDLE
         WRITE(IHANDLE) MNP, MNE, NFRE, NANG
         WRITE(IHANDLE) XP
         WRITE(IHANDLE) YP 
-        WRITE(IHANDLE) DEPTH
+        WRITE(IHANDLE) DEPTH_INPUT
         WRITE(IHANDLE) CCON
         WRITE(IHANDLE) SI
         WRITE(IHANDLE) TRIA
@@ -2252,17 +2265,20 @@ END INTERFACE
 !     --------------------------------------------------------------
 
         USE YOWUNPOOL
-        USE YOWSHAL  , ONLY : DEPTH
+        USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
+        USE YOWSHAL  , ONLY : WVENVI, DEPTH_INPUT
         IMPLICIT NONE
 
         INTEGER(KIND=JWIM), INTENT(IN) :: IHANDLE
+
+        INTEGER(KIND=JWIM) :: IP, ICHNK, IPRM
 ! 
 !         READ(IHANDLE) MNP, MNE, MSC, MDC
 
         CALL INIT_UNWAM_ARRAYS
 !         READ(IHANDLE) XP
 !         READ(IHANDLE) YP 
-        READ(IHANDLE) DEPTH
+        READ(IHANDLE) DEPTH_INPUT
         READ(IHANDLE) CCON
         READ(IHANDLE) SI
         READ(IHANDLE) TRIA
@@ -2272,6 +2288,14 @@ END INTERFACE
         READ(IHANDLE) IOBP
         READ(IHANDLE) IOBPD
         READ(IHANDLE) IOBWB
+
+!!      Transfer the water depth to array it is used by the wave physics
+        DO ICHNK = 1, NCHNK
+          DO IPRM = 1, KIJL4CHNK(ICHNK)
+            IP = IJFROMCHNK(IPRM, ICHNK)
+            WVENVI(IPRM, ICHNK)%DEPTH = DEPTH_INPUT(IP)
+          ENDDO
+        ENDDO
 
       END SUBROUTINE UNWAM_IN
 !**********************************************************************
@@ -2456,7 +2480,7 @@ END INTERFACE
       IMPLICIT NONE
 
       REAL(KIND=JWRB), INTENT(IN) :: FL1(NINF-1:NSUP,NANG,NFRE)
-      REAL(KIND=JWRB), INTENT(OUT) :: FLNEW(NINF-1:NSUP,NANG,NFRE)
+      REAL(KIND=JWRB), INTENT(INOUT) :: FLNEW(1:MNP,NANG,NFRE)
 !
 ! local INTEGER
 !
@@ -2991,10 +3015,12 @@ END INTERFACE
       SUBROUTINE ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
       USE YOWUNPOOL, ONLY : LSPHE
       USE YOWFRED,  ONLY : DELTH, FRATIO, FR
-      USE YOWSTAT,  ONLY : IDELPRO, IREFRA, ISHALLO
+      USE YOWGRID , ONLY : NPROMA_WAM, NCHNK, ICHNKFROMIJ, IPRMFROMIJ
+      USE YOWSTAT,  ONLY : IDELPRO, IREFRA
       USE YOWGRID,  ONLY : DELPHI, IJS, IJL
       USE YOWPCONS, ONLY : PI, ZPI
       USE YOWREFD,  ONLY : THDD, THDC, SDOT
+      USE YOWSHAl,  ONLY : WVPRPT 
       USE yowpd, only : np_global
       USE YOWUNPOOL, ONLY : SI
       IMPLICIT NONE
@@ -3002,10 +3028,9 @@ END INTERFACE
       REAL(KIND=JWRU) SS, SC, CC, SD, CD
       REAL(KIND=JWRU) DELPH0, DELTH0, DELFR0, DELPRO
       REAL(KIND=JWRU) DRCP(NANG), DRCM(NANG), DRDP(NANG), DRDM(NANG)
-      INTEGER(KIND=JWIM) :: IP, IJ, K, M, KM1, KP1, MP1, MM1
+      INTEGER(KIND=JWIM) :: IP, IJ, K, M, KM1, KP1, MP1, MM1, IPRM, IK
       REAL(KIND=JWRU) DFP, DFM
       REAL(KIND=JWRU) DTHP, DTHM
-      REAL SHLFAC(IJS(1):IJL(1),NFRE)
       REAL(KIND=JWRU) CASS(0:NFRE+1)
       REAL(KIND=JWRU) CAS(NFRE,NANG)
       REAL(KIND=JWRU) CAD(NANG,NFRE)
@@ -3020,19 +3045,20 @@ END INTERFACE
       DELFR0 = 0.25_JWRU*DELPRO/((FRATIO-1)*ZPI)
       IF (REFRA_METHOD .eq. 1) THEN
         IF (IREFRA.NE.0) THEN
-          CALL DOTDC (IJS(1), IJL(1), ISHALLO, SHLFAC)
           DO IP=1,NP_RES
             IJ = IP
-            IF (ISHALLO.NE.1) THEN
-              DO K=1,NANG
-                KP1 = K+1
-                IF (KP1.GT.NANG) KP1 = 1
-                KM1 = K-1
-                IF (KM1.LT.1) KM1 = NANG
-                DRDP(K) = (THDD(IJ, K) + THDD(IJ, KP1))*DELTH0
-                DRDM(K) = (THDD(IJ, K) + THDD(IJ, KM1))*DELTH0
-              END DO
-            END IF
+            IK = ICHNKFROMIJ(IJ)
+            IPRM = IPRMFROMIJ(IJ)
+
+            DO K=1,NANG
+              KP1 = K+1
+              IF (KP1.GT.NANG) KP1 = 1
+              KM1 = K-1
+              IF (KM1.LT.1) KM1 = NANG
+              DRDP(K) = (THDD(IJ, K) + THDD(IJ, KP1))*DELTH0
+              DRDM(K) = (THDD(IJ, K) + THDD(IJ, KM1))*DELTH0
+            END DO
+
             IF ((IREFRA.EQ.2).OR.(IREFRA.EQ.3)) THEN
               DO K=1,NANG
                 KP1 = K+1
@@ -3043,44 +3069,29 @@ END INTERFACE
                 DRCM(K) = (THDC(IJ,K) + THDC(IJ,KM1))*DELTH0
               END DO
             END IF
-            IF (ISHALLO.EQ.1) THEN
-              DFP = PI*(1.+FRATIO)*DELFR0
-              DO M=1,NFRE
-                DO K=1,NANG
-                  DTHP = DRCP(K)
-                  DTHM = DRCM(K)
-                  DTP_I(K,M,IJ) = -DTHP+ABS(DTHP)
-                  DTM_I(K,M,IJ) =  DTHM+ABS(DTHM)
-                  ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
-                  !
-                  DTHP    = SDOT(K,NFRE,IJ) * DFP
-                  ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + 2.* ABS(DTHP)
-                  DOP_I(K,M,IJ) = (-DTHP+ABS(DTHP))/FRATIO
-                  DOM_I(K,M,IJ) = ( DTHP+ABS(DTHP))*FRATIO
-                END DO
+            DO M=1,NFRE
+              DO K=1,NANG
+                MP1 = MIN(NFRE,M+1)
+                MM1 = MAX(1,M-1)
+                DFP = DELFR0/FR(M)
+                DFM = DELFR0/FR(MM1)
+                !
+
+                DTHP = REAL(WVPRPT(IPRM,M,IK)%OMOSNH2KD,JWRU)*DRDP(K) + DRCP(K)
+                DTHM = REAL(WVPRPT(IPRM,M,IK)%OMOSNH2KD,JWRU)*DRDM(K) + DRCM(K)
+
+
+                ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
+                DTP_I(K,M,IJ) = -DTHP+ABS(DTHP)
+                DTM_I(K,M,IJ) =  DTHM+ABS(DTHM)
+                !
+                DTHP = (SDOT(K,M,IJ) + SDOT(K,MP1,IJ))*DFP
+                DTHM = (SDOT(K,M,IJ) + SDOT(K,MM1,IJ))*DFM
+                ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
+                DOP_I(K,M,IJ) = (-DTHP+ABS(DTHP))/FRATIO
+                DOM_I(K,M,IJ) = ( DTHM+ABS(DTHM))*FRATIO
               END DO
-            ELSE
-              DO M=1,NFRE
-                DO K=1,NANG
-                  MP1 = MIN(NFRE,M+1)
-                  MM1 = MAX(1,M-1)
-                  DFP = DELFR0/FR(M)
-                  DFM = DELFR0/FR(MM1)
-                  !
-                  DTHP = REAL(SHLFAC(IJ,M),JWRU)*DRDP(K) + DRCP(K)
-                  DTHM = REAL(SHLFAC(IJ,M),JWRU)*DRDM(K) + DRCM(K)
-                  ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
-                  DTP_I(K,M,IJ) = -DTHP+ABS(DTHP)
-                  DTM_I(K,M,IJ) =  DTHM+ABS(DTHM)
-                  !
-                  DTHP = (SDOT(K,M,IJ) + SDOT(K,MP1,IJ))*DFP
-                  DTHM = (SDOT(K,M,IJ) + SDOT(K,MM1,IJ))*DFM
-                  ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
-                  DOP_I(K,M,IJ) = (-DTHP+ABS(DTHP))/FRATIO
-                  DOM_I(K,M,IJ) = ( DTHM+ABS(DTHM))*FRATIO
-                END DO
-              END DO
-            END IF
+            END DO
           END DO
         END IF
       END IF
@@ -3142,8 +3153,8 @@ END INTERFACE
       IMPLICIT NONE
       INTEGER(KIND=JWIM), INTENT(IN) :: IP
       REAL(KIND=JWRU), INTENT(IN)  :: AC(NANG,NFRE,MNP)
-      REAL(KIND=JWRU), intent(out) :: IMATRA(NANG,NFRE)
-      REAL(KIND=JWRU), intent(out) :: IMATDA(NANG,NFRE)
+      REAL(KIND=JWRU), intent(inout) :: IMATRA(NANG,NFRE)
+      REAL(KIND=JWRU), intent(inout) :: IMATDA(NANG,NFRE)
       REAL(KIND=JWRU) eVal
       IF (LNONL) THEN
          !*    Advanced computation, likely call to IMPLSCH
@@ -3197,7 +3208,7 @@ END INTERFACE
       USE yowpd, only : comm
       USE yowpd, only : np_global
       USE YOWMPP, ONLY : NINF, NSUP
-      USE YOWSTAT, ONLY : IREFRA, ISHALLO
+      USE YOWSTAT, ONLY : IREFRA
       USE yowunpool
       IMPLICIT NONE
 
@@ -3208,7 +3219,7 @@ END INTERFACE
       INTEGER(KIND=JWIM) :: ierr
 
       REAL(KIND=JWRB), INTENT(IN)  :: FL1(NINF-1:NSUP,NANG,NFRE)
-      REAL(KIND=JWRB), INTENT(OUT) :: FLNEW(NINF-1:NSUP,NANG,NFRE)
+      REAL(KIND=JWRB), INTENT(INOUT) :: FLNEW(1:MNP,NANG,NFRE)
 
       REAL(KIND=JWRU) MaxNorm, SumNorm, p_is_converged
       REAL(KIND=JWRU) eSum(NANG,NFRE)
@@ -3236,7 +3247,6 @@ END INTERFACE
       WRITE(740+MyRankGlobal,*) 'JWRU=', JWRU
       WRITE(740+MyRankGlobal,*) 'JWRB=', JWRB
       WRITE(740+MyRankGlobal,*) 'IREFRA=', IREFRA
-      WRITE(740+MyRankGlobal,*) 'ISHALLO=', ISHALLO
       FLUSH(740+MyRankGlobal)
 #endif
 
@@ -3609,7 +3619,7 @@ END INTERFACE
 ! local double
 !
       REAL(KIND=JWRB), INTENT(IN) :: FL1(:,:,:)
-      REAL(KIND=JWRB), INTENT(OUT) :: FLNEW(:,:,:)
+      REAL(KIND=JWRB), INTENT(INOUT) :: FLNEW(:,:,:)
       REAL(KIND=JWRU)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
       REAL(KIND=JWRU)  :: DTMAX_GLOBAL_EXP_LOC
       REAL(KIND=JWRU)  :: REST, CFLXY, DT4AI
@@ -3783,67 +3793,6 @@ END INTERFACE
          flnew(ip,:,:) = REAL(u(:,:,ip),JWRB)
       ENDDO
       END SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_HPCF
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE ALL_CHECKS
-      IMPLICIT NONE
-      CALL STAT_WHGTTG
-      END SUBROUTINE ALL_CHECKS
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE PRINT_WHGTTG
-      USE YOWINTP  , ONLY : WHGTTG
-      USE YOWPARAM , ONLY : NGX      ,NGY
-      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
-      IMPLICIT NONE
-      INTEGER(KIND=JWIM) :: I, J
-      WRITE(740+MyRankGlobal,*) 'STAT_WHGTTG, alloc=', allocated(WHGTTG)
-      IF (ALLOCATED(WHGTTG)) THEN
-        DO I=1,NGX
-          DO J=1,NGY
-            WRITE(740+MyRankGlobal,*) 'I/J/Hs=', I, J, WHGTTG(I,J)
-          END DO
-        END DO
-      END IF
-      END SUBROUTINE PRINT_WHGTTG
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE STAT_WHGTTG
-      USE YOWINTP  , ONLY : WHGTTG
-      USE YOWPARAM , ONLY : NGX      ,NGY
-      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
-      IMPLICIT NONE
-      INTEGER(KIND=JWIM) :: I, J, nbNAN, nbSea
-      REAL(KIND=JWRB) :: sumPt, sumWHGTTG, avgWHGTTG
-      REAL(KIND=JWRB) :: ZMISS, eVal
-      ZMISS=-999._JWRB
-      WRITE(740+MyRankGlobal,*) 'STAT_WHGTTG, alloc=', allocated(WHGTTG)
-      IF (ALLOCATED(WHGTTG)) THEN
-        nbNaN=0
-        nbSea=0
-        sumPt=0
-        sumWHGTTG=0.
-        DO I=1,NGX
-          DO J=1,NGY
-            eVal=WHGTTG(I,J)
-            IF (eVal .ne. ZMISS) THEN
-              nbSea=nbSea+1
-              IF (eVal .ne. eVal) THEN
-                nbNaN=nbNan+1
-              ELSE
-                sumPt=sumPt+1
-                sumWHGTTG=sumWHGTTG + eVal
-              END IF
-            END IF
-          END DO
-        END DO
-        avgWHGTTG=sumWHGTTG/sumPt
-        WRITE(740+MyRankGlobal,*) 'nbSea/NaN/Pt/avg=', nbSea, nbNaN, sumPt, avgWHGTTG
-      END IF
-      END SUBROUTINE STAT_WHGTTG
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

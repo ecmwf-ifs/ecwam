@@ -1,4 +1,4 @@
-      SUBROUTINE OUTWPSP (IJSLOC, IJLLOC, IJ_OFFSET, FL1, USTAR)
+SUBROUTINE OUTWPSP (FL1, FF_NOW)
 ! ----------------------------------------------------------------------
 
 !**** *OUTWPSP* - MODEL OUTPUT OF SPECTRA AT GIVEN LOCATIONS 
@@ -11,13 +11,9 @@
 
 !**   INTERFACE.
 !     ----------
-!      *CALL*OUTWPSP (IJSLOC, IJLLOC, IJ_OFFSET, FL1
-!      *IJSLOC* - INDEX OF FIRST LOCAL GRIDPOINT
-!      *IJLLOC* - INDEX OF LAST LOCAL GRIDPOINT
-!      *IJ_OFFSET* OFFSET to point IJSLOC and IJLLOC to the global block of data
-!                   only meaningful if unstructured grid
+!      *CALL*OUTWPSP (FL1, FF_NOW) 
 !      *FL1*    - INPUT SPECTRUM.
-!      *USTAR*  - FRICTION VELOCITY
+!      *FF_NOW* - FORCING FIELDS
 
 !     EXTERNALS.
 !     ----------
@@ -37,52 +33,45 @@
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
-      USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,MARSTYPE
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWSTAT  , ONLY : CDTPRO
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "out_onegrdpt_sp.intfb.h"
-#include "outers.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJSLOC, IJLLOC
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJ_OFFSET
-      REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NANG,NFRE), INTENT(IN) :: FL1
-      REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC), INTENT(IN) :: USTAR 
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL1
+      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: FF_NOW
 
-      INTEGER(KIND=JWIM) :: IJ
+
+      INTEGER(KIND=JWIM) :: ICHNK, IJ
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('OUTWPSP',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('OUTWPSP',0,ZHOOK_HANDLE)
+
+ASSOCIATE(UFRIC => FF_NOW%UFRIC)
 
 !*    OUTPUT OF SPECTRA FOR ONE GRID POINT SIMULATION
 !     -----------------------------------------------
 
-      IF(CLDOMAIN.EQ.'s') THEN
-        DO IJ=IJSLOC, IJLLOC
-          CALL OUT_ONEGRDPT_SP(FL1(IJ:IJ,:,:),USTAR(IJ),CDTPRO)
+      IF (CLDOMAIN == 's') THEN
+        DO ICHNK = 1, NCHNK
+          DO IJ = 1, KIJL4CHNK(ICHNK)
+            CALL OUT_ONEGRDPT_SP(FL1(IJ:IJ,:,:,ICHNK), UFRIC(IJ,ICHNK), CDTPRO)
+          ENDDO
         ENDDO
       ENDIF
 
-!*    OUTPUT OF SPECTRA FOR SATELLITE COLLOCATION.
-!     --------------------------------------------
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('OUTWPSP',1,ZHOOK_HANDLE)
 
-      IF (MARSTYPE.EQ.'an'.OR.MARSTYPE.EQ.'fg'.OR.MARSTYPE.EQ.'4v') THEN
-        IF (CDTPRO.NE.CDATEA) THEN
-          CALL OUTERS (FL1, IJSLOC, IJLLOC, CDTPRO)
-          IF (ITEST.GE.3) THEN
-            WRITE(IU06,*) '      SUB. OUTWPSP: OUTPUT OF SPECTRA',      &
-     &       ' FOR SATELLITE COLLOCATION DONE FOR ', CDTPRO
-          ENDIF
-        ENDIF
-      ENDIF
-
-      IF (LHOOK) CALL DR_HOOK('OUTWPSP',1,ZHOOK_HANDLE)
-
-      END SUBROUTINE OUTWPSP
+END SUBROUTINE OUTWPSP

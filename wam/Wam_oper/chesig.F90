@@ -1,6 +1,6 @@
 ! ----------------------------------------------------------------------
 
-      SUBROUTINE CHESIG (KU06, KTST, KRANK, KPROC, LDSIGSTOP, LDSIGREST)
+      SUBROUTINE CHESIG (KU06, KRANK, KPROC, LDSIGSTOP, LDSIGREST)
 
 ! ----------------------------------------------------------------------
 
@@ -15,7 +15,6 @@
 !        *CALL* *CHESIG(KU06,KRANK,KPROC,LDSIGSTOP,LDSIGREST)
 
 !    I/   *KU06*      - LOGICAL I/O UNIT FOR STDOUT.
-!    I/   *KTST*      - TEST OUTPUT LEVEL.
 !    I/   *KRANK*     - CURRENT PROCESSOR ELEMENT (NUMERIC).
 !    I/   *KPROC*     - TOTAL NUMBER OF PROCESSING ELEMENTS.
 !     /O  *LDSIGSTOP* - SET .TRUE. IF STOP SIGNAL RECEIVED.
@@ -59,7 +58,7 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: KU06, KTST, KRANK, KPROC
+      INTEGER(KIND=JWIM), INTENT(IN) :: KU06, KRANK, KPROC
       LOGICAL, INTENT(OUT) :: LDSIGSTOP, LDSIGREST
 
       INTEGER(KIND=JWIM) :: JE, ITAG, IPROC
@@ -71,9 +70,6 @@
 !*    1. UNBLOCK SIGNALS.
 !        ----------------
 
-      IF (KTST.GE.2)                                                    &
-     & WRITE(KU06,*) '   CHESIG:  FOR PE ', KRANK, ' START'
-
       CALL IFSSIGB
 
 !         check for arrival of signals
@@ -81,44 +77,33 @@
       LDSIGSTOP=.FALSE.
       LDSIGREST=.FALSE.
 
-      IF (KRANK .EQ. 1) THEN
-        IF(ISIGINT == 1) THEN
+      IF (KRANK == 1) THEN
+        IF (ISIGINT == 1) THEN
           WRITE(*,'(A)')' SIGNAL RECEIVED: WRITE RESTART FILES'
         ENDIF
-        IF(ISIGHUP == 1) THEN
+        IF (ISIGHUP == 1) THEN
           WRITE(*,'(A)')' SIGNAL RECEIVED: STOP'
         ENDIF
 
-        DO JE=2, KPROC
+        DO JE=2,KPROC
           ITAG=JPSIGTAG+JE
           IBUF(1)=ISIGHUP
           IBUF(2)=ISIGINT
-          CALL MPL_SEND(IBUF,KDEST=JE,KTAG=ITAG,                        &
-     &                  CDSTRING='CHESIG:') 
+          CALL MPL_SEND(IBUF,KDEST=JE,KTAG=ITAG,CDSTRING='CHESIG:')
         ENDDO
       ELSE
         ITAG=JPSIGTAG+KRANK
         IPROC=1
-        CALL MPL_RECV(IBUF,KSOURCE=IPROC,KTAG=ITAG,                     &
-     &                CDSTRING='CHESIG:') 
+        CALL MPL_RECV(IBUF,KSOURCE=IPROC,KTAG=ITAG,CDSTRING='CHESIG:')
         ISIGHUP=IBUF(1)
         ISIGINT=IBUF(2)
       ENDIF
-      IF (ISIGHUP.NE.0) LDSIGSTOP=.TRUE.
-      IF (ISIGINT.NE.0) LDSIGREST=.TRUE.
+      IF (ISIGHUP /= 0) LDSIGSTOP=.TRUE.
+      IF (ISIGINT /= 0) LDSIGREST=.TRUE.
       ISIGINT=0
-      IF (KPROC .GT. 1) THEN
+      IF (KPROC > 1) THEN
         CALL MPL_BARRIER(CDSTRING='CHESIG:')
       ENDIF
 
-      IF (KTST.GE.2) THEN
-        WRITE(KU06,*) '   CHESIG:  FOR PE ', KRANK, ' DONE'
-        WRITE(KU06,*) '   CHESIG:  LDSIGSTOP:', LDSIGSTOP,              &
-     &                ' LDSIGREST: ', LDSIGREST
-        CALL FLUSH(KU06)
-      ENDIF
-
 !     ------------------------------------------------------------------
-
-      RETURN
       END SUBROUTINE CHESIG

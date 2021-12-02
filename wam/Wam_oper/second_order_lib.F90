@@ -357,6 +357,8 @@
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
+# include "vmin.intfb.h"
+# include "vplus.intfb.h"
 
       REAL(KIND=JWRB) :: DEL1, XI, XJ, XK, XL, THI, THJ, THK, THL,      &
      &                   OI, OJ, OK, OL, RI, RJ, RK, RL,                &
@@ -366,7 +368,7 @@
      &                   XNJK, XNIL, YNIL, YNJK, YNJL, YNIK,            &
      &                   ZNIJ, ZNKL, ZPIJ, ZPKL, THLJ, THIL, THKJ,      &
      &                   THKI, THJI, THLK, VABS, VDIR,                  &
-     &                   VMIN, VPLUS, OMEG
+     &                   OMEG
 !
 !***  1. DETERMINE NONLINEAR TRANSFER.
 !     --------------------------------
@@ -606,11 +608,14 @@
 !-----------------------------------------------------------------------
 !
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS, ONLY : PI
 
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
+# include "vmin.intfb.h"
+# include "vplus.intfb.h"
 
       REAL(KIND=JWRB) :: DEL1, XI, XJ, XK, XL, THI, THJ, THK, THL,      &
      &                   OI, OJ, OK, OL, RI, RJ, RK, RL,                &
@@ -618,7 +623,7 @@
      &                   RLI, RIL, RLK, RKL, THIJ, THJI,                &
      &                   THIK, THKI, THLJ, THJL, THJK, THKJ,            &
      &                   THLI, THIL, THLK, THKL, ZIJKL,                 &
-     &                   VABS, VDIR, VMIN, VPLUS, A1, A3, W1, OMEG
+     &                   VABS, VDIR, A1, A3, W1, OMEG
 !
 !***  1. DETERMINE NONLINEAR TRANSFER.
 !     --------------------------------
@@ -727,12 +732,14 @@
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
+# include "vmin.intfb.h"
+# include "vplus.intfb.h"
 
       REAL(KIND=JWRB) :: DEL1, XI, XJ, XK, XL, THI, THJ, THK, THL,      &
      &                   OI, OJ, OK, OL, RI, RJ, RK, RL,                &
      &                   RIJ, RIK, RIL, RJL, RJK, RKL, THIJ, THIK,      &
      &                   THIL, THJL, THJK, THLK, THKL,                  &
-     &                   ZIJKL, VABS, VDIR, VMIN, VPLUS,                &
+     &                   ZIJKL, VABS, VDIR,                             &
      &                   A1, A3, W4, OMEG
 !
 !***  1. DETERMINE NONLINEAR TRANSFER.
@@ -824,13 +831,14 @@
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
+# include "vmin.intfb.h"
 
       REAL(KIND=JWRB) :: DEL1, XI, XJ, XK, XL, THI, THJ, THK, THL,      &
      &                   OI, OJ, OK, OL, RI, RJ, RK, RL,                &
      &                   RIJ, RJI, RIK, RKI, RJL, RJK, RLI,             &
      &                   RIL, RKL, THIJ, THJI, THIK,                    &
      &                   THKI, THJL, THJK, THLI, THIL, THKL, ZIJKL,     &
-     &                   VABS, VDIR, VMIN, A1, A3, W1, OMEG
+     &                   VABS, VDIR, A1, A3, W1, OMEG
 !
 !
 !***  1. DETERMINE NONLINEAR TRANSFER.
@@ -1026,9 +1034,10 @@
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
+# include "vmin.intfb.h"
 
       REAL(KIND=JWRB) :: DEL1, XI,XJ, XK, THI, THJ, THK, OI, OJ, OK,    &
-     &                   VMIN, OMEG
+     &                   OMEG
 !
 !***  1. DETERMINE NONLINEAR TRANSFER.
 !     --------------------------------
@@ -1131,9 +1140,10 @@
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
+# include "vplus.intfb.h"
 
       REAL(KIND=JWRB) :: DEL1, OI, OJ, OK, XI, XJ, XK,                  &
-     &                   THI, THJ, THK, OMEG, VPLUS
+     &                   THI, THJ, THK, OMEG
 !
 !***  1. DETERMINE NONLINEAR TRANSFER.
 !     --------------------------------

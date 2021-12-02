@@ -1,4 +1,4 @@
-      SUBROUTINE WVFRICVELO(IJS, IJL, U10, BETA, G, XKAPPA, ZREF, &
+      SUBROUTINE WVFRICVELO(KIJS, KIJL, U10, BETA, G, XKAPPA, ZREF, &
      &                      USTAR, Z0W) 
 
 ! ----------------------------------------------------------------------
@@ -14,7 +14,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *WVFRICVELO(IU06,ITEST)*
+!       *CALL* *WVFRICVELO(IU06)*
 !          *IU06*  -  LOGICAL UNIT FOR PRINTER OUTPUT UNIT.
 
 !     METHOD.
@@ -42,17 +42,19 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : C1CD,    C2CD,     P1CD,     P2CD
+
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), INTENT(IN) :: G, XKAPPA, ZREF
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10, BETA
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) ::  USTAR, Z0W
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: U10, BETA
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) ::  USTAR, Z0W
 
       INTEGER(KIND=JWIM), PARAMETER :: NITER=10
 
@@ -67,7 +69,7 @@
       IF (LHOOK) CALL DR_HOOK('WVFRICVELO',0,ZHOOK_HANDLE)
 
       XLOGZ=LOG(ZREF)
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         BOG=BETA(IJ)/G
         XKU10=XKAPPA*U10(IJ)
         C_D = (C1CD + C2CD*U10(IJ)**P1CD)*U10(IJ)**P2CD
@@ -81,7 +83,7 @@
           XLOGINV= 1._JWRB/(XLOGZ-LOG(Z0))
           F      = UST-XKU10*XLOGINV
 !         protection in case it fails to converge
-          IF(ABS(F) == ABS(FOLD) ) THEN
+          IF (ABS(F) == ABS(FOLD) ) THEN
             EXIT
           ELSE IF (ABS(F) > ABS(FOLD) ) THEN
             UST=USTFG

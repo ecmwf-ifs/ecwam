@@ -1,4 +1,4 @@
-      SUBROUTINE Z0WAVE (IJS, IJL, US, TAUW, UTOP, Z0, Z0B)
+      SUBROUTINE Z0WAVE (KIJS, KIJL, US, TAUW, UTOP, Z0, Z0B)
 
 ! ----------------------------------------------------------------------
 
@@ -12,9 +12,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *Z0WAVE (IJS, IJL, US, TAUW, UTOP, Z0)
-!          *IJS*  - INDEX OF FIRST GRIDPOINT.
-!          *IJL*  - INDEX OF LAST GRIDPOINT.
+!       *CALL* *Z0WAVE (KIJS, KIJL, US, TAUW, UTOP, Z0)
+!          *KIJS* - INDEX OF FIRST GRIDPOINT.
+!          *KIJL* - INDEX OF LAST GRIDPOINT.
 !          *US*   - OUTPUT BLOCK OF SURFACE STRESSES.
 !          *TAUW* - INPUT BLOCK OF WAVE STRESSES.
 !          *UTOP* - WIND SPEED.
@@ -42,37 +42,39 @@
       USE YOWPCONS , ONLY : GM1
       USE YOWPHYS  , ONLY : ALPHA
       USE YOWTABL  , ONLY : EPS1
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "chnkmin.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL),INTENT(IN)  ::  US, TAUW, UTOP
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL),INTENT(OUT) ::  Z0, Z0B
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL),INTENT(IN)  ::  US, TAUW, UTOP
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL),INTENT(OUT) ::  Z0, Z0B
+
 
       INTEGER(KIND=JWIM) :: IJ
-      REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: UST2, UST3, ARG
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAOG
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ALPHAOG
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('Z0WAVE',0,ZHOOK_HANDLE)
 
-      IF(LLCAPCHNK) THEN
-        DO IJ=IJS,IJL
+      IF (LLCAPCHNK) THEN
+        DO IJ=KIJS,KIJL
           ALPHAOG(IJ)= CHNKMIN(UTOP(IJ))*GM1
         ENDDO
       ELSE
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           ALPHAOG(IJ)= ALPHA*GM1
         ENDDO
       ENDIF
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         UST2 = US(IJ)**2
         UST3 = US(IJ)**3
         ARG = MAX(UST2-TAUW(IJ),EPS1)

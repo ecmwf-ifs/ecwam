@@ -1,5 +1,5 @@
-      SUBROUTINE MPFLDTOIFS(IG, IJS, IJL, NWVFIELDS, BLOCK,             &
-     &                      GRID, DEFVAL, MASK_OUT, LLGLOBAL)
+SUBROUTINE MPFLDTOIFS(IJS, IJL, BLK2GLO, NWVFIELDS, BLOCK,       &
+ &                    GRID, DEFVAL, MASK_OUT, LLGLOBAL)
 
 !****  *MPFLDTOIFS* - TRANSFORMS BLOCK DATA TO GRID DATA FOR
 !****                 FIELDS THAT WILL BE RETURNED TO IFS.                
@@ -14,13 +14,17 @@
 !*    INTERFACE.
 !     ----------
 
-!     CALL *MPFLDTOIFS(IG, IJS, IJL, NWVFIELDS, BLOCK,
+!     CALL *MPFLDTOIFS(IJS, IJL, BLK2GLO, NWVFIELDS, BLOCK,
 !    &                 GRID, DEFVAL, MASK_OUT )*
-!         *IG*         - BLOCK NUMBER.
 !         *IJS*        - BLOCK INDEX OF FIRST GRIDPOINT.
 !         *IJL*        - BLOCK INDEX OF LAST GRIDPOINT.
+!         *BLK2GLO*    - BLOCK TO GRID TRANSFORMATION
 !         *NWVFIELDS*  - TOTAl NUMBER OF FIELDS RETURNED TO IFS
-!         *BLOCK*      - FIELDS IN BLOCK FORM (INPUT) 
+!         *BLOCK*      - FIELDS IN BLOCK FORM (INPUT) !     CALL *MPFLDTOIFS(IJS, IJL, BLK2GLO, NWVFIELDS, BLOCK,
+!    &                 GRID, DEFVAL, MASK_OUT )*
+!         *IJS*        - BLOCK INDEX OF FIRST GRIDPOINT.
+!         *IJL*        - BLOCK INDEX OF LAST GRIDPOINT.
+!
 !                        ONLY DEFINED LOCALLY.
 !         *GRID*       - FIELDS IN GRID FORM (OUTPUT)
 !                        DEFINED  GLOBALLY OR JUST ON THE
@@ -45,12 +49,12 @@
 ! -------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
       USE YOWCOUP  , ONLY : LWCOUNORMS,LMASK_OUT_NOT_SET,               &
      &            LMASK_TASK_STR,                                       &
      &            LFROMTASK,IJFROMTASK,NFROMTASKS,ISTFROMTASK,          &
      &            LTOTASK  ,IJTOTASK  ,NTOTASKS  ,ISTTOTASK
-      USE YOWMAP   , ONLY : IXLG     ,KXLT
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWSPEC  , ONLY : NSTART   ,NEND
@@ -62,14 +66,15 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IG, IJS, IJL, NWVFIELDS
-      INTEGER(KIND=JWIM), INTENT(IN) :: MASK_OUT(NGX,NGY)
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
+      INTEGER(KIND=JWIM), INTENT(IN) :: NWVFIELDS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NWVFIELDS), INTENT(IN) :: BLOCK
       REAL(KIND=JWRB), DIMENSION(:,:,:), INTENT(INOUT) :: GRID
       REAL(KIND=JWRB), DIMENSION(NWVFIELDS), INTENT(IN) :: DEFVAL 
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: MASK_OUT(NGX,NGY)
       LOGICAL, INTENT(OUT) :: LLGLOBAL
+
 
       INTEGER(KIND=JWIM) :: IFLD, IP, IP1, IJ, I, J, IX, IY
       INTEGER(KIND=JWIM) :: ITAG, IREQ, ICOUNT, IC, IST, IEND
@@ -78,12 +83,15 @@
 
       REAL(KIND=JWRB), ALLOCATABLE :: ZBUFS(:) ,ZBUFR(:)
       REAL(KIND=JWRB), ALLOCATABLE :: ZSENDBUF(:), ZRECVBUF(:) 
-      REAL(KIND=JWRB) ZHOOK_HANDLE
-      REAL(KIND=JWRB) ZHOOK_HANDLE1
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE1
 
 !----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('MPFLDTOIFS',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('MPFLDTOIFS',0,ZHOOK_HANDLE)
+
+ASSOCIATE(IXLG => BLK2GLO%IXLG, &
+ &        KXLT => BLK2GLO%KXLT)
 
       CALL GSTATS_BARRIER(734)
 
@@ -109,7 +117,7 @@
 
       DO IFLD=1,NWVFIELDS
 
-        IF (NPROC.GT.1) THEN
+        IF (NPROC > 1) THEN
 
 !         GLOBAL EXCHANGE
 
@@ -133,8 +141,8 @@
 !           TRANSFORM FROM BLOCK TO GRID
             DO IP=1,NPROC
               DO IJ = NSTART(IP), NEND(IP)
-               IX = IXLG(IJ,IG)
-               IY = NGY- KXLT(IJ,IG) +1
+               IX = IXLG(IJ)
+               IY = NGY- KXLT(IJ) +1
                GRID(IX,IY,IFLD) = ZBUFR(IJ)
               ENDDO
             ENDDO
@@ -159,9 +167,9 @@
               DO IP=1,NPROC
                 LFROMTASK(IP)=0
                 DO IJ = NSTART(IP), NEND(IP)
-                  IX = IXLG(IJ,IG)
-                  IY = NGY- KXLT(IJ,IG) +1
-                  IF (MASK_OUT(IX,IY).EQ.1) LFROMTASK(IP)=LFROMTASK(IP)+1
+                  IX = IXLG(IJ)
+                  IY = NGY- KXLT(IJ) +1
+                  IF (MASK_OUT(IX,IY) == 1) LFROMTASK(IP)=LFROMTASK(IP)+1
                 ENDDO
               ENDDO
 
@@ -177,12 +185,12 @@
 
               ICOUNT=0
               DO IP=1,NPROC
-                IF (LFROMTASK(IP).GT.0) THEN
+                IF (LFROMTASK(IP) > 0) THEN
                   ISTFROMTASK(IP)=ICOUNT+1
                   DO IJ = NSTART(IP), NEND(IP)
-                    IX = IXLG(IJ,IG)
-                    IY = NGY- KXLT(IJ,IG) +1
-                    IF (MASK_OUT(IX,IY).EQ.1) THEN
+                    IX = IXLG(IJ)
+                    IY = NGY- KXLT(IJ) +1
+                    IF (MASK_OUT(IX,IY) == 1) THEN
                       ICOUNT=ICOUNT+1
                       IJFROMTASK(ICOUNT)=IJ
                     ENDIF
@@ -234,7 +242,7 @@
               IREQ=0
 
               DO IP=1,NPROC
-                IF (LFROMTASK(IP).GT.0) THEN
+                IF (LFROMTASK(IP) > 0) THEN
                   IREQ=IREQ+1
 
                   IST=ISTFROMTASK(IP)
@@ -250,7 +258,7 @@
 !             SENT.
               IST=1
               DO IP=1,NPROC
-                IF (LTOTASK(IP).GT.0) THEN
+                IF (LTOTASK(IP) > 0) THEN
                   IEND=IST+LTOTASK(IP)-1
                   ISTTOTASK(IP)=IST
                   CALL MPL_RECV(IJTOTASK(IST:IEND),                     &
@@ -261,15 +269,15 @@
                 ENDIF
               ENDDO
 
-              IF ( IREQ .GT. 0 )THEN
+              IF ( IREQ > 0 )THEN
                 CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ),                &
      &                        CDSTRING='MPFLDTOIFS: WAIT SEND IJ')
               ENDIF
 
 !             DO IP1=1,NPROC
-!               IF (IRANK.EQ.IP1)THEN
+!               IF (IRANK == IP1)THEN
 !                 DO IP=1,NPROC
-!                   IF ( LTOTASK(IP)>0.OR.LFROMTASK(IP)>0 )THEN
+!                   IF ( LTOTASK(IP)>0 .OR. LFROMTASK(IP)>0 )THEN
 !                     WRITE(0,                                    &
 !    &                  '("MPFLDTOIFS: IP=",I6," LTOTASK=",I10,   &
 !    &                  " LFROMTASK=",I10)') IP,LTOTASK(IP),      &
@@ -289,7 +297,7 @@
 
             ALLOCATE(ZSENDBUF(MAX(1,NTOTASKS)))
             DO IP=1,NPROC
-              IF (LTOTASK(IP).GT.0) THEN
+              IF (LTOTASK(IP) > 0) THEN
                 IST=ISTTOTASK(IP)
                 IEND=IST+LTOTASK(IP)-1
                 DO IC=IST,IEND
@@ -302,7 +310,7 @@
             IREQ=0
 
             DO IP=1,NPROC
-              IF (LTOTASK(IP).GT.0) THEN
+              IF (LTOTASK(IP) > 0) THEN
                 IREQ=IREQ+1
                 IST=ISTTOTASK(IP)
                 IEND=IST+LTOTASK(IP)-1
@@ -319,7 +327,7 @@
 !           RECEIVE INFORMATION FROM OTHER TASKS (IF NEEDED)
             DO IP=1,NPROC
 
-              IF (LFROMTASK(IP).GT.0) THEN
+              IF (LFROMTASK(IP) > 0) THEN
                 IST=ISTFROMTASK(IP)
                 IEND=IST+LFROMTASK(IP)-1
                 CALL MPL_RECV(ZRECVBUF(IST:IEND),                       &
@@ -332,20 +340,20 @@
 
 !           ENSURE ALL SENDS ARE FINISHED.
 
-            IF (IREQ.GT.0) THEN
+            IF (IREQ > 0) THEN
               CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ),                  &
      &                      CDSTRING='MPFLDTOIFS: WAIT SEND DATA ')
             ENDIF
 
             DO IP=1,NPROC
-              IF (LFROMTASK(IP).GT.0) THEN
+              IF (LFROMTASK(IP) > 0) THEN
                 IST=ISTFROMTASK(IP)
                 IEND=IST+LFROMTASK(IP)-1
 !               TRANSFORM FROM BLOCK TO GRID
                 DO IC = IST,IEND
                   IJ=IJFROMTASK(IC)
-                  IX = IXLG(IJ,IG)
-                  IY = NGY- KXLT(IJ,IG) +1
+                  IX = IXLG(IJ)
+                  IY = NGY- KXLT(IJ) +1
                   GRID(IX,IY,IFLD) = ZRECVBUF(IC)
                 ENDDO
               ENDIF
@@ -361,8 +369,8 @@
 !         TRANSFORM FROM BLOCK TO GRID
           DO IP=1,NPROC
             DO IJ = NSTART(IP), NEND(IP)
-             IX = IXLG(IJ,IG)
-             IY = NGY- KXLT(IJ,IG) +1
+             IX = IXLG(IJ)
+             IY = NGY- KXLT(IJ) +1
              GRID(IX,IY,IFLD) = BLOCK(IJ,IFLD)
             ENDDO
           ENDDO
@@ -372,7 +380,7 @@
       ENDDO
 
       CALL GSTATS(686,1)
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('MPFLDTOIFS',1,ZHOOK_HANDLE)
 
-      IF (LHOOK) CALL DR_HOOK('MPFLDTOIFS',1,ZHOOK_HANDLE)
-
-      END SUBROUTINE MPFLDTOIFS
+END SUBROUTINE MPFLDTOIFS

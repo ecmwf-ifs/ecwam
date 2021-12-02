@@ -97,7 +97,8 @@
       IPOGBO(0) = 0
       DO I = 1,NBMAX
         IJARC(I) = 0
-        IGARC(I) = 0
+        ! IGARC obsolete
+        IGARC(I) = 1
         BLATC(I) = 0.0_JWRB
         BLNGC(I) = 0.0_JWRB
       ENDDO
@@ -119,7 +120,7 @@
         ListSTART(1)=1
         ListEND(1)=1
         CALL FINDB (NBMAX, NBOUNC, BLATC(IPOGBN(II-1)+1),               &
-     &    BLNGC(IPOGBN(II-1)+1), IGARC(IPOGBN(II-1)+1),                 &
+     &    BLNGC(IPOGBN(II-1)+1),                                        &
      &    IJARC(IPOGBN(II-1)+1),                                        &
      &     1, ListSTART,ListEND, 1)
 

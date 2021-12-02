@@ -12,8 +12,6 @@
 
 !*    PURPOSE.
 !     --------
-!     READ LMESSPASS AND LFDB FROM USER INPUT SKIPPING ALL THE OTHER
-!     INPUT PARAMETER WHICH WILL BE READ IN WITH USERIN.
 
 !**   INTERFACE.
 !     ----------
@@ -58,7 +56,6 @@
      &            LRSTPARALW,LRSTPARALR,LRSTINFDAT,                     &
      &            NTRAIN   ,                                            &
      &            IPFGTBL  ,                                            &
-     &            LLOUTERS ,                                            &
      &            LWAMANOUT,                                            &
      &            NWRTOUTWAM,                                           &
      &            LSECONDORDER,                                         &
@@ -69,10 +66,10 @@
       USE YOWFRED  , ONLY : XKMSS_CUTOFF 
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G, IMDLGRBID_M
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
+      USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI, LCIWABR  ,  &
      &            LICETH
-      USE YOWMESPAS, ONLY : LMESSPASS,                                  &
-     &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
+      USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
@@ -93,21 +90,15 @@
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,    &
-     &            LGUST    ,LADEN    ,NPROMA_WAM,LSUBGRID ,LLSOURCE ,   &
-     &            LNSESTART,                                            &
+     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,LNSESTART,    &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            LRELWIND ,                                            &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,   &
      &            PATH     ,CPATH    ,CWI
-      USE YOWUNIT  , ONLY : IU20     ,IU23     ,                        &
-     &            IU27     ,IU28     ,IU04     ,IU30     ,              &
-     &            IU31     ,IU32     ,IU33     ,IU35     ,IU36     ,    &
-     &            IU37     ,IU38
       USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LVECTOR, IVECTOR
       USE UNSTRUCT_BOUND , ONLY : LBCWA
-      USE UNWAM    , ONLY : USE_DIRECT_WIND_FILE
       USE UNWAM    , ONLY : LIMPLICIT, JGS_DIFF_SOLVERTHR,              &
      &            SOURCE_IMPL, WAE_SOLVERTHR,                           &
      &            LNONL, BLOCK_GAUSS_SEIDEL,                            &
@@ -122,12 +113,11 @@
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "mpcrtbl.intfb.h"
+#include "iwam_get_unit.intfb.h"
 #include "wposnam.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU05
       INTEGER(KIND=JWIM) :: ISAT, IC, II
-      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
@@ -150,7 +140,6 @@
      &   CLOTSU, CDATER, CDATES,                                        &
      &   FFLAG,  GFLAG, NFLAG,                                          &
      &   XKMSS_CUTOFF,                                                  &
-     &   LLOUTERS,                                                      &
      &   LFDB, LGRIBIN, LGRIBOUT, LFDBIOOUT,                            &
      &   LRSTPARALW, LRSTPARALR, LRSTINFDAT,                            &
      &   LWAMANOUT,                                                     &
@@ -170,7 +159,7 @@
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
      &   IMDLGRBID_G, IMDLGRBID_M,                                      &
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
-     &   LMESSPASS, LWCOU, LNOCDIN, LODBRALT,                           &
+     &   LWCOU, LNOCDIN, LODBRALT,                                      &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
      &   IBUFRSAT, CSATNAME,                                            &
      &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,                   &
@@ -183,7 +172,6 @@
      &   LNSESTART,                                                     &
      &   LLUNSTR, LPREPROC, LVECTOR, IVECTOR,                           &
      &   WAE_SOLVERTHR, JGS_DIFF_SOLVERTHR,                             &
-     &   USE_DIRECT_WIND_FILE,                                          &
      &   LIMPLICIT,                                                     &
      &   SOURCE_IMPL,                                                   &
      &   LNONL, BLOCK_GAUSS_SEIDEL,                                     &
@@ -259,7 +247,6 @@
 !     XKMSS_CUTOFF: IF DIFFERENT FROM 0., SETS THE MAXIMUM WAVE NUMBER TO BE USED IN
 !                   THE CALCULATION OF THE MEAN SQUARE SLOPE.
 !                   OTHERWISE, USE XK_GC(NWAV_GC)
-!     LLOUTERS : IF TRUE CALL OUTERS: OUTPUT OF SATELLITE COLOCATION SPECTRA
 !     TYPE OF INTEGRATED PARAMETERS IN FFLAG GFLAG (see OUTINT) :
 !     1  : WAVE HEIGHT (M)
 !     2  : MEAN WAVE DIRECTION (DEG.)
@@ -358,7 +345,7 @@
 !     LSECONDORDER : IF TRUE THEN SECOND ORDER CORRECTIOn IS APPLIED TO
 !                    OUTPUT INTEGRATED PARAMETERS.
 !     ICASE: 1 FOR SPHERICAL COORDINATES ELSE CARTESIAN COORDINATES.
-!     ISHALLO: 1 FOR DEEP WATER MODE ELSE SHALLOW WATER MODEL.
+!     ISHALLO: THIS OPTION IS DEPRICATED. IT IS ALWAYS SHALLOW WATER FORMULATION
 !     IREFRA: 0 MODEL RUNS WITHOUT REFRACTION.
 !             1 MODEL RUNS WITH DEPTH REFRACTION ONLY.
 !             2 MODEL RUNS WITH CURRENT REFRACTION ONLY.
@@ -395,7 +382,6 @@
 !              or MONTHLY FORECAST RUNS
 !     NMETNB : METHOD NUMBER TO BE USED FOR GRIBBING OF SEASONAL DATA.
 !              or MONTHLY FORECAST RUNS
-!     LMESSPASS: TRUE FOR MESSAGE PASSING ARCHITECHTURE.
 !     LWCOU: FALSE FOR UNCOUPLED RUN (see WVWAMINIT1 if coupled to IFS).
 !     NEMO COUPLING FLAGS:
 !     LWNEMOCOU: FALSE FOR NO COUPLING TO NEMO RUN.
@@ -510,7 +496,7 @@
 !                IS COMPUTED.
 !     LNSESTART : FLAG CONTROLLING WHETHER OR NOT THE INITIAL SPECTRA ARE
 !                 RESET TO NOISE LEVEL.
-!     LSMSSIG_WAM : .T. = send signals to SMS or ECFLOW (ECMWF supervisor)
+!     LSMSSIG_WAM : .T. = send signals to ECFLOW (ECMWF supervisor)
 !     CMETER :  SMS or ECFLOW meter command (ECMWF supervisor)
 !     CEVENT :  SMS or ECFLOW event command (ECMWF supervisor)
 
@@ -581,8 +567,6 @@
 
       XKMSS_CUTOFF = 0.0_JWRB
 
-      LLOUTERS = .FALSE.
-
       LSECONDORDER = .TRUE.
 
       LFDB      = .TRUE. 
@@ -595,7 +579,7 @@
       LRSTINFDAT= .FALSE.
       LODBRALT  = .FALSE.
       ICASE     = 1 
-      ISHALLO   = 0 
+      ISHALLO   = 0   !! depricated 
       IPHYS     = 1
       ISNONLIN  = 1 
       IDAMPING  = 1 
@@ -622,7 +606,6 @@
       NTOTENS   = 0
       NSYSNB    = -1
       NMETNB    = -1
-      LMESSPASS = .TRUE.
 
       NOUTT     = 0
 
@@ -768,7 +751,6 @@
       LVECTOR=.FALSE.
       IVECTOR=1
       LPREPROC=.FALSE.
-      USE_DIRECT_WIND_FILE=.FALSE.
       JGS_DIFF_SOLVERTHR = 1.E-5_JWRU
       WAE_SOLVERTHR = 1.E-10_JWRU
       LIMPLICIT = .FALSE.
@@ -805,6 +787,7 @@
         CALL ABORT1
       ENDIF
 
+      ! when coupled to IFS, the control will come from it via calls to wavemdl
       IF (LWCOU) LSMSSIG_WAM=.FALSE.
 
 
@@ -918,8 +901,7 @@
 !     RESET CERTAIN FLAGS:
 
 !     WE SHOULD RECEIVE DATA FROM NEMO
-      IF (LWNEMOCOUCIC.OR.LWNEMOCOUCIT.OR.LWNEMOCOUCUR)                 &
-     &   LWNEMOCOURECV = .TRUE.
+      IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT .OR. LWNEMOCOUCUR) LWNEMOCOURECV = .TRUE.
 
 
 ! Here we set LL1D = .TRUE. for the case of LLUNSTR in order to omit the mapping for the parallel strucutured grid
@@ -933,7 +915,6 @@
       IF (IRANK.EQ.1) THEN
         WRITE(6,*) '==============================================='
         WRITE(6,*) '*** MPUSERIN has read the following settings'
-        WRITE(6,*) '*** LMESSPASS = ',LMESSPASS
         WRITE(6,*) '*** LFDB = ',LFDB
         WRITE(6,*) '*** LRSTPARALW = ',LRSTPARALW
         WRITE(6,*) '*** LRSTPARALR = ',LRSTPARALR

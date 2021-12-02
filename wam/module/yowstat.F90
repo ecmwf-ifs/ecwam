@@ -63,7 +63,6 @@
       INTEGER(KIND=JWIM) :: NMFR
       INTEGER(KIND=JWIM) :: NNCEP
       INTEGER(KIND=JWIM) :: NUKM
-      INTEGER(KIND=JWIM) :: NPROMA_WAM 
       INTEGER(KIND=JWIM) :: IREFDATE
 
       LOGICAL :: LANAONLY
@@ -146,7 +145,7 @@
 !      *ICASE*     INTEGER   PROPAGATION FLAG
 !                            = 1  SPHERICAL COORDINATES
 !                            OTHERWISE CARTESIAN COORDINATES.
-!      *ISHALLO*   INTEGER   SHALLOW WATER MODEL FLAG
+!      *ISHALLO*   INTEGER   SHALLOW WATER MODEL FLAG  !!! no longer used. It is always shallow water option
 !                            = 1  DEEP WATER MODEL
 !                            OTHERWISE  SHALLOW WATER MODEL.
 !      *ISNONLIN*  INTEGER   SNONLIN FLAG
@@ -234,7 +233,6 @@
 !                            ENSEMBLE FORECASTS. IT SPECIFIED WHETHER
 !                            THE MET OFFICE IS USED IN THE INITIAL
 !                            CONDITIONS.
-!      *NPROMA_WAM* INTEGER  MAX NUMBERS OF GRID POINTS PER THREAD 
 !      *IREFDATE*  INTEGER   REFERENCE DATE FOR MONTHLY FORECAST
 !                            HINDCAST RUNS. 
 !

@@ -1,4 +1,4 @@
-SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
+SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
 !     J. BIDLOT    ECMWF      MARCH 2010: modified to use gribapi 
@@ -9,8 +9,12 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *GETSPEC(FL,NBLKS,NBLKE,IREAD)
-!     *FL*       ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
+!     *CALL* *GETSPEC(FL1, BLK2GLO, WVENVI,NBLKS,NBLKE,IREAD)
+!     *FL1       ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
+
+!     *BLK2GLO*  BLOCK TO GRID TRANSFORMATION
+!     *BLK2LOC*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!     *WVENVI*   WAVE ENVIRONMENT FIELDS
 !     *NBLKS*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !     *NBLKE*    INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *IREAD*    PROCESSOR WHICH WILL ACCESS THE FILE ON DISK 
@@ -44,35 +48,35 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO, WVGRIDLOC, ENVIRONMENT
 
       USE YOWCOUT  , ONLY : KDEL     ,MDEL     ,LRSTPARALR
-      USE YOWFRED  , ONLY : FR       ,TH
+      USE YOWFRED  , ONLY : FR       ,TH       ,FR5      ,FRM5
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,NLONRGG
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,              &
-     &            XDELLA   ,ZDELLO
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
+      USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,ZDELLO   ,NLONRGG
       USE YOWMESPAS, ONLY : LGRIBIN
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
-     &            KTAG     ,NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,                        &
-     &            NBLO     ,NIBLO    ,CLDOMAIN
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,                        &
+     &                      KTAG     ,NPRECR   ,NPRECI
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
+     &                      NIBLO    ,CLDOMAIN
       USE YOWPCONS , ONLY : G        ,DEG      ,R        ,ZMISS    ,    &
-     &            EPSMIN
-      USE YOWSHAL  , ONLY : EMAXDPT
-      USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,NPROMA_WAM,IREFRA  ,    &
-     &            LNSESTART
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+     &                      EPSMIN
+      USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,IREFRA  ,LNSESTART
+      USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
       USE YOWPD, ONLY : MNP => npa
       USE YOWUNPOOL ,ONLY : LLUNSTR
       USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "sdepthlim.intfb.h"
 #include "abort1.intfb.h"
 #include "expand_string.intfb.h"
@@ -83,10 +87,13 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
 #include "mpdistribfl.intfb.h"
 #include "readfl.intfb.h"
 
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(OUT) :: FL1
+      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN)                          :: BLK2GLO
+      TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)              :: BLK2LOC
+      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)            :: WVENVI
+      INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN)                       :: NBLKS, NBLKE
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
-      INTEGER(KIND=JWIM), DIMENSION(NPROC),INTENT(IN) :: NBLKS, NBLKE
-      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(OUT) :: FL
-    
+
 
       INTEGER(KIND=JWIM) :: NBIT
 
@@ -94,8 +101,9 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
       INTEGER(KIND=JWIM) :: IJ, K, M, IC, ICC, JSN, IDUM, IX, IY, ID, MR, KR, IP
       INTEGER(KIND=JWIM) :: KLOOP, MLOOP, KINF, KSUP, MINF, MSUP
       INTEGER(KIND=JWIM) :: IERR, KRCOUNT, KFROM, KRTAG
-      INTEGER(KIND=JWIM) :: IRA, IG
+      INTEGER(KIND=JWIM) :: IRA
       INTEGER(KIND=JWIM) :: IUNIT
+      INTEGER(KIND=JWIM) :: IFCST
       INTEGER(KIND=JWIM) :: LNAME
       INTEGER(KIND=JWIM) :: IBREAD, NBREAD, NBREAD_AGAIN 
       INTEGER(KIND=JWIM) :: IPARAM, KZLEV, KK, MM
@@ -104,7 +112,8 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
       INTEGER(KIND=JWIM) :: KRET, IPLENG, ISIZE, KLEN, ILENG, KWORD
       INTEGER(KIND=JWIM) :: IRET
       INTEGER(KIND=JWIM) :: LFILE, KFILE_HANDLE, KGRIB_HANDLE
-      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: JKGLO
+      INTEGER(KIND=JWIM) :: IJSG, IJLG, IJSB, IJLB, KIJS, KIJL, IPRM, ICHNK
       INTEGER(KIND=JWIM) :: IPROC, ITAG, IREQ, IST, IEND, KSEND
       INTEGER(KIND=JWIM) :: ISENDREQ(NPROC)
       INTEGER(KIND=JWIM) :: NLONRGG_LOC(NYFF)
@@ -130,64 +139,46 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
+
+ASSOCIATE(IXLG => BLK2GLO%IXLG, &
+ &        KXLT => BLK2GLO%KXLT, &
+ &        EMAXDPT  => WVENVI%EMAXDPT)
 
       LFRSDECODE=.TRUE.
 
       NBIT=NIBLO+200
 
-      NPROMA=NPROMA_WAM
-
-      IF (ITEST > 3 ) THEN
-        WRITE(IU06,*) ' SUB. GETSPEC:'
-        WRITE(IU06,*) ' ABOUT TO READ SPECTRUM IN........'
-        WRITE(IU06,*) ' CDTPRO    =', CDTPRO
-        WRITE(IU06,*) ' LGRIBIN   =', LGRIBIN
-        WRITE(IU06,*) ' LRESTARTED=', LRESTARTED
-        WRITE(IU06,*) ' IRANK=', IRANK
-        WRITE(IU06,*) ' IREAD=', IREAD
-        CALL FLUSH(IU06)
-      ENDIF
-
       LOUNIT = .TRUE.
       LCUNIT = .TRUE.
       ISEND=IREAD
 
-      IF(LNSESTART .AND. .NOT.LRESTARTED) THEN
+      IF (LNSESTART .AND. .NOT.LRESTARTED) THEN
 !     BY-PASSED INPUT BY STARTING WITH SPECTRA AT NOISE LEVEL
 !     =======================================================
 
-        IG=1
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)
-        DO JKGLO=IJS(IG),IJL(IG),NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          DO K=1,NANG
-            DO M=1,NFRE
-              DO IJ=KIJS,KIJL
-                FL(IJ,K,M) = EPSMIN 
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, M, K, IJ)
+        DO ICHNK = 1, NCHNK
+          DO M = 1, NFRE
+            DO K = 1, NANG
+              DO IJ = 1, NPROMA_WAM
+                FL1(IJ, K, M, ICHNK) = EPSMIN 
               ENDDO
             ENDDO
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
 
-         DO K=1,NANG
-           DO M=1,NFRE
-             FL(NINF-1,K,M) = 0.0_JWRB
-           ENDDO
-         ENDDO
-
       ELSEIF (LGRIBIN .AND. .NOT.LRESTARTED) THEN
 !     INPUT SPECTRA ARE IN GRIB FORMAT
 !     ================================
 
-        IF (IRANK.EQ.IREAD) THEN
+        IF (IRANK == IREAD) THEN
           FILENAME='specwavein'
           LFILE=LEN_TRIM(FILENAME)
 
-          INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
-          IF(.NOT.LLEXIST) THEN
+          INQUIRE(FILE=FILENAME(1:LFILE), EXIST=LLEXIST)
+          IF (.NOT.LLEXIST) THEN
             WRITE(IU06,*)'**************************************'
             WRITE(IU06,*)'*                                    *'
             WRITE(IU06,*)'*GETSPEC : GRIB SPECTRA NOT FOUND IN *'
@@ -211,12 +202,12 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
 1121    CONTINUE
 
 !         CONNECT INPUT PE (IREAD) WITH INPUT FILE
-        IF (IRANK.EQ.IREAD) THEN
-          CALL IGRIB_OPEN_FILE(KFILE_HANDLE,FILENAME(1:LFILE),'r')
+        IF (IRANK == IREAD) THEN
+          CALL IGRIB_OPEN_FILE(KFILE_HANDLE, FILENAME(1:LFILE),'r')
         ENDIF
         IF (.NOT.ALLOCATED(WORK)) ALLOCATE(WORK(NIBLO))
 
-!       GET GRIB DATA FROM (NFRE*NANG) FIELDS
+!       GET GRIB DATA FROM (NFRE_RED*NANG) FIELDS
 
 !       READ NPROC-1 FIELDS AND SEND THEM SUCCESSIVELY TO ALL OTHER PE'S
 !       FOR DECODING (IF IN MESSAGE PASSING MODE)
@@ -235,74 +226,74 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
         LLALLOC_ONLY=.FALSE.
         LLINIALL=.FALSE.
         LLOCAL=.FALSE.
-        CALL INIT_FIELDG(LLALLOC_ONLY,LLINIALL,LLOCAL)
+        CALL INIT_FIELDG(BLK2LOC, LLALLOC_ONLY, LLINIALL, LLOCAL)
 
 
-        ALL_FILE: DO IC=1,NFRE*NANG,ISTEP 
+        ALL_FILE: DO IC=1,NFRE_RED*NANG,ISTEP 
 
           ISTEP_LOCAL=ISTEP
-          IF(IC+ISTEP.GT.NFRE*NANG ) ISTEP_LOCAL=NFRE*NANG-IC+1
+          IF (IC+ISTEP > NFRE_RED*NANG ) ISTEP_LOCAL=NFRE_RED*NANG-IC+1
 
           ALL_DECODE_PE : DO IDUM=1,ISTEP_LOCAL
-            IF(NPROC.EQ.1) THEN
+            IF (NPROC == 1) THEN
               KSEND=1
-            ELSEIF (IDUM.LT.IREAD) THEN
+            ELSEIF (IDUM < IREAD) THEN
               KSEND=IDUM
             ELSE
               KSEND=IDUM+1
             ENDIF
-            M=(((IC-1)+IDUM-1)/NANG)+1
-            K=(IC-1)+IDUM-(M-1)*NANG
+            M = (((IC-1)+IDUM-1)/NANG)+1
+            K = (IC-1)+IDUM-(M-1)*NANG
 
 !           DATA ARE READ IN ON PE IREAD
 
 !           LOAD THE DATA
-            IF (IRANK.EQ.IREAD) THEN
+            IF (IRANK == IREAD) THEN
 1021          ISIZE=NBIT
               KBYTES=ISIZE*NPRECI
-              IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
+              IF (.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
               NBREAD=NBREAD+1
               CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,KBYTES,IRET)
-              IF(IRET.EQ.JPGRIB_BUFFER_TOO_SMALL) THEN
-                IF(.NOT.LLRESIZING) NBREAD_AGAIN=NBREAD
+              IF (IRET == JPGRIB_BUFFER_TOO_SMALL) THEN
+                IF (.NOT.LLRESIZING) NBREAD_AGAIN=NBREAD
                 CALL KGRIBSIZE(IU06, KBYTES, NBIT, 'GETSPEC')
                 DEALLOCATE(INGRIB)
                 LLRESIZING=.TRUE.
                 GOTO 1021
-              ELSEIF(LLRESIZING .AND. IRET.NE.JPGRIB_END_OF_FILE) THEN
+              ELSEIF (LLRESIZING .AND. IRET /= JPGRIB_END_OF_FILE) THEN
 !               LOOP UNTIL YOU HAVE EXPLORE THE SIZE FOR THE WHOLE FILE.
                 DEALLOCATE(INGRIB)
                 GOTO 1021
-              ELSEIF(LLRESIZING .AND. IRET.EQ.JPGRIB_END_OF_FILE) THEN
+              ELSEIF (LLRESIZING .AND. IRET == JPGRIB_END_OF_FILE) THEN
 !               WE SHOULD HAVE THE MAXIMUM SIZE NECESSARY, START ALL OVER.
                 DEALLOCATE(INGRIB)
                 LLRESIZING=.FALSE.
                 CALL IGRIB_CLOSE_FILE(KFILE_HANDLE)
                 CALL IGRIB_OPEN_FILE(KFILE_HANDLE,FILENAME(1:LFILE),'r')
                 ISIZE=NBIT
-                IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
+                IF (.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
 
                 NBREAD=NBREAD+1
 
                 CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,KBYTES,IRET)
-                IF(IRET.EQ.JPGRIB_BUFFER_TOO_SMALL) THEN
-                  IF(.NOT.LLRESIZING) NBREAD_AGAIN=NBREAD
+                IF (IRET == JPGRIB_BUFFER_TOO_SMALL) THEN
+                  IF (.NOT.LLRESIZING) NBREAD_AGAIN=NBREAD
                   CALL KGRIBSIZE(IU06, KBYTES, NBIT, 'GETSPEC')
                   DEALLOCATE(INGRIB)
                   LLRESIZING=.TRUE.
                   GOTO 1021
-                ELSEIF(LLRESIZING .AND. IRET.NE.JPGRIB_END_OF_FILE) THEN
+                ELSEIF (LLRESIZING .AND. IRET /= JPGRIB_END_OF_FILE) THEN
 !                 LOOP UNTIL YOU HAVE EXPLORE THE SIZE FOR THE WHOLE FILE.
                   DEALLOCATE(INGRIB)
                   GOTO 1021
-                ELSEIF(LLRESIZING .AND. IRET.EQ.JPGRIB_END_OF_FILE) THEN
+                ELSEIF (LLRESIZING .AND. IRET == JPGRIB_END_OF_FILE) THEN
 !                 WE SHOULD HAVE THE MAXIMUM SIZE NECESSARY, START ALL OVER.
                   DEALLOCATE(INGRIB)
                   LLRESIZING=.FALSE.
                   CALL IGRIB_CLOSE_FILE(KFILE_HANDLE)
                   CALL IGRIB_OPEN_FILE(KFILE_HANDLE,FILENAME(1:LFILE),'r')
                   ISIZE=NBIT
-                  IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
+                  IF (.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
                   DO IBREAD=1,NBREAD_AGAIN
                     KBYTES=ISIZE*NPRECI
                     CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,KBYTES,IRET)
@@ -310,12 +301,12 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
                   NBREAD=IBREAD-1
                   NBREAD_AGAIN=0
 
-                ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
+                ELSEIF (IRET == JPGRIB_END_OF_FILE) THEN
                   WRITE(IU06,*) '**********************************'
                   WRITE(IU06,*) '* GETSPEC: END OF FILE ENCOUNTED'
                   WRITE(IU06,*) '**********************************'
                   CALL ABORT1
-                ELSEIF(IRET.NE.JPGRIB_SUCCESS) THEN
+                ELSEIF (IRET /= JPGRIB_SUCCESS) THEN
                   WRITE(IU06,*) '**********************************'
                   WRITE(IU06,*) '* GETSPEC: FILE HANDLING ERROR'
                   WRITE(IU06,*) '**********************************'
@@ -328,55 +319,55 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
 !           IN CASE OF MESSAGE PASSING THE DECODING WILL OCCUR ON KSEND
 !           SEND DATA TO KEND: 
             CALL GSTATS(623,0)
-            IF(IRANK.EQ.IREAD .AND. NPROC.NE.1) THEN
+            IF (IRANK == IREAD .AND. NPROC /= 1) THEN
 !             SEND GRIB DATA SIZE TO PE KSEND
               ITAG=(M-1)*NANG+K
               CALL MPL_SEND(ISIZE,KDEST=KSEND,KTAG=ITAG,KERROR=IERR,CDSTRING='GETSPEC 0:')
-              IF(IERR.LT.0) CALL MPL_ABORT('MPL_SEND ERROR AT 1 in GETSPEC' )
+              IF (IERR < 0) CALL MPL_ABORT('MPL_SEND ERROR AT 1 in GETSPEC' )
             ENDIF
-            IF (IRANK.EQ.KSEND .AND. NPROC.NE.1) THEN
+            IF (IRANK == KSEND .AND. NPROC /= 1) THEN
 !             RECEIVE GRIB DATA SIZE FROM IREAD
               ITAG=(M-1)*NANG+K
               CALL MPL_RECV(ISIZE,KSOURCE=IREAD,KTAG=ITAG,              &
      &          KOUNT=KRCOUNT,KRECVTAG=KRTAG,KERROR=IERR,               &
      &          CDSTRING='GETSPEC 0:')
-              IF(IERR.LT.0) CALL MPL_ABORT('MPL_RECV ERROR AT 1 in GETSPEC' )
-              IF(KRTAG.NE.ITAG) CALL MPL_ABORT                          &
+              IF (IERR < 0) CALL MPL_ABORT('MPL_RECV ERROR AT 1 in GETSPEC' )
+              IF (KRTAG /= ITAG) CALL MPL_ABORT                          &
      &          ('MPL_RECV ERROR AT 1 in GETSPEC:  MISMATCHED TAGS' )
 
-              IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
+              IF (ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
               ALLOCATE(INGRIB(ISIZE))
             ENDIF
 
 
-            IF(IRANK.EQ.IREAD .AND. NPROC.NE.1) THEN
+            IF (IRANK == IREAD .AND. NPROC /= 1) THEN
 !             SEND GRIB DATA TO PE KSEND
-              ITAG=NFRE*NANG+(M-1)*NANG+K
+              ITAG=NFRE_RED*NANG+(M-1)*NANG+K
               CALL MPL_SEND(INGRIB(1:ISIZE),KDEST=KSEND,KTAG=ITAG,      &
      &         KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=ISENDREQ(1),  &
      &         KERROR=IERR,CDSTRING='GETSPEC 1:')
-              IF(IERR.LT.0) CALL MPL_ABORT('MPL_SEND ERROR AT 2 in GETSPEC' )
+              IF (IERR < 0) CALL MPL_ABORT('MPL_SEND ERROR AT 2 in GETSPEC' )
             ENDIF
 
-            IF (IRANK.EQ.KSEND .AND. NPROC.NE.1) THEN
+            IF (IRANK == KSEND .AND. NPROC /= 1) THEN
 !             RECEIVED GRIB DATA FROM PE IREAD
-              ITAG=NFRE*NANG+(M-1)*NANG+K
+              ITAG=NFRE_RED*NANG+(M-1)*NANG+K
               ALLOCATE(INTMP(1:ISIZE))
               CALL MPL_RECV(INTMP(1:ISIZE),KSOURCE=IREAD,KTAG=ITAG,     &
      &             KOUNT=KRCOUNT,KRECVTAG=KRTAG,KERROR=IERR,            &
      &             CDSTRING='GETSPEC 1:')
-              IF(IERR.LT.0) CALL MPL_ABORT                              &
+              IF (IERR < 0) CALL MPL_ABORT                              &
      &                     ('MPL_RECV ERROR AT 2 in GETSPEC ' )
-              IF(KRCOUNT.NE.ISIZE) CALL MPL_ABORT                       &
+              IF (KRCOUNT /= ISIZE) CALL MPL_ABORT                       &
      &        ('MPL_RECV ERROR in 2 in GETSPEC:MISMATCHED MSG LENGTH')
-              IF(KRTAG.NE.ITAG) CALL MPL_ABORT                          &
+              IF (KRTAG /= ITAG) CALL MPL_ABORT                          &
      &        ('MPL_RECV ERROR in 2 in GETSPEC:MISMATCHED TAGS' )
             ENDIF
 
-            IF(IRANK.EQ.IREAD .AND. NPROC.NE.1) THEN
+            IF (IRANK == IREAD .AND. NPROC /= 1) THEN
               CALL MPL_WAIT(KREQUEST=ISENDREQ(1),                       &
      &                      CDSTRING='GETSPEC: WAIT FOR SEND')
-              IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
+              IF (ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
             ENDIF
 
             IF (ALLOCATED(INTMP)) THEN
@@ -387,13 +378,13 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
             CALL GSTATS(623,1)
 
 !           DECODE THE GRIB DATA ON PE KSEND 
-            IF (IRANK.EQ.KSEND .OR. NPROC.EQ.1) THEN
+            IF (IRANK == KSEND .OR. NPROC == 1) THEN
 
               KGRIB_HANDLE=-99
               CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,INGRIB)
 
-              IF(.NOT.ALLOCATED(FIELD)) ALLOCATE(FIELD(NXFF,NYFF))
-              CALL GRIB2WGRID (IU06, ITEST, NPROMA_WAM,                 &
+              IF (.NOT.ALLOCATED(FIELD)) ALLOCATE(FIELD(NXFF,NYFF))
+              CALL GRIB2WGRID (IU06, NPROMA_WAM,                        &
      &                         KGRIB_HANDLE, INGRIB, ISIZE,             &
      &                         LLUNSTR,                                 &
      &                         NXFF, NYFF, NLONRGG_LOC,                 &
@@ -404,7 +395,7 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
 
               CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
-              IF (CDATE.NE.CDTPRO) THEN
+              IF (CDATE /= CDTPRO) THEN
                 WRITE(IU06,*)'**********************************'
                 WRITE(IU06,*)'*                                *'
                 WRITE(IU06,*)'* FATAL ERROR IN SUB GETSPEC     *'
@@ -419,7 +410,7 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
                 WRITE(IU06,*)'**********************************'
                 CALL ABORT1
               ENDIF
-              IF(K.NE.KK) THEN
+              IF (K /= KK) THEN
                 WRITE(IU06,*) '************************************'
                 WRITE(IU06,*) '* FATAL ERROR IN SUB. GETSPEC      *'
                 WRITE(IU06,*) '* REQUESTED AND DECODED DIRECTIONAL*'
@@ -430,7 +421,7 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
                 WRITE(IU06,*) '************************************'
                 CALL ABORT1
               ENDIF
-              IF(M.NE.MM) THEN
+              IF (M /= MM) THEN
                 WRITE(IU06,*) '************************************'
                 WRITE(IU06,*) '* FATAL ERROR IN SUB. GETSPEC      *'
                 WRITE(IU06,*) '* REQUESTED AND DECODED FREQUENCY  *'
@@ -442,21 +433,18 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
                 CALL ABORT1
               ENDIF
 
-!$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,IY)
-              DO JKGLO=1,NIBLO,NPROMA
+!$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO, KIJS, KIJL, IJ, IX, IY)
+              DO JKGLO = 1, NIBLO, NPROMA_WAM
                 KIJS=JKGLO
-                KIJL=MIN(KIJS+NPROMA-1,NIBLO)
-                DO IJ=KIJS,KIJL
-                  IX = IXLG(IJ,1)
-                  IY = NYFF- KXLT(IJ,1) +1
-                  IF (FIELD(IX,IY) .NE. ZMISS) THEN
-                      WORK(IJ) = FIELD(IX,IY)
-                  ELSE
-                    WORK(IJ) = EPSMIN
-                  ENDIF
+                KIJL=MIN(KIJS+NPROMA_WAM-1, NIBLO)
+                DO IJ = KIJS, KIJL
+                  IX = IXLG(IJ)
+                  IY = NYFF- KXLT(IJ) +1
+                  WORK(IJ) = FIELD(IX,IY)
                 ENDDO
-                ENDDO
+              ENDDO
 !$OMP         END PARALLEL DO
+
 
               DEALLOCATE(FIELD)
 
@@ -464,7 +452,7 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
 
           ENDDO ALL_DECODE_PE
 
-          IF(LLUNSTR) THEN
+          IF (LLUNSTR) THEN
               write(*,*) 'In GETSPEC : not yet ready !!!'
               call abort1
           ELSE
@@ -472,9 +460,9 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
           CALL GSTATS(623,0)
           IREQ=0
           DO IDUM=1,ISTEP_LOCAL
-            IF(NPROC.EQ.1) THEN
+            IF (NPROC == 1) THEN
               KSEND=1
-            ELSEIF(IDUM.LT.IREAD) THEN
+            ELSEIF (IDUM < IREAD) THEN
               KSEND=IDUM
             ELSE
               KSEND=IDUM+1
@@ -482,9 +470,9 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
             M=(((IC-1)+IDUM-1)/NANG)+1
             K=(IC-1)+IDUM-(M-1)*NANG
 
-            ITAG=2*NFRE*NANG+(M-1)*NANG+K
+            ITAG=2*NFRE_RED*NANG+(M-1)*NANG+K
 
-            IF(IRANK.EQ.KSEND) THEN
+            IF (IRANK == KSEND) THEN
 !             SEND TO ALL OTHER TASKS
               DO IP=1,NPROC-1
                 IPROC=MOD(IRANK+IP-1,NPROC)+1
@@ -506,10 +494,10 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
           IST=NBLKS(IPROC)
           IEND=NBLKE(IPROC)
           ALLOCATE(ZRECVBUF(IST:IEND))
-          DO IDUM=1,ISTEP_LOCAL
-            IF(NPROC.EQ.1) THEN
+          DO IDUM = 1, ISTEP_LOCAL
+            IF (NPROC == 1) THEN
               KSEND=1
-            ELSEIF(IDUM.LT.IREAD) THEN
+            ELSEIF (IDUM < IREAD) THEN
               KSEND=IDUM
             ELSE
               KSEND=IDUM+1
@@ -518,11 +506,44 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
             M=(((IC-1)+IDUM-1)/NANG)+1
             K=(IC-1)+IDUM-(M-1)*NANG
 
-            IF(IRANK.EQ.KSEND) THEN
+            IF (IRANK == KSEND) THEN
 !             SAVE LOCAL CONTRIBUTION
-              DO IJ = NBLKS(IRANK),NBLKE(IRANK) 
-                FL(IJ,K,M)=WORK(IJ)
+
+              IF (NBLKS(IRANK) /= IJFROMCHNK(1,1) .OR. NBLKE(IRANK) /= IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) ) THEN
+                WRITE(IU06,*)'* GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
+                WRITE(0,*)'*************************************************************************'
+                WRITE(0,*)'* IRANK = ',IRANK
+                WRITE(0,*)'* GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
+                WRITE(0,*)'* THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
+                WRITE(0,*)'* NBLKS(IRANK) = ', NBLKS(IRANK)
+                WRITE(0,*)'* IJFROMCHNK(1,1) = ',IJFROMCHNK(1,1)
+                WRITE(0,*)'* AND OR THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
+                WRITE(0,*)'* NBLKE(IRANK) = ', NBLKE(IRANK)
+                WRITE(0,*)'* IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) = ', IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK)
+                WRITE(0,*)'*                                                                       *'
+                WRITE(0,*)'*************************************************************************'
+                CALL ABORT1
+              ENDIF
+
+!$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, IJ) 
+              DO ICHNK = 1, NCHNK
+                KIJS = 1
+                IJSB = IJFROMCHNK(KIJS, ICHNK)
+                KIJL = KIJL4CHNK(ICHNK)
+                IJLB = IJFROMCHNK(KIJL, ICHNK)
+
+                FL1(KIJS:KIJL, K, M, ICHNK) = WORK(IJSB:IJLB)
+
+                DO IJ = KIJS, KIJL
+                  IF (FL1(IJ, K, M, ICHNK) ==  ZMISS) FL1(IJ, K, M, ICHNK) = EPSMIN 
+                ENDDO
+
+                IF (KIJL < NPROMA_WAM) THEN
+                  FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)
+                ENDIF
               ENDDO
+!$OMP         END PARALLEL DO
+
             ELSE
 !             RECEIVE INFORMATION FROM KSEND (that sets M and K)
               CALL MPL_RECV(ZRECVBUF(IST:IEND),                         &
@@ -530,15 +551,16 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
      &                      KMP_TYPE=JP_BLOCKING_STANDARD,              &
      &                      CDSTRING='GETSPEC: RECEIVING WORK' )
 
-              IF(KFROM.LT.IREAD) THEN
+              IF (KFROM < IREAD) THEN
                 ID=KFROM
               ELSE
                 ID=KFROM-1
               ENDIF
-              MR=(((IC-1)+ID-1)/NANG)+1
-              KR=(IC-1)+ID-(MR-1)*NANG
-              ITAG=2*NFRE*NANG+(MR-1)*NANG+KR
-              IF(KRTAG.NE.ITAG) THEN
+              MR = (((IC-1)+ID-1)/NANG)+1
+              KR = (IC-1)+ID-(MR-1)*NANG
+
+              ITAG = 2*NFRE_RED*NANG+(MR-1)*NANG+KR
+              IF (KRTAG /= ITAG) THEN
                 WRITE(0,*)'MPL_RECV ERROR in GETSPEC: MISMATCHED TAGS'
                 WRITE(0,*)'IRANK = ',IRANK
                 WRITE(0,*)'KFROM = ',KFROM
@@ -548,20 +570,50 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
                 CALL ABORT1
               ENDIF
 
-              DO IJ = IST,IEND 
-                FL(IJ,KR,MR)=ZRECVBUF(IJ) 
+              IF (IST /= IJFROMCHNK(1,1) .OR. IEND /= IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) ) THEN
+                WRITE(IU06,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR NON LOCAL PTS *'
+                WRITE(0,*)'*************************************************************************'
+                WRITE(0,*)'* IRANK = ',IRANK
+                WRITE(0,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION *'
+                WRITE(0,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR NON LOCAL PTS *'
+                WRITE(0,*)'* THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
+                WRITE(0,*)'* IST = ', IST 
+                WRITE(0,*)'* IJFROMCHNK(1,1) = ',IJFROMCHNK(1,1)
+                WRITE(0,*)'* AND OR THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
+                WRITE(0,*)'* IEND = ', IEND 
+                WRITE(0,*)'* IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) = ', IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK)
+                WRITE(0,*)'*                                                                       *'
+                WRITE(0,*)'*************************************************************************'
+                CALL ABORT1
+              ENDIF
+
+!$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB) 
+              DO ICHNK = 1, NCHNK
+                KIJS = 1
+                IJSB = IJFROMCHNK(KIJS, ICHNK)
+                KIJL = KIJL4CHNK(ICHNK)
+                IJLB = IJFROMCHNK(KIJL, ICHNK)
+
+                FL1(KIJS:KIJL, KR, MR, ICHNK) = ZRECVBUF(IJSB:IJLB)
+
+                DO IJ = KIJS, KIJL
+                  IF (FL1(IJ, KR, MR, ICHNK) ==  ZMISS) FL1(IJ, KR, MR, ICHNK) = EPSMIN 
+                ENDDO
+
+                IF (KIJL < NPROMA_WAM) THEN
+                  FL1(KIJL+1:NPROMA_WAM, KR, MR, ICHNK) = FL1(1, KR, MR, ICHNK)
+                ENDIF
               ENDDO
+!$OMP         END PARALLEL DO
 
             ENDIF
 
-            FL(NINF-1,K,M)=0.0_JWRB
           ENDDO
           DEALLOCATE(ZRECVBUF)
 
 !         ENSURE ALL SENDS ARE FINISHED.
-          IF(IREQ.GT.0) THEN
-            CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ),                    &
-     &                    CDSTRING='GETSPEC: WAIT SENDING WORK')
+          IF (IREQ > 0) THEN
+            CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ), CDSTRING='GETSPEC: WAIT SENDING WORK')
           ENDIF
           CALL GSTATS(623,1)
 
@@ -576,20 +628,27 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
 
         DEALLOCATE(FIELDG)
 
-        IF (IRANK.EQ.IREAD) THEN
+        IF (IRANK == IREAD) THEN
           CALL IGRIB_CLOSE_FILE(KFILE_HANDLE)
         ENDIF
 
-        IF(ALLOCATED(WORK)) DEALLOCATE(WORK)
+        IF (ALLOCATED(WORK)) DEALLOCATE(WORK)
 
+
+!       FILL MISSING PART (if any) AND
 !       CHECK THAT INPUT SPECTRA ARE CONSISTENT WITH MODEL DEPTH
 !       RESCALE IF NOT
-        IG=1
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=IJS(IG),IJL(IG),NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          CALL SDEPTHLIM(KIJS,KIJL,EMAXDPT(KIJS),FL(KIJS:KIJL,:,:))
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, M, K, IJ)
+        DO ICHNK = 1, NCHNK
+          DO M = NFRE_RED+1, NFRE
+            DO K = 1, NANG
+              DO IJ = 1, NPROMA_WAM
+                FL1(IJ, K, M, ICHNK) = FL1(IJ, K, NFRE_RED, ICHNK) * FR5(NFRE_RED)*FRM5(M) 
+              ENDDO
+            ENDDO
+          ENDDO
+
+          CALL SDEPTHLIM(1, NPROMA_WAM, EMAXDPT(:,ICHNK), FL1(:,:,:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
 
@@ -598,76 +657,94 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
  
 !     BINARY INPUT:
 !     =============
-         IF (ITEST.GE.2) THEN
-           WRITE(IU06,*)''
-           WRITE(IU06,*)' IN GETSPEC :'
-           IF(MDEL.EQ.1) THEN
-             WRITE(IU06,*)'  ',MDEL,' FREQUENCY IS DISTRIBUTED AT ONE TIME'
-           ELSE
-             WRITE(IU06,*)'  ',MDEL,' FREQUENCIES ARE DISTRIBUTED EACH TIME'
-           ENDIF
-         ENDIF
 
-         CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
+         IFCST = 0
+         CALL GRSTNAME(CDTPRO,CDATEF,IFCST, 'BLS', ICPLEN, CPATH, FILENAME)
 
          IUNIT=0
 
-         IF(LRSTPARALR) THEN
+         IF (LRSTPARALR) THEN
 !          RESTART FILES FROM ALL PE's
            LNAME = LEN_TRIM(FILENAME)
-           FILENAME=FILENAME(1:LNAME)//'.%p_%n'
-           CALL EXPAND_STRING(IRANK,NPROC,0,0,FILENAME,1)
-           CALL READFL(FL, NINF-1, NSUP, 1, NANG, 1, NFRE,              &
+           FILENAME = FILENAME(1:LNAME)//'.%p_%n'
+           CALL EXPAND_STRING(IRANK,NPROC, 0, 0, FILENAME, 1)
+
+           IJSG = IJFROMCHNK(1,1)
+           IJLG = IJSG + SUM(KIJL4CHNK) - 1
+           ALLOCATE(RFL(IJSG:IJLG, NANG, NFRE))
+
+           CALL READFL(RFL, IJSG, IJLG, 1, NANG, 1, NFRE,              &
      &                 FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARALR)
+
+!$OMP      PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K)
+           DO ICHNK = 1, NCHNK
+             KIJS = 1
+             IJSB = IJFROMCHNK(KIJS, ICHNK)
+             KIJL = KIJL4CHNK(ICHNK)
+             IJLB = IJFROMCHNK(KIJL, ICHNK)
+
+             FL1(KIJS:KIJL, :, :, ICHNK) = RFL(IJSB:IJLB, :, :)
+
+             IF (KIJL < NPROMA_WAM) THEN
+                DO M = 1, NFRE 
+                  DO K = 1, NANG 
+                    FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)
+                  ENDDO
+                ENDDO
+             ENDIF
+           ENDDO
+!$OMP      END PARALLEL DO
+
+           DEALLOCATE(RFL)
 
          ELSE
 
-           DO MLOOP=1,NFRE,MDEL
+           DO MLOOP= 1, NFRE, MDEL
              MINF=MLOOP
              MSUP=MIN(MLOOP+MDEL-1,NFRE)
              DO KLOOP=1,NANG,KDEL
                KINF=KLOOP
-               KSUP=MIN(KLOOP+KDEL-1,NANG)
+               KSUP=MIN(KLOOP+KDEL-1, NANG)
 
-               ALLOCATE(RFL(0:NIBLO,KINF:KSUP,MINF:MSUP))
+               ALLOCATE(RFL(1:NIBLO, KINF:KSUP, MINF:MSUP))
 !              READ RESTART SPECTRA FROM PE ISEND (IREAD) 
-               IF (IRANK.EQ.ISEND) THEN
+               IF (IRANK == ISEND) THEN
                  LOUNIT = .FALSE.
                  LCUNIT = .FALSE.
-                 IF(MINF.EQ.1 .AND. KINF.EQ.1) LOUNIT = .TRUE.
-                 IF(MSUP.EQ.NFRE .AND. KSUP.EQ.NANG) LCUNIT = .TRUE.
+                 IF (MINF == 1 .AND. KINF == 1) LOUNIT = .TRUE.
+                 IF (MSUP == NFRE .AND. KSUP == NANG) LCUNIT = .TRUE.
 
-                 CALL READFL(RFL, 0, NIBLO, KINF, KSUP, MINF, MSUP,     &
-     &                     FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARALR)
+                 CALL READFL(RFL, 1, NIBLO, KINF, KSUP, MINF, MSUP,       &
+     &                       FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARALR)
                ENDIF
 
-               CALL MPDISTRIBFL(ISEND,KTAG,NBLKS,NBLKE,KINF,KSUP,MINF,MSUP,RFL)
+               CALL MPDISTRIBFL(ISEND, KTAG, NBLKS, NBLKE, KINF, KSUP, MINF, MSUP, RFL)
                KTAG=KTAG+1
 
-               IF (ITEST.GE.2)                                          &
-     &          WRITE(IU06,*)'SUB. GETSPEC: RESTART SPECTRUM COLLECTED, PART:',MLOOP
+!             KEEP CORRESPONDING CONTRIBUTION TO FL1
+!$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, K, M)
+              DO ICHNK = 1, NCHNK
+                KIJS = 1
+                IJSB = IJFROMCHNK(KIJS, ICHNK)
+                KIJL = KIJL4CHNK(ICHNK)
+                IJLB = IJFROMCHNK(KIJL, ICHNK)
 
-!              KEEP CORRESPONDING CONTRIBUTION TO FL
-               IG=1
-!$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)
-               DO JKGLO=IJS(IG),IJL(IG),NPROMA
-                 KIJS=JKGLO
-                 KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-                 DO K=KINF,KSUP
-                   DO M=MINF,MSUP
-                     DO IJ=KIJS,KIJL
-                       FL(IJ,K,M) = RFL(IJ,K,M)
-                     ENDDO
-                   ENDDO
-                 ENDDO
-               ENDDO
-!$OMP       END PARALLEL DO
+                DO M = MINF, MSUP
+                  DO K = KINF, KSUP
+                    FL1(KIJS:KIJL, K, M, ICHNK) = RFL(IJSB:IJLB, K, M)
+                  ENDDO
+                ENDDO
 
-               DO M=MINF,MSUP
-                 DO K=KINF,KSUP
-                   FL(NINF-1,K,M) = 0.0_JWRB
-                 ENDDO
-               ENDDO
+                IF (KIJL < NPROMA_WAM) THEN
+                  DO M = MINF, MSUP
+                    DO K = KINF, KSUP
+                      FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)
+                    ENDDO
+                  ENDDO
+                ENDIF
+
+              ENDDO
+!$OMP         END PARALLEL DO
 
                DEALLOCATE(RFL)
              ENDDO
@@ -681,6 +758,7 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
       WRITE(IU06,*) ' '
       CALL FLUSH (IU06)
 
-      IF (LHOOK) CALL DR_HOOK('GETSPEC',1,ZHOOK_HANDLE)
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('GETSPEC',1,ZHOOK_HANDLE)
 
 END SUBROUTINE GETSPEC

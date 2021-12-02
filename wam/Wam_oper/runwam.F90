@@ -97,9 +97,6 @@
       USE YOWALTAS , ONLY : LODBRALT
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-      USE coupling_var, only : WAV_COMM_WORLD
-#endif
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
 
 ! ----------------------------------------------------------------------
@@ -169,15 +166,10 @@
 
       IF (LHOOK) CALL DR_HOOK('RUNWAM',0,ZHOOK_HANDLE)
 
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-      LMPLUSERCOMM = .TRUE.
-      MPLUSERCOMM = WAV_COMM_WORLD
-#else
       IF (.NOT.LNEMOIO) THEN
          LMPLUSERCOMM = .TRUE.
          MPLUSERCOMM = MPI_COMM_WORLD
       ENDIF
-#endif
 
       time0=-wam_user_clock()
       IU06=6
@@ -185,12 +177,8 @@
 !     0.1 INITIALISE MESSAGE PASSING PROTOCOL 
 !         -----------------------------------
 
-#if !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
-      MyRankGlobal=0
-#endif
-
       CALL MPL_INIT(KERROR=KERROR)
-      IF(KERROR.LT.0) THEN 
+      IF (KERROR < 0) THEN 
         IU06=6
         WRITE (IU06,*) ' ******************************************'
         WRITE (IU06,*) ' *                                        *'
@@ -214,7 +202,7 @@
       LWCOURNW=.FALSE.
       LWCOUHMF=.FALSE.
       LWFLUX=.FALSE. ! will be reset to true if ocean fluxes are output.
-      LWCUR=.FALSE. ! only used in coupled runs
+      LWCUR=.FALSE. ! only used in coupled runs with atmospheric model
       LFDBIFS=.FALSE.
 
 
@@ -244,7 +232,7 @@
 !     1.1  ALLOCATE NECESSARY ARRAYS
 !          -------------------------
 
-      CALL WVALLOC(LWCUR)
+      CALL WVALLOC
 
 
 !     1.2 INITIALIZE SIGNAL HANDLER.
@@ -288,7 +276,6 @@
       IDUM=0
       IGRIB_HANDLE_DUM=-99 ! only used in coupled model
       NATMFLX=0
-      LWCUR=.FALSE. ! only used in coupled runs with atmospheric model
       LWSTOKES=.FALSE.  ! only used in coupled runs with atmospheric model
       RMISS=-999.0_JWRB ! missing data indicator
       ZRCHAR=0.0155_JWRB ! default value for Charnock
@@ -296,13 +283,13 @@
       ! WAM-NEMO COUPLING
 
       IF (LWNEMOCOU) THEN
-        IF(IRANK.EQ.1) WRITE (IU06,*)'CALLING NEMOGCMCOUP_INIT'
+        IF (IRANK == 1) WRITE (IU06,*)'CALLING NEMOGCMCOUP_INIT'
 #ifdef WITH_NEMO
         CALL NEMOGCMCOUP_INIT( MPL_COMM, NEMOINIDATE, NEMOINITIME,      &
      &                         NEMOITINI, NEMOITEND, NEMOTSTEP,         &
      &                         .TRUE., -1, .FALSE. )
 #endif
-        IF(IRANK.EQ.1) THEN
+        IF (IRANK == 1) THEN
           WRITE(IU06,*)'NEMO INITIAL DATE         : ',NEMOINIDATE
           WRITE(IU06,*)'NEMO INITIAL TIME         : ',NEMOINITIME
           WRITE(IU06,*)'NEMO INITIAL STEP         : ',NEMOITINI
@@ -317,13 +304,13 @@
           NEMONSTEP=NINT(NEMOFRCO*IDELPRO/NEMOTSTEP)
           NEMOWSTEP=0
         ENDIF
-        IF ((NEMOFRCO*IDELPRO)/=NINT(NEMOTSTEP*NEMONSTEP)) THEN
+        IF ((NEMOFRCO*IDELPRO) /= NINT(NEMOTSTEP*NEMONSTEP)) THEN
           WRITE(IU06,*)'Inconsistent NEMO and WAM coupling intervals:'
           WRITE(IU06,*)'WAM coupling interval is : ',NEMOFRCO*IDELPRO
           WRITE(IU06,*)'NEMO coupling interval is: ',NEMOTSTEP*NEMONSTEP
           CALL ABORT1
         ELSE
-          IF (IRANK.EQ.1) THEN
+          IF (IRANK == 1) THEN
             WRITE(IU06,*)'NEMONSTEP                 : ',NEMONSTEP
             WRITE(IU06,*)'NEMO coupling interval is : ',                &
      &                   NEMOTSTEP*NEMONSTEP
@@ -333,7 +320,7 @@
 
  20   CONTINUE
 
-      DO WHILE (CDTPRO.LT.CDATEE .OR. CDTPRO.EQ. ZERO)
+      DO WHILE (CDTPRO < CDATEE .OR. CDTPRO == ZERO)
        CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
      &             NFIELDS, NGPTOTG, NC, NR,                            &
      &             IGRIB_HANDLE_DUM, RMISS, ZRCHAR, FIELDS,             &

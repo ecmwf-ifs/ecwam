@@ -1,9 +1,11 @@
-      SUBROUTINE WNFLUXES (IJS, IJL,                                    &
-     &                     MIJ, RHOWGDFTH,                              &
-     &                     SSURF, CICVR,                                &
-     &                     PHIWA,                                       &
-     &                     EM, F1, U10, THW,                            &
-     &                     USNEW, ROAIRN, LNUPD)
+SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
+ &                   MIJ, RHOWGDFTH,                   &
+ &                   CINV,                             &
+ &                   SSURF, CICOVER,                   &
+ &                   PHIWA,                            &
+ &                   EM, F1, WSWAVE, WDWAVE,           &
+ &                   UFRIC, AIRD, INTFLDS, WAM2NEMO,   &
+ &                   LNUPD)
 
 ! ----------------------------------------------------------------------
 
@@ -15,77 +17,71 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *WNFLUXES* (IJS, IJL,
+!       *CALL* *WNFLUXES* (KIJS, KIJL,
 !    &                     MIJ, RHOWGDFTH,
-!    &                     SSURF, CICVR,
+!    &                     CINV,
+!    &                     SSURF, CICOVER,
 !    &                     PHIWA,
-!    &                     EM, F1, U10, THW,
-!    &                     USNEW, ROAIRN, LNUPD)
-!          *IJS*    - INDEX OF FIRST GRIDPOINT.
-!          *IJL*    - INDEX OF LAST GRIDPOINT.
+!    &                     EM, F1, WSWAVE, WDWAVE,
+!    &                     UFRIC, AIRD, INTFLDS, WAM2NEMO,
+!    &                     LNUPD)
+!          *KIJS*    - INDEX OF FIRST GRIDPOINT.
+!          *KIJL*    - INDEX OF LAST GRIDPOINT.
 !          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE
 !         *RHOWGDFTH    - WATER DENSITY * G * DF * DTHETA
 !                         FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ)
 !                         !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)
+!          *CINV*   - INVERSE PHASE SPEED.
 !          *SSURF*  - CONTRIBUTION OF ALL SOURCE TERMS ACTING ON 
 !                     THE SURFACE MOMENTUM AND ENERGY FLUXES.
-!          *CICVR*  - SEA ICE COVER.
+!          *CICOVER*- SEA ICE COVER.
 !          *PHIWA*  - ENERGY FLUX FROM WIND INTO WAVES INTEGRATED
 !                     OVER THE FULL FREQUENCY RANGE.
 !          *EM*     - MEAN WAVE VARIANCE.
 !          *F1*     - MEAN WAVE FREQUENCY BASED ON f*F INTEGRATION.
-!          *U10*    - NEW WIND SPEED IN M/S.
-!          *THW*    - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC CONVENTION
-!          *USNEW*  - NEW FRICTION VELOCITY IN M/S.
-!          *ROAIRN* - AIR DENSITY IN KG/M3.
+!          *WSWAVE* - WIND SPEED IN M/S.
+!          *WDWAVE* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC CONVENTION
+!          *UFRIC*  - FRICTION VELOCITY IN M/S.
+!          *AIRD*   - AIR DENSITY IN KG/M3.
+!          *INTFLDS*-  INTEGRATED/DERIVED PARAMETERS
+!          WAM2NEMO*- WAVE FIELDS PASSED TO NEMO
 !          *LNUPD*  - UPDATE NEMO FIELDS.
-
-
-!     METHOD.
-!     -------
-
-!     EXTERNALS.
-!     ---------
-
-!     REFERENCE.
-!     ----------
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWALTAS , ONLY : EGRCRV   ,AFCRV       ,BFCRV
-      USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOTAUOC, NEMOTAUX, NEMOTAUY, &
-     &                      NEMONEW10, NEMOPHIF   , LWFLUX,             &
-     &                      NPHIEPS  ,NTAUOC      ,NSWH     ,NMWP
+      USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOTAUOC
       USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH
       USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH, CIBLOCK
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,    &
-     &                      TAUOC    ,TAUXD    ,TAUYD    ,              &
-     &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
+
       USE YOWNEMOP , ONLY : NEMODP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : TAUOCMIN ,TAUOCMAX ,PHIEPSMIN,PHIEPSMAX,    &
      &               EPSUS ,EPSU10   ,G        ,ZPI
-      USE YOWSHAL  , ONLY : CINV     ,INDEP
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: MIJ
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: SSURF
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: PHIWA
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: EM, F1, U10, THW
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, ROAIRN
-
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: RHOWGDFTH
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CINV 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: SSURF
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: PHIWA
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EM, F1, WSWAVE, WDWAVE
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, AIRD
+      TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
+      TYPE(WAVE2OCEAN), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WAM2NEMO
       LOGICAL, INTENT(IN) :: LNUPD
+
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
@@ -112,17 +108,35 @@
       REAL(KIND=JWRB) :: EFD, FFD, EFD_FAC, FFD_FAC
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XSTRESS, YSTRESS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USTAR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHILF
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: OOVAL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EM_OC, F1_OC
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CMRHOWGDFTH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMT, SUMX, SUMY
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XSTRESS, YSTRESS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: USTAR
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: PHILF
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: OOVAL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EM_OC, F1_OC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CMRHOWGDFTH
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SUMT, SUMX, SUMY
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
+
+ASSOCIATE(PHIEPS  => INTFLDS%PHIEPS,  &
+ &        PHIAW   => INTFLDS%PHIAW,   &
+ &        TAUOC   => INTFLDS%TAUOC,   &
+ &        TAUXD   => INTFLDS%TAUXD,   &
+ &        TAUYD   => INTFLDS%TAUYD,   &
+ &        TAUOCXD => INTFLDS%TAUOCXD, &
+ &        TAUOCYD => INTFLDS%TAUOCYD, &
+ &        PHIOCD  => INTFLDS%PHIOCD, &
+ &        NEMOTAUX  => WAM2NEMO%NEMOTAUX,  &
+ &        NEMOTAUY => WAM2NEMO%NEMOTAUY,  &
+ &        NEMOWSWAVE => WAM2NEMO%NEMOWSWAVE,  &
+ &        NEMOPHIF => WAM2NEMO%NEMOPHIF, &
+ &        NSWH  => WAM2NEMO%NSWH,  &
+ &        NMWP  => WAM2NEMO%NMWP,  &
+ &        NPHIEPS  => WAM2NEMO%NPHIEPS,  &
+ &        NTAUOC  => WAM2NEMO%NTAUOC)
+
 
       EPSUS3 =  EPSUS*SQRT(EPSUS)
 
@@ -136,7 +150,7 @@
 
 !     ENERGY FLUX from SSURF
 !     MOMENTUM FLUX FROM SSURF
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         PHILF(IJ) = 0.0_JWRB
         XSTRESS(IJ) = 0.0_JWRB
         YSTRESS(IJ) = 0.0_JWRB
@@ -145,34 +159,34 @@
 !     THE INTEGRATION ONLY UP TO FR=MIJ
       DO M=1,MAXVAL(MIJ(:))
         K=1
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           SUMT(IJ) = SSURF(IJ,K,M)
           SUMX(IJ) = SINTH(K)*SSURF(IJ,K,M)
           SUMY(IJ) = COSTH(K)*SSURF(IJ,K,M)
         ENDDO
         DO K=2,NANG
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             SUMT(IJ) = SUMT(IJ) + SSURF(IJ,K,M)
             SUMX(IJ) = SUMX(IJ) + SINTH(K)*SSURF(IJ,K,M)
             SUMY(IJ) = SUMY(IJ) + COSTH(K)*SSURF(IJ,K,M)
           ENDDO
         ENDDO
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           PHILF(IJ)   = PHILF(IJ)   + SUMT(IJ)*RHOWGDFTH(IJ,M)
-          CMRHOWGDFTH(IJ) = CINV(INDEP(IJ),M)*RHOWGDFTH(IJ,M)
+          CMRHOWGDFTH(IJ) = CINV(IJ,M)*RHOWGDFTH(IJ,M)
           XSTRESS(IJ) = XSTRESS(IJ) + SUMX(IJ)*CMRHOWGDFTH(IJ)
           YSTRESS(IJ) = YSTRESS(IJ) + SUMY(IJ)*CMRHOWGDFTH(IJ)
         ENDDO
       ENDDO
 
       IF (LICERUN .AND. LWAMRSETCI) THEN
-        DO IJ=IJS,IJL
-          IF(CICVR(IJ) .GT. CIBLOCK) THEN
-            OOVAL(IJ)=EXP(-MIN((CICVR(IJ)*CITHRSH_INV)**4,10._JWRB))
+        DO IJ=KIJS,KIJL
+          IF(CICOVER(IJ) > CIBLOCK) THEN
+            OOVAL(IJ)=EXP(-MIN((CICOVER(IJ)*CITHRSH_INV)**4,10._JWRB))
 !           ADJUST USTAR FOR THE PRESENCE OF SEA ICE
-            U10P = MAX(U10(IJ),EPSU10)
+            U10P = MAX(WSWAVE(IJ),EPSU10)
             CD_BULK = MIN((C1 + C2*U10P**P1)*U10P**P2, CDMAX)
-            CD_WAVE = (USNEW(IJ)/U10P)**2
+            CD_WAVE = (UFRIC(IJ)/U10P)**2
             CD_ICE = OOVAL(IJ)*CD_WAVE + (1.0_JWRB-OOVAL(IJ))*CD_BULK
             USTAR(IJ) = MAX(SQRT(CD_ICE)*U10P,EPSUS)
 
@@ -186,37 +200,30 @@
             F1_OC(IJ) = MIN(MAX(F1_OC(IJ), FR(2)),FR(NFRE))
           ELSE
             OOVAL(IJ) = 1.0_JWRB
-            USTAR(IJ) = USNEW(IJ)
+            USTAR(IJ) = UFRIC(IJ)
             EM_OC(IJ) = EM(IJ)
             F1_OC(IJ) = F1(IJ)
           ENDIF
         ENDDO
       ELSE
         OOVAL(:) = 1.0_JWRB
-        USTAR(:) = USNEW(:)
+        USTAR(:) = UFRIC(:)
         EM_OC(:) = EM(:)
         F1_OC(:) = F1(:)
       ENDIF
 
-      IF(LWFLUX) THEN
-        DO IJ=IJS,IJL
-          EMEAN(IJ)  = EM_OC(IJ) 
-          FMEAN(IJ)  = F1_OC(IJ) 
-        ENDDO
-      ENDIF
+      DO IJ=KIJS,KIJL
 
-      DO IJ=IJS,IJL
-
-        TAU        = ROAIRN(IJ)*MAX(USTAR(IJ)**2,EPSUS)
-        TAUXD(IJ)  = TAU*SIN(THW(IJ))
-        TAUYD(IJ)  = TAU*COS(THW(IJ))
+        TAU        = AIRD(IJ)*MAX(USTAR(IJ)**2,EPSUS)
+        TAUXD(IJ)  = TAU*SIN(WDWAVE(IJ))
+        TAUYD(IJ)  = TAU*COS(WDWAVE(IJ))
 
         TAUOCXD(IJ)= TAUXD(IJ)-OOVAL(IJ)*XSTRESS(IJ)
         TAUOCYD(IJ)= TAUYD(IJ)-OOVAL(IJ)*YSTRESS(IJ)
         TAUO       = SQRT(TAUOCXD(IJ)**2+TAUOCYD(IJ)**2)
         TAUOC(IJ)  = MIN(MAX(TAUO/TAU,TAUOCMIN),TAUOCMAX)
 
-        XN        = ROAIRN(IJ)*MAX(USTAR(IJ)**3,EPSUS3)
+        XN        = AIRD(IJ)*MAX(USTAR(IJ)**3,EPSUS3)
         PHIOCD(IJ)= OOVAL(IJ)*(PHILF(IJ)-PHIWA(IJ))+(1.0_JWRB-OOVAL(IJ))*PHIOC_ICE*XN
 
         PHIEPS(IJ)= PHIOCD(IJ)/XN 
@@ -227,15 +234,15 @@
         PHIAW(IJ) = PHIWA(IJ)/XN
         PHIAW(IJ) = OOVAL(IJ)*PHIWA(IJ)/XN+(1.0_JWRB-OOVAL(IJ))*PHIAW_ICE
 
-        IF (LWNEMOCOU.AND.LNUPD) THEN
+        IF (LWNEMOCOU .AND. LNUPD) THEN
           NPHIEPS(IJ) = PHIEPS(IJ)
           NTAUOC(IJ)  = TAUOC(IJ)
-          IF (EM_OC(IJ)/=0.0_JWRB) THEN
+          IF (EM_OC(IJ) /= 0.0_JWRB) THEN
              NSWH(IJ) = 4.0_NEMODP*SQRT(EM_OC(IJ))
           ELSE
              NSWH(IJ) = 0.0_NEMODP
           ENDIF
-          IF (F1_OC(IJ)/=0.0_JWRB) THEN
+          IF (F1_OC(IJ) /= 0.0_JWRB) THEN
              NMWP(IJ) = 1.0_NEMODP/F1_OC(IJ)
           ELSE
              NMWP(IJ) = 0.0_NEMODP
@@ -248,13 +255,13 @@
             NEMOTAUX(IJ) = NEMOTAUX(IJ) + TAUXD(IJ)
             NEMOTAUY(IJ) = NEMOTAUY(IJ) + TAUYD(IJ)
           ENDIF 
-          NEMONEW10(IJ) = NEMONEW10(IJ) + U10(IJ)
+          NEMOWSWAVE(IJ) = NEMOWSWAVE(IJ) + WSWAVE(IJ)
           NEMOPHIF(IJ)  = NEMOPHIF(IJ) + PHIOCD(IJ) 
         ENDIF
       ENDDO
 
 ! ----------------------------------------------------------------------
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('WNFLUXES',1,ZHOOK_HANDLE)
 
-      IF (LHOOK) CALL DR_HOOK('WNFLUXES',1,ZHOOK_HANDLE)
-
-      END SUBROUTINE WNFLUXES
+END SUBROUTINE WNFLUXES

@@ -1,11 +1,9 @@
-      SUBROUTINE WDFLUXES (IJS, IJL, IG,                                &
-     &                     MIJ,                                         &
-     &                     FL1, XLLWS,                                  &
-     &                     CICVR,                                       &
-     &                     U10NEW, THWNEW, USNEW,                       &
-     &                     Z0NEW, Z0B, ROAIRN, WSTAR,                   &
-     &                     WSEMEAN, WSFMEAN,                            &
-     &                     USTOKES, VSTOKES, STRNMS )
+      SUBROUTINE WDFLUXES (KIJS, KIJL,                 &
+     &                     MIJ,                        &
+     &                     FL1, XLLWS,                 &
+     &                     WVPRPT,                     &
+     &                     WVENVI, FF_NOW,             &
+     &                     INTFLDS, WAM2NEMO)
 
 ! ----------------------------------------------------------------------
 
@@ -21,70 +19,57 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *WDFLUXES (FL1, IJS, IJL, IG,
-!    &                    CICVR,
-!    &                    THWNEW,USNEW,Z0NEW,Z0B,ROAIRN,WSTAR,
-!    &                    WSEMEAN, WSFMEAN,
-!    &                    USTOKES, VSTOKES, STRNMS)
-!          *FL1*    - FREQUENCY SPECTRUM(INPUT).
-!          *IJS*    - INDEX OF FIRST GRIDPOINT.
-!          *IJL*    - INDEX OF LAST GRIDPOINT.
-!          *IG*     - BLOCK NUMBER.
-!          *U10NEW* - WIND SPEED.
-!          *THWNEW* - WIND DIRECTION IN RADIANS.
-!          *USNEW*  - NEW FRICTION VELOCITY IN M/S.
-!          *Z0NEW*  - ROUGHNESS LENGTH IN M.
-!          *Z0B*    - BACKGROUND ROUGHNESS LENGTH.
-!          *ROAIRN* - AIR DENSITY IN KG/M3.
-!          *WSTAR*  - FREE CONVECTION VELOCITY SCALE (M/S).
-!          *WSEMEAN*   WINDSEA VARIANCE.
-!          *WSFMEAN*   WINDSEA MEAN FREQUENCY.
-!          *USTOKES*   U-COMP SURFACE STOKES DRIFT.
-!          *VSTOKES*   V-COMP SURFACE STOKES DRIFT.
-!          *STRNMS*    MEAN SQUARE STRAIN INTO THE SEA ICE (only if LWNEMOCOUSTRN).
+!       *CALL* *WDFLUXES (KIJS, KIJL,
+!    &                    MIJ,
+!    &                    FL1, XLLWS,
+!    &                    WVPRPT,
+!    &                    WVENVI, FF_NOW, INTFLDS, WAM2NEMO)
 
-
-!     METHOD.
-!     -------
-
-!     REFERENCE.
-!     ----------
+!          *KIJS*   - INDEX OF FIRST GRIDPOINT.
+!          *KIJL*   - INDEX OF LAST GRIDPOINT.
+!          *FL1*    - SPECTRUM(INPUT).
+!          *XLLWS*  - TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
+!          *WVPRPT* - WAVE PROPERTIES FIELDS
+!          *WVENVI* - WAVE ENVIRONMENT
+!          *FF_NOW* - FORCING FIELDS AT CURRENT TIME.
+!          *INTFLDS*-  INTEGRATED/DERIVED PARAMETERS
+!          *WAM2NEMO* FIELDS PASSED FROM WAM TO NEMO
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
+     &                         INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : WSEMEAN_MIN
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "cimsstrn.intfb.h"
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
 #include "sdissip.intfb.h"
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
-#include "stokesdrift.intfb.h"
+#include "stokestrn.intfb.h"
 #include "wnfluxes.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL,IG
-      INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(IJS:IJL)
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      INTEGER(KIND=JWIM),  DIMENSION(KIJS:KIJL), INTENT(OUT) :: MIJ
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, WSTAR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: U10NEW, USNEW, Z0NEW, Z0B
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: WSEMEAN, WSFMEAN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
+      TYPE(FREQUENCY), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WVPRPT
+      TYPE(ENVIRONMENT), DIMENSION(KIJS:KIJL), INTENT(IN) :: WVENVI
+      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW
+      TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
+      TYPE(WAVE2OCEAN), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WAM2NEMO
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M
@@ -93,22 +78,39 @@
       REAL(KIND=JWRB) :: TAU, XN, PHIDIAG, TAUO
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUWDIR_LOC  ! TAUW should not be updated do use a local array
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIWA
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: FLM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL, SPOS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TAUWDIR_LOC  ! TAUW should not be updated do use a local array
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEAN, FMEAN
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEANWS, FMEANWS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: F1MEAN, AKMEAN, XKMEAN
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: PHIWA
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: FLM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: RHOWGDFTH
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: FLD, SL, SPOS
 
       LOGICAL :: LCFLX
       LOGICAL :: LUPDTUS
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
+
+ASSOCIATE(DEPTH => WVENVI%DEPTH, &
+ &        INDEP => WVENVI%INDEP, &
+ &        WAVNUM => WVPRPT%WAVNUM, &
+ &        CINV => WVPRPT%CINV, &
+ &        CGROUP => WVPRPT%CGROUP, &
+ &        STOKFAC => WVPRPT%STOKFAC, &
+ &        WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        UFRIC => FF_NOW%UFRIC, &
+ &        Z0M => FF_NOW%Z0M, &
+ &        Z0B => FF_NOW%Z0B, &
+ &        AIRD => FF_NOW%AIRD, &
+ &        WSTAR => FF_NOW%WSTAR, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        WSEMEAN => INTFLDS%WSEMEAN, &
+ &        WSFMEAN => INTFLDS%WSFMEAN)
 
 !*    1. INITIALISATION.
 !        ---------------
@@ -119,71 +121,64 @@
 !*    1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
 !         -----------------------------------------
 
-      CALL FKMEAN(FL1, IJS, IJL, EMEANALL, FMEANALL,                    &
-     &            F1MEAN, AKMEAN, XKMEAN)
+      CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                         &
+     &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
       TAUW_LOC(:) = 0.0_JWRB
-      TAUWDIR_LOC(:) = THWNEW(:)
+      TAUWDIR_LOC(:) = WDWAVE(:)
 
       LUPDTUS = .FALSE.
-      FMEANWS(:) = FMEANALL(:)
+      FMEANWS(:) = FMEAN(:)
       FLM(:,:) = 0.0_JWRB
       NCALL = 1
       ICALL = 1
-      CALL SINFLX (ICALL, NCALL, IJS, IJL, &
-     &             LUPDTUS, &
-     &             U10NEW, THWNEW, ROAIRN, WSTAR, &
-     &             CICVR, &
-     &             FMEANALL, FMEANWS, &
-     &             FLM, FL1, &
-     &             USNEW, TAUW_LOC, TAUWDIR_LOC, Z0NEW, Z0B, PHIWA, &
-     &             FL, SL, SPOS, &
+      CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                        &
+     &             LUPDTUS,                                         &
+     &             FL1,                                             &
+     &             WAVNUM, CINV, CGROUP,                            &
+     &             WSWAVE, WDWAVE, AIRD, WSTAR, CICOVER,            &
+     &             FMEAN, FMEANWS,                                  &
+     &             FLM,                                             &
+     &             UFRIC, TAUW_LOC, TAUWDIR_LOC, Z0M, Z0B, PHIWA, &
+     &             FLD, SL, SPOS,                                   &
      &             MIJ, RHOWGDFTH, XLLWS)
 
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. WDFLUXES: SINFLX CALLED ', ICALL
-        CALL FLUSH (IU06)
-      ENDIF
+      IF (LCFLX) THEN
 
-      IF(LCFLX) THEN
+        CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,    &
+     &                INDEP, WAVNUM, CGROUP,       &
+     &                EMEAN, F1MEAN, XKMEAN,       &
+     &                UFRIC, WDWAVE, AIRD)
 
-        CALL SDISSIP (FL1 ,FL, SL, IJS, IJL,                            &
-     &                EMEANALL, F1MEAN, XKMEAN,                         &
-     &                USNEW, THWNEW, ROAIRN)
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. WDFLUXES: SDISSIP CALLED'
-          CALL FLUSH (IU06)
+        IF (.NOT. LWVFLX_SNL) THEN
+          CALL WNFLUXES (KIJS, KIJL,                        &
+     &                   MIJ, RHOWGDFTH,                    &
+     &                   CINV,                              &
+     &                   SL, CICOVER,                       &
+     &                   PHIWA,                             &
+     &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
+     &                   UFRIC, AIRD, INTFLDS, WAM2NEMO,    &
+     &                  .FALSE.)
         ENDIF
 
-        IF(.NOT. LWVFLX_SNL) THEN
-          CALL WNFLUXES (IJS, IJL,                                      &
-     &                   MIJ, RHOWGDFTH,                                &
-     &                   SL, CICVR,                                     &
-     &                   PHIWA,                                         &
-     &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
-     &                   USNEW, ROAIRN, .FALSE.)
+        CALL SNONLIN (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH, AKMEAN)
+
+        IF (LWVFLX_SNL) THEN
+          CALL WNFLUXES (KIJS, KIJL,                        &
+     &                   MIJ, RHOWGDFTH,                    &
+     &                   CINV,                              &
+     &                   SL, CICOVER,                       &
+     &                   PHIWA,                             &
+     &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
+     &                   UFRIC, AIRD, INTFLDS, WAM2NEMO,    &
+     &                  .FALSE.)
         ENDIF
 
-        CALL SNONLIN (FL1, FL, IJS, IJL, IG, SL, AKMEAN)
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. WDFLUXES: SNONLIN CALLED'
-          CALL FLUSH (IU06)
-        ENDIF
+        IF (LWFLUX) THEN
+         CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, EMEANWS, FMEANWS)
 
-        IF(LWVFLX_SNL) THEN
-          CALL WNFLUXES (IJS, IJL,                                      &
-     &                   MIJ, RHOWGDFTH,                                &
-     &                   SL, CICVR,                                     &
-     &                   PHIWA,                                         &
-     &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
-     &                   USNEW, ROAIRN, .FALSE.)
-        ENDIF
-
-        IF(LWFLUX) THEN
-         CALL FEMEANWS(FL1, IJS, IJL, EMEANWS, FMEANWS, XLLWS)
-
-          DO IJ=IJS,IJL
-            IF(EMEANWS(IJ) < WSEMEAN_MIN) THEN
+          DO IJ=KIJS,KIJL
+            IF (EMEANWS(IJ) < WSEMEAN_MIN) THEN
               WSEMEAN(IJ) = WSEMEAN_MIN 
               WSFMEAN(IJ) = 2._JWRB*FR(NFRE)
             ELSE
@@ -193,13 +188,12 @@
           ENDDO
         ENDIF
 
-        CALL STOKESDRIFT(FL1, IJS, IJL, U10NEW, THWNEW, CICVR, USTOKES, VSTOKES)
-
-        IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL1, IJS, IJL, STRNMS)
+        CALL STOKESTRN(KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, FF_NOW, INTFLDS, WAM2NEMO)
 
       ENDIF
 ! ----------------------------------------------------------------------
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('WDFLUXES',1,ZHOOK_HANDLE)
 
-      IF (LHOOK) CALL DR_HOOK('WDFLUXES',1,ZHOOK_HANDLE)
+END SUBROUTINE WDFLUXES
 
-      END SUBROUTINE WDFLUXES

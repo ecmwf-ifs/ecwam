@@ -1,62 +1,34 @@
-      SUBROUTINE PREWIND (U10OLD, THWOLD, USOLD, Z0OLD,                 &
-     &                    ROAIRO, ZIDLOLD,                              &
-     &                    CICOVER, CITHICK,                             &
-     &                    LLINIT, LLALLOC_FIELDG_ONLY,                  &
-     &                    IREAD,                                        &
-     &                    NFIELDS, NGPTOTG, NC, NR,                     &
-     &                    FIELDS, LWCUR, MASK_IN)
+SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
+ &                  LLINIT, LLALLOC_FIELDG_ONLY,            &
+ &                  IREAD,                                  &
+ &                  NFIELDS, NGPTOTG, NC, NR,               &
+ &                  FIELDS, LWCUR, MASK_IN,                 &
+ &                  NEMO2WAM)
 
 ! ----------------------------------------------------------------------
 
-!**** *PREWIND* - PREPARES WIND DATA FOR WAVE MODEL.
-
-!     P.GROENWOUD     DELFT HYDRAULICS LABORATORY  OKTOBER 1986
-
-!     E. BAUER        MPI       FEB 1987   VERSION FOR CDC 205 HAMBURG.
-
-!     S. HASSELMANN   MPI       MAY 1987   COMBINED CDC 205 AND CRAY
-!                                          VERSIONS.
-!     W. BRUEGGEMANN  MPI      AUGUST 1988   SIMPLIFIED PROGRAM.
-
-!     L. ZAMBRESKY    ECMWF    JUNE 1988   MODIFIED EXTENSIVELY FOR
-!                                          COUPLING TO SPECTRAL MODEL.
-
-!     H. GUNTHER      ECMWF    JUNE 1990   MODIFIED FOR CYCLE_4.
-
-!     J. BIDLOT       ECMWF    FEBRUARY 1996 MESSAGE PASSING
-
-!     S. ABDALLA      ECMWF    OCTOBER 2001  AIR DENSITY AND Zi/L
+!**** *PREWIND* - PREPARES WIND/FORCING DATA FOR WAVE MODEL.
 
 !*    PURPOSE.
 !     --------
 
-!       EVALUATE WIND SPEED AND DIRECTION AT WAVE MODEL GRID POINTS.
+!     EVALUATE THE FORCING AT WAVE MODEL GRID POINTS.
 
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *PREWIND (U10OLD,THWOLD,USOLD,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, CICOVER,
-!    &                 LLINIT,
+!     *CALL* *PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT, 
+!    &                 LLINIT, LLALLOC_FIELDG_ONLY,
 !    &                 IREAD,
 !    &                 NFIELDS, NGPTOTG, NC, NR,
-!    &                 FIELDS, LWCUR, MASK_IN)*
+!    &                 FIELDS, LWCUR, MASK_IN,
+!    &                 NEMO2WAM)*
 
-!      *U10OLD*    REAL      INTERMEDIATE STORAGE OF MODULUS OF WIND
-!                            VELOCITY.
-!                            CLOCKWISE FROM NORTH).
-!      *THWOLD*    REAL      INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
-!                            WIND VELOCITY.
-!      *USOLD*     REAL      INTERMEDIATE STORAGE OF MODULUS OF FRICTION
-!                            VELOCITY.
-!      *Z0OLD*     REAL      INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
-!                            M.
-!      *ROAIRO*    REAL      AIR DENSITY IN KG/M3.
-!      *ZIDLOLD*   REAL      Zi/L (Zi: INVERSION HEIGHT,
-!                                   L: MONIN-OBUKHOV LENGTH).
-!      *CICOVER*   REAL      SEA ICE COVER.
-!      *CITHICK*   REAL      SEA ICE THICKNESS.
-!      *LLINIT*    LOGICAL   TRUE IF WAMADSZIDL NEEDS TO BE CALLED.   
+!      *BLK2LOC*             POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!      *WVENVI*              WAVE ENVIRONMENT.
+!      *FF_NOW*    REAL      DATA STRUCTURE WITH THE CURRENT FORCING FIELDS
+!      *FF_NEXT*   REAL      DATA STRUCTURE WITH THE NEXT FORCING FIELDS
+!      *LLINIT*    LOGICAL   TRUE IF WAMADSWSTAR NEEDS TO BE CALLED.   
 !      *LLALLOC_FIELDG_ONLY  LOGICAL IF TRUE THEN FIELDG DATA STRUCTURE WILL
 !                            ONLY BE ALLOCATED BUT NOT INITIALISED.
 !      *IREAD*     INTEGER   PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
@@ -65,17 +37,10 @@
 !      *NGPTOTG*   INTEGER   NUMBER OF ATMOSPHERIC GRID POINTS
 !      *NC*        INTEGER   NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !      *NR*        INTEGER   NUMBER OF ATM. ROWS OF LATITUDES
-!      *FIELDS*    REAL      ATM. FIELDS (U10, V10, AIR DENSITY, Zi/L, U and V CURRENTS)
+!      *FIELDS*    REAL      ATM. FIELDS (U10, V10, AIR DENSITY, w*, U and V CURRENTS)
 !      *LWCUR*     LOGICAL   INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 !      *MASK_IN*   INTEGER   MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
-
-!       *UNIT* *DESCRIPTION*
-
-!          IU01    INPUT WIND DATA (SUB READWIND).
-!          IU06    PRINTER OUTPUT (SUB INITMDL).
-!          IUVELO  OUTPUT OF BLOCKED WIND FIELDS.
-!          IUSCR   SCRATCH UNITS FOR ALL BLOCKS (INTERMEDIATE STORAGE,
-!                  INPUT/OUTPUT) (SUB INITMDL).
+!      *NEMO2WAM*            FIELDS FRON OCEAN MODEL to WAM
 
 !     METHOD.
 !     -------
@@ -105,86 +70,64 @@
 !              I.E. INFORMATION FOR ONE WIND INPUT TIMESTEP.
 !              TIME FILE(I+1)= TIME FILE(I) + IDELWI
 
-!     EXTERNALS.
-!     ----------
-
-!       *ABORT*     - TERMINATES PROCESSING.
-!       *AIRSEA*    - SURFACE LAYER STRESS.
-!       *INCDAT*    - INCREMENTS DATE TIME GROUP.
-!       *LOCINT*    - INTERPOLATES IN SPACE.
-!       *NOTIM*     - STEERING SUB FOR INTERPOLATION IN SPACE ONLY.
-!       *READWIND*   - READS A WIND FIELD.
-!       *TIMIN*     - STEERING SUB FOR INTERPOLATION IN SPACE AND TIME.
-!       *WAMWND*    - BLOCKS A WIND FIELD AND CONVERTS TO USTAR.
-
-!     REFERENCE.
-!     -----------
-
-!       NONE.
-
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDLOC, ENVIRONMENT, FORCING_FIELDS, OCEAN2WAVE
 
-      USE YOWCOUP  , ONLY : LWNEMOCOU,LWNEMOCOURECV
-      USE YOWGRID  , ONLY : IJS      ,IJL
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NFRE
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUSAMEGRID, LWNEMOCOU, LWNEMOCOURECV
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
+      USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,    &
      &            IDELWO   ,LANAONLY, IDELT
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE YOWUNPOOL ,ONLY : LLUNSTR
-      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,FIELDG
+      USE YOWWIND  , ONLY : CDATEWL   ,CDAWIFL  ,FIELDG
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-!      USE UNWAM, ONLY : USE_DIRECT_WIND_FILE
-!      USE UNSTRUCT_WIND, ONLY : SET_WIND_UNSTRUCTURED
-#ifdef MODEL_COUPLING_ATM_WAV
-      USE pgmcl_lib_WAM, only : WAV_coupl_prewind
-#endif
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
+#include "abort1.intfb.h"
 #include "getcurr.intfb.h"
+#include "getfrstwnd.intfb.h"
 #include "ifstowam.intfb.h"
 #include "incdate.intfb.h"
 #include "init_fieldg.intfb.h"
 #include "notim.intfb.h"
 #include "recvnemofields.intfb.h"
-#include "timin.intfb.h"
-#include "wamadszidl.intfb.h"
+#include "wamadswstar.intfb.h"
 
+      TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)         :: BLK2LOC
+      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)    :: WVENVI
+      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FF_NOW
+      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FF_NEXT
+      LOGICAL, INTENT(IN) :: LLINIT
+      LOGICAL, INTENT(IN) :: LLALLOC_FIELDG_ONLY
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       INTEGER(KIND=JWIM), INTENT(IN) :: NFIELDS
       INTEGER(KIND=JWIM), INTENT(IN) :: NGPTOTG
       INTEGER(KIND=JWIM), INTENT(IN) :: NC
       INTEGER(KIND=JWIM), INTENT(IN) :: NR
-      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
+      REAL(KIND=JWRB),DIMENSION(NGPTOTG, NFIELDS), INTENT(IN) :: FIELDS
       LOGICAL, INTENT(IN) :: LWCUR
-      LOGICAL, INTENT(IN) :: LLINIT
-      LOGICAL, INTENT(IN) :: LLALLOC_FIELDG_ONLY
       INTEGER(KIND=JWIM),DIMENSION(NGPTOTG), INTENT(INOUT)  :: MASK_IN
-      REAL(KIND=JWRB),DIMENSION(NGPTOTG,NFIELDS), INTENT(IN) :: FIELDS
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: U10OLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: THWOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: USOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: Z0OLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: ROAIRO
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: ZIDLOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: CICOVER
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: CITHICK
+      TYPE(OCEAN2WAVE), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: NEMO2WAM
+
 
 
       INTEGER(KIND=JWIM) :: IDELWH
-      INTEGER(KIND=JWIM) :: ISTORE, IJ, IG, IIG
+      INTEGER(KIND=JWIM) :: ISTORE, IJ
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=14) :: CDTWIE, CDTWIS, ZERO
 
       LOGICAL, SAVE :: LLFRSTNEMO
-      LOGICAL :: LLINIALL, LLOCAL
+      LOGICAL :: LLINIALL, LLOCAL, LLMORE
+      LOGICAL :: LLNREST, LLNINIT
 
       DATA LLFRSTNEMO / .TRUE. /
 
@@ -192,27 +135,35 @@
 
       IF (LHOOK) CALL DR_HOOK('PREWIND',0,ZHOOK_HANDLE)
 
+ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
+ &        JFROMIJ => BLK2LOC%JFROMIJ, &
+ &        UCUR => WVENVI%UCUR, &
+ &        VCUR => WVENVI%VCUR, &
+ &        WSWAVE => FF_NOW%WSWAVE, &
+ &        WDWAVE => FF_NOW%WDWAVE, &
+ &        AIRD => FF_NOW%AIRD, &
+ &        WSTAR => FF_NOW%WSTAR, &
+ &        CICOVER => FF_NOW%CICOVER, &
+ &        CITHICK => FF_NOW%CITHICK, &
+ &        NEMOUCUR => NEMO2WAM%NEMOUCUR, &
+ &        NEMOVCUR => NEMO2WAM%NEMOVCUR)
+
+
 !*    1. BEGIN AND END DATES OF WIND FIELDS TO BE PROCESSED.
 !        ---------------------------------------------------
 
       ZERO = ' '
 
-      IF (CDA.EQ.ZERO.OR.LANAONLY) THEN
-
-!        IF START FROM PRESET FIELDS DO FIRST FIELD IN ADDITION.
-
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) "  PREWIND AT CDATEA = ", CDATEA 
-          FLUSH (IU06)
-        ENDIF
+      IF (CDATEWL == ZERO .OR. LANAONLY) THEN
+!       IF START FROM PRESET FIELDS DO FIRST FIELD IN ADDITION.
         CDTWIS = CDATEA
       ELSE
         CDTWIS = CDAWIFL
-        IDELWH = -MAX(IDELPRO,IDELWI)+IDELWO
-        CALL INCDATE (CDTWIS,IDELWH)
+        IDELWH = -MAX(IDELPRO, IDELWI)+IDELWO
+        CALL INCDATE (CDTWIS, IDELWH)
       ENDIF
 
-      IF(CDAWIFL.LT.CDATEE) THEN
+      IF (CDAWIFL < CDATEE) THEN
         CDTWIE = CDAWIFL
       ELSE
         CDTWIE = CDATEE
@@ -227,77 +178,80 @@
       LLINIALL=.TRUE.
       LLOCAL=.TRUE.
 
-      CALL INIT_FIELDG(LLALLOC_FIELDG_ONLY,LLINIALL,LLOCAL)
+      CALL INIT_FIELDG(BLK2LOC, LLALLOC_FIELDG_ONLY, LLINIALL, LLOCAL)
+
 
 !     2.1 IN COUPLED RUNS, TRANSFORM INPUT FORCING FIELDS TO WAM GRID.
 !         -----------------------------------------------------------
 
-      CALL IFSTOWAM (NFIELDS, NGPTOTG, NC, NR, FIELDS, LWCUR, MASK_IN)
+      IF (LWCOU) THEN
+        CALL IFSTOWAM (BLK2LOC,                    &
+ &                     NFIELDS, NGPTOTG, NC, NR,   &
+ &                     FIELDS, LWCUR, MASK_IN)
+      ELSE
+        LWCOUSAMEGRID = .FALSE.
+      ENDIF
 
 !     2.1.1 GET DATA FROM NEMO (OR BINARY RESTART).
 !           -------------------------------------
  
-      IF(LWNEMOCOU.AND.LWNEMOCOURECV) THEN
-        CALL RECVNEMOFIELDS(LLFRSTNEMO.AND.LRESTARTED,                  &
-     &                      LLFRSTNEMO.AND..NOT.LRESTARTED)
+      IF (LWNEMOCOU .AND. LWNEMOCOURECV) THEN
+        LLNREST = LLFRSTNEMO .AND. LRESTARTED
+        LLNINIT = LLFRSTNEMO .AND. .NOT.LRESTARTED
+        CALL RECVNEMOFIELDS(BLK2LOC, WVENVI, NEMO2WAM, FF_NOW, LLNREST, LLNINIT)
         LLFRSTNEMO=.FALSE.
       ENDIF
 
 !!!   WHEN COUPLED, IT IS ALSO NEEDED TO INITIALISE THE AIR DENSITY AND
 !!!   THE CONVECTIVE VELOCITY SCALE ARRAYS SINCE THESE ARE NOT (YET) PROVIDED
 !!!   AS PART OF THE GRIB RESTART FILES.
-      IF (LLINIT) CALL WAMADSZIDL(ROAIRO,ZIDLOLD)
+      IF (LLINIT .AND. LWCOU) CALL WAMADSWSTAR(BLK2LOC, AIRD, WSTAR)
 
 !     2.2 GET SURFACE CURRENTS TO WAM BLOCK STRUCTURE (if needed) 
 !         -------------------------------------------
 
-      CALL GETCURR(LWCUR, IREAD)
+      CALL GETCURR(LWCUR, IREAD, IFROMIJ ,JFROMIJ, &
+     &             NEMOUCUR, NEMOVCUR, UCUR, VCUR)
+
 
 !*    PROCESS THE OTHER FORCING FIELDS.
 !     ---------------------------------
-      IF (IDELWO.GE.IDELWI) THEN
+      IF (IDELWO >= IDELWI) THEN
 
 !*      2.2 NO TIME INTERPOLATION.
 !       ----------------------
 
-        IF (ITEST.GE.2) THEN
-          WRITE (IU06,*) '   SUB. PREWIND: WIND REQUEST'
-          WRITE (IU06,*) '     NO TIME INTERPOLATION'
-          WRITE (IU06,*) '     START OF PERIOD IS    CDTWIS = ',CDTWIS
-          WRITE (IU06,*) '     END   OF PERIOD IS    CDTWIE = ',CDTWIE
-          WRITE (IU06,*) '     WIND INPUT TIME STEP  IDELWI = ',IDELWI
-          WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
-          FLUSH (IU06)
-        ENDIF
-        CALL NOTIM (CDTWIS, CDTWIE,                                     &
-     &              IJS(1), IJL(1),                                     &
-     &              U10OLD(IJS(1),1), THWOLD(IJS(1),1),                 &
-     &              USOLD(IJS(1),1), Z0OLD(IJS(1),1),                   &
-     &              ROAIRO(IJS(1),1), ZIDLOLD(IJS(1),1),                &
-     &              CICOVER(IJS(1),1), CITHICK(IJS(1),1),               &
-     &              IREAD, LWCUR)
 
+        IF (CDATEWL == ZERO) THEN
+!         Initialisation (either first time or following a restart)
+          CALL GETFRSTWND (CDTWIS, CDTWIE,                 &
+     &                     BLK2LOC, WVENVI, FF_NOW,        &
+     &                     IREAD, LWCUR, NEMO2WAM,         &
+     &                     LLMORE)
+        ELSE
+          LLMORE = .TRUE.
+        ENDIF
+
+
+        IF (LLMORE) THEN
+!         Update forcing
+          CALL NOTIM (CDTWIS, CDTWIE,             &
+     &                BLK2LOC, WVENVI, FF_NEXT,   &
+     &                IREAD, LWCUR, NEMO2WAM)
+        ENDIF
       ELSE
 
 !*      2.3 TIME INTERPOLATION.
 !       -------------------
 
-        IF (ITEST.GE.2) THEN
-          WRITE (IU06,*) '   SUB. PREWIND: WIND REQUEST'
-          WRITE (IU06,*) '     TIME INTERPOLATION'
-          WRITE (IU06,*) '     START OF PERIOD IS    CDTWIS = ',CDTWIS
-          WRITE (IU06,*) '     END   OF PERIOD IS    CDTWIE = ',CDTWIE
-          WRITE (IU06,*) '     WIND INPUT TIME STEP  IDELWI = ',IDELWI
-          WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
-          FLUSH (IU06)
-        ENDIF
-        CALL TIMIN (CDTWIS, CDTWIE,                                     &
-     &              IJS(1), IJL(1),                                     &
-     &              U10OLD(IJS(1),1), THWOLD(IJS(1),1),                 &
-     &              USOLD(IJS(1),1), Z0OLD(IJS(1),1),                   &
-     &              ROAIRO(IJS(1),1), ZIDLOLD(IJS(1),1),                &
-     &              CICOVER(IJS(1),1), CITHICK(IJS(1),1),               &
-     &              IREAD, LWCUR)
+              WRITE (IU06,*) ' *********************************'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' * PROBLEM IN PREWIND .........  *'
+              WRITE (IU06,*) ' * NOT AN OPTION ANY MORE        *'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' *********************************'
+              CALL FLUSH(IU06)
+              CALL ABORT1
 
       ENDIF
 
@@ -307,6 +261,8 @@
 
       DEALLOCATE(FIELDG)
 
-      IF (LHOOK) CALL DR_HOOK('PREWIND',1,ZHOOK_HANDLE)
+END ASSOCIATE
 
-      END SUBROUTINE PREWIND
+IF (LHOOK) CALL DR_HOOK('PREWIND',1,ZHOOK_HANDLE)
+
+END SUBROUTINE PREWIND
