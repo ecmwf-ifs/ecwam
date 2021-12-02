@@ -33,6 +33,7 @@
       USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
 #include "abort1.intfb.h"
@@ -99,16 +100,16 @@
 
         ICNT(:)=0
 
-        DO ICHNK = 1, NCHNK
-          DO ICT = 1, JPPFLAG
-            IPR = IPFGTBL(ICT)
-            IF (IPR > 0) THEN 
+        DO ICT = 1, JPPFLAG
+          IPR = IPFGTBL(ICT)
+          IF (IPR > 0) THEN 
+            DO ICHNK = 1, NCHNK
               DO IPRM = 1, KIJL4CHNK(ICHNK)
                 ICNT(IPR) = ICNT(IPR) + 1
-                ZSENDBUF(ICNT(IPR), IPR) = BOUT(IPRM, ITOBOUT(ICT), NCHNK)
+                ZSENDBUF(ICNT(IPR), IPR) = BOUT(IPRM, ITOBOUT(ICT), ICHNK)
               ENDDO
-            ENDIF
-          ENDDO
+            ENDDO
+          ENDIF
         ENDDO
 
       ELSEIF (OUT_METHOD == 1) THEN
@@ -128,7 +129,7 @@
 !          IF (IPR > 0) THEN 
 !            DO IJ=IJSLOC,IJLLOC
 !              ICNT(IPR) = ICNT(IPR) + 1
-!              ZSENDBUF(ICNT(IPR),IPR) = BOUT(IJ,ITOBOUT(ICT))
+!              ZSENDBUF(ICNT(IPR),IPR) = BOUT(IJ,ITOBOUT(ICT)) !!!!!
 !            ENDDO
 !          ENDIF
 !        ENDDO
@@ -159,6 +160,7 @@
      &        CDSTRING='OUTGRID:')
           ENDDO
         ENDIF
+
         DO IPR=1,NPROC
           IF (NFLDPPE(IPR) > 0) THEN
             IR=IR+1
