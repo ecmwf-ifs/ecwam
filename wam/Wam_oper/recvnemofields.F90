@@ -79,6 +79,7 @@ SUBROUTINE RECVNEMOFIELDS(BLK2LOC, WVENVI, NEMO2WAM, FF_NOW, LREST, LINIT)
       REAL(KIND=NEMODP), DIMENSION(NTOTIJ, NFIELD) :: ZNEMOTOWAM
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
+      LOGICAL :: LLFLDUPDT
 ! -------------------------------------------------------------------   
 
 IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
@@ -100,10 +101,10 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
       IF (LREST) THEN
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK)
         DO ICHNK = 1, NCHNK
-          NEMOCICOVER(:,ICHNK)=CICOVER(:,ICHNK)
-          NEMOCITHICK(:,ICHNK)=CITHICK(:,ICHNK)
-          NEMOUCUR(:,ICHNK)=UCUR(:,ICHNK)
-          NEMOVCUR(:,ICHNK)=VCUR(:,ICHNK)
+          NEMOCICOVER(:, ICHNK)=CICOVER(:, ICHNK)
+          NEMOCITHICK(:, ICHNK)=CITHICK(:, ICHNK)
+          NEMOUCUR(:, ICHNK)=UCUR(:, ICHNK)
+          NEMOVCUR(:, ICHNK)=VCUR(:, ICHNK)
         ENDDO
 !$OMP   END PARALLEL DO
 
@@ -113,12 +114,13 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
 #ifdef WITH_NEMO
         CALL NEMOGCMCOUP_WAM_GET( IRANK-1, NPROC, MPL_COMM,     &
      &                            NTOTIJ, NFIELD, ZNEMOTOWAM,   &
-     &                            LNEMOCITHICK )
+     &                            LNEMOCITHICK, LLFLDUPDT )
 
         LLNEWCURR=.TRUE.
 
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, KIJL, IC, IFLD)
-        DO ICHNK = 1, NCHNK
+        IF (LLFLDUPDT) THEN
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, KIJL, IC, IFLD)
+          DO ICHNK = 1, NCHNK
 
             KIJS = 1
             DO IC = 1, ICHNK-1
@@ -145,8 +147,9 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
               NEMOUCUR(KIJL4CHNK(ICHNK)+1:NPROMA_WAM, ICHNK)    = NEMOUCUR(1, ICHNK)
               NEMOVCUR(KIJL4CHNK(ICHNK)+1:NPROMA_WAM, ICHNK)    = NEMOVCUR(1, ICHNK)
             ENDIF
-        ENDDO
-!$OMP   END PARALLEL DO
+          ENDDO
+!$OMP     END PARALLEL DO
+        ENDIF
 
 #endif
         LNEMOICEREST=.FALSE.
@@ -178,8 +181,8 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
 
             IF (LWNEMOCOUCIT) THEN
               DO IJ = 1, NPROMA_WAM
-                IX = IFROMIJ(IJ,ICHNK)
-                JY = JFROMIJ(IJ,ICHNK)
+                IX = IFROMIJ(IJ, ICHNK)
+                JY = JFROMIJ(IJ, ICHNK)
 !              if lake cover = 0, we assume open ocean point, then get sea ice thickness directly from NEMO
                 IF (FIELDG(IX,JY)%LKFR <= 0.0_JWRB ) THEN
                   CITHICK(IJ,ICHNK)=NEMOCICOVER(IJ,ICHNK)*NEMOCITHICK(IJ,ICHNK)
@@ -191,8 +194,8 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
 
             IF (LWNEMOCOUCUR) THEN
               DO IJ = 1, NPROMA_WAM
-                IX = IFROMIJ(IJ,ICHNK)
-                JY = JFROMIJ(IJ,ICHNK)
+                IX = IFROMIJ(IJ, ICHNK)
+                JY = JFROMIJ(IJ, ICHNK)
 !              if lake cover = 0, we assume open ocean point, then get currents directly from NEMO
                 IF (FIELDG(IX,JY)%LKFR <= 0.0_JWRB ) THEN
                   UCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMOUCUR(IJ,ICHNK)),CURRENT_MAX),NEMOUCUR(IJ,ICHNK))
