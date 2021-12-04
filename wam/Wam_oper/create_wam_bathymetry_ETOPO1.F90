@@ -371,7 +371,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 !     OUTPUT ORIGINAL DATA SET ON SUB AREA
 
-      IF(LORIGINAL) THEN
+      IF (LORIGINAL) THEN
         OPEN(11,file='depth.dat')
         WRITE(11,'(a4)') '#GEO'
         WRITE(11,'(a11)') '#FORMAT LLV'
@@ -381,8 +381,8 @@ PROGRAM CREATE_BATHY_ETOPO1
         write(*,*) ILONL,ILONR
         DO J=ILATT,ILATB
           DO I=ILONL,ILONR
-            IF(IDEPTH(I,J).GE. -300 .and.                               &
-     &         IDEPTH(I,J).LE. 2000 ) THEN
+            IF (IDEPTH(I,J) >=  -300 .and.                               &
+     &          IDEPTH(I,J) <= 2000 ) THEN
             WRITE(11,'(2(1X,F8.3),1X,I4)')ALON(I),ALAT(J),IDEPTH(I,J)
             ENDIF
           ENDDO
