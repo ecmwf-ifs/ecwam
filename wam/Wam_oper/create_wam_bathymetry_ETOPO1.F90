@@ -45,15 +45,15 @@ PROGRAM CREATE_BATHY_ETOPO1
 !     CORRECTION TO WAM POINTS (optional).
 
 !     THEY WERE OBTAINED FROM THE PREVIOUS GRID SETUP
-!     correction_to_wam_grid_xxx
-!     where xxxx=int(xdella*100) if grid_description is not present
+!     correction_to_wam_grid_xxxxx
+!     where xxxxx=int(xdella*100) if grid_description is not present
 !     else  xxxx=the gaussian number of latitude - 1 (NY)
 
 !     OUTPUT FILES:
 
-!     wam_topo_xxxx
-!     where xxxx=int(xdella*100) if grid_description is not present
-!     else  xxxx=the gaussian spectral truncation ISPECTRUNC
+!     wam_topo_xxxxx
+!     where xxxxx=int(xdella*100) if grid_description is not present
+!     else  xxxxx=the gaussian spectral truncation ISPECTRUNC
 
 !     AND ALL THE FILES NECESSARY FOR PLOTTING WITH METVIEW
 !     IF REQUESTED IN THE USER INPUT !
@@ -65,9 +65,26 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP 
+      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
+      USE YOWPCONS , ONLY : PI, RAD, G
+      USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,    &
+     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,    &
+     &            IREFDATE ,ISTREAM  ,NLOCGRB
+
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+! ----------------------------------------------------------------------
+
       IMPLICIT NONE
+
+
+#include "abort1.intfb.h"
 #include "aki.intfb.h"
+#include "iniwcst.intfb.h"
 #include "iwam_get_unit.intfb.h"
+#include "preset_wgrib_template.intfb.h"
+
 
       INTEGER(KIND=JWIM), PARAMETER :: ILON=21601
       INTEGER(KIND=JWIM), PARAMETER :: ILAT=10801
@@ -75,7 +92,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM), PARAMETER :: NDPT=1000
       INTEGER(KIND=JWIM), PARAMETER :: ISWTHRS=200
 
-      INTEGER(KIND=JWIM) :: IU06, IU, IUNIT
+      INTEGER(KIND=JWIM) :: IU01, IU06, IU, IUNIT
       INTEGER(KIND=JWIM) :: I, J, IJ, K, KSN, M
       INTEGER(KIND=JWIM) :: NX, NY
       INTEGER(KIND=JWIM) :: IPER, IRGG, NFRE_RED, IFRE1, ISPECTRUNC
@@ -84,7 +101,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM) :: ILONL, ILONR, ILATB, ILATT
       INTEGER(KIND=JWIM) :: NTOT, ICOUNT, IC, IR
       INTEGER(KIND=JWIM) :: NREFERENCE
-      INTEGER(KIND=JWIM) :: IX, NJM, NJP, NIM, NIP, IH
+      INTEGER(KIND=JWIM) :: IX, IXLP, NJM, NJP, NIM, NIP, IH
       INTEGER(KIND=JWIM) :: II, JJ, IK, NPTS, IDPT
       INTEGER(KIND=JWIM) :: IREINF, ITEMPEW
       INTEGER(KIND=JWIM) :: IS, KT, KB
@@ -101,12 +118,12 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSCOR
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
 
-      REAL(KIND=JWRB), PARAMETER :: OLDPI = 3.1415927_JWRB
       REAL(KIND=JWRB), PARAMETER :: SQRT2 = 2.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: XKDMAX=1.5_JWRB
       REAL(KIND=JWRB), PARAMETER :: XKEXTHRS_DEEP=100.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: ALPR_DEEP=0.025_JWRB
-      REAL(KIND=JWRB) :: PI, RAD, OLDRAD, G, X60, FRATIO, FR1
+      REAL(KIND=JWRB) :: PRPLRADI
+      REAL(KIND=JWRB) :: X60, FRATIO, FR1
       REAL(KIND=JWRB) :: XDELLA, XDELLO
       REAL(KIND=JWRB) :: AMOSOP, AMONOP, AMOWEP, AMOEAP
       REAL(KIND=JWRB) :: ALONL, ALONR, ALATB, ALATT, XLON
@@ -119,6 +136,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       REAL(KIND=JWRB) :: STEPLAT, STEPLON
       REAL(KIND=JWRB) :: RESOL
       REAL(KIND=JWRB) :: RR, XKEXTHRS, ALPR
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(ILON) :: ALON
       REAL(KIND=JWRB), DIMENSION(ILAT) :: ALAT
       REAL(KIND=JWRB), DIMENSION(NDPT) :: XK 
@@ -140,27 +158,34 @@ PROGRAM CREATE_BATHY_ETOPO1
       LOGICAL :: LORIGINAL, LLPRINT
       LOGICAL :: LLAND, LREALLAND, L1ST, LNSW
       LOGICAL :: LLGRID
+      LOGICAL :: LLGRIBIN, LLGRIBOUT    !!!! funtionality not yet fully coded
       LOGICAL, ALLOCATABLE, DIMENSION(:,:) :: LLEXCLTHRSHOLD
 
+!----------------------------------------------------------------------
 
-      PI=4.0_JWRB*ATAN(1.0_JWRB)
-      RAD=PI/180.0_JWRB
-      OLDRAD=OLDPI/180.0_JWRB
-      G=9.806_JWRB
-      X60=60.0_JWRB
+      IF (LHOOK) CALL DR_HOOK('CREATE_BATHY_ETOPO1',0,ZHOOK_HANDLE)
+
+      PRPLRADI=1.0_JWRB
+      CALL INIWCST(PRPLRADI)
 
 !     ETOPO1 RESOLUTION
       INVRES=60
+      X60=60.0_JWRB
       RESOL=1.0_JWRB/INVRES
 
       FRATIO=1.1_JWRB
 
+      IU01=1
       IU06=6
 
 
 !     READ INPUT SELECTION
 !     --------------------
       READ(5,*) CLINE
+      READ(5,*) CLINE
+      READ(5,*) LLGRIBIN
+      READ(5,*) CLINE
+      READ(5,*) LLGRIBOUT
       READ(5,*) CLINE
       READ(5,*) XDELLA
       READ(5,*) CLINE
@@ -184,9 +209,9 @@ PROGRAM CREATE_BATHY_ETOPO1
 !     IF IT IS THERE IT WILL SUPERSEDE THE OTHER INPUT
 
       FILENAME='grid_description'
-!!!!!!!!!! grid_description is alsoread in uiprep  !!!!!!!!!!
+!!!!!!!!!! grid_description is also read in uiprep  !!!!!!!!!!
       INQUIRE(FILE=FILENAME,EXIST=LLGRID)
-      IF(LLGRID) THEN
+      IF (LLGRID) THEN
         IU=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0)
         OPEN(IU,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
         READ (IU,*) ISPECTRUNC
@@ -200,7 +225,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       ENDIF
 
 
-      IF(LLGRID) THEN
+      IF (LLGRID) THEN
         XDELLA = (AMONOP-AMOSOP)/(NY-1)
         ALLOCATE(NLONRGG(NY))
 
@@ -211,7 +236,7 @@ PROGRAM CREATE_BATHY_ETOPO1
           NX = MAX(NX,NLONRGG(KSN))
         ENDDO
 
-        IF(IPER.EQ.1) THEN
+        IF (IPER == 1) THEN
           XDELLO  = 360._JWRB/REAL(NX)
           AMOEAP = AMOWEP + 360._JWRB - XDELLO
         ELSE
@@ -248,28 +273,20 @@ PROGRAM CREATE_BATHY_ETOPO1
       DO K=1,NY
 !       !!! from south to north !!!!
         COSPH(K)   = COS(XLAT(K)*RAD)
-        IF(.NOT.LLGRID) THEN
+        IF (.NOT.LLGRID) THEN
           IF (IRGG.EQ.1) THEN
-            IF(XDELLA .EQ. 0.25_JWRB .AND.                              &
-     &         AMOWEP .EQ. -98._JWRB .AND. AMOSOP .EQ.  9._JWRB .AND.   &
-     &         AMOEAP .EQ. 42.0_JWRB .AND. AMONOP .EQ. 81._JWRB       ) THEN
-!         the old value for pi has to be taken in order to reproduce
-!         exactly the irregular grid of the operational LAW model 0.25
-              NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1,JWRB)*XDELLA)*OLDRAD))
-            ELSE
 !            The silly division by cos(x60*RAD) is an attempt at making sure
 !            that exactly 0.5 is used for cosine of 60 degrees.
              NLONRGG(K)=                                                &
      &         MAX(NINT(NX*(COS(XLAT(K)*RAD)/(2._JWRB*COS(X60*RAD)))),2)
-            ENDIF
-            IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
+            IF (MOD(NLONRGG(K),2) == 1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
             NLONRGG(K) = NX
           ENDIF
           WRITE(IU06,*) 'POINTS PER LATITUDES: ',K, XLAT(K), NLONRGG(K)
         ENDIF
 
-        IF(IPER.EQ.1) THEN
+        IF (IPER == 1) THEN
           ZDELLO(K)  = 360._JWRB/REAL(NLONRGG(K))
         ELSE
           ZDELLO(K)  = (AMOEAP-AMOWEP)/REAL(NLONRGG(K)-1)
@@ -287,18 +304,44 @@ PROGRAM CREATE_BATHY_ETOPO1
       ENDDO
 
 
+      MARSTYPE = 'an'
+      YCLASS   = 'rd'
+      YEXPVER  = 'xxxx' 
+      NENSFNB = 0  
+      NTOTENS = 0
+      ISTREAM = 1045 !! if changed to an ifs stream also change LNEWLVTP
+      NLOCGRB = 1
+      NSYSNB  = -1
+      NMETNB  = -1
+      IREFDATE = 0
+      LGRHDIFS =.FALSE.
+      LNEWLVTP =.FALSE.
+
+      IF ( LLGRIBOUT ) THEN
+        WRITE(IU06,*) ''
+        WRITE(IU06,*) 'OUTPUT IN GRIB '
+        WRITE(IU06,*) ''
+!       PREPARE OUTPUT
+!       FOR INTEGRATED PARAMETERS
+        CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
+!       FOR SPECTRA
+        CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
+
+!        CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'w')
+      ENDIF
+
 !     DATASET:
 !     --------
  
-      IF(ALONL.LT.-180._JWRB .OR. ALONR.GT.180._JWRB) THEN
+      IF (ALONL < -180._JWRB .OR. ALONR > 180._JWRB) THEN
         WRITE(*,*) ' LONGITUDE SPECIFICATION ERROR +- 180'
         WRITE(*,*) ' ALONL, ALONR : ',ALONL,ALONR
-        STOP
+        CALL ABORT1
       ENDIF
-      IF(ALATT.GT.90.0_JWRB .OR. ALATB.LT.-90.0_JWRB) THEN
+      IF (ALATT > 90.0_JWRB .OR. ALATB < -90.0_JWRB) THEN
         WRITE(*,*) ' LATITUDE SPECIFICATION ERROR +- 90'
         WRITE(*,*) ' ALATT, ALATB : ',ALATT,ALATB
-        STOP
+        CALL ABORT1
       ENDIF
      
       ILONL = NINT((ALONL + 180._JWRB)*INVRES) + 1
@@ -307,8 +350,8 @@ PROGRAM CREATE_BATHY_ETOPO1
       ILATB = MAX(1,MIN(ILATB,ILAT))
       ILATT = NINT((90.0_JWRB- ALATT)*INVRES) + 1
       ILATT = MAX(1,MIN(ILATT,ILAT))
-      IF(ILONR.EQ.ILON+1)ILONR=ILON
-      IF(ILATB.EQ.ILAT+1)ILATB=ILAT
+      IF (ILONR == ILON+1) ILONR=ILON
+      IF (ILATB == ILAT+1) ILATB=ILAT
 
       ALLOCATE(IDEPTH(ILON,ILAT))
       ALLOCATE(WAMDEPTH(NX,NY))
@@ -373,7 +416,7 @@ PROGRAM CREATE_BATHY_ETOPO1
           IF(YJ.GE.YINF(IR).AND.YJ.LE.YSUP(IR)) THEN
             DO I=1,ILON
               XI=ALON(I)
-              IF (XI.GE.XINF(IR).AND.XI.LE.XSUP(IR)) THEN
+              IF (XI >= XINF(IR) .AND. XI <= XSUP(IR)) THEN
                  IF(IDEPTH(I,J).LE.LEVEL(IR)) THEN
                    IF(NDEPTH(IR).NE.0) THEN
                      IDEPTH(I,J)=NDEPTH(IR)
@@ -608,35 +651,35 @@ PROGRAM CREATE_BATHY_ETOPO1
       ENDIF
       FILENAME='wam_topo_'//CWAMRESOL
 
-      OPEN(1,FILE=FILENAME,FORM='FORMATTED')
+      OPEN(IU01,FILE=FILENAME,FORM='FORMATTED')
       IF(LLGRID) THEN
-        WRITE(1,'(A)') 'WAM BATHYMETRY'
-        WRITE(1,'(6F13.8)') XDELLA,XDELLO,AMOSOP,AMONOP,AMOWEP,AMOEAP
+        WRITE(IU01,'(A)') 'WAM BATHYMETRY'
+        WRITE(IU01,'(6F13.8)') XDELLA,XDELLO,AMOSOP,AMONOP,AMOWEP,AMOEAP
       ELSE
-        WRITE(1,'(6F10.5)') XDELLA,XDELLO,AMOSOP,AMONOP,AMOWEP,AMOEAP
+        WRITE(IU01,'(6F10.5)') XDELLA,XDELLO,AMOSOP,AMONOP,AMOWEP,AMOEAP
       ENDIF
 
       CX='     '
       FORMAT='          '
       IF(LLGRID) THEN
         DO K=1,NY
-           WRITE(1,'(I5.5)') NLONRGG(K) 
+           WRITE(IU01,'(I5.5)') NLONRGG(K) 
         ENDDO
         WRITE(CX,'(I5.5)') NLONRGG(1)
         FORMAT='('//CX//'F9.2)'
         DO K=1,NY
           DO IS = 1,NLONRGG(K),NLONRGG(1)
-            WRITE(1,FORMAT) (WAMDEPTH(IX,K),IX=IS,MIN(IS+NLONRGG(1)-1,NLONRGG(K))) 
+            WRITE(IU01,FORMAT) (WAMDEPTH(IX,K),IX=IS,MIN(IS+NLONRGG(1)-1,NLONRGG(K))) 
           ENDDO
         ENDDO
       ELSE
         DO K=1,NY
-           WRITE(1,'(I4.4)') NLONRGG(K) 
+           WRITE(IU01,'(I4.4)') NLONRGG(K) 
         ENDDO
         DO K=1,NY
           WRITE(CX,'(I4.4)') NLONRGG(K) 
           FORMAT='('//CX//'I4)'
-          WRITE(1,FORMAT) (NINT(WAMDEPTH(IX,K)),IX=1,NLONRGG(K)) 
+          WRITE(IU01,FORMAT) (NINT(WAMDEPTH(IX,K)),IX=1,NLONRGG(K)) 
         ENDDO
       ENDIF
 
@@ -2116,44 +2159,51 @@ PROGRAM CREATE_BATHY_ETOPO1
         ENDIF
 
 
+
 !       OUTPUT OBSTRUCTIONS
 !       FOR GLOBAL FIELD (in the same file as mean bathymetry)
+
+        WRITE(CX,'(I5.5)') NLONRGG(1)
+        FORMAT='('//CX//'I4)'
+
         DO IS =1,2
           DO K=1,NY
-           WRITE(CX,'(I4.4)') NLONRGG(K) 
-           FORMAT='('//CX//'I4)'
-           WRITE(1,FORMAT) (IOBSLAT(IX,K,IS),IX=1,NLONRGG(K)) 
+            DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+              WRITE(IU01,FORMAT) (IOBSLAT(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+            ENDDO
           ENDDO
         ENDDO
         DO IS =1,2
           DO K=1,NY
-           WRITE(CX,'(I4.4)') NLONRGG(K) 
-           FORMAT='('//CX//'I4)'
-           WRITE(1,FORMAT) (IOBSLON(IX,K,IS),IX=1,NLONRGG(K)) 
+            DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+              WRITE(IU01,FORMAT) (IOBSLON(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+            ENDDO
           ENDDO
         ENDDO
         DO IS =1,2
           DO K=1,NY
-           WRITE(CX,'(I4.4)') NLONRGG(K) 
-           FORMAT='('//CX//'I4)'
-           WRITE(1,FORMAT) (IOBSRLAT(IX,K,IS),IX=1,NLONRGG(K)) 
+            DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+              WRITE(IU01,FORMAT) (IOBSRLAT(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+            ENDDO
           ENDDO
         ENDDO
         DO IS =1,2
           DO K=1,NY
-           WRITE(CX,'(I4.4)') NLONRGG(K) 
-           FORMAT='('//CX//'I4)'
-           WRITE(1,FORMAT) (IOBSRLON(IX,K,IS),IX=1,NLONRGG(K)) 
+            DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+              WRITE(IU01,FORMAT) (IOBSRLON(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+            ENDDO
           ENDDO
         ENDDO
         DO IS =1,4
           DO K=1,NY
-           WRITE(CX,'(I4.4)') NLONRGG(K) 
-           FORMAT='('//CX//'I4)'
-           WRITE(1,FORMAT) (IOBSCOR(IX,K,IS),IX=1,NLONRGG(K)) 
+            DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+              WRITE(IU01,FORMAT) (IOBSCOR(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+            ENDDO
           ENDDO
         ENDDO
 
       ENDDO ! END LOOP ON FREQUENCIES
+
+      IF (LHOOK) CALL DR_HOOK('CREATE_BATHY_ETOPO1',1,ZHOOK_HANDLE)
 
 END PROGRAM CREATE_BATHY_ETOPO1

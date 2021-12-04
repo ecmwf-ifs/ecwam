@@ -64,7 +64,7 @@
 
       INTEGER(KIND=JWIM) :: IU01
       INTEGER(KIND=JWIM) :: NPROPAGS
-      INTEGER(KIND=JWIM) :: NFREMAX, IX
+      INTEGER(KIND=JWIM) :: NFREMAX, IX, IXLP
       INTEGER(KIND=JWIM) :: IJ, IJP, I, K, IP, IH, IS, M
       INTEGER(KIND=JWIM) :: IMIN, IPLUS, IMIN2, IPLUS2, IMIN3, IPLUS3
       INTEGER(KIND=JWIM) :: IC, ICP, ICL, ICR
@@ -77,8 +77,8 @@
       REAL(KIND=JWRB) :: XLL, XPL, XLR, XPR
       REAL(KIND=JWRB) ::  BATHY(NGX, NGY)
 
-      CHARACTER(LEN=4) :: CX
-      CHARACTER(LEN=10) :: FORMAT
+      CHARACTER(LEN=5) :: CX
+      CHARACTER(LEN=11) :: FORMAT
 
       LOGICAL :: LLABORT
 
@@ -1042,6 +1042,9 @@
 
       ALLOCATE(KDUM(NIBLO))
 
+      WRITE(CX,'(I5.5)') NLONRGG(1)
+      FORMAT='('//CX//'I4)'
+
       DO M=1,NFRE_RED  ! loop over frequencies used for the propagation
 
 !     KOBSLAT
@@ -1051,9 +1054,9 @@
           ENDDO
           IF (LLOBSTRCT) THEN
             DO K=1,NY
-              WRITE(CX,'(I4.4)') NLONRGG(K)
-              FORMAT='('//CX//'I4)'
-              READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
+              DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+                READ(IU01,FORMAT) (IDUM(IX,K),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+              ENDDO
             ENDDO
             DO IP = 1,NIBLO
               I = BLK2GLO(IP)%IXLG
@@ -1073,9 +1076,9 @@
           ENDDO
           IF (LLOBSTRCT) THEN
             DO K=1,NY
-              WRITE(CX,'(I4.4)') NLONRGG(K)
-              FORMAT='('//CX//'I4)'
-              READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
+              DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+                READ(IU01,FORMAT) (IDUM(IX,K),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+              ENDDO
             ENDDO
             DO IP = 1,NIBLO
               I = BLK2GLO(IP)%IXLG
@@ -1095,9 +1098,9 @@
           ENDDO
           IF (LLOBSTRCT) THEN
             DO K=1,NY
-              WRITE(CX,'(I4.4)') NLONRGG(K)
-              FORMAT='('//CX//'I4)'
-              READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
+              DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+                READ(IU01,FORMAT)(IDUM(IX,K),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+              ENDDO
             ENDDO
             DO IP = 1,NIBLO
               I = BLK2GLO(IP)%IXLG
@@ -1115,9 +1118,9 @@
           ENDDO
           IF (LLOBSTRCT) THEN
             DO K=1,NY
-              WRITE(CX,'(I4.4)') NLONRGG(K)
-              FORMAT='('//CX//'I4)'
-              READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
+              DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+                READ(IU01,FORMAT)(IDUM(IX,K),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+              ENDDO
             ENDDO
             DO IP = 1,NIBLO
               I = BLK2GLO(IP)%IXLG
@@ -1135,9 +1138,9 @@
           ENDDO
           IF (LLOBSTRCT) THEN
             DO K=1,NY
-              WRITE(CX,'(I4.4)') NLONRGG(K)
-              FORMAT='('//CX//'I4)'
-              READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
+              DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+                READ(IU01,FORMAT) (IDUM(IX,K),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+              ENDDO
             ENDDO
             DO IP = 1,NIBLO
               I = BLK2GLO(IP)%IXLG
