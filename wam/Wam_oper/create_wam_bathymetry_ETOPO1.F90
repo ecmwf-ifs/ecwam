@@ -47,7 +47,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !     THEY WERE OBTAINED FROM THE PREVIOUS GRID SETUP
 !     correction_to_wam_grid_xxxxx
 !     where xxxxx=int(xdella*100) if grid_description is not present
-!     else  xxxx=the gaussian number of latitude - 1 (NY)
+!     else  xxxxx=the gaussian number of latitude - 1 (NY)
 
 !     OUTPUT FILES:
 
