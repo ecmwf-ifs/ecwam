@@ -214,13 +214,13 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 !         FIND THE RELATIVE WEIGHT IN
 !         THE CONER TRANSPORT UPSTREAM SCHEME.
 
-!*        LOOP OVER DIRECTIONS.
-!         ---------------------
-          DO K=1,NANG
+!*        LOOP OVER FREQUENCIES.
+!         ----------------------
+          DO M=1,NFRE_RED
 
-!*          LOOP OVER FREQUENCIES.
-!           ----------------------
-            DO M=1,NFRE_RED
+!*          LOOP OVER DIRECTIONS.
+!           ---------------------
+            DO K=1,NANG
 
 !             FIND MEAN GROUP VELOCITY COMPONENTS FOR DIRECTION TH(K)+180
 !             -----------------------------------------------------------
@@ -248,7 +248,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                 IX=IXLG(IJ)
                 KY=KXLT(IJ)
 
-!               FLUX VELOCITUES AT THE GRID BOX INTERFACE 
+!               FLUX VELOCITIES AT THE GRID BOX INTERFACE 
 
                 DO IC=1,2
 
@@ -356,9 +356,9 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                 ENDDO  ! END LOOP OVER GRID POINTS
 
 
-            ENDDO  ! END LOOP OVER FREQUENCIES
+            ENDDO  ! END LOOP OVER DIRECTIONS
 
-          ENDDO  ! END LOOP OVER DIRECTIONS
+          ENDDO  ! END LOOP OVER FREQUENCIES
 
 
       ELSE
