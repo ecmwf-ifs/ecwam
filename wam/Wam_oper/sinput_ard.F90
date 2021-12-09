@@ -352,11 +352,10 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
           ENDDO
         ENDDO
 
-          DO K=1,NANG
-            DO IJ=KIJS,KIJL
-              IF (COSLP(IJ,K) > 0.01_JWRB) THEN
-!!!debile testing
-        DO IGST=1,NGST
+        DO K=1,NANG
+          DO IJ=KIJS,KIJL
+            IF (COSLP(IJ,K) > 0.01_JWRB) THEN
+              DO IGST=1,NGST
                 X    = COSLP(IJ,K)*UCN(IJ,IGST)
                 ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)/COSLP(IJ,K)
                 IF (ZLOG < 0.0_JWRB) THEN
@@ -366,11 +365,10 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
                 ELSE
                   GAM0(IJ,K,IGST) = 0.0_JWRB
                 ENDIF
-              ELSE
-                GAM0(IJ,K,IGST) = 0.0_JWRB
-            ENDDO
-!!!debile testing
-              ENDIF
+              ENDDO
+            ELSE
+              GAM0(IJ,K,:) = 0.0_JWRB
+            ENDIF
           ENDDO
         ENDDO
 
