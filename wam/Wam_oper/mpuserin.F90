@@ -77,7 +77,7 @@
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
 
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
-     &            IDELPRO  ,IDELT    ,IDELWI   ,                        &
+     &            IFRELFMAX, IDELPRO_LF, IDELPRO  ,IDELT    ,IDELWI,    &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
      &            IDELBC   ,                                            &
      &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,    &
@@ -133,8 +133,8 @@
 
       NAMELIST /NALINE/ CLHEADER,                                       &
      &   CBPLTDT, CEPLTDT, CDATEF,                                      &
-     &   IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU, IDELALT,               &
-     &   IDELINT, IDELINS, IDELSPT, IDELSPS, IDELRES,                   &
+     &   IFRELFMAX, IDELPRO_LF, IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU, &
+     &   IDELALT, IDELINT, IDELINS, IDELSPT, IDELSPS, IDELRES,          &
      &   IDELCUR, CDATECURA,                                            &
      &   LLCFLCUROFF,                                                   &
      &   CLOTSU, CDATER, CDATES,                                        &
@@ -211,7 +211,13 @@
 !     CBPLTDT: USER INPUT START DATE OF RUN.
 !     CEPLTDT: USER INPUT END DATE OF RUN.
 !     CDATEF: BEGIN DATE OF FORECAST.
-!     IDELPRO: PROPAGATION TIME STEP.
+!     IFRELFMAX: INDEX FOR THE LAST FREQUENCY THAT WILL BR PROPAGATED WITH TIME STEP IDELPRO_LF (see below).
+!     IDELPRO_LF: PROPAGATION TIME STEP FOR THE ALL WAVES WITH FREQUENCIES <= FR(IFRELFMAX).
+!                 if 1 <= IFRELFMAX <= NFRE
+!              IF COUPLED TO IFS, THE INPUT VALUE OF IDELPRO_LF WILL BE
+!              THE UPPER BOUND ON THE TIME STEP, IT WILL BE SET SO THAT IT IS A FRACTION OF IDELPRO,
+!              WHILE STILL SATSISFYING THE LIMIT IMPOSED BY THE UPPER BOUND.
+!     IDELPRO: PROPAGATION TIME STEP FOR THE ALL WAVES WITH FREQUENCIES > FR(IFRELFMAX).
 !              IF COUPLED TO IFS, THE INPUT VALUE OF IDELPRO WILL BE
 !              THE UPPER BOUND ON THE TIME STEP, WHICH WOULD OTHERWISE
 !              BE SET TO THE COUPLING TIME STEP.
@@ -532,6 +538,8 @@
       CBPLTDT   =  ZERO
       CEPLTDT   =  ZERO
       CDATEF    =  ZERO
+      IFRELFMAX = 0
+      IDELPRO_LF=  0
       IDELPRO   =  0
       IDELT     =  0
       IDELWO    =  0
@@ -888,17 +896,21 @@
       CLOSE(IU05)
 
 !           **** MODEL TIME STEPS ****
-      IF (CLMTSU(1) .EQ. 'H') IDELPRO = IDELPRO*3600
-      IF (CLMTSU(2) .EQ. 'H') IDELT   = IDELT*3600
-      IF (CLMTSU(3) .EQ. 'H') IDELWO  = IDELWO*3600
-      IF (CLMTSU(4) .EQ. 'H') IDELWI  = IDELWI*3600
+      IF (CLMTSU(1) == 'H') IDELPRO = IDELPRO*3600
+      IF (CLMTSU(2) == 'H') IDELT   = IDELT*3600
+      IF (CLMTSU(3) == 'H') IDELWO  = IDELWO*3600
+      IF (CLMTSU(4) == 'H') IDELWI  = IDELWI*3600
 !           **** OUTPUT TIME IN FIXED INTERVALS ****
-      IF (CLOTSU(1) .EQ. 'H') IDELINT = IDELINT*3600
-      IF (CLOTSU(7) .EQ. 'H') IDELRES = IDELRES*3600
-      IF (CLOTSU(8) .EQ. 'H') IDELBC  = IDELBC*3600
+      IF (CLOTSU(1) == 'H') IDELINT = IDELINT*3600
+      IF (CLOTSU(7) == 'H') IDELRES = IDELRES*3600
+      IF (CLOTSU(8) == 'H') IDELBC  = IDELBC*3600
+
+
 
 
 !     RESET CERTAIN FLAGS:
+
+      IF(IFRELFMAX <= 0) IDELPRO_LF = IDELPRO
 
 !     WE SHOULD RECEIVE DATA FROM NEMO
       IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT .OR. LWNEMOCOUCUR) LWNEMOCOURECV = .TRUE.
@@ -912,7 +924,7 @@
 
 !     Some are printed below
 
-      IF (IRANK.EQ.1) THEN
+      IF (IRANK == 1) THEN
         WRITE(6,*) '==============================================='
         WRITE(6,*) '*** MPUSERIN has read the following settings'
         WRITE(6,*) '*** LFDB = ',LFDB

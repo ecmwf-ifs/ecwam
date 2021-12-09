@@ -184,8 +184,8 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDTINTT  ,CDTBC    ,                                  &
-     &            IDELPRO  ,IDELT    ,IDELWI   ,IDELWO   ,IDELRES  ,    &
-     &            IDELINT  ,                                            &
+     &            IFRELFMAX, IDELPRO_LF, IDELPRO  ,IDELT ,              &
+     &            IDELWI   ,IDELWO   ,IDELRES  ,IDELINT  ,              &
      &            IREFRA   ,                                            &
      &            IPHYS    ,                                            &
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,    &
@@ -437,9 +437,9 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
         COUTLST=CDATEA
         IF (GFLAG20) THEN
           DO WHILE (COUTLST <= CDATEE .AND. IDELINT > 0)
-            CALL INCDATE (COUTLST,IDELINT)
+            CALL INCDATE (COUTLST, IDELINT)
           ENDDO
-          CALL INCDATE (COUTLST,-IDELINT)
+          CALL INCDATE (COUTLST, -IDELINT)
         ENDIF
 
         IF (COUTLST > CDATEE) COUTLST=CDATEE
@@ -723,10 +723,10 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       CDATEWO = CDTPRO
       CDTBC= CDATEA
-      IF (IDELT < IDELWO) CALL INCDATE(CDATEWO,IDELWO/2)
+      IF (IDELT < IDELWO) CALL INCDATE(CDATEWO, IDELWO/2)
       CDAWIFL = CDTPRO
-      IDELWH = MAX(IDELWI,IDELPRO)
-      CALL INCDATE(CDAWIFL,IDELWH)
+      IDELWH = MAX(IDELWI, IDELPRO)
+      CALL INCDATE(CDAWIFL, IDELWH)
       CDATEFL = CDATEWO
 
 ! ----------------------------------------------------------------------
@@ -768,7 +768,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       IF (DPH == 0.0_JWRB) THEN
         CFLP= 0.0_JWRB
       ELSE
-        CFLP= IDELPRO*GVE/DPH
+        CFLP= IDELPRO_LF*GVE/DPH
       ENDIF
       DLH = CIRC 
 !     FIND THE SMALLEST DLH
@@ -780,7 +780,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       IF (DLH == 0.0_JWRB) THEN
         CFLL= 0.0_JWRB
       ELSE
-        CFLL= IDELPRO*GVE/DLH
+        CFLL= IDELPRO_LF*GVE/DLH
       ENDIF
       IF (CFLP > 1.0_JWRB .OR. CFLL > 1.0_JWRB) THEN
         WRITE(IU06,*) ' **********************************************'
@@ -790,7 +790,9 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
         WRITE(IU06,*) ' * CFL-CRITERION NOT FULFILLED.               *'
         WRITE(IU06,*) ' * CFLP: ',CFLP,'  GROUP VELOCITY: ',GVE
         WRITE(IU06,*) ' * CFLL: ',CFLL,'  GROUP VELOCITY: ',GVE
-        WRITE(IU06,*) ' * PROPAGATION TIME: ',IDELPRO
+        WRITE(IU06,*) ' * PROPAGATION TIME IDELPRO_LF : ',IDELPRO_LF
+        WRITE(IU06,*) ' * PROPAGATION TIME IDELPRO    : ',IDELPRO
+        WRITE(IU06,*) ' * LOW FREQUENCY FREQUENCY INDEX : ',IFRELFMAX
         WRITE(IU06,*) ' * GRID Y-DISTANCE AT MOST NORTH LATITUDE: ',DPH
         WRITE(IU06,*) ' * GRID X-DISTANCE AT MOST NORTH LATITUDE: ',DLH
         WRITE(IU06,*) ' *     PROGRAM ABORTS   PROGRAM ABORTS        *'
@@ -835,7 +837,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !     INITIALISE CDTCUR
       CDTCUR=CDATECURA
       IF (.NOT.LWCOU .AND. .NOT.LRESTARTED) THEN
-        IF (IREFRA == 2 .OR. IREFRA == 3) CALL INCDATE(CDTCUR,-IDELCUR)
+        IF (IREFRA == 2 .OR. IREFRA == 3) CALL INCDATE(CDTCUR, -IDELCUR)
       ENDIF
 
 !     COMPUTE BOTTOM REFRACTION TERMS (SEE *PROPAGS_WAM*)

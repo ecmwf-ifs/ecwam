@@ -130,9 +130,10 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DSTAB1, TEMP1, TEMP2
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: COSLP, TEMP3
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NGST) :: COSLP, COSLPM1, TEMP3
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NGST) :: GAM0, DSTAB
 
+      LOGICAL, DIMENSION(KIJS:KIJL,NANG,NGST) :: LZ
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
@@ -181,6 +182,20 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
       DO K=1,NANG
         DO IJ=KIJS,KIJL
           COSLP(IJ,K) = COS(TH(K)-WDWAVE(IJ))
+          IF (COSLP(IJ,K) > 0.01_JWRB) THEN
+            COSLPM1(IJ,K) = 1.0_JWRB /COSLP(IJ,K) 
+            LZ(IJ,K,1) = .TRUE.
+          ELSE
+            COSLPM1(IJ,K) = 1.0_JWRB
+            LZ(IJ,K,1) = .FALSE.
+          ENDIF
+        ENDDO
+      ENDDO
+      DO IGST=2,NGST
+        DO K=1,NANG
+          DO IJ=KIJS,KIJL
+            LZ(IJ,K,IGST) = LZ(IJ,K,1)
+          ENDDO
         ENDDO
       ENDDO
 
@@ -328,7 +343,9 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         DSTAB(:,:,:) = 0.0_JWRB
       ENDIF
 
-      DO M=1,NFRE
+
+
+      DO M = 1, NFRE
 
 !*      PRECALCULATE FREQUENCY DEPENDENCE.
 !       ----------------------------------
@@ -355,10 +372,10 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         DO IGST=1,NGST
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              IF (COSLP(IJ,K) > 0.01_JWRB) THEN
-                X    = COSLP(IJ,K)*UCN(IJ,IGST)
-                ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)/COSLP(IJ,K)
+              IF (LZ(IJ,K,IGST)) THEN
+                ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)*COSLPM1(IJ,K)
                 IF (ZLOG < 0.0_JWRB) THEN
+                  X      = COSLP(IJ,K)*UCN(IJ,IGST)
                   ZLOG2X = ZLOG*ZLOG * X
                   GAM0(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X * CNSN(IJ)
                   XLLWS(IJ,K,M) = 1.0_JWRB
