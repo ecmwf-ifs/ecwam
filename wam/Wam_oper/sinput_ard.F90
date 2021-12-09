@@ -366,7 +366,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
                   GAM0(IJ,K,IGST) = 0.0_JWRB
                 ENDIF
               ELSE
-                GAM0(IJ,K,:) = 0.0_JWRB
+                GAM0(IJ,K,IGST) = 0.0_JWRB
               ENDIF
             ENDDO
           ENDDO
