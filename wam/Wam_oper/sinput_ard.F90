@@ -107,7 +107,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       REAL(KIND=JWRB) :: ZNZ
       REAL(KIND=JWRB) :: X1, X2, ZLOG, ZLOG1, ZLOG2, ZLOG2X, XV1, XV2, ZBETA1, ZBETA2
       REAL(KIND=JWRB) :: XI, X, DELI1, DELI2
-      REAL(KIND=JWRB) :: FU,FUD, NU_AIR,SMOOTH, HFTSWELLF6,Z0TUB
+      REAL(KIND=JWRB) :: FU, FUD, NU_AIR,SMOOTH, HFTSWELLF6,Z0TUB
       REAL(KIND=JWRB) :: FAC_NU_AIR, FACM1_NU_AIR
       REAL(KIND=JWRB) :: ARG, DELABM1
       REAL(KIND=JWRB) :: TAUPX, TAUPY
@@ -130,7 +130,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DSTAB1, TEMP1, TEMP2
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: COSDIF, COSLP, COSLPM1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: COSLP, TEMP3
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NGST) :: GAM0, DSTAB
 
 ! ----------------------------------------------------------------------
@@ -178,6 +178,11 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         CONST(M)=SIG(M)*CONST1
       ENDDO
 
+      DO K=1,NANG
+        DO IJ=KIJS,KIJL
+          COSLP(IJ,K) = COS(TH(K)-WDWAVE(IJ))
+        ENDDO
+      ENDDO
 
       IF (LLSNEG) THEN
 !!!!  only for the negative sinput
@@ -190,12 +195,15 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
          FUD=SWELLF2
          DELABM1= REAL(IAB)/(ABMAX-ABMIN)
 
+         DO K=1,NANG
+           DO IJ=KIJS,KIJL
+             TEMP3(IJ,K) = FU+FUD*COSLP(IJ,K)
+           ENDDO
+         ENDDO
 
 !       computation of Uorb and Aorb
-        DO IJ=KIJS,KIJL
-          UORBT(IJ) = EPSMIN 
-          AORB(IJ) = EPSMIN
-        ENDDO
+        UORBT(:) = EPSMIN 
+        AORB(:) = EPSMIN
 
         DO M=1,NFRE
           COEF(M) =-SWELLF*16._JWRB*SIG2(M)/(G*ROWATER)
@@ -273,7 +281,6 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
       ENDIF
 
 
-
 ! Initialisation
 
       IF (NGST == 1) THEN
@@ -300,20 +307,6 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
       DO IGST=1,NGST
         DO IJ=KIJS,KIJL
           USTPM1(IJ,IGST) = 1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
-        ENDDO
-      ENDDO
-
-      DO K=1,NANG
-        DO IJ=KIJS,KIJL
-          COSDIF(IJ,K) = COS(TH(K)-WDWAVE(IJ))
-          COSLP(IJ,K) = MAX(COSDIF(IJ,K), 0.0_JWRB)
-          !!!! COSLPM1 is only meaningful for COSDIF > 0
-          !!!! see 2.1, when COSDIF < 0, then X will be 0 and so GAM0 = 0 as intended
-          IF ( COSDIF(IJ,K) > 0.01_JWRB) THEN
-            COSLPM1(IJ,K) = 1.0_JWRB / COSDIF(IJ,K)
-          ELSE
-            COSLPM1(IJ,K) = 0.0_JWRB 
-          ENDIF
         ENDDO
       ENDDO
 
@@ -346,10 +339,9 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
             UCNZALPD(IJ,IGST) = XKAPPA/(UCN(IJ,IGST) + ZALP)
           ENDDO
         ENDDO
-        DO IJ=KIJS,KIJL
-          ZCN(IJ) = LOG(WAVNUM(IJ,M)*Z0M(IJ))
-          CNSN(IJ) = CONST(M)*AIRD(IJ)
-        ENDDO
+
+        ZCN(:) = LOG(WAVNUM(:,M)*Z0M(:))
+        CNSN(:) = CONST(M)*AIRD(:)
 
 !*    2.1 LOOP OVER DIRECTIONS.
 !         ---------------------
@@ -360,43 +352,50 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
           ENDDO
         ENDDO
 
-        DO IGST=1,NGST
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              X      = COSLP(IJ,K)*UCN(IJ,IGST)
-              ZLOG   = ZCN(IJ) + COSLPM1(IJ,K) * UCNZALPD(IJ,IGST)
-              ZLOG   = MIN(ZLOG, 0.0_JWRB)
-              ZLOG2X = X*ZLOG*ZLOG
-              GAM0(IJ,K,IGST) = ZLOG2X*ZLOG2X * EXP(ZLOG) * CNSN(IJ)
-              XLLWS(IJ,K,M) = XLLWS(IJ,K,M) + SIGN(1.0_JWRB,GAM0(IJ,K,IGST))
+              IF (COSLP(IJ,K) > 0.01_JWRB) THEN
+!!!debile testing
+        DO IGST=1,NGST
+                X    = COSLP(IJ,K)*UCN(IJ,IGST)
+                ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)/COSLP(IJ,K)
+                IF (ZLOG < 0.0_JWRB) THEN
+                  ZLOG2X = ZLOG*ZLOG * X
+                  GAM0(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X * CNSN(IJ)
+                  XLLWS(IJ,K,M) = 1.0_JWRB
+                ELSE
+                  GAM0(IJ,K,IGST) = 0.0_JWRB
+                ENDIF
+              ELSE
+                GAM0(IJ,K,IGST) = 0.0_JWRB
             ENDDO
+!!!debile testing
+              ENDIF
           ENDDO
         ENDDO
 
-        IF (NGST > 1) XLLWS(:,:,M) = MIN(XLLWS(:,:,M), 1.0_JWRB) 
 
+        IF (LLNORMAGAM) THEN
 
-      IF (LLNORMAGAM) THEN
+          DO IGST=1,NGST
 
-        DO IGST=1,NGST
-
-          SUMF(:) = 0.0_JWRB
-          SUMFSIN2(:) = 0.0_JWRB
-          DO K=1,NANG
-            DO IJ=KIJS,KIJL
-              SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)
-              SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SIN2(IJ,K)
+            SUMF(:) = 0.0_JWRB
+            SUMFSIN2(:) = 0.0_JWRB
+            DO K=1,NANG
+              DO IJ=KIJS,KIJL
+                SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)
+                SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SIN2(IJ,K)
+              ENDDO
             ENDDO
+
+            DO IJ=KIJS,KIJL
+              ZNZ = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)
+              GAMNORMA(IJ,IGST) = (1.0_JWRB + ZNZ*SUMFSIN2(IJ)) / (1.0_JWRB + ZNZ*SUMF(IJ))
+            ENDDO
+
           ENDDO
 
-          DO IJ=KIJS,KIJL
-            ZNZ = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)
-            GAMNORMA(IJ,IGST) = (1.0_JWRB + ZNZ*SUMFSIN2(IJ)) / (1.0_JWRB + ZNZ*SUMF(IJ))
-          ENDDO
-
-        ENDDO
-
-      ENDIF
+        ENDIF
 
 
         IF (LLSNEG) THEN
@@ -409,7 +408,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
           DO IGST=1,NGST
             DO K=1,NANG
               DO IJ=KIJS,KIJL
-                DSTAB2 = TEMP1(IJ)*(TEMP2(IJ)+(FU+FUD*COSDIF(IJ,K))*USTP(IJ,IGST))
+                DSTAB2 = TEMP1(IJ) * ( TEMP2(IJ) + TEMP3(IJ,K)*USTP(IJ,IGST) )
                 DSTAB(IJ,K,IGST) = DSTAB1(IJ)+PTURB(IJ)*DSTAB2
               ENDDO
             ENDDO
@@ -418,7 +417,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 
 
 !     2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
-!         -----------------------------------------------
+!         ------------------------------------------------
 
         DO K=1,NANG
 
