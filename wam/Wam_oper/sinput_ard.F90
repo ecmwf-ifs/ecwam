@@ -71,7 +71,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH, ZPIFR, DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,GM1      ,ROWATER  ,EPSMIN, EPSUS, ZPI
-      USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2,    &
+      USE YOWPHYS  , ONLY : ZALP     ,XKAPPA, BETAMAXOXKAPPA2,                &
      &                      BMAXOKAPDTH, RN1_RN, &
      &                      RNU      ,RNUM, &
      &                      SWELLF   ,SWELLF2  ,SWELLF3  ,SWELLF4  , SWELLF5, &
@@ -102,7 +102,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
 
       REAL(KIND=JWRB) :: ROG
       REAL(KIND=JWRB) :: CONSTN 
-      REAL(KIND=JWRB) :: AVG_GST, ABS_TAUWSHELTER 
+      REAL(KIND=JWRB) :: AVG_GST
       REAL(KIND=JWRB) :: CONST1
       REAL(KIND=JWRB) :: ZNZ
       REAL(KIND=JWRB) :: X1, X2, ZLOG, ZLOG1, ZLOG2, ZLOG2X, XV1, XV2, ZBETA1, ZBETA2
@@ -130,9 +130,9 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DSTAB1, TEMP1, TEMP2
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NGST) :: COSLP, GAM0, DSTAB
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: COSDIF, COSLP, COSLPM1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NGST) :: GAM0, DSTAB
 
-      LOGICAL :: LTAUWSHELTER
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
@@ -141,13 +141,6 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
       AVG_GST = 1.0_JWRB/NGST
       CONST1  = BETAMAXOXKAPPA2/ROWATER
       CONSTN = DELTH*ROWATER/(XKAPPA*ZPI) 
-
-      ABS_TAUWSHELTER=ABS(TAUWSHELTER)
-      IF (ABS_TAUWSHELTER == 0.0_JWRB ) THEN
-        LTAUWSHELTER = .FALSE.
-      ELSE
-        LTAUWSHELTER = .TRUE.
-      ENDIF
 
       DO IJ=KIJS,KIJL
         AIRDM(IJ) = 1.0_JWRB/MAX(AIRD(IJ),1.0_JWRB)
@@ -310,25 +303,19 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
-      IF (LTAUWSHELTER) THEN
-        DO IGST=1,NGST
-          DO IJ=KIJS,KIJL
-            XSTRESS(IJ,IGST)=0.0_JWRB
-            YSTRESS(IJ,IGST)=0.0_JWRB
-            USG2(IJ,IGST)=USTP(IJ,IGST)**2
-            TAUX(IJ,IGST)=USG2(IJ,IGST)*SIN(WDWAVE(IJ))
-            TAUY(IJ,IGST)=USG2(IJ,IGST)*COS(WDWAVE(IJ))
-          ENDDO
+      DO K=1,NANG
+        DO IJ=KIJS,KIJL
+          COSDIF(IJ,K) = COS(TH(K)-WDWAVE(IJ))
+          COSLP(IJ,K) = MAX(COSDIF(IJ,K), 0.0_JWRB)
+          !!!! COSLPM1 is only meaningful for COSDIF > 0
+          !!!! see 2.1, when COSDIF < 0, then X will be 0 and so GAM0 = 0 as intended
+          IF ( COSDIF(IJ,K) > 0.01_JWRB) THEN
+            COSLPM1(IJ,K) = 1.0_JWRB / COSDIF(IJ,K)
+          ELSE
+            COSLPM1(IJ,K) = 0.0_JWRB 
+          ENDIF
         ENDDO
-      ELSE
-        DO IGST=1,NGST
-          DO K=1,NANG
-            DO IJ=KIJS,KIJL
-              COSLP(IJ,K,IGST) = COS(TH(K)-WDWAVE(IJ))
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDIF
+      ENDDO
 
       DO IJ=KIJS,KIJL
         GZ0(IJ) = G*Z0M(IJ)
@@ -349,31 +336,6 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
       ENDIF
 
       DO M=1,NFRE
-
-        IF (LTAUWSHELTER) THEN
-          DO IGST=1,NGST
-            DO IJ=KIJS,KIJL
-              TAUPX=TAUX(IJ,IGST)-ABS_TAUWSHELTER*XSTRESS(IJ,IGST)
-              TAUPY=TAUY(IJ,IGST)-ABS_TAUWSHELTER*YSTRESS(IJ,IGST)
-              USDIRP(IJ,IGST)=ATAN2(TAUPX,TAUPY)
-              USTP(IJ,IGST)=(TAUPX**2+TAUPY**2)**0.25_JWRB
-              USTPM1(IJ,IGST)=1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
-            ENDDO
-          ENDDO
-
-          DO IGST=1,NGST
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                COSLP(IJ,K,IGST) = COS(TH(K)-USDIRP(IJ,IGST))
-              ENDDO
-            ENDDO
-          ENDDO
-
-          DO IJ=KIJS,KIJL
-            CONSTF(IJ) = ROGOROAIR(IJ)*CINV(IJ,M)*DFIM(M)
-          ENDDO
-        ENDIF
-
 
 !*      PRECALCULATE FREQUENCY DEPENDENCE.
 !       ----------------------------------
@@ -401,22 +363,17 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         DO IGST=1,NGST
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              IF (COSLP(IJ,K,IGST) > 0.01_JWRB) THEN
-                X    = COSLP(IJ,K,IGST)*UCN(IJ,IGST)
-                ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)/COSLP(IJ,K,IGST)
-                IF (ZLOG < 0.0_JWRB) THEN
-                  ZLOG2X=ZLOG*ZLOG*X
-                  GAM0(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X * CNSN(IJ)
-                  XLLWS(IJ,K,M) = 1.0_JWRB
-                ELSE
-                  GAM0(IJ,K,IGST) = 0.0_JWRB
-                ENDIF
-              ELSE
-                GAM0(IJ,K,IGST) = 0.0_JWRB
-              ENDIF
+              X      = COSLP(IJ,K)*UCN(IJ,IGST)
+              ZLOG   = ZCN(IJ) + COSLPM1(IJ,K) * UCNZALPD(IJ,IGST)
+              ZLOG   = MIN(ZLOG, 0.0_JWRB)
+              ZLOG2X = X*ZLOG*ZLOG
+              GAM0(IJ,K,IGST) = ZLOG2X*ZLOG2X * EXP(ZLOG) * CNSN(IJ)
+              XLLWS(IJ,K,M) = XLLWS(IJ,K,M) + SIGN(1.0_JWRB,GAM0(IJ,K,IGST))
             ENDDO
           ENDDO
         ENDDO
+
+        IF (NGST > 1) XLLWS(:,:,M) = MIN(XLLWS(:,:,M), 1.0_JWRB) 
 
 
       IF (LLNORMAGAM) THEN
@@ -452,7 +409,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
           DO IGST=1,NGST
             DO K=1,NANG
               DO IJ=KIJS,KIJL
-                DSTAB2 = TEMP1(IJ)*(TEMP2(IJ)+(FU+FUD*COSLP(IJ,K,IGST))*USTP(IJ,IGST))
+                DSTAB2 = TEMP1(IJ)*(TEMP2(IJ)+(FU+FUD*COSDIF(IJ,K))*USTP(IJ,IGST))
                 DSTAB(IJ,K,IGST) = DSTAB1(IJ)+PTURB(IJ)*DSTAB2
               ENDDO
             ENDDO
@@ -460,9 +417,8 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         ENDIF
 
 
-!*    2.2 UPDATE THE SHELTERING STRESS (in any),
-!         AND THEN ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
-!         ---------------------------------------------------------
+!     2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
+!         -----------------------------------------------
 
         DO K=1,NANG
 
@@ -479,19 +435,6 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
               SLP(IJ,IGST) = SLP(IJ,IGST)*FL1(IJ,K,M)
             ENDDO
           ENDDO
-
-          IF (LTAUWSHELTER) THEN
-            DO IJ=KIJS,KIJL
-              CONST11(IJ)=CONSTF(IJ)*SINTH(K)
-              CONST22(IJ)=CONSTF(IJ)*COSTH(K)
-            ENDDO
-            DO IGST=1,NGST
-              DO IJ=KIJS,KIJL
-                XSTRESS(IJ,IGST)=XSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST11(IJ)
-                YSTRESS(IJ,IGST)=YSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST22(IJ)
-              ENDDO
-            ENDDO
-          ENDIF
 
           IGST=1
             DO IJ=KIJS,KIJL
