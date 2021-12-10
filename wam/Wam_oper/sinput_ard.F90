@@ -71,7 +71,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH, ZPIFR, DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,GM1      ,ROWATER  ,EPSMIN, EPSUS, ZPI
-      USE YOWPHYS  , ONLY : ZALP     ,XKAPPA, BETAMAXOXKAPPA2,                &
+      USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2,    &
      &                      BMAXOKAPDTH, RN1_RN, &
      &                      RNU      ,RNUM, &
      &                      SWELLF   ,SWELLF2  ,SWELLF3  ,SWELLF4  , SWELLF5, &
@@ -102,12 +102,12 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
 
       REAL(KIND=JWRB) :: ROG
       REAL(KIND=JWRB) :: CONSTN 
-      REAL(KIND=JWRB) :: AVG_GST
+      REAL(KIND=JWRB) :: AVG_GST, ABS_TAUWSHELTER 
       REAL(KIND=JWRB) :: CONST1
       REAL(KIND=JWRB) :: ZNZ
       REAL(KIND=JWRB) :: X1, X2, ZLOG, ZLOG1, ZLOG2, ZLOG2X, XV1, XV2, ZBETA1, ZBETA2
       REAL(KIND=JWRB) :: XI, X, DELI1, DELI2
-      REAL(KIND=JWRB) :: FU, FUD, NU_AIR,SMOOTH, HFTSWELLF6,Z0TUB
+      REAL(KIND=JWRB) :: FU, FUD, NU_AIR,SMOOTH, HFTSWELLF6, Z0TUB
       REAL(KIND=JWRB) :: FAC_NU_AIR, FACM1_NU_AIR
       REAL(KIND=JWRB) :: ARG, DELABM1
       REAL(KIND=JWRB) :: TAUPX, TAUPY
@@ -122,7 +122,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CNSN, SUMF, SUMFSIN2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CSTRNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FLP_AVG, SLP_AVG
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: GZ0, ROGOROAIR, AIRD_PVISC, AIRDM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ROGOROAIR, AIRD_PVISC, AIRDM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: XSTRESS, YSTRESS, FLP, SLP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: USG2, TAUX, TAUY, USTP, USTPM1, USDIRP, UCN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: UCNZALPD
@@ -130,10 +130,9 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DSTAB1, TEMP1, TEMP2
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NGST) :: COSLP, COSLPM1, TEMP3
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NGST) :: GAM0, DSTAB
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NGST) :: COSLP, GAM0, DSTAB
 
-      LOGICAL, DIMENSION(KIJS:KIJL,NANG,NGST) :: LZ
+      LOGICAL :: LTAUWSHELTER
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
@@ -143,15 +142,24 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
       CONST1  = BETAMAXOXKAPPA2/ROWATER
       CONSTN = DELTH*ROWATER/(XKAPPA*ZPI) 
 
+      ABS_TAUWSHELTER=ABS(TAUWSHELTER)
+      IF (ABS_TAUWSHELTER == 0.0_JWRB ) THEN
+        LTAUWSHELTER = .FALSE.
+      ELSE
+        LTAUWSHELTER = .TRUE.
+      ENDIF
+
       DO IJ=KIJS,KIJL
         AIRDM(IJ) = 1.0_JWRB/MAX(AIRD(IJ),1.0_JWRB)
       ENDDO
 
       IF (LLNORMAGAM) THEN
-        CSTRNFAC(:) = CONSTN * RNFAC(:)
+        DO IJ=KIJS,KIJL
+          CSTRNFAC(IJ) = CONSTN * RNFAC(IJ) * AIRDM(IJ)
+        ENDDO
         DO M=1,NFRE
           DO IJ=KIJS,KIJL
-            XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*WAVNUM(IJ,M)**2*CGROUP(IJ,M)*AIRDM(IJ)
+            XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*WAVNUM(IJ,M)**2*CGROUP(IJ,M)
           ENDDO
         ENDDO
 
@@ -179,25 +187,6 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         CONST(M)=SIG(M)*CONST1
       ENDDO
 
-      DO K=1,NANG
-        DO IJ=KIJS,KIJL
-          COSLP(IJ,K) = COS(TH(K)-WDWAVE(IJ))
-          IF (COSLP(IJ,K) > 0.01_JWRB) THEN
-            COSLPM1(IJ,K) = 1.0_JWRB /COSLP(IJ,K) 
-            LZ(IJ,K,1) = .TRUE.
-          ELSE
-            COSLPM1(IJ,K) = 1.0_JWRB
-            LZ(IJ,K,1) = .FALSE.
-          ENDIF
-        ENDDO
-      ENDDO
-      DO IGST=2,NGST
-        DO K=1,NANG
-          DO IJ=KIJS,KIJL
-            LZ(IJ,K,IGST) = LZ(IJ,K,1)
-          ENDDO
-        ENDDO
-      ENDDO
 
       IF (LLSNEG) THEN
 !!!!  only for the negative sinput
@@ -210,15 +199,12 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
          FUD=SWELLF2
          DELABM1= REAL(IAB)/(ABMAX-ABMIN)
 
-         DO K=1,NANG
-           DO IJ=KIJS,KIJL
-             TEMP3(IJ,K) = FU+FUD*COSLP(IJ,K)
-           ENDDO
-         ENDDO
 
 !       computation of Uorb and Aorb
-        UORBT(:) = EPSMIN 
-        AORB(:) = EPSMIN
+        DO IJ=KIJS,KIJL
+          UORBT(IJ) = EPSMIN 
+          AORB(IJ) = EPSMIN
+        ENDDO
 
         DO M=1,NFRE
           COEF(M) =-SWELLF*16._JWRB*SIG2(M)/(G*ROWATER)
@@ -296,6 +282,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
       ENDIF
 
 
+
 ! Initialisation
 
       IF (NGST == 1) THEN
@@ -325,12 +312,31 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
-      DO IJ=KIJS,KIJL
-        GZ0(IJ) = G*Z0M(IJ)
-      ENDDO
-      DO IJ=KIJS,KIJL
-        ROGOROAIR(IJ) = ROG*AIRDM(IJ)
-      ENDDO
+      IF (LTAUWSHELTER) THEN
+        DO IGST=1,NGST
+          DO IJ=KIJS,KIJL
+            XSTRESS(IJ,IGST)=0.0_JWRB
+            YSTRESS(IJ,IGST)=0.0_JWRB
+            USG2(IJ,IGST)=USTP(IJ,IGST)**2
+            TAUX(IJ,IGST)=USG2(IJ,IGST)*SIN(WDWAVE(IJ))
+            TAUY(IJ,IGST)=USG2(IJ,IGST)*COS(WDWAVE(IJ))
+          ENDDO
+        ENDDO
+      ELSE
+        DO IGST=1,NGST
+          DO K=1,NANG
+            DO IJ=KIJS,KIJL
+              COSLP(IJ,K,IGST) = COS(TH(K)-WDWAVE(IJ))
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+      IF (LTAUWSHELTER) THEN
+        DO IJ=KIJS,KIJL
+          ROGOROAIR(IJ) = ROG*AIRDM(IJ)
+        ENDDO
+      ENDIF
 
 !*    2. MAIN LOOP OVER FREQUENCIES.
 !        ---------------------------
@@ -344,8 +350,32 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
       ENDIF
 
 
+      DO M=1,NFRE
 
-      DO M = 1, NFRE
+        IF (LTAUWSHELTER) THEN
+          DO IGST=1,NGST
+            DO IJ=KIJS,KIJL
+              TAUPX=TAUX(IJ,IGST)-ABS_TAUWSHELTER*XSTRESS(IJ,IGST)
+              TAUPY=TAUY(IJ,IGST)-ABS_TAUWSHELTER*YSTRESS(IJ,IGST)
+              USDIRP(IJ,IGST)=ATAN2(TAUPX,TAUPY)
+              USTP(IJ,IGST)=(TAUPX**2+TAUPY**2)**0.25_JWRB
+              USTPM1(IJ,IGST)=1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
+            ENDDO
+          ENDDO
+
+          DO IGST=1,NGST
+            DO K=1,NANG
+              DO IJ=KIJS,KIJL
+                COSLP(IJ,K,IGST) = COS(TH(K)-USDIRP(IJ,IGST))
+              ENDDO
+            ENDDO
+          ENDDO
+
+          DO IJ=KIJS,KIJL
+            CONSTF(IJ) = ROGOROAIR(IJ)*CINV(IJ,M)*DFIM(M)
+          ENDDO
+        ENDIF
+
 
 !*      PRECALCULATE FREQUENCY DEPENDENCE.
 !       ----------------------------------
@@ -356,9 +386,10 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
             UCNZALPD(IJ,IGST) = XKAPPA/(UCN(IJ,IGST) + ZALP)
           ENDDO
         ENDDO
-
-        ZCN(:) = LOG(WAVNUM(:,M)*Z0M(:))
-        CNSN(:) = CONST(M)*AIRD(:)
+        DO IJ=KIJS,KIJL
+          ZCN(IJ) = LOG(WAVNUM(IJ,M)*Z0M(IJ))
+          CNSN(IJ) = CONST(M)*AIRD(IJ)
+        ENDDO
 
 !*    2.1 LOOP OVER DIRECTIONS.
 !         ---------------------
@@ -372,11 +403,11 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         DO IGST=1,NGST
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              IF (LZ(IJ,K,IGST)) THEN
-                ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)*COSLPM1(IJ,K)
+              IF (COSLP(IJ,K,IGST) > 0.01_JWRB) THEN
+                ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)/COSLP(IJ,K,IGST)
                 IF (ZLOG < 0.0_JWRB) THEN
-                  X      = COSLP(IJ,K)*UCN(IJ,IGST)
-                  ZLOG2X = ZLOG*ZLOG * X
+                  X     = COSLP(IJ,K,IGST)*UCN(IJ,IGST)
+                  ZLOG2X = ZLOG*ZLOG*X
                   GAM0(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X * CNSN(IJ)
                   XLLWS(IJ,K,M) = 1.0_JWRB
                 ELSE
@@ -394,9 +425,12 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 
           DO IGST=1,NGST
 
-            SUMF(:) = 0.0_JWRB
-            SUMFSIN2(:) = 0.0_JWRB
-            DO K=1,NANG
+            K=1
+              DO IJ=KIJS,KIJL
+                SUMF(IJ) = GAM0(IJ,K,IGST)*FL1(IJ,K,M)
+                SUMFSIN2(IJ) = GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SIN2(IJ,K)
+              ENDDO
+            DO K=2,NANG
               DO IJ=KIJS,KIJL
                 SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)
                 SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SIN2(IJ,K)
@@ -423,7 +457,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
           DO IGST=1,NGST
             DO K=1,NANG
               DO IJ=KIJS,KIJL
-                DSTAB2 = TEMP1(IJ) * ( TEMP2(IJ) + TEMP3(IJ,K)*USTP(IJ,IGST) )
+                DSTAB2 = TEMP1(IJ)*(TEMP2(IJ)+(FU+FUD*COSLP(IJ,K,IGST))*USTP(IJ,IGST))
                 DSTAB(IJ,K,IGST) = DSTAB1(IJ)+PTURB(IJ)*DSTAB2
               ENDDO
             ENDDO
@@ -431,8 +465,9 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         ENDIF
 
 
-!     2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
-!         ------------------------------------------------
+!*    2.2 UPDATE THE SHELTERING STRESS (in any),
+!         AND THEN ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
+!         ---------------------------------------------------------
 
         DO K=1,NANG
 
@@ -449,6 +484,20 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
               SLP(IJ,IGST) = SLP(IJ,IGST)*FL1(IJ,K,M)
             ENDDO
           ENDDO
+
+
+          IF (LTAUWSHELTER) THEN
+            DO IJ=KIJS,KIJL
+              CONST11(IJ)=CONSTF(IJ)*SINTH(K)
+              CONST22(IJ)=CONSTF(IJ)*COSTH(K)
+            ENDDO
+            DO IGST=1,NGST
+              DO IJ=KIJS,KIJL
+                XSTRESS(IJ,IGST)=XSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST11(IJ)
+                YSTRESS(IJ,IGST)=YSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST22(IJ)
+              ENDDO
+            ENDDO
+          ENDIF
 
           IGST=1
             DO IJ=KIJS,KIJL

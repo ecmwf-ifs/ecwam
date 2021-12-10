@@ -184,7 +184,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDTINTT  ,CDTBC    ,                                  &
-     &            IFRELFMAX, IDELPRO_LF, IDELPRO  ,IDELT ,              &
+     &            IFRELFMAX, DELPRO_LF, IDELPRO  ,IDELT ,               &
      &            IDELWI   ,IDELWO   ,IDELRES  ,IDELINT  ,              &
      &            IREFRA   ,                                            &
      &            IPHYS    ,                                            &
@@ -763,43 +763,53 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !        ---------------------------------------------
       IF (.NOT. LLUNSTR) THEN
 
-      GVE = G/(ZPI*FR(1)*2.0_JWRB)
-      DPH = DELPHI
-      IF (DPH == 0.0_JWRB) THEN
-        CFLP= 0.0_JWRB
-      ELSE
-        CFLP= IDELPRO_LF*GVE/DPH
-      ENDIF
-      DLH = CIRC 
-!     FIND THE SMALLEST DLH
-      DO KX=KMSOP,KMNOP
-        DLH_KX = DELLAM(KX)*COSPH(KX)
-        DLH = MIN(DLH_KX,DLH)
-      ENDDO
+        IF (IFRELFMAX > NFRE ) THEN
+          WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! +'
+          WRITE(IU06,*)'+   IFRELFMAX SHOULD BE LESS THAN NFRE ' 
+          WRITE(IU06,*)'+   IFRELFMAX = ', IFRELFMAX
+          WRITE(IU06,*)'+   NFRE = ', NFRE
+          WRITE(IU06,*)'+   ABORT SERVICE ROUTINE CALLED BY INITMDL +'
+          WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! +'
+          CALL ABORT1
+        ENDIF
 
-      IF (DLH == 0.0_JWRB) THEN
-        CFLL= 0.0_JWRB
-      ELSE
-        CFLL= IDELPRO_LF*GVE/DLH
-      ENDIF
-      IF (CFLP > 1.0_JWRB .OR. CFLL > 1.0_JWRB) THEN
-        WRITE(IU06,*) ' **********************************************'
-        WRITE(IU06,*) ' *                                            *'
-        WRITE(IU06,*) ' *       FATAL ERROR IN SUB. INITMDL          *'
-        WRITE(IU06,*) ' *       ===========================          *'
-        WRITE(IU06,*) ' * CFL-CRITERION NOT FULFILLED.               *'
-        WRITE(IU06,*) ' * CFLP: ',CFLP,'  GROUP VELOCITY: ',GVE
-        WRITE(IU06,*) ' * CFLL: ',CFLL,'  GROUP VELOCITY: ',GVE
-        WRITE(IU06,*) ' * PROPAGATION TIME IDELPRO_LF : ',IDELPRO_LF
-        WRITE(IU06,*) ' * PROPAGATION TIME IDELPRO    : ',IDELPRO
-        WRITE(IU06,*) ' * LOW FREQUENCY FREQUENCY INDEX : ',IFRELFMAX
-        WRITE(IU06,*) ' * GRID Y-DISTANCE AT MOST NORTH LATITUDE: ',DPH
-        WRITE(IU06,*) ' * GRID X-DISTANCE AT MOST NORTH LATITUDE: ',DLH
-        WRITE(IU06,*) ' *     PROGRAM ABORTS   PROGRAM ABORTS        *'
-        WRITE(IU06,*) ' *                                            *'
-        WRITE(IU06,*) ' **********************************************'
-        CALL ABORT1
-      ENDIF
+        GVE = G/(ZPI*FR(1)*2.0_JWRB)
+        DPH = DELPHI
+        IF (DPH == 0.0_JWRB) THEN
+          CFLP= 0.0_JWRB
+        ELSE
+          CFLP= DELPRO_LF*GVE/DPH
+        ENDIF
+        DLH = CIRC 
+!       FIND THE SMALLEST DLH
+        DO KX=KMSOP,KMNOP
+          DLH_KX = DELLAM(KX)*COSPH(KX)
+          DLH = MIN(DLH_KX,DLH)
+        ENDDO
+
+        IF (DLH == 0.0_JWRB) THEN
+          CFLL= 0.0_JWRB
+        ELSE
+          CFLL= DELPRO_LF*GVE/DLH
+        ENDIF
+        IF (CFLP > 1.0_JWRB .OR. CFLL > 1.0_JWRB) THEN
+          WRITE(IU06,*) ' **********************************************'
+          WRITE(IU06,*) ' *                                            *'
+          WRITE(IU06,*) ' *       FATAL ERROR IN SUB. INITMDL          *'
+          WRITE(IU06,*) ' *       ===========================          *'
+          WRITE(IU06,*) ' * CFL-CRITERION NOT FULFILLED.               *'
+          WRITE(IU06,*) ' * CFLP: ',CFLP,'  GROUP VELOCITY: ',GVE
+          WRITE(IU06,*) ' * CFLL: ',CFLL,'  GROUP VELOCITY: ',GVE
+          WRITE(IU06,*) ' * PROPAGATION TIME DELPRO_LF : ',DELPRO_LF
+          WRITE(IU06,*) ' * PROPAGATION TIME IDELPRO    : ',IDELPRO
+          WRITE(IU06,*) ' * LOW FREQUENCY FREQUENCY INDEX : ',IFRELFMAX
+          WRITE(IU06,*) ' * GRID Y-DISTANCE AT MOST NORTH LATITUDE: ',DPH
+          WRITE(IU06,*) ' * GRID X-DISTANCE AT MOST NORTH LATITUDE: ',DLH
+          WRITE(IU06,*) ' *     PROGRAM ABORTS   PROGRAM ABORTS        *'
+          WRITE(IU06,*) ' *                                            *'
+          WRITE(IU06,*) ' **********************************************'
+          CALL ABORT1
+        ENDIF
 
       ENDIF ! .NOT. LLUNSTR
 

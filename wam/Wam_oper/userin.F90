@@ -110,7 +110,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            DELTA_THETA_RN, DTHRN_A, DTHRN_U,                     &
      &            SWELLF5, Z0TUBMAX, Z0RAT
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
-     &            IDELPRO  ,IDELT    ,IDELWI   ,                        &
+     &            IFRELFMAX, DELPRO_LF, IDELPRO, IDELT   ,IDELWI   ,    &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
      &            IDELBC   ,                                            &
      &            ICASE    ,                                            &
@@ -171,6 +171,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       INTEGER(KIND=JWIM) :: IU04
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: DELPRO_LF_NEW
       REAL(KIND=JWRB) :: WSPEED, WTHETA
 
       CHARACTER(LEN=2) :: MARSFCTYPE
@@ -341,6 +342,30 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ELSE
 !           **** FORCING TIME STEPPING AT SPECIFIED TIMES ****
 !        SEE MPUSERIN
+
+      ENDIF
+
+!!    SETTING THE LOW FREQUENCY TIME STEP, IF THAT OPTION IS USED
+
+      IF (IFRELFMAX > 0 ) THEN
+        IF (IPROPAGS /= 2 .OR. IREFRA == 2 .OR. IREFRA == 3) THEN
+          WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
+          WRITE(IU06,*)'+   SPLITTING BETWEEN SLOW AND FAST WAVES (IFRELFMAX > 0) +'
+          WRITE(IU06,*)'+   IS NOT AN OPTION FOR ' 
+          WRITE(IU06,*)'+   IPROPAGS = ', IPROPAGS
+          WRITE(IU06,*)'+   IREFRA = ', IREFRA
+          WRITE(IU06,*)'+   ABORT SERVICE ROUTINE CALLED BY USERIN  +'
+          WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
+          CALL ABORT1
+        ENDIF
+
+        ! MAKE SURE DELPRO_LF IS A PROPER SUB-MULTIPLE OF IDELPRO,
+        ! RESPECTING THE UPPER BOUND PROVIDED BY THE INPUT.
+          DO IC = 1, IDELPRO
+            DELPRO_LF_NEW = REAL(IDELPRO,JWRB)/IC
+            IF ( DELPRO_LF_NEW <= DELPRO_LF ) EXIT
+          ENDDO
+          DELPRO_LF = DELPRO_LF_NEW
 
       ENDIF
 
@@ -616,7 +641,13 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' MODEL TIME STEPS:'
       WRITE(IU06,*) ' SOURCE TERM INTEGRATION TIME STEP : ', IDELT,' SECS'
-      WRITE(IU06,*) ' PROPAGATION TIME STEP ............: ', IDELPRO,' SECS'
+      IF (IFRELFMAX > 0 ) THEN
+        WRITE(IU06,*) ' PROPAGATION TIME STEP FOR FAST WAVES : ', DELPRO_LF,' SECS'
+        WRITE(IU06,*) ' PROPAGATION TIME STEP FOR SLOW WAVES : ', IDELPRO,' SECS'
+        WRITE(IU06,*) ' FAST WAVES ARE THOSE WITH FREQUENCY BELOW : ', FR(IFRELFMAX),' HZ'
+      ELSE
+        WRITE(IU06,*) ' PROPAGATION TIME STEP ............: ', IDELPRO,' SECS'
+      ENDIF
       IF (.NOT.LWCOU) THEN
         IF (NDELW_LST <= 0) THEN
           WRITE(IU06,*) ' MODEL WIND INPUT TIME STEP .......: ', IDELWI,' SECS'

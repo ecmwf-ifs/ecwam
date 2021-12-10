@@ -28,7 +28,7 @@
       CHARACTER(LEN=25) ::  CEVENT
 
       INTEGER(KIND=JWIM) :: IFRELFMAX 
-      INTEGER(KIND=JWIM) :: IDELPRO_LF 
+      REAL(KIND=JWRB) ::    DELPRO_LF
       INTEGER(KIND=JWIM) :: IDELPRO 
       INTEGER(KIND=JWIM) :: IDELT 
       INTEGER(KIND=JWIM) :: IDELWI 
@@ -111,12 +111,12 @@
 !                            CDATEE   
 !      *CDTINTT*   CHAR*14   NEXT DATE TO WRITE INTEG. PARAMETERS.
 
-!      *IFRELFMAX* INTEGER   FREQUENCY INDEX FOR THE LOW FREQUENCY WAVES (see IDELPRO_LF below)
-!      *IDELPRO_LF*INTEGER   TIMESTEP WAM PROPAGATION IN SECONDS FOR LOW FREQUENCY WAVES
+!      *IFRELFMAX* INTEGER   FREQUENCY INDEX FOR THE LOW FREQUENCY WAVES (see DELPRO_LF below)
+!      *DELPRO_LF* REAL      TIMESTEP WAM PROPAGATION IN SECONDS FOR LOW FREQUENCY WAVES (can be fraction od seconds)
 !                            FOR ALL WAVES WITH FREQUENCY <= FR(IFRELFMAX), IF IFRELFMAX>0
 !                            !!! this option is only possible when no refraction effects are used (IREFRA=0)
-!                            !!! and IPROPAGS = 2 (I could not be bother to code if for the other options)
-!      *IDELPRO*   INTEGER   TIMESTEP WAM PROPAGATION IN SECONDS FOR ALL WAVES IF IFRELFMAX=0,
+!                            !!! and only if IPROPAGS = 2 (I could not be bother to code if for the other options)
+!      *IDELPRO*   INTEGER   TIMESTEP WAM PROPAGATION IN full SECONDS FOR ALL WAVES IF IFRELFMAX=0,
 !                            OR ALL WAVES WITH FREQUENCIES > FR(IFRELFMAX)a (see above).
 !      *IDELT*     INTEGER   TIMESTEP SOURCE FUNCTION IN SECONDS.
 !      *IDELWI*    INTEGER   INPUT WIND TIMESTEP PREWIND IN SECONDS.

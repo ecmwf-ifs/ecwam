@@ -117,7 +117,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
         WRITE (IU06,*) ' *                                *'
         WRITE (IU06,*) ' *   FATAL ERROR IN SUB. NOTIM:   *'
         WRITE (IU06,*) ' *   ==========================   *'
-        WRITE (IU06,*) ' *   THE OPTION IDELPRO.GT.IDELWO *'
+        WRITE (IU06,*) ' *   THE OPTION IDELPRO > IDELWO  *'
         WRITE (IU06,*) ' *      IS LONGER AVAILABLE !!!!! *'
         WRITE (IU06,*) ' *                                *'
         WRITE (IU06,*) ' *          PROGRAM ABORTS        *'
