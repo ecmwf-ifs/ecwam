@@ -763,11 +763,11 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !        ---------------------------------------------
       IF (.NOT. LLUNSTR) THEN
 
-        IF (IFRELFMAX > NFRE ) THEN
+        IF (IFRELFMAX > NFRE_RED ) THEN
           WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! +'
           WRITE(IU06,*)'+   IFRELFMAX SHOULD BE LESS THAN NFRE ' 
           WRITE(IU06,*)'+   IFRELFMAX = ', IFRELFMAX
-          WRITE(IU06,*)'+   NFRE = ', NFRE
+          WRITE(IU06,*)'+   NFRE_RED = ', NFRE_RED
           WRITE(IU06,*)'+   ABORT SERVICE ROUTINE CALLED BY INITMDL +'
           WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! +'
           CALL ABORT1

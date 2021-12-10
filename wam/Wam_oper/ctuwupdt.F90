@@ -20,11 +20,11 @@ USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
 USE YOWCURR  , ONLY : LLCFLCUROFF
 USE YOWFRED  , ONLY : COSTH    ,SINTH
-USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
+USE YOWGRID  , ONLY : NPROMA_WAM
 USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
 USE YOWMPP   , ONLY : IRANK    ,NPROC
 USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE_RED
-USE YOWSTAT  , ONLY : IREFRA
+USE YOWSTAT  , ONLY : IFRELFMAX, DELPRO_LF, IDELPRO, IREFRA
 USE YOWTEST  , ONLY : IU06
 USE YOWUBUF  , ONLY : SUMWN    ,                                            &
 &                     JXO      ,JYO      ,KCR      ,KPM      ,MPM,          &
@@ -38,6 +38,8 @@ USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 #include "abort1.intfb.h"
 #include "ctuw.intfb.h"
+#include "ctuwdrv.intfb.h"
+#include "ctuwini.intfb.h"
 
 INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL   ! GRID POINTS WITHIN A BLOCK
 INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP ! GRID POINT WITH HALO EXTEND NINF:NSUP+1 
@@ -50,12 +52,17 @@ REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: U_EXT ! U-COMPONENT OF SU
 REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: V_EXT ! V-COMPONENT OF SURFACE CURRENT
 
 
-INTEGER(KIND=JWIM) :: IJ, K, M, J, ICALL, KM1, KP1
+INTEGER(KIND=JWIM) :: IJ, K, M, J, KM1, KP1
 INTEGER(KIND=JWIM) :: IC, ICL, ICR
+INTEGER(KIND=JWIM) :: MSTART, MEND
 INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, MTHREADS
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
 REAL(KIND=JWRB) :: ZHOOK_HANDLE
+REAL(KIND=JWRB) :: DELPRO
+REAL(KIND=JWRB), DIMENSION(NINF:NSUP,2) :: WLATM1 ! 1 - WLAT
+REAL(KIND=JWRB), DIMENSION(NINF:NSUP,4) :: WCORM1 ! 1 - WCOR
+REAL(KIND=JWRB), DIMENSION(NINF:NSUP,2) :: DP     ! COS PHI FACTOR
 
 LOGICAL :: LL2NDCALL
 LOGICAL, DIMENSION(IJS:IJL) :: LCFLFAIL
@@ -159,138 +166,142 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
 ENDIF
 
 
-!! NPROMA=NPROMA_WAM
-        MTHREADS=1
-!$      MTHREADS=OMP_GET_MAX_THREADS()
-        NPROMA=(IJL-IJS+1)/MTHREADS + 1
 
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL, ICALL, IJ, LL2NDCALL)
+! SOME INITIALISATION FOR *CTUW*
+!! NPROMA=NPROMA_WAM
+   MTHREADS=1
+!$ MTHREADS=OMP_GET_MAX_THREADS()
+   NPROMA=(IJL-IJS+1)/MTHREADS + 1
+
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
 DO JKGLO = IJS, IJL, NPROMA
   KIJS=JKGLO
   KIJL=MIN(KIJS+NPROMA-1,IJL)
-  ICALL = 1
-  CALL CTUW(KIJS, KIJL, NINF, NSUP, LCFLFAIL(KIJS), ICALL, &
-&           BLK2GLO,                                       &
-&           CGROUP_EXT, OMOSNH2KD_EXT,                     &
-&           COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT )
-
-
-! WHEN SURFACE CURRENTS ARE USED AND LLCFLCUROFF IS TRUE
-! THEN TRY TO SATISFY THE CFL CONDITION WITHOUT THE CURRENTS
-! IF IT WAS VIOLATED IN THE FIRST PLACE
-  IF (LLCFLCUROFF .AND. (IREFRA == 2 .OR. IREFRA == 3)) THEN
-    LL2NDCALL=.FALSE.
-    DO IJ=KIJS,KIJL
-       IF (LCFLFAIL(IJ)) THEN
-         LL2NDCALL=.TRUE.
-         EXIT
-       ENDIF
-    ENDDO
-    IF (LL2NDCALL) THEN
-       ICALL = 2
-       CALL CTUW(KIJS, KIJL, NINF, NSUP, LCFLFAIL(KIJS), ICALL, &
-&                BLK2GLO,                                       &
-&                CGROUP_EXT, OMOSNH2KD_EXT,                     &
-&                COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT )
-    ENDIF
-  ENDIF
+  CALL CTUWINI(KIJS, KIJL, NINF, NSUP, BLK2GLO, COSPHM1_EXT,     &
+&              WLATM1, WCORM1, DP )
 ENDDO
 !$OMP  END PARALLEL DO
 
-DO IJ=IJS,IJL
-  IF (LCFLFAIL(IJ)) THEN
-    CALL FLUSH (IU06)
-    WRITE(0,*) '!!! ********************************* !!'
-    WRITE(0,*) '!!! WAVE MODEL HAS ABORTED !!!'
-    WRITE(0,*) '!!! FOLLOWING CFL CRITERION VIOLATION !!'
-    WRITE(0,*) '!!! ON PE ',IRANK
-    WRITE(0,*) '!!! ********************************* !!'
-    WRITE(IU06,*) '!!! ********************************* !!'
-    WRITE(IU06,*) '!!! WAVE MODEL HAS ABORTED !!!'
-    WRITE(IU06,*) '!!! FOLLOWING CFL CRITERION VIOLATION !!'
-    WRITE(IU06,*) '!!! ON PE ',IRANK
-    WRITE(IU06,*) '!!! ********************************* !!'
-    CALL ABORT1
-  ENDIF
-ENDDO
+
+! COMPUTES THE WEIGHTS
+! --------------------
+
+IF (IFRELFMAX <= 0 ) THEN
+  ! *PROPAGS2* IS NOT SPLIT, COMPUTE THE WEIGHTS FOR ALL WAVES 
+  DELPRO = REAL(IDELPRO, JWRB)
+  MSTART = 1 
+  MEND   = NFRE_RED
+ELSE
+  ! *PROPAGS2* IS SPLIT, COMPUTE THE WEIGHTS FOR THE FAST WAVES
+  DELPRO = DELPRO_LF
+  MSTART = 1 
+  MEND   = IFRELFMAX 
+ENDIF
+
+CALL CTUWDRV (DELPRO, MSTART, MEND,                 &
+ &           IJS, IJL, NINF, NSUP,                  &
+ &           BLK2GLO,                               &
+ &           WLATM1, WCORM1, DP,                    &
+ &           CGROUP_EXT, OMOSNH2KD_EXT,             &
+ &           COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT )
+
+
+! IF *PROPAGS* IS SPLIT BETWEEN FAST AND SLOW WAVES,
+! *CTUWUPDT* IS CALLED AGAIN FOR THE SLOW WAVES
+
+IF (IFRELFMAX > 0 .AND. IFRELFMAX < NFRE_RED) THEN
+  DELPRO = REAL(IDELPRO, JWRB)
+  MSTART = IFRELFMAX + 1 
+  MEND   = NFRE_RED
+
+  CALL CTUWDRV (DELPRO, MSTART, MEND,                    &
+ &              IJS, IJL, NINF, NSUP,                    &
+ &              BLK2GLO,                                 &
+ &              WLATM1, WCORM1, DP,                      &
+ &              CGROUP_EXT, OMOSNH2KD_EXT,               &
+ &              COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT )
+
+ENDIF
+
+
 
 ! FIND THE LOGICAL FLAGS THAT WILL LIMIT THE EXTEND OF THE CALCULATION IN PROPAGS2
 
-              DO IC=1,2
-                DO ICL=1,2
-                  DO K=1,NANG
-                    DO M=1,NFRE_RED
-                      LLWLATN(K,M,IC,ICL)=.FALSE.
-                      DO IJ=IJS,IJL
-                        IF (WLATN(IJ,K,M,IC,ICL) > 0.0_JWRB) THEN
-                          LLWLATN(K,M,IC,ICL)=.TRUE.
-                          EXIT
-                        ENDIF
-                      ENDDO
-                    ENDDO
-                  ENDDO
-                ENDDO
-              ENDDO
+DO IC=1,2
+  DO ICL=1,2
+    DO K=1,NANG
+      DO M=1,NFRE_RED
+        LLWLATN(K,M,IC,ICL)=.FALSE.
+        DO IJ=IJS,IJL
+          IF (WLATN(IJ,K,M,IC,ICL) > 0.0_JWRB) THEN
+            LLWLATN(K,M,IC,ICL)=.TRUE.
+            EXIT
+          ENDIF
+        ENDDO
+      ENDDO
+    ENDDO
+  ENDDO
+ENDDO
 
-              DO IC=1,2
-                DO M=1,NFRE_RED
-                  DO K=1,NANG
-                    LLWLONN(K,M,IC)=.FALSE.
-                    DO IJ=IJS,IJL
-                      IF (WLONN(IJ,K,M,IC) > 0.0_JWRB) THEN
-                        LLWLONN(K,M,IC)=.TRUE.
-                        EXIT
-                      ENDIF
-                    ENDDO
-                  ENDDO
-                ENDDO
-              ENDDO
+DO IC=1,2
+  DO M=1,NFRE_RED
+    DO K=1,NANG
+      LLWLONN(K,M,IC)=.FALSE.
+      DO IJ=IJS,IJL
+        IF (WLONN(IJ,K,M,IC) > 0.0_JWRB) THEN
+          LLWLONN(K,M,IC)=.TRUE.
+          EXIT
+        ENDIF
+      ENDDO
+    ENDDO
+  ENDDO
+ENDDO
 
-              DO ICL=1,2
-                DO ICR=1,4
-                  DO M=1,NFRE_RED
-                    DO K=1,NANG
-                      LLWCORN(K,M,ICR,ICL)=.FALSE.
-                      DO IJ=IJS,IJL
-                        IF (WCORN(IJ,K,M,ICR,ICL) > 0.0_JWRB) THEN
-                          LLWCORN(K,M,ICR,ICL)=.TRUE.
-                          EXIT
-                        ENDIF
-                      ENDDO
-                    ENDDO
-                  ENDDO
-                ENDDO
-              ENDDO
+DO ICL=1,2
+  DO ICR=1,4
+    DO M=1,NFRE_RED
+      DO K=1,NANG
+        LLWCORN(K,M,ICR,ICL)=.FALSE.
+        DO IJ=IJS,IJL
+          IF (WCORN(IJ,K,M,ICR,ICL) > 0.0_JWRB) THEN
+            LLWCORN(K,M,ICR,ICL)=.TRUE.
+            EXIT
+          ENDIF
+        ENDDO
+      ENDDO
+    ENDDO
+  ENDDO
+ENDDO
 
-              DO IC=-1,1
-                DO M=1,NFRE_RED
-                  DO K=1,NANG
-                   LLWKPMN(K,M,IC)=.FALSE.
-                    DO IJ=IJS,IJL
-                      IF (WKPMN(IJ,K,M,IC) > 0.0_JWRB) THEN
-                        LLWKPMN(K,M,IC)=.TRUE.
-                        EXIT
-                      ENDIF
-                    ENDDO
-                  ENDDO
-                ENDDO
-              ENDDO
+DO IC=-1,1
+  DO M=1,NFRE_RED
+    DO K=1,NANG
+      LLWKPMN(K,M,IC)=.FALSE.
+      DO IJ=IJS,IJL
+        IF (WKPMN(IJ,K,M,IC) > 0.0_JWRB) THEN
+          LLWKPMN(K,M,IC)=.TRUE.
+          EXIT
+        ENDIF
+      ENDDO
+    ENDDO
+  ENDDO
+ENDDO
 
-              IF (IREFRA == 2 .OR. IREFRA == 3) THEN
-                DO IC=-1,1
-                  DO M=1,NFRE_RED
-                    DO K=1,NANG
-                     LLWMPMN(K,M,IC)=.FALSE.
-                      DO IJ=IJS,IJL
-                        IF (WMPMN(IJ,K,M,IC) > 0.0_JWRB) THEN
-                          LLWMPMN(K,M,IC)=.TRUE.
-                          EXIT
-                        ENDIF
-                      ENDDO
-                    ENDDO
-                  ENDDO
-                ENDDO
-              ENDIF
+IF (IREFRA == 2 .OR. IREFRA == 3) THEN
+  DO IC=-1,1
+    DO M=1,NFRE_RED
+      DO K=1,NANG
+        LLWMPMN(K,M,IC)=.FALSE.
+        DO IJ=IJS,IJL
+          IF (WMPMN(IJ,K,M,IC) > 0.0_JWRB) THEN
+            LLWMPMN(K,M,IC)=.TRUE.
+            EXIT
+          ENDIF
+        ENDDO
+      ENDDO
+    ENDDO
+  ENDDO
+ENDIF
 
 
 IF (ALLOCATED(THDD)) DEALLOCATE(THDD)

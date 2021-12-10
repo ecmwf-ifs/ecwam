@@ -1,5 +1,7 @@
-SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
+SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    & 
+ &               KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
  &               BLK2GLO,                                 &
+ &               WLATM1, WCORM1, DP,                      &
  &               CGROUP_EXT, OMOSNH2KD_EXT,               &
  &               COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT )
 ! ----------------------------------------------------------------------
@@ -26,12 +28,11 @@ SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
       USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE_RED ,NGY
       USE YOWPCONS , ONLY : ZPI      ,R        ,CIRC
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
-      USE YOWSTAT  , ONLY : IDELPRO  ,ICASE    ,IREFRA
+      USE YOWSTAT  , ONLY : ICASE    ,IREFRA
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT     ,KCOR     ,WCOR     ,    &
      &                      SUMWN    ,WLATN    ,WLONN    ,WCORN    ,              &
      &                      WKPMN    ,WMPMN    ,OBSLAT   ,OBSLON   ,OBSCOR   ,    &
-     &                      LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN  ,    &
      &                      JXO      ,JYO      ,KCR
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -40,6 +41,8 @@ SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
 
       IMPLICIT NONE
 
+      REAL(KIND=JWRB), INTENT(IN) :: DELPRO ! ADVECTION TIME STEP
+      INTEGER(KIND=JWIM), INTENT(IN) :: MSTART, MEND ! FREQUENCY START AND END INDEXES OVER WHICH THE WEIGHT WILL BE COMPUTED
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL  ! GRID POINT INDEXES
       INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP  ! HALO EXTEND NINF:NSUP+1
       INTEGER(KIND=JWIM), INTENT(IN) :: ICALL ! INDICATES IF IT IS THE FIRST OR SECOND CALL
@@ -47,6 +50,9 @@ SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
 !                                               CFL IS VIOLATED WHEN THE CURRENT REFRACTION TERMS ARE SET TO 0
 !                                               FOR THOSE POINTS WHERE IT WAS VIOLATED AT THE FIRST CALL  
       TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO  ! BLOCK TO GRID TRANSFORMATION
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP,2), INTENT(IN) :: WLATM1  ! 1 - WLAT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP,4), INTENT(IN) :: WCORM1  ! 1 - WCOR
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP,2), INTENT(IN) :: DP      ! COS PHI FACTOR
       LOGICAL, DIMENSION(KIJS:KIJL), INTENT(INOUT) :: LCFLFAIL ! TRUE IF CFL CRITERION WAS VIOLATED.
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: CGROUP_EXT  ! GROUP VELOCITY
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: OMOSNH2KD_EXT ! OMEGA / SINH(2KD)
@@ -64,7 +70,7 @@ SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
       INTEGER(KIND=JWIM) :: MP1, MM1
       INTEGER(KIND=JWIM) :: ISSU(2),ISSV(2)
 
-      REAL(KIND=JWRB) :: DELPRO, DTNEW
+      REAL(KIND=JWRB) :: DTNEW
       REAL(KIND=JWRB) :: DXP, DYP, XM 
       REAL(KIND=JWRB) :: CMTODEG
       REAL(KIND=JWRB) :: GRIDAREAM1
@@ -84,9 +90,6 @@ SUBROUTINE CTUW (KIJS, KIJL, NINF, NSUP, LCFLFAIL, ICALL, &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DRCP,DRCM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CURMASK
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: CGX, CGY
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: DP 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: WLATM1 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,4) :: WCORM1 
 
 
 ! ----------------------------------------------------------------------
@@ -98,7 +101,6 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 
       NLAND = NSUP+1
 
-      DELPRO = REAL(IDELPRO,JWRB)   
       CMTODEG = 360.0_JWRB/CIRC
 
       IF (ICALL == 1) THEN
@@ -117,78 +119,6 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
         LCFLFAIL(:) = .FALSE.
       ENDIF
 
-      DO IC=1,2
-        DO IJ = KIJS,KIJL
-          IF (KLAT(IJ,IC,1) < NLAND .AND. KLAT(IJ,IC,2) < NLAND) THEN
-!           BOTH CLOSEST AND SECOND CLOSEST POINTS ARE OVER THE OCEAN
-            WLATM1(IJ,IC) = 1.0_JWRB - WLAT(IJ,IC)
-          ELSE IF (KLAT(IJ,IC,1) == NLAND) THEN
-!           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
-!           CLOSEST POINT IS OVER LAND
-            IF (WLAT(IJ,IC) <= 0.75_JWRB) WLAT(IJ,IC)=0.0_JWRB
-            WLATM1(IJ,IC) = 1.0_JWRB - WLAT(IJ,IC)
-          ELSE
-!           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
-!           SECOND CLOSEST POINT IS OVER LAND
-            IF (WLAT(IJ,IC) >= 0.5_JWRB) WLAT(IJ,IC)=1.0_JWRB
-            WLATM1(IJ,IC) = 1.0_JWRB - WLAT(IJ,IC)
-          ENDIF
-        ENDDO
-      ENDDO
-
-      DO ICR=1,4
-        DO IJ = KIJS,KIJL
-          IF (KCOR(IJ,ICR,1) < NLAND .AND. KCOR(IJ,ICR,2) < NLAND) THEN
-!           BOTH CLOSEST AND SECOND CLOSEST CORNER POINTS ARE OVER THE OCEAN
-            WCORM1(IJ,ICR) = 1.0_JWRB - WCOR(IJ,ICR)
-          ELSE IF (KCOR(IJ,ICR,1) == NLAND) THEN
-!           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
-!           CLOSEST CORNER POINT IS OVER LAND
-            IF (WCOR(IJ,ICR) <= 0.75_JWRB) WCOR(IJ,ICR)=0.0_JWRB
-            WCORM1(IJ,ICR) = 1.0_JWRB - WCOR(IJ,ICR)
-          ELSE
-!           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
-!           SECOND CLOSEST CORNER POINT IS OVER LAND
-            IF (WCOR(IJ,ICR) > 0.5_JWRB) WCOR(IJ,ICR)=1.0_JWRB 
-            WCORM1(IJ,ICR) = 1.0_JWRB - WCOR(IJ,ICR)
-          ENDIF
-        ENDDO
-      ENDDO
-
-      DO ICL=1,2
-        DO IC=1,2
-          DO M=1,NFRE_RED
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                WLATN(IJ,K,M,IC,ICL)=0.0_JWRB
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDDO
-
-      DO IC=1,2
-        DO M=1,NFRE_RED
-          DO K=1,NANG
-            DO IJ=KIJS,KIJL
-              WLONN(IJ,K,M,IC)=0.0_JWRB
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDDO
-
-      DO ICL=1,2
-        DO ICR=1,4
-          DO M=1,NFRE_RED
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                WCORN(IJ,K,M,ICR,ICL)=0.0_JWRB
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDDO
-
 !*    ADVECTION IN PHYSICAL SPACE
 !     =========================== 
 
@@ -199,24 +129,12 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 !*      SPHERICAL GRID.
 !       ---------------
 
-
-!*        COMPUTE COS PHI FACTOR FOR ADJOINING GRID POINT.
-!         (for all grid points)
-          DO IC=1,2
-            DO IJ = KIJS,KIJL
-              KY=KXLT(IJ)
-              KK=KY+2*IC-3
-              KKM=MAX(1,MIN(KK,NGY))
-              DP(IJ,IC) = COSPH(KKM)*COSPHM1_EXT(IJ)
-            ENDDO
-          ENDDO
-
 !         FIND THE RELATIVE WEIGHT IN
 !         THE CONER TRANSPORT UPSTREAM SCHEME.
 
 !*        LOOP OVER FREQUENCIES.
 !         ----------------------
-          DO M=1,NFRE_RED
+          DO M = MSTART, MEND
 
 !*          LOOP OVER DIRECTIONS.
 !           ---------------------
@@ -281,8 +199,8 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                     WRITE (IU06,*) '* ADXP = ',ADXP(IC),IC
                     WRITE (IU06,*) '* ZDELLO = ',ZDELLO(KY)
                     DTNEW=ZDELLO(KY)*DELPRO/ADXP(IC)
-                    WRITE (IU06,*) '* TIME STEP SHOULD BE REDUCED TO',  &
-     &                              DTNEW
+                    WRITE (IU06,*) '* TIME STEP ',DELPRO
+                    WRITE (IU06,*) '* SHOULD BE REDUCED TO ', DTNEW
                     WRITE (IU06,*) '*                              *'
                     WRITE (IU06,*) '********************************'
                     LCFLFAIL(IJ)=.TRUE.
@@ -299,7 +217,8 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                     WRITE (IU06,*) '* XDELLA = ',XDELLA
                     WRITE (IU06,*) '* XLAT= ',XLAT,' XLON= ',XLON 
                     WRITE (IU06,*) '* DEPTH= ',DEPTH_EXT(IJ)
-                    WRITE (IU06,*) '* TIME STEP SHOULD BE REDUCED TO', DTNEW
+                    WRITE (IU06,*) '* TIME STEP ',DELPRO
+                    WRITE (IU06,*) '* SHOULD BE REDUCED TO ', DTNEW
                     WRITE (IU06,*) '*                              *'
                     WRITE (IU06,*) '********************************'
                     LCFLFAIL(IJ)=.TRUE.
@@ -458,7 +377,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 !*      NO DEPTH REFRACTION.
 !       -------------------
         IF (IREFRA == 0) THEN
-          DO M=1,NFRE_RED
+          DO M = MSTART, MEND
             DO IJ=KIJS,KIJL
               DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M) + DRCP(IJ)
               DTHM = DRGM(IJ)*CGROUP_EXT(IJ,M) + DRCM(IJ)
@@ -470,7 +389,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
         ELSE
 !*      SHALLOW WATER AND DEPTH REFRACTION.
 !       -----------------------------------
-          DO M=1,NFRE_RED
+          DO M = MSTART, MEND
             DO IJ=KIJS,KIJL
               DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDP(IJ)+DRCP(IJ)
               DTHM = DRGM(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDM(IJ)+DRCM(IJ)
@@ -488,7 +407,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 
           DELFR0 = 0.25_JWRB*DELPRO/((FRATIO-1)*ZPI)
 
-            DO M=1,NFRE_RED
+            DO M = MSTART, MEND
               MP1 = MIN(NFRE_RED,M+1)
               MM1 = MAX(1,M-1)
               DFP = DELFR0/FR(M)
@@ -512,7 +431,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 !!!   THE SUM IS NEEDED LATER ON !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       DO K=1,NANG
-        DO M=1,NFRE_RED
+        DO M = MSTART, MEND
           DO IJ=KIJS,KIJL
             DO IC=1,2
               DO ICL=1,2
@@ -677,7 +596,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 !     SURROUNDING POINTS.
 
       DO K=1,NANG
-        DO M=1,NFRE_RED
+        DO M = MSTART, MEND
           DO IJ=KIJS,KIJL
 
 !           POINTS ON SURROUNDING LATITUDES 
@@ -728,4 +647,4 @@ IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
         ENDIF
       END FUNCTION ISAMESIGN
 
-END SUBROUTINE CTUW 
+END SUBROUTINE CTUW
