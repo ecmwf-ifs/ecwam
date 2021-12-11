@@ -1,5 +1,5 @@
-      SUBROUTINE SDISSIP_ARD (KIJS, KIJL, FL1, FLD, SL,           &
-     &                        INDEP, WAVNUM, CGROUP,              &
+      SUBROUTINE SDISSIP_ARD (KIJS, KIJL, FL1, FLD, SL,          &
+     &                        INDEP, WAVNUM, XK2CG,              &
      &                        UFRIC, WDWAVE, AIRD)
 ! ----------------------------------------------------------------------
 
@@ -19,7 +19,7 @@
 !     ----------
 
 !       *CALL* *SDISSIP_ARD (KIJS, KIJL, FL1, FLD,SL,*
-!                            INDEP, WAVNUM, CGROUP,
+!                            INDEP, WAVNUM, XK2CG,
 !                            UFRIC, WDWAVE, AIRD)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
@@ -28,7 +28,7 @@
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY
 !          *INDEP*  - DEPTH INDEX
 !          *WAVNUM* - WAVE NUMBER
-!          *CGROUP* - GROUP SPEED
+!          *XK2CG*  - (WAVE NUMBER)**2 * GROUP SPEED
 !          *UFRIC*  - FRICTION VELOCITY IN M/S.
 !          *AIRD*   - AIR DENSITY IN KG/M3
 !          *WDWAVE* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC.
@@ -72,7 +72,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: INDEP
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, XK2CG 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, WDWAVE, AIRD 
 
 
@@ -122,7 +122,7 @@
 
       DO M=1, NFRE
         DO IJ=KIJS,KIJL
-          FACSAT(IJ,M) = WAVNUM(IJ,M)**3*TPIINV*CGROUP(IJ,M)
+          FACSAT(IJ,M) = WAVNUM(IJ,M)*TPIINV*XK2CG(IJ,M)
         ENDDO
       ENDDO
 

@@ -1,5 +1,5 @@
       SUBROUTINE SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, & 
-     &                   WAVNUM, CINV, CGROUP,          &
+     &                   WAVNUM, CINV, XK2CG,           &
      &                   WDWAVE, WSWAVE, UFRIC, Z0M,    &
      &                   AIRD, WSTAR, RNFAC,            &
      &                   FLD, SL, SPOS, XLLWS)
@@ -12,7 +12,7 @@
 !     ----------
 
 !     *CALL* *SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1,
-!    &                WAVNUM, CINV, CGROUP,
+!    &                WAVNUM, CINV, XK2CG,
 !    &                WDWAVE, UFRIC, Z0M,
 !    &                AIRD, WSTAR, FLD, SL, SPOS, XLLWS)
 !         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
@@ -23,7 +23,7 @@
 !          *FL1* - SPECTRUM.
 !       *WAVNUM* - WAVE NUMBER.
 !         *CINV* - INVERSE PHASE VELOCITY.
-!       *CGROUP* - GROUP SPPED.
+!       *XK2CG*  - (WAVE NUMBER)**2 * GROUP SPPED.
 !       *WDWAVE* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                  NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                  CLOCKWISE FROM NORTH).
@@ -71,7 +71,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, XK2CG
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: AIRD, WSTAR, RNFAC
@@ -89,13 +89,13 @@
       SELECT CASE (IPHYS)
       CASE(0)
         CALL SINPUT_JAN (NGST, LLSNEG, KIJS, KIJL, FL1,  &
-     &                   WAVNUM, CINV, CGROUP,           &
+     &                   WAVNUM, CINV, XK2CG,            &
      &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
      &                   AIRD, WSTAR, RNFAC,             &
      &                   FLD, SL, SPOS, XLLWS)
       CASE(1) 
         CALL SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1,  &
-     &                   WAVNUM, CINV, CGROUP,           &
+     &                   WAVNUM, CINV, XK2CG,            &
      &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
      &                   AIRD, WSTAR, RNFAC,             &
      &                   FLD, SL, SPOS, XLLWS)

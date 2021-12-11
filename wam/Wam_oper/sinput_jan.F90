@@ -1,5 +1,5 @@
       SUBROUTINE SINPUT_JAN (NGST, LLSNEG, KIJS, KIJL, FL1 , &
-     &                       WAVNUM, CINV, CGROUP,           &
+     &                       WAVNUM, CINV, XK2CG,            &
      &                       WDWAVE, WSWAVE, UFRIC, Z0M,     &
      &                       AIRD, WSTAR, RNFAC,             &
                              FLD, SL, SPOS, XLLWS)
@@ -47,7 +47,7 @@
 !     ----------
 
 !     *CALL* *SINPUT_JAN (NGST, LLSNEG, KIJS, KIJL, FL1,
-!    &                    WAVNUM, CINV, CGROUP,
+!    &                    WAVNUM, CINV, XK2CG,
 !    &                    WDWAVE, WSWAVE, UFRIC, Z0M,
 !    &                    AIRD, WSTAR, RNFAC,
 !    &                    FLD, SL, SPOS, XLLWS)
@@ -59,7 +59,7 @@
 !          *FL1* - SPECTRUM.
 !       *WAVNUM* - WAVE NUMBER.
 !         *CINV* - INVERSE PHASE VELOCITY.
-!       *CGROUP* - GROUP SPPED.
+!       *XK2CG*  - (WAVNUM)**2 * GROUP SPPED.
 !       *WDWAVE* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                  NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                  CLOCKWISE FROM NORTH).
@@ -123,7 +123,7 @@
       LOGICAL, INTENT(IN) :: LLSNEG
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, CGROUP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, XK2CG
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: AIRD, WSTAR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
@@ -194,10 +194,12 @@
       ENDDO
 
       IF (LLNORMAGAM) THEN
-        CSTRNFAC(:) = CONSTN * RNFAC(:)
+        DO IJ=KIJS,KIJL
+          CSTRNFAC(IJ) = CONSTN * RNFAC(IJ) * AIRDM(IJ)
+        ENDDO
         DO M=1,NFRE
           DO IJ=KIJS,KIJL
-            XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*WAVNUM(IJ,M)**2*CGROUP(IJ,M)*AIRDM(IJ)
+            XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*XK2CG(IJ,M)
           ENDDO
         ENDDO
 

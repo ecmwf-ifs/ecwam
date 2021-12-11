@@ -1,11 +1,11 @@
 SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,                &
 &                  LUPDTUS,                                 &
 &                  FL1,                                     &
-&                  WAVNUM, CINV, CGROUP,                    &
-&                  WSWAVE, WDWAVE, AIRD, WSTAR, CICOVER,  &
+&                  WAVNUM, CINV, XK2CG,                     &
+&                  WSWAVE, WDWAVE, AIRD, WSTAR, CICOVER,    &
 &                  FMEAN, FMEANWS,                          &
 &                  FLM,                                     &
-&                  UFRIC, TAUW, TAUWDIR, Z0M, Z0B, PHIWA, &
+&                  UFRIC, TAUW, TAUWDIR, Z0M, Z0B, PHIWA,   &
 &                  FLD, SL, SPOS,                           &
 &                  MIJ, RHOWGDFTH, XLLWS)
 
@@ -42,7 +42,7 @@ LOGICAL, INTENT(IN) :: LUPDTUS  !! IF TRUE UFRIC AND Z0M WILL BE UPDATED (CALLIN
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1  !! WAVE SPECTRUM.
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM  !! WAVE NUMBER.
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CINV    !! INVERSE PHASE VELOCITY.
-REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CGROUP  !! GROUP SPPED.
+REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: XK2CG  !! (WAVNUM)**2 * GROUP SPPED.
 
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSWAVE !! WIND SPEED IN M/S.
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE !! WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC NOTATION.
@@ -124,7 +124,7 @@ ELSE
 ENDIF
 
 CALL SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, &
-&            WAVNUM, CINV, CGROUP,          &
+&            WAVNUM, CINV, XK2CG,           &
 &            WDWAVE, WSWAVE, UFRIC, Z0M,    &
 &            AIRD, WSTAR, RNFAC,            &
 &            FLD, SL, SPOS, XLLWS) 

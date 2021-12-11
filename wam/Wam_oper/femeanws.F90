@@ -84,11 +84,8 @@
 !        ------------------------------------------
       
       DO M=1,NFRE
-        K = 1
-        DO IJ =KIJS,KIJL
-           TEMP2(IJ) = XLLWS(IJ,K,M)*FL1(IJ,K,M)
-        ENDDO
-        DO K=2,NANG
+        TEMP2(:) = 0.0_JWRB
+        DO K=1,NANG
           DO IJ=KIJS,KIJL
             TEMP2(IJ) = TEMP2(IJ)+XLLWS(IJ,K,M)*FL1(IJ,K,M)
           ENDDO

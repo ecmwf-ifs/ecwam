@@ -99,7 +99,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
  &        INDEP => WVENVI%INDEP, &
  &        WAVNUM => WVPRPT%WAVNUM, &
  &        CINV => WVPRPT%CINV, &
- &        CGROUP => WVPRPT%CGROUP, &
+ &        XK2CG => WVPRPT%XK2CG, &
  &        STOKFAC => WVPRPT%STOKFAC, &
  &        WSWAVE => FF_NOW%WSWAVE, &
  &        WDWAVE => FF_NOW%WDWAVE, &
@@ -135,18 +135,18 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                        &
      &             LUPDTUS,                                         &
      &             FL1,                                             &
-     &             WAVNUM, CINV, CGROUP,                            &
+     &             WAVNUM, CINV, XK2CG,                             &
      &             WSWAVE, WDWAVE, AIRD, WSTAR, CICOVER,            &
      &             FMEAN, FMEANWS,                                  &
      &             FLM,                                             &
-     &             UFRIC, TAUW_LOC, TAUWDIR_LOC, Z0M, Z0B, PHIWA, &
+     &             UFRIC, TAUW_LOC, TAUWDIR_LOC, Z0M, Z0B, PHIWA,   &
      &             FLD, SL, SPOS,                                   &
      &             MIJ, RHOWGDFTH, XLLWS)
 
       IF (LCFLX) THEN
 
         CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,    &
-     &                INDEP, WAVNUM, CGROUP,       &
+     &                INDEP, WAVNUM, XK2CG,        &
      &                EMEAN, F1MEAN, XKMEAN,       &
      &                UFRIC, WDWAVE, AIRD)
 

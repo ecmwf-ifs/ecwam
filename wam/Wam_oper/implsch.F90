@@ -143,6 +143,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
  &        WAVNUM => WVPRPT%WAVNUM, &
  &        CINV => WVPRPT%CINV, &
  &        CGROUP => WVPRPT%CGROUP, &
+ &        XK2CG => WVPRPT%XK2CG, &
  &        STOKFAC => WVPRPT%STOKFAC, &
  &        CIWA => WVPRPT%CIWA, &
  &        WSWAVE => FF_NOW%WSWAVE, &
@@ -230,9 +231,9 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
         CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                 &
      &               LUPDTUS,                                  &
      &               FL1,                                      &
-     &               WAVNUM, CINV, CGROUP,                     &
+     &               WAVNUM, CINV, XK2CG,                      &
      &               WSWAVE, WDWAVE, AIRD, WSTAR, CICOVER,     &
-     &               FMEAN, FMEANWS,                        &
+     &               FMEAN, FMEANWS,                           &
      &               FLM,                                      &
      &               UFRIC, TAUW, TAUWDIR, Z0M, Z0B, PHIWA,    &
      &               FLD, SL, SPOS,                            &
@@ -244,7 +245,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !           ---------------------------
 
       CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,  &
-     &              INDEP, WAVNUM, CGROUP,     &
+     &              INDEP, WAVNUM, XK2CG,      &
      &              EMEAN, F1MEAN, XKMEAN,     &
      &              UFRIC, WDWAVE, AIRD)
 
@@ -292,7 +293,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
         DELFL(M) = COFRM4(M)*DELT
       ENDDO
       DO IJ=KIJS,KIJL
-        USFM(IJ) = UFRIC(IJ)*MAX(FMEANWS(IJ),FMEAN(IJ))
+        USFM(IJ) = UFRIC(IJ)*MAX(FMEANWS(IJ), FMEAN(IJ))
       ENDDO
 
       DO M=1,NFRE
@@ -354,7 +355,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
       CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, EMEANWS, FMEANWS)
 
-      CALL IMPHFTAIL(KIJS, KIJL, MIJ, FLM, WAVNUM, CGROUP, FL1)
+      CALL IMPHFTAIL(KIJS, KIJL, MIJ, FLM, WAVNUM, XK2CG, FL1)
 
 
 !     UPDATE WINDSEA VARIANCE AND MEAN FREQUENCY IF PASSED TO ATMOSPHERE
