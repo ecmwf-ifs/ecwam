@@ -54,6 +54,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "cal_second_order_spec.intfb.h"
 #include "cimsstrn.intfb.h"
 #include "femean.intfb.h"
@@ -261,7 +262,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        CALL MEANSQS (XKMSS_CUTOFF, KIJS, KIJL, FL1, WAVNUM, WSWAVE, UFRIC, WDWAVE, BOUT(KIJS,ITOBOUT(IR)))
+        CALL MEANSQS (XKMSS_CUTOFF, KIJS, KIJL, FL1, WAVNUM, UFRIC, WDWAVE, BOUT(KIJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
@@ -616,7 +617,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       IF (IPFGTBL(IR) /= 0) THEN
 !!!for testing
         XMODEL_CUTOFF = (ZPI*FR(NFRE))**2/G
-        CALL MEANSQS (XMODEL_CUTOFF, KIJS, KIJL, FL1, WAVNUM, WSWAVE, UFRIC, WDWAVE, BOUT(KIJS,ITOBOUT(IR)))
+        CALL MEANSQS (XMODEL_CUTOFF, KIJS, KIJL, FL1, WAVNUM, UFRIC, WDWAVE, BOUT(KIJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1

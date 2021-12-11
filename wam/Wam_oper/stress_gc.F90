@@ -1,4 +1,4 @@
-      SUBROUTINE STRESS_GC(ANG_GC, USTAR, Z0, Z0MIN, HALP, RNFAC, TAUWCG)
+REAL(KIND=JWRB) FUNCTION STRESS_GC(ANG_GC, USTAR, Z0, Z0MIN, HALP, RNFAC)
 
 !***  DETERMINE WAVE INDUCED STRESS FOR GRAV-CAP WAVES
 
@@ -28,7 +28,7 @@
 
       IMPLICIT NONE
 
-#include "omegagc.intfb.h"
+#include "ns_gc.intfb.h"
 
       REAL(KIND=JWRB), INTENT(IN) :: ANG_GC  ! factor to account for angular spreading of the input.
       REAL(KIND=JWRB), INTENT(IN) :: USTAR ! friction velocity
@@ -36,7 +36,7 @@
       REAL(KIND=JWRB), INTENT(IN) :: Z0MIN ! minimum surface roughness
       REAL(KIND=JWRB), INTENT(IN) :: HALP  ! 1/2 Phillips parameter
       REAL(KIND=JWRB), INTENT(IN) :: RNFAC  ! wind dependent factor used in the growth renormalisation
-      REAL(KIND=JWRB), INTENT(OUT) :: TAUWCG ! wave induced kinematic stress for gravity-capillary waves
+
 
       INTEGER(KIND=JWIM) :: NS
       INTEGER(KIND=JWIM) :: I
@@ -48,7 +48,8 @@
       INTEGER(KIND=JWIM), PARAMETER :: NLAM = 4
 
       REAL(KIND=JWRB) :: TAUWCG_MIN
-      REAL(KIND=JWRB) :: XKS, OMS, ZABHRC
+      REAL(KIND=JWRB) :: TAUWCG
+      REAL(KIND=JWRB) :: ZABHRC
       REAL(KIND=JWRB) :: X, XLOG, ZLOG, ZLOG2X
       REAL(KIND=JWRB) :: CONST, ZN 
       REAL(KIND=JWRB) :: GAMNORMA ! RENORMALISATION FACTOR OF THE GROWTH RATE
@@ -60,13 +61,13 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('STRESS_GC',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('STRESS_GC',0,ZHOOK_HANDLE)
 
 !*    1.0  DETERMINE GRAV_CAP SPECTRUM, TAUWHF.
 !          ------------------------------------
 
 !     FIND NS:
-      CALL OMEGAGC(USTAR, NS, XKS, OMS)
+      NS = NS_GC(USTAR)
 
       TAUWCG_MIN = (USTAR*(Z0MIN/Z0))**2
 
@@ -87,7 +88,7 @@
         ZLOG    = XLOG - LOG(XLAMBDA) 
         ZLOG    = MIN(ZLOG,0.0_JWRB)
         ZLOG2X  = ZLOG*ZLOG*X
-        GAM_W(I)= ZLOG2X*EXP(XLOG)*ZLOG2X*OM3GMKM_GC(I)
+        GAM_W(I)= ZLOG2X*ZLOG2X*EXP(XLOG)*OM3GMKM_GC(I)
       ENDDO
 
       ZN = CONST*XKMSQRTVGOC2_GC(NS)*GAM_W(NS)
@@ -107,8 +108,8 @@
         GAMNORMA = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
         TAUWCG = TAUWCG + GAM_W(I) * DELKCC_GC(I) * OMXKM3_GC(I) * GAMNORMA
       ENDDO
-      TAUWCG = MAX(ZABHRC * TAUWCG, TAUWCG_MIN)
+      STRESS_GC = MAX(ZABHRC * TAUWCG, TAUWCG_MIN)
 
-      IF (LHOOK) CALL DR_HOOK('STRESS_GC',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('STRESS_GC',1,ZHOOK_HANDLE)
  
-      END SUBROUTINE STRESS_GC
+END FUNCTION STRESS_GC

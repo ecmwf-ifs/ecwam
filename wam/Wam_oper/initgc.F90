@@ -34,7 +34,7 @@
      &                      XK_GC, XKM_GC, OMEGA_GC, OMXKM3_GC, VG_GC, C_GC, &
      &                      CM_GC, C2OSQRTVG_GC, XKMSQRTVGOC2_GC, OM3GMKM_GC,&
      &                      DELKCC_GC, DELKCC_GC_NS
-      USE YOWPCONS , ONLY : G,  SURFT
+      USE YOWPCONS , ONLY : G,  SURFT, SQRTGOSURFT
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
 
@@ -52,6 +52,8 @@
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('INITGC',0,ZHOOK_HANDLE)
+
+      SQRTGOSURFT = SQRT(G/SURFT)
 
       NWAV_GC = NINT(LOG(XKL_GC/XKS_GC)/(LOG(KRATIO_GC)))
 

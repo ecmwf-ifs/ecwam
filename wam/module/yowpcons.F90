@@ -35,6 +35,7 @@
       REAL(KIND=JWRB), PARAMETER :: YINVEPS = 1.0_JWRB/YEPS
       REAL(KIND=JWRB), PARAMETER :: GAM_SURF = 0.0717_JWRB   !!!! will need to be adapted if you change ROWATER
       REAL(KIND=JWRB), PARAMETER :: SURFT =  GAM_SURF/ROWATER
+      REAL(KIND=JWRB) :: SQRTGOSURFT  !! SQRT(G/SURFT) (see wavemdl)
       REAL(KIND=JWRB), PARAMETER :: WSTAR0 = 0.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: Rconstant = 287.16_JWRB   ! The gas constant
       REAL(KIND=JWRB), PARAMETER :: EpsWaterVapor = 0.61_JWRB ! The mass ratio of  water vapor to dry air

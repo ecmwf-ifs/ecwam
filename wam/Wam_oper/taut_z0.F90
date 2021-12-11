@@ -58,7 +58,8 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG, FL1, WAVNUM,   &
       USE YOWCOUP  , ONLY : LLCAPCHNK, LLGCBZ0
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G, GM1, EPSUS, EPSMIN, ACD, BCD, CDMAX
-      USE YOWPHYS  , ONLY : XKAPPA, XNLEV, RNU, RNUM, ALPHA, ALPHAMIN, ALPHAMAX
+      USE YOWPHYS  , ONLY : XKAPPA, XNLEV, RNU, RNUM, ALPHA, ALPHAMIN, ALPHAMAX, &
+     &                      ANG_GC_A, ANG_GC_B, ANG_GC_C
       USE YOWTABL  , ONLY : EPS1 
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -67,7 +68,6 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG, FL1, WAVNUM,   &
 
       IMPLICIT NONE
 #include "chnkmin.intfb.h"
-#include "dirsprd_gc.intfb.h"
 #include "halphap.intfb.h"
 #include "stress_gc.intfb.h"
 
@@ -181,9 +181,10 @@ IF (LLGCBZ0) THEN
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
           TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
 
-          ANG_GC(IJ) = DIRSPRD_GC(USTAR(IJ))
+          ANG_GC(IJ) = ANG_GC_A + ANG_GC_B * TANH(ANG_GC_C * TAUOLD)
 
-          CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
+          TAUUNR(IJ) = STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ))
+
 !         TOTAL kinematic STRESS:
           TAUNEW = TAUWEFF(IJ) + TAUV + TAUUNR(IJ)
           USTNEW = SQRT(TAUNEW)
@@ -215,14 +216,14 @@ IF (LLGCBZ0) THEN
           TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
 
           DO ITER=1,NITER
-            X = MIN(TAUWEFF(IJ)/TAUOLD,0.99_JWRB)
+            X = MIN(TAUWEFF(IJ)/TAUOLD, 0.99_JWRB)
             USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS)
             !!!! Limit how small z0 could become
             !!!! This is a bit of a compromise to limit very low Charnock for intermediate high winds (15 -25 m/s)
             !!!! It is not ideal !!!
             Z0(IJ) = MAX(XNLEV/EXP(XKUTOP/USTOLD), Z0MIN)
 
-            CALL STRESS_GC(ANG_GC(IJ), USTOLD, Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
+            TAUUNR(IJ) = STRESS_GC(ANG_GC(IJ), USTOLD, Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ))
 
             Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
             Z0VIS = RNUM*USTM1

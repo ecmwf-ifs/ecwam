@@ -1,4 +1,4 @@
-      SUBROUTINE MEANSQS(XKMSS, KIJS, KIJL, F, WAVNUM, U10, USTAR, UDIR, XMSS)
+      SUBROUTINE MEANSQS(XKMSS, KIJS, KIJL, F, WAVNUM, USTAR, UDIR, XMSS)
 
 ! ----------------------------------------------------------------------
 
@@ -12,13 +12,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MEANSQS (XKMSS, KIJS, KIJL, F, WAVNUM, U10, USTAR, UDIR, XMSS)*
+!       *CALL* *MEANSQS (XKMSS, KIJS, KIJL, F, WAVNUM, USTAR, UDIR, XMSS)*
 !              *XKMSS*   - WAVE NUMBER CUT OFF
 !              *KIJS*    - INDEX OF FIRST GRIDPOINT
 !              *KIJL*    - INDEX OF LAST GRIDPOINT
 !              *F*       - SPECTRUM.
 !              *WAVNUM*  - WAVE NUMBER.
-!              *U10*     - 10m wind speed
 !              *USTAR*   - NEW FRICTION VELOCITY IN M/S (INPUT).
 !              *UDIR*    - WIND SPEED DIRECTION
 !              *XMSS*    - MEAN SQUARE SLOPE (OUTPUT).
@@ -48,7 +47,9 @@
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
+
 #include "halphap.intfb.h"
 #include "meansqs_gc.intfb.h"
 #include "meansqs_lf.intfb.h"
@@ -57,7 +58,6 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: F
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: U10
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USTAR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UDIR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: XMSS 
@@ -73,6 +73,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: HALP, FRGC
 
 ! ----------------------------------------------------------------------
+
       IF (LHOOK) CALL DR_HOOK('MEANSQS',0,ZHOOK_HANDLE)
 
 !*    1. COMPUTE THE GRAVITY-CAPILLARY CONTRIBUTION TO MSS 
@@ -82,7 +83,7 @@
       CALL HALPHAP(KIJS, KIJL, WAVNUM, UDIR, F, HALP)
 
 !     GRAVITY-CAPILLARY CONTRIBUTION TO MSS
-      CALL MEANSQS_GC(XKMSS, KIJS, KIJL, HALP, U10, USTAR, XMSS, FRGC)
+      CALL MEANSQS_GC(XKMSS, KIJS, KIJL, HALP, USTAR, XMSS, FRGC)
 
 !     MODEL SPECTRUM PART
       FCUT = SQRT(G*XKMSS)/ZPI
@@ -96,7 +97,7 @@
 
       XLOGFS = LOG(FR(NFRE_EFF))
       DO IJ=KIJS,KIJL
-        XMSS_TAIL(IJ) = 2.0_JWRB*HALP(IJ)*MAX((LOG(MIN(FRGC(IJ),FCUT)) - XLOGFS),0.0_JWRB)
+        XMSS_TAIL(IJ) = 2.0_JWRB*HALP(IJ)*MAX((LOG(MIN(FRGC(IJ),FCUT)) - XLOGFS), 0.0_JWRB)
         XMSS(IJ) = XMSS(IJ) + XMSS_TAIL(IJ)
       ENDDO
 
