@@ -105,8 +105,8 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       REAL(KIND=JWRB) :: AVG_GST, ABS_TAUWSHELTER 
       REAL(KIND=JWRB) :: CONST1
       REAL(KIND=JWRB) :: ZNZ
-      REAL(KIND=JWRB) :: X1, X2, ZLOG, ZLOG0, ZLOG2, ZLOG2X, XV1, XV2, ZBETA1, ZBETA2
-      REAL(KIND=JWRB) :: XI, X, DELI1, DELI2
+      REAL(KIND=JWRB) :: X1, X2, ZLOG2X, XV1, XV2, ZBETA1, ZBETA2
+      REAL(KIND=JWRB) :: XI, DELI1, DELI2
       REAL(KIND=JWRB) :: FU, FUD, NU_AIR,SMOOTH, HFTSWELLF6, Z0TUB
       REAL(KIND=JWRB) :: FAC_NU_AIR, FACM1_NU_AIR
       REAL(KIND=JWRB) :: ARG, DELABM1
@@ -122,7 +122,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CNSN, SUMF, SUMFSIN2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CSTRNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FLP_AVG, SLP_AVG
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ROGOROAIR, AIRD_PVISC, AIRDM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) ::  ROGOROAIR, AIRD_PVISC, AIRDM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: XSTRESS, YSTRESS, FLP, SLP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: USG2, TAUX, TAUY, USTP, USTPM1, USDIRP, UCN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: UCNZALPD
@@ -130,10 +130,9 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DSTAB1, TEMP1, TEMP2
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NGST) :: COSLP, GAM0, DSTAB
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NGST) :: COSLP, ZLOG, X, GAM0, DSTAB
 
       LOGICAL :: LTAUWSHELTER
-      LOGICAL :: LLOOP_DIR
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
@@ -155,12 +154,10 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
       ENDDO
 
       IF (LLNORMAGAM) THEN
-        DO IJ=KIJS,KIJL
-          CSTRNFAC(IJ) = CONSTN * RNFAC(IJ) * AIRDM(IJ)
-        ENDDO
+        CSTRNFAC(:) = CONSTN * RNFAC(:)
         DO M=1,NFRE
           DO IJ=KIJS,KIJL
-            XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*WAVNUM(IJ,M)**2*CGROUP(IJ,M)
+            XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*WAVNUM(IJ,M)**2*CGROUP(IJ,M)*AIRDM(IJ)
           ENDDO
         ENDDO
 
@@ -350,7 +347,6 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         DSTAB(:,:,:) = 0.0_JWRB
       ENDIF
 
-
       DO M=1,NFRE
 
         IF (LTAUWSHELTER) THEN
@@ -392,8 +388,6 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
           CNSN(IJ) = CONST(M)*AIRD(IJ)
         ENDDO
 
-
-
 !*    2.1 LOOP OVER DIRECTIONS.
 !         ---------------------
 
@@ -403,76 +397,52 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
           ENDDO
         ENDDO
 
-!       CHECK WHETHER THE FULL LOOP OVER DIRECTIONS CAN BE SKIPPED FOR ALL GRID POINTS
-        LLOOP_DIR = .FALSE.
-        LOOP_DIR: DO IGST=1,NGST
-          DO IJ=KIJS,KIJL
-            ZLOG0 = ZCN(IJ) + UCNZALPD(IJ,IGST)
-            IF (ZLOG0 < 0.0_JWRB) THEN
-              LLOOP_DIR = .TRUE.
-              EXIT LOOP_DIR
-            ENDIF
-          ENDDO
-        ENDDO LOOP_DIR
-
-
-        IF (LLOOP_DIR) THEN
-
-          DO IGST=1,NGST
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                IF (COSLP(IJ,K,IGST) > 0.01_JWRB) THEN
-                  X    = COSLP(IJ,K,IGST)*UCN(IJ,IGST)
-                  ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)/COSLP(IJ,K,IGST)
-                  IF (ZLOG < 0.0_JWRB) THEN
-                    ZLOG2X=ZLOG*ZLOG*X
-                    GAM0(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X * CNSN(IJ)
-                    XLLWS(IJ,K,M) = 1.0_JWRB
-                  ELSE
-                    GAM0(IJ,K,IGST) = 0.0_JWRB
-                  ENDIF
-                ELSE
-                  GAM0(IJ,K,IGST) = 0.0_JWRB
-                ENDIF
-              ENDDO
+        DO IGST=1,NGST
+          DO K=1,NANG
+            DO IJ=KIJS,KIJL
+              IF (COSLP(IJ,K,IGST) > 0.01_JWRB) THEN
+                X(IJ,K,IGST) = COSLP(IJ,K,IGST)*UCN(IJ,IGST)
+                ZLOG(IJ,K,IGST) = ZCN(IJ) + UCNZALPD(IJ,IGST)/COSLP(IJ,K,IGST)
+              ELSE
+                ZLOG(IJ,K,IGST) = 0.0_JWRB
+              ENDIF
             ENDDO
           ENDDO
+        ENDDO
 
-          IF (LLNORMAGAM) THEN
-
-            DO IGST=1,NGST
-              K=1
-                DO IJ=KIJS,KIJL
-                  SUMF(IJ) = GAM0(IJ,K,IGST)*FL1(IJ,K,M)
-                  SUMFSIN2(IJ) = GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SIN2(IJ,K)
-                ENDDO
-              DO K=2,NANG
-                DO IJ=KIJS,KIJL
-                  SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)
-                  SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SIN2(IJ,K)
-                ENDDO
-              ENDDO
-
-              DO IJ=KIJS,KIJL
-                ZNZ = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)
-                GAMNORMA(IJ,IGST) = (1.0_JWRB + ZNZ*SUMFSIN2(IJ)) / (1.0_JWRB + ZNZ*SUMF(IJ))
-              ENDDO
-            ENDDO
-
-          ENDIF
-
-        ELSE
-
-          DO IGST=1,NGST
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
+        DO IGST=1,NGST
+          DO K=1,NANG
+            DO IJ=KIJS,KIJL
+              IF (ZLOG(IJ,K,IGST) < 0.0_JWRB) THEN
+                ZLOG2X = ZLOG(IJ,K,IGST)*ZLOG(IJ,K,IGST)*X(IJ,K,IGST)
+                GAM0(IJ,K,IGST) = EXP(ZLOG(IJ,K,IGST))*ZLOG2X*ZLOG2X * CNSN(IJ)
+                XLLWS(IJ,K,M) = 1.0_JWRB
+              ELSE
                 GAM0(IJ,K,IGST) = 0.0_JWRB
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+
+
+        IF (LLNORMAGAM) THEN
+
+          DO IGST=1,NGST
+
+            SUMF(:) = 0.0_JWRB
+            SUMFSIN2(:) = 0.0_JWRB
+            DO K=1,NANG
+              DO IJ=KIJS,KIJL
+                SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)
+                SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SIN2(IJ,K)
               ENDDO
             ENDDO
 
             DO IJ=KIJS,KIJL
-              GAMNORMA(IJ,IGST) = 1.0_JWRB
+              ZNZ = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)
+              GAMNORMA(IJ,IGST) = (1.0_JWRB + ZNZ*SUMFSIN2(IJ)) / (1.0_JWRB + ZNZ*SUMF(IJ))
             ENDDO
+
           ENDDO
 
         ENDIF
