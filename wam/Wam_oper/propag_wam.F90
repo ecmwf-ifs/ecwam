@@ -36,7 +36,7 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NIBLO
       USE YOWREFD  , ONLY : LLUPDTTD ,THDD     ,THDC     ,SDOT
-      USE YOWSTAT  , ONLY : IPROPAGS
+      USE YOWSTAT  , ONLY : IPROPAGS ,IFRELFMAX, DELPRO_LF, IDELPRO
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE UNWAM    , ONLY : PROPAG_UNWAM
       USE YOWUNPOOL ,ONLY : LLUNSTR
@@ -64,6 +64,7 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
 
       INTEGER(KIND=JWIM) :: IJ, K, M, J
       INTEGER(KIND=JWIM) :: JKGLO, NPROMA, MTHREADS
+      INTEGER(KIND=JWIM) :: NSTEP_LF, ISUBST
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
       INTEGER(KIND=JWIM) :: IJSG, IJLG, ICHNK, KIJS, KIJL, IJSB, IJLB
 
@@ -140,7 +141,7 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 
 !          OBTAIN INFORMATION AT NEIGHBORING GRID POINTS (HALO)
 !          ----------------------------------------------------
-           CALL MPEXCHNG(FL1_EXT, NANG, NFRE_RED)
+           CALL MPEXCHNG(FL1_EXT, NANG, 1, NFRE_RED)
 
 
            CALL GSTATS(1430,0)
@@ -177,7 +178,6 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
              ENDDO
 !$OMP        END PARALLEL DO
 
-
              LLUPDTTD = .FALSE.
            ENDIF
 
@@ -207,14 +207,58 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
                LUPDTWGHT=.FALSE.
              ENDIF
 
-!$OMP        PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
+!$OMP        PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, K, M, IJ)
              DO JKGLO = IJSG, IJLG, NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1, IJLG)
-               CALL PROPAGS2(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL)
+
+               CALL PROPAGS2(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL, NANG, 1, NFRE_RED)
+
+!              SUB TIME STEPPING FOR FAST WAVES (see below) (only if IFRELFMAX > 0)
+               DO M = 1, IFRELFMAX 
+                 DO K = 1, NANG
+                   DO IJ = KIJS, KIJL
+                     FL1_EXT(IJ, K, M) = FL3_EXT(IJ, K, M)
+                   ENDDO
+                 ENDDO
+               ENDDO
+
              ENDDO
 !$OMP        END PARALLEL DO
 
+!            SUB TIME STEPPING FOR FAST WAVES
+             IF (IFRELFMAX <= 0 ) THEN
+                NSTEP_LF = NINT(REAL(IDELPRO, JWRB)/DELPRO_LF)
+                ISUBST = 2  ! The first step was done as part of the previous call to PROPAGS2
+
+                DO WHILE (ISUBST <= NSTEP_LF)
+
+                  CALL MPEXCHNG(FL1_EXT(:,:,1:IFRELFMAX), NANG, 1, IFRELFMAX)
+
+!$OMP             PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, K, M, IJ)
+                  DO JKGLO = IJSG, IJLG, NPROMA
+                    KIJS=JKGLO
+                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
+
+                    CALL PROPAGS2(FL1_EXT(:,:,1:IFRELFMAX), FL3_EXT(:,:,1:IFRELFMAX), NINF, NSUP, KIJS, KIJL, NANG, 1, IFRELFMAX)
+
+                    IF (ISUBST < NSTEP_LF) THEN
+                      DO M = 1, IFRELFMAX 
+                        DO K = 1, NANG
+                          DO IJ = KIJS, KIJL
+                            FL1_EXT(IJ, K, M) = FL3_EXT(IJ, K, M)
+                          ENDDO
+                        ENDDO
+                      ENDDO
+                    ENDIF
+
+                  ENDDO
+!$OMP             END PARALLEL DO
+
+                  ISUBST = ISUBST + 1
+
+                ENDDO
+             ENDIF  ! end sub time steps (if needed)
 
            CASE(1)
              IF (L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.

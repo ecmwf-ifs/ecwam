@@ -1,4 +1,4 @@
-SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL)
+SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)
 
 ! ----------------------------------------------------------------------
 
@@ -12,12 +12,15 @@ SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL)
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PROPAGS2(F1, F3, NINF, NSUP, KIJS, KIJL)*
+!       *CALL* *PROPAGS2(F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)*
 !          *F1*          - SPECTRUM AT TIME T (with exchange halo).
 !          *F3*          - SPECTRUM AT TIME T+DELT
 !          *NINF:NSUP+1* - 1st DIMENSION OF F1 and F3
 !          *KIJS*        - ACTIVE INDEX OF FIRST POINT
 !          *KIJL*        - ACTIVE INDEX OF LAST POINT
+!          *NANG*        - NUMBER OF DIRECTIONS
+!          *ND3S*        - FREQUENCY INDEX SOLVED BY THIS CALL ND3S:ND3E
+!          *ND3E*
 
 !     METHOD.
 !     -------
@@ -38,7 +41,6 @@ SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL)
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : COSTH    ,SINTH
-      USE YOWPARAM , ONLY : NANG     ,NFRE_RED
       USE YOWSTAT  , ONLY : ICASE    ,IREFRA
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR      ,             &
@@ -55,10 +57,11 @@ SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL)
 
 #include "abort1.intfb.h"
 
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, NFRE_RED), INTENT(IN) :: F1
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, NFRE_RED), INTENT(OUT) :: F3
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3S:ND3E), INTENT(IN) :: F1
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3S:ND3E), INTENT(OUT) :: F3
       INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: NANG, ND3S, ND3E 
 
 
       INTEGER(KIND=JWIM) :: K, M, IJ
@@ -84,12 +87,12 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
 
-          DO K=1,NANG
+          DO K = 1, NANG
             JJX=JXO(K,1)
             JJY=JYO(K,1)
             JJY=JYO(K,1)
             JJK=KCR(K,1)
-            DO M=1,NFRE_RED
+            DO M = ND3S, ND3E
               DO IJ = KIJS, KIJL
                 FJ1(IJ)= F1(KLON(IJ,JJX)  ,K  ,M)
                 FJ2(IJ)= F1(KLAT(IJ,JJY,1),K  ,M)
@@ -136,8 +139,8 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 !*      DEPTH AND CURRENT REFRACTION.
 !       -----------------------------
 
-          DO M=1,NFRE_RED
-            DO K=1,NANG
+          DO M = ND3S, ND3E
+            DO K = 1, NANG
 
               DO IJ = KIJS, KIJL
                 F3(IJ,K,M) = (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ,K,M)
