@@ -28,8 +28,6 @@ REAL(KIND=JWRB) FUNCTION STRESS_GC(ANG_GC, USTAR, Z0, Z0MIN, HALP, RNFAC)
 
       IMPLICIT NONE
 
-#include "ns_gc.intfb.h"
-
       REAL(KIND=JWRB), INTENT(IN) :: ANG_GC  ! factor to account for angular spreading of the input.
       REAL(KIND=JWRB), INTENT(IN) :: USTAR ! friction velocity
       REAL(KIND=JWRB), INTENT(IN) :: Z0 !  surface roughness
@@ -58,6 +56,7 @@ REAL(KIND=JWRB) FUNCTION STRESS_GC(ANG_GC, USTAR, Z0, Z0MIN, HALP, RNFAC)
    
 !     INCLUDE FUNCTIONS FROM GRAVITY-CAPILLARY DISPERSION REALTIONS
 #include "gc_dispersion.h"
+#include "ns_gc.intfb.h"
 
 ! ----------------------------------------------------------------------
 

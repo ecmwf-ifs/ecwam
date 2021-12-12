@@ -23,8 +23,6 @@ USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
 
 IMPLICIT NONE
 
-#include "ns_gc.intfb.h"
-
 INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UST
 INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(OUT) :: NS ! index in array XK_GC corresponding to XKS and OMS
@@ -35,6 +33,8 @@ REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: OMS   ! cut-off angular fr
 INTEGER(KIND=JWIM) :: IJ
 REAL(KIND=JWRB) :: ZHOOK_HANDLE
    
+#include "ns_gc.intfb.h"
+
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('OMEGAGC',0,ZHOOK_HANDLE)
