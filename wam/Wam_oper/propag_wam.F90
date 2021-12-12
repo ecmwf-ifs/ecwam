@@ -227,7 +227,7 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 !$OMP        END PARALLEL DO
 
 !            SUB TIME STEPPING FOR FAST WAVES
-             IF (IFRELFMAX <= 0 ) THEN
+             IF (IFRELFMAX > 0 ) THEN
                 NSTEP_LF = NINT(REAL(IDELPRO, JWRB)/DELPRO_LF)
                 ISUBST = 2  ! The first step was done as part of the previous call to PROPAGS2
 
