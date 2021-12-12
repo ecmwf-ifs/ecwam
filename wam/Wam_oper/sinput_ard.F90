@@ -322,6 +322,11 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
             TAUY(IJ,IGST)=USG2(IJ,IGST)*COS(WDWAVE(IJ))
           ENDDO
         ENDDO
+
+        DO IJ=KIJS,KIJL
+          ROGOROAIR(IJ) = ROG*AIRDM(IJ)
+        ENDDO
+
       ELSE
         DO IGST=1,NGST
           DO K=1,NANG
@@ -329,12 +334,6 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
               COSLP(IJ,K,IGST) = COS(TH(K)-WDWAVE(IJ))
             ENDDO
           ENDDO
-        ENDDO
-      ENDIF
-
-      IF (LTAUWSHELTER) THEN
-        DO IJ=KIJS,KIJL
-          ROGOROAIR(IJ) = ROG*AIRDM(IJ)
         ENDDO
       ENDIF
 
