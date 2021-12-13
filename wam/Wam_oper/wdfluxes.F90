@@ -45,7 +45,7 @@
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : WSEMEAN_MIN
+      USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -80,10 +80,12 @@
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TAUWDIR_LOC  ! TAUW should not be updated do use a local array
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: RAORW
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEAN, FMEAN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEANWS, FMEANWS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: F1MEAN, AKMEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: PHIWA
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: COSWDIF, SINWDIF2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: FLD, SL, SPOS
@@ -130,13 +132,26 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       LUPDTUS = .FALSE.
       FMEANWS(:) = FMEAN(:)
       FLM(:,:) = 0.0_JWRB
+
+      DO IJ=KIJS,KIJL
+        RAORW(IJ) = MAX(AIRD(IJ), 1.0_JWRB) * ROWATERM1
+      ENDDO
+
+      DO K=1,NANG
+        DO IJ=KIJS,KIJL
+          COSWDIF(IJ,K) = COS(TH(K)-WDWAVE(IJ))
+          SINWDIF2(IJ,K) = SIN(TH(K)-WDWAVE(IJ))**2
+        ENDDO
+      ENDDO
+
       NCALL = 1
       ICALL = 1
       CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                        &
      &             LUPDTUS,                                         &
      &             FL1,                                             &
      &             WAVNUM, CINV, XK2CG,                             &
-     &             WSWAVE, WDWAVE, AIRD, WSTAR, CICOVER,            &
+     &             WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER,     &
+     &             COSWDIF, SINWDIF2,                               &
      &             FMEAN, FMEANWS,                                  &
      &             FLM,                                             &
      &             UFRIC, TAUW_LOC, TAUWDIR_LOC, Z0M, Z0B, PHIWA,   &
@@ -148,7 +163,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
         CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,    &
      &                INDEP, WAVNUM, XK2CG,        &
      &                EMEAN, F1MEAN, XKMEAN,       &
-     &                UFRIC, WDWAVE, AIRD)
+     &                UFRIC, COSWDIF, RAORW) 
 
         IF (.NOT. LWVFLX_SNL) THEN
           CALL WNFLUXES (KIJS, KIJL,                        &

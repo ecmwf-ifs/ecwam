@@ -1,13 +1,14 @@
-SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,                &
-&                  LUPDTUS,                                 &
-&                  FL1,                                     &
-&                  WAVNUM, CINV, XK2CG,                     &
-&                  WSWAVE, WDWAVE, AIRD, WSTAR, CICOVER,    &
-&                  FMEAN, FMEANWS,                          &
-&                  FLM,                                     &
-&                  UFRIC, TAUW, TAUWDIR, Z0M, Z0B, PHIWA,   &
-&                  FLD, SL, SPOS,                           &
-&                  MIJ, RHOWGDFTH, XLLWS)
+SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,                    &
+ &                 LUPDTUS,                                     &
+ &                 FL1,                                         &
+ &                 WAVNUM, CINV, XK2CG,                         &
+ &                 WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER, &
+ &                 COSWDIF, SINWDIF2,                           &
+ &                 FMEAN, FMEANWS,                              &
+ &                 FLM,                                         &
+ &                 UFRIC, TAUW, TAUWDIR, Z0M, Z0B, PHIWA,       &
+ &                 FLD, SL, SPOS,                               &
+ &                 MIJ, RHOWGDFTH, XLLWS)
 
 ! ----------------------------------------------------------------------
 
@@ -43,12 +44,14 @@ REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1  !! WAVE S
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM  !! WAVE NUMBER.
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CINV    !! INVERSE PHASE VELOCITY.
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: XK2CG  !! (WAVNUM)**2 * GROUP SPPED.
-
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSWAVE !! WIND SPEED IN M/S.
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE !! WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC NOTATION.
-REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: AIRD  !! AIR DENSITY IN KG/M3.
+REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: AIRD  !! AIR DENSITY (KG/M**3).
+REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: RAORW  !! RATIO AIR DENSITY TO WATER DENSITY.
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WSTAR !! FREE CONVECTION VELOCITY SCALE (M/S)
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER  !! SEA ICE COVER.
+REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(IN) :: COSWDIF  !! COS(TH(K)-WDWAVE(IJ))
+REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(IN) :: SINWDIF2 !! SIN(TH(K)-WDWAVE(IJ))**2
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: FMEAN  !! MEAN FREQUENCY.
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: FMEANWS  !! MEAN FREQUENCY OF THE WINDSEA.
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG), INTENT(IN) :: FLM  !! SPECTAL DENSITY MINIMUM VALUE
@@ -70,6 +73,7 @@ REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(OUT) :: RHOWGDFTH  !! WATER D
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS  !! TOTAL WINDSEA MASK FROM INPUT SOURCE TERM.
 
 
+INTEGER(KIND=JWIM) :: IJ, K
 INTEGER(KIND=JWIM) :: IUSFG, ICODE_WND
 INTEGER(KIND=JWIM) :: NGST
 
@@ -126,7 +130,8 @@ ENDIF
 CALL SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, &
 &            WAVNUM, CINV, XK2CG,           &
 &            WDWAVE, WSWAVE, UFRIC, Z0M,    &
-&            AIRD, WSTAR, RNFAC,            &
+&            COSWDIF, SINWDIF2,             &
+&            RAORW, WSTAR, RNFAC,           &
 &            FLD, SL, SPOS, XLLWS) 
 
 
@@ -141,6 +146,7 @@ CALL STRESSO (KIJS, KIJL, MIJ, RHOWGDFTH,          &
 &             FL1, SL, SPOS,                       &
 &             CINV,                                &
 &             WDWAVE, UFRIC, Z0M, AIRD, RNFAC,     &
+&             COSWDIF, SINWDIF2,                   &
 &             TAUW, TAUWDIR, PHIWA, LLPHIWA) 
 
 ! ----------------------------------------------------------------------

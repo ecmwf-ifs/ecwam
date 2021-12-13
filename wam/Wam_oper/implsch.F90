@@ -69,7 +69,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LCIWABR  ,LICERUN   ,LMASKICE
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : WSEMEAN_MIN 
+      USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1 
       USE YOWSTAT  , ONLY : IDELT    ,CDTPRO   ,LBIWBK
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
@@ -112,13 +112,15 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELFL(NFRE)
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: RAORW
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEAN, FMEAN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: F1MEAN, AKMEAN, XKMEAN 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: PHIWA
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DPTHREDUC
 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: FLM 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: FLM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: COSWDIF, SINWDIF2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: TEMP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: RHOWGDFTH
 !     *FLD* DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
@@ -170,6 +172,18 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU
 
+
+      DO IJ=KIJS,KIJL
+        RAORW(IJ) = MAX(AIRD(IJ), 1.0_JWRB) * ROWATERM1
+      ENDDO
+
+      DO K=1,NANG
+        DO IJ=KIJS,KIJL
+          COSWDIF(IJ,K) = COS(TH(K)-WDWAVE(IJ))
+          SINWDIF2(IJ,K) = SIN(TH(K)-WDWAVE(IJ))**2
+        ENDDO
+      ENDDO
+
 ! ----------------------------------------------------------------------
 
 !*    2. COMPUTATION OF IMPLICIT INTEGRATION.
@@ -192,7 +206,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-          FLM(IJ,K)=FLMIN*MAX(0.0_JWRB, COS(TH(K)-WDWAVE(IJ)))**2
+          FLM(IJ,K)=FLMIN*MAX(0.0_JWRB, COSWDIF(IJ,K))**2
         ENDDO
       ENDDO
 
@@ -228,15 +242,16 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       LUPDTUS = .TRUE.
       NCALL = 2
       DO ICALL = 1, NCALL 
-        CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                 &
-     &               LUPDTUS,                                  &
-     &               FL1,                                      &
-     &               WAVNUM, CINV, XK2CG,                      &
-     &               WSWAVE, WDWAVE, AIRD, WSTAR, CICOVER,     &
-     &               FMEAN, FMEANWS,                           &
-     &               FLM,                                      &
-     &               UFRIC, TAUW, TAUWDIR, Z0M, Z0B, PHIWA,    &
-     &               FLD, SL, SPOS,                            &
+        CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                    &
+     &               LUPDTUS,                                     &
+     &               FL1,                                         &
+     &               WAVNUM, CINV, XK2CG,                         &
+     &               WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER, &
+     &               COSWDIF, SINWDIF2,                           &
+     &               FMEAN, FMEANWS,                              &
+     &               FLM,                                         &
+     &               UFRIC, TAUW, TAUWDIR, Z0M, Z0B, PHIWA,       &
+     &               FLD, SL, SPOS,                               &
      &               MIJ, RHOWGDFTH, XLLWS)
 
       ENDDO
@@ -247,7 +262,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,  &
      &              INDEP, WAVNUM, XK2CG,      &
      &              EMEAN, F1MEAN, XKMEAN,     &
-     &              UFRIC, WDWAVE, AIRD)
+     &              UFRIC, COSWDIF, RAORW)
 
 !     Save source term contributions relevant for the calculation of ocean fluxes
       IF (LCFLX .AND. .NOT.LWVFLX_SNL) THEN
@@ -377,7 +392,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !         -----------------------------
 
       IF (LICERUN .AND. LMASKICE) THEN
-        CALL SETICE(KIJS, KIJL, FL1, CICOVER, WSWAVE, WDWAVE)
+        CALL SETICE(KIJS, KIJL, FL1, CICOVER, WSWAVE, COSWDIF)
       ENDIF
 
 

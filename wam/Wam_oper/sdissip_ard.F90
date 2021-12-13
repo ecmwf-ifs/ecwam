@@ -1,6 +1,6 @@
       SUBROUTINE SDISSIP_ARD (KIJS, KIJL, FL1, FLD, SL,          &
      &                        INDEP, WAVNUM, XK2CG,              &
-     &                        UFRIC, WDWAVE, AIRD)
+     &                        UFRIC, COSWDIF, RAORW)
 ! ----------------------------------------------------------------------
 
 !**** *SDISSIP_ARD* - COMPUTATION OF DISSIPATION SOURCE FUNCTION.
@@ -20,7 +20,7 @@
 
 !       *CALL* *SDISSIP_ARD (KIJS, KIJL, FL1, FLD,SL,*
 !                            INDEP, WAVNUM, XK2CG,
-!                            UFRIC, WDWAVE, AIRD)*
+!                            UFRIC, COSWDIF, RAORW)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FL1*    - SPECTRUM.
@@ -30,8 +30,8 @@
 !          *WAVNUM* - WAVE NUMBER
 !          *XK2CG*  - (WAVE NUMBER)**2 * GROUP SPEED
 !          *UFRIC*  - FRICTION VELOCITY IN M/S.
-!          *AIRD*   - AIR DENSITY IN KG/M3
-!          *WDWAVE* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC.
+!          *RAORW*  - RATIO AIR DENSITY TO WATER DENSITY
+!          *COSWDIF*-  COS(TH(K)-WDWAVE(IJ))
 
 
 !     METHOD.
@@ -54,7 +54,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : FR      , TH     ,ZPIFR
-      USE YOWPCONS , ONLY : G        ,ZPI    ,ROWATER
+      USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPHYS  , ONLY : SDSBR   ,ISDSDTH ,ISB     ,IPSAT    ,      &
 &                  SSDSC2  , SSDSC4, SSDSC6,  MICHE, SSDSC3, SSDSBRF1, &
@@ -73,14 +73,15 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: INDEP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, XK2CG 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, WDWAVE, AIRD 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, RAORW 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(IN) :: COSWDIF 
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, I, J, M2, K2, KK, NANGD
       INTEGER(KIND=JWIM), DIMENSION(NANG) :: KKD
 
       REAL(KIND=JWRB) :: TPIINV, TPIINVH, TMP01, TMP03
-      REAL(KIND=JWRB) :: EPSR, ROG, SSDSC6M1
+      REAL(KIND=JWRB) :: EPSR, SSDSC6M1
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB), DIMENSION(NFRE) :: SIG, SSDSC2_SIG 
@@ -107,8 +108,6 @@
 
       NANGD=NANG/2
 
-      ROG = ROWATER*G
-
 
       TMP03 = 1.0_JWRB/(SDSBR*MICHE)
 
@@ -133,7 +132,7 @@
         ENDDO
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            BTH(IJ,K,M)=0.0_JWRB
+            BTH(IJ,K,M) = 0.0_JWRB
           ENDDO
         ENDDO
       ENDDO
@@ -245,9 +244,9 @@
 
 !     WAVE-TURBULENCE INTERACTION TERM
       IF (SSDSC5 /= 0.0_JWRB) THEN
-        TMP01 = 2._JWRB*SSDSC5/ROG
+        TMP01 = 2._JWRB*SSDSC5/G
         DO IJ=KIJS,KIJL
-          FACTURB(IJ) = TMP01*AIRD(IJ)*UFRIC(IJ)*UFRIC(IJ)
+          FACTURB(IJ) = TMP01*RAORW(IJ)*UFRIC(IJ)*UFRIC(IJ)
         ENDDO
         DO M=1, NFRE
           DO IJ=KIJS,KIJL
@@ -255,7 +254,7 @@
           ENDDO
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              D(IJ,K,M)= D(IJ,K,M)- FACWTRB(IJ,M)*COS(WDWAVE(IJ)-TH(K))
+              D(IJ,K,M)= D(IJ,K,M)- FACWTRB(IJ,M)*COSWDIF(IJ,K)
             ENDDO
           ENDDO
         ENDDO

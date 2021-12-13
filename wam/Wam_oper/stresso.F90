@@ -2,6 +2,7 @@
      &                    FL1, SL, SPOS,                      &
      &                    CINV,                               &
      &                    WDWAVE, UFRIC, Z0M, AIRD, RNFAC,    &
+     &                    COSWDIF, SINWDIF2,                  &
      &                    TAUW, TAUWDIR, PHIWA, LLPHIWA)
 
 ! ----------------------------------------------------------------------
@@ -27,6 +28,7 @@
 !                         FL1, SL, SPOS,
 !    &                    CINV,
 !    &                    WDWAVE, UFRIC, Z0M, AIRD, RNFAC,
+!    &                    COSWDIF, SINWDIF2,
 !    &                    TAUW, TAUWDIR, PHIWA)*
 !         *KIJS*        - INDEX OF FIRST GRIDPOINT.
 !         *KIJL*        - INDEX OF LAST GRIDPOINT.
@@ -43,6 +45,8 @@
 !         *Z0M*         - ROUGHNESS LENGTH IN M.
 !         *AIRD*        - AIR DENSITY IN KG/M**3.
 !         *RNFAC*       - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
+!         *COSWDIF*     - COS(TH(K)-WDWAVE(IJ))
+!         *SINWDIF2*    - SIN(TH(K)-WDWAVE(IJ))**2
 !         *TAUW*        - KINEMATIC WAVE STRESS IN (M/S)**2
 !         *TAUWDIR*     - KINEMATIC WAVE STRESS DIRECTION
 !         *PHIWA*       - ENERGY FLUX FROM WIND INTO WAVES INTEGRATED
@@ -86,6 +90,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CINV
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, UFRIC, Z0M, AIRD, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(IN) :: COSWDIF, SINWDIF2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: TAUW, TAUWDIR, PHIWA
       LOGICAL, INTENT(IN) :: LLPHIWA
 
@@ -153,8 +158,8 @@
 
 !     TAUW is the kinematic wave stress !
       DO IJ=KIJS,KIJL
-        XSTRESS(IJ) = XSTRESS(IJ)/MAX(AIRD(IJ),1.0_JWRB)
-        YSTRESS(IJ) = YSTRESS(IJ)/MAX(AIRD(IJ),1.0_JWRB)
+        XSTRESS(IJ) = XSTRESS(IJ)/MAX(AIRD(IJ), 1.0_JWRB)
+        YSTRESS(IJ) = YSTRESS(IJ)/MAX(AIRD(IJ), 1.0_JWRB)
       ENDDO
 
       IF ( LLPHIWA ) THEN
@@ -201,7 +206,8 @@
       ENDIF
 
       CALL TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
-     &                FL1, WDWAVE, AIRD, RNFAC,                  &
+     &                FL1, AIRD, RNFAC,                          &
+     &                COSWDIF, SINWDIF2,                         &
      &                UST, TAUHF, PHIHF, LLPHIWA)
 
       DO IJ=KIJS,KIJL

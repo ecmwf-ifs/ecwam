@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
 
-      SUBROUTINE SETICE (KIJS, KIJL, FL1, CICOVER, WSWAVE, WDWAVE)
+      SUBROUTINE SETICE (KIJS, KIJL, FL1, CICOVER, WSWAVE, COSWDIF)
 
 !-----------------------------------------------------------------------
 
@@ -17,20 +17,18 @@
 !**   INTERFACE.
 !     ----------
 
-!         *CALL* *SETICE(KIJS, KIJL, FL1, CICOVER, WSWAVE, WDWAVE)*
+!         *CALL* *SETICE(KIJS, KIJL, FL1, CICOVER, WSWAVE, COSWDIF)*
 !          *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
 !          *KIJL*    - LOCAL  INDEX OF LAST GRIDPOINT
 !          *FL1*     - SPECTRA
 !          *CICOVER* - SEA ICE COVER
 !          *WSWAVE*  - WIND SPEED.
-!          *WDWAVE*  - WIND DIRECTION (RADIANS).
-
+!          *COSWDIF* - COS(TH(K)-WDWAVE(IJ))
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : TH
       USE YOWICE   , ONLY : FLMIN    ,CITHRSH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
@@ -42,7 +40,8 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(INOUT) :: FL1
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER, WSWAVE, WDWAVE
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER, WSWAVE
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG), INTENT(IN) :: COSWDIF
 
 
       INTEGER(KIND=JWIM) :: IJ, M, K
@@ -59,7 +58,7 @@
 
       DO K=1,NANG
         DO IJ = KIJS, KIJL
-          SPRD(IJ,K)=MAX(0.0_JWRB,COS(TH(K)-WDWAVE(IJ)))**2
+          SPRD(IJ,K)=MAX(0.0_JWRB, COSWDIF(IJ,K))**2
         ENDDO
       ENDDO
 

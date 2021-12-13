@@ -31,6 +31,7 @@
       REAL(KIND=JWRB) :: ZMISS=-999.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: ROAIR = 1.225_JWRB
       REAL(KIND=JWRB), PARAMETER :: ROWATER = 1000.0_JWRB
+      REAL(KIND=JWRB), PARAMETER :: ROWATERM1 = 1.0_JWRB/ROWATER
       REAL(KIND=JWRB), PARAMETER :: YEPS = ROAIR/ROWATER
       REAL(KIND=JWRB), PARAMETER :: YINVEPS = 1.0_JWRB/YEPS
       REAL(KIND=JWRB), PARAMETER :: GAM_SURF = 0.0717_JWRB   !!!! will need to be adapted if you change ROWATER
@@ -86,6 +87,7 @@
 !                          (SET IN CHIEF OR VIA THE IFS).
 !     *ROAIR*     REAL      AIR DENSITY.
 !     *ROWATER*   REAL      WATER DENSITY.
+!     *ROWATERM1* REAL      1 /(WATER DENSITY).
 !     *GAM_SURF*  REAL      SURFACE TENSION (in N/m)
 !     *SURFT*     REAL      SURFACE TENSION divided by water density (in m**3 s**-2)
 !     *YEPS*      REAL      ROAIR/ROWATER.

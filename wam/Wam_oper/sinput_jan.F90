@@ -1,7 +1,8 @@
       SUBROUTINE SINPUT_JAN (NGST, LLSNEG, KIJS, KIJL, FL1 , &
      &                       WAVNUM, CINV, XK2CG,            &
      &                       WDWAVE, WSWAVE, UFRIC, Z0M,     &
-     &                       AIRD, WSTAR, RNFAC,             &
+     &                       COSWDIF, SINWDIF2,              &
+     &                       RAORW, WSTAR, RNFAC,            &
                              FLD, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
@@ -49,7 +50,8 @@
 !     *CALL* *SINPUT_JAN (NGST, LLSNEG, KIJS, KIJL, FL1,
 !    &                    WAVNUM, CINV, XK2CG,
 !    &                    WDWAVE, WSWAVE, UFRIC, Z0M,
-!    &                    AIRD, WSTAR, RNFAC,
+!    &                    COSWDIF, SINWDIF2,
+!    &                    RAORW, WSTAR, RNFAC,
 !    &                    FLD, SL, SPOS, XLLWS)
 !         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
 !                - IF = 2 THEN GUSTINESS PARAMETERISATION
@@ -65,7 +67,9 @@
 !                  CLOCKWISE FROM NORTH).
 !        *UFRIC* - FRICTION VELOCITY IN M/S.
 !        *Z0M*   - ROUGHNESS LENGTH IN M.
-!       *AIRD*   - AIR DENSITY IN KG/M3
+!      *COSWDIF* - COS(TH(K)-WDWAVE(IJ))
+!     *SINWDIF2* - SIN(TH(K)-WDWAVE(IJ))**2
+!        *RAORW* - RATIO AIR DENSITY TO WATER DENSITY
 !        *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
 !          *FLD* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
@@ -107,7 +111,7 @@
       USE YOWFRED  , ONLY : ZPIFR    ,DELTH    ,TH
       USE YOWFRED  , ONLY : FR       ,TH       , ZPIFR
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,GM1      ,ZPI  ,ROWATER   ,YEPS,  EPSUS
+      USE YOWPCONS , ONLY : G        ,GM1      ,ZPI  , EPSUS
       USE YOWPHYS  , ONLY : ZALP     ,XKAPPA, BETAMAXOXKAPPA2
       USE YOWSTAT  , ONLY : IDAMPING
       USE YOWTEST  , ONLY : IU06
@@ -125,7 +129,8 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, XK2CG
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: AIRD, WSTAR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG), INTENT(IN) :: COSWDIF, SINWDIF2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: RAORW, WSTAR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
@@ -136,7 +141,6 @@
       REAL(KIND=JWRB) :: CONST1, CONST3, XKAPPAD
       REAL(KIND=JWRB) :: CONSTN
       REAL(KIND=JWRB) :: ZNZ
-      REAL(KIND=JWRB) :: RWINV
       REAL(KIND=JWRB) :: X, ZLOG, ZLOG2X, ZBETA
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NGST) :: WSIN
@@ -144,17 +148,14 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ZTANHKD 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SIG_N
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CNSN
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EPSIL
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: AIRDM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SUMF, SUMFSIN2 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CSTRNFAC
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: SIN2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: SIGDEV ,US, Z0, UCN, ZCN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: USTPM1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: XVD, UCND, CONST3_UCN2
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: COSD, UFAC1, UFAC2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: UFAC1, UFAC2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: TEMPD
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NGST) :: GAM0
 
@@ -167,25 +168,19 @@
       CONST1   = BETAMAXOXKAPPA2 
       CONST3   = 2.0_JWRB*XKAPPA/CONST1  ! SEE IDAMPING
       XKAPPAD  = 1.E0_JWRB/XKAPPA
-      RWINV = 1.0_JWRB/ROWATER
 
       CONST3 = IDAMPING*CONST3
 
-      CONSTN = DELTH*ROWATER/(XKAPPA*ZPI)
-
-      DO IJ=KIJS,KIJL
-        AIRDM(IJ) = 1.0_JWRB/MAX(AIRD(IJ),1.0_JWRB)
-      ENDDO
+      CONSTN = DELTH/(XKAPPA*ZPI)
 
 !*    1. PRECALCULATED ANGULAR DEPENDENCE.
 !        ---------------------------------
 
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-          COSD(IJ,K) = COS(TH(K)-WDWAVE(IJ))
-          IF (COSD(IJ,K) > 0.01_JWRB) THEN
+          IF (COSWDIF(IJ,K) > 0.01_JWRB) THEN
             LZ(IJ,K) = .TRUE.
-            TEMPD(IJ,K) = XKAPPA/COSD(IJ,K)
+            TEMPD(IJ,K) = XKAPPA/COSWDIF(IJ,K)
           ELSE
             LZ(IJ,K) = .FALSE.
             TEMPD(IJ,K) = XKAPPA 
@@ -195,17 +190,11 @@
 
       IF (LLNORMAGAM) THEN
         DO IJ=KIJS,KIJL
-          CSTRNFAC(IJ) = CONSTN * RNFAC(IJ) * AIRDM(IJ)
+          CSTRNFAC(IJ) = CONSTN * RNFAC(IJ) / RAORW(IJ)
         ENDDO
         DO M=1,NFRE
           DO IJ=KIJS,KIJL
             XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*XK2CG(IJ,M)
-          ENDDO
-        ENDDO
-
-        DO K=1,NANG
-          DO IJ=KIJS,KIJL
-            SIN2(IJ,K) = SIN(TH(K)-WDWAVE(IJ))**2
           ENDDO
         ENDDO
 
@@ -266,9 +255,6 @@
         ENDDO
       ENDDO
 
-      DO IJ=KIJS,KIJL
-        EPSIL(IJ) = AIRD(IJ)*RWINV
-      ENDDO
 ! ----------------------------------------------------------------------
 
 !*    2. LOOP OVER FREQUENCIES.
@@ -294,7 +280,7 @@
         ENDDO
 
         DO IJ=KIJS,KIJL
-          CNSN(IJ) = CONST(M)*ZTANHKD(IJ)*EPSIL(IJ)
+          CNSN(IJ) = CONST(M)*ZTANHKD(IJ)*RAORW(IJ)
         ENDDO
 
         DO IGST=1,NGST
@@ -323,7 +309,7 @@
               IF (LZ(IJ,K)) THEN
                 ZLOG = ZCN(IJ,IGST) + TEMPD(IJ,K)*UCND(IJ,IGST)
                 IF (ZLOG < 0.0_JWRB) THEN
-                  X=COSD(IJ,K)*UCN(IJ,IGST)
+                  X=COSWDIF(IJ,K)*UCN(IJ,IGST)
                   ZLOG2X=ZLOG*ZLOG*X
                   GAM0(IJ,K,IGST) = ZLOG2X*ZLOG2X*EXP(ZLOG) * CNSN(IJ)
                   XLLWS(IJ,K,M)= 1.0_JWRB
@@ -348,7 +334,7 @@
             DO K=1,NANG
               DO IJ=KIJS,KIJL
                 SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)
-                SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SIN2(IJ,K)
+                SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SINWDIF2(IJ,K)
               ENDDO
             ENDDO
 
@@ -378,13 +364,13 @@
           DO K=1,NANG
             DO IGST=1,1
               DO IJ=KIJS,KIJL
-                ZBETA = CONST3_UCN2(IJ,IGST)*(COSD(IJ,K)-XVD(IJ,IGST))
+                ZBETA = CONST3_UCN2(IJ,IGST)*(COSWDIF(IJ,K)-XVD(IJ,IGST))
                 UFAC2(IJ,K) = WSIN(IGST)*ZBETA
               ENDDO
             ENDDO
             DO IGST=2,NGST
               DO IJ=KIJS,KIJL
-                ZBETA = CONST3_UCN2(IJ,IGST)*(COSD(IJ,K)-XVD(IJ,IGST))
+                ZBETA = CONST3_UCN2(IJ,IGST)*(COSWDIF(IJ,K)-XVD(IJ,IGST))
                 UFAC2(IJ,K) = UFAC2(IJ,K)+WSIN(IGST)*ZBETA
               ENDDO
             ENDDO

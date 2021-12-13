@@ -1,7 +1,8 @@
       SUBROUTINE SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, & 
      &                   WAVNUM, CINV, XK2CG,           &
      &                   WDWAVE, WSWAVE, UFRIC, Z0M,    &
-     &                   AIRD, WSTAR, RNFAC,            &
+     &                   COSWDIF, SINWDIF2,             & 
+     &                   RAORW, WSTAR, RNFAC,           &
      &                   FLD, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
@@ -14,7 +15,8 @@
 !     *CALL* *SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1,
 !    &                WAVNUM, CINV, XK2CG,
 !    &                WDWAVE, UFRIC, Z0M,
-!    &                AIRD, WSTAR, FLD, SL, SPOS, XLLWS)
+!    &                COSWDIF, SINWDIF2,
+!    &                RAORW, WSTAR, FLD, SL, SPOS, XLLWS)
 !         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
 !                - IF = 2 THEN GUSTINESS PARAMETERISATION
 !         *LLSNEG* - IF TRUE THEN THE NEGATIVE SINPUT WILL BE COMPUTED
@@ -29,7 +31,9 @@
 !                  CLOCKWISE FROM NORTH).
 !        *UFRIC* - FRICTION VELOCITY IN M/S.
 !        *Z0M*   - ROUGHNESS LENGTH IN M.
-!       *AIRD*   - AIR DENSITY IN KG/M3
+!      *COSWDIF* - COS(TH(K)-WDWAVE(IJ))
+!     *SINWDIF2* - SIN(TH(K)-WDWAVE(IJ))**2
+!        *RAORW* - RATIO AIR DENSITY TO WATER DENSITY.
 !        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
 !        *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !          *FLD* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
@@ -74,7 +78,8 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, XK2CG
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: AIRD, WSTAR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: RAORW, WSTAR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(IN) :: COSWDIF, SINWDIF2
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
 
@@ -91,13 +96,15 @@
         CALL SINPUT_JAN (NGST, LLSNEG, KIJS, KIJL, FL1,  &
      &                   WAVNUM, CINV, XK2CG,            &
      &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
-     &                   AIRD, WSTAR, RNFAC,             &
+     &                   COSWDIF, SINWDIF2,              & 
+     &                   RAORW, WSTAR, RNFAC,            &
      &                   FLD, SL, SPOS, XLLWS)
       CASE(1) 
         CALL SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1,  &
      &                   WAVNUM, CINV, XK2CG,            &
      &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
-     &                   AIRD, WSTAR, RNFAC,             &
+     &                   COSWDIF, SINWDIF2,              & 
+     &                   RAORW, WSTAR, RNFAC,            &
      &                   FLD, SL, SPOS, XLLWS)
       END SELECT 
 

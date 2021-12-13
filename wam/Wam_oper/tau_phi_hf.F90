@@ -1,5 +1,6 @@
 SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
- &                    FL1, WDWAVE, AIRD, RNFAC,                  &
+ &                    FL1, AIRD, RNFAC,                          &
+ &                    COSWDIF, SINWDIF2,                         &
  &                    UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
@@ -19,17 +20,19 @@ SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
 !     ---------
 
 !       *CALL* *TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, UST, Z0M,
-!                          FL1, WDWAVE, AIRD, RNFAC, &
+!                          FL1, AIRD, RNFAC,
+!                          COSWDIF, SINWDIF2, 
 !                          UST, TAUHF, PHIHF, LLPHIHF)
 !          *KIJS*         - INDEX OF FIRST GRIDPOINT
 !          *KIJL*         - INDEX OF LAST GRIDPOINT
 !          *MIJ*          - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !          *LTAUWSHELTER* - if true then TAUWSHELTER 
 !          *FL1*          - WAVE SPECTRUM.
-!          *WDWAVE*       - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !          *AIRD*         - AIR DENSITY IN KG/M**3.
 !          *RNFAC*        - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !          *UFRIC*        - FRICTION VELOCITY
+!          *COSWDIF*      - COS(TH(K)-WDWAVE(IJ))
+!          *SINWDIF2*     - SIN(TH(K)-WDWAVE(IJ))**2
 !          *UST*          - REDUCED FRICTION VELOCITY DUE TO SHELTERING
 !          *Z0M*          - ROUGHNESS LENGTH 
 !          *TAUHF*        - HIGH-FREQUENCY STRESS
@@ -76,13 +79,13 @@ SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
       INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(KIJS:KIJL)
       LOGICAL, INTENT(IN) :: LTAUWSHELTER
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, Z0M
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, AIRD, RNFAC
-
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
-
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: AIRD, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(IN) :: COSWDIF, SINWDIF2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: UST
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: TAUHF, PHIHF
       LOGICAL, INTENT(IN) :: LLPHIHF
+
 
       INTEGER(KIND=JWIM) :: J, IJ, K
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL) :: NS
@@ -132,20 +135,20 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
 
       K=1
       DO IJ=KIJS,KIJL
-        COSW     = MAX(COS(TH(K)-WDWAVE(IJ)),0.0_JWRB)
+        COSW     = MAX(COSWDIF(IJ,K), 0.0_JWRB)
         FCOSW2   = FL1(IJ,K,MIJ(IJ))*COSW**2
         F1DCOS3(IJ) = FCOSW2*COSW
         F1DCOS2(IJ) = FCOSW2
-        F1DSIN2(IJ) = FL1(IJ,K,MIJ(IJ))*SIN(TH(K)-WDWAVE(IJ))**2
+        F1DSIN2(IJ) = FL1(IJ,K,MIJ(IJ))*SINWDIF2(IJ,K)
         F1D(IJ) = FL1(IJ,K,MIJ(IJ))
       ENDDO
       DO K=2,NANG
         DO IJ=KIJS,KIJL
-          COSW     = MAX(COS(TH(K)-WDWAVE(IJ)),0.0_JWRB)
+          COSW     = MAX(COSWDIF(IJ,K), 0.0_JWRB)
           FCOSW2   = FL1(IJ,K,MIJ(IJ))*COSW**2
           F1DCOS3(IJ) = F1DCOS3(IJ) + FCOSW2*COSW
           F1DCOS2(IJ) = F1DCOS2(IJ) + FCOSW2 
-          F1DSIN2(IJ) = F1DSIN2(IJ) + FL1(IJ,K,MIJ(IJ))*SIN(TH(K)-WDWAVE(IJ))**2
+          F1DSIN2(IJ) = F1DSIN2(IJ) + FL1(IJ,K,MIJ(IJ))*SINWDIF2(IJ,K)
           F1D(IJ) = F1D(IJ) + FL1(IJ,K,MIJ(IJ))
         ENDDO
       ENDDO
@@ -196,12 +199,12 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
             ZX        = UST(IJ)*CM1 + ZALP
             ZARG      = XKAPPA/ZX
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
-            ZLOG      = MIN(ZLOG,0.0_JWRB)
-            ZBETA     = EXP(ZLOG)*ZLOG**4
+            ZLOG      = MIN(ZLOG, 0.0_JWRB)
+            ZBETA     = ZLOG**4 * EXP(ZLOG)
             ZNZ       = ZBETA*UST(IJ)*Y
             GAMNORMA  = (1.0_JWRB + CONST1(IJ)*ZNZ) / (1.0_JWRB + CONST2(IJ)*ZNZ)
             FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
-            TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
+            TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2, 0.0_JWRB)
 
             UST(IJ)   = SQRT(TAUL(IJ))
             TAUHF(IJ) = TAUHF(IJ) + FNC2
@@ -216,8 +219,8 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
             ZX        = UST(IJ)*CM1 + ZALP
             ZARG      = XKAPPA/ZX
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
-            ZLOG      = MIN(ZLOG,0.0_JWRB)
-            ZBETA     = EXP(ZLOG)*ZLOG**4
+            ZLOG      = MIN(ZLOG, 0.0_JWRB)
+            ZBETA     = ZLOG**4 * EXP(ZLOG)
             FNC2      = ZBETA*WTAUHF(J)
             ZNZ       = ZBETA*UST(IJ)*Y
             GAMNORMA  = (1.0_JWRB + CONST1(IJ)*ZNZ) / (1.0_JWRB + CONST2(IJ)*ZNZ)
@@ -236,7 +239,7 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
         DO IJ=KIJS,KIJL
           TAUL(IJ) = USTPH(IJ)**2
           ZSUP(IJ) = ZSUPMAX
-          DELZ(IJ) = MAX((ZSUP(IJ)-ZINF(IJ))/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
+          DELZ(IJ) = MAX((ZSUP(IJ)-ZINF(IJ))/REAL(JTOT_TAUHF-1,JWRB), 0.0_JWRB)
         ENDDO
 
         DO IJ=KIJS,KIJL
@@ -253,12 +256,12 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
               ZX        = USTPH(IJ)*CM1 + ZALP
               ZARG      = XKAPPA/ZX
               ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
-              ZLOG      = MIN(ZLOG,0.0_JWRB)
-              ZBETA     = EXP(ZLOG)*ZLOG**4
+              ZLOG      = MIN(ZLOG, 0.0_JWRB)
+              ZBETA     = ZLOG**4 * EXP(ZLOG)
               ZNZ       = ZBETA*UST(IJ)*Y
               GAMNORMA  = (1.0_JWRB + CONST1(IJ)*ZNZ) / (1.0_JWRB + CONST2(IJ)*ZNZ)
               FNC2      = ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
-              TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*F1DCOS3(IJ)*CONSTTAU(IJ)*FNC2,0.0_JWRB)
+              TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*F1DCOS3(IJ)*CONSTTAU(IJ)*FNC2, 0.0_JWRB)
               USTPH(IJ)   = SQRT(TAUL(IJ))
               PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
             ENDDO
@@ -273,8 +276,8 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
               ZX        = USTPH(IJ)*CM1 + ZALP
               ZARG      = XKAPPA/ZX
               ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
-              ZLOG      = MIN(ZLOG,0.0_JWRB)
-              ZBETA     = EXP(ZLOG)*ZLOG**4
+              ZLOG      = MIN(ZLOG, 0.0_JWRB)
+              ZBETA     = ZLOG**4 * EXP(ZLOG)
               ZNZ       = ZBETA*UST(IJ)*Y
               GAMNORMA  = (1.0_JWRB + CONST1(IJ)*ZNZ) / (1.0_JWRB + CONST2(IJ)*ZNZ)
               FNC2      = ZBETA*WTAUHF(J) * GAMNORMA
