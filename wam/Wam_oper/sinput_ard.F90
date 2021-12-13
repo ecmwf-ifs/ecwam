@@ -462,7 +462,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
             ENDDO
 
           ELSE
-            DSTAB(:,:,M) = 0.0_JWRB
+            DSTAB(:,:,:) = 0.0_JWRB
           ENDIF
         ENDIF
 
