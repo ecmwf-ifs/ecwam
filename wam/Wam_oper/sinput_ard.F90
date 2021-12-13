@@ -69,7 +69,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
 
       USE YOWCOUP  , ONLY : LLCAPCHNK,LLNORMAGAM
       USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH, ZPIFR, DELTH
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
       USE YOWPCONS , ONLY : G        ,GM1      ,ROWATER  ,EPSMIN, EPSUS, ZPI
       USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2,    &
      &                      BMAXOKAPDTH, RN1_RN, &
@@ -443,21 +443,27 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         ENDIF
 
 
-        IF (LLSNEG) THEN
 !       SWELL DAMPING:
-          DO IJ=KIJS,KIJL
-            DSTAB1(IJ) = COEF5(M)*AIRD_PVISC(IJ)*WAVNUM(IJ,M)
-            TEMP1(IJ) = COEF(M)*AIRD(IJ)
-          ENDDO
+        IF (LLSNEG) THEN
+          IF ( M <= NFRE_RED) THEN
 
-          DO IGST=1,NGST
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                DSTAB2 = TEMP1(IJ)*(TEMP2(IJ)+(FU+FUD*COSLP(IJ,K,IGST))*USTP(IJ,IGST))
-                DSTAB(IJ,K,IGST) = DSTAB1(IJ)+PTURB(IJ)*DSTAB2
+            DO IJ=KIJS,KIJL
+              DSTAB1(IJ) = COEF5(M)*AIRD_PVISC(IJ)*WAVNUM(IJ,M)
+              TEMP1(IJ) = COEF(M)*AIRD(IJ)
+            ENDDO
+
+            DO IGST=1,NGST
+              DO K=1,NANG
+                DO IJ=KIJS,KIJL
+                  DSTAB2 = TEMP1(IJ)*(TEMP2(IJ)+(FU+FUD*COSLP(IJ,K,IGST))*USTP(IJ,IGST))
+                  DSTAB(IJ,K,IGST) = DSTAB1(IJ)+PTURB(IJ)*DSTAB2
+                ENDDO
               ENDDO
             ENDDO
-          ENDDO
+
+          ELSE
+            DSTAB(:,:,M) = 0.0_JWRB
+          ENDIF
         ENDIF
 
 
