@@ -602,21 +602,19 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 !           POINTS ON SURROUNDING LATITUDES 
             DO IC=1,2
               DO ICL=1,2
-                WLATN(IJ,K,M,IC,ICL)=                                   &
-     &                   WLATN(IJ,K,M,IC,ICL)*OBSLAT(IJ,M,IC)
+                WLATN(IJ,K,M,IC,ICL) = WLATN(IJ,K,M,IC,ICL)*OBSLAT(IJ,M,IC) 
               ENDDO
             ENDDO
 
 !           POINTS ON SURROUNDING LONGITUDE
             DO IC=1,2
-              WLONN(IJ,K,M,IC)=WLONN(IJ,K,M,IC)*OBSLON(IJ,M,IC)
+              WLONN(IJ,K,M,IC) = WLONN(IJ,K,M,IC)*OBSLON(IJ,M,IC)
             ENDDO
 
 !           SURROUNDING CORNER POINTS
             DO ICR=1,4
               DO ICL=1,2
-                WCORN(IJ,K,M,ICR,ICL)=                                  &
-     &                   WCORN(IJ,K,M,ICR,ICL)*OBSCOR(IJ,M,KCR(K,ICR))
+                WCORN(IJ,K,M,ICR,ICL) = WCORN(IJ,K,M,ICR,ICL)*OBSCOR(IJ,M,KCR(K,ICR))
               ENDDO
             ENDDO
 
