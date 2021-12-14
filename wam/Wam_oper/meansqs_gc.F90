@@ -1,4 +1,4 @@
-      SUBROUTINE MEANSQS_GC(XKMSS, KIJS, KIJL, HALPHAP, USTAR, XMSSCG, FRGC)
+      SUBROUTINE MEANSQS_GC(XKMSS, KIJS, KIJL, HALP, USTAR, XMSSCG, FRGC)
 
 !***  DETERMINE MSS FOR GRAV-CAP WAVES UP TO WAVE NUMBER XKMSS
 
@@ -29,7 +29,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
       REAL(KIND=JWRB), INTENT(IN) :: XKMSS ! WAVE NUMBER CUT-OFF
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: HALPHAP  ! 1/2 Phillips parameter
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: HALP  ! 1/2 Phillips parameter
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USTAR ! friction velocity
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: XMSSCG  ! mean square slope for gravity-capillary waves
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: FRGC  ! Frequency from which the gravity-capillary spectrum is approximated
@@ -68,7 +68,7 @@
 !         mss :  integral of k**2 F(k)  k dk
           XMSSCG(IJ) = XMSSCG(IJ) + DELKCC_GC(I) * XKM_GC(I) 
         ENDDO
-        COEF(IJ) = C2OSQRTVG_GC(NS(IJ))*HALPHAP(IJ)
+        COEF(IJ) = C2OSQRTVG_GC(NS(IJ))*HALP(IJ)
         XMSSCG(IJ) = XMSSCG(IJ)*COEF(IJ)
       ENDDO
 

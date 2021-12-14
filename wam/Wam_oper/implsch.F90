@@ -113,7 +113,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELFL(NFRE)
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: RAORW
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEAN, FMEAN
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEAN, FMEAN, HALP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: F1MEAN, AKMEAN, XKMEAN 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: PHIWA
@@ -248,7 +248,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
      &               WAVNUM, CINV, XK2CG,                         &
      &               WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER, &
      &               COSWDIF, SINWDIF2,                           &
-     &               FMEAN, FMEANWS,                              &
+     &               FMEAN, HALP, FMEANWS,                        &
      &               FLM,                                         &
      &               UFRIC, TAUW, TAUWDIR, Z0M, Z0B, PHIWA,       &
      &               FLD, SL, SPOS,                               &

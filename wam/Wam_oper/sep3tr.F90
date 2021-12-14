@@ -1,6 +1,6 @@
-      SUBROUTINE SEP3TR (KIJS, KIJL, FL1, MIJ, WSWAVE, WDWAVE ,   &
-     &                   ESWELL, FSWELL, THSWELL, FSEA,           &
-     &                   FLSW, SWM,                               &
+      SUBROUTINE SEP3TR (KIJS, KIJL, FL1, MIJ, WSWAVE, WDWAVE , COSWDIF, &
+     &                   ESWELL, FSWELL, THSWELL, FSEA,                  &
+     &                   FLSW, SWM,                                      &
      &                   EMTRAIN  ,THTRAIN  ,PMTRAIN)
 
 ! ----------------------------------------------------------------------
@@ -22,7 +22,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEP3TR (KIJS, KIJL, FL1, MIJ, WSWAVE, WDWAVE,
+!       *CALL* *SEP3TR (KIJS, KIJL, FL1, MIJ, WSWAVE, WDWAVE, COSWDIF,
 !                       ESWELL, FSWELL, THSWELL, FSEA,
 !                       FLSW, SWM,
 !                       EMTRAIN  ,THTRAIN  ,PMTRAIN)
@@ -32,6 +32,7 @@
 !          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !          *WSWAVE* - LATESt WIND SPEED.
 !          *WDWAVE* - LATEST WIND DIRECTION.
+!          *COSWDIF*- COSINE (WDWAVE - WAVES DIRECTIONS)
 !          *ESWELL* - TOTAL SWELL ENERGY
 !          *FSWELL* - TOTAL SWELL MEAN FREQUENCY
 !          *THSWELL*- TOTAL SWELL MEAN DIRECTION
@@ -74,6 +75,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: MIJ
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WSWAVE, WDWAVE 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG), INTENT(IN) :: COSWDIF
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: ESWELL,  FSWELL, THSWELL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: FSEA
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLSW, SWM
@@ -101,7 +103,6 @@
       REAL(KIND=JWRB) :: THRS
       REAL(KIND=JWRB) :: HSMIN
 
-      REAL(KIND=JWRB) :: COSDIFF
       REAL(KIND=JWRB) :: DELDW
       REAL(KIND=JWRB) :: COSDIR, FRLIMIT 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -177,9 +178,8 @@
 
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-          COSDIFF=COS(TH(K)-WDWAVE(IJ))
-          LLCOSDIFF(IJ,K)=(COSDIFF.LT.-0.4_JWRB)
-          SPRD(IJ,K)=MAX(0.0_JWRB,COSDIFF)**2
+          LLCOSDIFF(IJ,K) = (COSWDIF(IJ,K) < -0.4_JWRB)
+          SPRD(IJ,K) = MAX(0.0_JWRB, COSWDIF(IJ,K))**2
         ENDDO
       ENDDO
 

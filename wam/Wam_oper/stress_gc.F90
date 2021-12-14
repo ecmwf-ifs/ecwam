@@ -85,7 +85,7 @@ IF (LHOOK) CALL DR_HOOK('STRESS_GC',0,ZHOOK_HANDLE)
         X       = USTAR*CM_GC(I)
         XLOG    = LOG(XK_GC(I)*Z0) + XKAPPA/(X + ZALP)
         ZLOG    = XLOG - LOG(XLAMBDA) 
-        ZLOG    = MIN(ZLOG,0.0_JWRB)
+        ZLOG    = MIN(ZLOG, 0.0_JWRB)
         ZLOG2X  = ZLOG*ZLOG*X
         GAM_W(I)= ZLOG2X*ZLOG2X*EXP(XLOG)*OM3GMKM_GC(I)
       ENDDO

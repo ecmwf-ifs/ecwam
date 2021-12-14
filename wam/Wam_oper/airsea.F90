@@ -1,5 +1,5 @@
-      SUBROUTINE AIRSEA (KIJS, KIJL, FL1, WAVNUM,           &
-&                        U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
+      SUBROUTINE AIRSEA (KIJS, KIJL, FL1, WAVNUM,                 &
+&                        HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
 &                        US, Z0, Z0B, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
@@ -21,25 +21,27 @@
 !     ----------
 
 !       *CALL* *AIRSEA (KIJS, KIJL, FL1, WAVNUM,
-!                       U10, U10DIR, TAUW, TAUWDIR, RNFAC,
+!                       HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,
 !                       US, Z0, Z0B, ICODE_WND, IUSFG)*
-!          *KIJS*  - INDEX OF FIRST GRIDPOINT.
-!          *KIJL*  - INDEX OF LAST GRIDPOINT.
-!          *FL1*  - SPECTRA
+
+!          *KIJS*    - INDEX OF FIRST GRIDPOINT.
+!          *KIJL*    - INDEX OF LAST GRIDPOINT.
+!          *FL1*     - SPECTRA
 !          *WAVNUM*  - WAVE NUMBER
-!          *U10*  - INPUT OR OUTPUT BLOCK OF WINDSPEED U10.
-!          *U10DIR*  - INPUT OR OUTPUT BLOCK OF WINDSPEED DIRECTION.
-!          *TAUW* - INPUT BLOCK OF WAVE STRESS.
-!          *TAUWDIR* - INPUT BLOCK OF WAVE STRESS DIRECTION.
-!          *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
-!          *US*   - OUTPUT OR OUTPUT BLOCK OF FRICTION VELOCITY.
-!          *Z0*   - OUTPUT BLOCK OF ROUGHNESS LENGTH.
-!          *Z0B*  - BACKGROUND ROUGHNESS LENGTH.
+!          *HALP*    - 1/2 PHILLIPS PARAMETER
+!          *U10*     - WINDSPEED U10.
+!          *U10DIR*  - WINDSPEED DIRECTION.
+!          *TAUW*    - WAVE STRESS.
+!          *TAUWDIR* - WAVE STRESS DIRECTION.
+!          *RNFAC*   - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
+!          *US*      - OUTPUT OR OUTPUT BLOCK OF FRICTION VELOCITY.
+!          *Z0*      - OUTPUT BLOCK OF ROUGHNESS LENGTH.
+!          *Z0B*     - BACKGROUND ROUGHNESS LENGTH.
 !          *ICODE_WND* SPECIFIES WHICH OF U10 OR US HAS BEEN FILED UPDATED:
 !                     U10: ICODE_WND=3 --> US will be updated
 !                     US:  ICODE_WND=1 OR 2 --> U10 will be updated
-!          *IUSFG* - IF = 1 THEN USE THE FRICTION VELOCITY (US) AS FIRST GUESS in TAUT_Z0
-!                         0 DO NOT USE THE FIELD US 
+!          *IUSFG*   - IF = 1 THEN USE THE FRICTION VELOCITY (US) AS FIRST GUESS in TAUT_Z0
+!                           0 DO NOT USE THE FIELD US 
 
 
 ! ----------------------------------------------------------------------
@@ -55,6 +57,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "taut_z0.intfb.h"
 #include "z0wave.intfb.h"
@@ -62,7 +65,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (IN) :: U10DIR, TAUW, TAUWDIR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (IN) :: HALP, U10DIR, TAUW, TAUWDIR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (INOUT) :: U10, US
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (OUT) :: Z0, Z0B
 
@@ -80,8 +83,9 @@
 !        ----------------------------------
 
       IF (ICODE_WND == 3) THEN
-        CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, WAVNUM,    &
-     &                U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
+
+        CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, WAVNUM,          &
+     &                HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
      &                US, Z0, Z0B)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN

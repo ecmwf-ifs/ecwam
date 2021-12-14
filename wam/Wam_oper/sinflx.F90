@@ -4,7 +4,7 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,                    &
  &                 WAVNUM, CINV, XK2CG,                         &
  &                 WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER, &
  &                 COSWDIF, SINWDIF2,                           &
- &                 FMEAN, FMEANWS,                              &
+ &                 FMEAN, HALP, FMEANWS,                        &
  &                 FLM,                                         &
  &                 UFRIC, TAUW, TAUWDIR, Z0M, Z0B, PHIWA,       &
  &                 FLD, SL, SPOS,                               &
@@ -18,7 +18,7 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,                    &
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LWCOU    ,LLCAPCHNK , LLNORMAGAM
+      USE YOWCOUP  , ONLY : LWCOU    ,LLCAPCHNK , LLGCBZ0, LLNORMAGAM
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPHYS  , ONLY : DTHRN_A  ,DTHRN_U 
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
@@ -28,9 +28,11 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,                    &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "airsea.intfb.h"
 #include "femeanws.intfb.h"
 #include "frcutindex.intfb.h"
+#include "halphap.intfb.h"
 #include "sinput.intfb.h"
 #include "stresso.intfb.h"
 
@@ -53,6 +55,7 @@ REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER  !! SEA ICE COVER.
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(IN) :: COSWDIF  !! COS(TH(K)-WDWAVE(IJ))
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(IN) :: SINWDIF2 !! SIN(TH(K)-WDWAVE(IJ))**2
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: FMEAN  !! MEAN FREQUENCY.
+REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: HALP   !! 1/2 PHILLIPS PARAMETER  
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: FMEANWS  !! MEAN FREQUENCY OF THE WINDSEA.
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG), INTENT(IN) :: FLM  !! SPECTAL DENSITY MINIMUM VALUE
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: UFRIC !! FRICTION VELOCITY IN M/S.
@@ -108,11 +111,21 @@ ENDIF
 
 IF(LUPDTUS) THEN
   ! increase noise level in the tail
-  IF (ICALL == 1 ) FL1(KIJS:KIJL,:,NFRE) = MAX(FL1(KIJS:KIJL,:,NFRE),FLM(KIJS:KIJL,:))
+  IF (ICALL == 1 ) THEN
+    FL1(KIJS:KIJL,:,NFRE) = MAX(FL1(KIJS:KIJL,:,NFRE),FLM(KIJS:KIJL,:))
 
-  CALL AIRSEA (KIJS, KIJL, FL1, WAVNUM,              &
-&              WSWAVE, WDWAVE, TAUW, TAUWDIR, RNFAC, &
+    IF (LLGCBZ0) THEN
+      CALL HALPHAP(KIJS, KIJL, WAVNUM, COSWDIF, FL1, HALP)
+    ELSE
+      HALP(:) = 0.0_JWRB 
+    ENDIF
+
+  ENDIF
+
+  CALL AIRSEA (KIJS, KIJL, FL1, WAVNUM,                    &
+&              HALP, WSWAVE, WDWAVE, TAUW, TAUWDIR, RNFAC, &
 &              UFRIC, Z0M, Z0B, ICODE_WND, IUSFG) 
+
 ENDIF
 
 ! COMPUTE WIND INPUT

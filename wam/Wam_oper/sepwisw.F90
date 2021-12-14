@@ -1,5 +1,5 @@
       SUBROUTINE SEPWISW (KIJS, KIJL, MIJ, FL1, XLLWS, CINV,      &
-     &                    UFRIC    ,WSWAVE   ,WDWAVE,             &
+     &                    UFRIC    ,WSWAVE   ,WDWAVE, COSWDIF,    &
      &                    ESWELL   ,FSWELL   ,THSWELL  ,          &
      &                    P1SWELL  ,P2SWELL  ,SPRDSWELL,          &
      &                    ESEA     ,FSEA     ,THWISEA  ,          &
@@ -32,7 +32,7 @@
 !     ----------
 
 !       *CALL* SEPWISW (KIJS, KIJL, MIJ, FL1, XLLWS,
-!    &                  UFRIC, WSWAVE, WDWAVE,
+!    &                  UFRIC, WSWAVE, WDWAVE, COSWDIF,
 !    &                  ESWELL   ,FSWELL   ,THSWELL  ,
 !    &                  P1SWELL  ,P2SWELL  ,SPRDSWELL,
 !    &                  ESEA     ,FSEA     ,THWISEA  ,
@@ -46,6 +46,7 @@
 !          *UFRIC*  - NEW FRICTION VELOCITY IN M/S.
 !          *WSWAVE* - LATESt WIND SPEED.
 !          *WDWAVE* - LATEST WIND DIRECTION.
+!          *COSWDIF*- COSINE (WDWAVE - WAVES DIRECTIONS)
 !          *        - SWELL and WINDSEA PARAMETERS.
 
 !     METHOD.
@@ -75,6 +76,7 @@
 ! -----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "femean.intfb.h"
 #include "mwp1.intfb.h"
 #include "mwp2.intfb.h"
@@ -88,6 +90,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: XLLWS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CINV 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, WSWAVE, WDWAVE
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG), INTENT(IN) :: COSWDIF
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: ESWELL ,FSWELL ,THSWELL, P1SWELL, P2SWELL, SPRDSWELL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: ESEA   ,FSEA   ,THWISEA, P1SEA  , P2SEA  , SPRDSEA
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NTRAIN), INTENT(OUT) :: EMTRAIN, THTRAIN, PMTRAIN
@@ -122,7 +125,7 @@
 
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-          DIRCOEF(IJ,K)=COEF*COS(TH(K)-WDWAVE(IJ))
+          DIRCOEF(IJ,K)=COEF*COSWDIF(IJ,K)
         ENDDO
       ENDDO
 
@@ -181,7 +184,7 @@
       DO K=1,NANG
         DO IJ=KIJS,KIJL
           ! add factor to extend windsea area
-          DIRCOEF(IJ,K)=R(IJ)*COEF*SIGN(1.0_JWRB,0.4_JWRB+COS(TH(K)-WDWAVE(IJ)))
+          DIRCOEF(IJ,K)=R(IJ)*COEF*SIGN(1.0_JWRB,0.4_JWRB+COSWDIF(IJ,K))
         ENDDO
       ENDDO
       DO M=1,NFRE
@@ -227,9 +230,9 @@
       IF (LLPARTITION) THEN
         CALL FEMEAN(KIJS, KIJL, F1, ESWELL, FSWELL)
         CALL STHQ(KIJS, KIJL, F1, THSWELL)
-        CALL SEP3TR (KIJS, KIJL, FL1, MIJ, WSWAVE, WDWAVE,     &
-     &               ESWELL, FSWELL, THSWELL, FSEA,            &
-     &               F1, SWM,                                  &
+        CALL SEP3TR (KIJS, KIJL, FL1, MIJ, WSWAVE, WDWAVE, COSWDIF, &
+     &               ESWELL, FSWELL, THSWELL, FSEA,                 &
+     &               F1, SWM,                                       &
      &               EMTRAIN  ,THTRAIN  ,PMTRAIN)
       ELSE
         EMTRAIN(:,:) = 0.0_JWRB
