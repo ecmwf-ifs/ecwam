@@ -33,7 +33,7 @@
       USE YOWFRED  , ONLY : NWAV_GC, KRATIO_GC, XKS_GC, XKL_GC,  &
      &                      XK_GC, XKM_GC, OMEGA_GC, OMXKM3_GC, VG_GC, C_GC, &
      &                      CM_GC, C2OSQRTVG_GC, XKMSQRTVGOC2_GC, OM3GMKM_GC,&
-     &                      DELKCC_GC, DELKCC_GC_NS
+     &                      DELKCC_GC, DELKCC_GC_NS, DELKCC_OMXKM3_GC
       USE YOWPCONS , ONLY : G,  SURFT, SQRTGOSURFT
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
