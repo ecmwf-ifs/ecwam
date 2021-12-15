@@ -158,7 +158,7 @@
          IF (IHOUR >= 24) THEN
             IDAY = IDAY + IHOUR/24
             IHOUR = IHOUR - (IHOUR/24)*24
-            DO WHILE (IDAY.GT.MON(IMON))
+            DO WHILE (IDAY > MON(IMON))
                IDAY=IDAY-MON(IMON)
                IMON=IMON+1
                IF (IMON == 13) THEN
@@ -177,7 +177,7 @@
          IF (IHOUR < 0) THEN
             IDAY = IDAY + (IHOUR-23)/24
             IHOUR = IHOUR - ((IHOUR-23)/24)*24
-            DO WHILE (IDAY.LT.1)
+            DO WHILE (IDAY < 1)
                IMON=IMON-1
                IF (IMON == 0) THEN
                   IMON = 12

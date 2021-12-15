@@ -290,7 +290,7 @@
  
 !     3.2.1 START AND END MONTHS ARE IN DIFFERENT YEARS.
  
-         DO WHILE (IYEAR2 .GT. IYEAR1)
+         DO WHILE (IYEAR2 > IYEAR1)
             DO M=IMON1,12
                KSHIFT = KSHIFT + INT(MON(M)*86400)
             ENDDO
