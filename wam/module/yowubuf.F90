@@ -43,16 +43,16 @@
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *KLAT*      INTEGER   KLAT(:,:,1) INDEX OF GRIDPOINT SOUTH AND NORTH
-!                            LANDPOINTS ARE MARKED BY ZERO OR NINF-1.
+!                            LANDPOINTS ARE MARKED BY ZERO OR NINF+1.
 !                            KLAT(:,:,2) INDEX OF 2nd closest GRIDPOINT
 !                            SOUTH AND NORTH LANDPOINTS ARE MARKED BY ZERO
-!                            OR NINF-1.
-!                            THE SECOND INDEX IS 1 FOR SOUTH 
-!                                                2 FOR NORTH
+!                            OR NINF+1.
+!                            !!!!!! THE SECOND INDEX IS 1 FOR SOUTH 
+!                                                       2 FOR NORTH
 !      *KLON*      INTEGER   INDEX OF GRIDPOINT WEST AND EAST
-!                            LANDPOINTS ARE MARKED BY ZERO OR NINF-1.
-!                            THE SECOND INDEX IS 1 FOR WEST 
-!                                                2 FOR EAST 
+!                            LANDPOINTS ARE MARKED BY ZERO OR NINF+1.
+!                            !!!! THE SECOND INDEX IS 1 FOR WEST 
+!                                                     2 FOR EAST 
 !      *KCOR*      INTEGER   INDEX OF THE GRID CORNER POINTS IN DIAGONAL
 !                            DIRECTIONS. IT IS USED IN MPDECOMP TO DETERMINE
 !                            THE MAXIMUM SIZE OF THE HALO WHEN IPROPAGS=2.
@@ -66,15 +66,15 @@
 !                            THE THIRD INDEX IS 1 FOR THE CLOSEST GRID POINT
 !                                               2 FOR THE SECOND CLOSEST GRID POINT
 !   *KRLAT(:,:,1)*INTEGER   INDEX OF GRIDPOINT SOUTH-EAST AND NORTH-WEST
-!                            LANDPOINTS ARE MARKED BY ZERO OR NINF-1.
+!                            LANDPOINTS ARE MARKED BY ZERO OR NINF+1.
 !   *KRLAT(:,:,2)*INTEGER   INDEX OF 2nd closest GRIDPOINT SOUTH-EAST
 !                            NORTH-WEST. LANDPOINTS ARE MARKED BY ZERO
-!                            OR NINF-1.
+!                            OR NINF+1.
 !   *KRLON(:,:,1)*INTEGER   INDEX OF GRIDPOINT SOUTH-WEST AND NORTH-EAST
-!                            LANDPOINTS ARE MARKED BY ZERO OR NINF-1.
+!                            LANDPOINTS ARE MARKED BY ZERO OR NINF+1.
 !   *KRLON(:,:,2)*INTEGER   INDEX OF 2nd closest GRIDPOINT SOUTH-WEST
 !                            AND NORTH-EAST. LANDPOINTS ARE MARKED BY ZERO
-!                            OR NINF-1.
+!                            OR NINF+1.
 !      *KPM*       INTEGER   INDEX FOR DIRECTION TERMS IN CTUW.
 !      *MPM*       INTEGER   INDEX FOR FREQUENCY TERMS IN CTUW.
 !      *JXO*       INTEGER   INDEX FOR EAST-WEST TERMS IN CTUW.
