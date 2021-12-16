@@ -84,6 +84,7 @@
       REAL(KIND=JWRB) :: SWELLF5  ! controls the viscous swell dissipation
       REAL(KIND=JWRB), PARAMETER :: SWELLF6 = 1.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF7 = 3.6E05_JWRB
+      REAL(KIND=JWRB), PARAMETER :: SWELLF7M1 = 1.0_JWRB/SWELLF7    !!!! set it to 1 if you decide to have SWELLF7=0
       REAL(KIND=JWRB) :: Z0RAT
       REAL(KIND=JWRB) :: Z0TUBMAX
 

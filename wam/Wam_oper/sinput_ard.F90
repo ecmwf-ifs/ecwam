@@ -79,7 +79,8 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
      &                      BMAXOKAPDTH, RN1_RN, &
      &                      RNU      ,RNUM, &
      &                      SWELLF   ,SWELLF2  ,SWELLF3  ,SWELLF4  , SWELLF5, &
-     &                      SWELLF6  ,SWELLF7  ,Z0RAT    ,Z0TUBMAX , ABMIN  ,ABMAX
+     &                      SWELLF6  ,SWELLF7  ,SWELLF7M1, Z0RAT   ,Z0TUBMAX , &
+     &                      ABMIN  ,ABMAX
       USE YOWTEST  , ONLY : IU06
       USE YOWTABL  , ONLY : IAB      ,SWELLFT
 
@@ -251,7 +252,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 !       Swell damping weight between viscous and turbulent boundary layer
         IF (SWELLF7 > 0.0_JWRB) THEN
           DO IJ=KIJS,KIJL
-            SMOOTH=0.5_JWRB*TANH((RE(IJ)-RE_C(IJ))/SWELLF7)
+            SMOOTH=0.5_JWRB*TANH((RE(IJ)-RE_C(IJ))*SWELLF7M1)
             PTURB(IJ)=0.5_JWRB+SMOOTH
             PVISC(IJ)=0.5_JWRB-SMOOTH
           ENDDO

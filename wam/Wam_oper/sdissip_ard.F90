@@ -106,9 +106,6 @@
       TPIINV = 1.0_JWRB/ZPI
       TPIINVH= 0.5_JWRB*TPIINV
 
-      NANGD=NANG/2
-
-
       TMP03 = 1.0_JWRB/(SDSBR*MICHE)
 
 
@@ -141,9 +138,9 @@
         DO K=1,NANG
           ! integrates in directional sector
           DO K2=1,NSDSNTH*2+1
-            KK=INDICESSAT(K,K2)
+            KK=INDICESSAT(K2,K)
             DO IJ=KIJS,KIJL
-              BTH(IJ,K,M) = BTH(IJ,K,M) + SATWEIGHTS(K,K2)*FL1(IJ,KK,M)
+              BTH(IJ,K,M) = BTH(IJ,K,M) + SATWEIGHTS(K2,K)*FL1(IJ,KK,M)
             ENDDO
           ENDDO
           DO IJ=KIJS,KIJL
@@ -174,6 +171,8 @@
 
       ! CUMULATIVE TERM
       IF (SSDSC3 /= 0.0_JWRB) THEN
+
+        NANGD=NANG/2
 
         DO M2=1,NFRE-NDIKCUMUL
           DO IJ=KIJS,KIJL
