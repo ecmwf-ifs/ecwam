@@ -80,7 +80,7 @@
      &            IFRELFMAX, DELPRO_LF, IDELPRO  ,IDELT  ,IDELWI   ,    &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
      &            IDELBC   ,                                            &
-     &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,    &
+     &            ICASE    ,ISHALLO  ,                                  &
      &            IPHYS    ,                                            &
      &            ISNONLIN ,                                            &
      &            IDAMPING ,                                            &
@@ -134,7 +134,7 @@
       NAMELIST /NALINE/ CLHEADER,                                       &
      &   CBPLTDT, CEPLTDT, CDATEF,                                      &
      &   IFRELFMAX, DELPRO_LF, IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU,  &
-     &   IDELALT, IDELINT, IDELINS, IDELSPT, IDELSPS, IDELRES,          &
+     &   IDELALT, IDELINT, IDELRES,                                     &
      &   IDELCUR, CDATECURA,                                            &
      &   LLCFLCUROFF,                                                   &
      &   CLOTSU, CDATER, CDATES,                                        &
@@ -547,13 +547,6 @@
       IDELALT   =  21600 
       IDELINT   =  0
 
-!!!! obsolete should be removed as soon as I can update scripts
-      IDELINS   =  0
-      IDELSPT   =  0
-      IDELSPS   =  0
-!!!!
-
-      IDELRES   =  0
       IDELCUR   =  0
       CDATECURA = ZERO
       LLCFLCUROFF = .TRUE.
