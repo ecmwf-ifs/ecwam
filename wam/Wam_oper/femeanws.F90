@@ -105,7 +105,7 @@
 !        ------------------------------------------
 
       DO IJ=KIJS,KIJL
-        EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ,NFFE)
+        EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ,NFRE)
         FM(IJ) = FM(IJ)+DELT2*TEMP2(IJ,NFRE)
         FM(IJ) = EM(IJ)/FM(IJ)
       ENDDO
