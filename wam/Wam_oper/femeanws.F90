@@ -62,7 +62,7 @@
 
       REAL(KIND=JWRB) :: DELT25, DELT2
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: TEMP2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP2
 
 ! ----------------------------------------------------------------------
 
@@ -71,6 +71,11 @@
 !*    1. INITIALISE MEAN FREQUENCY ARRAY AND TAIL FACTOR.
 !        ------------------------------------------------
 
+      DO IJ=KIJS,KIJL
+        EM(IJ) = EPSMIN
+        FM(IJ) = EPSMIN
+      ENDDO
+
       DELT25 = WETAIL*FR(NFRE)*DELTH
       DELT2 = FRTAIL*DELTH
 
@@ -78,25 +83,16 @@
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
 !        ------------------------------------------
       
-      TEMP2(:,:) = 0.0_JWRB
-
       DO M=1,NFRE
+        TEMP2(:) = 0.0_JWRB
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            TEMP2(IJ,M) = TEMP2(IJ,M)+XLLWS(IJ,K,M)*FL1(IJ,K,M)
+            TEMP2(IJ) = TEMP2(IJ)+XLLWS(IJ,K,M)*FL1(IJ,K,M)
           ENDDO
         ENDDO
-      ENDDO
-
-      DO IJ=KIJS,KIJL
-        EM(IJ) = EPSMIN
-        FM(IJ) = EPSMIN
-      ENDDO
-
-      DO M=1,NFRE
         DO IJ=KIJS,KIJL
-          EM(IJ) = EM(IJ)+DFIM(M)*TEMP2(IJ,M)
-          FM(IJ) = FM(IJ)+DFIMOFR(M)*TEMP2(IJ,M)
+          EM(IJ) = EM(IJ)+DFIM(M)*TEMP2(IJ)
+          FM(IJ) = FM(IJ)+DFIMOFR(M)*TEMP2(IJ)
         ENDDO
       ENDDO
 
@@ -105,8 +101,8 @@
 !        ------------------------------------------
 
       DO IJ=KIJS,KIJL
-        EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ,NFRE)
-        FM(IJ) = FM(IJ)+DELT2*TEMP2(IJ,NFRE)
+        EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ)
+        FM(IJ) = FM(IJ)+DELT2*TEMP2(IJ)
         FM(IJ) = EM(IJ)/FM(IJ)
       ENDDO
 
