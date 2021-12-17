@@ -106,11 +106,8 @@
       TPIINV = 1.0_JWRB/ZPI
       TPIINVH= 0.5_JWRB*TPIINV
 
-      NANGD=NANG/2
-
 
       TMP03 = 1.0_JWRB/(SDSBR*MICHE)
-
 
       SSDSC6M1=1._JWRB-SSDSC6
 
@@ -174,6 +171,8 @@
 
       ! CUMULATIVE TERM
       IF (SSDSC3 /= 0.0_JWRB) THEN
+
+        NANGD=NANG/2
 
         DO M2=1,NFRE-NDIKCUMUL
           DO IJ=KIJS,KIJL
