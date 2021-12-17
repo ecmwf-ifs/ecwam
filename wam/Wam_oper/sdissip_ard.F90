@@ -106,8 +106,8 @@
       TPIINV = 1.0_JWRB/ZPI
       TPIINVH= 0.5_JWRB*TPIINV
 
-      TMP03 = 1.0_JWRB/(SDSBR*MICHE)
 
+      TMP03 = 1.0_JWRB/(SDSBR*MICHE)
 
       SSDSC6M1=1._JWRB-SSDSC6
 
@@ -138,9 +138,9 @@
         DO K=1,NANG
           ! integrates in directional sector
           DO K2=1,NSDSNTH*2+1
-            KK=INDICESSAT(K2,K)
+            KK=INDICESSAT(K,K2)
             DO IJ=KIJS,KIJL
-              BTH(IJ,K,M) = BTH(IJ,K,M) + SATWEIGHTS(K2,K)*FL1(IJ,KK,M)
+              BTH(IJ,K,M) = BTH(IJ,K,M) + SATWEIGHTS(K,K2)*FL1(IJ,KK,M)
             ENDDO
           ENDDO
           DO IJ=KIJS,KIJL
