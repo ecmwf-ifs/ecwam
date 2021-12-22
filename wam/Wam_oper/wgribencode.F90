@@ -316,8 +316,8 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
 
       IF (.NOT. LGRHDIFS .OR. & 
-         (MARSTYPE == 'an' .AND. IFCST == 0) .OR. &
-         (MARSTYPE == 'fg' .AND. IFCST == 0) ) THEN
+     &   (MARSTYPE == 'an' .AND. IFCST == 0) .OR. &
+     &   (MARSTYPE == 'fg' .AND. IFCST == 0) ) THEN
 
         READ(CDATE(1:8),'(I8)') IDATE
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'date',IDATE)

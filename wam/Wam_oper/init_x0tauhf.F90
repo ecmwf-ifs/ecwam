@@ -36,7 +36,8 @@
      &                      BETAMAXOXKAPPA2,                             &
      &                      BMAXOKAP, BMAXOKAPDTH, GAMNCONST,            &
      &                      DELTA_THETA_RN
-      USE YOWPCONS , ONLY : GM1      ,ZPI 
+      USE YOWPCONS , ONLY : GM1      ,ZPI
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
 
