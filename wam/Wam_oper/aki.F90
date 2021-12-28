@@ -40,7 +40,6 @@ REAL(KIND=JWRB) FUNCTION AKI(OM,BETA)
 
       USE YOWPCONS , ONLY : G     ,DKMAX
 
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -51,11 +50,9 @@ REAL(KIND=JWRB) FUNCTION AKI(OM,BETA)
       REAL(KIND=JWRB), PARAMETER :: EBS = 0.0001_JWRB
 
       REAL(KIND=JWRB) :: AKM1, AKM2, AO, AKP, BO, TH, STH  
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('AKI',0,ZHOOK_HANDLE)
 
 !*    1. START VALUE:  MAXIMUM FROM DEEP  AND EXTREM SHALLOW WATER
 !                      WAVE NUMBER.
@@ -82,7 +79,5 @@ REAL(KIND=JWRB) FUNCTION AKI(OM,BETA)
         IF (ABS(AKP-AO) > EBS*AO) GO TO 2000
         AKI = AO
       ENDIF
-
-      IF (LHOOK) CALL DR_HOOK('AKI',1,ZHOOK_HANDLE)
 
 END FUNCTION AKI

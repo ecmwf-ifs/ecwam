@@ -17,8 +17,8 @@ SUBROUTINE INITMDL (NADV,                                 &
 !                    J. BIDLOT     FEBRUARY 1996-1997
 !                    J. DOYLE      SEPTEMBER 1996
 !                    J. BIDLOT     APRIL 1997
-!                    J. BIDLOT     SEPTEMBER : MODIFY PARALLEL INPUT 
-!                    S. ABDALLA    OCTOBER 2001: INCLUSION OF AIR 
+!                    J. BIDLOT     SEPTEMBER : MODIFY PARALLEL INPUT
+!                    S. ABDALLA    OCTOBER 2001: INCLUSION OF AIR
 !                                                DENSITY AND Zi/L
 !                    J. BIDLOT     AUGUST 2008. ADD CALL TO PREWIND
 !                                  TO GET CURRENTS EARLIER
@@ -270,7 +270,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       REAL(KIND=JWRB) :: GAM
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
-      REAL(KIND=JWRB) :: XLA, XLO 
+      REAL(KIND=JWRB) :: XLA, XLO
 
       CHARACTER(LEN=14) :: ZERO, CDUM
       CHARACTER(LEN=24) :: FILNM
@@ -458,7 +458,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       GBOUNC = 1
 
       IF (.NOT. LLUNSTR) THEN
- 
+
       IF (IBOUNC == 1 .OR. IBOUNF == 1) THEN
         IF (IBOUNC == 1) THEN
 !         READ INFORMATION ABOUT WHERE THE FINE GRID(S) ARE
@@ -472,8 +472,8 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
             WRITE(IU06,*) '*                                  *'
             WRITE(IU06,*) '*  FATAL ERROR IN SUB. INITMDL     *'
             WRITE(IU06,*) '*  =============================   *'
-            WRITE(IU06,*) '*  WITH OPTION IBOUNC = 1          *' 
-            WRITE(IU06,*) '*  YOU MUST PROVIDE THE FILE:      *' 
+            WRITE(IU06,*) '*  WITH OPTION IBOUNC = 1          *'
+            WRITE(IU06,*) '*  YOU MUST PROVIDE THE FILE:      *'
             WRITE(IU06,*) '* ',FILENAME(1:LFILE)
             WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),   &
      &        ' IS MISSING !!!!'
@@ -487,7 +487,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
         ENDIF
 
         IF (IBOUNF == 1) THEN
-!         READ INFORMATION ABOUT WHERE THE BOUNDARY VALUES ARE 
+!         READ INFORMATION ABOUT WHERE THE BOUNDARY VALUES ARE
           FILENAME='wam_boundary_grid_info'
           LFILE=0
           LLEXIST=.FALSE.
@@ -498,8 +498,8 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
             WRITE(IU06,*) '*                                  *'
             WRITE(IU06,*) '*  FATAL ERROR IN SUB. INITMDL     *'
             WRITE(IU06,*) '*  =============================   *'
-            WRITE(IU06,*) '*  WITH OPTION IBOUNF = 1          *' 
-            WRITE(IU06,*) '*  YOU MUST PROVIDE THE FILE:      *' 
+            WRITE(IU06,*) '*  WITH OPTION IBOUNF = 1          *'
+            WRITE(IU06,*) '*  YOU MUST PROVIDE THE FILE:      *'
             WRITE(IU06,*) '* ',FILENAME(1:LFILE)
             WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),   &
      &        ' IS MISSING !!!!'
@@ -509,7 +509,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
           ENDIF
           IU10 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
         ELSE
-          IU10 = 10 
+          IU10 = 10
         ENDIF
 
         CALL READBOU (IU09, IU10, IU06)
@@ -533,7 +533,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       IF (.NOT. LGRHDIFS) THEN
 !       FOR INTEGRATED PARAMETERS
         CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
-!       FOR SPECTRA 
+!       FOR SPECTRA
         CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
       ENDIF
 
@@ -706,8 +706,8 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       ENDIF
 
       IF (LWCOU) THEN
-        IDELWO = KCOUSTEP 
-        IDELWI = KCOUSTEP 
+        IDELWO = KCOUSTEP
+        IDELWI = KCOUSTEP
         IDELCUR= KCOUSTEP
       ELSE
         IF (NDELW_LST > 0) THEN
@@ -871,7 +871,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !     *GETCURR* IS CALLED (SEE *PREWIND*).
 !     A CALL TO PREWIND IS NEEDED TO GET THE SURFACE CURRENTS
 !     BEFORE A CALL TO GETSPEC DUE TO THE TRANSFORMATION FROM
-!     ABSOLUTE TO RELATIVE FRAME OF REFERENCE. 
+!     ABSOLUTE TO RELATIVE FRAME OF REFERENCE.
 
       LLINIT = .NOT.LRESTARTED
       LLALLOC_FIELDG_ONLY=.FALSE.
@@ -883,7 +883,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
      &              FIELDS, LWCUR, MASK_IN,              &
      &              NEMO2WAM)
 
-      WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'                   
+      WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'
       CALL FLUSH (IU06)
 
 
@@ -909,7 +909,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
 !     9.2 COMPUTE FREQUENCY DEPENDENT INDICES AND COEFFICIENTS FOR SNONLIN
 !         AND THE FREQUENCY FRONT TAIl REDUCTION COEFFICIENTS.
-!         ------------------------------------------------------------ 
+!         ------------------------------------------------------------
 
       CALL INISNONLIN
 

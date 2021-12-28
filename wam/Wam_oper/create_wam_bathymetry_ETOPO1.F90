@@ -72,12 +72,9 @@ PROGRAM CREATE_BATHY_ETOPO1
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,    &
      &            IREFDATE ,ISTREAM  ,NLOCGRB
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-
 
 #include "abort1.intfb.h"
 #include "aki.intfb.h"
@@ -136,7 +133,6 @@ PROGRAM CREATE_BATHY_ETOPO1
       REAL(KIND=JWRB) :: STEPLAT, STEPLON
       REAL(KIND=JWRB) :: RESOL
       REAL(KIND=JWRB) :: RR, XKEXTHRS, ALPR
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(ILON) :: ALON
       REAL(KIND=JWRB), DIMENSION(ILAT) :: ALAT
       REAL(KIND=JWRB), DIMENSION(NDPT) :: XK 
@@ -162,8 +158,6 @@ PROGRAM CREATE_BATHY_ETOPO1
       LOGICAL, ALLOCATABLE, DIMENSION(:,:) :: LLEXCLTHRSHOLD
 
 !----------------------------------------------------------------------
-
-      IF (LHOOK) CALL DR_HOOK('CREATE_BATHY_ETOPO1',0,ZHOOK_HANDLE)
 
       PRPLRADI=1.0_JWRB
       CALL INIWCST(PRPLRADI)
@@ -2203,7 +2197,5 @@ PROGRAM CREATE_BATHY_ETOPO1
         ENDDO
 
       ENDDO ! END LOOP ON FREQUENCIES
-
-      IF (LHOOK) CALL DR_HOOK('CREATE_BATHY_ETOPO1',1,ZHOOK_HANDLE)
 
 END PROGRAM CREATE_BATHY_ETOPO1
