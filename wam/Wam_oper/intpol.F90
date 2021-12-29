@@ -1,4 +1,4 @@
-      SUBROUTINE INTPOL (F3, F1, IJS, IJL, IG, IRA)
+      SUBROUTINE INTPOL (KIJS, KIJL, FLR, FLA, WAVNUM, UCUR, VCUR, IRA)
 
 ! ----------------------------------------------------------------------
 
@@ -16,14 +16,16 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *INTPOL (F3, F1, IJS, IJL, IG, IRA)*
-!         *F3*   - SPECTRA (INPUT).
-!         *F1*   - SPECTRA (OUTPUT).
-!         *IJS*  - INDEX OF FIRST GRIDPOINT.
-!         *IJL*  - INDEX OF LAST GRIDPOINT.
-!         *IG*   - BLOCK NUMBER.
-!         *IRA*  - = 1 TRANSFORMATION FROM MOVING TO ABSOLUTE COORD.
-!                  =-1 TRANSFORMATION FROM ABSOLUTE TO MOVING COORD.
+!       *CALL* *INTPOL (KIJS, KIJL, FLR, FLA, WAVNUM, UCUR, VCUR, IRA)*
+!         *KIJS*  - INDEX OF FIRST GRIDPOINT.
+!         *KIJL*  - INDEX OF LAST GRIDPOINT.
+!         *FLR*   - SPECTRA (INPUT)
+!         *FLA*   - SPECTRA (OUTPUT)
+!         *WAVNUM*- WAVE NUMBER.
+!         *UCUR*  - U-COMPONENT OF THE SURFACE CURRENT
+!         *VCUR*  - V-COMPONENT OF THE SURFACE CURRENT
+!         *IRA*   - = 1 TRANSFORMATION FROM MOVING TO ABSOLUTE COORD.
+!                   =-1 TRANSFORMATION FROM ABSOLUTE TO MOVING COORD.
 
 !     METHOD.
 !     -------
@@ -44,37 +46,38 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : FR       ,DFIM     ,COSTH    ,SINTH     ,   &
      &              DELTH  ,FRATIO   ,FLOGSPRDM1
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP
-      USE YOWSTAT  , ONLY : ISHALLO
       USE YOWTEST  , ONLY : IU06
+
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IG, IRA
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: F1
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FLR
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLA
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM 
+      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(IN) :: UCUR, VCUR
+      INTEGER(KIND=JWIM), INTENT(IN) :: IRA
+
 
       INTEGER(KIND=JWIM) :: IJ, M, K
       INTEGER(KIND=JWIM) :: NEWM, NEWM1, KH 
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: NEWF, NEWF1, KNEW
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL) :: NEWF, NEWFLA, KNEW
 
       REAL(KIND=JWRB) :: PI2G, FRE0, CDF 
       REAL(KIND=JWRB) :: FNEW, GWH
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: DFTH(NFRE)
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: OLDFL 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FNEF, GWP, GWM, WAVN
+      REAL(KIND=JWRB), DIMENSION(NFRE) :: DFTH
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: OLDFL 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FNEF, GWP, GWM
 
-      LOGICAL :: LICE2SEA(IJS:IJL)
+      LOGICAL, DIMENSION(KIJS:KIJL) :: LICE2SEA
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('INTPOL',0,ZHOOK_HANDLE)
@@ -95,7 +98,7 @@
         DFTH(M)= FR(M)*CDF
       ENDDO
 
-      IF (ABS(IRA).NE.1) THEN
+      IF (ABS(IRA) /= 1) THEN
         WRITE (IU06,*) '**************************************'
         WRITE (IU06,*) '* SUBROUTINE INTPOL:                  '
         WRITE (IU06,*) '* IRA MUST BE = 1 OR -1               '
@@ -107,14 +110,14 @@
         CALL ABORT1
       ENDIF
 
-      DO IJ = IJS, IJL
+      DO IJ = KIJS, KIJL
         LICE2SEA(IJ)=.TRUE.
       ENDDO
 
       DO K=1,NANG
         DO M=1,NFRE
-          DO IJ = IJS, IJL
-             IF (F3(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
+          DO IJ = KIJS, KIJL
+             IF (FLR(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
           ENDDO
         ENDDO
       ENDDO
@@ -122,8 +125,8 @@
 
       DO M = 1, NFRE
         DO K = 1, NANG
-          DO IJ = IJS, IJL
-            F1(IJ,K,M) = 0.0_JWRB
+          DO IJ = KIJS, KIJL
+            FLA(IJ,K,M) = 0.0_JWRB
           ENDDO
         ENDDO
       ENDDO
@@ -132,15 +135,6 @@
 !        ----------------------
 
       DO M = 1, NFRE
-        IF (ISHALLO.NE.1) THEN
-          DO IJ = IJS, IJL
-            WAVN(IJ) = TFAK(INDEP(IJ),M)/ZPI
-          ENDDO
-        ELSE
-          DO IJ = IJS, IJL
-            WAVN(IJ) = PI2G*FR(M)*FR(M)
-          ENDDO
-        ENDIF
 
 !*    1.3 LOOP OVER DIRECTONS.
 !         --------------------
@@ -150,9 +144,9 @@
 !*    1.3.1 NEW FREQUENCY AND DIRECTION AT ALL GRIDPOINTS.
 !           ----------------------------------------------
 
-          DO IJ = IJS, IJL
-            FNEF(IJ) = FR(M) + IRA*WAVN(IJ)*(COSTH(K)*V(IJ,IG) + SINTH(K)*U(IJ,IG))
-            IF (FNEF(IJ).GT.0.0_JWRB) THEN
+          DO IJ = KIJS, KIJL
+            FNEF(IJ) = FR(M) + IRA*WAVNUM(IJ,M)*(COSTH(K)*VCUR(IJ) + SINTH(K)*UCUR(IJ))
+            IF (FNEF(IJ) > 0.0_JWRB) THEN
               KNEW(IJ) = K
             ELSE
               KNEW(IJ) = MOD(K+NANG/2-1,NANG) + 1
@@ -163,8 +157,8 @@
 !*    1.3.2 NEW FREQUENCY BIN NUMBER AT ALL GRIDPOINTS.
 !           -------------------------------------------
 
-          DO IJ = IJS, IJL
-            IF (FNEF(IJ).LE.FR(1)/FRATIO) THEN
+          DO IJ = KIJS, KIJL
+            IF (FNEF(IJ) <= FR(1)/FRATIO) THEN
               NEWF(IJ)= -1
             ELSE
               NEWF(IJ)=FLOOR(LOG10(FNEF(IJ)/FR(1))*FLOGSPRDM1)+1
@@ -173,49 +167,47 @@
 
 !*    1.3.3 INTERPOLATED ENERGY DENSITIES AT ALL GRIDPOINTS.
 !           ------------------------------------------------
-          DO IJ = IJS, IJL
+          DO IJ = KIJS, KIJL
             IF (LICE2SEA(IJ)) THEN
               OLDFL(IJ)=0.0_JWRB
             ELSE
-              OLDFL(IJ)=F3(IJ,K,M)
+              OLDFL(IJ)=FLR(IJ,K,M)
             ENDIF
           ENDDO
 
-          DO IJ = IJS, IJL
+          DO IJ = KIJS, KIJL
             FNEW = FNEF(IJ)
             NEWM = NEWF(IJ)
-            IF (NEWM.LT.NFRE.AND.NEWM.GE.1) THEN
+            IF (NEWM < NFRE .AND. NEWM >= 1) THEN
               NEWM1 = NEWM + 1
               GWH = DFTH(M)/(FR(NEWM1)-FR(NEWM)) *OLDFL(IJ)
               GWM(IJ) = GWH*(FR(NEWM1)-FNEW)/DFTH(NEWM)
               GWP(IJ) = GWH*(FNEW-FR(NEWM))/DFTH(NEWM1)
-              NEWF1(IJ) = NEWM1
-            ELSEIF (NEWM.EQ.0) THEN
+              NEWFLA(IJ) = NEWM1
+            ELSEIF (NEWM == 0) THEN
               GWH = FRATIO*DFTH(M)/(FRE0*FR(1)) * OLDFL(IJ)
               GWP(IJ) = GWH*(FNEW-FR(1)/FRATIO)/DFTH(1)
               NEWF (IJ) = -1
-              NEWF1(IJ) = 1
-            ELSEIF (NEWM.EQ.NFRE) THEN
+              NEWFLA(IJ) = 1
+            ELSEIF (NEWM == NFRE) THEN
               GWH = DFTH(M)/(FRE0*FR(NFRE)) * OLDFL(IJ)
               GWM(IJ) = GWH*(FRATIO*FR(NFRE)-FNEW)/DFTH(NFRE)
-              NEWF1(IJ) = -1
+              NEWFLA(IJ) = -1
             ELSE
               NEWF (IJ) = -1
-              NEWF1(IJ) = -1
+              NEWFLA(IJ) = -1
             ENDIF
           ENDDO
 
 !*    1.3.4 NEW SPECTRUM AT ALL GRIDPOINTS.
 !           -------------------------------
 
-          DO IJ = IJS, IJL
+          DO IJ = KIJS, KIJL
             NEWM  = NEWF (IJ)
-            NEWM1 = NEWF1(IJ)
+            NEWM1 = NEWFLA(IJ)
             KH = KNEW(IJ)
-            IF (NEWM .NE.-1)                                            &
-     &       F1(IJ,KH,NEWM ) = F1(IJ,KH,NEWM ) + GWM(IJ)
-            IF (NEWM1.NE.-1)                                            &
-     &       F1(IJ,KH,NEWM1) = F1(IJ,KH,NEWM1) + GWP(IJ)
+            IF (NEWM /= -1) FLA(IJ,KH,NEWM ) = FLA(IJ,KH,NEWM ) + GWM(IJ)
+            IF (NEWM1 /= -1)FLA(IJ,KH,NEWM1) = FLA(IJ,KH,NEWM1) + GWP(IJ)
           ENDDO
 
 !*    BRANCH BACK TO 1.3 FOR NEXT DIRECTION.
@@ -228,8 +220,8 @@
 
       DO M = 1, NFRE
         DO K = 1, NANG
-          DO IJ = IJS, IJL
-            F1(IJ,K,M) = MAX(F1(IJ,K,M),EPSMIN)
+          DO IJ = KIJS, KIJL
+            FLA(IJ,K,M) = MAX(FLA(IJ,K,M),EPSMIN)
           ENDDO
         ENDDO
       ENDDO

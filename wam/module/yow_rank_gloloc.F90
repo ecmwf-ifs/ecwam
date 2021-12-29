@@ -1,9 +1,5 @@
 MODULE YOW_RANK_GLOLOC
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-  USE coupling_var, ONLY : MyRankGlobal, MyRankLocal
-#else
   USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
   IMPLICIT NONE
   INTEGER(KIND=JWIM) :: MyRankGlobal, MyRankLocal
-#endif
 END MODULE

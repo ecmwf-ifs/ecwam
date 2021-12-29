@@ -1,9 +1,4 @@
-!-----------------------------------------------------------------------
-!
-!***  *REAL(KIND=JWRB) FUNCTION* *VMIN(XI,XJ,XK,THI,THJ,THK)
-!
-!-----------------------------------------------------------------------
-      REAL(KIND=JWRB) FUNCTION VMIN(XI,XJ,XK,THI,THJ,THK)
+REAL(KIND=JWRB) FUNCTION VMIN(XI,XJ,XK,THI,THJ,THK)
 !
 !***  *VMIN*  DETERMINES THE SECOND-ORDER TRANSFER COEFFICIENT FOR 
 !             THREE WAVE INTERACTIONS OF GRAVITY WAVES.
@@ -44,7 +39,9 @@
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB) :: DEL1, RI, RJ, RK, XI, XJ, XK, THI, THJ, THK,   &
+      REAL(KIND=JWRB), INTENT(IN) :: XI, XJ, XK, THI, THJ, THK
+
+      REAL(KIND=JWRB) :: DEL1, RI, RJ, RK,                              &
      &                   OI, OJ, OK, QI, QJ, QK, RIJ,                   &
      &                   RIK, RJK, SQIJK, SQIKJ, SQJKI, ZCONST, OMEG
 !
@@ -76,4 +73,4 @@
 
       VMIN=ZCONST*( (RIJ-QI*QJ)*SQIJK + (RIK-QI*QK)*SQIKJ + (RJK+QJ*QK)*SQJKI )
 
-      END FUNCTION VMIN
+END FUNCTION VMIN

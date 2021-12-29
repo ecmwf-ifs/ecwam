@@ -1,4 +1,4 @@
-      SUBROUTINE STHQ (F3, IJS, IJL, THQ)
+      SUBROUTINE STHQ (KIJS, KIJL, FL1, THQ)
 
 ! ----------------------------------------------------------------------
 
@@ -15,11 +15,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *STHQ (F3, IJS, IJL, THQ)*
-!          *F3*  - SPECTRUM.
-!          *IJS* - INDEX OF FIRST GRIDPOINT
-!          *IJL* - INDEX OF LAST GRIDPOINT
-!          *THQ* - MEAN WAVE DIRECTION
+!       *CALL* *STHQ (KIJS, KIJL, FL1, THQ)*
+!          *KIJS*   - INDEX OF FIRST GRIDPOINT
+!          *KIJL*   - INDEX OF LAST GRIDPOINT
+!          *FL1*    - SPECTRUM.
+!          *THQ*    - MEAN WAVE DIRECTION
 
 !     METHOD.
 !     -------
@@ -43,19 +43,20 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,EPSMIN
       USE YOWFRED  , ONLY : DFIM     ,COSTH    ,SINTH
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: THQ
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: THQ
 
       INTEGER(KIND=JWIM) :: IJ, M, K
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP, SI, CI
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP, SI, CI
 
 ! ----------------------------------------------------------------------
 
@@ -64,7 +65,7 @@
 !*    1. INITIALISE SIN AND COS ARRAYS.
 !        ------------------------------
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         SI(IJ) = 0.0_JWRB
         CI(IJ) = 0.0_JWRB
       ENDDO
@@ -75,15 +76,15 @@
 !        ------------------------------------------
 
       DO K=1,NANG
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           TEMP(IJ) = 0.0_JWRB
         ENDDO
         DO M=1,NFRE
-          DO IJ=IJS,IJL
-            TEMP(IJ) = TEMP(IJ)+F3(IJ,K,M)*DFIM(M)
+          DO IJ=KIJS,KIJL
+            TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,M)*DFIM(M)
           ENDDO
         ENDDO
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           SI(IJ) = SI(IJ)+SINTH(K)*TEMP(IJ)
           CI(IJ) = CI(IJ)+COSTH(K)*TEMP(IJ)
         ENDDO
@@ -94,14 +95,14 @@
 !*    3. COMPUTE MEAN DIRECTION.
 !        -----------------------
 
-      DO IJ=IJS,IJL
-        IF (CI(IJ).EQ.0.0_JWRB) CI(IJ) = EPSMIN
+      DO IJ=KIJS,KIJL
+        IF (CI(IJ) == 0.0_JWRB) CI(IJ) = EPSMIN
       ENDDO
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         THQ(IJ) = ATAN2(SI(IJ),CI(IJ))
       ENDDO
-      DO IJ=IJS,IJL
-        IF (THQ(IJ).LT.0.0_JWRB) THQ(IJ) = THQ(IJ) + ZPI
+      DO IJ=KIJS,KIJL
+        IF (THQ(IJ) < 0.0_JWRB) THQ(IJ) = THQ(IJ) + ZPI
       ENDDO
 
       IF (LHOOK) CALL DR_HOOK('STHQ',1,ZHOOK_HANDLE)

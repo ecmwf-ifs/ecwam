@@ -37,7 +37,6 @@
       REAL(KIND=JWRB), ALLOCATABLE :: FRH(:)
       REAL(KIND=JWRB), ALLOCATABLE :: FTRF(:)
       REAL(KIND=JWRB), ALLOCATABLE :: RNLCOEF(:,:)
-      REAL(KIND=JWRB), ALLOCATABLE :: ENH(:,:,:)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   -------
@@ -81,7 +80,6 @@
 !                            TAIL IN FRONT OF THE FIRST DISCRETISED FREQUENCY
 !      *RNLCOEF*   REAL      ARRAY USED TO STORE ALL FREQUENCY DEPENDENT
 !                            COEFFICIENT FOUND IN SNONLIN
-!      *ENH*       REAL      TRANSFER FUNCTION COEFFICIENT.     
 
 ! ----------------------------------------------------------------------
       END MODULE YOWINDN

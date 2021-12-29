@@ -31,7 +31,7 @@
 
       USE YOWICE   , ONLY : NICT    ,NICH    ,TICMIN  ,HICMIN   ,       &
      &              DTIC   ,DHIC    ,CIDEAC
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 

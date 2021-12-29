@@ -1,5 +1,6 @@
-      SUBROUTINE KURTOSIS(F3, DPTH, IJS, IJL,                           &
-     &                    C3, C4, BF2, QP, HMAX, TMAX,                  &
+      SUBROUTINE KURTOSIS(KIJS, KIJL, FL1,                        &
+     &                    DEPTH,                                  &
+     &                    C3, C4, BF2, QP, HMAX, TMAX,            &
      &                    ETA_M, R, XNSLC, SIG_TH, EPS)
  
 !***  *KURTOSIS*   DETERMINES SKEWNESS C3, KURTOSIS C4, THE SQUARE OF THE
@@ -24,14 +25,15 @@
 !                              HMAXN AND TMAX
 !     INTERFACE.
 !     ----------
-!           *CALL*  *KURTOSIS(F3, DPTH, IJS, IJL
+!           *CALL*  *KURTOSIS(FL1, KIJS, KIJL,
+!                             DEPTH,
 !                             C3, C4, BF2, QP, HMAX, TMAX,
 !                             ETA_M, R, XNSLC)
 !                      INPUT:
-!                           *F3*    - 2-DIMENSIONAL SPECTRUM
-!                           *DPTH*  - WATER DEPTH
-!                           *IJS*   - STARTING INDEX
-!                           *IJL*   - LAST INDEX
+!                           *FL1*    - 2-DIMENSIONAL SPECTRUM
+!                           *KIJS*   - STARTING INDEX
+!                           *KIJL*   - LAST INDEX
+!                           *DEPTH*  - WATER DEPTH
 !                      OUTPUT: 
 !                           *C3*    - SKEWNESS 
 !                           *C4*    - KURTOSIS
@@ -182,15 +184,19 @@
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "aki.intfb.h"
 #include "peak_ang.intfb.h"
 #include "stat_nl.intfb.h"
+#include "transf_bfi.intfb.h"
 #include "h_max.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: DPTH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: C3, C4, BF2, QP, HMAX, TMAX
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: ETA_M, R, XNSLC, SIG_TH, EPS
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: C3, C4, BF2, QP, HMAX, TMAX
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: ETA_M, R, XNSLC, SIG_TH, EPS
 
       INTEGER(KIND=JWIM) :: IJ, M, K
 
@@ -206,17 +212,16 @@
       REAL(KIND=JWRB) :: CONST_SIG_SQRTPIM1, CONST_OM_ZPI, OM_MEAN
       REAL(KIND=JWRB) :: TRANS, DUR, TAU, ZFAC, ZEPS, HS
       REAL(KIND=JWRB) :: ZEPSILON, ZSQREPSILON, FRMAX, FRMIN
-      REAL(KIND=JWRB) :: AKI, TRANSF_BFI
  
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FAC4
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HMAXN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUM0,SUM1,SUM2,SUM4,SUM40,SUM6
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XKP,SIG_OM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SIG_HM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F_M,XNU,OM_UP
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: AA,BB,C4_DYN,C4_B
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FFMAX
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: FF 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: HMAXN
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SUM0,SUM1,SUM2,SUM4,SUM40,SUM6
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XKP,SIG_OM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SIG_HM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: F_M,XNU,OM_UP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: AA,BB,C4_DYN,C4_B
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FFMAX
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: FF 
      
 !-----------------------------------------------------------------------
  
@@ -234,32 +239,32 @@
 !***  2. DETERMINE ANGULAR WIDTH PARAMETER SIG_TH.
 !     -------------------------------------------
  
-      CALL PEAK_ANG(F3, IJS, IJL, XNU, SIG_TH)
+      CALL PEAK_ANG(KIJS, KIJL, FL1, XNU, SIG_TH)
 
 !     COMPUTES THE DIFFERENT MOMENTS 
 
       DO M=1,NFRE
         K=1
-        DO IJ=IJS,IJL
-          FF(IJ,M) = F3(IJ,K,M)
+        DO IJ=KIJS,KIJL
+          FF(IJ,M) = FL1(IJ,K,M)
         ENDDO   
         DO K=2,NANG
-          DO IJ=IJS,IJL
-            FF(IJ,M) = FF(IJ,M)+F3(IJ,K,M)
+          DO IJ=KIJS,KIJL
+            FF(IJ,M) = FF(IJ,M)+FL1(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO 
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         FFMAX(IJ)=FF(IJ,1)
       ENDDO
       DO M=2,NFRE
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           FFMAX(IJ)=MAX(FFMAX(IJ),FF(IJ,M))
         ENDDO
       ENDDO 
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         SUM0(IJ)= ZEPSILON 
         SUM1(IJ)= 0._JWRB
         SUM2(IJ)= 0._JWRB
@@ -267,7 +272,7 @@
       ENDDO
 
       DO M=1,NFRE
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           SUM0(IJ) = SUM0(IJ)+FF(IJ,M)*DFIM(M)
           SUM1(IJ) = SUM1(IJ)+FF(IJ,M)*DFIMFR(M)
           SUM2(IJ) = SUM2(IJ)+FF(IJ,M)*DFIMFR2(M)
@@ -279,7 +284,7 @@
       COEF_FR1 = WP1TAIL*DELTH*FR(NFRE)**2
       COEF_FR2 = WP2TAIL*DELTH*FR(NFRE)**3
       DELT2    = FRTAIL*DELTH
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         SUM0(IJ) = SUM0(IJ)+DELT25*FF(IJ,NFRE)
         SUM1(IJ) = SUM1(IJ)+COEF_FR1*FF(IJ,NFRE)
         SUM2(IJ) = SUM2(IJ)+COEF_FR2*FF(IJ,NFRE)
@@ -290,14 +295,14 @@
       DO M=1,NFRE
         FAC4(M) = 2._JWRB*DELTH*DFIMFR(M)
       ENDDO
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         SUM40(IJ)= ZSQREPSILON 
         SUM4(IJ)= 0._JWRB
         FFMAX(IJ)=FLTHRS*FFMAX(IJ)
       ENDDO
       DO M=1,NFRE
-        DO IJ=IJS,IJL
-          IF(FF(IJ,M).GT.FFMAX(IJ)) THEN
+        DO IJ=KIJS,KIJL
+          IF (FF(IJ,M) > FFMAX(IJ)) THEN
             SUM40(IJ)= SUM40(IJ)+FF(IJ,M)*DFIM(M)
             SUM4(IJ) = SUM4(IJ)+FF(IJ,M)**2*FAC4(M)
           ENDIF
@@ -306,18 +311,18 @@
 
 !***  3. DETERMINE EPS AND BFI^2.
 !     --------------------------
-      DO IJ=IJS,IJL
-        IF (SUM1(IJ).GT.ZSQREPSILON .AND. SUM0(IJ).GT.ZEPSILON) THEN
+      DO IJ=KIJS,KIJL
+        IF (SUM1(IJ) > ZSQREPSILON .AND. SUM0(IJ) > ZEPSILON) THEN
 
           F_M(IJ) = MAX(MIN(SUM1(IJ)/SUM0(IJ),FRMAX),FRMIN)
           QP(IJ) = MAX(MIN(SUM4(IJ)/SUM40(IJ)**2,QPMAX),QPMIN)
           SIG_OM(IJ) = CONST_SIG_SQRTPIM1/QP(IJ)
 
           OM_MEAN = CONST_OM_ZPI*MAX(MIN(SUM0(IJ)/SUM6(IJ),FRMAX),FRMIN)
-          XKP(IJ) = AKI(OM_MEAN,DPTH(IJ))
+          XKP(IJ) = AKI(OM_MEAN,DEPTH(IJ))
           EPS(IJ) = XKP(IJ)*SQRT(SUM0(IJ))
 
-          TRANS  = TRANSF_BFI(XKP(IJ),DPTH(IJ),XNU(IJ),SIG_TH(IJ))
+          TRANS  = TRANSF_BFI(XKP(IJ),DEPTH(IJ),XNU(IJ),SIG_TH(IJ))
           BF2(IJ)= 2._JWRB*TRANS*(EPS(IJ)/MAX(SIG_OM(IJ),ZEPSILON))**2
           BF2(IJ) = MAX(MIN(BF2(IJ),BF2MAX),BF2MIN)
         ELSE
@@ -334,8 +339,8 @@
 !***  4. DETERMINE C3 AND C4.
 !     ----------------------
  
-      CALL STAT_NL(IJS, IJL,                                            &
-     &             SUM0, XKP, BF2, XNU, SIG_TH, DPTH,                   &
+      CALL STAT_NL(KIJS, KIJL,                                         &
+     &             SUM0, XKP, BF2, XNU, SIG_TH, DEPTH,                 &
      &             C3, C4, ETA_M, R, C4_B, C4_DYN)
 
   
@@ -349,8 +354,8 @@
       DUR = 1200._JWRB
 
       ZFAC = 2._JWRB*ZPI/ZPISQRT
-      DO IJ=IJS,IJL
-        IF (F_M(IJ).GT.0._JWRB) THEN
+      DO IJ=KIJS,KIJL
+        IF (F_M(IJ) > 0._JWRB) THEN
           OM_UP(IJ) = ZFAC*XNU(IJ)*F_M(IJ)
 
           XNSLC(IJ) = REAL(NINT(DUR*OM_UP(IJ)),JWRB)
@@ -359,10 +364,10 @@
         ENDIF
       ENDDO
 
-      CALL H_MAX(C3,C4,XNSLC,IJS,IJL,AA,BB,HMAXN,SIG_HM)
+      CALL H_MAX(C3,C4,XNSLC,KIJS,KIJL,AA,BB,HMAXN,SIG_HM)
 
-      DO IJ=IJS,IJL
-        IF (SUM1(IJ).GT.ZEPSILON .AND. HMAXN(IJ).GT.ZEPSILON) THEN
+      DO IJ=KIJS,KIJL
+        IF (SUM1(IJ) > ZEPSILON .AND. HMAXN(IJ) > ZEPSILON) THEN
           ZEPS = XNU(IJ)/(SQRT2*HMAXN(IJ))
           TMAX(IJ) = 1._JWRB+0.5_JWRB*ZEPS**2+0.75_JWRB*ZEPS**4
           TAU = SUM0(IJ)/SUM1(IJ)
@@ -372,8 +377,8 @@
         ENDIF
       ENDDO
 
-      DO IJ=IJS,IJL
-        IF (SUM0(IJ).GT.0._JWRB) THEN
+      DO IJ=KIJS,KIJL
+        IF (SUM0(IJ) > 0._JWRB) THEN
           HS = 4._JWRB*SQRT(SUM0(IJ))
           HMAX(IJ) = HMAXN(IJ)*HS
         ELSE

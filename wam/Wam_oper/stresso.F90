@@ -1,7 +1,9 @@
-      SUBROUTINE STRESSO (F, SL, SPOS, IJS, IJL,                        &
-     &                    MIJ, RHOWGDFTH,                               &
-     &                    THWNEW, USNEW, Z0NEW, ROAIRN,                 &
-     &                    TAUW, PHIWA)
+      SUBROUTINE STRESSO (KIJS, KIJL, MIJ, RHOWGDFTH,         &
+     &                    FL1, SL, SPOS,                      &
+     &                    CINV,                               &
+     &                    WDWAVE, UFRIC, Z0M, AIRD, RNFAC,    &
+     &                    COSWDIF, SINWDIF2,                  &
+     &                    TAUW, TAUWDIR, PHIWA, LLPHIWA)
 
 ! ----------------------------------------------------------------------
 
@@ -12,7 +14,6 @@
 !     J. BIDLOT            ECMWF FEBRUARY   1996-97
 !     S. ABDALLA           ECMWF OCTOBER    2001 INTRODUCTION OF VARIABLE
 !                                                AIR DENSITY
-!     J. BIDLOT            ECMWF            2007  ADD MIJ
 !     P.A.E.M. JANSSEN     ECMWF            2011  ADD FLUX CALULATIONS
 
 !*    PURPOSE.
@@ -23,28 +24,34 @@
 !**   INTERFACE.
 !     ----------
 
-!        *CALL* *STRESSO (F, SPOS, IJS, IJL,
-!    &                    MIJ, RHOWGDFTH,
-!    &                    THWNEW, USNEW, Z0NEW, ROAIRN,
-!    &                    TAUW, PHIWA)*
-!         *F*           - WAVE SPECTRUM.
-!         *SL*          - WIND INPUT SOURCE FUNCTION ARRAY (positive and negative contributions).
-!         *SPOS*        - POSITIVE WIND INPUT SOURCE FUNCTION ARRAY.
-!         *IJS*         - INDEX OF FIRST GRIDPOINT.
-!         *IJL*         - INDEX OF LAST GRIDPOINT.
+!        *CALL* *STRESSO (KIJS, KIJL, MIJ, RHOWGDFTH, 
+!                         FL1, SL, SPOS,
+!    &                    CINV,
+!    &                    WDWAVE, UFRIC, Z0M, AIRD, RNFAC,
+!    &                    COSWDIF, SINWDIF2,
+!    &                    TAUW, TAUWDIR, PHIWA)*
+!         *KIJS*        - INDEX OF FIRST GRIDPOINT.
+!         *KIJL*        - INDEX OF LAST GRIDPOINT.
 !         *MIJ*         - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !         *RHOWGDFTH    - WATER DENSITY * G * DF * DTHETA
-!                         FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ) 
-!                         !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)
-!         *THWNEW*      - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
+!         *FL1*         - WAVE SPECTRUM.
+!         *SL*          - WIND INPUT SOURCE FUNCTION ARRAY (positive and negative contributions).
+!         *SPOS*        - POSITIVE WIND INPUT SOURCE FUNCTION ARRAY.
+!         *CINV*        - INVERSE PHASE VELOCITY.
+!         *WDWAVE*      - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                         NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                         CLOCKWISE FROM NORTH).
-!         *USNEW*       - NEW FRICTION VELOCITY IN M/S.
-!         *Z0NEW*       - ROUGHNESS LENGTH IN M.
-!         *ROAIRN*      - AIR DENSITY IN KG/M**3.
+!         *UFRIC*       - FRICTION VELOCITY IN M/S.
+!         *Z0M*         - ROUGHNESS LENGTH IN M.
+!         *AIRD*        - AIR DENSITY IN KG/M**3.
+!         *RNFAC*       - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
+!         *COSWDIF*     - COS(TH(K)-WDWAVE(IJ))
+!         *SINWDIF2*    - SIN(TH(K)-WDWAVE(IJ))**2
 !         *TAUW*        - KINEMATIC WAVE STRESS IN (M/S)**2
+!         *TAUWDIR*     - KINEMATIC WAVE STRESS DIRECTION
 !         *PHIWA*       - ENERGY FLUX FROM WIND INTO WAVES INTEGRATED
 !                         OVER THE FULL FREQUENCY RANGE.
+!         *LLPHIWA*     - TRUE IF PHIWA NEEDS TO BE COMPUTED
 
 !     METHOD.
 !     -------
@@ -55,208 +62,174 @@
 !       HAS TO BE STORED IN *SPOS* (CALL FIRST SINPUT, THEN
 !       STRESSO, AND THEN THE REST OF THE SOURCE FUNCTIONS)
 
-!     EXTERNALS.
-!     -----------
-
-!       NONE.
-
 !     REFERENCE.
 !     ----------
-!       R SNYDER ET AL,1981.
-!       G. KOMEN, S. HASSELMANN AND K. HASSELMANN, JPO, 1984.
-!       P. JANSSEN, JPO, 1985
+!       P. JANSSEN, 
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : ALPHA    ,TAUWSHELTER, ITSHELT,LWVFLX_SNL
+      USE YOWCOUP  , ONLY : LLGCBZ0
       USE YOWFRED  , ONLY : FR       ,RHOWG_DFIM ,DELTH    ,TH       ,    &
-     &            COSTH    ,SINTH    ,FR5      ,FRATIO
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+     &            COSTH    ,SINTH    ,FR5
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI
-      USE YOWSHAL  , ONLY : CINV     ,INDEP
+      USE YOWPHYS  , ONLY : TAUWSHELTER
       USE YOWTABL  , ONLY : EPS1
       USE YOWSTAT  , ONLY : IPHYS
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 #include "tau_phi_hf.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, SL, SPOS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: TAUW, PHIWA
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(KIJS:KIJL)
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: RHOWGDFTH
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1, SL, SPOS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CINV
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, UFRIC, Z0M, AIRD, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(IN) :: COSWDIF, SINWDIF2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: TAUW, TAUWDIR, PHIWA
+      LOGICAL, INTENT(IN) :: LLPHIWA
 
 
       INTEGER(KIND=JWIM) :: IJ, M, K, I, J, II
 
       REAL(KIND=JWRB) :: TAUTOUS2
-      REAL(KIND=JWRB) :: CONST
-      REAL(KIND=JWRB) :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, XK, DELK1, DELK2
-      REAL(KIND=JWRB) :: PHI2
-      REAL(KIND=JWRB) :: ABS_TAUWSHELTER, GM1
       REAL(KIND=JWRB) :: COSW, FCOSW2
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUHF, TEMP1, CONST1, XSTRESS, YSTRESS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIHF, TEMP2, CONST2
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAU1, PHI1, XLEVTAIL 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CMRHOWGDFTH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: US2, TAUX, TAUY, TAUPX, TAUPY
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USDIRP, UST, UST2 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMT, SUMX, SUMY
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XSTRESS, YSTRESS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TAUHF, PHIHF
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CMRHOWGDFTH
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: US2, TAUX, TAUY, TAUPX, TAUPY
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: USDIRP, UST
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SUMT, SUMX, SUMY
+
+      LOGICAL :: LTAUWSHELTER
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('STRESSO',0,ZHOOK_HANDLE)
 
-!*    1. PRECOMPUTE FREQUENCY SCALING.
-!        -----------------------------
-
-      GM1 = 1.0_JWRB/G
-      CONST = DELTH*(ZPI)**4*GM1
-      TAUTOUS2 = 1.0_JWRB-EPS1
-
-      ABS_TAUWSHELTER=ABS(TAUWSHELTER)
-
-      DO IJ=IJS,IJL
-        CONST1(IJ)  = CONST*FR5(MIJ(IJ))*GM1
-        CONST2(IJ)  = ROAIRN(IJ)*CONST*FR5(MIJ(IJ))
-      ENDDO
-
-!*    2. COMPUTE WAVE STRESS OF ACTUAL BLOCK.
-!        ------------------------------------
-
-!*    2.2 INTEGRATE INPUT SOURCE FUNCTION OVER FREQUENCY AND DIRECTIONS.
-!         --------------------------------------------------------------
-
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         PHIWA(IJ)   = 0.0_JWRB
         XSTRESS(IJ) = 0.0_JWRB
         YSTRESS(IJ) = 0.0_JWRB
       ENDDO
 
+!*    CONTRIBUTION TO THE WAVE STRESS FROM THE NEGATIVE PART OF THE WIND INPUT
+!     ------------------------------------------------------------------------
+
+      IF ( LLPHIWA ) THEN
 !     full energy flux due to negative Sinput (SL-SPOS)
-!     we assume that above NFRE, the contibutions can be negleted
-      DO M=1,NFRE
-        K=1
-        DO IJ=IJS,IJL
-          SUMT(IJ) = SL(IJ,K,M)-SPOS(IJ,K,M)
-        ENDDO
-        DO K=2,NANG
-          DO IJ=IJS,IJL
-            SUMT(IJ) = SUMT(IJ) + SL(IJ,K,M)-SPOS(IJ,K,M) 
+!     we assume that above NFRE, the contibutions can be neglected
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=KIJS,KIJL
+              PHIWA(IJ) = PHIWA(IJ) + (SL(IJ,K,M)-SPOS(IJ,K,M))*RHOWG_DFIM(M)
+            ENDDO
           ENDDO
         ENDDO
-        DO IJ=IJS,IJL
-          PHIWA(IJ) = PHIWA(IJ) + SUMT(IJ)*RHOWG_DFIM(M)
-        ENDDO
-      ENDDO
+      ENDIF
 
-
-!*    2.2 CALCULATE LOW-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
-!     --------------------------------------------------------------------------------------
+!*    CALCULATE LOW-FREQUENCY CONTRIBUTION TO STRESS AND ENERGY FLUX (positive sinput).
+!     ---------------------------------------------------------------------------------
       DO M=1,MAXVAL(MIJ(:))
 !     THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
         K=1
-        DO IJ=IJS,IJL
-          SUMT(IJ) = SPOS(IJ,K,M)
+        DO IJ=KIJS,KIJL
           SUMX(IJ) = SPOS(IJ,K,M)*SINTH(K)
           SUMY(IJ) = SPOS(IJ,K,M)*COSTH(K)
         ENDDO
         DO K=2,NANG
-          DO IJ=IJS,IJL
-            SUMT(IJ) = SUMT(IJ) + SPOS(IJ,K,M)
+          DO IJ=KIJS,KIJL
             SUMX(IJ) = SUMX(IJ) + SPOS(IJ,K,M)*SINTH(K)
             SUMY(IJ) = SUMY(IJ) + SPOS(IJ,K,M)*COSTH(K)
           ENDDO
         ENDDO
-        DO IJ=IJS,IJL
-          PHIWA(IJ)   =  PHIWA(IJ) + SUMT(IJ)*RHOWGDFTH(IJ,M)
-          CMRHOWGDFTH(IJ) = CINV(INDEP(IJ),M)*RHOWGDFTH(IJ,M)
-          XSTRESS(IJ) = XSTRESS(IJ) + SUMX(IJ)*CMRHOWGDFTH(IJ)
-          YSTRESS(IJ) = YSTRESS(IJ) + SUMY(IJ)*CMRHOWGDFTH(IJ)
+        DO IJ=KIJS,KIJL
+          CMRHOWGDFTH(IJ) = RHOWGDFTH(IJ,M)*CINV(IJ,M)
+          XSTRESS(IJ) = XSTRESS(IJ) + CMRHOWGDFTH(IJ)*SUMX(IJ)
+          YSTRESS(IJ) = YSTRESS(IJ) + CMRHOWGDFTH(IJ)*SUMY(IJ)
         ENDDO
       ENDDO
 
 !     TAUW is the kinematic wave stress !
-      DO IJ=IJS,IJL
-        XSTRESS(IJ) = XSTRESS(IJ)/MAX(ROAIRN(IJ),1.0_JWRB)
-        YSTRESS(IJ) = YSTRESS(IJ)/MAX(ROAIRN(IJ),1.0_JWRB)
+      DO IJ=KIJS,KIJL
+        XSTRESS(IJ) = XSTRESS(IJ)/MAX(AIRD(IJ), 1.0_JWRB)
+        YSTRESS(IJ) = YSTRESS(IJ)/MAX(AIRD(IJ), 1.0_JWRB)
       ENDDO
 
-!*    2.3 CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
-!     --------------------------------------------------------------------------------------
+      IF ( LLPHIWA ) THEN
+        DO M=1,MAXVAL(MIJ(:))
+!       THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
+          K=1
+          DO IJ=KIJS,KIJL
+            SUMT(IJ) = SPOS(IJ,K,M)
+          ENDDO
+          DO K=2,NANG
+            DO IJ=KIJS,KIJL
+              SUMT(IJ) = SUMT(IJ) + SPOS(IJ,K,M)
+            ENDDO
+          ENDDO
+          DO IJ=KIJS,KIJL
+            PHIWA(IJ) = PHIWA(IJ) + RHOWGDFTH(IJ,M)*SUMT(IJ)
+          ENDDO
+        ENDDO
+      ENDIF
 
-      DO IJ=IJS,IJL
-        US2(IJ)=USNEW(IJ)**2
+!*    CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
+!     ----------------------------------------------------------------------------------
+
+      DO IJ=KIJS,KIJL
+        US2(IJ)=UFRIC(IJ)**2
       ENDDO
 
-      IF (IPHYS.EQ.0 .OR. ITSHELT.EQ.0) THEN
-        DO IJ=IJS,IJL
-          USDIRP(IJ)=THWNEW(IJ)
-          UST(IJ)=USNEW(IJ)
-          UST2(IJ)=US2(IJ)
+      IF ( IPHYS == 0 .OR. TAUWSHELTER == 0.0_JWRB) THEN
+        LTAUWSHELTER = .FALSE.
+        DO IJ=KIJS,KIJL
+          USDIRP(IJ)=WDWAVE(IJ)
+          UST(IJ)=UFRIC(IJ)
         ENDDO
       ELSE
-        DO IJ=IJS,IJL
-          TAUX(IJ)=US2(IJ)*SIN(THWNEW(IJ))
-          TAUY(IJ)=US2(IJ)*COS(THWNEW(IJ))
-          TAUPX(IJ)=TAUX(IJ)-ABS_TAUWSHELTER*XSTRESS(IJ)
-          TAUPY(IJ)=TAUY(IJ)-ABS_TAUWSHELTER*YSTRESS(IJ)
+        LTAUWSHELTER = .TRUE.
+        DO IJ=KIJS,KIJL
+          TAUX(IJ)=US2(IJ)*SIN(WDWAVE(IJ))
+          TAUY(IJ)=US2(IJ)*COS(WDWAVE(IJ))
+          TAUPX(IJ)=TAUX(IJ)-TAUWSHELTER*XSTRESS(IJ)
+          TAUPY(IJ)=TAUY(IJ)-TAUWSHELTER*YSTRESS(IJ)
           USDIRP(IJ)=ATAN2(TAUPX(IJ),TAUPY(IJ))
-          UST2(IJ)=SQRT(TAUPX(IJ)**2+TAUPY(IJ)**2)
-          UST(IJ)=SQRT(UST2(IJ))
+          UST(IJ)=(TAUPX(IJ)**2+TAUPY(IJ)**2)**0.25_JWRB
         ENDDO
       ENDIF
 
-      K=1
-      DO IJ=IJS,IJL
-        COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-        FCOSW2   = F(IJ,K,MIJ(IJ))*COSW**2
-        TEMP1(IJ) = FCOSW2*COSW
-        TEMP2(IJ) = FCOSW2 
-      ENDDO
+      CALL TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
+     &                FL1, AIRD, RNFAC,                          &
+     &                COSWDIF, SINWDIF2,                         &
+     &                UST, TAUHF, PHIHF, LLPHIWA)
 
-      DO K=2,NANG
-        DO IJ=IJS,IJL
-          COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-          FCOSW2   = F(IJ,K,MIJ(IJ))*COSW**2
-          TEMP1(IJ) = TEMP1(IJ) + FCOSW2*COSW
-          TEMP2(IJ) = TEMP2(IJ) + FCOSW2 
-        ENDDO
-      ENDDO
-
-      IF (ITSHELT.EQ.0) THEN
-        DO IJ=IJS,IJL
-          XLEVTAIL(IJ)=0.0_JWRB
-        ENDDO
-      ELSE
-        DO IJ=IJS,IJL
-          XLEVTAIL(IJ)=TAUWSHELTER*CONST1(IJ)*TEMP1(IJ)
-        ENDDO
-      ENDIF
-
-      CALL TAU_PHI_HF(IJS, IJL, MIJ, UST, Z0NEW, XLEVTAIL, TAU1, PHI1)
-
-      DO IJ=IJS,IJL
-        TAUHF(IJ) = CONST1(IJ)*TEMP1(IJ)*TAU1(IJ)
-        PHIHF(IJ) = CONST2(IJ)*TEMP2(IJ)*PHI1(IJ)
-      ENDDO
-
-      DO IJ=IJS,IJL
-        PHIWA(IJ)   = PHIWA(IJ)   + PHIHF(IJ)
+      DO IJ=KIJS,KIJL
         XSTRESS(IJ) = XSTRESS(IJ) + TAUHF(IJ)*SIN(USDIRP(IJ))
         YSTRESS(IJ) = YSTRESS(IJ) + TAUHF(IJ)*COS(USDIRP(IJ))
         TAUW(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
-
-        TAUW(IJ) = MIN(TAUW(IJ),US2(IJ)*TAUTOUS2)
         TAUW(IJ) = MAX(TAUW(IJ),0.0_JWRB)
+        TAUWDIR(IJ) = ATAN2(XSTRESS(IJ),YSTRESS(IJ))
       ENDDO
+
+      IF ( .NOT. LLGCBZ0) THEN
+        TAUTOUS2 = 1.0_JWRB/(1.0_JWRB+EPS1)
+        DO IJ=KIJS,KIJL
+          TAUW(IJ) = MIN(TAUW(IJ),US2(IJ)*TAUTOUS2)
+        ENDDO
+      ENDIF
+
+      IF ( LLPHIWA ) THEN
+        DO IJ=KIJS,KIJL
+          PHIWA(IJ) = PHIWA(IJ) + PHIHF(IJ)
+        ENDDO
+      ENDIF
 
       IF (LHOOK) CALL DR_HOOK('STRESSO',1,ZHOOK_HANDLE)
 

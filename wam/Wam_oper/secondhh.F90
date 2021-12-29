@@ -46,11 +46,12 @@
 !-------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "vmin_d.intfb.h"
+#include "vplus_d.intfb.h"
 
       INTEGER(KIND=JWIM) :: K, M, K1, M1, K2, M2
 
       REAL(KIND=JWRB), PARAMETER :: DEL1=1.0E-8_JWRB
-      REAL(KIND=JWRB) :: VMIN_D, VPLUS_D
       REAL(KIND=JWRB) :: CO1
       REAL(KIND=JWRB) :: XK1, XK1SQ, XK2, XK2SQ, XK3
       REAL(KIND=JWRB) :: COSDIFF

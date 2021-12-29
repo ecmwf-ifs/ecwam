@@ -6,7 +6,6 @@
 
 !*    **  *YOWMESPAS* - SELECTS MACHINE SPECIFIC PART OF THE CODE 
 !                    AND SOME LATER CONTROL SWITCHES
-      LOGICAL :: LMESSPASS 
       LOGICAL :: LFDBIOOUT 
       LOGICAL :: LGRIBIN 
       LOGICAL :: LGRIBOUT 
@@ -16,9 +15,6 @@
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      --------    ----      -------
 
-!      *LMESSPASS  LOGICAL   SELECTS PART OF THE CODE THAT IS SPECIFIC
-!                            TO A MESSAGE PASSING OR A MULTI-TASKED 
-!                            ENVIRONMENT.
 !      *LFDBIOOUT  LOGICAL   IF TRUE THE PBIO SOFTWARE WILL BE USED FOR 
 !                            OUTPUT.
 !      *LGRIBIN    LOGICAL   SELECTS TYPE OF INPUT FILES

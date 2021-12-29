@@ -1,5 +1,5 @@
       SUBROUTINE WVWAMINIT (LLCOUPLED, IULOG, LLRNL,                    &
-     &                      NLON, NLAT, RSOUTW, RNORTW)
+     &                      NGAUSSW, NLON, NLAT, RSOUTW, RNORTW)
 
 !****  *WVWAMINIT* - INITIALISES A FEW VARIABLE AND READ WAVE MODEL
 !                    NAMELIST (if LLRNL is true) and
@@ -11,11 +11,12 @@
 !*    INTERFACE.
 !     ----------
 !     CALL *WVWAMINIT* (LLCOUPLED,IULOG,LLRNL,
-!                       NLON, NLAT, RSOUTW, RNORTW)
+!                       NGAUSSW, NLON, NLAT, RSOUTW, RNORTW)
 
 !      *LLCOUPLED*  LOGICAL  TRUE IF ATMOSPHERIC COUPLED RUN.
 !      *IULOG*      INTEGER  STANDARD OUTPUT UNIT USED BY IFS.
 !      *LLRNL*      LOGICAL  IF TRUE READS WAM NAMELIST.
+!      *NGAUSSW*    INTEGER  1: GAUSSIAN GRID, 0: LAT-LON GRID
 !      *NLON*       INTEGER  MAXIMUM NUMBER OF LONGITUDES USED BY WAM. 
 !      *NLAT*       INTEGER  MAXIMUM NUMBER OF LATITUDES USED BY WAM. 
 !      *RSOUTW*     REAL     MOST SOUTHERN LATITUDE IN WAM.
@@ -25,7 +26,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWMAP   , ONLY : AMOSOP   ,AMONOP
+      USE YOWMAP   , ONLY : AMOSOP   ,AMONOP   ,IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI   ,    &
      &            KTAG
       USE YOWPARAM , ONLY : NGX      ,NGY      ,KWAMVER 
@@ -34,22 +35,24 @@
       USE YOWUNIT  , ONLY : IREADG   ,NPROPAGS ,IU07     ,IU08     ,    &
      &            LWVWAMINIT
       USE YOWSTAT  , ONLY : IPROPAGS
-      USE MPL_MODULE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWUNPOOL, ONLY : LLUNSTR
+
+      USE MPL_MODULE
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "expand_string.intfb.h"
+#include "iwam_get_unit.intfb.h"
 #include "mpuserin.intfb.h"
+#include "setwavphys.intfb.h"
 #include "readpre.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IULOG
-      INTEGER(KIND=JWIM), INTENT(OUT) :: NLON, NLAT
+      INTEGER(KIND=JWIM), INTENT(OUT) :: NGAUSSW, NLON, NLAT
       INTEGER(KIND=JWIM) :: IREAD, LFILE
       INTEGER(KIND=JWIM) :: I4(2)
-      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
 
       REAL(KIND=JWRB), INTENT(OUT) :: RSOUTW, RNORTW
       REAL(KIND=JWRB) :: X4(2)
@@ -78,7 +81,7 @@
 !     STANDARD OUTPUT UNIT
 !     --------------------
 
-      IF(LLCOUPLED) THEN
+      IF (LLCOUPLED) THEN
         IU06=IULOG
       ELSE
         IU06=65
@@ -88,7 +91,7 @@
           LOGFILENAME='logfile.%p'
           CALL EXPAND_STRING(IRANK,NPROC,0,0,LOGFILENAME,1)
           INQUIRE(UNIT=IU06, OPENED=LLEXIST)
-          IF(.NOT. LLEXIST) THEN
+          IF (.NOT. LLEXIST) THEN
             OPEN(IU06,FILE=LOGFILENAME,STATUS='UNKNOWN')
             WRITE(IU06,*) ' STDOUT OF PE ', IRANK
             WRITE(IU06,*) ' ============ '
@@ -99,12 +102,18 @@
 
 !     GET CONTROLLING FLAG FROM INPUT NAMELIST 
 !     ----------------------------------------
-      IF(LFRST .AND. LLRNL) THEN
+      IF (LFRST .AND. LLRNL) THEN
         CALL MPUSERIN
         LFRST=.FALSE.
       ENDIF
 
       WRITE(IU06,*) ' WAM SOFTWARE VERSION: ', KWAMVER
+
+
+!     SET WAVE PHYSICS PACKAGE
+!     ------------------------
+
+      CALL SETWAVPHYS
 
 !     DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS
 !     -----------------------------------------------------
@@ -121,13 +130,13 @@
 
 !     CONSTANT FILES INPUT UNIT
 !     -------------------------
-      IF(IRANK.EQ.IREAD) THEN
+      IF (IRANK == IREAD) THEN
         FILENAME='wam_grid_tables'
         LFILE=0
         LLEXIST=.FALSE.
-        IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
+        IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
         INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
-        IF(.NOT. LLEXIST) THEN
+        IF (.NOT. LLEXIST) THEN
           WRITE(IU06,*) '************************************'
           WRITE(IU06,*) '*                                  *'
           WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVWAMINIT   *'
@@ -142,7 +151,7 @@
         ENDIF
         IU07 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
 
-        IF(IPROPAGS.LT.0 .OR. IPROPAGS.GT.NPROPAGS) THEN
+        IF (IPROPAGS < 0 .OR. IPROPAGS > NPROPAGS) THEN
           WRITE(IU06,*) '************************************'
           WRITE(IU06,*) '*                                  *'
           WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVWAMINIT   *'
@@ -158,9 +167,9 @@
 
         LFILE=0
         LLEXIST=.FALSE.
-        IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
+        IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
         INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
-        IF(.NOT. LLEXIST) THEN
+        IF (.NOT. LLEXIST) THEN
           WRITE(IU06,*) '************************************'
           WRITE(IU06,*) '*                                  *'
           WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVWAMINIT   *'
@@ -187,6 +196,7 @@
       CALL FLUSH (IU06)
 
 !     RETURN NECESSARY PARAMETERS
+      NGAUSSW = IQGAUSS
       NLON=NGX
       NLAT=NGY
       RSOUTW=AMOSOP

@@ -1,4 +1,4 @@
-      SUBROUTINE PARMEAN (IJS, IJL, NPMAX, NPEAK,                       &
+      SUBROUTINE PARMEAN (KIJS, KIJL, NPMAX, NPEAK,                     &
      &                    SPEC,                                         &
      &                    ENE, DIR, PER)
 
@@ -18,11 +18,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PARMEAN (IJS, IJL, NPMAX, NPEAK,
+!       *CALL* *PARMEAN (KIJS, KIJL, NPMAX, NPEAK,
 !                        SPEC,
 !                        ENE, DIR, PER)
-!              *IJS*     - INDEX OF FIRST GRIDPOINT
-!              *IJL*     - INDEX OF LAST GRIDPOINT
+!              *KIJS*    - INDEX OF FIRST GRIDPOINT
+!              *KIJL*    - INDEX OF LAST GRIDPOINT
 !              *NPMAX*   - MAXIMUM NUMBER OF PARTITIONS
 !              *NPEAK*   - NUMBER OF PEAKS 
 !              *SPEC*    - SPECTRUM.
@@ -52,20 +52,22 @@
       USE YOWFRED  ,ONLY : FR , DFIM , DFIMOFR, COSTH, SINTH
       USE YOWPARAM ,ONLY : NANG, NFRE
       USE YOWPCONS ,ONLY : EPSMIN, ZPI
+
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, NPMAX
-      INTEGER(KIND=JWIM), INTENT(IN), DIMENSION(IJS:IJL) :: NPEAK
-      REAL(KIND=JWRB), INTENT(IN) :: SPEC(NANG,NFRE,NPMAX,IJS:IJL)
-      REAL(KIND=JWRB), INTENT(OUT), DIMENSION(IJS:IJL,0:NPMAX) :: ENE, DIR, PER
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, NPMAX
+      INTEGER(KIND=JWIM), INTENT(IN), DIMENSION(KIJS:KIJL) :: NPEAK
+      REAL(KIND=JWRB), INTENT(IN) :: SPEC(NANG,NFRE,NPMAX,KIJS:KIJL)
+      REAL(KIND=JWRB), INTENT(OUT), DIMENSION(KIJS:KIJL,0:NPMAX) :: ENE, DIR, PER
+
 
       INTEGER(KIND=JWIM) :: IPK, IJ, K, M, IP
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB)    :: F1D(NFRE)
+      REAL(KIND=JWRB) :: F1D(NFRE)
       REAL(KIND=JWRB), DIMENSION(NPMAX) :: TEMP, SI, CI, EM, FM, THQ
 
 ! ----------------------------------------------------------------------
@@ -75,7 +77,7 @@
 
 !     ENE must be initialised and index 0 must stay equal to 0
       DO IP=0,NPMAX
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           ENE(IJ,IP)=0.0_JWRB
           DIR(IJ,IP)=0.0_JWRB
           PER(IJ,IP)=0.0_JWRB
@@ -83,7 +85,7 @@
       ENDDO
 
 !     LOOP OVER GRID POINT
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         DO IPK=1,NPEAK(IJ)
           EM(IPK) = EPSMIN
           FM(IPK) = EPSMIN
@@ -105,14 +107,14 @@
             ENDDO
             SI(IPK) = SI(IPK)+SINTH(K)*TEMP(IPK)
             CI(IPK) = CI(IPK)+COSTH(K)*TEMP(IPK)
-            IF (CI(IPK).EQ.0.0_JWRB) CI(IPK) = EPSMIN
+            IF (CI(IPK) == 0.0_JWRB) CI(IPK) = EPSMIN
             THQ(IPK) = ATAN2(SI(IPK),CI(IPK))
-            IF (THQ(IPK).LT.0.0_JWRB) THQ(IPK) = THQ(IPK) + ZPI
+            IF (THQ(IPK) < 0.0_JWRB) THQ(IPK) = THQ(IPK) + ZPI
           ENDDO
         ENDDO
 
         DO IPK=1,NPEAK(IJ)
-          IF(EM(IPK).GT.EPSMIN) THEN
+          IF (EM(IPK) > EPSMIN) THEN
              ENE(IJ,IPK) = EM(IPK)
              PER(IJ,IPK) = FM(IPK)/EM(IPK)
              DIR(IJ,IPK) = THQ(IPK)

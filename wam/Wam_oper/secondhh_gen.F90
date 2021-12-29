@@ -45,7 +45,7 @@
      &                      TA, TB, TC_QL, TT_4M, TT_4P, TFAKH
       USE YOWPARAM , ONLY : NANG, NFRE
       USE YOWPCONS , ONLY : G, PI, ZPI
-      USE YOWSHAL  , ONLY : NDEPTH,DEPTH,DEPTHA,DEPTHD,INDEP
+      USE YOWSHAL  , ONLY : NDEPTH
       USE YOWTEST  , ONLY : IU06
 !-----------------------------------------------------------------------
 

@@ -36,9 +36,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCINP  , ONLY : OUTLONG  ,OUTLAT
-      USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,    &
-     &            XDELLA   ,ZDELLO
+      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
+      USE YOWMAP   , ONLY : BLK2GLO   ,AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO
       USE YOWPARAM , ONLY : NIBLO
       USE YOWSPEC,   ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06
@@ -63,7 +62,6 @@
         WRITE(IU06,*) 'OUTPUT POINTS ARE NOT DEFINED IN USER INPUT'
         RETURN
       ELSE
-        ALLOCATE(IGAR(NGOUT))
         ALLOCATE(IJAR(NGOUT))
       ENDIF
 
@@ -74,7 +72,7 @@
 
       ListSTART(1)=1
       ListEND(1)=1
-      CALL FINDB (NGOUT, NGOUT, OUTLAT, OUTLONG, IGAR, IJAR,            &
+      CALL FINDB (NGOUT, NGOUT, OUTLAT, OUTLONG, IJAR,            &
      &            1, ListSTART,ListEND,1)
 
 ! ----------------------------------------------------------------------
@@ -91,16 +89,16 @@
      &             ''  POINT.'')')
       DO IO=1,NGOUT
         IF (IJAR(IO).GT.0) THEN
-          KX  = KXLT(IJAR(IO),IGAR(IO))
-          IX  = IXLG(IJAR(IO),IGAR(IO))
+          IX  = BLK2GLO(IJAR(IO))%IXLG
+          KX  = BLK2GLO(IJAR(IO))%KXLT
           ALONG = AMOWEP + (IX-1)*ZDELLO(KX)
           ALAT  = AMOSOP + (KX-1)*XDELLA
         ELSE
           ALONG = 9999999
           ALAT  = 9999999
         ENDIF
-        WRITE(IU06,'(4X,I5,4F8.2,2I8)')                                 &
-     &   IO, OUTLAT(IO), OUTLONG(IO), ALAT, ALONG, IGAR(IO), IJAR(IO)
+        WRITE(IU06,'(4X,I5,4F8.2,I8)')                                 &
+     &   IO, OUTLAT(IO), OUTLONG(IO), ALAT, ALONG, IJAR(IO)
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -112,7 +110,6 @@
       DO IO=1,NGOUT
         IF (NG.GT.0 .AND. IO-NG.GT.0) THEN
           IJAR(IO-NG) = IJAR(IO)
-          IGAR(IO-NG) = IGAR(IO)
         ENDIF
         IF (IJAR(IO).EQ.0) NG = NG+1
       ENDDO
@@ -137,14 +134,6 @@
         ALLOCATE(IJAR(NGOUTNEW))
         DO IO=1,NGOUTNEW
            IJAR(IO) = IDUM(IO)
-        ENDDO
-        DO IO=1,NGOUTNEW
-           IDUM(IO) = IGAR(IO)
-        ENDDO
-        DEALLOCATE(IGAR)
-        ALLOCATE(IGAR(NGOUTNEW))
-        DO IO=1,NGOUTNEW
-           IGAR(IO) = IDUM(IO)
         ENDDO
         DEALLOCATE(IDUM)
         NGOUT = NGOUTNEW

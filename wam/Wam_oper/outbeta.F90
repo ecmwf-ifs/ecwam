@@ -1,4 +1,4 @@
-      SUBROUTINE OUTBETA (IJS, IJL, U10, US, Z0, BETA)
+SUBROUTINE OUTBETA (KIJS, KIJL, PRCHAR, FF_NOW, BETAHQ)
 
 ! ----------------------------------------------------------------------
 
@@ -18,13 +18,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *OUTBETA (IJS, IJL, US, Z0, BETA)
-!         *IJS*    - INDEX OF FIRST GRIDPOINT.
-!         *IJL*    - INDEX OF LAST GRIDPOINT.
-!         *U10*    - WIND SPEED IN M/S.
-!         *US*     - FRICTION VELOCITY IN M/S.
-!         *Z0*     - ROUGHNESS LENGTH IN M.
-!         *BETA*   - CHARNOCK FIELD (BLOCK ARRAY)
+!       *CALL* *OUTBETA (KIJS, KIJL, PRCHAR, FF_NOW, BETAHQ)
+!         *KIJS*    - INDEX OF FIRST GRIDPOINT.
+!         *KIJL*    - INDEX OF LAST GRIDPOINT.
+!         *PRCHAR* - DEFAULT VALUE FOR CHARNOCK
+!         *FF_NOW* - FORCING FIELDS
+!         *BETAHQ* - EQUIVALENT CHARNOCK FIELD FOR HEAT AND MOISTURE
+!                    (i.e. Charnock with the background roughness removed)   
 !         
 
 !     EXTERNALS.
@@ -45,40 +45,65 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
+      USE YOWCOUP  , ONLY : LLGCBZ0
       USE YOWPCONS , ONLY : G        ,EPSUS
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWPHYS  , ONLY : RNUM     ,ALPHAMIN  , ALPHAMAX, ALPHA
+      USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10, US, Z0
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: BETA
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), INTENT(IN) :: PRCHAR
+      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: BETAHQ 
 
-      REAL(KIND=JWRB), PARAMETER :: ALPHAMAX=0.1_JWRB
+
       REAL(KIND=JWRB), PARAMETER :: AMAX=0.02_JWRB
       REAL(KIND=JWRB), PARAMETER :: BMAX=0.01_JWRB
       INTEGER(KIND=JWIM) :: IJ
 
-      REAL(KIND=JWRB) :: ALPHAMAXU10
+      REAL(KIND=JWRB) :: Z0VIS, ZN, USM, GUSM2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL)  :: ALPHAMAXU10
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
 
-!*    COMPUTE CHARNOCK 'CONSTANT' BETA.
+ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
+ &        UFRIC => FF_NOW%UFRIC, &
+ &        Z0M => FF_NOW%Z0M, &
+ &        Z0B => FF_NOW%Z0B, &
+ &        CHNK => FF_NOW%CHNK )
+
+
+!*    COMPUTE CHARNOCK 'CONSTANT' CHNK.
 !     ---------------------------------
 
-      DO IJ = IJS,IJL
-        BETA(IJ) = G*Z0(IJ)/MAX(US(IJ)**2,EPSUS)
-        ALPHAMAXU10=MIN(ALPHAMAX,AMAX+BMAX*U10(IJ))
-        BETA(IJ) = MIN(BETA(IJ),ALPHAMAXU10)
+      IF (LLGCBZ0) THEN
+        ZN = RNUM
+        ALPHAMAXU10(:)=ALPHAMAX
+      ELSE
+        ZN = 0.0_JWRB
+        ALPHAMAXU10(:)=MIN(ALPHAMAX,AMAX+BMAX*WSWAVE(:))
+      ENDIF
+
+      DO IJ = KIJS,KIJL
+        USM = 1.0_JWRB/MAX(UFRIC(IJ), EPSUS)
+        Z0VIS = ZN*USM
+        GUSM2 = G*USM**2
+        CHNK(IJ) = (Z0M(IJ)-Z0VIS)*GUSM2
+        CHNK(IJ) = MAX(MIN(CHNK(IJ),ALPHAMAXU10(IJ)),ALPHAMIN)
+        BETAHQ(IJ) = MAX(CHNK(IJ)-MAX(Z0B(IJ)*GUSM2, ALPHA), ALPHAMIN)
       ENDDO
 
-      IF (LHOOK) CALL DR_HOOK('OUTBETA',1,ZHOOK_HANDLE)
-
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('OUTBETA',1,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
-      END SUBROUTINE OUTBETA
+END SUBROUTINE OUTBETA

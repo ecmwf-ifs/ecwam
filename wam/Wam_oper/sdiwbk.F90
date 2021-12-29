@@ -1,4 +1,4 @@
-      SUBROUTINE SDIWBK (IJS, IJL, F, FL, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)
+      SUBROUTINE SDIWBK (KIJS, KIJL, FL1, FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)
 
 ! ----------------------------------------------------------------------
 
@@ -14,16 +14,16 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDIWBK (IJS, IJL, F, FL, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)*
-!          *IJS* - INDEX OF FIRST GRIDPOINT
-!          *IJL* - INDEX OF LAST GRIDPOINT
-!          *F*   - SPECTRUM.
-!          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
-!          *SL*  - TOTAL SOURCE FUNCTION ARRAY
-!          *DEPTH* WATER DEPTH
-!          *EMAXDPT* MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
-!          *EMEAN* - MEAN ENERGY DENSITY
-!          *F1MEAN* - MEAN FREQUENCY BASED ON 1st MOMENT.
+!       *CALL* *SDIWBK (KIJS, KIJL, FL1, FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)*
+!          *KIJS*    - INDEX OF FIRST GRIDPOINT
+!          *KIJL*    - INDEX OF LAST GRIDPOINT
+!          *FL1*     - SPECTRUM.
+!          *FLD*     - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
+!          *SL*      - TOTAL SOURCE FUNCTION ARRAY
+!          *DEPTH*   - WATER DEPTH
+!          *EMAXDPT* - MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
+!          *EMEAN*   - MEAN ENERGY DENSITY
+!          *F1MEAN*  - MEAN FREQUENCY BASED ON 1st MOMENT.
 
 !     METHOD.
 !     -------
@@ -42,25 +42,25 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE,    NFRE_RED
       USE YOWSTAT  , ONLY : LBIWBK
-      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK, JPHOOK
+
+      USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL),INTENT(IN):: DEPTH, EMAXDPT, EMEAN, F1MEAN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL, SL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(INOUT) :: FLD, SL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL),INTENT(IN):: DEPTH, EMAXDPT, EMEAN, F1MEAN
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, IC
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: ALPH, ARG, Q, Q_OLD, REL_ERR, EXPQ
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: SDS
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL) :: SDS
 
       REAL, PARAMETER :: ALPH_B_J = 1.0_JWRB
       REAL, PARAMETER :: COEF_B_J=2*ALPH_B_J
@@ -76,8 +76,8 @@
 
       IF (LBIWBK) THEN
 !       (FOLLOWING BATTJES-JANSSEN AND BEJI)
-        DO IJ=IJS,IJL
-           IF(DEPTH(IJ).LT.DEPTHTRS) THEN
+        DO IJ=KIJS,KIJL
+           IF(DEPTH(IJ) < DEPTHTRS) THEN
              ALPH = 2.0_JWRB*EMAXDPT(IJ)/EMEAN(IJ)
              ARG  = MIN(ALPH,50.0_JWRB)
              Q_OLD = EXP(-ARG)
@@ -94,12 +94,12 @@
            ENDIF
         ENDDO 
       
-        DO M=1,NFRE
+        DO M = 1, NFRE_RED
            DO K=1,NANG
-              DO IJ=IJS,IJL
-                IF(DEPTH(IJ).LT.DEPTHTRS) THEN
-                  SL(IJ,K,M) = SL(IJ,K,M)-SDS(IJ)*F(IJ,K,M)
-                  FL(IJ,K,M) = FL(IJ,K,M)-SDS(IJ)
+              DO IJ=KIJS,KIJL
+                IF(DEPTH(IJ) < DEPTHTRS) THEN
+                  SL(IJ,K,M) = SL(IJ,K,M)-SDS(IJ)*FL1(IJ,K,M)
+                  FLD(IJ,K,M) = FLD(IJ,K,M)-SDS(IJ)
                 ENDIF
               ENDDO
            ENDDO

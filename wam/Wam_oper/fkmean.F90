@@ -1,4 +1,5 @@
-      SUBROUTINE FKMEAN (F, IJS, IJL, EM, FM1, F1, AK, XK)
+      SUBROUTINE FKMEAN (KIJS, KIJL, FL1, WAVNUM,   &
+     &                   EM, FM1, F1, AK, XK)
 
 ! ----------------------------------------------------------------------
 
@@ -6,7 +7,6 @@
 !                AND MEAN WAVE NUMBER (based in  sqrt(k)*F moment) .
 !                COMPUTATION OF THE MEAN WAVE ENERGY WAS ALSO
 !                ADDED SUCH THAT A CALL TO FKMEAN DOES NOT NEED
-!                TO BE PRECEDED BY A CALL TO SEMEAN.
 
 
 !*    PURPOSE.
@@ -17,19 +17,20 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FKMEAN (F, IJS, IJL, EM, FM1, F1, AK, XK)*
-!              *F*   - SPECTRUM.
-!              *IJS* - INDEX OF FIRST GRIDPOINT
-!              *IJL* - INDEX OF LAST GRIDPOINT
-!              *EM*  - MEAN WAVE ENERGY
-!              *FM1* - MEAN WAVE FREQUENCY BASED ON (1/f)*F INTEGRATION
-!              *F1*  - MEAN WAVE FREQUENCY BASED ON f*F INTEGRATION
-!              *AK*  - MEAN WAVE NUMBER  BASED ON sqrt(1/k)*F INTGRATION
-!                      ONLY FOR SHALLOW WATER RUNS.
-!!!                    AK IS STILL NEEDED IN SNONLIN !!!!
-!!!                    IF THE OLD FORMULATION IS USED.
-!              *XK*  - MEAN WAVE NUMBER  BASED ON sqrt(k)*F INTEGRATION
-!                      ONLY FOR SHALLOW WATER RUNS.
+!       *CALL* *FKMEAN (KIJS, KIJL, FL1, WAVNUM, EM, FM1, F1, AK, XK)*
+!              *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
+!              *KIJL*    - LOCAL INDEX OF LAST GRIDPOINT
+!              *FL1*     - SPECTRUM.
+!              *WAVNUM*  - WAVE NUMBER.
+!              *EM*      - MEAN WAVE ENERGY
+!              *FM1*     - MEAN WAVE FREQUENCY BASED ON (1/f)*FL1 INTEGRATION
+!              *F1*      - MEAN WAVE FREQUENCY BASED ON f*FL1 INTEGRATION
+!              *AK*      - MEAN WAVE NUMBER  BASED ON sqrt(1/k)*FL1 INTGRATION
+!                          ONLY FOR SHALLOW WATER RUNS.
+!!!                        AK IS STILL NEEDED IN SNONLIN !!!!
+!!!                        IF THE OLD FORMULATION IS USED.
+!              *XK*      - MEAN WAVE NUMBER  BASED ON sqrt(k)*FL1 INTEGRATION
+!                          ONLY FOR SHALLOW WATER RUNS.
 
 !     METHOD.
 !     -------
@@ -52,25 +53,26 @@
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DFIMFR   ,    &
      &            DELTH    ,WETAIL   ,FRTAIL   ,WP1TAIL
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
-      USE YOWSTAT  , ONLY : ISHALLO
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP
 
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM 
+
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(OUT) :: EM, FM1, F1, AK, XK
+
+
       INTEGER(KIND=JWIM) :: IJ, M, K
-
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(OUT) :: EM, FM1, F1, AK, XK
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELT25, COEFM1, COEF1, COEFA, COEFX, SQRTK
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: TEMPA, TEMPX,  TEMP2
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL) :: TEMPA, TEMPX,  TEMP2
 
 ! ----------------------------------------------------------------------
 
@@ -80,7 +82,7 @@
 !*    1. INITIALISE MEAN FREQUENCY ARRAY AND TAIL FACTOR.
 !        ------------------------------------------------
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         EM(IJ) = EPSMIN
         FM1(IJ)= EPSMIN
         F1(IJ) = EPSMIN
@@ -97,49 +99,25 @@
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
 !        ------------------------------------------
 
-      IF (ISHALLO.EQ.1) THEN
-
-!*    2.1 DEEP WATER INTEGRATION.
-!         -----------------------
-
-        DO M=1,NFRE
-          K=1
-          DO IJ=IJS,IJL
-            TEMP2(IJ) = F(IJ,K,M)
-          ENDDO
-          DO K=2,NANG
-            DO IJ=IJS,IJL
-              TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
-            ENDDO
-          ENDDO
-          DO IJ=IJS,IJL
-            EM(IJ) = EM(IJ)+DFIM(M)*TEMP2(IJ)
-            FM1(IJ)= FM1(IJ)+DFIMOFR(M)*TEMP2(IJ)
-            F1(IJ) = F1(IJ)+DFIMFR(M)*TEMP2(IJ)
-          ENDDO
-        ENDDO
-
-      ELSE
-
 !*    2.2 SHALLOW WATER INTEGRATION.
 !         --------------------------
 
         DO M=1,NFRE
-          DO IJ=IJS,IJL
-            SQRTK=SQRT(TFAK(INDEP(IJ),M))
+          DO IJ=KIJS,KIJL
+            SQRTK=SQRT(WAVNUM(IJ,M))
             TEMPA(IJ) = DFIM(M)/SQRTK
             TEMPX(IJ) = SQRTK*DFIM(M)
           ENDDO
           K=1
-          DO IJ=IJS,IJL
-            TEMP2(IJ) = F(IJ,K,M) 
+          DO IJ=KIJS,KIJL
+            TEMP2(IJ) = FL1(IJ,K,M) 
           ENDDO
           DO K=2,NANG
-            DO IJ=IJS,IJL
-              TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
+            DO IJ=KIJS,KIJL
+              TEMP2(IJ) = TEMP2(IJ)+FL1(IJ,K,M)
             ENDDO
           ENDDO
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             EM(IJ) = EM(IJ)+DFIM(M)*TEMP2(IJ)
             FM1(IJ)= FM1(IJ)+DFIMOFR(M)*TEMP2(IJ)
             F1(IJ) = F1(IJ)+DFIMFR(M)*TEMP2(IJ)
@@ -148,25 +126,9 @@
           ENDDO
         ENDDO
 
-      ENDIF
-
-!*    3. ADD TAIL CORRECTION TO MEAN FREQUENCY AND
-!*       NORMALIZE WITH TOTAL ENERGY.
-!        ------------------------------------------
-
-      IF (ISHALLO.EQ.1) THEN
-
-        DO IJ=IJS,IJL
-          EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ)
-          FM1(IJ)= FM1(IJ)+COEFM1*TEMP2(IJ)
-          FM1(IJ)= EM(IJ)/FM1(IJ)
-          F1(IJ) = F1(IJ)+COEF1*TEMP2(IJ)
-          F1(IJ) = F1(IJ)/EM(IJ)
-        ENDDO
-
-      ELSE
-
-        DO IJ=IJS,IJL
+!*      ADD TAIL CORRECTION TO MEAN FREQUENCY AND
+!*      NORMALIZE WITH TOTAL ENERGY.
+        DO IJ=KIJS,KIJL
           EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ)
           FM1(IJ) = FM1(IJ)+COEFM1*TEMP2(IJ)
           FM1(IJ) = EM(IJ)/FM1(IJ)
@@ -177,8 +139,6 @@
           XK(IJ) = XK(IJ)+COEFX*TEMP2(IJ)
           XK(IJ) = (XK(IJ)/EM(IJ))**2
         ENDDO
-
-      ENDIF
 
       IF (LHOOK) CALL DR_HOOK('FKMEAN',1,ZHOOK_HANDLE)
 

@@ -42,9 +42,10 @@
      &            K1W      ,K2W      ,K11W     ,K21W     ,AF11     ,    &
      &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,    &
      &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,    &
-     &            FRH      ,FTRF     ,ENH      ,MFRSTLW  ,MLSTHG   ,    &
+     &            FRH      ,FTRF     ,MFRSTLW  ,MLSTHG   ,              &
      &            KFRH     ,NINL     ,NRNL     ,INLCOEF  ,RNLCOEF
       USE YOWTEST  , ONLY : IU06
+
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 ! ----------------------------------------------------------------------
 
@@ -85,8 +86,8 @@
 
 !     2. WORK ARRAYS STORING THE DIFFERENT INDICES AND COEFFICIENTS
 
-      IF(.NOT.ALLOCATED(INLCOEF)) ALLOCATE(INLCOEF(NINL,1:MLSTHG)) 
-      IF(.NOT.ALLOCATED(RNLCOEF)) ALLOCATE(RNLCOEF(NRNL,1:MLSTHG)) 
+      IF (.NOT.ALLOCATED(INLCOEF)) ALLOCATE(INLCOEF(NINL,1:MLSTHG))
+      IF (.NOT.ALLOCATED(RNLCOEF)) ALLOCATE(RNLCOEF(NRNL,1:MLSTHG))
 
 !*    3. FREQUENCY LOOP.
 !        ---------------
@@ -101,37 +102,54 @@
         FFACM1 = 1.0_JWRB
         FTAIL  = 1.0_JWRB
         IC  = MC
+!       front tail protection (keep IC >=1)
+        IF (IC < 1 ) IC = 1
         IP  = MP
         IP1 = MP1
         IM  = MM
         IM1 = MM1
 !       LOW FREQUENCY FRONT TAIL
-        IF (IM.LT.1) THEN
-           FFACM = FTRF(IM)
-           IM = 1
-           IF (IM1.LT.1) THEN
-             FFACM1 = FTRF(IM1)
-             IM1 = 1
-           ENDIF
+        IF (IP < 1) THEN
+          FFACP = FTRF(IP)
+          IP=1
         ENDIF
+        IF (IP1 < 1) THEN
+          FFACP1 = FTRF(IP1)
+          IP1=1
+        ENDIF
+        IF (IM < MFRSTLW) THEN
+          FFACM = 0.0_JWRB
+          IM = 1
+        ELSE IF (IM < 1) THEN
+          FFACM = FTRF(IM)
+          IM = 1
+        ENDIF
+        IF (IM1 < MFRSTLW) THEN
+          FFACM1 = 0.0_JWRB
+          IM1 = 1
+        ELSE IF (IM1 < 1) THEN
+          FFACM1 = FTRF(IM1)
+          IM1 = 1
+        ENDIF
+
 !       HIGH FREQUENCY TAIL
-        IF (IP1.GT.NFRE) THEN
+        IF (IP1 > NFRE) THEN
 ! Quick fix from Deborah
           ITEMP=IP1-NFRE+1
-          IF(ITEMP .GT. SIZE(FRH))THEN
+          IF (ITEMP > SIZE(FRH))THEN
             ITEMP=SIZE(FRH)
           ENDIF
 !         FFACP1 = FRH(IP1-NFRE+1)
           FFACP1 = FRH(ITEMP)
 
           IP1 = NFRE
-          IF (IP .GT.NFRE) THEN
+          IF (IP > NFRE) THEN
             FFACP  = FRH(IP -NFRE+1)
             IP  = NFRE
-            IF (IC .GT.NFRE) THEN
+            IF (IC > NFRE) THEN
               FTAIL  = FRH(IC -NFRE+1)
               IC  = NFRE
-              IF (IM1.GT.NFRE) THEN
+              IF (IM1 > NFRE) THEN
                 FFACM1 = FRH(IM1-NFRE+1)
                 IM1 = NFRE
               ENDIF
@@ -236,7 +254,7 @@
 
       ENDDO
 
-      IF(ICOUNT.NE.NINL) THEN
+      IF (ICOUNT /= NINL) THEN
         WRITE(IU06,*) '*************************************'
         WRITE(IU06,*) 'ERROR IN INISNONLIN : ICOUNT NE NINL'
         WRITE(IU06,*) 'ICOUNT= ',ICOUNT
@@ -244,7 +262,7 @@
         WRITE(IU06,*) '*************************************'
         CALL ABORT1
       ENDIF
-      IF(IRCOUNT.NE.NRNL) THEN
+      IF (IRCOUNT /= NRNL) THEN
         WRITE(IU06,*) '*************************************'
         WRITE(IU06,*) 'ERROR IN INISNONLIN : IRCOUNT NE NRNL'
         WRITE(IU06,*) 'IRCOUNT= ',IRCOUNT

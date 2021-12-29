@@ -1,4 +1,4 @@
-      SUBROUTINE JONSWAP (ALPHAJ, GAMMA, SA, SB, FP, IJS, IJL, ET)
+      SUBROUTINE JONSWAP (ALPHAJ, ZGAMMA, SA, SB, FP, KIJS, KIJL, ET)
 
 ! ---------------------------------------------------------------------
 
@@ -14,32 +14,19 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *JONSWAP (ALPHAJ, GAMMA, SA, SB, FP, IJS, IJL, ET)*
+!       *CALL* *JONSWAP (ALPHAJ, ZGAMMA, SA, SB, FP, KIJS, KIJL, ET)*
 !        *ALPHAJ*  -  OVERALL ENERGY LEVEL OF JONSWAP SPECTRUM
-!        *GAMMA*   -  OVERSHOOT FACTOR.
+!        *ZGAMMA*  -  OVERSHOOT FACTOR.
 !        *SA*      -  LEFT PEAK WIDTH.
 !        *SB*      -  RIGHT PEAK WIDTH.
 !        *FP*      -  PEAK FREQUENCY.
-!        *IJS*     -  FIRST POINT IN BLOCK.
-!        *IJL*     -  LAST  POINT IN BLOCK.
+!        *KIJS*    -  FIRST POINT IN BLOCK.
+!        *KIJL*    -  LAST  POINT IN BLOCK.
 !        *ET*      -  JOSWAP SPECTRUM AT DISCRETISED FRQUENCY BINS.
 
 
 !     METHOD.
 !     -------
-
-!       NONE.
-
-!     EXTERNALS.
-!     ----------
-
-!       NONE.
-
-
-!     REFERENCES.
-!     -----------
-
-!       NONE.
 
 ! ----------------------------------------------------------------------
 
@@ -47,34 +34,43 @@
 
       USE YOWFRED  , ONLY : FR
       USE YOWPARAM , ONLY : NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI      ,G2ZPI4
+      USE YOWPCONS , ONLY : G        ,ZPI      ,ZPI4GM2
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM) :: M, IJ, IJS, IJL
+      REAL(KIND=JWRB), INTENT(IN)  :: ZGAMMA, SA, SB
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: ALPHAJ, FP
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(OUT) :: ET
 
-      REAL(KIND=JWRB) :: GAMMA, SA, SB, SIGMA, G2ZPI4FRH5M
+
+      INTEGER(KIND=JWIM) :: M, IJ
+
+      REAL(KIND=JWRB) :: SIGMA, G2ZPI4FRH5M
       REAL(KIND=JWRB) :: FRH, EARG, FJON, FMPF, FJONH
-
-      REAL(KIND=JWRB) :: ALPHAJ(IJS:IJL), FP(IJS:IJL)
-      REAL(KIND=JWRB) :: ET(IJS:IJL,NFRE)
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
+      IF (LHOOK) CALL DR_HOOK('JONSWAP',0,ZHOOK_HANDLE)
+
       DO M=1,NFRE
         FRH = FR(M)
-        G2ZPI4FRH5M=G2ZPI4/FRH**5
-        DO IJ=IJS,IJL
-          IF (ALPHAJ(IJ).NE.0.0_JWRB .AND. FP(IJ).NE.0.0_JWRB) THEN
-            IF (FRH.GT.FP(IJ)) THEN
+        G2ZPI4FRH5M=1.0_JWRB/(FRH**5*ZPI4GM2)
+        DO IJ=KIJS,KIJL
+          IF (ALPHAJ(IJ) /= 0.0_JWRB .AND. FP(IJ) /= 0.0_JWRB) THEN
+            IF (FRH > FP(IJ)) THEN
               SIGMA = SB
             ELSE
               SIGMA = SA
             ENDIF
             EARG = 0.5_JWRB*((FRH-FP(IJ)) / (SIGMA*FP(IJ)))**2
             EARG = MIN(EARG,50.0_JWRB)
-            FJON = GAMMA**EXP(-EARG)
+            FJON = ZGAMMA**EXP(-EARG)
             FMPF = 1.25_JWRB*(FP(IJ)/FRH)**4
             FMPF = MIN(FMPF,50.0_JWRB)
             FJONH = EXP(-FMPF)
@@ -84,5 +80,7 @@
           ENDIF
         ENDDO
       ENDDO
+
+      IF (LHOOK) CALL DR_HOOK('JONSWAP',1,ZHOOK_HANDLE)
 
       END SUBROUTINE JONSWAP

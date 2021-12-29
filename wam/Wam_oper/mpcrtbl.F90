@@ -38,15 +38,14 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : XNLEV
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,NFLAG     ,   &
      &            LFDB     ,                                            &
      &            IPFGTBL  ,NWRTOUTWAM, COUTNAME, NIPRMOUT,ITOBOUT  ,   &
      &            NTRAIN   ,LLPARTITION,NIPRMINFO,IPRMINFO          ,   &
      &            IRWDIR, IRCD ,IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
-     &            IRHS     ,IRTP     ,IRT1     ,IRPHIOC  ,IRTAUOC   ,   &
-     &            IRHSWS   ,IRT1WS   ,IRBATHY  ,                        &
-     &            IFRSTPARTI, NINFOBOUT,INFOBOUT  ,BOUT
+     &            IRHS     ,IRTP     ,IRT1       ,IRPHIAW  ,IRPHIOC ,   &
+     &            IRTAUOC   , IRHSWS   ,IRT1WS   ,IRBATHY  ,            &
+     &            IFRSTPARTI, NINFOBOUT,INFOBOUT
 !      *IPRMINFO* INTEGER    AUXILIARY INFORMATION FOR OUTPUT OF INTEGRATED PARAMETERS
 !                            IPRMINFO(:,1)  : GRIB TABLE NUMBER.
 !                            IPRMINFO(:,2)  : GRIB PARAMETER IDENTIFIER.
@@ -55,6 +54,7 @@
 !                            IPRMINFO(:,5)  : 1 IF TOO SHALLOW POINTS ARE SET TO MISSING.
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
       USE YOWMPP   , ONLY : NPROC
+      USE YOWPHYS  , ONLY : XNLEV
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -67,7 +67,7 @@
 !     1. CREATE TABLE MAPPING OUTPUT INTEGRATED PARAMETER WITH PE RANK
 !        -------------------------------------------------------------
 
-      IZLEV=NINT(XNLEV(1))
+      IZLEV=NINT(XNLEV)
 
       IR=0
       COUTNAME(:) =' VARIABLE NOT DEFINED, see MPCRTBL'
@@ -156,7 +156,7 @@
       IR=IR+1
 !     PARAMETER 008
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE STRESS ....................'
+      COUTNAME(IR)=' NORMALISED WAVE STRESS .........'
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=083   !!! use a spare extra parameter number
       IF(GFLAG(IR) ) THEN
@@ -490,6 +490,7 @@
 
       IR=IR+1
 !     PARAMETER 040
+      IRPHIAW=IR
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
       COUTNAME(IR)=' NORMALISED ENERGY FLUX TO WAVES .'
       IPRMINFO(IR,1)=140
@@ -948,8 +949,6 @@
       ENDDO
 
       IF(NIPRMOUT>0) THEN
-        IF(ALLOCATED(BOUT)) DEALLOCATE(BOUT)
-        ALLOCATE(BOUT(IJSLOC:IJLLOC,NIPRMOUT))
         IF(ALLOCATED(INFOBOUT)) DEALLOCATE(INFOBOUT)
         ALLOCATE(INFOBOUT(NIPRMOUT,NINFOBOUT))
         DO IFLAG=1,JPPFLAG

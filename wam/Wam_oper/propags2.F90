@@ -1,13 +1,8 @@
-      SUBROUTINE PROPAGS2 (F1, F3, MIJS, MIJL)
-
-! ----------------------------------------------------------------------
-
-!**** *PROPAGS2* - COMPUTATION OF A PROPAGATION TIME STEP.
+SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)
 
 ! ----------------------------------------------------------------------
 
 !**** *PROPAGS2* -  ADVECTION USING THE CORNER TRANSPORT SCHEME IN SPACE
-
 
 !*    PURPOSE.
 !     --------
@@ -17,18 +12,20 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PROPAGS2(F1, F3, MIJS, MIJL)*
-!          *F1*   - BLOCK SPECTRUM AT TIME T.
-!          *F3*   - CHUNCK SPECTRUM AT TIME T+DELT.
-!          *MIJS* - INDEX OF FIRST POINT
-!          *MIJL* - INDEX OF LAST POINT
-
+!       *CALL* *PROPAGS2(F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)*
+!          *F1*          - SPECTRUM AT TIME T (with exchange halo).
+!          *F3*          - SPECTRUM AT TIME T+DELT
+!          *NINF:NSUP+1* - 1st DIMENSION OF F1 and F3
+!          *KIJS*        - ACTIVE INDEX OF FIRST POINT
+!          *KIJL*        - ACTIVE INDEX OF LAST POINT
+!          *NANG*        - NUMBER OF DIRECTIONS
+!          *ND3S*        - FREQUENCY INDEX SOLVED BY THIS CALL ND3S:ND3E
+!          *ND3E*
 
 !     METHOD.
 !     -------
 
 !!  need text !!!!!!!!
-
 
 !     EXTERNALS.
 !     ----------
@@ -37,65 +34,66 @@
 !     REFERENCE.
 !     ----------
 
-!       NONE.
+!      See IFS Documentation, part VII 
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : COSTH    ,SINTH
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSTAT  , ONLY : ICASE    ,ISHALLO  ,IREFRA
+      USE YOWSTAT  , ONLY : ICASE    ,IREFRA
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR      ,             &
      &            WLATN    ,WLONN    ,WCORN    ,WKPMN    ,WMPMN     ,   &
      &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN   ,   &
      &            SUMWN    ,                                            &
      &            JXO      ,JYO      ,KCR      ,KPM      ,MPM
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3S:ND3E), INTENT(IN) :: F1
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3S:ND3E), INTENT(OUT) :: F3
+      INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: NANG, ND3S, ND3E 
 
-      REAL(KIND=JWRB),DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: F1
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL,NANG,NFRE), INTENT(OUT) :: F3
 
-      INTEGER(KIND=JWIM), PARAMETER :: IG=1
       INTEGER(KIND=JWIM) :: K, M, IJ
       INTEGER(KIND=JWIM) :: IC, ICR, ICL 
       INTEGER(KIND=JWIM) :: KP1, KM1, MM1, MP1, KNS, KEW
       INTEGER(KIND=JWIM) :: JJK, JJY, JJX
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: FJ1, FJ2, FJ3, FJ4, FJ5
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FJ1, FJ2, FJ3, FJ4, FJ5
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
 !*    SPHERICAL OR CARTESIAN GRID?
 !     ----------------------------
-      IF (ICASE.EQ.1) THEN
+      IF (ICASE == 1) THEN
 
 !*      SPHERICAL GRID.
 !       ---------------
 
-        IF (IREFRA.NE.2 .AND. IREFRA.NE.3 ) THEN
+        IF (IREFRA /= 2 .AND. IREFRA /= 3 ) THEN
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
 
-          DO K=1,NANG
+          DO K = 1, NANG
             JJX=JXO(K,1)
             JJY=JYO(K,1)
             JJY=JYO(K,1)
             JJK=KCR(K,1)
-            DO M=1,NFRE
-              DO IJ=MIJS,MIJL
+            DO M = ND3S, ND3E
+              DO IJ = KIJS, KIJL
                 FJ1(IJ)= F1(KLON(IJ,JJX)  ,K  ,M)
                 FJ2(IJ)= F1(KLAT(IJ,JJY,1),K  ,M)
                 FJ3(IJ)= F1(KLAT(IJ,JJY,2),K  ,M)
@@ -105,7 +103,7 @@
 !JFH Loop split to enhance vectorisation
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
-              DO IJ=MIJS,MIJL
+              DO IJ = KIJS, KIJL
                 F3(IJ,K,M) =                                            &
      &                (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ           ,K  ,M) &
 !    &         + WLONN(IJ,K,M,JXO(K,1)) * F1(KLON(IJ,JXO(K,1))  ,K  ,M) &
@@ -126,8 +124,8 @@
               ENDDO
 
               DO IC=-1,1,2
-                IF(LLWKPMN(K,M,IC)) THEN
-                  DO IJ=MIJS,MIJL
+                IF (LLWKPMN(K,M,IC)) THEN
+                  DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M)                             &
      &         +      WKPMN(IJ,K,M,IC)* F1(IJ,KPM(K,IC),M)
                   ENDDO
@@ -141,16 +139,16 @@
 !*      DEPTH AND CURRENT REFRACTION.
 !       -----------------------------
 
-          DO M=1,NFRE
-            DO K=1,NANG
+          DO M = ND3S, ND3E
+            DO K = 1, NANG
 
-              DO IJ=MIJS,MIJL
+              DO IJ = KIJS, KIJL
                 F3(IJ,K,M) = (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ,K,M)
               ENDDO
               
               DO IC=1,2
-                IF(LLWLONN(K,M,IC)) THEN
-                  DO IJ=MIJS,MIJL
+                IF (LLWLONN(K,M,IC)) THEN
+                  DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M)                             &
      &           +      WLONN(IJ,K,M,IC)*F1(KLON(IJ,IC) ,K,M)
                   ENDDO
@@ -159,8 +157,8 @@
 
               DO ICL=1,2
                 DO IC=1,2
-                  IF(LLWLATN(K,M,IC,ICL)) THEN
-                    DO IJ=MIJS,MIJL
+                  IF (LLWLATN(K,M,IC,ICL)) THEN
+                    DO IJ = KIJS, KIJL
                       F3(IJ,K,M) = F3(IJ,K,M)                           &
      &         +        WLATN(IJ,K,M,IC,ICL)*F1(KLAT(IJ,IC,ICL) ,K,M)
                     ENDDO
@@ -170,8 +168,8 @@
 
               DO ICL=1,2
                 DO ICR=1,4
-                  IF(LLWCORN(K,M,ICR,ICL)) THEN
-                    DO IJ=MIJS,MIJL
+                  IF (LLWCORN(K,M,ICR,ICL)) THEN
+                    DO IJ = KIJS, KIJL
                       F3(IJ,K,M) = F3(IJ,K,M)                           &
      &         +   WCORN(IJ,K,M,ICR,ICL)*F1(KCOR(IJ,KCR(K,ICR),ICL),K,M)
                     ENDDO
@@ -180,8 +178,8 @@
               ENDDO
 
               DO IC=-1,1,2
-                IF(LLWKPMN(K,M,IC)) THEN
-                  DO IJ=MIJS,MIJL
+                IF (LLWKPMN(K,M,IC)) THEN
+                  DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M)                             &
      &         +      WKPMN(IJ,K,M,IC)* F1(IJ,KPM(K,IC),M)
                   ENDDO
@@ -190,8 +188,8 @@
 
 
               DO IC=-1,1,2
-                IF(LLWMPMN(K,M,IC)) THEN
-                  DO IJ=MIJS,MIJL
+                IF (LLWMPMN(K,M,IC)) THEN
+                  DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M)                             &
      &         +      WMPMN(IJ,K,M,IC)* F1(IJ,K  ,MPM(M,IC))
                   ENDDO
@@ -208,7 +206,7 @@
       ELSE
 !*    CARTESIAN GRID.
 !     ---------------
-        IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
+        IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
           WRITE (IU06,*) '******************************************'
@@ -239,6 +237,6 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('PROPAGS2',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('PROPAGS2',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE PROPAGS2 
+END SUBROUTINE PROPAGS2 

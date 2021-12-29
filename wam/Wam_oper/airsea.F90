@@ -1,4 +1,6 @@
-      SUBROUTINE AIRSEA (U10, TAUW, US, Z0, IJS, IJL, KLEV, ICODE_WND)
+      SUBROUTINE AIRSEA (KIJS, KIJL, FL1, WAVNUM,                 &
+&                        HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
+&                        US, Z0, Z0B, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
 
@@ -18,55 +20,55 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *AIRSEA (U10, TAUW, US, Z0, IJS, IJL, KLEV, ICODE_WND)*
-!          *U10*  - INPUT OR OUTPUT BLOCK OF WINDSPEED U10.
-!          *TAUW* - INPUT BLOCK OF WAVE STRES.
-!          *US*   - OUTPUT OR OUTPUT BLOCK OF FRICTION VELOCITY.
-!          *ZO*   - OUTPUT BLOCK OF ROUGHNESS LENGTH.
-!          *IJS*  - INDEX OF FIRST GRIDPOINT.
-!          *IJL*  - INDEX OF LAST GRIDPOINT.
-!          *KLEV* - LEVEL HEIGHT INDEX
-!          *ICODE_WND* SPECIFIES WHICH OF U10 OR US HAS BEEN UPDATED:
+!       *CALL* *AIRSEA (KIJS, KIJL, FL1, WAVNUM,
+!                       HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,
+!                       US, Z0, Z0B, ICODE_WND, IUSFG)*
+
+!          *KIJS*    - INDEX OF FIRST GRIDPOINT.
+!          *KIJL*    - INDEX OF LAST GRIDPOINT.
+!          *FL1*     - SPECTRA
+!          *WAVNUM*  - WAVE NUMBER
+!          *HALP*    - 1/2 PHILLIPS PARAMETER
+!          *U10*     - WINDSPEED U10.
+!          *U10DIR*  - WINDSPEED DIRECTION.
+!          *TAUW*    - WAVE STRESS.
+!          *TAUWDIR* - WAVE STRESS DIRECTION.
+!          *RNFAC*   - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
+!          *US*      - OUTPUT OR OUTPUT BLOCK OF FRICTION VELOCITY.
+!          *Z0*      - OUTPUT BLOCK OF ROUGHNESS LENGTH.
+!          *Z0B*     - BACKGROUND ROUGHNESS LENGTH.
+!          *ICODE_WND* SPECIFIES WHICH OF U10 OR US HAS BEEN FILED UPDATED:
 !                     U10: ICODE_WND=3 --> US will be updated
 !                     US:  ICODE_WND=1 OR 2 --> U10 will be updated
+!          *IUSFG*   - IF = 1 THEN USE THE FRICTION VELOCITY (US) AS FIRST GUESS in TAUT_Z0
+!                           0 DO NOT USE THE FIELD US 
 
-
-
-!     METHOD.
-!     -------
-
-!       CALL TAUT_Z0
-
-!     EXTERNALS.
-!     ----------
-
-!       NONE.
-
-!     REFERENCE.
-!     ---------
-
-!       NONE.
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP, ONLY: XKAPPA, XNLEV
-      USE YOWTEST, ONLY: IU06
+      USE YOWPARAM, ONLY : NANG     ,NFRE
+      USE YOWPHYS,  ONLY : XKAPPA, XNLEV
+      USE YOWTEST,  ONLY : IU06
+      USE YOWWIND,  ONLY : WSPMIN
+
       USE YOMHOOK, ONLY: LHOOK, DR_HOOK, JPHOOK
-      USE YOWWIND, ONLY: WSPMIN
+
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "taut_z0.intfb.h"
 #include "z0wave.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT (IN) :: IJS, IJL, KLEV, ICODE_WND
-
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (IN) :: TAUW
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (INOUT) :: U10, US
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (OUT) :: Z0
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (IN) :: HALP, U10DIR, TAUW, TAUWDIR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (INOUT) :: U10, US
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (OUT) :: Z0, Z0B
 
       INTEGER(KIND=JWIM) :: IJ, I, J
 
@@ -82,23 +84,25 @@
 !        ----------------------------------
 
       IF (ICODE_WND == 3) THEN
-        XLEV = XNLEV (KLEV)
-        CALL TAUT_Z0 (IJS, IJL, XLEV, U10, TAUW, US, Z0)
+
+        CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, WAVNUM,          &
+     &                HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
+     &                US, Z0, Z0B)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
 
 !*    3. DETERMINE ROUGHNESS LENGTH (if needed).
 !        ---------------------------
 
-        CALL Z0WAVE (IJS, IJL, US, TAUW, U10, Z0)
+        CALL Z0WAVE (KIJS, KIJL, US, TAUW, U10, Z0, Z0B)
 
 !*    3. DETERMINE U10 (if needed).
 !        ---------------------------
 
         XKAPPAD = 1.0_JWRB / XKAPPA
-        XLOGLEV = LOG (XNLEV (KLEV))
+        XLOGLEV = LOG (XNLEV)
 
-        DO IJ = IJS, IJL
+        DO IJ = KIJS, KIJL
           U10 (IJ) = XKAPPAD * US (IJ) * (XLOGLEV - LOG (Z0 (IJ)))
           U10 (IJ) = MAX (U10 (IJ), WSPMIN)
         ENDDO

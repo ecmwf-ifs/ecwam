@@ -13,7 +13,7 @@
         WAM_USER_CLOCK = REAL(ICOUNT+0.0_JWRB) * 1.E6_JWRB /            &
      &                   REAL(ICOUNT_RATE+0.0_JWRB)
       ELSE
-        WAM_USER_CLOCK = 0.0
+        WAM_USER_CLOCK = 0.0_JWRB
       ENDIF    
 
       RETURN

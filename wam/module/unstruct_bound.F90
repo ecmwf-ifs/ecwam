@@ -10,7 +10,6 @@ MODULE UNSTRUCT_BOUND
       USE yowpd, only: XP=>x, YP=>y, DEP=>z
       USE yowpd, only: exchange
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
-      USE WAV_NETCDF_FCT
 
       IMPLICIT NONE
 
@@ -26,7 +25,6 @@ MODULE UNSTRUCT_BOUND
       REAL(KIND=JWRU), ALLOCATABLE :: WWM_WD1(:), WWM_WD2(:)
       INTEGER(KIND=JWIM) :: recTime1, recTime2
       INTEGER(KIND=JWIM), ALLOCATABLE :: Indexes_boundary(:)
-      TYPE(TIMEPERIOD) RecTimeBnd
       REAL(KIND=JWRU) :: WAV_BoucTime = 0._JWRU
       CHARACTER(LEN=*), PARAMETER :: eFileBnd = 'wwm_bouc_format.nc'
       INTEGER(KIND=JWIM)                :: IWBMNP ! number of wave boundary points
@@ -289,16 +287,6 @@ MODULE UNSTRUCT_BOUND
 !
 ! reporting differences found
 !
-#ifdef DEBUG
-      nbDiff=0
-      DO IP=1,MNP
-        IF (IOBP(IP) .ne. IOBPcopy(IP)) THEN
-          nbDiff=nbDiff+1
-        END IF
-      END DO
-      WRITE(740+MyRankGlobal,*) 'nbDiff=', nbDiff
-#endif
-!
 ! Determining number of boundary nodes
 !
       IWBMNP = 0
@@ -458,87 +446,16 @@ MODULE UNSTRUCT_BOUND
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#ifdef NETCDF_OUTPUT_WAM
-      SUBROUTINE SINGLE_READ_BOUNDARY(eFile, WBAC, IT)
-      USE YOWPCONS , ONLY : ZPI
-      USE NETCDF
-      IMPLICIT NONE
-      CHARACTER(LEN=*), INTENT(IN) :: eFile
-      REAL(KIND=JWRU), INTENT(OUT) :: WBAC(NANG,NFRE,IWBMNP)
-      INTEGER(KIND=JWIM), INTENT(IN) :: IT
-      REAL(KIND=JWRU) WBAC_GL(NFRE,NANG,IWBMNPGL)
-      REAL(KIND=JWRU) eAC, eFL
-      INTEGER(KIND=JWIM) :: istat, ncid, var_id
-      INTEGER(KIND=JWIM) :: IP, IS, ID, idx
-      CHARACTER(LEN=*), PARAMETER :: CallFct = "SINGLE_READ_BOUNDARY"
-      INTEGER(KIND=JWIM) :: ID1, ID2
-      REAL(KIND=JWRU) eWD1, eWD2
-      !
-      ! We have this inversion of the order because that is so in WWM at 
-      ! the present time
-      !
-      ISTAT = NF90_OPEN(TRIM(eFile), NF90_NOWRITE, ncid)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
-      ISTAT = nf90_inq_varid(ncid, 'WBAC', var_id)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
-      ISTAT = NF90_GET_VAR(ncid, var_id, WBAC_GL, start=(/1,1,1,IT/), count = (/NFRE,NANG,IWBMNPGL,1/))
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
-      ISTAT = NF90_CLOSE(ncid)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
-      !
-      ! Now reassigning 
-      !
-#ifdef DEBUG
-      WRITE(740+MyRankGlobal,*) 'IWBMNPGL = ', IWBMNPGL
-      WRITE(740+MyRankGlobal,*) 'IWBMNP   = ', IWBMNP
-#endif
-      DO IP=1,IWBMNP
-        idx=Indexes_boundary(IP)
-!        WRITE(740+MyRankGlobal,*) 'IP=', IP, ' idx=', idx
-        DO ID=1,NANG
-           DO IS=1,NFRE
-            ID1=WWM_ID1(ID)
-            ID2=WWM_ID2(ID)
-            eWD1=WWM_WD1(ID)
-            eWD2=WWM_WD2(ID)
-            eAC=WBAC_GL(IS,ID1,idx) * eWD1 + WBAC_GL(IS,ID2,idx) * eWD2
-            eFL=eAC * SPSIG(IS) * ZPI
-            WBAC(ID,IS,IP) = eFL
-!#ifdef DEBUG
-!            WRITE(740+MyRankGlobal,*) 'ID=', ID, ' IS=', IS, ' IP=', IP
-!            WRITE(740+MyRankGlobal,*) '   wbac=', WBAC(ID,IS,IP)
-!#endif
-          END DO
-        END DO
-      END DO
-!#ifdef DEBUG
-!      FLUSH(740+MyRankGlobal)
-!#endif
-      END SUBROUTINE
-#endif
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE SET_UP_WBAC
       USE YOWSTAT  , ONLY : IDELT
       IMPLICIT NONE
       REAL(KIND=JWRU) :: eTimeDay
       REAL(KIND=JWRU) w1, w2
       INTEGER(KIND=JWIM) :: iTime1, iTime2
-#ifdef NETCDF_OUTPUT_WAM
-      CALL WAV_GET_ETIMEDAY(eTimeDay, WAV_BoucTime)
-      CALL FIND_MATCH_TIME(RecTimeBnd, eTimeDay, iTime1, w1, iTime2, w2)
-#endif
       IF (iTime1 .ne. recTime1) THEN
-#ifdef NETCDF_OUTPUT_WAM
-        CALL SINGLE_READ_BOUNDARY(eFileBnd, WBAC1, iTime1)
-#endif
         recTime1 = iTime1
       END IF
       IF (iTime2 .ne. recTime2) THEN
-#ifdef NETCDF_OUTPUT_WAM
-        CALL SINGLE_READ_BOUNDARY(eFileBnd, WBAC2, iTime2)
-#endif
         recTime2 = iTime2
       END IF
       WBAC = w1*WBAC1 + w2*WBAC2
@@ -567,151 +484,6 @@ MODULE UNSTRUCT_BOUND
       SUBROUTINE INIT_FILE_BOUNDARY
       USE YOWPCONS, ONLY : PI, ZPI
       USE YOWFRED, ONLY : FR, TH
-#ifdef NETCDF_OUTPUT_WAM
-      USE NETCDF
-      IMPLICIT NONE
-      character(len=*), parameter :: CallFct = "INIT_FILE_BOUNDARY"
-      INTEGER(KIND=JWIM) :: varid, ncid
-      INTEGER(KIND=JWIM), dimension(nf90_max_var_dims) :: dimids
-      INTEGER(KIND=JWIM) :: istat
-      INTEGER(KIND=JWIM) :: iTime
-      REAL(KIND=JWRU) eWD1, eWD2, eDiff, eDiff1, eDiff2
-      REAL(KIND=JWRU) DeltaDiff, eDir
-      logical IsAssigned
-      INTEGER(KIND=JWIM) :: ID, ID1, ID2
-      !
-#ifdef DEBUG
-      WRITE(740+MyRankGlobal,*) 'eFileBnd=', TRIM(eFileBnd)
-#endif
-      !
-      CALL TEST_FILE_EXIST_DIE(eFileBnd, "Need boundary file for boundary forcing")
-      ISTAT = NF90_OPEN(TRIM(eFileBnd), NF90_NOWRITE, ncid)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
-      !
-      ! reading direction
-      !
-      ISTAT = nf90_inq_varid(ncid, "SPDIR", varid)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
-      !
-      ISTAT = nf90_inquire_variable(ncid, varid, dimids=dimids)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
-      !
-      ISTAT = nf90_inquire_dimension(ncid, dimids(1), len = nbDirWWM)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
-      allocate(SPDIR_WWM(nbDirWWM), stat=istat)
-      !
-      ISTAT = nf90_get_var(ncid, varid, SPDIR_WWM)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
-      !
-      ! reading frequencies
-      !
-      ISTAT = nf90_inq_varid(ncid, "SPSIG", varid)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
-      !
-      ISTAT = nf90_inquire_variable(ncid, varid, dimids=dimids)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
-      !
-      ISTAT = nf90_inquire_dimension(ncid, dimids(1), len = nbFreqWWM)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
-      allocate(SPSIG_WWM(nbFreqWWM), stat=istat)
-      !
-      ISTAT = nf90_get_var(ncid, varid, SPSIG_WWM)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
-      !
-      ! reading the time
-      !
-      CALL READ_LIST_TIME(ncid, RecTimeBnd)
-      !
-      ! closing the file
-      !
-      ISTAT = NF90_CLOSE(ncid)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
-!
-! allocate wave boundary arrays ... 
-!
-      recTime1=-1
-      recTime2=-1
-      ALLOCATE(WBAC(NANG,NFRE,IWBMNP), WBAC1(NANG,NFRE,IWBMNP), WBAC2(NANG,NFRE,IWBMNP), stat=istat)
-      !
-      ! allocating the interpolation arrays
-      !
-      allocate(WWM_ID1(NANG), WWM_ID2(NANG), WWM_WD1(NANG), WWM_WD2(NANG), stat=istat)
-      WWM_ID1=0
-      WWM_ID2=0
-#ifdef DEBUG
-      WRITE(740+MyRankGlobal,*) 'NANG=', NANG, 'nbDirWWM=', nbDirWWM
-#endif
-      DO ID=1,NANG
-        eDir = PI *0.5_JWRU - TH(ID)
-#ifdef DEBUG
-        WRITE(740+MyRankGlobal,*) '--------------------------------------------------'
-        WRITE(740+MyRankGlobal,*) 'ID=', ID
-        WRITE(740+MyRankGlobal,*) 'eDir=', eDir, ' TH=', TH(ID)
-#endif
-        IsAssigned=.FALSE.
-        DO ID1=1,nbDirWWM
-          IF (ID1 .lt. nbDirWWM) THEN
-            ID2=ID1 + 1
-          ELSE
-            ID2=1
-          END IF
-          IF (IsAssigned .eqv. .FALSE.) THEN
-            eDiff = SPDIR_WWM(ID2) - SPDIR_WWM(ID1)
-            CALL RenormalizeAngle(eDiff)
-            !
-            eDiff1 = eDir - SPDIR_WWM(ID1)
-            CALL RenormalizeAngle(eDiff1)
-            !
-            eDiff2 = SPDIR_WWM(ID2) - eDir
-            CALL RenormalizeAngle(eDiff2)
-            !
-            DeltaDiff=abs(eDiff) - abs(eDiff1) - abs(eDiff2)
-#ifdef DEBUG
-            WRITE(740+MyRankGlobal,*) 'ID1=', ID1, ' ID2=', ID2
-            WRITE(740+MyRankGlobal,*) 'SPDIR12=', SPDIR_WWM(ID1), SPDIR_WWM(ID2)
-            WRITE(740+MyRankGlobal,*) 'eDiff=', eDiff
-            WRITE(740+MyRankGlobal,*) 'eDiff1=', eDiff1, 'eDiff2=', eDiff2
-            WRITE(740+MyRankGlobal,*) 'DeltaDiff=', DeltaDiff
-#endif
-            IF (abs(DeltaDiff) .lt. 0.0001_JWRU) THEN
-#ifdef DEBUG
-              WRITE(740+MyRankGlobal,*) 'M A T C H I N G'
-#endif
-              eWD1 = eDiff2 / eDiff
-              eWD2 = eDiff1 / eDiff
-              IsAssigned=.TRUE.
-              WWM_ID1(ID) = ID1
-              WWM_ID2(ID) = ID2
-              WWM_WD1(ID) = eWD1
-              WWM_WD2(ID) = eWD2
-#ifdef DEBUG
-              WRITE(740+MyRankGlobal,*) 'eWD1=', eWD1, ' eWD2=', eWD2
-#endif
-            END IF
-          END IF
-        END DO
-        IF (IsAssigned .eqv. .FALSE.) THEN
-          FLUSH(740+MyRankGlobal)
-          Print *, 'Failed in the directional interpolation'
-          STOP
-        END IF
-#ifdef DEBUG
-        WRITE(740+MyRankGlobal,*) 'ID12=', WWM_ID1(ID), WWM_ID2(ID)
-        WRITE(740+MyRankGlobal,*) 'WD12=', WWM_WD1(ID), WWM_WD2(ID)
-        WRITE(740+MyRankGlobal,*) '--------------------------------------------------'
-#endif
-      END DO
-      CONTAINS
-      SUBROUTINE RenormalizeAngle(eDiff)
-      REAL(KIND=JWRU), intent(inout) :: eDiff
-      IF (eDiff .gt. PI) THEN
-        eDiff = eDiff - ZPI
-      END IF
-      IF (eDiff .lt. -PI) THEN
-        eDiff = eDiff + ZPI
-      END IF
-      END SUBROUTINE
-#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

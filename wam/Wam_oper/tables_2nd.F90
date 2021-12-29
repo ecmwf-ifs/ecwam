@@ -66,13 +66,14 @@
  
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWSHAL, ONLY: DEPTHA,DEPTHD
+      USE YOWSHAL, ONLY: DEPTHA, DEPTHD
       USE YOWPCONS , ONLY : G, ZPI
       USE YOWCONST_2ND, ONLY: DPTH 
 
 !--------------------------------------------------------------------
 
       IMPLICIT NONE
+include "aki.intfb.h"
    
       INTEGER(KIND=JWIM), INTENT(IN) :: NFRE, NANG, NDEPTH
       INTEGER(KIND=JWIM), DIMENSION(NFRE,NFRE), INTENT(OUT) :: IM_P, IM_M
@@ -88,7 +89,6 @@
 
       REAL(KIND=JWRB) :: OM0,TH0,XK0,OM1,TH1,XK1,OM2,XK2,OM0P,XK0P,OM0M
       REAL(KIND=JWRB) :: XK0M,XM2,A,B,C_QL,FAC,W2,V2 
-      REAL(KIND=JWRB) :: AKI
 
 !
 !     1. COMPUTATION OF WAVENUMBER ARRAY TFAK
@@ -133,7 +133,7 @@
                   OM2 = OM0-OM1
          
              
-                  IF (ABS(OM1).LT.OM0/2.0_JWRB) THEN
+                  IF (ABS(OM1) < OM0/2.0_JWRB) THEN
                      XM2  = LOG(OM2/OMSTART)/LOG(1.0_JWRB+FRAC)
                      IM_M(M1,M) = NINT(XMR*(XM2+1.0_JWRB))
                      XK1 = TFAK(M1,JD)

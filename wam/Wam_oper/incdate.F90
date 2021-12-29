@@ -96,11 +96,11 @@
 
       IRET=0
       MON(2)=MFEB_LENGTH(IYEAR)
-      IF(IMON<1 .OR. IMON>12) IRET=-1
-      IF(IDAY<1 .OR. IDAY>MON(MIN(MAX(IMON,1),12))) IRET=-2
-      IF(IHOUR<0 .OR. IHOUR>23) IRET=-3
-      IF(IMIN<0 .OR. IMIN>59) IRET=-4
-      IF(ISEC<0 .OR. ISEC>59) IRET=-5
+      IF (IMON<1 .OR. IMON>12) IRET=-1
+      IF (IDAY<1 .OR. IDAY>MON(MIN(MAX(IMON,1),12))) IRET=-2
+      IF (IHOUR<0 .OR. IHOUR>23) IRET=-3
+      IF (IMIN<0 .OR. IMIN>59) IRET=-4
+      IF (ISEC<0 .OR. ISEC>59) IRET=-5
       IF (IRET/=0) THEN
         WRITE(6, '(" INCDATE:  FATAL@! IRET= ", I3 )') IRET
         WRITE(6, '("           INPUT DATE INCORRECT,")')
@@ -120,7 +120,7 @@
         WRITE(*, '("           ISEC ", I2 )') ISEC
         CALL ABORT1
       ENDIF
-      IF (IL==12 .AND. MOD(ISHIFT,60).NE.0) THEN
+      IF (IL==12 .AND. MOD(ISHIFT,60) /= 0) THEN
         IRET=-6
         WRITE(6, '(" INCDATE:  FATAL@! IRET= ", I3 )') IRET
         WRITE(6, '(" WHEN HANDELING CHARACTER*12 DATES,")')
@@ -140,10 +140,10 @@
 
 
       ISEC=ISEC+MOD(ISHIFT,60)
-      IF (ISEC.GE.60) THEN
+      IF (ISEC >= 60) THEN
         IMIN = IMIN+ISEC/60
         ISEC = ISEC-(ISEC/60)*60
-      ELSE IF (ISEC.LT.0) THEN
+      ELSE IF (ISEC < 0) THEN
         IMIN = IMIN +(ISEC-59)/60
         ISEC = ISEC-((ISEC-59)/60)*60
       END IF
@@ -152,34 +152,34 @@
 
 !     2.1 POSITIVE SHIFT GREATER THAN 1 MINUTE.
 
-      IF (IMIN.GE.60) THEN
+      IF (IMIN >= 60) THEN
          IHOUR = IHOUR + IMIN/60
          IMIN = IMIN - (IMIN/60)*60
-         IF (IHOUR.GE.24) THEN
+         IF (IHOUR >= 24) THEN
             IDAY = IDAY + IHOUR/24
             IHOUR = IHOUR - (IHOUR/24)*24
-            DO WHILE (IDAY.GT.MON(IMON))
+            DO WHILE (IDAY > MON(IMON))
                IDAY=IDAY-MON(IMON)
                IMON=IMON+1
-               IF(IMON.EQ.13) THEN
+               IF (IMON == 13) THEN
                   IMON = 1
                   IYEAR=IYEAR+1
                   MON(2)=MFEB_LENGTH(IYEAR)
                END IF
             ENDDO
          END IF
-      ELSE IF (IMIN.LT.0) THEN
+      ELSE IF (IMIN < 0) THEN
  
 !     2.2 NEGATIVE SHIFT.
 
          IHOUR = IHOUR + (IMIN-59)/60
          IMIN = IMIN - ((IMIN-59)/60)*60
-         IF (IHOUR.LT.0) THEN
+         IF (IHOUR < 0) THEN
             IDAY = IDAY + (IHOUR-23)/24
             IHOUR = IHOUR - ((IHOUR-23)/24)*24
-            DO WHILE (IDAY.LT.1)
+            DO WHILE (IDAY < 1)
                IMON=IMON-1
-               IF(IMON.EQ.0) THEN
+               IF (IMON == 0) THEN
                   IMON = 12
                   IYEAR=IYEAR-1
                   MON(2)=MFEB_LENGTH(IYEAR)
@@ -198,11 +198,11 @@
 
       IRET=0
       MON(2)=MFEB_LENGTH(IYEAR)
-      IF(IMON<1 .OR. IMON>12) IRET=-1
-      IF(IDAY<1 .OR. IDAY>MON(MIN(MAX(IMON,1),12))) IRET=-2
-      IF(IHOUR<0 .OR. IHOUR>23) IRET=-3
-      IF(IMIN<0 .OR. IMIN>59) IRET=-4
-      IF(ISEC<0 .OR. ISEC>59) IRET=-5
+      IF (IMON<1 .OR. IMON>12) IRET=-1
+      IF (IDAY<1 .OR. IDAY>MON(MIN(MAX(IMON,1),12))) IRET=-2
+      IF (IHOUR<0 .OR. IHOUR>23) IRET=-3
+      IF (IMIN<0 .OR. IMIN>59) IRET=-4
+      IF (ISEC<0 .OR. ISEC>59) IRET=-5
       IF (IRET/=0) THEN
         WRITE(6, '(" INCDATE:  FATAL@! IRET= ", I3 )') IRET
         WRITE(6, '("           OUTPUT DATE INCORRECT,")')
@@ -243,15 +243,16 @@
 
       CONTAINS
 
-      INTEGER FUNCTION MFEB_LENGTH(IYEAR)
+      INTEGER(KIND=JWIM) FUNCTION MFEB_LENGTH(IYEAR)
 !     LENGTH OF FEBRUARY IN DAYS FOR YEAR IYEAR (YYYY)
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       IMPLICIT NONE
-      INTEGER :: IYEAR
-      IF(MOD(IYEAR,400).EQ.0) THEN
+      INTEGER(KIND=JWIM), INTENT(IN) :: IYEAR
+      IF (MOD(IYEAR,400) == 0) THEN
         MFEB_LENGTH=29
-      ELSE IF(MOD(IYEAR,100).EQ.0) THEN
+      ELSEIF (MOD(IYEAR,100) == 0) THEN
         MFEB_LENGTH=28
-      ELSE IF(MOD(IYEAR,4).EQ.0) THEN
+      ELSEIF (MOD(IYEAR,4) == 0) THEN
         MFEB_LENGTH=29
       ELSE
         MFEB_LENGTH=28

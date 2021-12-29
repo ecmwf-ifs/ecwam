@@ -44,20 +44,22 @@
      &            WETAIL   ,WP1TAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,EPSMIN
-      USE YOWSTAT  , ONLY : ISHALLO
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
       REAL(KIND=JWRB), INTENT(IN) :: USTT, DPT
-      REAL(KIND=JWRB), INTENT(IN) :: FSEA(NANG,NFRE)
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN) :: FSEA
       REAL(KIND=JWRB), INTENT(OUT) :: EW, FM
 
       INTEGER(KIND=JWIM) :: M, K
       REAL(KIND=JWRB) :: EN, YNU, EMAX, X
       REAL(KIND=JWRB) :: DELT25, COEF1, XTEMP, TEMP, SPFB
       REAL(KIND=JWRB) :: ESTAR, DSTAR, SPINTDI, FREQDI 
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
@@ -77,6 +79,8 @@
       EMAX(X) = ESH*TANH(ASH*X**BSH)
 
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('WSMFEN',0,ZHOOK_HANDLE)
 
 !*    1. INTEGRATING THE WINDSEA PART OF THE SPECTRUM.                  
 !*       (UNDERESTIMATE IS IMPLIED)                                     
@@ -114,20 +118,16 @@
       XTEMP = FM*USTT/G
 
       ESTAR=EN(FM*USTT/G)
-      IF (ISHALLO.NE.1) THEN
-         DSTAR = DPT*G/USTT**2
-         ESTAR = MIN(EMAX(DSTAR),ESTAR)
-      ENDIF
+      DSTAR = DPT*G/USTT**2
+      ESTAR = MIN(EMAX(DSTAR),ESTAR)
       SPINTDI = USTT**4/G**2 * ESTAR
 
 !*    2.2 MEAN FREQUENCY IS DERIVED FROM THE UNDERESTIMATED ENERGY.     
 !         ---------------------------------------------------------     
 
       ESTAR=EW*G**2/USTT**4
-      IF (ISHALLO.NE.1) THEN
-         DSTAR = DPT*G/USTT**2
-         ESTAR = MIN(EMAX(DSTAR),ESTAR)
-      ENDIF
+      DSTAR = DPT*G/USTT**2
+      ESTAR = MIN(EMAX(DSTAR),ESTAR)
 
       FREQDI = G/USTT * YNU(ESTAR)
 
@@ -146,4 +146,6 @@
 
       FM = (FM+FREQDI)*0.5_JWRB
  
+      IF (LHOOK) CALL DR_HOOK('WSMFEN',1,ZHOOK_HANDLE)
+
       END SUBROUTINE WSMFEN

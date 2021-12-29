@@ -1,4 +1,4 @@
-      SUBROUTINE IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3) 
+      SUBROUTINE IMPHFTAIL (KIJS, KIJL, MIJ, FLM, WAVNUM, XK2CG, FL1) 
 ! ----------------------------------------------------------------------
 
 !**** *IMPHFTAIL* - IMPOSE A HIGH FREQUENCY TAIL TO THE SPECTRUM
@@ -13,13 +13,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
-!          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
-!          *IJS*    - INDEX OF FIRST GRIDPOINT
-!          *IJL*    - INDEX OF LAST GRIDPOINT
-!          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
-!          *FLM*    - SPECTAL DENSITY MINIMUM VALUE
-!          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
+!       *CALL* *IMPHFTAIL (KIJS, KIJL, MIJ, FLM, WAVNUM, XK2CG, FL1)
+!          *KIJS*    - INDEX OF FIRST GRIDPOINT
+!          *KIJL*    - INDEX OF LAST GRIDPOINT
+!          *MIJ*     - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!          *FLM*     - SPECTAL DENSITY MINIMUM VALUE
+!          *WAVNUM*  - WAVENUMBER
+!          *XK2CG*   - (WAVNUM)**2 * GROUP SPEED
+!          *FL1*     - SPECTRUM (INPUT AND OUTPUT).
 
 !     METHOD.
 !     -------
@@ -36,23 +37,23 @@
       USE YOWFRED  , ONLY : FRM5 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSHAL  , ONLY : TCGOND   ,TFAK     ,INDEP
-      USE YOWSTAT  , ONLY : ISHALLO
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(IJS:IJL)
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG), INTENT(IN) :: FLM 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: MIJ
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG), INTENT(IN) :: FLM 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, XK2CG
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
+
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
       REAL(KIND=JWRB) :: AKM1, TFAC
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: TEMP2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: TEMP2
 
 ! ----------------------------------------------------------------------
 
@@ -61,22 +62,13 @@
 !*    DIAGNOSTIC TAIL.
 !     ----------------
 
-      IF(ISHALLO.EQ.1) THEN
-        DO IJ=IJS,IJL
-          DO M=MIJ(IJ),NFRE
-            TEMP2(IJ,M) = FRM5(M)
-          ENDDO
+      DO IJ=KIJS,KIJL
+        DO M=MIJ(IJ),NFRE
+          TEMP2(IJ,M) = 1.0_JWRB/XK2CG(IJ,M)/WAVNUM(IJ,M)
         ENDDO
-      ELSE
-        DO IJ=IJS,IJL
-          DO M=MIJ(IJ),NFRE
-            AKM1 = 1._JWRB/TFAK(INDEP(IJ),M)
-            TEMP2(IJ,M) = AKM1**3/TCGOND(INDEP(IJ),M)
-          ENDDO
-        ENDDO
-      ENDIF
+      ENDDO
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         DO M=MIJ(IJ)+1,NFRE
           TEMP2(IJ,M) = TEMP2(IJ,M)/TEMP2(IJ,MIJ(IJ))
         ENDDO
@@ -85,10 +77,10 @@
 !*    MERGE TAIL INTO SPECTRA.
 !     ------------------------
       DO K=1,NANG
-        DO IJ=IJS,IJL
-          TFAC = FL3(IJ,K,MIJ(IJ))
+        DO IJ=KIJS,KIJL
+          TFAC = FL1(IJ,K,MIJ(IJ))
           DO M=MIJ(IJ)+1,NFRE
-            FL3(IJ,K,M) = MAX(TEMP2(IJ,M)*TFAC,FLM(IJ,K))
+            FL1(IJ,K,M) = MAX(TEMP2(IJ,M)*TFAC,FLM(IJ,K))
           ENDDO
         ENDDO
       ENDDO
