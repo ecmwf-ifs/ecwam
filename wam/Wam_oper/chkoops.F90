@@ -79,10 +79,12 @@
             LWAMANOUT = LWAMANOUT_ORIG
           ENDIF
 
-          WRITE(IU06,*) ''
+          WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++++ '
           WRITE(IU06,*) ' SUB. CHKOOPS CALLED FROM ', GET_ALGOR_TYPE(), &
- &                      ' FOR NUPTRA: ', NUPTRA, ' AND MUPTRA: ',        &
- &                      GET_MUPTRA(), ' --> IASSI reset to', IASSI
+ &                      ' FOR NUPTRA: ', NUPTRA, ' AND MUPTRA: ', GET_MUPTRA() 
+          WRITE(IU06,*) ' --> IASSI reset to', IASSI 
+          WRITE(IU06,*) ' --> LWAMANOUT reset to', LWAMANOUT
+          WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++++ '
 
            NTRAJ = NUPTRA
         ENDIF
