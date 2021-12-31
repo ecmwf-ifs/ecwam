@@ -212,7 +212,6 @@ SUBROUTINE INITMDL (NADV,                                 &
       IMPLICIT NONE
 
 #include "abort1.intfb.h"
-#include "chkoops.intfb.h"
 #include "cigetdeac.intfb.h"
 #include "cireduce.intfb.h"
 #include "getspec.intfb.h"
@@ -528,12 +527,6 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !          ------------------------------------
       LANAONLY=.FALSE.
       IF ((CDATEA == CDATEE) .AND. (CDATEA == CDATEF)) LANAONLY=.TRUE.
-
-#ifdef ECMWF
-      IF (LWCOU) THEN
-        CALL CHKOOPS(LDUPDATEOOPS=.TRUE.)
-      ENDIF
-#endif
 
       CALL SETMARSTYPE
 

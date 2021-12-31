@@ -148,6 +148,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       IMPLICIT NONE
 
 #include "abort1.intfb.h"
+#include "chkoops.intfb.h"
 #include "difdate.intfb.h"
 #include "initgc.intfb.h"
 #include "iwam_get_unit.intfb.h"
@@ -195,6 +196,13 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       IFORCA=1
       NPROC_RST=0
 
+
+#ifdef ECMWF
+!     IN OOPS MODE, CERTAIN NAMELIST INPUT ARE OVER-RULED:
+      IF (LWCOU) THEN
+        CALL CHKOOPS(LDUPDATEOOPS=.TRUE.)
+      ENDIF
+#endif
 
 !*    1. ANALYSE NAMELIST NALINE.
 !        ------------------------
@@ -641,7 +649,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '  WITH LWCOUHMF : ', LWCOUHMF
       WRITE(IU06,*) '  '
       ENDIF
-      WRITE(IU06,*) ' COUPLING WITH NEMO MOD.(LWNEMOCOU) : ',LWNEMOCOU
+      WRITE(IU06,*) ' COUPLING WITH NEMO (LWNEMOCOU) : ',LWNEMOCOU
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' STARTING DATE ........... : ',CDATEA
       WRITE(IU06,*) ' END DATE ................ : ',CDATEE
@@ -931,6 +939,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       IF (LNSESTART) THEN
         WRITE(IU06,*) ' INITIAL SPECTRA ARE RESET TO NOISE.'
       ENDIF
+
       IF (IASSI == 1) THEN
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' WAVE DATA ASSIMILATION IS CARRIED OUT'
@@ -1020,6 +1029,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ELSE
         WRITE(IU06,*) ' DATA ASSIMILATION IS NOT CARRIED OUT'
       ENDIF
+
       IF (LSARINV) THEN
         WRITE(IU06,*) '  '
         WRITE(IU06,*) ' SAR INVERSION IS CARRIED OUT'
@@ -1028,10 +1038,27 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' MODEL OUTPUT SELECTION:'
       WRITE(IU06,*) '  '
+
+      IF (.NOT. LWAMANOUT) THEN
+        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*) '+   OUTPUT AT ANALYSIS TIMES IS DISABLED.   +'
+        WRITE(IU06,*) '+   BUT NORMS WILL STILL BE COMPUTED.       +'
+        WRITE(IU06,*) '+   REASON:  LWAMANOUT IS SET TO .FALSE.    +'
+        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
+      ENDIF
+
       IF (NOUTT > 0) THEN
-        WRITE(IU06,*) ' NUMBER OF OUTPUT TIMES IS NOUTT = ', NOUTT
-        WRITE(IU06,*) ' OUTPUT WILL BE PROCESSED AT:'
-        WRITE(IU06,'(6(2X,A14))') (COUTT(I),I=1,NOUTT)
+        IF (.NOT. LWAMANOUT) THEN
+          DO I = 1, NOUTT
+            IF (COUTT(I) > CDATEF) THEN
+              WRITE(IU06,*) ' OUTPUT WILL BE PROCESSED AT: ',COUTT(I)
+            ENDIF 
+          ENDDO
+        ELSE
+          WRITE(IU06,*) ' NUMBER OF OUTPUT TIMES IS NOUTT = ', NOUTT
+          WRITE(IU06,*) ' OUTPUT WILL BE PROCESSED AT:'
+          WRITE(IU06,'(6(2X,A14))') (COUTT(I),I=1,NOUTT)
+        ENDIF
         WRITE(IU06,*) '  '
       ENDIF
 
@@ -1105,7 +1132,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         GFLAG20 = .TRUE.
       ENDIF
       IF (LFDB) THEN
-        WRITE(IU06,*) ' OUTPUT OF GRIB INTEGRATED PARAMETERS REDIRECTED' &
+        WRITE(IU06,*) ' ANY OUTPUT OF GRIB INTEGRATED PARAMETERS REDIRECTED' &
      &   ,' TO THE FIELD DATA BASE'
         WRITE(IU06,*) '                    '
       ENDIF
@@ -1114,10 +1141,19 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) ' BINARY RESTART READ  PARALLEL = ', LRSTPARALR
       WRITE(IU06,*) ' BINARY RESTART WRITE PARALLEL = ', LRSTPARALW
       WRITE(IU06,*) '  '
+
       IF ( NOUTS > 0 ) THEN
-        WRITE(IU06,*) ' NUMBER OF SPECTRA OUTPUT TIMES IS NOUTS = ', NOUTS
-        WRITE(IU06,*) ' SPECTRA OUTPUT WILL BE PROCESSED AT:'
-        WRITE(IU06,'(6(2X,A14))') (COUTS(I),I=1,NOUTS)
+        IF (.NOT. LWAMANOUT) THEN
+          DO I = 1, NOUTS
+            IF (COUTS(I) > CDATEF) THEN
+              WRITE(IU06,*) ' SPECTRA OUTPUT WILL BE PROCESSED AT: ',COUTS(I)
+            ENDIF 
+          ENDDO
+        ELSE
+          WRITE(IU06,*) ' NUMBER OF SPECTRA OUTPUT TIMES IS NOUTS = ', NOUTS
+          WRITE(IU06,*) ' SPECTRA OUTPUT WILL BE PROCESSED AT:'
+          WRITE(IU06,'(6(2X,A14))') (COUTS(I),I=1,NOUTS)
+        ENDIF
         WRITE(IU06,*) '  '
 
       ELSEIF (IREST == 1) THEN
@@ -1480,14 +1516,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
 !*    2.5 OUTPUT OPTION.
 !         --------------
-
-      IF (.NOT. LWAMANOUT) THEN
-        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
-        WRITE(IU06,*) '+ INFO FROM SUB. USERIN                     +'
-        WRITE(IU06,*) '+   OUTPUT AT ANALYSIS TIME IS DISABLED.    +'
-        WRITE(IU06,*) '+   REASON:  LWAMANOUT IS SET TO .FALSE.    +'
-        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
-      ENDIF
 
       IF (NOUTT > 0) THEN
         DO J=1,NOUTT
