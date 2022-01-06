@@ -1,4 +1,5 @@
-      SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD)
+SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
+ &                   NXS, NXE, NYS, NYE, FIELDG)
 
 !***  *READWIND* - PROGRAM TO FORMAT WIND FIELDS FROM MARS 
 !                  FROM INPUT FILE sfcwind.
@@ -59,13 +60,17 @@
 !     INTERFACE
 !     ---------
 
-!     *CALL* *READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD)*
+!     *CALL* *READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,
+!                       NXS, NXE, NYS, NYE, FIELDG)
 !
 !        *CDTWIR* - DATE/TIME OF THE DATA READ
 !        *FILNM*    FILENAME OF INPUT FILE
 !        *LLNOTOPENED*  TRUE IF THE INPUT FILE HAS TO BE OPENED
 !        *IREAD*    PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                   (IF NEEDED)
+!        *NXS:NXE*  FIRST DIMENSION OF FIELDG
+!        *NYS:NYE*  SECOND DIMENSION OF FIELDG
+!        *FIELDG* - INPUT FORCING FIELDS ON THE WAVE MODEL GRID
 
 
 !     EXTERNALS
@@ -80,23 +85,21 @@
 ! --------------------------------------------------------------------- 
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWICE   , ONLY : LICERUN  ,IPARAMCI ,LICETH
-      USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG
+      USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,ZDELLO   ,NLONRGG
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
-      USE YOWPARAM , ONLY : NIBLO    ,CLDOMAIN ,                        &
+      USE YOWPARAM , ONLY : NGY      ,NIBLO    ,CLDOMAIN ,              &
      &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,LWDINTS  ,    &
      &            SWAMPCIFR
       USE YOWSTAT  , ONLY : CDATEA   ,IDELWI   ,LADEN    ,LGUST
       USE YOWTEST  , ONLY : IU06
-      USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLATN    ,    &
-     &            RLONL    ,RLONR    ,KCOL     ,KROW     ,ICODE    ,    &
-     &            IWPER    ,ICOORD
-      USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG   ,IUNITW   ,    &
-     &            NBITW    ,CWDFILE  ,LLWSWAVE ,LLWDWAVE
+      USE YOWWNDG  , ONLY : ICODE    ,IWPER    ,ICOORD 
+      USE YOWWIND  , ONLY : FIELDG   ,IUNITW   , NBITW    ,CWDFILE ,    &
+     &                      LLWSWAVE ,LLWDWAVE
       USE YOWPCONS , ONLY : RAD      ,ZMISS    ,ROAIR    ,WSTAR0
       USE YOWPD, ONLY : MNP => npa
       USE YOWUNPOOL ,ONLY : LLUNSTR
@@ -119,6 +122,9 @@
       CHARACTER(LEN=14), INTENT(INOUT) :: CDTWIR
       CHARACTER(LEN=24), INTENT(INOUT) :: FILNM
       LOGICAL, INTENT(INOUT) :: LLNOTOPENED
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(INOUT) :: FIELDG
+
 
       INTEGER(KIND=JWIM) :: NFLD  
       INTEGER(KIND=JWIM) :: I, J, IVAR, JSN
@@ -130,14 +136,14 @@
       INTEGER(KIND=JWIM) :: KGRIB_HANDLE
       INTEGER(KIND=JWIM) :: IDUM(2)
       INTEGER(KIND=JWIM), ALLOCATABLE :: KGRIB(:)
-      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NYFF)
+      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NYS:NYE)
 
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL(KIND=JWRB) :: ZDUM
       REAL(KIND=JWRB) :: UWIND, VWIND, WSPEED, WTHETA
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), ALLOCATABLE :: WORK(:,:)  
+      REAL(KIND=JWRB), DIMENSION(NXS:NXE, NYS:NYE) :: WORK
 
       CHARACTER(LEN=14) :: CDTTURN
       CHARACTER(LEN=14), SAVE :: CWDDATE
@@ -152,7 +158,7 @@
       IF (LLUNSTR) THEN
         NLONRGG_LOC(:)=MNP
       ELSE
-        NLONRGG_LOC(:)=NLONRGG(:)
+        NLONRGG_LOC(NYS:NYE) = NLONRGG(NYS:NYE)
       ENDIF
 
       ICODE=0
@@ -235,7 +241,6 @@
 !!      setting it to a constant !!
         IF (.NOT.LWCOU .AND. LGUST) NFLD=NFLD+1
 
-        ALLOCATE(WORK(NXFF,NYFF))
         ALLOCATE(LLNOTREAD(NFLD))
         LLNOTREAD=.TRUE.
 
@@ -304,11 +309,11 @@
           CALL GRIB2WGRID (IU06, NPROMA_WAM,                            &
      &                     KGRIB_HANDLE, KGRIB, ISIZE,                  &
      &                     LLUNSTR,                                     &
-     &                     NXFF, NYFF, NLONRGG_LOC,                     &
+     &                     NXS, NXE, NYS, NYE, NLONRGG_LOC,             &
      &                     IRGG, XDELLA, ZDELLO,                        &
      &                     FIELDG%XLON, FIELDG%YLAT,                    &
      &                     ZMISS, ZDUM, ZDUM,                           &
-     &                     CDTWIR, IFORP, IPARAM, KZLEV,IDM,IDM,WORK)
+     &                     CDTWIR, IFORP, IPARAM, KZLEV, IDM, IDM, WORK)
 
           CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
@@ -316,9 +321,9 @@
      &        IPARAM == 180 ) THEN
 
             IF (LLNOTREAD(IVAR)) THEN
-              DO J=1,NYFF
-                JSN=NYFF-J+1
-                DO I=1,NLONRGG_LOC(JSN)
+              DO J = NYS, NYE
+                JSN = NGY-J+1
+                DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
                   FIELDG(I,J)%UWND=WORK(I,J)
                 ENDDO
               ENDDO
@@ -336,9 +341,9 @@
      &            .OR. IPARAM == 181 ) THEN
 
             IF (LLNOTREAD(IVAR)) THEN 
-              DO J=1,NYFF
-                JSN=NYFF-J+1
-                DO I=1,NLONRGG_LOC(JSN)
+              DO J = NYS, NYE
+                JSN = NGY-J+1
+                DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
                   FIELDG(I,J)%VWND=WORK(I,J)
                 ENDDO
               ENDDO
@@ -357,9 +362,9 @@
              IPARAMCI=IPARAM
 
             IF (LLNOTREAD(IVAR)) THEN 
-              DO J=1,NYFF
-                JSN=NYFF-J+1
-                DO I=1,NLONRGG_LOC(JSN)
+              DO J = NYS, NYE
+                JSN = NGY-J+1
+                DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
                   FIELDG(I,J)%CICOVER=WORK(I,J)
                 ENDDO
               ENDDO
@@ -375,9 +380,9 @@
           ELSEIF (IPARAM == 92) THEN
 
             IF (LLNOTREAD(IVAR)) THEN 
-              DO J=1,NYFF
-                JSN=NYFF-J+1
-                DO I=1,NLONRGG_LOC(JSN)
+              DO J = NYS, NYE
+                JSN = NGY-J+1
+                DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
                   FIELDG(I,J)%CITHICK=WORK(I,J)
                 ENDDO
               ENDDO
@@ -394,9 +399,9 @@
 
             IF (LLWSWAVE) THEN
               IF (LLNOTREAD(IVAR)) THEN 
-                DO J=1,NYFF
-                  JSN=NYFF-J+1
-                  DO I=1,NLONRGG_LOC(JSN)
+                DO J = NYS, NYE
+                  JSN = NGY-J+1
+                  DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
                     IF (WORK(I,J) == ZMISS) THEN
                       FIELDG(I,J)%WSWAVE=0.0_JWRB
                     ELSE
@@ -414,9 +419,9 @@
 
             IF (LLWDWAVE) THEN
               IF (LLNOTREAD(IVAR)) THEN 
-                DO J=1,NYFF
-                  JSN=NYFF-J+1
-                  DO I=1,NLONRGG_LOC(JSN)
+                DO J = NYS, NYE
+                  JSN = NGY-J+1
+                  DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
                     IF (WORK(I,J) == ZMISS) THEN
                       FIELDG(I,J)%WDWAVE=0.0_JWRB
                     ELSE
@@ -434,9 +439,9 @@
           ELSEIF (IPARAM == 209) THEN
 
             IF (LLNOTREAD(IVAR)) THEN 
-              DO J=1,NYFF
-                JSN=NYFF-J+1
-                DO I=1,NLONRGG_LOC(JSN)
+              DO J = NYS, NYE
+                JSN = NGY-J+1
+                DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
                   IF (WORK(I,J) == ZMISS) THEN
                     FIELDG(I,J)%AIRD=ROAIR
                   ELSE
@@ -452,9 +457,9 @@
           ELSEIF (IPARAM == 208) THEN
 
             IF (LLNOTREAD(IVAR)) THEN 
-              DO J=1,NYFF
-                JSN=NYFF-J+1
-                DO I=1,NLONRGG_LOC(JSN)
+              DO J = NYS, NYE
+                JSN = NGY-J+1
+                DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
                   IF (WORK(I,J) == ZMISS) THEN
                     FIELDG(I,J)%WSTAR = WSTAR0
                   ELSE
@@ -514,30 +519,9 @@
             CALL ABORT1
           ENDIF
 
-!*      3.2.1 DETERMINE GRID PARAMETERS.                
-!             -------------------------- 
-
-          KCOL = NXFF
-          KROW = NYFF
-          RLATN = AMONOP
-          RLATS = AMOSOP
-          RLONL = AMOWEP
-          RLONR = AMOEAP
-          IF (KCOL /= 1) THEN
-            DLAM  = (RLONR-RLONL)/REAL(KCOL-1)
-          ELSE
-            DLAM  = 0.0_JWRB
-          ENDIF
-          IF (KROW /= 1) THEN
-            DPHI  = (RLATN-RLATS)/REAL(KROW-1)
-          ELSE
-            DPHI  = 0.0_JWRB
-          ENDIF
-
           DEALLOCATE(KGRIB)
         ENDDO WND
 
-        DEALLOCATE(WORK)
         DEALLOCATE(LLNOTREAD)
 
       ELSE
@@ -551,26 +535,10 @@
         ICODE = 3
 
         IF (LLNOTOPENED) THEN
-           RLATS = AMOSOP
-           RLATN = AMONOP 
-           RLONL = AMOWEP 
-           RLONR = AMOEAP 
            CDTWIR = CDATEA
            CALL INCDATE(CDTWIR,-IDELWI)
-           KCOL = NXFF
-           KROW = NYFF
            IWPER = 0
            ICOORD = 1
-           IF (KCOL /= 1) THEN
-             DLAM  = (RLONR-RLONL)/REAL(KCOL-1)
-           ELSE
-             DLAM  = 0.0_JWRB
-           ENDIF
-           IF (KROW /= 1) THEN
-             DPHI  = (RLATN-RLATS)/REAL(KROW-1)
-           ELSE
-             DPHI  = 0.0_JWRB
-           ENDIF
 
            IF (LWDINTS) THEN
              IUNITW=IWAM_GET_UNIT(IU06,CWDFILE, 'r', 'f', 0)
@@ -623,8 +591,8 @@
 
         IPARAMCI=31
 
-        DO J=1,NYFF
-          DO I=1,NXFF
+        DO J = NYS, NYE
+          DO I = NXS, NXE
             FIELDG(I,J)%UWND=UWIND
             FIELDG(I,J)%VWND=VWIND
           ENDDO
@@ -632,13 +600,13 @@
 
 !!!! impose the northern part of the swamp domain to be covered with
 !!!! a sea ice cover=SWAMPCIFR
-        DO J=1,NYFF/2
-          DO I=1,NXFF
+        DO J = NYS, NYE/2
+          DO I = NXS, NXE
             FIELDG(I,J)%CICOVER=SWAMPCIFR
           ENDDO
         ENDDO
-        DO J=NYFF/2+1,NYFF
-          DO I=1,NXFF
+        DO J=NYE/2+1,NYE
+          DO I = NXS, NXE
             FIELDG(I,J)%CICOVER=0.0_JWRB
           ENDDO
         ENDDO
@@ -673,5 +641,4 @@
 
       IF (LHOOK) CALL DR_HOOK('READWIND',1,ZHOOK_HANDLE)
 
-      RETURN
-      END SUBROUTINE READWIND
+END SUBROUTINE READWIND

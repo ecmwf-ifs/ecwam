@@ -1,4 +1,5 @@
 SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
+ &                 NXS, NXE, NYS, NYE, FIELDG,            &
  &                 UCUR, VCUR,                            &
  &                 U10, US,                               &
  &                 THW,                                   &
@@ -24,6 +25,7 @@ SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
 !     ----------
 
 !       *CALL* *GETWND (IFROMIJ, JFROMIJ,
+!                       NXS, NXE, NYS, NYE, FIELDG,
 !                       UCUR, VCUR,
 !                       U10, THW, ADS, WSTAR, CICOVER, CITHICK,
 !                       CDTWIS, LWNDFILE, LCLOSEWND,
@@ -31,6 +33,9 @@ SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
 !                       ICODE_WND)*
 !         *IFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !         *JFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!         *NXS:NXE*  FIRST DIMENSION OF FIELDG
+!         *NYS:NYE*  SECOND DIMENSION OF FIELDG
+!         *FIELDG* - INPUT FORCING FIELDS ON THE WAVE MODEL GRID
 !         *UCUR*   - U-COMPONENT OF THE SURFACE CURRENT
 !         *VCUR*   - V-COMPONENT OF THE SURFACE CURRENT
 !         *U10*    - MAGNITUDE OF 10m WIND AT EACH POINT AND BLOCK.
@@ -56,6 +61,7 @@ SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
       USE YOWNEMOP , ONLY : NEMODP
 
       USE YOWCOUP  , ONLY : LWCOU
@@ -80,6 +86,8 @@ SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
 #include "wamwnd.intfb.h"
 
       INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(INOUT) :: FIELDG
       REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(IN) :: UCUR, VCUR
       REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(INOUT) :: U10, US 
       REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(OUT) :: THW
@@ -91,6 +99,7 @@ SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
       LOGICAL, INTENT(IN) :: LWCUR
       REAL(KIND=NEMODP), DIMENSION (NPROMA_WAM, NCHNK), INTENT(IN) :: NEMOCICOVER, NEMOCITHICK
       INTEGER(KIND=JWIM), INTENT(OUT) :: ICODE_WND
+
 
       INTEGER(KIND=JWIM) :: ICHNK, KIJS, KIJL 
       INTEGER(KIND=JWIM) :: I, J
@@ -124,7 +133,8 @@ IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
 !     -----------------------------------
 
       IF (LWNDFILE) THEN
-        CALL READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD)
+        CALL READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,  &
+     &                 NXS, NXE, NYS, NYE, FIELDG)
 
         ICODE_WND = ICODE
 

@@ -133,7 +133,7 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
      &            WLAT     ,WCOR     ,WRLAT    ,WRLON    ,              &
      &            OBSLAT   ,OBSLON   ,OBSCOR   ,OBSRLAT  ,OBSRLON
       USE YOWUNIT  , ONLY : IREADG   ,IU07     ,IU08     ,LWVWAMINIT
-      USE YOWWIND  , ONLY : NXFF     ,NYFF
+      USE YOWWIND  , ONLY : NXFFS    ,NXFFE    ,NYFFS    ,NYFFE
 
       USE YOWUNPOOL, ONLY : LLUNSTR, LLR8TOR4
       USE YOWPD, ONLY : MNP => npa, RANK
@@ -277,15 +277,19 @@ IF (LLUNSTR) THEN
 
 !       the data structure of type FORCING_FIELDS are defacto uni-dimensional
 !       when unstructured grid is used and only limited to the local+ghost points
-        NXFF=MNP
-        NYFF=1
+        NXFFS=1
+        NXFFE=MNP
+        NYFFS=1
+        NYFFE=1
 
 
 ELSE
       !! NON UNSTRUCTURED GRID : !!
 
-      NXFF=NGX
-      NYFF=NGY
+      NXFFS=1
+      NXFFE=NGX
+      NYFFS=1
+      NYFFE=NGY
 
 !*    1. INPUT NEIGHBOURING GRID POINT INDICES (UBUF) 
 !        --------------------------------------------
