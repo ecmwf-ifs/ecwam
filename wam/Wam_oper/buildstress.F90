@@ -30,7 +30,7 @@ SUBROUTINE BUILDSTRESS(BLK2LOC, WVENVI, FF_NOW, NEMO2WAM, IREAD)
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,             &
-     &                      NXFFS    ,NXFFE    ,NYFFS   ,NYFFE
+     &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE
       USE MPL_MODULE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 

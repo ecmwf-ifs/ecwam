@@ -126,10 +126,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWSHAL  , ONLY : WVENVI   ,WVPRPT
       USE YOWTEST  , ONLY : IU06
       USE YOWWNDG  , ONLY : ICODE_CPL
-      USE YOWWIND  , ONLY : FF_NEXT
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1 
-      USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW   ,CDATEWO  ,CDATEFL
+      USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW   ,CDATEWO  ,CDATEFL ,     &
+     &                      FF_NEXT  ,                                  &
+     &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE
       USE YOWUNPOOL,ONLY  : LLUNSTR
 
       USE YOMHOOK , ONLY : LHOOK,   DR_HOOK
@@ -268,7 +269,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       LOGICAL, SAVE :: LLGRAPI
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
-      LOGICAL :: LLALLOC_FIELDG_ONLY
+      LOGICAL :: LLINIT_FIELDG
 
       DATA LFRST /.TRUE./
       DATA LLGRAPI /.TRUE./
@@ -550,14 +551,14 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
 !*      REFORMAT FORCING FIELDS FROM INPUT GRID TO BLOCKED.
 !       ---------------------------------------------------
-        LLINIT=.FALSE.
-        LLALLOC_FIELDG_ONLY=LWCOU
+        LLINIT = .FALSE.
+        LLINIT_FIELDG = .NOT. LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-        CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,  &
-     &                LLINIT, LLALLOC_FIELDG_ONLY,       &
-     &                IREAD,                             &
-     &                NFIELDS, NGPTOTG, NC, NR,          &
-     &                FIELDS, LWCUR, MASK_IN,            &
+        CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,          &
+     &                NXFFS, NXFFE, NYFFS, NYFFE, LLINIT_FIELDG, &
+     &                LLINIT, IREAD,                             &
+     &                NFIELDS, NGPTOTG, NC, NR,                  &
+     &                FIELDS, LWCUR, MASK_IN,                    &
      &                NEMO2WAM) 
 
 

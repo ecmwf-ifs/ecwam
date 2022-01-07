@@ -1,4 +1,6 @@
-      SUBROUTINE WAMCUR (KIJS, KIJL, IFROMIJ, JFROMIJ, U, V)
+      SUBROUTINE WAMCUR (NXS, NXE, NYS, NYE, FIELDG,    &
+     &                   KIJS, KIJL, IFROMIJ, JFROMIJ,  &
+     &                   U, V)
 
 ! ----------------------------------------------------------------------
 
@@ -16,7 +18,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL WAMCUR (KIJS, KIJL, IFROMIJ, JFROMIJ, U, V)*
+!       *CALL WAMCUR (NXS, NXE, NYS, NYE, FIELDG,
+!                     KIJS, KIJL, IFROMIJ, JFROMIJ, U, V)*
+!          *NXS:NXE*  FIRST DIMENSION OF FIELDG
+!          *NYS:NYE*  SECOND DIMENSION OF FIELDG
+!          *FIELDG* - INPUT FORCING FIELDS ON THE WAVE MODEL GRID
 !          *KIJS:KIJL*  - DIMENSION OF PASSED ARRAYS
 !          *IFROMIJ* - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !          *JFROMIJ* - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
@@ -33,9 +39,9 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCURR  , ONLY : CURRENT_MAX
-      USE YOWWIND  , ONLY : FIELDG
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -43,6 +49,8 @@
 
       IMPLICIT NONE
 
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(IN) :: FIELDG
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(OUT) :: U, V

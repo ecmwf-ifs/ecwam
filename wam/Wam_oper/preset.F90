@@ -105,7 +105,8 @@ PROGRAM preset
       USE YOWUNPOOL ,ONLY : LLUNSTR  ,LPREPROC
       USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
-     &            LLNEWCURR,NXFF     ,NYFF     ,WSPMIN   ,FF_NEXT
+     &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE    ,    &
+     &                      LLNEWCURR, WSPMIN   ,FF_NEXT
       USE UNSTRUCT_BOUND, ONLY : IOBPD
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -155,7 +156,7 @@ PROGRAM preset
       CHARACTER(LEN=14), PARAMETER :: CDUM='00000000000000'
 
       LOGICAL :: LLINIT
-      LOGICAL :: LLALLOC_FIELDG_ONLY
+      LOGICAL :: LLINIT_FIELDG
       LOGICAL :: LWCUR
       LOGICAL :: LLALLOC_ONLY, LLINIALL, LLOCAL
 
@@ -526,14 +527,14 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !!! remove that call in 40R3
       CALL CIGETDEAC
 
-        LLINIT=.FALSE.
-        LLALLOC_FIELDG_ONLY=.FALSE.
+        LLINIT = .FALSE.
+        LLINIT_FIELDG = .TRUE.
 
-        CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,  &
-     &                LLINIT, LLALLOC_FIELDG_ONLY,       &
-     &                IREAD,                             &
-     &                NFIELDS, NGPTOTG, NC, NR,          &
-     &                FIELDS, LWCUR, MASK_IN,            &
+        CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,            &
+     &                NXFFS, NXFFE, NYFFS, NYFFE, LLINIT_FIELDG,   &
+     &                LLINIT, IREAD,                               &
+     &                NFIELDS, NGPTOTG, NC, NR,                    &
+     &                FIELDS, LWCUR, MASK_IN,                      &
      &                NEMO2WAM)
 
       FF_NOW(:,:)%TAUW = 0.1_JWRB * FF_NOW(:,:)%UFRIC**2

@@ -1,11 +1,11 @@
-SUBROUTINE GRIB2WGRID (IU06, KPROMA,                              &
-     &                 KGRIB_HANDLE, KGRIB, ISIZE,                &
-     &                 LLUNSTR,                                   &
-     &                 NXFF, NYFF, KLONRGG_LOC,                   &
-     &                 KRGG, XDELLA, ZDELLO,                      &
-     &                 XLON, YLAT,                                &
-     &                 PMISS, PPREC, PPEPS,                       &
-     &                 CDATE, IFORP, IPARAM, KZLEV,KKK,MMM,FIELD)
+SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
+     &                 KGRIB_HANDLE, KGRIB, ISIZE,                  &
+     &                 LLUNSTR,                                     &
+     &                 NGY, KRGG, KLONRGG_LOC,                      &
+     &                 NXS, NXE, NYS, NYE,                          &
+     &                 XLON, YLAT,                                  &
+     &                 PMISS, PPREC, PPEPS,                         &
+     &                 CDATE, IFORP, IPARAM, KZLEV, KKK, MMM, FIELD)
 ! ----------------------------------------------------------------------    
 
 !***  *GRIB2WGRID* - UNPACKS GRIB DATA FIELD
@@ -32,12 +32,15 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                              &
 !     XLON and YLAT WERE INTRODUCED TO LIMIT EXTRACTION FOR POINTS THAT ARE
 !     SPECIFIED AS NON MISSING WITH THOSE TWO ARRAYS.
 
-!**   INTERFACE.                                                        
-!     ----------                                                        
+!**   INTERFACE.
+!     ----------  
 
 !      *CALL GRIB2WGRID* (IU06, KPROMA,
 !    &                    KGRIB_HANDLE, KGRIB, ISIZE,
-!    &                    NXFF, NYFF, KRGG, KLONRGG_LOC, XDELLA, ZDELLO,
+!    &                    LLUNSTR,
+!    &                    NGY, KRGG, KLONRGG_LOC,
+!    &                    NXS, NXE, NYS, NYE,
+!    &                    XLON, YLAT,
 !    &                    PMISS, PPREC, PPEPS,
 !    &                    CDATE, IFORP, IPARAM, KZLEV, KKK, MMM, FIELD)
 
@@ -50,16 +53,14 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                              &
 !        *ISIZE*  - SIZE OF KGRIB
 !        *LLUNSTR - FLAG SPECIFYING IF THE UNSTRUCTURED GRID OPTION USED FOR THE MODEL
 
-!        *NXFF  * - NUMBER OF COLUMNS IN ARRAY FIELD, XLON, YLAT USED.
-!        *NYFF  * - NUMBER OF ROWS    IN ARRAY FIELD, XLON, YLAT USED.
+!      WAVE MODEL GRID SPECIFICATION (ONLY MEANINGFUL IF STRUCTURED GRID):
+!        *NGY*    - TOTAL NUMBER OF LATITUDES
+!        *KRGG*   - GRID DEFINITION PARAMETER (O=REGULAR, 1=IRREGULAR)
 !        *KLONRGG_LOC - IF STRUCTURED GRID :: NUMBER OF GRID POINTS FOR EACH LATITUDE
 !                    UNSTRUCTURED GRID :: TOTAL NUMBER OF GRID POINTS.
 
-!      WAVE MODEL GRID SPECIFICATION (ONLY MEANINGFUL IF STRUCTURED GRID):
-!        *KRGG*   - GRID DEFINITION PARAMETER (O=REGULAR, 1=IRREGULAR)
-!        *XDELLA* - GRID POINT SPACING BETWEEN LATITUDES.
-!        *ZDELL0* - GRID POINT SPACING PER LATITUDES. 
-
+!        *NXS:NXE* - FIRST DIMENSION OF FIELD, XLON, YLAT USED.
+!        *NYS:NYE* - SECOND DIMENSION OF FIELD, XLON, YLAT USED.
 !        *XLON*   - LONGITUDE OF POINTS FOR WHICH FIELDG MUST HAVE VALUES.
 !        *YLAT    - LATITUDE  OF POINTS FOR WHICH FIELDG MUST HAVE VALUES.
 !!!      other points in the list (if any) are specified as missing (=PMISS).
@@ -101,17 +102,16 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                              &
 #include "incdate.intfb.h"
 #include "wstream_strg.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, KPROMA, KGRIB_HANDLE,ISIZE
-      INTEGER(KIND=JWIM), INTENT(IN) :: NXFF, NYFF, KRGG
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, KPROMA, KGRIB_HANDLE, ISIZE
+      INTEGER(KIND=JWIM), INTENT(IN) :: NGY, KRGG
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
       INTEGER(KIND=JWIM), INTENT(IN) :: KGRIB(ISIZE)
-      INTEGER(KIND=JWIM), INTENT(IN) :: KLONRGG_LOC(NYFF)
+      INTEGER(KIND=JWIM), INTENT(IN) :: KLONRGG_LOC(NGY)
       INTEGER(KIND=JWIM), INTENT(OUT) :: IFORP, IPARAM, KZLEV, KKK, MMM
 
-      REAL(KIND=JWRB), INTENT(IN) :: XDELLA
-      REAL(KIND=JWRB), INTENT(IN) :: ZDELLO(NYFF)
       REAL(KIND=JWRB), INTENT(IN) :: PMISS, PPREC, PPEPS
-      REAL(KIND=JWRB) ,DIMENSION(NXFF,NYFF), INTENT(IN) :: XLON, YLAT
-      REAL(KIND=JWRB) ,DIMENSION(NXFF,NYFF), INTENT(OUT) :: FIELD
+      REAL(KIND=JWRB) ,DIMENSION(NXS:NXE, NYS:NYE), INTENT(IN) :: XLON, YLAT
+      REAL(KIND=JWRB) ,DIMENSION(NXS:NXE, NYS:NYE), INTENT(OUT) :: FIELD
 
       CHARACTER(LEN=14), INTENT(OUT) :: CDATE
 
@@ -188,9 +188,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                              &
       PMOEAP=0.0_JWRB
       PMONOP=0.0_JWRB
 
-      OUTDM: DO K=1,NYFF
-        JSN=NYFF-K+1
-        DO I=1,KLONRGG_LOC(JSN)
+      OUTDM: DO K = NYS, NYE
+        JSN = NGY-K+1
+        DO I = NXS, MIN(KLONRGG_LOC(JSN), NXE)
           IF (YLAT(I,K) == PMISS .OR. XLON(I,K) == PMISS) CYCLE
           PMOWEP=XLON(I,K)
           PMOSOP=YLAT(I,K)
@@ -199,9 +199,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                              &
           EXIT OUTDM
         ENDDO
       ENDDO OUTDM
-      DO K=1,NYFF
-        JSN=NYFF-K+1
-        DO I=1,KLONRGG_LOC(JSN)
+      DO K = NYS, NYE
+        JSN = NGY-K+1
+        DO I = NXS, MIN(KLONRGG_LOC(JSN), NXE)
           IF (YLAT(I,K) == PMISS .OR. XLON(I,K) == PMISS) CYCLE
           PMOWEP=MIN(PMOWEP,XLON(I,K))
           PMOSOP=MIN(PMOSOP,YLAT(I,K))
@@ -658,12 +658,12 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                              &
 
         IF (KPMONOP == KRMONOP .AND. KPMOSOP == KRMOSOP .AND.           &
      &      KPMOWEP == KRMOWEP .AND. KPMOEAP == KRMOEAP       ) THEN
-           IF (JRGG == KRGG .AND. NC == NXFF .AND. NR == NYFF) THEN
+           IF (JRGG == KRGG .AND. NC == NXE .AND. NR == NGY) THEN
 
               LLINTERPOL=.FALSE.
 
               IF (KRGG == 1) THEN
-                DO J=1,NYFF
+                DO J = 1, NGY 
                   IF (RLONRGG(J) /= KLONRGG_LOC(J)) THEN
                     LLINTERPOL=.TRUE.
                     EXIT
@@ -719,9 +719,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                              &
 !       --------------------
 
         L = 0                                                          
-        DO K=1,NYFF                                                
-          JSN=NYFF-K+1
-          DO I=1,KLONRGG_LOC(JSN)
+        DO K = NYS, NYE                                                
+          JSN = NGY-K+1
+          DO I = NXS, MIN(KLONRGG_LOC(JSN), NXE)
             L = L+1                                                     
             FIELD(I,K) = VALUES(L)
           ENDDO
@@ -855,12 +855,12 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                              &
         ENDIF
 
 !       loop over all wave model latitudes.
-        DO K=1,NYFF                                                
-          JSN=NYFF-K+1
+        DO K = NYS, NYE                                                
+          JSN = NGY-K+1
 !         loop over all wave model grid points on each latitude.
-          DO I=1,KLONRGG_LOC(JSN)
+          DO I = NXS, MIN(KLONRGG_LOC(JSN), NXE)
 
-!           skip all missing points !
+!           *** skip all missing points !
             IF (YLAT(I,K) == PMISS .OR. XLON(I,K) == PMISS) CYCLE 
 
             LLSKIP=.FALSE.

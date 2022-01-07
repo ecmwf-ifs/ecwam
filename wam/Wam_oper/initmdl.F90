@@ -194,7 +194,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      FAK      ,FRHF     ,DFIMHF
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE YOWWNDG  , ONLY : ICODE
+      USE YOWWNDG  , ONLY : ICODE    ,NXFFS    , NXFFE   ,NYFFS    , NYFFE
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE YOWUNIT  , ONLY : IU02     ,IU11     ,IU12     ,IU13     ,     &
      &                      IU14     ,IU15     ,IU19     ,IU20
@@ -278,7 +278,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 
       LOGICAL :: LLEXIST
       LOGICAL :: LLINIT
-      LOGICAL :: LLALLOC_FIELDG_ONLY
+      LOGICAL :: LLINIT_FIELDG
 
 !----------------------------------------------------------------------
 
@@ -874,13 +874,13 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !     ABSOLUTE TO RELATIVE FRAME OF REFERENCE.
 
       LLINIT = .NOT.LRESTARTED
-      LLALLOC_FIELDG_ONLY=.FALSE.
+      LLINIT_FIELDG = .TRUE.
 
-      CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,    &
-     &              LLINIT, LLALLOC_FIELDG_ONLY,         &
-     &              IREAD,                               &
-     &              NFIELDS, NGPTOTG, NC, NR,            &
-     &              FIELDS, LWCUR, MASK_IN,              &
+      CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,            &
+     &              NXFFS, NXFFE, NYFFS, NYFFE, LLINIT_FIELDG,   &
+     &              LLINIT, IREAD,                               &
+     &              NFIELDS, NGPTOTG, NC, NR,                    &
+     &              FIELDS, LWCUR, MASK_IN,                      &
      &              NEMO2WAM)
 
       WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'

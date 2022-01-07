@@ -1,5 +1,6 @@
       SUBROUTINE CURRENT2WAM (FILNM, IREAD, CDATEIN,        &
      &                        IFROMIJ, JFROMIJ,             &
+     &                        NXS, NXE, NYS, NYE, FIELDG,   &
      &                        UCUR, VCUR)
 
 !--------------------------------------------------------------------
@@ -17,13 +18,19 @@
 
 !**   INTERFACE
 !     ---------
-!     *CALL* *CURRENT2WAM(FILNM, IREAD, CDATEIN, UCUR, VCUR)*
+!     *CALL* *CURRENT2WAM(FILNM, IREAD, CDATEIN,
+!                         IFROMIJ, JFROMIJ,
+!                         NXS, NXE, NYS, NYE, FIELDG,
+!                         UCUR, VCUR)
 
 !     *FILNM*     DATA INPUT FILENAME.
 !     *IREAD*     RANK OF THE PROCESS WHICH INPUTS THE DATA. 
 !     *CDATEIN*   DATE OF THE DECODED DATA. 
 !     *IFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !     *JFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!     *NXS:NXE*  FIRST DIMENSION OF FIELDG
+!     *NYS:NYE*  SECOND DIMENSION OF FIELDG
+!     *FIELDG*   INPUT FORCING FIELDS ON THE WAVE MODEL GRID
 !     *UCUR*      U-COMPONENT OF SURFACE CURRENT
 !     *VCUR*      V-COMPONENT OF SURFACE CURRENT
 
@@ -38,18 +45,19 @@
 !---------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCURR  , ONLY : CURRENT_MAX
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
-      USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,XDELLO   ,ZDELLO, NLONRGG
+      USE YOWMAP   , ONLY : IRGG     ,NLONRGG
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
+      USE YOWPARAM , ONLY : NGY
       USE YOWPCONS , ONLY : ZMISS    ,EPSMIN
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06
       USE YOWPD, ONLY : MNP => npa
       USE YOWUNPOOL ,ONLY : LLUNSTR
-      USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
@@ -67,6 +75,8 @@
       CHARACTER(LEN=24), INTENT(IN) :: FILNM
       CHARACTER(LEN=14), INTENT(INOUT) :: CDATEIN
       INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(IN) :: FIELDG
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NCHNK), INTENT(OUT) :: UCUR, VCUR
 
 
@@ -80,14 +90,14 @@
       INTEGER(KIND=JWIM) :: IFORP, IPARAM, KZLEV, ICHNK, IJ, IC, IX, JY
       INTEGER(KIND=JWIM) :: IBUF(2)
       INTEGER(KIND=JWIM), ALLOCATABLE :: INGRIB(:)
-      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NYFF)
+      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NGY)
 
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL(KIND=JWRB), PARAMETER :: WLOWEST=0.0001_JWRB
       REAL(KIND=JWRB) :: ZDUM1, ZDUM2
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: FIELD(NXFF,NYFF)
+      REAL(KIND=JWRB) :: FIELD(NXS:NXE, NYS:NYE)
 
       CHARACTER(LEN=14) :: CDATEIN_OLD 
 
@@ -187,11 +197,11 @@
         CALL GRIB2WGRID (IU06, NPROMA_WAM,                              &
      &                   KGRIB_HANDLE, INGRIB, ISIZE,                   &
      &                   LLUNSTR,                                       &
-     &                   NXFF, NYFF, NLONRGG_LOC,                       &
-     &                   IRGG, XDELLA, ZDELLO,                          &
+     &                   NGY, IRGG, NLONRGG_LOC,                        &
+     &                   NXS, NXE, NYS, NYE,                            &
      &                   FIELDG%XLON, FIELDG%YLAT,                      &
      &                   ZMISS, ZDUM1, ZDUM2,                           &
-     &                   CDATEIN, IFORP, IPARAM,KZLEV,KK,MM, FIELD)
+     &                   CDATEIN, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
 
 
         CALL IGRIB_RELEASE(KGRIB_HANDLE)

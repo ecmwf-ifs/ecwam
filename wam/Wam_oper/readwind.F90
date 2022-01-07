@@ -90,7 +90,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWICE   , ONLY : LICERUN  ,IPARAMCI ,LICETH
-      USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,ZDELLO   ,NLONRGG
+      USE YOWMAP   , ONLY : IRGG     ,NLONRGG
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
       USE YOWPARAM , ONLY : NGY      ,NIBLO    ,CLDOMAIN ,              &
      &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,LWDINTS  ,    &
@@ -136,7 +136,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
       INTEGER(KIND=JWIM) :: KGRIB_HANDLE
       INTEGER(KIND=JWIM) :: IDUM(2)
       INTEGER(KIND=JWIM), ALLOCATABLE :: KGRIB(:)
-      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NYS:NYE)
+      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NGY)
 
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
@@ -158,7 +158,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
       IF (LLUNSTR) THEN
         NLONRGG_LOC(:)=MNP
       ELSE
-        NLONRGG_LOC(NYS:NYE) = NLONRGG(NYS:NYE)
+        NLONRGG_LOC(:) = NLONRGG(:)
       ENDIF
 
       ICODE=0
@@ -309,8 +309,8 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
           CALL GRIB2WGRID (IU06, NPROMA_WAM,                            &
      &                     KGRIB_HANDLE, KGRIB, ISIZE,                  &
      &                     LLUNSTR,                                     &
-     &                     NXS, NXE, NYS, NYE, NLONRGG_LOC,             &
-     &                     IRGG, XDELLA, ZDELLO,                        &
+     &                     NGY, IRGG, NLONRGG_LOC,                      &
+     &                     NXS, NXE, NYS, NYE,                          &
      &                     FIELDG%XLON, FIELDG%YLAT,                    &
      &                     ZMISS, ZDUM, ZDUM,                           &
      &                     CDTWIR, IFORP, IPARAM, KZLEV, IDM, IDM, WORK)

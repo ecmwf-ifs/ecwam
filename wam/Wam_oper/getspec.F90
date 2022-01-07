@@ -48,18 +48,18 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : WVGRIDGLO, WVGRIDLOC, ENVIRONMENT
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO, WVGRIDLOC, ENVIRONMENT, FORCING_FIELDS
 
       USE YOWCOUT  , ONLY : KDEL     ,MDEL     ,LRSTPARALR
       USE YOWFRED  , ONLY : FR       ,TH       ,FR5      ,FRM5
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
-      USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,ZDELLO   ,NLONRGG
+      USE YOWMAP   , ONLY : IRGG     ,NLONRGG
       USE YOWMESPAS, ONLY : LGRIBIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,                        &
      &                      KTAG     ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
-     &                      NIBLO    ,CLDOMAIN
+     &                      NGY      ,NIBLO    ,CLDOMAIN
       USE YOWPCONS , ONLY : G        ,DEG      ,R        ,ZMISS    ,    &
      &                      EPSMIN
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,IREFRA  ,LNSESTART
@@ -67,7 +67,7 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
       USE YOWPD, ONLY : MNP => npa
       USE YOWUNPOOL ,ONLY : LLUNSTR
-      USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG
+      USE YOWWIND  , ONLY : NXFFS    ,NXFFE    ,NYFFS    ,NYFFE
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
@@ -116,7 +116,7 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
       INTEGER(KIND=JWIM) :: IJSG, IJLG, IJSB, IJLB, KIJS, KIJL, IPRM, ICHNK
       INTEGER(KIND=JWIM) :: IPROC, ITAG, IREQ, IST, IEND, KSEND
       INTEGER(KIND=JWIM) :: ISENDREQ(NPROC)
-      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NYFF)
+      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NGY)
       INTEGER(KIND=JWIM), ALLOCATABLE :: INGRIB(:), INTMP(:)
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
@@ -128,11 +128,12 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: ZRECVBUF
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:) :: RFL
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: FIELD
+      TYPE(FORCING_FIELDS), ALLOCATABLE, DIMENSION(:,:) :: FIELDG
 
       CHARACTER(LEN= 14) :: CDATE 
       CHARACTER(LEN=296) :: FILENAME
 
-      LOGICAL :: LLALLOC_ONLY, LLINIALL, LLOCAL
+      LOGICAL :: LLINIALL, LLOCAL
       LOGICAL :: LFRSDECODE, LOUNIT, LCUNIT, LLEXIST
       LOGICAL :: LLRESIZING=.FALSE.
       LOGICAL :: LLEPSMIN=.TRUE.
@@ -223,10 +224,13 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 
 !       GRIB2WGRID REQUIRES FIELDG !
 
-        LLALLOC_ONLY=.FALSE.
-        LLINIALL=.FALSE.
-        LLOCAL=.FALSE.
-        CALL INIT_FIELDG(BLK2LOC, LLALLOC_ONLY, LLINIALL, LLOCAL)
+        LLINIALL = .FALSE.
+        LLOCAL = .FALSE.
+        ALLOCATE(FIELDG(NXFFS:NXFFE,NYFFS:NYFFE))
+        CALL INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,         &
+     &                   NXFFS, NXFFE, NYFFS, NYFFE, FIELDG)
+
+
 
 
         ALL_FILE: DO IC=1,NFRE_RED*NANG,ISTEP 
@@ -383,15 +387,16 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
               KGRIB_HANDLE=-99
               CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,INGRIB)
 
-              IF (.NOT.ALLOCATED(FIELD)) ALLOCATE(FIELD(NXFF,NYFF))
-              CALL GRIB2WGRID (IU06, NPROMA_WAM,                        &
-     &                         KGRIB_HANDLE, INGRIB, ISIZE,             &
-     &                         LLUNSTR,                                 &
-     &                         NXFF, NYFF, NLONRGG_LOC,                 &
-     &                         IRGG, XDELLA, ZDELLO,                    &
-     &                         FIELDG%XLON, FIELDG%YLAT,                &
-     &                         ZMISS, PPREC, PPEPS,                     &
-     &                         CDATE, IFORP, IPARAM, KZLEV,KK,MM,FIELD)
+              IF (.NOT.ALLOCATED(FIELD)) ALLOCATE(FIELD(NXFFS:NXFFE, NYFFS:NYFFE))
+
+              CALL GRIB2WGRID (IU06, NPROMA_WAM,                           &
+     &                         KGRIB_HANDLE, INGRIB, ISIZE,                &
+     &                         LLUNSTR,                                    &
+     &                         NGY, IRGG, NLONRGG_LOC,                     &
+     &                         NXFFS, NXFFE, NYFFS, NYFFE,                 &
+     &                         FIELDG%XLON, FIELDG%YLAT,                   &
+     &                         ZMISS, PPREC, PPEPS,                        &
+     &                         CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
 
               CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
