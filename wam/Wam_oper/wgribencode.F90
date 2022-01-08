@@ -372,6 +372,9 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
               ENDIF
             ENDIF
 !           in hours
+!!!debile
+          WRITE(IU06,*)' wgribencode NWINOFF = ',NWINOFF,CDATE2,' ',DATE_TIME_WINDOW_END
+
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE, &
              'offsetToEndOf4DvarWindow',NWINOFF)
           ENDIF 

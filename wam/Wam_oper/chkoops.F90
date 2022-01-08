@@ -79,6 +79,7 @@
             LWAMANOUT = LWAMANOUT_ORIG
           ENDIF
 
+          WRITE(IU06,*) ''
           WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++++ '
           WRITE(IU06,*) ' SUB. CHKOOPS CALLED FROM ', GET_ALGOR_TYPE(), &
  &                      ' FOR NUPTRA: ', NUPTRA, ' AND MUPTRA: ', GET_MUPTRA() 
