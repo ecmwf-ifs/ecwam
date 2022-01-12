@@ -165,6 +165,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
         LLONLYPOS=.TRUE.
         CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,            &
      &                 IFROMIJ, JFROMIJ,                       &
+     &                 NXFFS, NXFFE, NYFFS, NYFFE, FIELDG,     &
      &                 WSWAVE, KZLEVUWAVE, LLONLYPOS, IREAD)
 
         WRITE(IU06,*) ' '
@@ -236,6 +237,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
 !       !!!! CD was initialised above !!!!
         CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,         &
      &                 IFROMIJ, JFROMIJ,                    &
+     &                 NXFFS, NXFFE, NYFFS, NYFFE, FIELDG,  &
      &                 CD, KZLEVCD, LLONLYPOS, IREAD)
 
 !       TEST REFERENCE LEVEL FOR UWAVE AND CD

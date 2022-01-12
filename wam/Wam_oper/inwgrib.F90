@@ -1,5 +1,5 @@
-      SUBROUTINE INWGRIB (FILNM, IREAD,                                 &
-     &                    CDATE, IPARAM, KZLEV, FIELD)
+      SUBROUTINE INWGRIB (FILNM, IREAD, CDATE, IPARAM, KZLEV,  & 
+     &                    NXS, NXE, NYS, NYE, FIELDG, FIELD)
 
 ! -----------------------------------------------------------------     
 
@@ -15,8 +15,8 @@
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!      *CALL INWGRIB* (FILNM, IREAD,
-!    &                 CDATE, IPARAM, KZLEV, FIELD)
+!      *CALL INWGRIB* (FILNM, IREAD, CDATE, IPARAM, KZLEV,
+!    &                 NXS, NXE, NYS, NYE, FIELDG, FIELD)
 
 !        *FILNM*  - DATA INPUT FILENAME. 
 !        *IREAD*  - ACCESS TO FILE ONLY FOR PE=IREAD.
@@ -25,6 +25,9 @@
 !        *KZLEV*  - REFERENCE LEVEL IN FULL METER
 !                   SHOULD BE 0 EXCEPT FOR 233, 245 AND 249 WHERE IT
 !                   MIGHT BE DIFFERENT THAN ZERO. 
+!        *NXS:NXE*  FIRST DIMENSION OF FIELDG
+!        *NYS:NYE*  SECOND DIMENSION OF FIELDG
+!        *FIELDG* - INPUT FORCING FIELDS ON THE WAVE MODEL GRID
 !        *FIELD*  - UNPACKED DATA.
 
 !     EXTERNALS.                                                        
@@ -35,15 +38,15 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
-      USE YOWPARAM , ONLY : NIBLO
-      USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,ZDELLO,   NLONRGG
+      USE YOWPARAM , ONLY : NGY      ,NIBLO
+      USE YOWMAP   , ONLY : IRGG     ,NLONRGG
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI 
       USE YOWPCONS , ONLY : ZMISS
       USE YOWTEST  , ONLY : IU06
-      USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG
       USE YOWPD, ONLY : MNP => npa
       USE YOWUNPOOL ,ONLY : LLUNSTR
 
@@ -59,13 +62,14 @@
 #include "grib2wgrid.intfb.h"
 #include "kgribsize.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
-      INTEGER(KIND=JWIM), INTENT(INOUT) :: IPARAM, KZLEV
-
-      REAL(KIND=JWRB), INTENT(INOUT) :: FIELD(NXFF,NYFF)
-
       CHARACTER(LEN=24), INTENT(IN) :: FILNM
-      CHARACTER(LEN=14), INTENT(INOUT) :: CDATE
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
+      CHARACTER(LEN=14), INTENT(OUT) :: CDATE
+      INTEGER(KIND=JWIM), INTENT(OUT) :: IPARAM, KZLEV
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(IN) :: FIELDG
+      REAL(KIND=JWRB), INTENT(OUT) :: FIELD(NXS:NXE, NYS:NYE)
+
 
       INTEGER(KIND=JWIM) :: NBIT
 
@@ -75,7 +79,7 @@
       INTEGER(KIND=JWIM) :: KK, MM
       INTEGER(KIND=JWIM) :: IBUF(2) 
       INTEGER(KIND=JWIM), ALLOCATABLE :: INGRIB(:)
-      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NYFF)
+      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NGY)
 
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
@@ -178,8 +182,8 @@
       CALL GRIB2WGRID (IU06, NPROMA_WAM,                                &
      &                 KGRIB_HANDLE, INGRIB, ISIZE,                     &
      &                 LLUNSTR,                                         &
-     &                 NXFF, NYFF, NLONRGG_LOC,                         &
-     &                 IRGG, XDELLA, ZDELLO,                            &
+     &                 NGY, IRGG, NLONRGG_LOC,                          &
+     &                 NXS, NXE, NYS, NYE,                              &
      &                 FIELDG%XLON, FIELDG%YLAT,                        &
      &                 ZMISS, PPREC, PPEPS,                             &
      &                 CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
