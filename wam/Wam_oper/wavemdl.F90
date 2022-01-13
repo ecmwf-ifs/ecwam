@@ -130,7 +130,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1 
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW   ,CDATEWO  ,CDATEFL ,     &
      &                      FF_NEXT  ,                                  &
-     &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE
+     &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE,        &
+     &                      NXFFS_LOC,NXFFE_LOC,NYFFS_LOC,NYFFE_LOC
       USE YOWUNPOOL,ONLY  : LLUNSTR
 
       USE YOMHOOK , ONLY : LHOOK,   DR_HOOK
@@ -238,6 +239,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       INTEGER(KIND=JWIM) :: IC, IL, IST, IED, ICOUNT, JF, IP, IFLD
       INTEGER(KIND=JWIM) :: NCOMBUF, NCOMLOC, NTOT, NMASK
       INTEGER(KIND=JWIM) :: IFCST, IFCSTEP_HOUR
+      INTEGER(KIND=JWIM) :: NXS, NXE, NYS, NYE
       INTEGER(KIND=JWIM), ALLOCATABLE :: ZCOMCNT(:)
 
       REAL(KIND=JWRB) :: VAL
@@ -479,7 +481,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           ENDIF
         ENDIF
 
-      ELSE
+      ELSE  ! .NOT. FRSTIME
 
 !     !!!! ANY OTHER TIMES !!!!
 
@@ -551,16 +553,27 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
 !*      REFORMAT FORCING FIELDS FROM INPUT GRID TO BLOCKED.
 !       ---------------------------------------------------
+        IF (LWCOU) THEN
+          NXS = NXFFS_LOC
+          NXE = NXFFE_LOC
+          NYS = NYFFS_LOC
+          NYE = NYFFE_LOC
+        ELSE
+          NXS = NXFFS
+          NXE = NXFFE
+          NYS = NYFFS
+          NYE = NYFFE
+        ENDIF
+
         LLINIT = .FALSE.
         LLINIT_FIELDG = .NOT. LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-        CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,          &
-     &                NXFFS, NXFFE, NYFFS, NYFFE, LLINIT_FIELDG, &
-     &                LLINIT, IREAD,                             &
-     &                NFIELDS, NGPTOTG, NC, NR,                  &
-     &                FIELDS, LWCUR, MASK_IN,                    &
+        CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,    &
+                      NXS, NXE, NYS, NYE, LLINIT_FIELDG,   &
+     &                LLINIT, IREAD,                       &
+     &                NFIELDS, NGPTOTG, NC, NR,            &
+     &                FIELDS, LWCUR, MASK_IN,              &
      &                NEMO2WAM) 
-
 
       ENDIF
 
