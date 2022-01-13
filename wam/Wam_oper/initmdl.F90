@@ -194,12 +194,13 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      FAK      ,FRHF     ,DFIMHF
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE YOWWNDG  , ONLY : ICODE    ,NXFFS    , NXFFE   ,NYFFS    , NYFFE
+      USE YOWWNDG  , ONLY : ICODE
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE YOWUNIT  , ONLY : IU02     ,IU11     ,IU12     ,IU13     ,     &
      &                      IU14     ,IU15     ,IU19     ,IU20
       USE YOWWAMI  , ONLY : CBPLTDT
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
+     &                      NXFFS    , NXFFE   ,NYFFS    , NYFFE   ,    &
      &                      LLNEWCURR,LLWSWAVE ,LLWDWAVE ,FF_NEXT
 
       USE YOWUNPOOL, ONLY : LLUNSTR, OUT_METHOD

@@ -193,7 +193,8 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
       IF (LWCOU) THEN
         CALL IFSTOWAM (BLK2LOC,                    &
  &                     NFIELDS, NGPTOTG, NC, NR,   &
- &                     FIELDS, LWCUR, MASK_IN)
+ &                     FIELDS, LWCUR, MASK_IN,     &
+ &                     NXS, NXE, NYS, NYE, FIELDG)
       ELSE
         LWCOUSAMEGRID = .FALSE.
       ENDIF
@@ -204,7 +205,9 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
       IF (LWNEMOCOU .AND. LWNEMOCOURECV) THEN
         LLNREST = LLFRSTNEMO .AND. LRESTARTED
         LLNINIT = LLFRSTNEMO .AND. .NOT.LRESTARTED
-        CALL RECVNEMOFIELDS(BLK2LOC, WVENVI, NEMO2WAM, FF_NOW, LLNREST, LLNINIT)
+        CALL RECVNEMOFIELDS(BLK2LOC, WVENVI, NEMO2WAM,  &
+ &                          NXS, NXE, NYS, NYE, FIELDG, &
+ &                          FF_NOW, LLNREST, LLNINIT)
         LLFRSTNEMO=.FALSE.
       ENDIF
 
@@ -270,8 +273,6 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
 
 !*    2.5 DEALLOCATE GRID ARRAYS FOR INPUT FORCING FIELDS
 !         -----------------------------------------------
-
-      DEALLOCATE(FIELDG)
 
 END ASSOCIATE
 

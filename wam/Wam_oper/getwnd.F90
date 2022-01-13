@@ -204,6 +204,7 @@ IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
           KIJL=NPROMA_WAM
           CALL WAMWND (KIJS, KIJL,                          &
      &                 IFROMIJ(:,ICHNK), JFROMIJ(:,ICHNK),  &
+     &                 NXS, NXE, NYS, NYE, FIELDG,          &
      &                 UCUR(:,ICHNK), VCUR(:,ICHNK),        &
      &                 U10(:,ICHNK), US(:,ICHNK),           &
      &                 THW(:,ICHNK), ADS(:,ICHNK),          &
@@ -212,6 +213,7 @@ IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
 
 
           CALL MICEP(IPARAMCI, KIJS, KIJL, IFROMIJ(:,ICHNK), JFROMIJ(:,ICHNK),  &
+     &               NXS, NXE, NYS, NYE, FIELDG,                                &
      &               CICOVER(:,ICHNK), CITHICK(:,ICHNK),                        &
      &               NEMOCICOVER(:,ICHNK), NEMOCITHICK(:,ICHNK))
         ENDDO

@@ -444,7 +444,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                 KIJL=MIN(KIJS+NPROMA_WAM-1, NIBLO)
                 DO IJ = KIJS, KIJL
                   IX = IXLG(IJ)
-                  IY = NYFF- KXLT(IJ) +1
+                  IY = NGY- KXLT(IJ) +1
                   WORK(IJ) = FIELD(IX,IY)
                 ENDDO
               ENDDO
