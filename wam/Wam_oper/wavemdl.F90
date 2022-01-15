@@ -579,7 +579,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
               ENDDO
             ENDDO
 
-            LFRSTCHK - .FALSE.
+            LFRSTCHK = .FALSE.
           ENDIF
 
         ELSE
