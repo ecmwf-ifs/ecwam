@@ -13,8 +13,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &              IDATE_TIME_WINDOW_END, NSTEP,                 &
      &              LDIFS_IO_SERV_ENABLED )
 
-!****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES
-!****              OF THE WAVE MODEL
+!****  *WAVEMDL* - SUPERVISES EXECUTION OF THE WAVE MODEL
 
 !      LIANA ZAMBRESKY    GKSS/ECMWF    OCTOBER 1988
 
@@ -228,7 +227,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !     IFS IO SERVER ENABLED
       LOGICAL, INTENT(IN) :: LDIFS_IO_SERV_ENABLED
 
-      INTEGER(KIND=JWIM) :: I, J, K, ICPLEN,ICPLEN_ECF
+      INTEGER(KIND=JWIM) :: IJ, I, J, K, ICPLEN,ICPLEN_ECF
       INTEGER(KIND=JWIM) :: KDELWI, IDURAT
       INTEGER(KIND=JWIM) :: NDUR, KSTOP_BY, ISTOP
       INTEGER(KIND=JWIM) :: N_MASK_OUT_GLOBAL
@@ -268,12 +267,14 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       CHARACTER(LEN=256) :: CLSMSNAME,CLECFNAME
 
       LOGICAL, SAVE :: LFRST
+      LOGICAL, SAVE :: LFRSTCHK
       LOGICAL, SAVE :: LLGRAPI
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
       LOGICAL :: LLINIT_FIELDG
 
       DATA LFRST /.TRUE./
+      DATA LFRSTCHK /.TRUE./
       DATA LLGRAPI /.TRUE./
 
 ! ---------------------------------------------------------------------
@@ -558,6 +559,29 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           NXE = NXFFE_LOC
           NYS = NYFFS_LOC
           NYE = NYFFE_LOC
+
+          IF (LFRSTCHK) THEN
+!           CHECK THAT THE STRUCTURE OF FIELDS IS IN AGREEMENT WITH IFROMIJ AND JFROMIJ
+            DO ICHNK = 1, NCHNK
+              DO IJ = 1, KIJL4CHNK(ICHNK) 
+                I = BLK2LOC(IJ,ICHNK)%IFROMIJ 
+                J = BLK2LOC(IJ,ICHNK)%JFROMIJ
+                IF (I < NXS .OR. I > NXE .OR. J < NYS .OR. J > NYE) THEN
+                  WRITE(IU06,*) '*************ERROR********************'
+                  WRITE(IU06,*) '* WAVEMDL: IJS to IJL SPAN TOO MUCH !'
+                  WRITE(IU06,*) '* ICHNK, IJ = ', ICHNK, IJ
+                  WRITE(IU06,*) '* I, J = ', I, J
+                  WRITE(IU06,*) '* NXS, NXE  = ', NXS, NXE
+                  WRITE(IU06,*) '* NYS, NYE  = ', NYS, NYE
+                  WRITE(IU06,*) '*************ERROR********************'
+                  CALL ABORT1
+                ENDIF
+              ENDDO
+            ENDDO
+
+            LFRSTCHK - .FALSE.
+          ENDIF
+
         ELSE
           NXS = NXFFS
           NXE = NXFFE
