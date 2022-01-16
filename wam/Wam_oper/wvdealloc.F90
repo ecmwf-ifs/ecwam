@@ -16,6 +16,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMEAN  , ONLY : INTFLDS
+      USE YOWWIND  , ONLY : FF_NEXT
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
@@ -32,6 +33,8 @@
 !         -------------------------
 
       IF (ALLOCATED(INTFLDS)) DEALLOCATE(INTFLDS)
+
+      IF (ALLOCATED(FF_NEXT)) DEALLOCATE(FF_NEXT)
 
       IF (LHOOK) CALL DR_HOOK('WVDEALLOC',1,ZHOOK_HANDLE)
 
