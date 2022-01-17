@@ -66,6 +66,7 @@ PROGRAM preset
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,TH
@@ -105,7 +106,9 @@ PROGRAM preset
       USE YOWUNPOOL ,ONLY : LLUNSTR  ,LPREPROC
       USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
-     &            LLNEWCURR,NXFF     ,NYFF     ,WSPMIN   ,FF_NEXT
+     &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE    ,    &
+     &                      LLNEWCURR, WSPMIN   ,FF_NEXT
+      USE YOWPD, ONLY : MNP => npa
       USE UNSTRUCT_BOUND, ONLY : IOBPD
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -137,6 +140,7 @@ PROGRAM preset
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: IPRM, ICHNK
       INTEGER(KIND=JWIM) :: IU05, IU07 
+
       INTEGER(KIND=JWIM) :: I4(2)
       INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
 
@@ -146,6 +150,7 @@ PROGRAM preset
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: X4(2)
       REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
+      TYPE(FORCING_FIELDS), ALLOCATABLE, DIMENSION(:,:) :: FIELDG
 
       CHARACTER(LEN=1) :: CLTUNIT
       CHARACTER(LEN=70) :: HEADER
@@ -155,9 +160,9 @@ PROGRAM preset
       CHARACTER(LEN=14), PARAMETER :: CDUM='00000000000000'
 
       LOGICAL :: LLINIT
-      LOGICAL :: LLALLOC_FIELDG_ONLY
+      LOGICAL :: LLINIT_FIELDG
       LOGICAL :: LWCUR
-      LOGICAL :: LLALLOC_ONLY, LLINIALL, LLOCAL
+      LOGICAL :: LLINIALL, LLOCAL
 
 ! ----------------------------------------------------------------------
 
@@ -315,8 +320,10 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         IJL = NIBLO
         NTOTIJ = IJL-IJS+1
         IF(NPROMA_WAM == 0 ) NPROMA_WAM = NTOTIJ
-        NXFF=NIBLO
-        NYFF=1
+        NXFFS=1
+        NXFFE=MNP
+        NYFFS=1
+        NYFFE=1
         NSTART=1
         NEND=IJL
         IJSLOC=1
@@ -347,8 +354,10 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       ELSE
         NTOTIJ = IJL-IJS+1
         IF(NPROMA_WAM == 0 ) NPROMA_WAM = NTOTIJ
-        NXFF=NGX
-        NYFF=NGY
+        NXFFS=1
+        NXFFE=NGX
+        NYFFS=1
+        NYFFE=NGY
         NSTART=1
         NEND=IJL
         IJSLOC=1
@@ -527,14 +536,14 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !!! remove that call in 40R3
       CALL CIGETDEAC
 
-        LLINIT=.FALSE.
-        LLALLOC_FIELDG_ONLY=.FALSE.
+        LLINIT = .FALSE.
+        LLINIT_FIELDG = .TRUE.
 
-        CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,  &
-     &                LLINIT, LLALLOC_FIELDG_ONLY,       &
-     &                IREAD,                             &
-     &                NFIELDS, NGPTOTG, NC, NR,          &
-     &                FIELDS, LWCUR, MASK_IN,            &
+        CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,            &
+     &                NXFFS, NXFFE, NYFFS, NYFFE, LLINIT_FIELDG,   &
+     &                LLINIT, IREAD,                               &
+     &                NFIELDS, NGPTOTG, NC, NR,                    &
+     &                FIELDS, LWCUR, MASK_IN,                      &
      &                NEMO2WAM)
 
       FF_NOW(:,:)%TAUW = 0.1_JWRB * FF_NOW(:,:)%UFRIC**2
@@ -577,16 +586,19 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       ELSE
 
-        LLALLOC_ONLY=.FALSE.
         LLINIALL=.FALSE.
         LLOCAL=.TRUE.
-        CALL INIT_FIELDG(BLK2LOC, LLALLOC_ONLY, LLINIALL, LLOCAL)
+        ALLOCATE(FIELDG(NXFFS:NXFFE,NYFFS:NYFFE))
+        CALL INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL, &
+     &                   NXFFS, NXFFE, NYFFS, NYFFE, FIELDG)
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
         DO ICHNK = 1, NCHNK
-          CALL MSWELL (1, NPROMA_WAM, BLK2LOC(:,ICHNK), FL1(:,:,:,ICHNK) )
+          CALL MSWELL (1, NPROMA_WAM, BLK2LOC(:,ICHNK), NXFFS, NXFFE, NYFFS, NYFFE, FIELDG, FL1(:,:,:,ICHNK) )
         ENDDO
 !$OMP END PARALLEL DO
+
+        DEALLOCATE(FIELDG)
 
 
         IF (LLUNSTR) THEN

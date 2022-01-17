@@ -45,6 +45,8 @@
         FL1(:,:,:,:) = 0.0_JWRB
       ENDIF
 
+
+
       IF (.NOT.ALLOCATED(INTFLDS)) THEN 
         ALLOCATE(INTFLDS(NPROMA_WAM, NCHNK))
         INTFLDS(:,:)%PHIEPS  = 0.0_JWRB

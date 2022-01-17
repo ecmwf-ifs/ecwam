@@ -1,9 +1,10 @@
-      SUBROUTINE WAMWND (KIJS, KIJL,                &
-     &                   IFROMIJ, JFROMIJ,          &
-     &                   UCUR, VCUR,                &
-     &                   U10, US,                   &
-     &                   THW, ADS,                  &
-     &                   WSTAR, CITH,               &
+      SUBROUTINE WAMWND (KIJS, KIJL,                 &
+     &                   IFROMIJ, JFROMIJ,           &
+     &                   NXS, NXE, NYS, NYE, FIELDG, &
+     &                   UCUR, VCUR,                 &
+     &                   U10, US,                    &
+     &                   THW, ADS,                   &
+     &                   WSTAR, CITH,                &
      &                   LWCUR, ICODE_WND)
 
 ! ----------------------------------------------------------------------
@@ -28,6 +29,7 @@
 
 !       *CALL WAMWND (KIJS, KIJL,
 !                     IFROMIJ, JFROMIJ,
+!                     NXS, NXE, NYS, NYE, FIELDG,
 !                     UCUR, VCUR,
 !                     U10, US,
 !                     THW, ADS, WSTAR, CITH,
@@ -35,6 +37,9 @@
 !          *KIJS:KIJL* DIMENSION OF PASSED ARRAYS
 !          *IFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !          *JFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!          *NXS:NXE*  FIRST DIMENSION OF FIELDG
+!          *NYS:NYE*  SECOND DIMENSION OF FIELDG
+!          *FIELDG* - INPUT FORCING FIELDS ON THE WAVE MODEL GRID
 !          *UCUR* - U-COMPONENT OF THE SURFACE CURRENT
 !          *VCUR* - V-COMPONENT OF THE SURFACE CURRENT
 !          *U10*  - INTERPOLATED WINDS AT ALL POINTS AND BLOCKS.
@@ -66,14 +71,14 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWPCONS , ONLY : G        ,ZPI      ,ZMISS    ,EPSUS
       USE YOWPHYS  , ONLY : XKAPPA
       USE YOWSTAT  , ONLY : IREFRA   ,LRELWIND
       USE YOWTEST  , ONLY : IU06
-      USE YOWWIND  , ONLY : WSPMIN   ,FIELDG   ,LLWSWAVE ,LLWDWAVE ,    &
-     &            RWFAC
+      USE YOWWIND  , ONLY : WSPMIN   ,LLWSWAVE ,LLWDWAVE ,RWFAC
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -83,6 +88,8 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(IN) :: FIELDG
       INTEGER(KIND=JWIM), INTENT(IN) :: ICODE_WND
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(IN) :: UCUR, VCUR 
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(INOUT) :: U10, US

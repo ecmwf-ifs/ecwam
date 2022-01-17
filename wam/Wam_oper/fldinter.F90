@@ -5,7 +5,8 @@
      &                     ILONRGG, IJBLOCK, PMISS,                     &
      &                     LADEN, ROAIR, LGUST, WSTAR0, LLKC, LWCUR,    &
      &                     LLINTERPOL,                                  &
-     &                     DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
+     &                     DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN,&
+     &                     NXS, NXE, NYS, NYE, FIELDG)
 ! ----------------------------------------------------------------------    
 
 !***  *FLDINTER* - INTERPOLATION OF ATMOSPHERIC FIELDS OVER
@@ -38,7 +39,8 @@
 !    &                    ILONRGG, IJBLOCK, PMISS,
 !    &                    LADEN, ROAIR, LGUST, WSTAR0,LWCUR, LLKC,
 !    &                    LLINTERPOL,
-!    &                    DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
+!    &                    DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN,
+!    &                    NXS, NXE, NYS, NYE, FIELDG)
 !
 !        *IU06*   - OUTPUT UNIT.
 !        ATMOSPHERIC MODEL GRID AND FIELD (INPUT):
@@ -87,6 +89,10 @@
 !        *IIM*    - INDEX
 !        *IIPM*   - INDEX
 !        *MASK_IN*  INTEGER  MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
+!        *NXS:NXE*  FIRST DIMENSION OF FIELDG
+!        *NYS:NYE*  SECOND DIMENSION OF FIELDG
+!        *FIELDG*   INPUT FORCING FIELDS ON THE WAVE MODEL GRID
+
 
 
 !     EXTERNALS.                                                        
@@ -95,8 +101,9 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
-      USE YOWWIND  , ONLY : FIELDG    ,LLNEWCURR
+      USE YOWWIND  , ONLY : LLNEWCURR
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -113,6 +120,9 @@
       INTEGER(KIND=JWIM), DIMENSION(0:NC+1,NR), INTENT(IN) :: IJBLOCK
       INTEGER(KIND=JWIM), DIMENSION(NGX,NGY), INTENT(IN) :: IIM, IIPM
       INTEGER(KIND=JWIM), DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(INOUT) :: FIELDG
+
 
       REAL(KIND=JWRB), INTENT(IN) :: XDELLA, AMOWEP, AMOSOP, AMOEAP, AMONOP, PMISS
       REAL(KIND=JWRB), INTENT(IN) :: ROAIR, WSTAR0

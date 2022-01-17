@@ -200,6 +200,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      IU14     ,IU15     ,IU19     ,IU20
       USE YOWWAMI  , ONLY : CBPLTDT
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
+     &                      NXFFS    , NXFFE   ,NYFFS    , NYFFE   ,    &
      &                      LLNEWCURR,LLWSWAVE ,LLWDWAVE ,FF_NEXT
 
       USE YOWUNPOOL, ONLY : LLUNSTR, OUT_METHOD
@@ -278,7 +279,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 
       LOGICAL :: LLEXIST
       LOGICAL :: LLINIT
-      LOGICAL :: LLALLOC_FIELDG_ONLY
+      LOGICAL :: LLINIT_FIELDG
 
 !----------------------------------------------------------------------
 
@@ -874,13 +875,13 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !     ABSOLUTE TO RELATIVE FRAME OF REFERENCE.
 
       LLINIT = .NOT.LRESTARTED
-      LLALLOC_FIELDG_ONLY=.FALSE.
+      LLINIT_FIELDG = .TRUE.
 
-      CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,    &
-     &              LLINIT, LLALLOC_FIELDG_ONLY,         &
-     &              IREAD,                               &
-     &              NFIELDS, NGPTOTG, NC, NR,            &
-     &              FIELDS, LWCUR, MASK_IN,              &
+      CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,            &
+     &              NXFFS, NXFFE, NYFFS, NYFFE, LLINIT_FIELDG,   &
+     &              LLINIT, IREAD,                               &
+     &              NFIELDS, NGPTOTG, NC, NR,                    &
+     &              FIELDS, LWCUR, MASK_IN,                      &
      &              NEMO2WAM)
 
       WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'

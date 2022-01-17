@@ -1,4 +1,5 @@
 SUBROUTINE NOTIM (CDTWIS, CDTWIE,              &
+ &                NXS, NXE, NYS, NYE, FIELDG,  &
  &                BLK2LOC, WVENVI, FF_NEXT,    &
  &                IREAD, LWCUR, NEMO2WAM)
 
@@ -15,10 +16,14 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,              &
 !     ----------  
 
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,
+!                      NXS, NXE, NYS, NYE, FIELDG,  &
 !                      BLK2LOC, WVENVI, FF_NEXT,  
 !                      IREAD, LWCUR, NEMO2WAM)
 !          *CDTWIS*   - DATE OF FIRST WIND FIELD.
 !          *CDTWIE*   - DATE OF LAST FIRST WIND FIELD.
+!          *NXS:NXE*  - FIRST DIMENSION OF FIELDG
+!          *NYS:NYE*  - SECOND DIMENSION OF FIELDG
+!          *FIELDG*   - INPUT FORCING FIELDS ON THE WAVE MODEL GRID
 !          *BLK2LOC*  - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !          *WVENVI*   - WAVE ENVIRONMENT.
 !          *FF_NEXT*  - DATA STRUCTURE WITH THE NEXT FORCING FIELDS
@@ -49,11 +54,13 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,              &
 #include "getwnd.intfb.h"
 #include "incdate.intfb.h"
 
+      CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(INOUT) :: FIELDG
       TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: BLK2LOC
       TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: WVENVI
       TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FF_NEXT
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
-      CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
       LOGICAL, INTENT(IN) :: LWCUR
       TYPE(OCEAN2WAVE), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: NEMO2WAM
 
@@ -131,6 +138,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
         CDTNEXT=CDTWIH
 
         CALL GETWND (IFROMIJ, JFROMIJ,                      &
+     &               NXS, NXE, NYS, NYE, FIELDG,            &
      &               UCUR, VCUR,                            &
      &               U10, US,                               &
      &               THW,                                   &

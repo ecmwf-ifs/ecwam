@@ -13,8 +13,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &              IDATE_TIME_WINDOW_END, NSTEP,                 &
      &              LDIFS_IO_SERV_ENABLED )
 
-!****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES
-!****              OF THE WAVE MODEL
+!****  *WAVEMDL* - SUPERVISES EXECUTION OF THE WAVE MODEL
 
 !      LIANA ZAMBRESKY    GKSS/ECMWF    OCTOBER 1988
 
@@ -126,10 +125,12 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWSHAL  , ONLY : WVENVI   ,WVPRPT
       USE YOWTEST  , ONLY : IU06
       USE YOWWNDG  , ONLY : ICODE_CPL
-      USE YOWWIND  , ONLY : FF_NEXT
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1 
-      USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW   ,CDATEWO  ,CDATEFL
+      USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW   ,CDATEWO  ,CDATEFL ,     &
+     &                      FF_NEXT  ,                                  &
+     &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE,        &
+     &                      NXFFS_LOC,NXFFE_LOC,NYFFS_LOC,NYFFE_LOC
       USE YOWUNPOOL,ONLY  : LLUNSTR
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -227,7 +228,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !     IFS IO SERVER ENABLED
       LOGICAL, INTENT(IN) :: LDIFS_IO_SERV_ENABLED
 
-      INTEGER(KIND=JWIM) :: I, J, K, ICPLEN,ICPLEN_ECF
+      INTEGER(KIND=JWIM) :: IJ, I, J, K, ICPLEN,ICPLEN_ECF
       INTEGER(KIND=JWIM) :: KDELWI, IDURAT
       INTEGER(KIND=JWIM) :: NDUR, KSTOP_BY, ISTOP
       INTEGER(KIND=JWIM) :: N_MASK_OUT_GLOBAL
@@ -238,6 +239,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       INTEGER(KIND=JWIM) :: IC, IL, IST, IED, ICOUNT, JF, IP, IFLD
       INTEGER(KIND=JWIM) :: NCOMBUF, NCOMLOC, NTOT, NMASK
       INTEGER(KIND=JWIM) :: IFCST, IFCSTEP_HOUR
+      INTEGER(KIND=JWIM) :: NXS, NXE, NYS, NYE
       INTEGER(KIND=JWIM), ALLOCATABLE :: ZCOMCNT(:)
 
       REAL(KIND=JWRB) :: VAL
@@ -266,12 +268,14 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       CHARACTER(LEN=256) :: CLSMSNAME,CLECFNAME
 
       LOGICAL, SAVE :: LFRST
+      LOGICAL, SAVE :: LFRSTCHK
       LOGICAL, SAVE :: LLGRAPI
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
-      LOGICAL :: LLALLOC_FIELDG_ONLY
+      LOGICAL :: LLINIT_FIELDG
 
       DATA LFRST /.TRUE./
+      DATA LFRSTCHK /.TRUE./
       DATA LLGRAPI /.TRUE./
 
 ! ---------------------------------------------------------------------
@@ -481,7 +485,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           ENDIF
         ENDIF
 
-      ELSE
+      ELSE  ! .NOT. FRSTIME
 
 !     !!!! ANY OTHER TIMES !!!!
 
@@ -553,14 +557,49 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
 !*      REFORMAT FORCING FIELDS FROM INPUT GRID TO BLOCKED.
 !       ---------------------------------------------------
-        LLINIT=.FALSE.
-        LLALLOC_FIELDG_ONLY=LWCOU
+        IF (LWCOU) THEN
+          NXS = NXFFS_LOC
+          NXE = NXFFE_LOC
+          NYS = NYFFS_LOC
+          NYE = NYFFE_LOC
+
+          IF (LFRSTCHK) THEN
+!           CHECK THAT THE STRUCTURE OF FIELDS IS IN AGREEMENT WITH IFROMIJ AND JFROMIJ
+            DO ICHNK = 1, NCHNK
+              DO IJ = 1, KIJL4CHNK(ICHNK) 
+                I = BLK2LOC(IJ,ICHNK)%IFROMIJ 
+                J = BLK2LOC(IJ,ICHNK)%JFROMIJ
+                IF (I < NXS .OR. I > NXE .OR. J < NYS .OR. J > NYE) THEN
+                  WRITE(IU06,*) '*************ERROR********************'
+                  WRITE(IU06,*) '* WAVEMDL: IJS to IJL SPAN TOO MUCH !'
+                  WRITE(IU06,*) '* ICHNK, IJ = ', ICHNK, IJ
+                  WRITE(IU06,*) '* I, J = ', I, J
+                  WRITE(IU06,*) '* NXS, NXE  = ', NXS, NXE
+                  WRITE(IU06,*) '* NYS, NYE  = ', NYS, NYE
+                  WRITE(IU06,*) '*************ERROR********************'
+                  CALL ABORT1
+                ENDIF
+              ENDDO
+            ENDDO
+
+            LFRSTCHK = .FALSE.
+          ENDIF
+
+        ELSE
+          NXS = NXFFS
+          NXE = NXFFE
+          NYS = NYFFS
+          NYE = NYFFE
+        ENDIF
+
+        LLINIT = .FALSE.
+        LLINIT_FIELDG = .NOT. LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-        CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,  &
-     &                LLINIT, LLALLOC_FIELDG_ONLY,       &
-     &                IREAD,                             &
-     &                NFIELDS, NGPTOTG, NC, NR,          &
-     &                FIELDS, LWCUR, MASK_IN,            &
+        CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,    &
+                      NXS, NXE, NYS, NYE, LLINIT_FIELDG,   &
+     &                LLINIT, IREAD,                       &
+     &                NFIELDS, NGPTOTG, NC, NR,            &
+     &                FIELDS, LWCUR, MASK_IN,              &
      &                NEMO2WAM) 
 
       ENDIF

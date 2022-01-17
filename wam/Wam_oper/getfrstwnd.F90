@@ -1,4 +1,5 @@
 SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
+ &                     NXS, NXE, NYS, NYE, FIELDG,     &
  &                     BLK2LOC, WVENVI, FF_NOW,        &
  &                     IREAD, LWCUR, NEMO2WAM,         & 
  &                     LLMORE)
@@ -14,11 +15,15 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
 !     ----------  
 
 !       *CALL* *GETFRSTWND (CDTWIS, CDTWIE,
-!                      BLK2LOC, WVENVI, FF_NOW,
-!                      IREAD, LWCUR, NEMO2WAM,
-!                      LLMORE)
+!                           NXS, NXE, NYS, NYE, FIELDG,
+!                           BLK2LOC, WVENVI, FF_NOW,
+!                           IREAD, LWCUR, NEMO2WAM,
+!                           LLMORE)
 !          *CDTWIS*   - DATE OF FIRST WIND FIELD.
 !          *CDTWIE*   - DATE OF LAST FIRST WIND FIELD.
+!          *NXS:NXE*  - FIRST DIMENSION OF FIELDG
+!          *NYS:NYE*  - SECOND DIMENSION OF FIELDG
+!          *FIELDG*   - INPUT FORCING FIELDS ON THE WAVE MODEL GRID
 !          *BLK2LOC*  - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !          *WVENVI*   - WAVE ENVIRONMENT.
 !          *FF_NOW*   - DATA STRUCTURE WITH THE CURRENT FORCING FIELDS
@@ -51,6 +56,8 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
 
       CHARACTER(LEN=14), INTENT(INOUT) :: CDTWIS
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIE
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(INOUT) :: FIELDG
       TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: BLK2LOC
       TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: WVENVI
       TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FF_NOW
@@ -108,6 +115,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
 
       CDATEWL = CDTWIS
       CALL GETWND (IFROMIJ, JFROMIJ,                      &
+     &             NXS, NXE, NYS, NYE, FIELDG,            &
      &             UCUR, VCUR,                            &
      &             WSWAVE, UFRIC,                         &
      &             WDWAVE,                                &

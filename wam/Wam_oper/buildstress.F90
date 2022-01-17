@@ -29,9 +29,8 @@ SUBROUTINE BUILDSTRESS(BLK2LOC, WVENVI, FF_NOW, NEMO2WAM, IREAD)
       USE YOWPHYS  , ONLY : ALPHA    ,XKAPPA   ,XNLEV    ,RNUM
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOWTEST  , ONLY : IU06
-      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,FIELDG   ,    &
-     &                      NXFF     ,NYFF
-
+      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,             &
+     &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -64,12 +63,15 @@ SUBROUTINE BUILDSTRESS(BLK2LOC, WVENVI, FF_NOW, NEMO2WAM, IREAD)
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NCHNK) :: CD
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NCHNK) :: ALPHAOG
 
+!     INPUT FORCING FIELDS ON THE WAVE MODEL GRID:
+      TYPE(FORCING_FIELDS), DIMENSION(NXFFS:NXFFE,NYFFS:NYFFE) :: FIELDG
+
       CHARACTER(LEN=24) :: FILNM
 
       LOGICAL :: LLONLYPOS
       LOGICAL :: LWNDFILE, LCLOSEWND
       LOGICAL :: LCR
-      LOGICAL :: LLALLOC_ONLY, LLINIALL, LLOCAL
+      LOGICAL :: LLINIALL, LLOCAL
 
 ! ----------------------------------------------------------------------
 
@@ -101,11 +103,11 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
       CDTPRO = CDATEA
       LCR=.FALSE.
 
-!     GETWND AND READWGRIB REQUIRES FIELDG TO BE ALLOCATED !
-      LLALLOC_ONLY=.FALSE.
+!     GETWND AND READWGRIB REQUIRES FIELDG
       LLINIALL=.TRUE.
       LLOCAL=.TRUE.
-      CALL INIT_FIELDG(BLK2LOC, LLALLOC_ONLY, LLINIALL, LLOCAL)
+      CALL INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,         &
+     &                 NXFFS, NXFFE, NYFFS, NYFFE, FIELDG)
 
 
 !     1.1 GET ATMOSPHERIC MODEL FORCINGS FIELDS 
@@ -116,6 +118,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
       LCLOSEWND=.TRUE.
 
       CALL GETWND (IFROMIJ, JFROMIJ,                    &
+     &             NXFFS, NXFFE, NYFFS, NYFFE, FIELDG,  &
      &             UCUR, VCUR,                          &
      &             WSWAVE, UFRIC,                       &
      &             WDWAVE,                              &
@@ -162,6 +165,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
         LLONLYPOS=.TRUE.
         CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,            &
      &                 IFROMIJ, JFROMIJ,                       &
+     &                 NXFFS, NXFFE, NYFFS, NYFFE, FIELDG,     &
      &                 WSWAVE, KZLEVUWAVE, LLONLYPOS, IREAD)
 
         WRITE(IU06,*) ' '
@@ -233,6 +237,7 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
 !       !!!! CD was initialised above !!!!
         CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,         &
      &                 IFROMIJ, JFROMIJ,                    &
+     &                 NXFFS, NXFFE, NYFFS, NYFFE, FIELDG,  &
      &                 CD, KZLEVCD, LLONLYPOS, IREAD)
 
 !       TEST REFERENCE LEVEL FOR UWAVE AND CD
@@ -301,8 +306,6 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)
       ENDIF
-
-      DEALLOCATE(FIELDG)
 
       WRITE(IU06,*) ' SUB. BUILDSTRESS: INPUT OF RESTART FILES DONE'
 

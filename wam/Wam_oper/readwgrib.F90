@@ -1,5 +1,6 @@
       SUBROUTINE READWGRIB(IU06, FILNM, IPARAM, CDATE,        &
      &                     IFROMIJ, JFROMIJ,                  &
+     &                     NXS, NXE, NYS, NYE, FIELDG,        &
      &                     FIELD, KZLEV, LLONLYPOS, IREAD )
 
 !-----------------------------------------------------------------------
@@ -17,6 +18,8 @@
 !     ----------
 
 !       *CALL* *READWGRIB*(IU06, FILNM, IPARAM, CDATE,
+!    &                     IFROMIJ, JFROMIJ,
+!    &                     NXS, NXE, NYS, NYE, FIELDG,
 !    &                     FIELD, KZLEV, LLONLYPOS, IREAD )
 
 !*     VARIABLE.   TYPE.     PURPOSE.
@@ -27,6 +30,10 @@
 !      *CDATE*     CHARACTER DATE OF THE REQUESTED FIELD 
 !      *IFROMIJ*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !      *JFROMIJ*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!      *NXS:NXE*   FIRST DIMENSION OF FIELDG
+!      *NYS:NYE*   SECOND DIMENSION OF FIELDG
+!      *FIELDG*    INPUT FORCING FIELDS ON THE WAVE MODEL GRID
+
 !      *FIELD*     REAL      WAVE FIELD IN BLOCK FORMAT 
 !      *KZLEV*     INTEGER   REFERENCE LEVEL IN full METER
 !                           (SHOULD BE 0 EXCEPT FOR 233, 245 AND 249 WHERE IT
@@ -64,6 +71,7 @@
 !-------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWMAP   , ONLY : NLONRGG
@@ -85,6 +93,8 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IPARAM
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(IN) :: FIELDG
       REAL(KIND=JWRB),DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FIELD 
       INTEGER(KIND=JWIM), INTENT(INOUT) :: KZLEV
       LOGICAL, INTENT(IN) :: LLONLYPOS
@@ -96,7 +106,7 @@
       INTEGER(KIND=JWIM) :: KLONRGG(NGY)
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: WORK(NGX,NGY)
+      REAL(KIND=JWRB) :: WORK(NXS:NXE, NYS:NYE)
 
       CHARACTER(LEN=14) :: CCDDATE
       CHARACTER(LEN=40) :: MSG
@@ -108,7 +118,8 @@
 
       IF (LHOOK) CALL DR_HOOK('READWGRIB',0,ZHOOK_HANDLE)
 
-      CALL INWGRIB(FILNM, IREAD, CCDDATE, KPARAM, KZLEV, WORK)
+      CALL INWGRIB(FILNM, IREAD, CCDDATE, KPARAM, KZLEV,  &
+     &             NXS, NXE, NYS, NYE, FIELDG, WORK)
 
 !*    SIMPLE CHECKS ON THE RETRIEVED DATA 
 !     -----------------------------------
