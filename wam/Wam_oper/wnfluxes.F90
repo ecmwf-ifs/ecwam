@@ -49,7 +49,7 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
 
 ! ----------------------------------------------------------------------
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU, JWRO
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWALTAS , ONLY : EGRCRV   ,AFCRV       ,BFCRV
@@ -57,7 +57,6 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
       USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH
       USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH, CIBLOCK
 
-      USE YOWNEMOP , ONLY : NEMODP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : TAUOCMIN ,TAUOCMAX ,PHIEPSMIN,PHIEPSMAX,    &
      &               EPSUS ,EPSU10   ,G        ,ZPI
@@ -238,14 +237,14 @@ ASSOCIATE(PHIEPS  => INTFLDS%PHIEPS,  &
           NPHIEPS(IJ) = PHIEPS(IJ)
           NTAUOC(IJ)  = TAUOC(IJ)
           IF (EM_OC(IJ) /= 0.0_JWRB) THEN
-             NSWH(IJ) = 4.0_NEMODP*SQRT(EM_OC(IJ))
+             NSWH(IJ) = 4.0_JWRO*SQRT(EM_OC(IJ))
           ELSE
-             NSWH(IJ) = 0.0_NEMODP
+             NSWH(IJ) = 0.0_JWRO
           ENDIF
           IF (F1_OC(IJ) /= 0.0_JWRB) THEN
-             NMWP(IJ) = 1.0_NEMODP/F1_OC(IJ)
+             NMWP(IJ) = 1.0_JWRO/F1_OC(IJ)
           ELSE
-             NMWP(IJ) = 0.0_NEMODP
+             NMWP(IJ) = 0.0_JWRO
           ENDIF
 
           IF (LWNEMOTAUOC) THEN
