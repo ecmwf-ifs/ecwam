@@ -1358,7 +1358,7 @@ ln -s /usr/local/lib/eclib/libec_FORTRAN_WITH_UNDERSCORE.R64.D64.I32.a ${LIBS}/l
 #          pure binary input/output.
 
 \rm -f ${LIBS}/libemos.a 
-ln -s /home/ma/emos/lib/rs6000/000200/libemos.R64.D64.I32.a ${LIBS}/libemos.a
+ln -s /home/emos/lib/rs6000/000200/libemos.R64.D64.I32.a ${LIBS}/libemos.a
 
 # NOTE: if SAR data assimilation was required you will need the following external library
 # NAG library for c06fuf anf the LAPACK library for dgelss. Dummy definitions of these two
