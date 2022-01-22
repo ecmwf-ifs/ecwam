@@ -69,7 +69,7 @@ SUBROUTINE OUTBETA (KIJS, KIJL, PRCHAR, FF_NOW, BETAHQ)
 
 !     BETAHQ_REDUCE was introduced to reduce the impact of the sea state dependent
 !     heat and moisture surface flux. It is just a dirty tuning knob !!
-      REAL(KIND=JWRB), PARAMETER :: BETAHQ_REDUCE=0.9_JWRB
+      REAL(KIND=JWRB), PARAMETER :: BETAHQ_REDUCE=0.25_JWRB
 
       INTEGER(KIND=JWIM) :: IJ
 
@@ -105,7 +105,7 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
         GUSM2 = G*USM**2
         CHNK(IJ) = (Z0M(IJ)-Z0VIS)*GUSM2
         CHNK(IJ) = MAX(MIN(CHNK(IJ),ALPHAMAXU10(IJ)),ALPHAMIN)
-        BETAHQ(IJ) = BETAHQ_REDUCE*MAX(CHNK(IJ)-MAX(Z0B(IJ)*GUSM2, ALPHA), ALPHAMIN)
+        BETAHQ(IJ) = MAX( BETAHQ_REDUCE*(CHNK(IJ)-MAX(Z0B(IJ)*GUSM2, ALPHA)), ALPHAMIN)
       ENDDO
 
 END ASSOCIATE
