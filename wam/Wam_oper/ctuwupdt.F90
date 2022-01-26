@@ -27,7 +27,6 @@ USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE_RED
 USE YOWSTAT  , ONLY : IFRELFMAX, DELPRO_LF, IDELPRO, IREFRA
 USE YOWTEST  , ONLY : IU06
 USE YOWUBUF  , ONLY : SUMWN    ,                                            &
-&                     KLAT     ,KLON     ,KCOR     ,                        & 
 &                     JXO      ,JYO      ,KCR      ,KPM      ,MPM,          &
 &                     WLATN    ,WLONN    ,WCORN    ,WKPMN    ,WMPMN    ,    &
 &                     LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN
@@ -143,18 +142,6 @@ IF (LFRSTCTU) THEN
   ENDDO
 
   LFRSTCTU = .FALSE.
-
-
-!!! debug
-DO IC=1,2
-  DO IJ=IJS,IJL
-    IF (KLON(IJ,IC) < NINF .OR. KLON(IJ,IC) > NSUP+1) THEN
-      write(IU06,*) 'debile CTUWUPDT KLON PROBLEM: ',IJ,IC,KLON(IJ,IC),NINF,NSUP+1
-      write(*,*) 'debile CTUWUPDT KLON PROBLEM: ',IJ,IC,KLON(IJ,IC),NINF,NSUP+1
-      CALL ABORT1
-    ENDIF
-  ENDDO
-ENDDO
 
 ENDIF
 
