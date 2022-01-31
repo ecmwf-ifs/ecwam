@@ -269,7 +269,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !!      if the numerical computation of TAU and CD changes, a similar
 !!      modification has to be put in buildstress where the friction
 !!      velocity is determined from U10 and CD.
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=MAX(UFRIC(KIJS:KIJL)**2,EPSUS)/MAX(WSWAVE(KIJS:KIJL)**2,EPSU10)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=MAX(UFRIC(KIJS:KIJL)**2,EPSUS)/MAX(WSWAVE(KIJS:KIJL)**2,EPSU10**2)
       ENDIF
 
       IR=IR+1

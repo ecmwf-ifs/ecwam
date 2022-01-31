@@ -186,7 +186,7 @@
             CD     = GOUT(IPCD,I,J)
             U10    = GOUT(IPU10,I,J) 
             HS     = GOUT(IPHS,I,J)
-            USTAR2 = MAX(CD*MAX(U10**2,EPSU10),EPSUS)
+            USTAR2 = MAX(CD*MAX(U10**2,EPSU10**2),EPSUS)
             USTAR  = SQRT(USTAR2)
 
             TSTAR = G*ITIME/USTAR
