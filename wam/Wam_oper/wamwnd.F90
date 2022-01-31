@@ -74,7 +74,7 @@
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWPCONS , ONLY : G        ,ZPI      ,ZMISS    ,EPSUS
+      USE YOWPCONS , ONLY : G        ,ZPI      ,ZMISS    ,EPSUS, EPSU10
       USE YOWPHYS  , ONLY : XKAPPA
       USE YOWSTAT  , ONLY : IREFRA   ,LRELWIND
       USE YOWTEST  , ONLY : IU06
@@ -237,7 +237,12 @@
 
 !       IMPOSE A MINIMUM WIND SPEED.
         DO IJ = KIJS, KIJL
-          U10(IJ) = MAX(U10(IJ),WSPMIN)
+          IF (WSTAR(IJ) <= EPSU10 ) THEN
+            U10(IJ) = MAX(U10(IJ), WSPMIN)
+          ELSE
+!           WHEN GUSTINESS IS PRESENT, IT WILL BE VECTOR ADDED TO U10 TO COMPUTE FLUXES
+            U10(IJ) = MAX(U10(IJ), EPSU10)
+          ENDIF
         ENDDO
 
       CASE(1)

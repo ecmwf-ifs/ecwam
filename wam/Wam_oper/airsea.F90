@@ -1,5 +1,5 @@
-      SUBROUTINE AIRSEA (KIJS, KIJL, FL1, WAVNUM,                 &
-&                        HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
+      SUBROUTINE AIRSEA (KIJS, KIJL, FL1, WAVNUM,                        &
+&                        HALP, U10, U10DIR, WSTAR, TAUW, TAUWDIR, RNFAC, &
 &                        US, Z0, Z0B, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
@@ -21,7 +21,7 @@
 !     ----------
 
 !       *CALL* *AIRSEA (KIJS, KIJL, FL1, WAVNUM,
-!                       HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,
+!                       HALP, U10, U10DIR, WSTAR, TAUW, TAUWDIR, RNFAC,
 !                       US, Z0, Z0B, ICODE_WND, IUSFG)*
 
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT.
@@ -31,6 +31,7 @@
 !          *HALP*    - 1/2 PHILLIPS PARAMETER
 !          *U10*     - WINDSPEED U10.
 !          *U10DIR*  - WINDSPEED DIRECTION.
+!          *WSTAR*   - FREE CONVECTION VELOCITY SCALE (M/S)
 !          *TAUW*    - WAVE STRESS.
 !          *TAUWDIR* - WAVE STRESS DIRECTION.
 !          *RNFAC*   - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
@@ -65,7 +66,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (IN) :: HALP, U10DIR, TAUW, TAUWDIR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (IN) :: HALP, U10DIR, WSTAR, TAUW, TAUWDIR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (INOUT) :: U10, US
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (OUT) :: Z0, Z0B
 
@@ -84,8 +85,8 @@
 
       IF (ICODE_WND == 3) THEN
 
-        CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, WAVNUM,          &
-     &                HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
+        CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, WAVNUM,                 &
+     &                HALP, U10, U10DIR, WSTAR, TAUW, TAUWDIR, RNFAC, &
      &                US, Z0, Z0B)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN

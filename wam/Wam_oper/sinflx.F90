@@ -122,8 +122,8 @@ IF(LUPDTUS) THEN
 
   ENDIF
 
-  CALL AIRSEA (KIJS, KIJL, FL1, WAVNUM,                    &
-&              HALP, WSWAVE, WDWAVE, TAUW, TAUWDIR, RNFAC, &
+  CALL AIRSEA (KIJS, KIJL, FL1, WAVNUM,                           &
+&              HALP, WSWAVE, WDWAVE, WSTAR, TAUW, TAUWDIR, RNFAC, &
 &              UFRIC, Z0M, Z0B, ICODE_WND, IUSFG) 
 
 ENDIF
