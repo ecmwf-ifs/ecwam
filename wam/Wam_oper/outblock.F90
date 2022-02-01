@@ -260,7 +260,8 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !!      if the numerical computation of TAU and CD changes, a similar
 !!      modification has to be put in buildstress where the friction
 !!      velocity is determined from U10 and CD.
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=MAX(UFRIC(KIJS:KIJL)**2,EPSUS)/MAX(WSWAVE(KIJS:KIJL)**2,EPSU10**2)
+!!      Because of the limited numerical resolution when encoding in grib, the maximum value for Cd is set to 0.007
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=MIN(MAX(UFRIC(KIJS:KIJL)**2,EPSUS)/MAX(WSWAVE(KIJS:KIJL)**2,EPSU10**2), 0.007_JWRB)
       ENDIF
 
       IR=IR+1
