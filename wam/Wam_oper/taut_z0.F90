@@ -205,6 +205,9 @@ IF (LLGCBZ0) THEN
         ENDDO
         ! protection just in case there is no convergence
         IF (ITER > NITER ) THEN
+!!!debile
+        write(*,*) 'debile no first convergence ', UTOP(IJ),DEL,USTAR(IJ)
+
           CDFG = CDM(UTOP(IJ))
           USTAR(IJ) = UTOP(IJ)*SQRT(CDFG)
           Z0MINRST = USTAR(IJ)**2 * ALPHA*GM1
@@ -254,6 +257,9 @@ IF (LLGCBZ0) THEN
           ENDDO
           ! protection just in case there is no convergence
           IF (ITER > NITER ) THEN
+!!!debile
+        write(*,*) 'debile no second convergence ', UTOP(IJ),DEL,USTAR(IJ)
+
             CDFG = CDM(UTOP(IJ))
             USTAR(IJ) = UTOP(IJ)*SQRT(CDFG)
             Z0MINRST = USTAR(IJ)**2 * ALPHA*GM1
