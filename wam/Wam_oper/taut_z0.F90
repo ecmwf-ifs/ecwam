@@ -156,7 +156,9 @@ IF (LLGCBZ0) THEN
       IF (IUSFG == 0 ) THEN
         ALPHAGM1 = ALPHA*GM1
         DO IJ = KIJS, KIJL
-          IF ( LLCOSDIFF(IJ) ) THEN
+          IF ( UTOP(IJ) < 1.0_JWRB ) THEN
+            CDFG = 0.002_JWRB
+          ELSEIF ( LLCOSDIFF(IJ) ) THEN
             X = MIN(TAUWACT(IJ)/MAX(USTAR(IJ),EPSUS)**2,0.99_JWRB)
             ZCHAR = MIN( ALPHAGM1 * USTAR(IJ)**2 / SQRT(1.0_JWRB - X), 0.05_JWRB*EXP(-0.05_JWRB*(UTOP(IJ)-35._JWRB)) )
             ZCHAR = MIN(ZCHAR,ALPHAMAX)
@@ -186,7 +188,7 @@ IF (LLGCBZ0) THEN
 
         DO ITER=1,NITER
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
-          Z0(IJ) = MAX(XNLEV/(EXP(XKUEFF/USTOLD)-1.0_JWRB), Z0MIN)
+          Z0(IJ) = MAX(XNLEV/(EXP(MIN(XKUEFF/USTOLD, 50.0_JWRB))-1.0_JWRB), Z0MIN)
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
           TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
 
