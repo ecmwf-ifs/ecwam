@@ -63,6 +63,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
 #include "meansqs.intfb.h"
 #include "mwp1.intfb.h"
 #include "mwp2.intfb.h"
+#include "outbeta.intfb.h"
 #include "outsetwmask.intfb.h"
 #include "dominant_period.intfb.h"
 #include "se10mean.intfb.h"
@@ -110,6 +111,9 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NTRAIN) :: THTRAIN, PMTRAIN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: COSWDIF
 
+      REAL(KIND=JWRB) :: ZRCHAR 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: BETAHQ
+
 !     *FL2ND*  SPECTRUM with second order effect added if LSECONDORDER is true .
 !            and in the absolute frame of reference if currents are used 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: FL2ND
@@ -135,6 +139,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
  &        TAUW => FF_NOW%TAUW, &
  &        AIRD => FF_NOW%AIRD, &
  &        WSTAR => FF_NOW%WSTAR, &
+ &        CHNK => FF_NOW%CHNK, &
  &        CICOVER => FF_NOW%CICOVER, &
  &        CITHICK => FF_NOW%CITHICK, &
  &        ALTWH   => INTFLDS%ALTWH  , &
@@ -645,7 +650,11 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=WAVEAGE(KIJS:KIJL)
+!!!        BOUT(KIJS:KIJL,ITOBOUT(IR))=WAVEAGE(KIJS:KIJL)
+!!! debugging output of Charnock
+        ZRCHAR = 0.018_JWRB
+        CALL OUTBETA (KIJS, KIJL, ZRCHAR, FF_NOW, BETAHQ)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=CHNK(KIJS:KIJL)
       ENDIF
 
 
