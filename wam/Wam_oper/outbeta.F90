@@ -1,4 +1,6 @@
-SUBROUTINE OUTBETA (KIJS, KIJL, PRCHAR, FF_NOW, BETAHQ)
+SUBROUTINE OUTBETA (KIJS, KIJL, PRCHAR,     & 
+ &                  U10, UFRIC, Z0M, Z0B,   &
+ &                  CHRNCK , BETAHQ)
 
 ! ----------------------------------------------------------------------
 
@@ -8,7 +10,7 @@ SUBROUTINE OUTBETA (KIJS, KIJL, PRCHAR, FF_NOW, BETAHQ)
 !     J.BIDLOT       ECMWF       FEBRUARY 1996  MESSAGE PASSING
 !     J.BIDLOT       ECMWF       AUGUST 2008  REMOVE MESSAGE PASSING 
 !     J.BIDLOT       ECMWF       MARCH 2014  USE MODEL CHARNOCK FOR ALL
-!                                SEA POINTS (INCLUDING SEA ICE POINTS)
+!                                SEA POINTS
 
 !*    PURPOSE.
 !     --------
@@ -18,12 +20,18 @@ SUBROUTINE OUTBETA (KIJS, KIJL, PRCHAR, FF_NOW, BETAHQ)
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *OUTBETA (KIJS, KIJL, PRCHAR, FF_NOW, BETAHQ)
+!       *CALL* *OUTBETA (KIJS, KIJL, PRCHAR,
+!                        U10, UFRIC, Z0M, Z0B,
+!                        CHRNCK , BETAHQ)
 !         *KIJS*    - INDEX OF FIRST GRIDPOINT.
 !         *KIJL*    - INDEX OF LAST GRIDPOINT.
-!         *PRCHAR* - DEFAULT VALUE FOR CHARNOCK
-!         *FF_NOW* - FORCING FIELDS
-!         *BETAHQ* - EQUIVALENT CHARNOCK FIELD FOR HEAT AND MOISTURE
+!         *PRCHAR*  - DEFAULT VALUE FOR CHARNOCK
+!         *U10*     - WIND SPEED.
+!         *UFRIC*   - FRICTION VELOCITY.
+!         *Z0M*     - ROUGHNESS LENGTH.
+!         *Z0B*     - BACKGROUND ROUGHNESS LENGTH.
+!         *BETA*    - CHARNOCK
+!         *BETAHQ*  - EQUIVALENT CHARNOCK FIELD FOR HEAT AND MOISTURE
 !                    (i.e. Charnock with the background roughness removed)   
 !         
 
@@ -45,12 +53,10 @@ SUBROUTINE OUTBETA (KIJS, KIJL, PRCHAR, FF_NOW, BETAHQ)
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCOUP  , ONLY : LLGCBZ0
       USE YOWPCONS , ONLY : G        ,EPSUS
       USE YOWPHYS  , ONLY : RNUM     ,ALPHAMIN  , ALPHAMAX, ALPHA
-      USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -60,7 +66,11 @@ SUBROUTINE OUTBETA (KIJS, KIJL, PRCHAR, FF_NOW, BETAHQ)
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), INTENT(IN) :: PRCHAR
-      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: U10
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: Z0M
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: Z0B
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: CHRNCK
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: BETAHQ 
 
 
@@ -81,14 +91,8 @@ SUBROUTINE OUTBETA (KIJS, KIJL, PRCHAR, FF_NOW, BETAHQ)
 
 IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
 
-ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
- &        UFRIC => FF_NOW%UFRIC, &
- &        Z0M => FF_NOW%Z0M, &
- &        Z0B => FF_NOW%Z0B, &
- &        CHNK => FF_NOW%CHNK )
 
-
-!*    COMPUTE CHARNOCK 'CONSTANT' CHNK.
+!*    COMPUTE CHARNOCK 'CONSTANT' CHRNCK.
 !     ---------------------------------
 
       IF (LLGCBZ0) THEN
@@ -96,19 +100,20 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
         ALPHAMAXU10(:)=ALPHAMAX
       ELSE
         ZN = 0.0_JWRB
-        ALPHAMAXU10(:)=MIN(ALPHAMAX,AMAX+BMAX*WSWAVE(:))
+        ALPHAMAXU10(:)=MIN(ALPHAMAX,AMAX+BMAX*U10(:))
       ENDIF
 
       DO IJ = KIJS,KIJL
         USM = 1.0_JWRB/MAX(UFRIC(IJ), EPSUS)
         Z0VIS = ZN*USM
         GUSM2 = G*USM**2
-        CHNK(IJ) = (Z0M(IJ)-Z0VIS)*GUSM2
-        CHNK(IJ) = MAX(MIN(CHNK(IJ),ALPHAMAXU10(IJ)),ALPHAMIN)
-        BETAHQ(IJ) = MAX( BETAHQ_REDUCE*(CHNK(IJ)-MAX(Z0B(IJ)*GUSM2, ALPHA)), ALPHAMIN)
+!!!     we are assuming here that z0 ~ ZN/ufric + Charnock ufric**2/g
+!!!     in order to fit with what is used in the IFS.
+        CHRNCK(IJ) = (Z0M(IJ)-Z0VIS)*GUSM2
+        CHRNCK(IJ) = MAX(MIN(CHRNCK(IJ),ALPHAMAXU10(IJ)),ALPHAMIN)
+        BETAHQ(IJ) = MAX( BETAHQ_REDUCE*(CHRNCK(IJ)-MAX(Z0B(IJ)*GUSM2, ALPHA)), ALPHAMIN)
       ENDDO
 
-END ASSOCIATE
 IF (LHOOK) CALL DR_HOOK('OUTBETA',1,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 END SUBROUTINE OUTBETA
