@@ -122,7 +122,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
         DO IJ = KIJS,KIJL
 !!!     we are assuming here that z0 ~ ZN/USTAR + Charnock USTAR**2/g
 !!!     in order to fit with what is used in the IFS.
-          Z0ATM = ZN*USM(IJ) + GM1 * CHRNCK(IJ) * MAX(USTAR(IJ),EPSUS))**2
+          Z0ATM = ZN*USM(IJ) + GM1 * CHRNCK(IJ) * MAX(USTAR(IJ), EPSUS)**2
           CD(IJ) = ( XKAPPA / LOG( 1.0_JWRB + XNLEV/Z0ATM) )**2
         ENDDO
       ENDIF
