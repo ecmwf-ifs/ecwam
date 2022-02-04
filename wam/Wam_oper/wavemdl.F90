@@ -1,6 +1,6 @@
 SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &              NFIELDS, NGPTOTG, NC, NR,                     &
-     &              IGRIB_HANDLE, RMISS, PRCHAR, FIELDS,          &
+     &              IGRIB_HANDLE, RMISS, ZRCHAR, FIELDS,          &
      &              NATMFLX,                                      &
      &              LWCUR, LWSTOKES,                              &
      &              NWVFIELDS, WVFLDG,                            &
@@ -117,7 +117,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE    ,     &
      &                      LL1D
       USE YOWPCONS , ONLY : ZMISS    ,G        ,GM1
-      USE YOWPHYS  , ONLY : RNU      ,RNUM     ,ALPHA
+      USE YOWPHYS  , ONLY : RNU      ,RNUM     ,PRCHAR   ,ALPHA
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,    &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
@@ -173,7 +173,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !     GRIB MISSING DATA INDICATOR
       REAL(KIND=JWRB), INTENT(IN) :: RMISS
 !     DEFAULT VALUE FOR CHARNOCK
-      REAL(KIND=JWRB), INTENT(IN) :: PRCHAR
+      REAL(KIND=JWRB), INTENT(IN) :: ZRCHAR
 !     FIELDS CONTAINING ATMOSPHERIC DATA
       REAL(KIND=JWRB), INTENT(INOUT) :: FIELDS(NGPTOTG,NFIELDS)
 !     INDICATES WHICH PHYSICAL QUANTITY IS USED FOR WIND INPUT
@@ -294,6 +294,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       RNU=RNU_ATM
       RNUM=RNUM_ATM
+      PRCHAR=ZRCHAR
 
       KDELWI=NINT(PSTEP)*KSTPW
 
@@ -443,7 +444,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL GSTATS(1443,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
         DO ICHNK = 1, NCHNK
-          CALL OUTBETA (1, NPROMA_WAM, PRCHAR, FF_NOW(:,ICHNK), BETAB(:,ICHNK))
+          CALL OUTBETA (1, NPROMA_WAM,                                                                          &
+     &                 FF_NOW(:,ICHNK)%WSWAVE, FF_NOW(:,ICHNK)%UFRIC, FF_NOW(:,ICHNK)%Z0M, FF_NOW(:,ICHNK)%Z0B, &
+     &                 FF_NOW(:,ICHNK)%CHNK, BETAB(:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1443,1)
@@ -754,7 +757,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL GSTATS(1443,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, KIJS, KIJL, IJSB, IJLB, IFLDOFFSET, IFLD)
         DO ICHNK = 1, NCHNK
-          CALL OUTBETA (1, NPROMA_WAM, PRCHAR, FF_NOW(:,ICHNK), BETAB(:,ICHNK))
+          CALL OUTBETA (1, NPROMA_WAM,                                                                          &
+     &                 FF_NOW(:,ICHNK)%WSWAVE, FF_NOW(:,ICHNK)%UFRIC, FF_NOW(:,ICHNK)%Z0M, FF_NOW(:,ICHNK)%Z0B, &
+     &                 FF_NOW(:,ICHNK)%CHNK, BETAB(:,ICHNK))
 
           KIJS = 1
           IJSB = IJFROMCHNK(KIJS,ICHNK)
