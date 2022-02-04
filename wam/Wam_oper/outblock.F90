@@ -258,14 +258,14 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !!      if the numerical computation of TAU and CD changes, a similar
 !!      modification has to be put in buildstress where the friction
 !!      velocity is determined from U10 and CD.
-!!      Because of the limited numerical resolution when encoding in grib, the maximum value for Cd is set to 0.007
-!!!!!!!!!!        BOUT(KIJS:KIJL,ITOBOUT(IR))=MIN(MAX(UFRIC(KIJS:KIJL)**2,EPSUS)/MAX(WSWAVE(KIJS:KIJL)**2,EPSU10**2), 0.007_JWRB)
+!!      Because of the limited numerical resolution when encoding in grib, the maximum value for Cd is set to 0.01
+!!!!!!!!!!        BOUT(KIJS:KIJL,ITOBOUT(IR))=MIN(MAX(UFRIC(KIJS:KIJL)**2,EPSUS)/MAX(WSWAVE(KIJS:KIJL)**2,EPSU10**2), 0.01_JWRB)
 !!! output the drag coeffient that is consistent with the Charnock parameter that is returned to the atmosphere model:
         CALL OUTBETA (KIJS, KIJL,                 &
      &                WSWAVE, UFRIC, Z0M, Z0B,    &
      &                CHARNOCK, BETAHQ, CD=CDATM)
 
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=MIN(CDATM(KIJS:KIJL), 0.007_JWRB)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=MIN(CDATM(KIJS:KIJL), 0.01_JWRB)
       ENDIF
 
       IR=IR+1

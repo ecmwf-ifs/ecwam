@@ -232,9 +232,7 @@ IF (LLGCBZ0) THEN
             !!!! Limit how small z0 could become
             !!!! This is a bit of a compromise to limit very low Charnock for intermediate high winds (15 -25 m/s)
             !!!! It is not ideal !!!
-!!!!?????            Z0(IJ) = MAX(XNLEV/EXP(MIN(XKUEFF/USTOLD, 50.0_JWRB)), Z0MIN)
             Z0(IJ) = MAX(XNLEV/(EXP(MIN(XKUEFF/USTOLD, 50.0_JWRB))-1.0_JWRB), Z0MIN)
-
 
             TAUUNR(IJ) = STRESS_GC(ANG_GC(IJ), USTOLD, Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ))
 
