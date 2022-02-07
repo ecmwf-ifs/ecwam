@@ -446,7 +446,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         DO ICHNK = 1, NCHNK
           CALL OUTBETA (1, NPROMA_WAM,                                                                          &
      &                 FF_NOW(:,ICHNK)%WSWAVE, FF_NOW(:,ICHNK)%UFRIC, FF_NOW(:,ICHNK)%Z0M, FF_NOW(:,ICHNK)%Z0B, &
-     &                 FF_NOW(:,ICHNK)%CHNK, BETAB(:,ICHNK))
+     &                 FF_NOW(:,ICHNK)%CHRNCK, BETAB(:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1443,1)
@@ -759,7 +759,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         DO ICHNK = 1, NCHNK
           CALL OUTBETA (1, NPROMA_WAM,                                                                          &
      &                 FF_NOW(:,ICHNK)%WSWAVE, FF_NOW(:,ICHNK)%UFRIC, FF_NOW(:,ICHNK)%Z0M, FF_NOW(:,ICHNK)%Z0B, &
-     &                 FF_NOW(:,ICHNK)%CHNK, BETAB(:,ICHNK))
+     &                 FF_NOW(:,ICHNK)%CHRNCK, BETAB(:,ICHNK))
 
           KIJS = 1
           IJSB = IJFROMCHNK(KIJS,ICHNK)

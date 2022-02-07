@@ -1,4 +1,4 @@
-      SUBROUTINE Z0WAVE (KIJS, KIJL, US, TAUW, UTOP, Z0, Z0B)
+      SUBROUTINE Z0WAVE (KIJS, KIJL, US, TAUW, UTOP, Z0, Z0B, CHRNCK)
 
 ! ----------------------------------------------------------------------
 
@@ -12,7 +12,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *Z0WAVE (KIJS, KIJL, US, TAUW, UTOP, Z0)
+!       *CALL* *Z0WAVE (KIJS, KIJL, US, TAUW, UTOP, Z0, Z0B, CHRNCK)
 !          *KIJS* - INDEX OF FIRST GRIDPOINT.
 !          *KIJL* - INDEX OF LAST GRIDPOINT.
 !          *US*   - OUTPUT BLOCK OF SURFACE STRESSES.
@@ -20,6 +20,7 @@
 !          *UTOP* - WIND SPEED.
 !          *Z0*   - OUTPUT BLOCK OF ROUGHNESS LENGTH.
 !          *Z0B*  - BACKGROUND ROUGHNESS LENGTH.
+!          *CHRNCK- CHARNOCK COEFFICIENT
 
 !     METHOD.
 !     -------
@@ -52,7 +53,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB),DIMENSION(KIJS:KIJL),INTENT(IN)  ::  US, TAUW, UTOP
-      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL),INTENT(OUT) ::  Z0, Z0B
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL),INTENT(OUT) ::  Z0, Z0B, CHRNCK
 
 
       INTEGER(KIND=JWIM) :: IJ
@@ -80,6 +81,7 @@
         ARG = MAX(UST2-TAUW(IJ),EPS1)
         Z0(IJ) = ALPHAOG(IJ)*UST3/SQRT(ARG)
         Z0B(IJ) = ALPHAOG(IJ)*UST2
+        CHRNCK(IJ) = G*Z0(IJ)/UST2
       ENDDO
 
       IF (LHOOK) CALL DR_HOOK('Z0WAVE',1,ZHOOK_HANDLE)

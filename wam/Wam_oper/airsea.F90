@@ -1,6 +1,6 @@
       SUBROUTINE AIRSEA (KIJS, KIJL, FL1, WAVNUM,                        &
 &                        HALP, U10, U10DIR, WSTAR, TAUW, TAUWDIR, RNFAC, &
-&                        US, Z0, Z0B, ICODE_WND, IUSFG)
+&                        US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
 
@@ -22,7 +22,7 @@
 
 !       *CALL* *AIRSEA (KIJS, KIJL, FL1, WAVNUM,
 !                       HALP, U10, U10DIR, WSTAR, TAUW, TAUWDIR, RNFAC,
-!                       US, Z0, Z0B, ICODE_WND, IUSFG)*
+!                       US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)*
 
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*    - INDEX OF LAST GRIDPOINT.
@@ -38,6 +38,7 @@
 !          *US*      - OUTPUT OR OUTPUT BLOCK OF FRICTION VELOCITY.
 !          *Z0*      - OUTPUT BLOCK OF ROUGHNESS LENGTH.
 !          *Z0B*     - BACKGROUND ROUGHNESS LENGTH.
+!          *CHRNCK*  - CHARNOCK COEFFICIENT
 !          *ICODE_WND* SPECIFIES WHICH OF U10 OR US HAS BEEN FILED UPDATED:
 !                     U10: ICODE_WND=3 --> US will be updated
 !                     US:  ICODE_WND=1 OR 2 --> U10 will be updated
@@ -68,7 +69,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (IN) :: HALP, U10DIR, WSTAR, TAUW, TAUWDIR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (INOUT) :: U10, US
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (OUT) :: Z0, Z0B
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (OUT) :: Z0, Z0B, CHRNCK
 
       INTEGER(KIND=JWIM) :: IJ, I, J
 
@@ -87,14 +88,14 @@
 
         CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, WAVNUM,                 &
      &                HALP, U10, U10DIR, WSTAR, TAUW, TAUWDIR, RNFAC, &
-     &                US, Z0, Z0B)
+     &                US, Z0, Z0B, CHRNCK)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
 
 !*    3. DETERMINE ROUGHNESS LENGTH (if needed).
 !        ---------------------------
 
-        CALL Z0WAVE (KIJS, KIJL, US, TAUW, U10, Z0, Z0B)
+        CALL Z0WAVE (KIJS, KIJL, US, TAUW, U10, Z0, Z0B, CHRNCK)
 
 !*    3. DETERMINE U10 (if needed).
 !        ---------------------------
