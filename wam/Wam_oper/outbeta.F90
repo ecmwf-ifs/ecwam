@@ -1,6 +1,6 @@
-SUBROUTINE OUTBETA (KIJS, KIJL,           & 
- &                  U10, USTAR, Z0M, Z0B, &
- &                  CHRNCK , BETAHQ, CD)
+SUBROUTINE OUTBETA (KIJS, KIJL,                   & 
+ &                  U10, USTAR, Z0M, Z0B, CHRNCK, &
+ &                  BETAM , BETAHQ, CD)
 
 ! ----------------------------------------------------------------------
 
@@ -29,7 +29,8 @@ SUBROUTINE OUTBETA (KIJS, KIJL,           &
 !         *USTAR*   - FRICTION VELOCITY.
 !         *Z0M*     - ROUGHNESS LENGTH.
 !         *Z0B*     - BACKGROUND ROUGHNESS LENGTH.
-!         *BETA*    - CHARNOCK
+!         *CHRNCK*  - MODEL CHARNOCK
+!         *BETA*    - OUTOUT CHARNOCK FOR ATMOSPHERE MODEL
 !         *BETAHQ*  - EQUIVALENT CHARNOCK FIELD FOR HEAT AND MOISTURE
 !                    (i.e. Charnock with the background roughness removed)   
 !         *CD*      - OPTIONAL : DRAG COEFFICIENT THAT IS CONSISTENT WITH THE DERIVED CHARNOCK
@@ -71,7 +72,8 @@ SUBROUTINE OUTBETA (KIJS, KIJL,           &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USTAR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: Z0M
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: Z0B
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: CHRNCK
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CHRNCK
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: BETAM 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: BETAHQ
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT), OPTIONAL :: CD
 
@@ -96,8 +98,8 @@ SUBROUTINE OUTBETA (KIJS, KIJL,           &
 IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
 
 
-!*    COMPUTE CHARNOCK 'CONSTANT' CHRNCK.
-!     ---------------------------------
+!*    COMPUTE CHARNOCK BETAM 
+!     ----------------------
 
       IF (LLGCBZ0) THEN
         ZN = RNUM
@@ -111,15 +113,15 @@ IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
       DO IJ = KIJS,KIJL
         USM(IJ) = 1.0_JWRB/MAX(USTAR(IJ), EPSUS)
         GUSM2 = G*USM(IJ)**2
-        CHRNCK(IJ) = MAX(MIN(CHRNCK(IJ), ALPHAMAXU10(IJ)), ALPHAMIN)
-        BETAHQ(IJ) = MAX( BETAHQ_REDUCE*(CHRNCK(IJ)-MAX(Z0B(IJ)*GUSM2, ALPHA)), ALPHAMIN)
+        BETAM(IJ) = MAX(MIN(CHRNCK(IJ), ALPHAMAXU10(IJ)), ALPHAMIN)
+        BETAHQ(IJ) = MAX( BETAHQ_REDUCE*(BETAM(IJ)-MAX(Z0B(IJ)*GUSM2, ALPHA)), ALPHAMIN)
       ENDDO
 
       IF( PRESENT(CD) ) THEN
         DO IJ = KIJS,KIJL
 !!!     we are assuming here that z0 ~ ZN/USTAR + Charnock USTAR**2/g
 !!!     in order to fit with what is used in the IFS.
-          Z0ATM = ZN*USM(IJ) + GM1 * CHRNCK(IJ) * MAX(USTAR(IJ), EPSUS)**2
+          Z0ATM = ZN*USM(IJ) + GM1 * BETAM(IJ) * MAX(USTAR(IJ), EPSUS)**2
           CD(IJ) = ( XKAPPA / LOG( 1.0_JWRB + XNLEV/Z0ATM) )**2
         ENDDO
       ENDIF

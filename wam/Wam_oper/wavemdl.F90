@@ -117,7 +117,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE    ,     &
      &                      LL1D
       USE YOWPCONS , ONLY : ZMISS    ,G        ,GM1
-      USE YOWPHYS  , ONLY : RNU      ,RNUM     ,PRCHAR   ,ALPHA
+      USE YOWPHYS  , ONLY : RNU      ,RNUM     ,PRCHAR
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,    &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
@@ -249,7 +249,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       REAL(KIND=JWRB), DIMENSION(NWVFIELDS) :: FAVG,FMIN,FMAX
       REAL(KIND=JWRB), DIMENSION(NWVFIELDS) :: DEFVAL
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NCHNK) :: BETAB
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NCHNK) :: BETAM, BETAB
       REAL(KIND=JWRB), ALLOCATABLE :: ZCOMBUFS(:), ZCOMBUFR(:)
       REAL(KIND=JWRB), ALLOCATABLE :: WVBLOCK(:,:)
 
@@ -440,16 +440,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                FIELDS, LWCUR, MASK_IN, PRPLRADI,        &
      &                NEMO2WAM) 
 
-
-        CALL GSTATS(1443,0)
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
-        DO ICHNK = 1, NCHNK
-          CALL OUTBETA (1, NPROMA_WAM,                                                                          &
-     &                 FF_NOW(:,ICHNK)%WSWAVE, FF_NOW(:,ICHNK)%UFRIC, FF_NOW(:,ICHNK)%Z0M, FF_NOW(:,ICHNK)%Z0B, &
-     &                 FF_NOW(:,ICHNK)%CHRNCK, BETAB(:,ICHNK))
-        ENDDO
-!$OMP   END PARALLEL DO
-        CALL GSTATS(1443,1)
 
 #ifdef ECMWF
         IF(IRANK==1 .AND. LSMSSIG_WAM) CALL SIGMASTER()
@@ -705,7 +695,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         IF (LWCOUHMF) THEN
           IFLDOFFSET=IFLDOFFSET+1
           FLABEL(IFLDOFFSET)=' Eqv Chnk'
-          DEFVAL(IFLDOFFSET)=PRCHAR-ALPHA
+          DEFVAL(IFLDOFFSET)=0.25_JWRB*PRCHAR
         ENDIF
 
         IF (LWSTOKES) THEN
@@ -759,7 +749,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         DO ICHNK = 1, NCHNK
           CALL OUTBETA (1, NPROMA_WAM,                                                                          &
      &                 FF_NOW(:,ICHNK)%WSWAVE, FF_NOW(:,ICHNK)%UFRIC, FF_NOW(:,ICHNK)%Z0M, FF_NOW(:,ICHNK)%Z0B, &
-     &                 FF_NOW(:,ICHNK)%CHRNCK, BETAB(:,ICHNK))
+     &                 FF_NOW(:,ICHNK)%CHRNCK, BETAM(:,ICHNK), BETAB(:,ICHNK))
 
           KIJS = 1
           IJSB = IJFROMCHNK(KIJS,ICHNK)
@@ -767,7 +757,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           IJLB = IJFROMCHNK(KIJL,ICHNK) 
 
           IFLDOFFSET=1
-          WVBLOCK(IJSB:IJLB,IFLDOFFSET)=FF_NOW(KIJS:KIJL,ICHNK)%CHNK
+          WVBLOCK(IJSB:IJLB,IFLDOFFSET)=BETAM(KIJS:KIJL,ICHNK)
 
           IF (LWCOUHMF) THEN
             IFLDOFFSET=IFLDOFFSET+1

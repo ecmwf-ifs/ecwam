@@ -131,6 +131,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
  &        UFRIC => FF_NOW%UFRIC, &
  &        Z0M => FF_NOW%Z0M, &
  &        Z0B => FF_NOW%Z0B, &
+ &        CHRNCK => FF_NOW%CHRNCK, &
  &        TAUW => FF_NOW%TAUW, &
  &        AIRD => FF_NOW%AIRD, &
  &        WSTAR => FF_NOW%WSTAR, &
@@ -261,8 +262,8 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !!      Because of the limited numerical resolution when encoding in grib, the maximum value for Cd is set to 0.01
 !!!!!!!!!!        BOUT(KIJS:KIJL,ITOBOUT(IR))=MIN(MAX(UFRIC(KIJS:KIJL)**2,EPSUS)/MAX(WSWAVE(KIJS:KIJL)**2,EPSU10**2), 0.01_JWRB)
 !!! output the drag coeffient that is consistent with the Charnock parameter that is returned to the atmosphere model:
-        CALL OUTBETA (KIJS, KIJL,                 &
-     &                WSWAVE, UFRIC, Z0M, Z0B,    &
+        CALL OUTBETA (KIJS, KIJL,                      &
+     &                WSWAVE, UFRIC, Z0M, Z0B, CHRNCK, &
      &                CHARNOCK, BETAHQ, CD=CDATM)
 
         BOUT(KIJS:KIJL,ITOBOUT(IR))=MIN(CDATM(KIJS:KIJL), 0.01_JWRB)
@@ -637,8 +638,8 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
 !!! debugging output of Charnock
-        CALL OUTBETA (KIJS, KIJL,              &
-     &                WSWAVE, UFRIC, Z0M, Z0B, &
+        CALL OUTBETA (KIJS, KIJL,                      &
+     &                WSWAVE, UFRIC, Z0M, Z0B, CHRNCK, &
      &                CHARNOCK, BETAHQ)
 
         BOUT(KIJS:KIJL,ITOBOUT(IR))=CHARNOCK(KIJS:KIJL)
