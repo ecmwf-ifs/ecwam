@@ -814,7 +814,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         ENDIF
 
         IF (LLGCBZ0) THEN
-          WSPMIN = 0.25_JWRB
+          WSPMIN = 0.3_JWRB
         ELSE
 !         for consistency with past version we keep the minimum wind to 1m/s
           WSPMIN = 1.0_JWRB
