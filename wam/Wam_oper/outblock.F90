@@ -72,7 +72,8 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
 #include "sthq.intfb.h"
 #include "wdirspread.intfb.h"
 #include "weflux.intfb.h"
-#include "w_maxh.intfb.h"
+!! not active:
+!!#include "w_maxh.intfb.h"
 #include "halphap.intfb.h"
 #include "alphap_tail.intfb.h"
 
@@ -98,8 +99,8 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
       REAL(KIND=JWRB), DIMENSION(0:NTEWH) :: TEWH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EM, FM, DP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: C3, C4, BF, QP, HMAX, TMAX
-!! new alternative ways to determine wave height extremes 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST
+!! not active: alternative ways to determine wave height extremes 
+!!      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ETA_M, R, XNSLC, SIG_TH, EPS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FLD1, FLD2
@@ -198,9 +199,9 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
      &              C3, C4, BF, QP, HMAX, TMAX,               &
      &              ETA_M, R, XNSLC, SIG_TH, EPS)
 
-!! new alternative ways to determine wave height extremes 
-      CALL W_MAXH (KIJS, KIJL, FL1, DEPTH, WAVNUM,            &
-     &             CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST)
+!! not active: alternative ways to determine wave height extremes 
+!!      CALL W_MAXH (KIJS, KIJL, FL1, DEPTH, WAVNUM,            &
+!!     &             CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST)
 
 !     WIND/SWELL PARAMETERS
       CALL SEPWISW (KIJS, KIJL, MIJ, FL1, XLLWS, CINV,                    &
