@@ -1,5 +1,5 @@
       SUBROUTINE FINDB (NDIM, NBOUN, BLATB, BLNGB, IJARB,        &
-     &                  NPROC, NSTART,NEND, IRANK)
+     &                  NPROC, NSTART, NEND, IRANK)
 
 ! ----------------------------------------------------------------------
 
