@@ -813,6 +813,13 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           WRITE(IU06,*) ' WIND DIRECTION FROM WAVE MODEL USED AS WELL.'
         ENDIF
 
+        IF (LLGCBZ0) THEN
+          WSPMIN = 0.3_JWRB
+        ELSE
+!         for consistency with past version we keep the minimum wind to 1m/s
+          WSPMIN = 1.0_JWRB
+        ENDIF
+
         WRITE (IU06,*) ' '
         WRITE (IU06,*) ' WIND SPEEDS LOWER THAN ',WSPMIN, ' M/S'
         WRITE (IU06,*) ' WILL BE RESET TO  ',WSPMIN, ' M/S'

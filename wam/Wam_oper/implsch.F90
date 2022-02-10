@@ -153,6 +153,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
  &        UFRIC => FF_NOW%UFRIC, &
  &        Z0M => FF_NOW%Z0M, &
  &        Z0B => FF_NOW%Z0B, &
+ &        CHRNCK => FF_NOW%CHRNCK, &
  &        TAUW => FF_NOW%TAUW, &
  &        TAUWDIR => FF_NOW%TAUWDIR, &
  &        AIRD => FF_NOW%AIRD, &
@@ -242,16 +243,16 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       LUPDTUS = .TRUE.
       NCALL = 2
       DO ICALL = 1, NCALL 
-        CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                    &
-     &               LUPDTUS,                                     &
-     &               FL1,                                         &
-     &               WAVNUM, CINV, XK2CG,                         &
-     &               WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER, &
-     &               COSWDIF, SINWDIF2,                           &
-     &               FMEAN, HALP, FMEANWS,                        &
-     &               FLM,                                         &
-     &               UFRIC, TAUW, TAUWDIR, Z0M, Z0B, PHIWA,       &
-     &               FLD, SL, SPOS,                               &
+        CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                      &
+     &               LUPDTUS,                                       &
+     &               FL1,                                           &
+     &               WAVNUM, CINV, XK2CG,                           &
+     &               WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER,   &
+     &               COSWDIF, SINWDIF2,                             &
+     &               FMEAN, HALP, FMEANWS,                          &
+     &               FLM,                                           &
+     &               UFRIC, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, PHIWA, &
+     &               FLD, SL, SPOS,                                 &
      &               MIJ, RHOWGDFTH, XLLWS)
 
       ENDDO

@@ -1,6 +1,6 @@
 SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG, FL1, WAVNUM,         &
 &                  HALP, UTOP, UDIR, TAUW, TAUWDIR, RNFAC, &
-&                  USTAR, Z0, Z0B)
+&                  USTAR, Z0, Z0B, CHRNCK)
 
 ! ----------------------------------------------------------------------
 
@@ -10,7 +10,9 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG, FL1, WAVNUM,         &
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *TAUT_Z0(KIJS, KIJL, IUSFG, FL1, WAVNUM, UTOP, UDIR, TAUW, TAUWDIR, RNFAC, USTAR, Z0, Z0B)
+!       *CALL* *TAUT_Z0(KIJS, KIJL, IUSFG, FL1, WAVNUM,
+!                       UTOP, UDIR, TAUW, TAUWDIR, RNFAC,
+!                       USTAR, Z0, Z0B, CHRNCK)
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT
 !          *KIJL*    - INDEX OF LAST GRIDPOINT
 !          *IUSFG*   - IF = 1 THEN USE THE FRICTION VELOCITY (US) AS FIRST GUESS in TAUT_Z0
@@ -26,6 +28,7 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG, FL1, WAVNUM,         &
 !          *USTAR*   - FRICTION VELOCITY
 !          *Z0*      - ROUGHNESS LENGTH
 !          *Z0B*     - BACKGROUND ROUGHNESS LENGTH
+!          *CHRNCK*  - CHARNOCK COEFFICIENT
 
 !     METHOD.
 !     -------
@@ -77,7 +80,7 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG, FL1, WAVNUM,         &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: HALP, UTOP, UDIR, TAUW, TAUWDIR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: USTAR
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: Z0, Z0B
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: Z0, Z0B, CHRNCK
 
 
       INTEGER(KIND=JWIM), PARAMETER :: NITER=17
@@ -154,7 +157,9 @@ IF (LLGCBZ0) THEN
       IF (IUSFG == 0 ) THEN
         ALPHAGM1 = ALPHA*GM1
         DO IJ = KIJS, KIJL
-          IF ( LLCOSDIFF(IJ) ) THEN
+          IF ( UTOP(IJ) < 1.0_JWRB ) THEN
+            CDFG = 0.002_JWRB
+          ELSEIF ( LLCOSDIFF(IJ) ) THEN
             X = MIN(TAUWACT(IJ)/MAX(USTAR(IJ),EPSUS)**2,0.99_JWRB)
             ZCHAR = MIN( ALPHAGM1 * USTAR(IJ)**2 / SQRT(1.0_JWRB - X), 0.05_JWRB*EXP(-0.05_JWRB*(UTOP(IJ)-35._JWRB)) )
             ZCHAR = MIN(ZCHAR,ALPHAMAX)
@@ -171,13 +176,14 @@ IF (LLGCBZ0) THEN
       ENDDO
 
       DO IJ = KIJS, KIJL
-        XKUTOP = XKAPPA*UTOP(IJ)
+        XKUTOP = XKAPPA * UTOP(IJ)
+
         USTOLD = USTAR(IJ)
         TAUOLD = USTOLD**2
 
         DO ITER=1,NITER
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
-          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB), Z0MIN)
+          Z0(IJ) = MAX(XNLEV/(EXP(MIN(XKUTOP/USTOLD, 50.0_JWRB))-1.0_JWRB), Z0MIN)
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
           TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
 
@@ -221,7 +227,7 @@ IF (LLGCBZ0) THEN
             !!!! Limit how small z0 could become
             !!!! This is a bit of a compromise to limit very low Charnock for intermediate high winds (15 -25 m/s)
             !!!! It is not ideal !!!
-            Z0(IJ) = MAX(XNLEV/EXP(XKUTOP/USTOLD), Z0MIN)
+            Z0(IJ) = MAX(XNLEV/(EXP(MIN(XKUTOP/USTOLD, 50.0_JWRB))-1.0_JWRB), Z0MIN)
 
             TAUUNR(IJ) = STRESS_GC(ANG_GC(IJ), USTOLD, Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ))
 
@@ -252,9 +258,15 @@ IF (LLGCBZ0) THEN
             Z0MINRST = USTAR(IJ)**2 * ALPHA*GM1
             Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MINRST)
             Z0B(IJ) = Z0MINRST
+            CHRNCK(IJ) = MAX(G*Z0(IJ)/USTAR(IJ)**2, ALPHAMIN)
+          ELSE
+            CHRNCK(IJ) = MAX( G*(Z0B(IJ)/SQRT(1.0_JWRB-X))/MAX(USTAR(IJ),EPSUS)**2, ALPHAMIN)
           ENDIF
 
-
+        ELSE
+          USTM1 = 1.0_JWRB/MAX(USTAR(IJ), EPSUS)
+          Z0VIS = RNUM*USTM1
+          CHRNCK(IJ) = MAX(G*(Z0(IJ)-Z0VIS) * USTM1**2, ALPHAMIN)
         ENDIF
 
       ENDDO
@@ -280,7 +292,8 @@ ELSE
       ENDIF
 
       DO IJ=KIJS,KIJL
-        XKUTOP = XKAPPA*UTOP(IJ)
+        XKUTOP = XKAPPA * UTOP(IJ)
+
         USTOLD = (1-IUSFG)*UTOP(IJ)*SQRT(MIN(ACD+BCD*UTOP(IJ),CDMAX)) + IUSFG*USTAR(IJ)
         TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
         USTAR(IJ) = SQRT(TAUOLD)
@@ -307,6 +320,7 @@ ELSE
 
         Z0(IJ) = Z0CH
         Z0B(IJ) = ALPHAOG(IJ)*TAUOLD
+        CHRNCK(IJ) = MAX(G*Z0(IJ)*USTM1**2, ALPHAMIN)
 
       ENDDO
 

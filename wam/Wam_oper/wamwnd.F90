@@ -237,7 +237,7 @@
 
 !       IMPOSE A MINIMUM WIND SPEED.
         DO IJ = KIJS, KIJL
-          U10(IJ) = MAX(U10(IJ),WSPMIN)
+          U10(IJ) = MAX(U10(IJ), WSPMIN)
         ENDDO
 
       CASE(1)
