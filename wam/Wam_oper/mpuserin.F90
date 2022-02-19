@@ -62,7 +62,8 @@
      &            LWAMANOUT,                                            &
      &            NWRTOUTWAM,                                           &
      &            LSECONDORDER,                                         &
-     &            LWAM_USE_IO_SERV
+     &            LWAM_USE_IO_SERV,                                     &
+     &            LOUTMDLDCP
       USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
@@ -196,7 +197,8 @@
      &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,                      &
      &   LWNEMOCOUDEBUG,                                                &
      &   LLCAPCHNK,                                                     &
-     &   LWAM_USE_IO_SERV
+     &   LWAM_USE_IO_SERV,                                              &
+     &   LOUTMDLDCP
 
 
       CHARACTER(LEN=14) :: CLOUT
@@ -406,6 +408,7 @@
 !     LLCAPCHNK : CAP CHARNOCK FOR HIGH WINDS.
 !     LWAM_USE_IO_SERV: TRUE IF SPECTRAL AND INTEGRATED PARAMETER OUTPUT SHOULD BE
 !              DONE USING IFS IO SERVER
+!     LOUTMDLDCP : OUPUT MODEL DECOMPOSITION TO FILE
 !
 !     LNOCDIN: IF TRUE THEN GRIB INPUT OF A DRAG COEFFICIENT FIELD IS
 !              NOT REQUIRED.  
@@ -707,6 +710,8 @@
 
       LWAM_USE_IO_SERV = .FALSE.
 
+      LOUTMDLDCP = .TRUE.
+
       LWCOUNORMS = .FALSE.
       LLNORMIFS2WAM = .FALSE.
       LLNORMWAM2IFS = .FALSE.
@@ -942,6 +947,7 @@
         WRITE(6,*) '*** LLNORMWAMOUT_GLOBAL= ',LLNORMWAMOUT_GLOBAL
         WRITE(6,*) '*** LSMSSIG_WAM= ',LSMSSIG_WAM
         WRITE(6,*) '*** LWAM_USE_IO_SERV = ',LWAM_USE_IO_SERV
+        WRITE(6,*) '*** LOUTMDLDCP = ',LOUTMDLDCP
         WRITE(6,*) '==============================================='
       ENDIF
 
