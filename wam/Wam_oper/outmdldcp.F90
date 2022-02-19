@@ -87,7 +87,7 @@ IRGRDPT = JPPFLAG-3
 GFLAG(IRGRDPT) = .TRUE.
 DO IJ = IJS, IJL
   BOUT(IJ, IRGRDPT) = IJ 
-ENDIF
+ENDDO
 
 ! Set output parameter mapping 
 CALL MPCRTBL

@@ -17,7 +17,7 @@
 
       IMPLICIT NONE
 #include "mpdecomp.intfb.h"
-#include "outmdlcdp.intfb.h"
+#include "outmdldcp.intfb.h"
 
       INTEGER(KIND=JWIM) :: NPR, MAXLEN
 
