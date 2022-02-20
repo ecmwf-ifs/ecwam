@@ -213,6 +213,8 @@
           END IF
 
      write(0,*) 'debile in outgrid call makegrid'
+     write(0,*) 'GTEMP :' 
+     write(0,*) GTEMP
 
           CALL MAKEGRID (GTEMP,GOUT(IFLD,:,:),IG,ZMISS)
           IFLD=IFLD+1
