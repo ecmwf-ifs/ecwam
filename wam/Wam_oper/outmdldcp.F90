@@ -18,7 +18,7 @@ SUBROUTINE OUTMDLDCP (IJS, IJL)
 
 USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-USE YOWCOUT  , ONLY : LFDB, JPPFLAG, FFLAG, GFLAG, BOUT, ITOBOUT, INFOBOUT
+USE YOWCOUT  , ONLY : LFDB, JPPFLAG, FFLAG, GFLAG, NFLAG, NIPRMOUT, BOUT, ITOBOUT, INFOBOUT
 USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_WAM_I, NGRIB_HANDLE_IFS
 USE YOWINTP  , ONLY : GOUT
 USE YOWMPP   , ONLY : IRANK 
@@ -33,6 +33,7 @@ USE GRIB_API_INTERFACE
 ! ----------------------------------------------------------------------
 
 IMPLICIT NONE
+#include "abort1.intfb.h"
 #include "mpcrtbl.intfb.h"
 #include "outgrid.intfb.h"
 #include "preset_wgrib_template.intfb.h"
@@ -54,7 +55,7 @@ CHARACTER(LEN=14) :: CDATE
 CHARACTER(LEN=296) :: OUTFILE
 
 LOGICAL :: LFDBBAK, LLCREATE
-LOGICAL :: FFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
+LOGICAL, DIMENSION((JPPFLAG) :: FFLAGBAK, GFLAGBAK, NFLAGBAK
 
 ! ----------------------------------------------------------------------
 
@@ -74,6 +75,7 @@ WRITE(IU06,*) ' OUTMDLDCP : The MPI decomposition is written to ', OUTFILE(1:LFI
 LFDBBAK = LFDB
 FFLAGBAK(:) = FFLAG(:)
 GFLAGBAK(:) = GFLAG(:)
+NFLAGBAK(:) = NFLAG(:)
 MARSTYPEBAK = MARSTYPE
 
 ! create a new output parameter selection that will only output
@@ -81,6 +83,7 @@ MARSTYPEBAK = MARSTYPE
 LFDB = .FALSE.  ! data will be written to file
 FFLAG(:) = .FALSE.
 GFLAG(:) = .FALSE.
+NFLAG(:) = .FALSE.
 MARSTYPE = 'an'
 IFCST = 0
 
@@ -108,6 +111,15 @@ DO IJ = IJS, IJL
  write(0,*) 'debile BOUT ',IJ, BOUT(IJ, IR)
 ENDDO
 
+
+IF ( IR /= NIPRMOUT ) THEN
+SUBROUTINE OUTMDLDCP (IJS, IJL)
+  WRITE(IU06,*) '******************************************'
+  WRITE(IU06,*) ' OUTMDLDCP : ABORTING' 
+  WRITE(IU06,*) ' IR /= NIPRMOUT ', IR, NIPRMOUT 
+  WRITE(IU06,*) '******************************************'
+  CALL ABORT1
+ENDIF
 
 ! Gather data for output (to IRANK = 1)
 CALL OUTGRID
@@ -156,6 +168,7 @@ ENDIF
 LFDB = LFDBBAK
 FFLAG(:) = FFLAGBAK(:)
 GFLAG(:) = GFLAGBAK(:)
+NFLAG(:) = NFLAGBAK(:)
 MARSTYPE = MARSTYPEBAK
 !  reset output field mapping
 CALL MPCRTBL
