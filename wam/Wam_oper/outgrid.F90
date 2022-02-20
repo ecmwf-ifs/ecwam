@@ -96,36 +96,25 @@
         RETURN
       ENDIF
  
-     write(0,*) 'debile in outgrid  NFLDTOT ',NFLDTOT
-
 !     SENDING TO RELEVANT PE'S
 !     ------------------------
 
       DO IPR=1,NPROC
         ISENDCOUNTS(IPR)=NFLDPPE(IPR)*(NBLKE(IRANK)-NBLKS(IRANK)+1)
-     write(0,*) 'debile in outgrid ISENDCOUNTS(IPR) ',ISENDCOUNTS(IPR) 
       ENDDO
 
       DO IPR=1,NPROC
         IRECVCOUNTS(IPR)=NFLDPPE(IRANK)*(NBLKE(IPR)-NBLKS(IPR)+1)
-     write(0,*) 'debile in outgrid IRECVCOUNTS(IPR) ',IRECVCOUNTS(IPR)
       ENDDO
 
       IF ((.NOT.LLUNSTR).OR.(OUT_METHOD.eq.1)) THEN
       
 !     LOADING THE COMMUNICATION BUFFER
         ALLOCATE(ZSENDBUF(NFLDPPEMAX * MPMAXLENGTH,NPROC))
-
-        write(0,*) 'debile outgrid NFLDPPEMAX , MPMAXLENGTH ',NFLDPPEMAX , MPMAXLENGTH
-
         ICNT(:)=0
         DO ICT=1,JPPFLAG
           IPR=IPFGTBL(ICT)
           IF(IPR.GT.0) THEN 
-
-        write(0,*) 'debile outgrid ITOBOUT(ICT) ', ICT, ITOBOUT(ICT)
-        write(0,*) 'debile outgrid IJSLOC,IJLLOC ',IJSLOC,IJLLOC
-
             DO IJ=IJSLOC,IJLLOC
               ICNT(IPR) = ICNT(IPR) + 1
               ZSENDBUF(ICNT(IPR),IPR) = BOUT(IJ,ITOBOUT(ICT))
@@ -156,7 +145,6 @@
      &        KTAG=KTAG,                                                &
      &        KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),      &
      &        CDSTRING='OUTGRID:')
-     write(0,*) 'debile in outgrid calling MPL_RECV'
           ENDDO
         ENDIF
         DO IPR=1,NPROC
@@ -166,7 +154,6 @@
      &        KTAG=KTAG,                                                &
      &        KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),      &
      &        CDSTRING='OUTGRID:')
-     write(0,*) 'debile in outgrid calling MPL_SEND'
           ENDIF
         ENDDO
 !       NOW WAIT FOR ALL TO COMPLETE
@@ -192,10 +179,6 @@
       IF(NFLDPPE(IRANK).GT.0) THEN
         IF(ALLOCATED(GOUT)) DEALLOCATE(GOUT)
         ALLOCATE(GOUT(NFLDPPE(IRANK),NGX,NGY))
-!!!debile
-        write(0,*) 'debile outgrid, allocating GOUT'
-        GOUT = zmiss 
-
       ENDIF
 
       ICNT(:)=0
@@ -206,8 +189,6 @@
           IF (.NOT.(LLUNSTR) .OR. (OUT_METHOD .eq. 1)) THEN
             DO IPR=1,NPROC
               ICOUNT=ICNT(IPR)
-     write(0,*) 'debile in outgrid NBLKS(IPR),NBLKE(IPR) ',IPR,NBLKS(IPR),NBLKE(IPR)
-
               DO IJ=NBLKS(IPR),NBLKE(IPR)
                 ICOUNT=ICOUNT+1
                 GTEMP(IJ)=ZRECVBUF(ICOUNT,IPR)
@@ -217,10 +198,6 @@
           ELSE
             GTEMP=ARR_OUT_RECV(LocalPosICT(ICT),:)
           END IF
-
-     write(0,*) 'debile in outgrid call makegrid'
-     write(0,*) 'GTEMP :' 
-     write(0,*) GTEMP
 
           CALL MAKEGRID (GTEMP,GOUT(IFLD,:,:),IG,ZMISS)
           IFLD=IFLD+1

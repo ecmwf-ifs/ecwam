@@ -108,7 +108,6 @@ BOUT(IJS:IJL, IR) = REAL(IRANK, JWRB)
 IR = IR + 1
 DO IJ = IJS, IJL
   BOUT(IJ, IR) = REAL(IJ, JWRB)
- write(0,*) 'debile BOUT ',IJ, BOUT(IJ, IR)
 ENDDO
 
 
@@ -145,9 +144,6 @@ IF(IRANK == 1) THEN
       IZLEV  = INFOBOUT(IT,3)
 
       CDATE = '20220220000000' ! set any date and time as the start date of the run might still be unknown
-
-      write(0,*) 'debile  ICOUNT ', ICOUNT
-      write(0,*) 'debile GOUT ',GOUT(ICOUNT,:,:)
 
       CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, GOUT(ICOUNT,:,:),  &
  &                    ITABLE, IPARAM, IZLEV, 0 , 0,             &
