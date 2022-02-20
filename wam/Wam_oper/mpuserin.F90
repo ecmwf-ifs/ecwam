@@ -953,7 +953,7 @@
         WRITE(6,*) '*** LLNORMWAMOUT_GLOBAL= ',LLNORMWAMOUT_GLOBAL
         WRITE(6,*) '*** LSMSSIG_WAM= ',LSMSSIG_WAM
         WRITE(6,*) '*** LWAM_USE_IO_SERV = ',LWAM_USE_IO_SERV
-        WRITE(6,*) '*** CPATH = ' CPATH,
+        WRITE(6,*) '*** CPATH = ',CPATH
         WRITE(6,*) '*** LOUTMDLDCP = ',LOUTMDLDCP
         WRITE(6,*) '==============================================='
       ENDIF
