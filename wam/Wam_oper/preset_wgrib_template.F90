@@ -1,4 +1,4 @@
-      SUBROUTINE PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE)
+      SUBROUTINE PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
 
 !----------------------------------------------------------------------
 
@@ -15,12 +15,17 @@
 !**   INTERFACE.
 !     ----------
 
-!     SUBROUTINE PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE)
+!     SUBROUTINE PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
 !                INPUT:
 !                CT           : "I" for INTEGRATED PARAMETERS AND
 !                               "S" for SPECTRA
 !                OUTPUT:
 !                IGRIB_HANDLE : GRIB HANDLE THAT WILL BE CREATED. 
+
+!                OPTIONAL INPUT:
+!                LLCREATE       IF TRUE, FORCE CREATION OF TEMPLATE FROM FILE
+!                NBITSPERVALUE  NUMBER OF BITS FOR CODING. 
+!                               IF PRESENT, IT WILL OVERRULE NGRBRESI AND NGRBRESS
 
 !     METHOD.
 !     -------
@@ -61,9 +66,14 @@
 #include "abort1.intfb.h"
 #include "wstream_strg.intfb.h"
 
+      CHARACTER(LEN=1), INTENT(IN) :: CT 
+      INTEGER(KIND=JWIM), INTENT(OUT) :: IGRIB_HANDLE
+      LOGICAL, INTENT(IN), OPTIONAL :: LLCREATE
+      INTEGER(KIND=JWIM) , INTENT(IN), OPTIONAL :: NBITSPERVALUE
+
       INTEGER(KIND=JWIM) :: IC, JC, KST,JSN, KK, MM
       INTEGER(KIND=JWIM) :: ICLASS,ICENTRE,IFS_STREAM
-      INTEGER(KIND=JWIM) :: IGRIB_HANDLE
+      INTEGER(KIND=JWIM) :: IBITSPERVALUE
       INTEGER(KIND=JWIM) :: IDIRSCALING, IFRESCALING
       INTEGER(KIND=JWIM) :: NY
       INTEGER(KIND=JWIM) :: KSYSNB, KMETNB, KREFDATE
@@ -80,18 +90,32 @@
 ! The following must NOT be changed from a 4 byte real
       REAL(KIND=4) :: REAL4
 
-      CHARACTER(LEN=1) :: CT 
       CHARACTER(LEN=2) :: MARSFCTYPE
       CHARACTER(LEN=4) :: CSTREAM
       CHARACTER(LEN=96) :: CLWORD
 
       LOGICAL :: LASTREAM
+      LOGICAL :: LLCRT 
 
 !-------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
-      IF(.NOT. LGRHDIFS) THEN
+      IF( PRESENT(LLCREATE) ) THEN
+        LLCRT = LLCREATE
+      ELSE
+        LLCRT = .FALSE. 
+      ENDIF
+
+      IF( PRESENT(NBITSPERVALUE) ) THEN
+        IBITSPERVALUE = NBITSPERVALUE
+      ELSEIF(CT.EQ."S") THEN
+        IBITSPERVALUE = NGRBRESS
+      ELSE
+        IBITSPERVALUE = NGRBRESI
+      ENDIF
+
+      IF(.NOT. LGRHDIFS .OR. LLCRT) THEN
         IGRIB_HANDLE=-99
         CALL IGRIB_NEW_FROM_SAMPLES(IGRIB_HANDLE,'gg_sfc_grib1')
       ELSE
@@ -130,7 +154,7 @@
 
 !     DEFINE YOUR OWN LOCAL HEADER
 !     -----------------------------
-      IF(.NOT. LGRHDIFS) THEN
+      IF(.NOT. LGRHDIFS .OR. LLCRT) THEN
         ! LOCAL MARS TABLE USED.
 
         IF(CT.EQ."S") THEN
@@ -382,7 +406,7 @@
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledFrequencies',SCFR)
         DEALLOCATE(SCFR)
 
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'bitsPerValue',NGRBRESS)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'bitsPerValue', IBITSPERVALUE)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'additionalFlagPresent',1)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfPacking',               &
      &                       'grid_simple_matrix')
@@ -491,11 +515,7 @@
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'missingValue',ZMISS)
 
       ! Number of bits used for each encoded value
-      IF(CT.EQ."S") THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'bitsPerValue',NGRBRESS)
-      ELSE
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'bitsPerValue',NGRBRESI)
-      ENDIF
+      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'bitsPerValue', IBITSPERVALUE)
 
       ! TOTAL NUMBER OF GRID POINTS FOR ENCODING.
       IF(IRGG.EQ.1) THEN

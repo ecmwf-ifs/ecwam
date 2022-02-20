@@ -899,6 +899,12 @@
       IF (CLOTSU(8) .EQ. 'H') IDELBC  = IDELBC*3600
 
 
+      ICPLEN=LEN_TRIM(CPATH)
+      IF(ICPLEN.GT.0.AND.CPATH(ICPLEN:ICPLEN).EQ.'/') THEN
+        CPATH=CPATH(1:ICPLEN-1)
+        ICPLEN=ICPLEN-1
+      ENDIF
+
 !     RESET CERTAIN FLAGS:
 
 !     WE SHOULD RECEIVE DATA FROM NEMO
@@ -947,6 +953,7 @@
         WRITE(6,*) '*** LLNORMWAMOUT_GLOBAL= ',LLNORMWAMOUT_GLOBAL
         WRITE(6,*) '*** LSMSSIG_WAM= ',LSMSSIG_WAM
         WRITE(6,*) '*** LWAM_USE_IO_SERV = ',LWAM_USE_IO_SERV
+        WRITE(6,*) '*** CPATH = ' CPATH,
         WRITE(6,*) '*** LOUTMDLDCP = ',LOUTMDLDCP
         WRITE(6,*) '==============================================='
       ENDIF
