@@ -43,7 +43,7 @@ INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
 INTEGER(KIND=JWIM), PARAMETER :: NBITSPERVALUE = 32  !! need a higher precision to code the grid point index 
 
-INTEGER(KIND=JWIM) :: IJ, IRMPIRNK, IRGRDPT, IFLAG
+INTEGER(KIND=JWIM) :: IJ, IR, IFLAG
 INTEGER(KIND=JWIM) :: LFILE, IUOUT, ICOUNT
 INTEGER(KIND=JWIM) :: IFCST, IT, IPARAM, ITABLE, IZLEV
 
@@ -86,12 +86,10 @@ IFCST = 0
 
 ! use the extra field codes (currently the last 5 fields of the list of potential output parameters:
 ! MPI RANK:
-IRMPIRNK = JPPFLAG-4
-GFLAG(IRMPIRNK) = .TRUE.
+GFLAG(JPPFLAG-4) = .TRUE.
 
 ! GRID POINT INDEX:
-IRGRDPT = JPPFLAG-3
-GFLAG(IRGRDPT) = .TRUE.
+GFLAG(JPPFLAG-3) = .TRUE.
 
 ! Set output parameter mapping (and allocate BOUT) 
 CALL MPCRTBL
@@ -99,9 +97,14 @@ CALL MPCRTBL
 
 ! Defining the ouput fields:
 ! -------------------------
-BOUT(IJS:IJL, IRMPIRNK) = REAL(IRANK, JWRB)
+IR = 0
+
+IR = IR + 1
+BOUT(IJS:IJL, IR) = REAL(IRANK, JWRB)
+
+IR = IR + 1
 DO IJ = IJS, IJL
-  BOUT(IJ, IRGRDPT) = REAL(IJ, JWRB)
+  BOUT(IJ, IR) = REAL(IJ, JWRB)
 ENDDO
 
 
@@ -114,9 +117,7 @@ IF(IRANK == 1) THEN
 
   ! Prepare grib template
   LLCREATE = .TRUE.
-write(0,*) 'debile before PRESET_WGRIB_TEMPLATE '
   CALL PRESET_WGRIB_TEMPLATE("I", NGRIB_HANDLE_WAM_I, LLCREATE=LLCREATE, NBITSPERVALUE=NBITSPERVALUE )
-write(0,*) 'debile after PRESET_WGRIB_TEMPLATE '
 
 
   ! keep looping over all posible output varaibles (as in outint)
