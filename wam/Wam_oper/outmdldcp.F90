@@ -114,7 +114,9 @@ IF(IRANK == 1) THEN
 
   ! Prepare grib template
   LLCREATE = .TRUE.
+write(0,*) 'debile before PRESET_WGRIB_TEMPLATE '
   CALL PRESET_WGRIB_TEMPLATE("I", NGRIB_HANDLE_WAM_I, LLCREATE=LLCREATE, NBITSPERVALUE=NBITSPERVALUE )
+write(0,*) 'debile after PRESET_WGRIB_TEMPLATE '
 
 
   ! keep looping over all posible output varaibles (as in outint)
