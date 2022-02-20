@@ -130,7 +130,7 @@ write(0,*) 'debile after PRESET_WGRIB_TEMPLATE '
       IPARAM = INFOBOUT(IT,2)
       IZLEV  = INFOBOUT(IT,3)
 
-      CDATE = CDATEA  ! set date to start of the run
+      CDATE = '20220220000000' ! set any date and time as the start date of the run might still be unknown
 
       CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, GOUT(ICOUNT,:,:),  &
  &                    ITABLE, IPARAM, IZLEV, 0 , 0,             &
