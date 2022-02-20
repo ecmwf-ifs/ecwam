@@ -68,7 +68,7 @@ ELSE
 ENDIF
 LFILE=LEN_TRIM(OUTFILE)
 
-WRITE(IU06,*) 'OUTMDLDCP : The MPI decomposition is written to ', OUTFILE(1:LFILE)
+WRITE(IU06,*) ' OUTMDLDCP : The MPI decomposition is written to ', OUTFILE(1:LFILE)
 
 ! save output parameter selection (it will be overwritten and then reset)
 LFDBBAK = LFDB
@@ -99,7 +99,7 @@ CALL MPCRTBL
 
 ! Defining the ouput fields:
 ! -------------------------
-BOUT(IJS:IJL, IRMPIRNK) = IRANK
+BOUT(IJS:IJL, IRMPIRNK) = REAL(IRANK, JWRB)
 DO IJ = IJS, IJL
   BOUT(IJ, IRGRDPT) = REAL(IJ, JWRB)
 ENDDO
