@@ -113,7 +113,6 @@ ENDDO
 
 
 IF ( IR /= NIPRMOUT ) THEN
-SUBROUTINE OUTMDLDCP (IJS, IJL)
   WRITE(IU06,*) '******************************************'
   WRITE(IU06,*) ' OUTMDLDCP : ABORTING' 
   WRITE(IU06,*) ' IR /= NIPRMOUT ', IR, NIPRMOUT 
