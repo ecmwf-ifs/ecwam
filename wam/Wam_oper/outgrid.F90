@@ -116,10 +116,16 @@
 !     LOADING THE COMMUNICATION BUFFER
         ALLOCATE(ZSENDBUF(NFLDPPEMAX * MPMAXLENGTH,NPROC))
 
+        write(0,*) 'debile outgrid NFLDPPEMAX , MPMAXLENGTH ',NFLDPPEMAX , MPMAXLENGTH
+
         ICNT(:)=0
         DO ICT=1,JPPFLAG
           IPR=IPFGTBL(ICT)
           IF(IPR.GT.0) THEN 
+
+        write(0,*) 'debile outgrid ITOBOUT(ICT) ', ICT, ITOBOUT(ICT)
+        write(0,*) 'debile outgrid IJSLOC,IJLLOC ',IJSLOC,IJLLOC
+
             DO IJ=IJSLOC,IJLLOC
               ICNT(IPR) = ICNT(IPR) + 1
               ZSENDBUF(ICNT(IPR),IPR) = BOUT(IJ,ITOBOUT(ICT))
