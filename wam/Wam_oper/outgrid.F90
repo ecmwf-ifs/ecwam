@@ -96,6 +96,7 @@
         RETURN
       ENDIF
  
+     write(0,*) 'debile in outgrid  NFLDTOT ',NFLDTOT
 
 !     SENDING TO RELEVANT PE'S
 !     ------------------------
@@ -181,6 +182,9 @@
       IF(NFLDPPE(IRANK).GT.0) THEN
         IF(ALLOCATED(GOUT)) DEALLOCATE(GOUT)
         ALLOCATE(GOUT(NFLDPPE(IRANK),NGX,NGY))
+!!!debile
+        GOUT = zmiss 
+
       ENDIF
 
       ICNT(:)=0
@@ -200,6 +204,8 @@
           ELSE
             GTEMP=ARR_OUT_RECV(LocalPosICT(ICT),:)
           END IF
+
+     write(0,*) 'debile in outgrid call makegrid'
 
           CALL MAKEGRID (GTEMP,GOUT(IFLD,:,:),IG,ZMISS)
           IFLD=IFLD+1
