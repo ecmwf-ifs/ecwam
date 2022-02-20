@@ -124,7 +124,7 @@
 #include "wposnam.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU05
-      INTEGER(KIND=JWIM) :: ISAT, IC, II
+      INTEGER(KIND=JWIM) :: ISAT, IC, II, LEN
       INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
