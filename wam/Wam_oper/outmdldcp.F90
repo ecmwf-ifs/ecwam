@@ -19,7 +19,7 @@ SUBROUTINE OUTMDLDCP (IJS, IJL)
 USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
 USE YOWCOUT  , ONLY : LFDB, JPPFLAG, FFLAG, GFLAG, BOUT, ITOBOUT, INFOBOUT
-USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_WAM_I
+USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_WAM_I, NGRIB_HANDLE_IFS
 USE YOWINTP  , ONLY : GOUT
 USE YOWMPP   , ONLY : IRANK 
 USE YOWPARAM , ONLY : NGX, NGY
@@ -105,6 +105,7 @@ BOUT(IJS:IJL, IR) = REAL(IRANK, JWRB)
 IR = IR + 1
 DO IJ = IJS, IJL
   BOUT(IJ, IR) = REAL(IJ, JWRB)
+ write(0,*) 'debile BOUT ',IJ, BOUT(IJ, IR)
 ENDDO
 
 
@@ -118,6 +119,7 @@ IF(IRANK == 1) THEN
   ! Prepare grib template
   LLCREATE = .TRUE.
   CALL PRESET_WGRIB_TEMPLATE("I", NGRIB_HANDLE_WAM_I, LLCREATE=LLCREATE, NBITSPERVALUE=NBITSPERVALUE )
+  IF ( NGRIB_HANDLE_IFS < 0 ) NGRIB_HANDLE_IFS = NGRIB_HANDLE_WAM_I
 
 
   ! keep looping over all posible output varaibles (as in outint)
@@ -132,6 +134,9 @@ IF(IRANK == 1) THEN
       IZLEV  = INFOBOUT(IT,3)
 
       CDATE = '20220220000000' ! set any date and time as the start date of the run might still be unknown
+
+      write(0,*) 'debile  ICOUNT ', ICOUNT
+      write(0,*) 'debile GOUT ',GOUT(ICOUNT,:,:)
 
       CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, GOUT(ICOUNT,:,:),  &
  &                    ITABLE, IPARAM, IZLEV, 0 , 0,             &
