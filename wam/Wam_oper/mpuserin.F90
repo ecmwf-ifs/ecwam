@@ -120,6 +120,7 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "mpcrtbl.intfb.h"
+#include "wam_u2l1cr.intfb.h"
 #include "wposnam.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU05
@@ -899,11 +900,21 @@
       IF (CLOTSU(8) .EQ. 'H') IDELBC  = IDELBC*3600
 
 
+      CALL WAM_U2L1CR( YCLASS )
+
+
+
       ICPLEN=LEN_TRIM(CPATH)
       IF(ICPLEN.GT.0.AND.CPATH(ICPLEN:ICPLEN).EQ.'/') THEN
         CPATH=CPATH(1:ICPLEN-1)
         ICPLEN=ICPLEN-1
       ENDIF
+
+!           **** CHECK LENGTH OF YEXPVER AND PUT IT RIGHT JUSTIFIED ****
+      LEN=LEN_TRIM(YEXPVER)
+      YEXPVER(5-LEN:4)=YEXPVER(1:LEN)
+      YEXPVER(1:4-LEN)='0000'
+
 
 !     RESET CERTAIN FLAGS:
 

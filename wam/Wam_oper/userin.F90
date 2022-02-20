@@ -144,7 +144,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 #include "outxt.intfb.h"
 #include "readsta.intfb.h"
 #include "set_wflags.intfb.h"
-#include "wam_u2l1cr.intfb.h"
 #include "wstream_strg.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(OUT) :: IFORCA 
@@ -266,13 +265,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         CBPLTDT = CDATEA
         CEPLTDT = CDATEF
       ENDIF
-      CALL WAM_U2L1CR( YCLASS )
 
-
-!           **** CHECK LENGTH OF YEXPVER AND PUT IT RIGHT JUSTIFIED ****
-      LEN=LEN_TRIM(YEXPVER)
-      YEXPVER(5-LEN:4)=YEXPVER(1:LEN)
-      YEXPVER(1:4-LEN)='0000'
 
       IF(LWCOU) THEN
 !       TIME STEP SELECTION: 
