@@ -24,6 +24,7 @@ USE YOWGRIBHD, ONLY : LPADPOLES
 USE YOWINTP  , ONLY : GOUT
 USE YOWMPP   , ONLY : IRANK 
 USE YOWPARAM , ONLY : NGX, NGY
+USE YOWSPEC  , ONLY : IJ2NEWIJ
 USE YOWSTAT  , ONLY : MARSTYPE, CDATEA
 USE YOWTEST  , ONLY : IU06, ITEST
 USE YOWTEXT  , ONLY : ICPLEN, CPATH
@@ -94,10 +95,13 @@ IFCST = 0
 ! MPI RANK:
 GFLAG(JPPFLAG-4) = .TRUE.
 
-! GRID POINT INDEX:
+! GRID POINT INDEX (as used inside the wave model):
 GFLAG(JPPFLAG-3) = .TRUE.
 
-!! GFLAG(JPPFLAG-2), GFLAG(JPPFLAG-1) and GFLAG(JPPFLAG) are still available if more entries are needed.
+! GLOBAL POINT INDEX (as used for non parallel binary input/output)
+GFLAG(JPPFLAG-2) = .TRUE.
+
+!!  GFLAG(JPPFLAG-1) and GFLAG(JPPFLAG) are still available if more entries are needed.
 
 
 ! Set output parameter mapping (and allocate BOUT) 
@@ -114,6 +118,11 @@ BOUT(IJS:IJL, IR) = REAL(IRANK, JWRB)
 IR = IR + 1
 DO IJ = IJS, IJL
   BOUT(IJ, IR) = REAL(IJ, JWRB)
+ENDDO
+
+IR = IR + 1
+DO IJ = IJS, IJL
+  BOUT(IJ2NEWIJ(IJ), IR) = REAL(IJ, JWRB)
 ENDDO
 
 
