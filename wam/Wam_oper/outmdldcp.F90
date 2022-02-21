@@ -78,7 +78,7 @@ GFLAGBAK(:) = GFLAG(:)
 NFLAGBAK(:) = NFLAG(:)
 MARSTYPEBAK = MARSTYPE
 
-! create a new output parameter selection that will only output
+! Create a new output parameter selection that will only output
 ! parameters relevant for the description of the model decomposition
 LFDB = .FALSE.  ! data will be written to file
 FFLAG(:) = .FALSE.
@@ -87,12 +87,15 @@ NFLAG(:) = .FALSE.
 MARSTYPE = 'an'
 IFCST = 0
 
-! use the extra field codes (currently the last 5 fields of the list of potential output parameters:
+! Use the extra field codes (currently the last 5 fields of the list of potential output parameters:
 ! MPI RANK:
 GFLAG(JPPFLAG-4) = .TRUE.
 
 ! GRID POINT INDEX:
 GFLAG(JPPFLAG-3) = .TRUE.
+
+!! GFLAG(JPPFLAG-2), GFLAG(JPPFLAG-1) and GFLAG(JPPFLAG) are still available if more entries are needed.
+
 
 ! Set output parameter mapping (and allocate BOUT) 
 CALL MPCRTBL
@@ -119,8 +122,11 @@ IF ( IR /= NIPRMOUT ) THEN
   CALL ABORT1
 ENDIF
 
+
 ! Gather data for output (to IRANK = 1)
 CALL OUTGRID
+
+
 
 IF(IRANK == 1) THEN
   ! Grib output to file:
