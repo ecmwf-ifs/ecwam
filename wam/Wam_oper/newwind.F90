@@ -94,7 +94,7 @@ ASSOCIATE(CGROUP => WVPRPT%CGROUP, &
  &        WDWAVE => FF_NOW%WDWAVE, &
  &        UFRIC => FF_NOW%UFRIC, &
  &        TAUW => FF_NOW%TAUW, &
- &        CHNK => FF_NOW%CHNK, &
+ &        CHRNCK => FF_NOW%CHRNCK, &
  &        AIRD => FF_NOW%AIRD, &
  &        WSTAR => FF_NOW%WSTAR, &
  &        CICOVER => FF_NOW%CICOVER, &
@@ -141,7 +141,7 @@ ASSOCIATE(CGROUP => WVPRPT%CGROUP, &
             DO IJ = KIJS, KIJL
               UFRIC(IJ, ICHNK) = FF_NEXT(IJ, ICHNK)%UFRIC
 ! update the estimate of TAUW
-              TAUW(IJ, ICHNK) = UFRIC(IJ, ICHNK)**2 * (1.0_JWRB-(ALPHA/CHNK(IJ, ICHNK))**2)
+              TAUW(IJ, ICHNK) = UFRIC(IJ, ICHNK)**2 * (1.0_JWRB-(ALPHA/CHRNCK(IJ, ICHNK))**2)
 ! adapt first estimate of wave induced stress for low winds
               IF (UFRIC(IJ, ICHNK) < USTMIN_RESET_TAUW) TAUW(IJ, ICHNK) = 0.0_JWRB
             ENDDO

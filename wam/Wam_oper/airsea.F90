@@ -1,6 +1,6 @@
-      SUBROUTINE AIRSEA (KIJS, KIJL, FL1, WAVNUM,                        &
-&                        HALP, U10, U10DIR, WSTAR, TAUW, TAUWDIR, RNFAC, &
-&                        US, Z0, Z0B, ICODE_WND, IUSFG)
+      SUBROUTINE AIRSEA (KIJS, KIJL, FL1, WAVNUM,                  &
+&                        HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,  &
+&                        US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
 
@@ -21,8 +21,8 @@
 !     ----------
 
 !       *CALL* *AIRSEA (KIJS, KIJL, FL1, WAVNUM,
-!                       HALP, U10, U10DIR, WSTAR, TAUW, TAUWDIR, RNFAC,
-!                       US, Z0, Z0B, ICODE_WND, IUSFG)*
+!                       HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,
+!                       US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)*
 
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*    - INDEX OF LAST GRIDPOINT.
@@ -31,13 +31,13 @@
 !          *HALP*    - 1/2 PHILLIPS PARAMETER
 !          *U10*     - WINDSPEED U10.
 !          *U10DIR*  - WINDSPEED DIRECTION.
-!          *WSTAR*   - FREE CONVECTION VELOCITY SCALE (M/S)
 !          *TAUW*    - WAVE STRESS.
 !          *TAUWDIR* - WAVE STRESS DIRECTION.
 !          *RNFAC*   - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !          *US*      - OUTPUT OR OUTPUT BLOCK OF FRICTION VELOCITY.
 !          *Z0*      - OUTPUT BLOCK OF ROUGHNESS LENGTH.
 !          *Z0B*     - BACKGROUND ROUGHNESS LENGTH.
+!          *CHRNCK*  - CHARNOCK COEFFICIENT
 !          *ICODE_WND* SPECIFIES WHICH OF U10 OR US HAS BEEN FILED UPDATED:
 !                     U10: ICODE_WND=3 --> US will be updated
 !                     US:  ICODE_WND=1 OR 2 --> U10 will be updated
@@ -56,7 +56,6 @@
 
       USE YOMHOOK, ONLY: LHOOK, DR_HOOK, JPHOOK
 
-
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
@@ -67,9 +66,9 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (IN) :: HALP, U10DIR, WSTAR, TAUW, TAUWDIR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (IN) :: HALP, U10DIR, TAUW, TAUWDIR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (INOUT) :: U10, US
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (OUT) :: Z0, Z0B
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (OUT) :: Z0, Z0B, CHRNCK
 
       INTEGER(KIND=JWIM) :: IJ, I, J
 
@@ -86,16 +85,16 @@
 
       IF (ICODE_WND == 3) THEN
 
-        CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, WAVNUM,                 &
-     &                HALP, U10, U10DIR, WSTAR, TAUW, TAUWDIR, RNFAC, &
-     &                US, Z0, Z0B)
+        CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, WAVNUM,          &
+     &                HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
+     &                US, Z0, Z0B, CHRNCK)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
 
 !*    3. DETERMINE ROUGHNESS LENGTH (if needed).
 !        ---------------------------
 
-        CALL Z0WAVE (KIJS, KIJL, US, TAUW, U10, Z0, Z0B)
+        CALL Z0WAVE (KIJS, KIJL, US, TAUW, U10, Z0, Z0B, CHRNCK)
 
 !*    3. DETERMINE U10 (if needed).
 !        ---------------------------

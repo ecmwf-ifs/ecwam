@@ -82,7 +82,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1, XLLWS
       TYPE(FREQUENCY), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WVPRPT
       TYPE(ENVIRONMENT), DIMENSION(KIJS:KIJL), INTENT(IN) :: WVENVI
-      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW
+      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(IN) :: FF_NOW
       TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(IN) :: INTFLDS 
       TYPE(OCEAN2WAVE), DIMENSION(KIJS:KIJL), INTENT(IN) :: NEMO2WAM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NIPRMOUT), INTENT(OUT) :: BOUT
@@ -106,13 +106,11 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FLD1, FLD2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ESWELL ,FSWELL ,THSWELL, P1SWELL, P2SWELL, SPRDSWELL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ESEA   ,FSEA   ,THWISEA, P1SEA  , P2SEA  , SPRDSEA
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: HALP, WAVEAGE, WAVEAGESEA
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CHARNOCK, BETAHQ, CDATM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: HALP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NTRAIN) :: EMTRAIN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NTRAIN) :: THTRAIN, PMTRAIN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: COSWDIF
-
-      REAL(KIND=JWRB) :: ZRCHAR 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: BETAHQ
 
 !     *FL2ND*  SPECTRUM with second order effect added if LSECONDORDER is true .
 !            and in the absolute frame of reference if currents are used 
@@ -136,10 +134,12 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
  &        WSWAVE => FF_NOW%WSWAVE, &
  &        WDWAVE => FF_NOW%WDWAVE, &
  &        UFRIC => FF_NOW%UFRIC, &
+ &        Z0M => FF_NOW%Z0M, &
+ &        Z0B => FF_NOW%Z0B, &
+ &        CHRNCK => FF_NOW%CHRNCK, &
  &        TAUW => FF_NOW%TAUW, &
  &        AIRD => FF_NOW%AIRD, &
  &        WSTAR => FF_NOW%WSTAR, &
- &        CHNK => FF_NOW%CHNK, &
  &        CICOVER => FF_NOW%CICOVER, &
  &        CITHICK => FF_NOW%CITHICK, &
  &        ALTWH   => INTFLDS%ALTWH  , &
@@ -172,8 +172,6 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       IRA=1
       SIG = 1._JWRB
-      WAVEAGE(:)=ZMISS
-      WAVEAGESEA(:)=ZMISS
       GOZPI=G/ZPI
 
       IF (IREFRA == 2 .OR. IREFRA == 3) THEN
@@ -236,12 +234,8 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
         DO IJ=KIJS,KIJL
           IF (FM(IJ) > 0._JWRB) THEN
             BOUT(IJ,ITOBOUT(IR))=1._JWRB/FM(IJ)
-! for testing: estimate of wave age based on mean frequency
-            WAVEAGE(IJ)=MIN(GOZPI/(0.9_JWRB*FM(IJ)*MAX(UFRIC(IJ),EPSUS)),1000.0_JWRB)
           ELSE
             BOUT(IJ,ITOBOUT(IR))=ZMISS
-! for testing: estimate of wave age based on mean frequency
-            WAVEAGE(IJ)=ZMISS
           ENDIF
         ENDDO
       ENDIF
@@ -274,8 +268,14 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !!      if the numerical computation of TAU and CD changes, a similar
 !!      modification has to be put in buildstress where the friction
 !!      velocity is determined from U10 and CD.
-!!      Because of the limited numerical resolution when encoding in grib, the maximum value for Cd is set to 0.007
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=MIN(MAX(UFRIC(KIJS:KIJL)**2,EPSUS)/MAX(WSWAVE(KIJS:KIJL)**2,EPSU10**2), 0.007_JWRB)
+!!      Because of the limited numerical resolution when encoding in grib, the maximum value for Cd is set to 0.01
+!!!!!!!!!!        BOUT(KIJS:KIJL,ITOBOUT(IR))=MIN(MAX(UFRIC(KIJS:KIJL)**2,EPSUS)/MAX(WSWAVE(KIJS:KIJL)**2,EPSU10**2), 0.01_JWRB)
+!!! output the drag coeffient that is consistent with the Charnock parameter that is returned to the atmosphere model:
+        CALL OUTBETA (KIJS, KIJL,                      &
+     &                WSWAVE, UFRIC, Z0M, Z0B, CHRNCK, &
+     &                CHARNOCK, BETAHQ, CD=CDATM)
+
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=MIN(CDATM(KIJS:KIJL), 0.01_JWRB)
       ENDIF
 
       IR=IR+1
@@ -323,12 +323,8 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
         DO IJ=KIJS,KIJL
           IF (FSEA(IJ) > 0._JWRB) THEN
             BOUT(IJ,ITOBOUT(IR))=1._JWRB/FSEA(IJ)
-! for testing: estimate of wave age based on wind mean frequency
-            WAVEAGESEA(IJ)=MIN(GOZPI/(0.9_JWRB*FSEA(IJ)*MAX(UFRIC(IJ),EPSUS)),1000.0_JWRB)
           ELSE
             BOUT(IJ,ITOBOUT(IR))=ZMISS
-! for testing: estimate of wave age based on wind mean frequency
-            WAVEAGESEA(IJ)=ZMISS
           ENDIF
         ENDDO
       ENDIF
@@ -633,7 +629,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=WAVEAGESEA(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
       ENDIF
 
       IR=IR+1
@@ -650,11 +646,12 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-!!!        BOUT(KIJS:KIJL,ITOBOUT(IR))=WAVEAGE(KIJS:KIJL)
 !!! debugging output of Charnock
-        ZRCHAR = 0.018_JWRB
-        CALL OUTBETA (KIJS, KIJL, ZRCHAR, FF_NOW, BETAHQ)
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=CHNK(KIJS:KIJL)
+        CALL OUTBETA (KIJS, KIJL,                      &
+     &                WSWAVE, UFRIC, Z0M, Z0B, CHRNCK, &
+     &                CHARNOCK, BETAHQ)
+
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=CHARNOCK(KIJS:KIJL)
       ENDIF
 
 

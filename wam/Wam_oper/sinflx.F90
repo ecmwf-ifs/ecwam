@@ -1,13 +1,13 @@
-SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,                    &
- &                 LUPDTUS,                                     &
- &                 FL1,                                         &
- &                 WAVNUM, CINV, XK2CG,                         &
- &                 WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER, &
- &                 COSWDIF, SINWDIF2,                           &
- &                 FMEAN, HALP, FMEANWS,                        &
- &                 FLM,                                         &
- &                 UFRIC, TAUW, TAUWDIR, Z0M, Z0B, PHIWA,       &
- &                 FLD, SL, SPOS,                               &
+SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,                       &
+ &                 LUPDTUS,                                        &
+ &                 FL1,                                            &
+ &                 WAVNUM, CINV, XK2CG,                            &
+ &                 WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER,    &
+ &                 COSWDIF, SINWDIF2,                              &
+ &                 FMEAN, HALP, FMEANWS,                           &
+ &                 FLM,                                            &
+ &                 UFRIC, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, PHIWA,  &
+ &                 FLD, SL, SPOS,                                  &
  &                 MIJ, RHOWGDFTH, XLLWS)
 
 ! ----------------------------------------------------------------------
@@ -63,6 +63,7 @@ REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: TAUW  !! WAVE STRESS IN 
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: TAUWDIR  !! WAVE STRESS DIRECTION.
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: Z0M  !! ROUGHNESS LENGTH IN M.
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: Z0B  !! BACKGROUND ROUGHNESS LENGTH.
+REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: CHRNCK  !! CHARNOCK COEFFICIENT.
 
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: PHIWA  !! ENERGY FLUX FROM WIND INTO WAVES.
 REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLD !! DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
@@ -122,9 +123,9 @@ IF(LUPDTUS) THEN
 
   ENDIF
 
-  CALL AIRSEA (KIJS, KIJL, FL1, WAVNUM,                           &
-&              HALP, WSWAVE, WDWAVE, WSTAR, TAUW, TAUWDIR, RNFAC, &
-&              UFRIC, Z0M, Z0B, ICODE_WND, IUSFG) 
+  CALL AIRSEA (KIJS, KIJL, FL1, WAVNUM,                     &
+&              HALP, WSWAVE, WDWAVE, TAUW, TAUWDIR, RNFAC,  &
+&              UFRIC, Z0M, Z0B, CHRNCK, ICODE_WND, IUSFG) 
 
 ENDIF
 

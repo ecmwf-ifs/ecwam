@@ -108,6 +108,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
  &        UFRIC => FF_NOW%UFRIC, &
  &        Z0M => FF_NOW%Z0M, &
  &        Z0B => FF_NOW%Z0B, &
+ &        CHRNCK => FF_NOW%CHRNCK, &
  &        AIRD => FF_NOW%AIRD, &
  &        WSTAR => FF_NOW%WSTAR, &
  &        CICOVER => FF_NOW%CICOVER, &
@@ -146,16 +147,16 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       NCALL = 1
       ICALL = 1
-      CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                        &
-     &             LUPDTUS,                                         &
-     &             FL1,                                             &
-     &             WAVNUM, CINV, XK2CG,                             &
-     &             WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER,     &
-     &             COSWDIF, SINWDIF2,                               &
-     &             FMEAN, HALP, FMEANWS,                            &
-     &             FLM,                                             &
-     &             UFRIC, TAUW_LOC, TAUWDIR_LOC, Z0M, Z0B, PHIWA,   &
-     &             FLD, SL, SPOS,                                   &
+      CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                              &
+     &             LUPDTUS,                                               &
+     &             FL1,                                                   &
+     &             WAVNUM, CINV, XK2CG,                                   &
+     &             WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER,           &
+     &             COSWDIF, SINWDIF2,                                     &
+     &             FMEAN, HALP, FMEANWS,                                  &
+     &             FLM,                                                   &
+     &             UFRIC, TAUW_LOC, TAUWDIR_LOC, Z0M, Z0B, CHRNCK, PHIWA, &
+     &             FLD, SL, SPOS,                                         &
      &             MIJ, RHOWGDFTH, XLLWS)
 
       IF (LCFLX) THEN
