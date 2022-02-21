@@ -20,6 +20,7 @@ USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
 USE YOWCOUT  , ONLY : LFDB, JPPFLAG, FFLAG, GFLAG, NFLAG, NIPRMOUT, BOUT, ITOBOUT, INFOBOUT
 USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_WAM_I, NGRIB_HANDLE_IFS
+USE YOWGRIBHD, ONLY : LPADPOLES
 USE YOWINTP  , ONLY : GOUT
 USE YOWMPP   , ONLY : IRANK 
 USE YOWPARAM , ONLY : NGX, NGY
@@ -54,7 +55,7 @@ CHARACTER(LEN= 2) :: MARSTYPEBAK
 CHARACTER(LEN=14) :: CDATE
 CHARACTER(LEN=296) :: OUTFILE
 
-LOGICAL :: LFDBBAK, LLCREATE
+LOGICAL :: LFDBBAK, LPADPOLESBAK, LLCREATE
 LOGICAL, DIMENSION(JPPFLAG) :: FFLAGBAK, GFLAGBAK, NFLAGBAK
 
 ! ----------------------------------------------------------------------
@@ -73,6 +74,7 @@ WRITE(IU06,*) ' OUTMDLDCP : The MPI decomposition is written to ', OUTFILE(1:LFI
 
 ! save output parameter selection (it will be overwritten and then reset)
 LFDBBAK = LFDB
+LPADPOLESBAK = LPADPOLES
 FFLAGBAK(:) = FFLAG(:)
 GFLAGBAK(:) = GFLAG(:)
 NFLAGBAK(:) = NFLAG(:)
@@ -81,6 +83,7 @@ MARSTYPEBAK = MARSTYPE
 ! Create a new output parameter selection that will only output
 ! parameters relevant for the description of the model decomposition
 LFDB = .FALSE.  ! data will be written to file
+LPADPOLES = .FALSE.  ! Do not pad the poles
 FFLAG(:) = .FALSE.
 GFLAG(:) = .FALSE.
 NFLAG(:) = .FALSE.
@@ -167,6 +170,7 @@ ENDIF
 
 ! Restore output configuration: 
 LFDB = LFDBBAK
+LPADPOLES = LPADPOLESBAK
 FFLAG(:) = FFLAGBAK(:)
 GFLAG(:) = GFLAGBAK(:)
 NFLAG(:) = NFLAGBAK(:)
