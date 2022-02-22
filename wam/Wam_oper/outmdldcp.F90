@@ -18,16 +18,21 @@ SUBROUTINE OUTMDLDCP (IJS, IJL)
 
 USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-USE YOWCOUT  , ONLY : LFDB, JPPFLAG, FFLAG, GFLAG, NFLAG, NIPRMOUT, BOUT, ITOBOUT, INFOBOUT
+USE YOWCOUT  , ONLY : JPPFLAG, FFLAG, GFLAG, NFLAG, NIPRMOUT, BOUT, ITOBOUT, INFOBOUT
 USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_WAM_I, NGRIB_HANDLE_IFS
-USE YOWGRIBHD, ONLY : LPADPOLES
+USE YOWGRIBHD, ONLY : PPMISS,  PPEPS, PPREC, PPRESOL, PPMIN_RESET, NTENCODE, NGRBRESS,   &
+ &                    LNEWLVTP
+USE YOWGRID  , ONLY : NLONRGG
 USE YOWINTP  , ONLY : GOUT
-USE YOWMPP   , ONLY : IRANK 
-USE YOWPARAM , ONLY : NIBLO, NGX, NGY, LL1D
+USE YOWMAP   , ONLY : IRGG, AMONOP, AMOSOP, XDELLA
+USE YOWMPP   , ONLY : IRANK, NPRECI 
+USE YOWPARAM , ONLY : NIBLO, NGX, NGY, LL1D, CLDOMAIN
+USE YOWPCONS , ONLY : ZMISS
 USE YOWSPEC  , ONLY : IJ2NEWIJ
-USE YOWSTAT  , ONLY : MARSTYPE, CDATEA
 USE YOWTEST  , ONLY : IU06, ITEST
 USE YOWTEXT  , ONLY : ICPLEN, CPATH
+
+
 
 USE YOMHOOK  ,ONLY  : LHOOK ,DR_HOOK
 USE GRIB_API_INTERFACE
@@ -39,24 +44,29 @@ IMPLICIT NONE
 #include "mpcrtbl.intfb.h"
 #include "outgrid.intfb.h"
 #include "preset_wgrib_template.intfb.h"
-#include "wgribenout.intfb.h"
+#include "wgribencode.intfb.h"
 
 INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
 
 INTEGER(KIND=JWIM), PARAMETER :: NBITSPERVALUE = 32  !! need a higher precision to code the grid point index 
 
-INTEGER(KIND=JWIM) :: IJ, IJGLO, IR, IFLAG
+INTEGER(KIND=JWIM) :: IJ, IJGLO, IK, IM, IR, IFLAG, IDT, KSTEP
 INTEGER(KIND=JWIM) :: LFILE, IUOUT, ICOUNT
 INTEGER(KIND=JWIM) :: IFCST, IT, IPARAM, ITABLE, IZLEV
-
+INTEGER(KIND=JWIM) :: IGRIB_HANDLE
+INTEGER(KIND=JWIM) :: ISIZE
+INTEGER(KIND=JPKSIZE_T) :: KBYTES
+INTEGER(KIND=JWIM), ALLOCATABLE :: KGRIB_BUFR(:)
+/
 REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
-CHARACTER(LEN= 2) :: MARSTYPEBAK
+CHARACTER(LEN= 2) :: MARSTYPE_DUM
 CHARACTER(LEN=14) :: CDATE
 CHARACTER(LEN=296) :: OUTFILE
 
-LOGICAL :: LFDBBAK, LPADPOLESBAK, LLCREATE
+LOGICAL :: LLCREATE
+LOGICAL :: LGRHDIFS_DUM, LPADPOLES_DUM, LRSTST0_DUM
 LOGICAL, DIMENSION(JPPFLAG) :: FFLAGBAK, GFLAGBAK, NFLAGBAK
 
 ! ----------------------------------------------------------------------
@@ -74,22 +84,15 @@ LFILE=LEN_TRIM(OUTFILE)
 WRITE(IU06,*) ' OUTMDLDCP : The MPI decomposition is written to ', OUTFILE(1:LFILE)
 
 ! save output parameter selection (it will be overwritten and then reset)
-LFDBBAK = LFDB
-LPADPOLESBAK = LPADPOLES
 FFLAGBAK(:) = FFLAG(:)
 GFLAGBAK(:) = GFLAG(:)
 NFLAGBAK(:) = NFLAG(:)
-MARSTYPEBAK = MARSTYPE
 
 ! Create a new output parameter selection that will only output
 ! parameters relevant for the description of the model decomposition
-LFDB = .FALSE.  ! data will be written to file
-LPADPOLES = .FALSE.  ! Do not pad the poles
 FFLAG(:) = .FALSE.
 GFLAG(:) = .FALSE.
 NFLAG(:) = .FALSE.
-MARSTYPE = 'an'
-IFCST = 0
 
 ! Use the extra field codes (currently the last 5 fields of the list of potential output parameters:
 ! MPI RANK:
@@ -173,11 +176,51 @@ IF(IRANK == 1) THEN
       IPARAM = INFOBOUT(IT,2)
       IZLEV  = INFOBOUT(IT,3)
 
-      CDATE = '20220220000000' ! set any date and time as the start date of the run might still be unknown
+      IK = 0
+      IM = 0
 
-      CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, GOUT(ICOUNT,:,:),  &
- &                    ITABLE, IPARAM, IZLEV, 0 , 0,             &
- &                    CDATE, IFCST, MARSTYPE, LFDB, IUOUT)
+      CDATE = '20220220000000' ! set any date and time as the start date of the run might still be unknown
+      IFCST = 0
+      MARSTYPE_DUM = 'an'
+
+      LGRHDIFS_DUM = .FALSE.
+      IDT = 0
+      KSTEP = 0
+      LPADPOLES_DUM = .FALSE.
+      LRSTST0_DUM = .FALSE.
+
+      ! grib coding
+      CALL WGRIBENCODE( IU06, ITEST, &
+ &                      NGX, NGY, &
+ &                      GOUT(ICOUNT,:,:),  &
+ &                      ITABLE, IPARAM, &
+ &                      IZLEV, &
+ &                      IK, IM, &
+ &                      CDATE, IFCST, MARSTYPE_DUM, &
+ &                      PPMISS, PPEPS, PPREC, PPRESOL, PPMIN_RESET, NTENCODE, &
+ &                      LGRHDIFS_DUM, &
+ &                      IDT, &
+ &                      NGRBRESS, LNEWLVTP, LPADPOLES_DUM, &
+ &                      SIZE(NLONRGG), NLONRGG, IRGG, &
+ &                      AMONOP, AMOSOP, XDELLA, CLDOMAIN, &
+ &                      KSTEP, LRSTST0_DUM, &
+ &                      ZMISS, &
+ &                      IGRIB_HANDLE )
+
+      ! Save grib data to file
+
+      CALL IGRIB_GET_MESSAGE_SIZE(IGRIB_HANDLE, KBYTES)
+      ISIZE=(KBYTES+NPRECI-1)/NPRECI
+      ALLOCATE(KGRIB_BUFR(ISIZE))
+
+      CALL IGRIB_GET_MESSAGE(IGRIB_HANDLE, KGRIB_BUFR)
+
+      CALL IGRIB_WRITE_BYTES(IUOUT, KGRIB_BUFR, KBYTES)
+
+      CALL IGRIB_RELEASE(IGRIB_HANDLE)
+
+      DEALLOCATE(KGRIB_BUFR)
+
     ENDIF
   ENDDO
 
@@ -190,12 +233,9 @@ ENDIF
 
 
 ! Restore output configuration: 
-LFDB = LFDBBAK
-LPADPOLES = LPADPOLESBAK
 FFLAG(:) = FFLAGBAK(:)
 GFLAG(:) = GFLAGBAK(:)
 NFLAG(:) = NFLAGBAK(:)
-MARSTYPE = MARSTYPEBAK
 !  reset output field mapping
 CALL MPCRTBL
 
