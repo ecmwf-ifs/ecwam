@@ -180,7 +180,7 @@ SUBROUTINE READPRE (IU07)
 !     DETERMINE IF WE ARE USING A QUASI GAUSSIAN GRID OR 
 !     LAT-LONG GRID (REGULAR OR IRREGULAR).
 
-        IF (IPER ==1 .AND. AMONOP ==ABS(AMOSOP) .AND.                  &
+        IF (IPER ==1 .AND. AMONOP == ABS(AMOSOP) .AND.                  &
      &     MOD(NY,2) == 0 .AND. IRGG == 1 ) THEN
           IQGAUSS=1
         ELSE

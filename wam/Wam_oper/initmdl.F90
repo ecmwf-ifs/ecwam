@@ -171,7 +171,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      NPROMA_WAM, NCHNK, IJFROMCHNK  
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,                        &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
-     &            KMNOP    ,KMSOP    ,IPER
+     &            KMNOP    ,KMSOP    ,IPER     ,IRGG     ,IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
      &                      NGX      ,NGY      ,                        &
@@ -555,21 +555,25 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' WAVE MODEL GRID ORGANISATION:'
-      WRITE(IU06,3002) ' SOUTHERNMOST LATITUDE IN GRID IS .......: ',   &
-     & AMOSOP, ' DEGREE'
-      WRITE(IU06,3002) ' NORTHERNMOST LATITUDE IN GRID IS .......: ',   &
-     & AMONOP, ' DEGREE'
-      WRITE(IU06,3002) ' WESTERNMOST LONGITUDE IN GRID IS .......: ',   &
-     & AMOWEP, ' DEGREE'
-      WRITE(IU06,3002) ' EASTERNMOST LONGITUDE IN GRID IS .......: ',   &
-     & AMOEAP, ' DEGREE'
-      WRITE(IU06,3002) ' LATITUDE INCREMENT IS ..................: ',   &
-     & XDELLA, ' DEGREE'
-      WRITE(IU06,3002) ' LONGITUDE INCREMENT IS .................: ',   &
-     & XDELLO, ' DEGREE'
+      WRITE(IU06,3002) ' SOUTHERNMOST LATITUDE IN GRID IS .......: ', AMOSOP, ' DEGREE'
+      WRITE(IU06,3002) ' NORTHERNMOST LATITUDE IN GRID IS .......: ', AMONOP, ' DEGREE'
+      WRITE(IU06,3002) ' WESTERNMOST LONGITUDE IN GRID IS .......: ', AMOWEP, ' DEGREE'
+      WRITE(IU06,3002) ' EASTERNMOST LONGITUDE IN GRID IS .......: ', AMOEAP, ' DEGREE'
+      IF ( IQGAUSS == 1 ) THEN
+        WRITE(IU06,*) ' GAUSSIAN GRID ..........................: '
+        WRITE(IU06,3002) ' APPROXIMATE LATITUDE INCREMENT IS ......: ', XDELLA, ' DEGREE'
+      ELSE
+        IF ( IRGG == 1 ) THEN
+          WRITE(IU06,*) ' IRREGULAR LAT/LON  GRID ................: '
+          WRITE(IU06,3002) ' LATITUDE INCREMENT IS ..................: ', XDELLA, ' DEGREE'
+        ELSE
+          WRITE(IU06,*) ' LAT/LON  GRID ..........................: '
+          WRITE(IU06,3002) ' LATITUDE INCREMENT IS ..................: ', XDELLA, ' DEGREE'
+          WRITE(IU06,3002) ' LONGITUDE INCREMENT IS .................: ', XDELLO, ' DEGREE'
+        ENDIF
+      ENDIF
       WRITE(IU06,*) '  '
-      WRITE(IU06,3003) ' TOTAL LENGTH OF EACH BLOCK .............: ',   &
-     & NIBLO
+      WRITE(IU06,3003) ' TOTAL LENGTH OF EACH BLOCK .............: ', NIBLO
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' SPECTRAL RESOLUTION:'
       WRITE(IU06,3003) ' TOTAL NUMBER OF DIRECTIONS .............: ', NANG 
