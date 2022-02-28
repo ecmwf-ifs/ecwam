@@ -30,6 +30,8 @@ USE YOWPCONS , ONLY : ZMISS
 USE YOWSPEC  , ONLY : IJ2NEWIJ
 USE YOWTEST  , ONLY : IU06, ITEST
 USE YOWTEXT  , ONLY : ICPLEN, CPATH
+USE YOWMAP   , ONLY : IXLG, KXLT
+USE YOWGRID  , ONLY : NLONRGG
 
 
 
@@ -50,7 +52,7 @@ INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
 INTEGER(KIND=JWIM), PARAMETER :: NBITSPERVALUE = 24  !! need a higher precision to code the grid point index 
 
-INTEGER(KIND=JWIM) :: IJ, IJGLO, IK, IM, IR, IFLAG, IDT, KSTEP
+INTEGER(KIND=JWIM) :: IJ, IJGLO, IK, IM, IR, IFLAG, IDT, KSTEP, IX, JSN, I,J,K
 INTEGER(KIND=JWIM) :: LFILE, IUOUT, ICOUNT
 INTEGER(KIND=JWIM) :: IFCST, IT, IPARAM, ITABLE, IZLEV
 INTEGER(KIND=JWIM) :: IGRIB_HANDLE
@@ -67,6 +69,9 @@ CHARACTER(LEN=296) :: OUTFILE
 LOGICAL :: LLCREATE
 LOGICAL :: LGRHDIFS_DUM, LPADPOLES_DUM, LRSTST0_DUM
 LOGICAL, DIMENSION(JPPFLAG) :: FFLAGBAK, GFLAGBAK, NFLAGBAK
+! TEMPORARY ARRAYS FOR LOCAL MASK AND GLOBAL INDICES
+INTEGER(KIND=JWIM) :: IGLOBAL(NGX,NGY)
+INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: NLOCMSK, NGLOIND
 
 ! ----------------------------------------------------------------------
 
@@ -95,14 +100,24 @@ NFLAG(:) = .FALSE.
 
 ! Use the extra field codes (currently the last 5 fields of the list of potential output parameters:
 ! MPI RANK:
+GFLAG(JPPFLAG-8) = .TRUE.
+GFLAG(JPPFLAG-7) = .TRUE.
+
+! LAND sea mask
+GFLAG(JPPFLAG-6) = .TRUE.
+
+! GRID POINT INDEX (as used inside the wave model):
+GFLAG(JPPFLAG-5) = .TRUE.
 GFLAG(JPPFLAG-4) = .TRUE.
 
 ! GRID POINT INDEX (as used inside the wave model):
 GFLAG(JPPFLAG-3) = .TRUE.
+GFLAG(JPPFLAG-2) = .TRUE.
 
 ! GLOBAL POINT INDEX (as used for non parallel binary input/output)
 ! It is different than the local grid point index if LL1D is false
-GFLAG(JPPFLAG-2) = .TRUE.
+GFLAG(JPPFLAG-1) = .TRUE.
+GFLAG(JPPFLAG) = .TRUE.
 
 !!  GFLAG(JPPFLAG-1) and GFLAG(JPPFLAG) are still available if more entries are needed.
 
@@ -111,17 +126,52 @@ GFLAG(JPPFLAG-2) = .TRUE.
 CALL MPCRTBL
 
 
+! SETUP GLOBAL INDICES 1D ARRAY + LOCAL MASK
+! SINCE WE ONLY HAVE OCEAN POINTS THE LOCAL MASK IS ONE FOR ALL POINTS
+IGLOBAL(:,:) = -1
+K=0
+DO J = 1, NGY
+  DO I = 1, NLONRGG(NGY-J+1)
+    K= K + 1
+    IGLOBAL(I,NGY-J+1) = K
+  ENDDO
+ENDDO
+!
+ALLOCATE( NLOCMSK(IJS:IJL), NGLOIND(IJS:IJL) )
+DO IJ=IJS,IJL
+   IX          = IXLG(IJ,1)
+   JSN         = KXLT(IJ,1)
+   NLOCMSK(IJ) = 1
+   NGLOIND(IJ) = IGLOBAL(IX,JSN)
+ENDDO
+
 ! Defining the ouput fields:
 ! -------------------------
 IR = 0
 
 IR = IR + 1
-BOUT(IJS:IJL, IR) = REAL(IRANK, JWRB)
+BOUT(IJS:IJL, IR) = REAL(MOD(IRANK,65536), JWRB)
 
+IR = IR + 1
+BOUT(IJS:IJL, IR) = REAL(IRANK/65536, JWRB)
+
+IR = IR + 1
+BOUT(IJS:IJL, IR) = REAL(NLOCMSK(IJS:IJL), JWRB)
+
+IR = IR + 1
+BOUT(IJS:IJL, IR) = REAL(MOD(NGLOIND(IJS:IJL),65536), JWRB)
+
+IR = IR + 1
+BOUT(IJS:IJL, IR) = REAL(NGLOIND(IJS:IJL)/65536, JWRB)
 
 IR = IR + 1
 DO IJ = IJS, IJL
-  BOUT(IJ, IR) = REAL(IJ, JWRB)
+  BOUT(IJ, IR) = REAL(MOD(IJ,65536), JWRB)
+ENDDO
+
+IR = IR + 1
+DO IJ = IJS, IJL
+  BOUT(IJ, IR) = REAL(IJ/65536, JWRB)
 ENDDO
 
 
@@ -130,15 +180,30 @@ IF ( .NOT. LL1D) THEN
   DO IJGLO = 1, NIBLO
     IJ = IJ2NEWIJ(IJGLO) 
     IF ( IJ >= IJS .AND. IJ <= IJL ) THEN 
-       BOUT(IJ, IR) = REAL(IJGLO, JWRB)
+       BOUT(IJ, IR) = REAL(MOD(IJGLO,65536), JWRB)
     ENDIF
   ENDDO
 ELSE
   DO IJ = IJS, IJL
-    BOUT(IJ, IR) = REAL(IJ, JWRB)
+    BOUT(IJ, IR) = REAL(MOD(IJ,65536), JWRB)
   ENDDO
 ENDIF
 
+IR = IR + 1
+IF ( .NOT. LL1D) THEN
+  DO IJGLO = 1, NIBLO
+    IJ = IJ2NEWIJ(IJGLO) 
+    IF ( IJ >= IJS .AND. IJ <= IJL ) THEN 
+       BOUT(IJ, IR) = REAL(IJGLO/65536, JWRB)
+    ENDIF
+  ENDDO
+ELSE
+  DO IJ = IJS, IJL
+    BOUT(IJ, IR) = REAL(IJ/65536, JWRB)
+  ENDDO
+ENDIF
+
+DEALLOCATE( NLOCMSK, NGLOIND )
 
 IF ( IR /= NIPRMOUT ) THEN
   WRITE(IU06,*) '******************************************'
@@ -164,15 +229,43 @@ IF(IRANK == 1) THEN
 
 
   ! keep looping over all posible output varaibles (as in outint)
+  ITABLE=140
   ICOUNT=0
-  DO IFLAG = 1, JPPFLAG
+  DO IFLAG = JPPFLAG-8, JPPFLAG
+
+
     IF ( GFLAG(IFLAG) ) THEN
       ICOUNT = ICOUNT+1
 
-      IT = ITOBOUT(IFLAG)
-      ITABLE = INFOBOUT(IT,1)
-      IPARAM = INFOBOUT(IT,2)
-      IZLEV  = INFOBOUT(IT,3)
+      SELECT CASE (IFLAG)
+        CASE (JPPFLAG-8)
+          IPARAM=80
+          IZLEV=0
+        CASE (JPPFLAG-7)
+          IPARAM=80
+          IZLEV=1
+        CASE (JPPFLAG-6)
+          IPARAM=81
+          IZLEV=0
+        CASE (JPPFLAG-5)
+          IPARAM=82
+          IZLEV=0
+        CASE (JPPFLAG-4)
+          IPARAM=82
+          IZLEV=1
+        CASE (JPPFLAG-3)
+          IPARAM=83
+          IZLEV=0
+        CASE (JPPFLAG-2)
+          IPARAM=83
+          IZLEV=1
+        CASE (JPPFLAG-1)
+          IPARAM=84
+          IZLEV=0
+        CASE (JPPFLAG)
+          IPARAM=84
+          IZLEV=1
+      END SELECT
 
       IK = 0
       IM = 0
