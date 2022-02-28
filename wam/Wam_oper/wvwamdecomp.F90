@@ -8,6 +8,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCOUT  , ONLY : LOUTMDLDCP
       USE YOWMPP   , ONLY : NPROC    ,MPMAXLENGTH
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -15,6 +16,7 @@
 
       IMPLICIT NONE
 #include "mpdecomp.intfb.h"
+#include "outmdldcp.intfb.h"
 
       INTEGER(KIND=JWIM) :: NPR, MAXLEN
 
@@ -31,6 +33,9 @@
       LLWVENVI = .TRUE.
       CALL MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
       MPMAXLENGTH=MAXLEN
+
+      ! Write model decomposition to a file
+      IF ( LOUTMDLDCP ) CALL OUTMDLDCP
 
       IF (LHOOK) CALL DR_HOOK('WVWAMDECOMP',1,ZHOOK_HANDLE)
  

@@ -1,10 +1,10 @@
-SUBROUTINE PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE)
+      SUBROUTINE PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
 
 !----------------------------------------------------------------------
 
 !**** *PRESET_WGRIB_TEMPLATE* SETS DEFAULT VALUES FOR GRIB TEMPLATES
 
-!     J. BIDLOT    ECMWF JUNE 2009
+!     J. BIDLOT    ECMWF JUNE 2009 
 
 !*    PURPOSE.
 !     --------
@@ -15,17 +15,22 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE)
 !**   INTERFACE.
 !     ----------
 
-!     SUBROUTINE PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE)
+!     SUBROUTINE PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
 !                INPUT:
 !                CT           : "I" for INTEGRATED PARAMETERS AND
 !                               "S" for SPECTRA
 !                OUTPUT:
 !                IGRIB_HANDLE : GRIB HANDLE THAT WILL BE CREATED. 
 
+!                OPTIONAL INPUT:
+!                LLCREATE       IF TRUE, FORCE CREATION OF TEMPLATE FROM FILE
+!                NBITSPERVALUE  NUMBER OF BITS FOR CODING. 
+!                               IF PRESENT, IT WILL OVERRULE NGRBRESI AND NGRBRESS
+
 !     METHOD.
 !     -------
 
-!     EXTERNALS./
+!     EXTERNALS.
 !     ----------
 
 !     REFERENCE.
@@ -37,22 +42,22 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LWCOUSAMEGRID
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY :                                             &
      &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESI ,    &
      &            NGRBRESS, LGRHDIFS ,LNEWLVTP 
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
+      USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,IQGAUSS  ,AMOWEP   ,AMOSOP   ,    &
-     &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,NLONRGG
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE_RED ,    &
+     &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE     ,    &
      &                      CLDOMAIN
       USE YOWPCONS , ONLY : ZMISS    ,DEG
       USE YOWSTAT  , ONLY : NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,    &
      &            MARSTYPE ,YCLASS   ,YEXPVER  ,ISTREAM  ,NLOCGRB  ,    &
      &            NCONSENSUS,NDWD    ,NMFR     ,NNCEP    ,NUKM     ,    &
      &            IREFDATE
-      USE YOWTEST  , ONLY : IU06
+      USE YOWTEST  , ONLY : IU06     ,ITEST
 
       USE GRIB_API_INTERFACE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -61,25 +66,25 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE)
 #include "abort1.intfb.h"
 #include "wstream_strg.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(OUT) :: IGRIB_HANDLE
       CHARACTER(LEN=1), INTENT(IN) :: CT 
-
+      INTEGER(KIND=JWIM), INTENT(OUT) :: IGRIB_HANDLE
+      LOGICAL, INTENT(IN), OPTIONAL :: LLCREATE
+      INTEGER(KIND=JWIM) , INTENT(IN), OPTIONAL :: NBITSPERVALUE
 
       INTEGER(KIND=JWIM) :: IC, JC, KST,JSN, KK, MM
       INTEGER(KIND=JWIM) :: ICLASS,ICENTRE,IFS_STREAM
-      INTEGER(KIND=JWIM) :: IREPR, IRESFLAGS
+      INTEGER(KIND=JWIM) :: IBITSPERVALUE
       INTEGER(KIND=JWIM) :: IDIRSCALING, IFRESCALING
       INTEGER(KIND=JWIM) :: NY
       INTEGER(KIND=JWIM) :: KSYSNB, KMETNB, KREFDATE
       INTEGER(KIND=JWIM) :: IDUM, IRET 
       INTEGER(KIND=JWIM) :: ITHETA(NANG)
-      INTEGER(KIND=JWIM) :: IFREQ(NFRE_RED)
+      INTEGER(KIND=JWIM) :: IFREQ(NFRE)
       INTEGER(KIND=JWIM), DIMENSION(:), ALLOCATABLE :: PL
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: RMOEAP
       REAL(KIND=JWRB) :: ZTHETA(NANG)
-      REAL(KIND=JWRB) :: ZFREQ(NFRE_RED)
+      REAL(KIND=JWRB) :: ZFREQ(NFRE)
       REAL(KIND=JWRB), ALLOCATABLE :: SCFR(:), SCTH(:)
 
 ! The following must NOT be changed from a 4 byte real
@@ -90,25 +95,44 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE)
       CHARACTER(LEN=96) :: CLWORD
 
       LOGICAL :: LASTREAM
+      LOGICAL :: LLCRT 
 
 !-------------------------------------------------------------------
 
-IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
-      IF (.NOT. LGRHDIFS) THEN
+      IF( PRESENT(LLCREATE) ) THEN
+        LLCRT = LLCREATE
+      ELSE
+        LLCRT = .FALSE. 
+      ENDIF
+
+      IF( PRESENT(NBITSPERVALUE) ) THEN
+        IBITSPERVALUE = NBITSPERVALUE
+      ELSEIF(CT.EQ."S") THEN
+        IBITSPERVALUE = NGRBRESS
+      ELSE
+        IBITSPERVALUE = NGRBRESI
+      ENDIF
+
+      IF(.NOT. LGRHDIFS .OR. LLCRT) THEN
         IGRIB_HANDLE=-99
         CALL IGRIB_NEW_FROM_SAMPLES(IGRIB_HANDLE,'gg_sfc_grib1')
-        !!! see below : this is a limitation of grib1   !!!!
       ELSE
          IGRIB_HANDLE=-99
          CALL IGRIB_CLONE(NGRIB_HANDLE_IFS,IGRIB_HANDLE)
+      ENDIF
+      IF(ITEST.GT.0) THEN
+        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'centre', ICENTRE)
+        WRITE(IU06,*) ' PRESET_WGRIB_TEMPLATE: GRIB HANDLE CREATED: ',  &
+     &               IGRIB_HANDLE, ' CENTRE = ',ICENTRE 
       ENDIF
 
 !     PRODUCT DEFINITION.
 !     -------------------
 
 !     MODEL IDENTIFICATION.
-      IF ( CLDOMAIN == 'g' ) THEN
+      IF( CLDOMAIN == 'g' ) THEN
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier', &
      &                       IMDLGRBID_G)
       ELSE
@@ -116,11 +140,11 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
      &                       IMDLGRBID_M)
       ENDIF
 
-      IF (.NOT.LNEWLVTP) THEN
+      IF(.NOT.LNEWLVTP) THEN
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',102)
       ELSE
         ! if this change check wgribout and intwaminput.
-        IF (CT == "S") THEN
+        IF(CT.EQ."S") THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',212)
         ELSE
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',209)
@@ -130,10 +154,10 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
 !     DEFINE YOUR OWN LOCAL HEADER
 !     -----------------------------
-      IF (.NOT. LGRHDIFS) THEN
+      IF(.NOT. LGRHDIFS .OR. LLCRT) THEN
         ! LOCAL MARS TABLE USED.
 
-        IF (CT == "S") THEN
+        IF(CT.EQ."S") THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',    &
      &                         13)
           ! set localFlag to 3 to prevent use of offsetToEndOf4DvarWindow
@@ -151,7 +175,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ! TYPE
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'type',2)
         ! STREAM
-        IF (ISTREAM > 0) THEN
+        IF(ISTREAM.GT.0) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
         ELSE
           WRITE(IU06,*) ''
@@ -170,7 +194,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'numberOfForecastsInEnsemble', &
      &                       NTOTENS)
 
-        IF (CT == "S") THEN
+        IF(CT.EQ."S") THEN
 !         special case for spectra....
 !         (for seasonal or monthly forecast only)
           IF ( ISTREAM .EQ. 1082 .OR.                                   &
@@ -188,12 +212,12 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           ! METHOD NUMBER
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'methodNumber',KMETNB)
 
-          IF (ISTREAM == 1204 .OR.                                       &
-     &        ISTREAM == 1078 .OR.                                       &
-     &        ISTREAM == 1079 .OR.                                       &
-     &        ISTREAM == 1084 .OR.                                       &
-     &        ISTREAM == 1085                                            &
-     &        ) THEN
+          IF(ISTREAM == 1204 .OR.                                       &
+     &       ISTREAM == 1078 .OR.                                       &
+     &       ISTREAM == 1079 .OR.                                       &
+     &       ISTREAM == 1084 .OR.                                       &
+     &       ISTREAM == 1085                                            &
+     &       ) THEN
             KREFDATE=IREFDATE
           ELSE
             KREFDATE=0 
@@ -208,18 +232,18 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'oceanAtmosphereCoupling',0)
 
 
-        ELSEIF (NLOCGRB == 18 ) THEN
+        ELSE IF(NLOCGRB == 18 ) THEN
           ! MULTI ANALYSIS ENSEMBLE RUNS
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'modelIdentifier','ECMF')
-          IF (NCONSENSUS == 0) THEN
+          IF(NCONSENSUS == 0) THEN
             ! Data from one centre
-            IF (NDWD == 1) THEN
+            IF(NDWD == 1) THEN
               CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'origin',78)
-            ELSEIF (NMFR == 1) THEN
+            ELSEIF(NMFR == 1) THEN
               CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'origin',85)
-            ELSEIF (NNCEP == 1) THEN
+            ELSEIF(NNCEP == 1) THEN
               CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'origin',7)
-            ELSEIF (NUKM == 1) THEN
+            ELSEIF(NUKM == 1) THEN
               CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'origin',74)
             ENDIF
           ELSE
@@ -227,19 +251,19 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'origin',255)
             ICENTRE=1
             CLWORD='ECMF'
-            IF (NDWD == 1) THEN
+            IF(NDWD == 1) THEN
               ICENTRE=ICENTRE+1
               CLWORD=CLWORD//'EDZW'
             ENDIF
-            IF (NMFR == 1) THEN
+            IF(NMFR == 1) THEN
               ICENTRE=ICENTRE+1
               CLWORD=CLWORD//'LFPW'
             ENDIF
-            IF (NNCEP == 1) THEN
+            IF(NNCEP == 1) THEN
              ICENTRE=ICENTRE+1
              CLWORD=CLWORD//'KWBC'
             ENDIF
-            IF (NUKM == 1) THEN
+            IF(NUKM == 1) THEN
              ICENTRE=ICENTRE+1
              CLWORD=CLWORD//'EGRR'
             ENDIF
@@ -247,13 +271,13 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'ccccIdentifiers',        &
      &                           CLWORD(1:4*ICENTRE))
           ENDIF
-        ELSEIF (NLOCGRB == 15 ) THEN
+        ELSE IF(NLOCGRB == 15 ) THEN
 !         SEASONAL FORECASTS
           ! SYSTEM NUMBER
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'system',NSYSNB)
           ! METHOD NUMBER
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'method',NMETNB)
-        ELSEIF (NLOCGRB == 23 ) THEN
+        ELSE IF(NLOCGRB == 23 ) THEN
 !         Coupled atmospheric, wave and ocean means (with hindcast support)
           ! SYSTEM NUMBER
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'system',NSYSNB)
@@ -261,7 +285,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'method',NMETNB)
           ! REFERENCE DATE
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'refdate',IREFDATE)
-        ELSEIF (NLOCGRB == 26 ) THEN
+        ELSE IF(NLOCGRB == 26 ) THEN
 !         EPS or DETERMINISTIC HINDCASTS
           ! REFERENCE DATE
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'referenceDate',IREFDATE)
@@ -272,7 +296,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 !     USES GRIB HEADER INFORMATION FROM THE IFS COUPLING
 !     --------------------------------------------------
 
-        IF (CT == "S") THEN
+        IF(CT.EQ."S") THEN
 !         SPECTRA USE THEIR OWN GRIB TABLE !!!
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',13)
 
@@ -280,67 +304,67 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
      &                        'offsetToEndOf4DvarWindow',IDUM,KRET=IRET)
           ! set localFlag to 3 to prevent use of offsetToEndOf4DvarWindow
           ! if not used in the IFS template.
-          IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',3)
+          IF(IRET.NE.0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',3)
 
           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'systemNumber',          &
      &                         IDUM,KRET=IRET)
-          IF (IRET /= 0) THEN
+          IF(IRET.NE.0) THEN
              KSYSNB=65535
              CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'systemNumber',KSYSNB)
           ENDIF
           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'methodNumber',          &
      &                         IDUM,KRET=IRET)
-          IF (IRET /= 0) THEN
+          IF(IRET.NE.0) THEN
              KMETNB=65535
              CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'methodNumber',KMETNB)
           ENDIF
           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'referenceDate',         &
      &                         IDUM,KRET=IRET)
-          IF (IRET /= 0) THEN
+          IF(IRET.NE.0) THEN
              KREFDATE=0 
              CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'referenceDate',KREFDATE)
           ENDIF
 
           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'climateDateFrom',       &
      &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
+          IF(IRET.NE.0)                                                  &
      &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateFrom',0)
 
           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'climateDateTo',         &
      &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
+          IF(IRET.NE.0)                                                  &
      &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateTo',0)
 
           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legBaseDate',           &
      &                         IDUM,KRET=IRET) 
-          IF (IRET /= 0)                                                 &
+          IF(IRET.NE.0)                                                  &
      &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseDate',0)
 
           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legBaseTime',           &
      &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
+          IF(IRET.NE.0)                                                  &
      &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseTime',0)
 
           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legNumber',             &
      &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
+          IF(IRET.NE.0)                                                  &
      &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legNumber',0)
 
           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,                         &
      &                         'oceanAtmosphereCoupling',                &
      &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
+          IF(IRET.NE.0)                                                  &
      &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                           &
      &                           'oceanAtmosphereCoupling',0)
         ENDIF
 
 !       RESET STREAM IF NEEDED
         CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'stream',IFS_STREAM)
-        IF (.NOT.LNEWLVTP) THEN
+        IF(.NOT.LNEWLVTP) THEN
 !         GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
           CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,       &
      &                      MARSFCTYPE, ISTREAM, LASTREAM) 
-          IF (CSTREAM == '****') THEN
+          IF(CSTREAM.EQ.'****') THEN
             WRITE(IU06,*) '*****************************************'
             WRITE(IU06,*) ''
             WRITE(IU06,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!'
@@ -358,7 +382,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
 
 !     SPECIFIC ENTRIES FOR SPECTRAL DATA
-      IF (CT == "S") THEN
+      IF(CT.EQ."S") THEN
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'numberOfDirections',NANG)
         IDIRSCALING = 1000
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'directionScalingFactor',      &
@@ -371,25 +395,25 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         DEALLOCATE(SCTH)
 
 
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'numberOfFrequencies',NFRE_RED)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'numberOfFrequencies',NFRE)
         IFRESCALING = 1000000
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'frequencyScalingFactor',      &
      &                       IFRESCALING)
-        ALLOCATE(SCFR(NFRE_RED))
-        DO MM=1,NFRE_RED
+        ALLOCATE(SCFR(NFRE))
+        DO MM=1,NFRE
           SCFR(MM)=NINT(FR(MM)*IFRESCALING)
         ENDDO
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledFrequencies',SCFR)
         DEALLOCATE(SCFR)
 
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'bitsPerValue',NGRBRESS)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'bitsPerValue', IBITSPERVALUE)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'additionalFlagPresent',1)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfPacking',               &
      &                       'grid_simple_matrix')
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NR',1)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC',1)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC1',NANG)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC2',NFRE_RED)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC2',NFRE)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'physicalFlag1',1)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'physicalFlag2',2)
         DO IC=1,NANG
@@ -398,7 +422,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           ZTHETA(IC)=REAL4
         ENDDO
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'coefsFirst',ZTHETA)
-        DO IC=1,NFRE_RED
+        DO IC=1,NFRE
           REAL4 = FR(IC)
 !!!          ZFREQ(IC)=TRANSFER (REAL4, 1)
           ZFREQ(IC)=REAL4
@@ -409,105 +433,79 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
 !     GEOGRAPHY
 
-      IF (.NOT. LGRHDIFS .OR. .NOT. LWCOUSAMEGRID ) THEN
-
-        IF ( IQGAUSS == 1 ) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','reduced_gg')
-          IREPR=4
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'dataRepresentationType',IREPR)
-        ELSE
-          IF (IRGG == 0) THEN
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','regular_ll')
-          ELSE
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','reduced_ll')
-          ENDIF
-        ENDIF
-
-
-        ! NUMBER OF POINTS ALONG A MERIDIAN
-        IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN 
-          NY = NINT(180.0_JWRB/XDELLA) + 1
-        ELSE
-          NY = NGY
-        ENDIF
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'Nj',NY)
-        IF ( IQGAUSS == 1 ) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'N',NY/2)
-        ENDIF
-
-        ! NUMBER OF POINTS PER LATITUDE
-        IF (IRGG == 0) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'Ni',NGX)
-        ELSE
-          ALLOCATE(PL(NY))
-          PL(:)=0
-          IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN 
-            KST = NINT((90.0_JWRB - AMONOP ) / XDELLA)
-          ELSE
-            KST = 0
-          ENDIF
-          DO JC = 1, NGY
-            JSN=NGY-JC+1
-            PL(JC+KST) = NLONRGG(JSN)
-          ENDDO
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'pl',PL)
-          DEALLOCATE(PL)
-        ENDIF
-
-!       RESOLUTION AND COMPONENT FLAGS
-        IF ( IQGAUSS == 1 ) THEN
-          IRESFLAGS=0
-        ELSE
-          IRESFLAGS=128
-        ENDIF
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
-     &                       'resolutionAndComponentFlags',IRESFLAGS)
-
-        ! LATITUDE OF THE FIRST GRID POINT
-        IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                         'latitudeOfFirstGridPointInDegrees',90.)
-        ELSE
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                         'latitudeOfFirstGridPointInDegrees',AMONOP)
-        ENDIF
-
-        ! LONGITUDE OF ORIGIN (WEST -)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                       'longitudeOfFirstGridPointInDegrees',AMOWEP)
-
-        ! LATITUDE OF THE LAST GRID POINT
-        IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                         'latitudeOfLastGridPointInDegrees',-90.)
-        ELSE
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                         'latitudeOfLastGridPointInDegrees',AMOSOP)
-        ENDIF
-
-        ! LONGITUDE OF EXTREME POINT (WEST)
-        IF ( IQGAUSS /= 1 ) THEN
-          RMOEAP = AMOEAP
-        ELSE
-          !!! this is a limitation of grib1   !!!!
-          RMOEAP = REAL(INT(1000._JWRB*AMOEAP),JWRB)/1000._JWRB
-        ENDIF
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
-     &                      'longitudeOfLastGridPointInDegrees',RMOEAP)
-
-        ! LONGITUDE INCREMENT
-        IF (IRGG == 0) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                       'iDirectionIncrementInDegrees',XDELLO)
-        ENDIF
-
-        ! LATITUDE INCREMENT
-        IF ( IQGAUSS /= 1 ) THEN 
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                       'jDirectionIncrementInDegrees',XDELLA)
-        ENDIF
-
+      IF (IRGG .EQ. 0) THEN
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','regular_ll')
+      ELSE
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','reduced_ll')
       ENDIF
+
+
+      ! NUMBER OF POINTS ALONG A MERIDIAN
+      IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
+        NY = NINT(180.0_JWRB/XDELLA) + 1
+      ELSE
+        NY = NGY
+      ENDIF
+      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'Nj',NY)
+
+      ! NUMBER OF POINTS PER LATITUDE
+      IF (IRGG .EQ. 0) THEN
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'Ni',NGX)
+      ELSE
+        ALLOCATE(PL(NY))
+        PL=0
+        IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
+          KST = NINT((90.0_JWRB - AMONOP ) / XDELLA)
+        ELSE
+          KST = 0
+        ENDIF
+        DO JC = 1, NGY
+          JSN=NGY-JC+1
+          PL(JC+KST) = NLONRGG(JSN)
+        ENDDO
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'pl',PL)
+        DEALLOCATE(PL)
+      ENDIF
+
+!     RESOLUTION AND COMPONENT FLAGS
+      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
+     &                     'resolutionAndComponentFlags',128)
+
+      ! LATITUDE OF THE FIRST GRID POINT
+      IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
+     &                       'latitudeOfFirstGridPointInDegrees',90.)
+      ELSE
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
+     &                       'latitudeOfFirstGridPointInDegrees',AMONOP)
+      ENDIF
+
+      ! LONGITUDE OF ORIGIN (WEST -)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
+     &                     'longitudeOfFirstGridPointInDegrees',AMOWEP)
+
+      ! LATITUDE OF THE LAST GRID POINT
+      IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
+     &                       'latitudeOfLastGridPointInDegrees',-90.)
+      ELSE
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
+     &                       'latitudeOfLastGridPointInDegrees',AMOSOP)
+      ENDIF
+
+      ! LONGITUDE OF EXTREME POINT (WEST)
+      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
+     &                    'longitudeOfLastGridPointInDegrees',AMOEAP)
+
+      ! LONGITUDE INCREMENT
+      IF (IRGG .EQ. 0) THEN
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
+     &                     'iDirectionIncrementInDegrees',XDELLO)
+      ENDIF
+
+      ! LATITUDE INCREMENT
+      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
+     &                     'jDirectionIncrementInDegrees',XDELLA)
 
 
       ! BITMAP PRESENT:
@@ -517,14 +515,10 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'missingValue',ZMISS)
 
       ! Number of bits used for each encoded value
-      IF (CT == "S") THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'bitsPerValue',NGRBRESS)
-      ELSE
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'bitsPerValue',NGRBRESI)
-      ENDIF
+      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'bitsPerValue', IBITSPERVALUE)
 
       ! TOTAL NUMBER OF GRID POINTS FOR ENCODING.
-      IF (IRGG == 1) THEN
+      IF(IRGG.EQ.1) THEN
         NTENCODE=0
         DO JC=1,NGY
           NTENCODE=NTENCODE+NLONRGG(JC)
@@ -533,6 +527,6 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         NTENCODE=NY*NGX
       ENDIF
 
-IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',1,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',1,ZHOOK_HANDLE)
 
-END SUBROUTINE PRESET_WGRIB_TEMPLATE 
+      END SUBROUTINE PRESET_WGRIB_TEMPLATE 

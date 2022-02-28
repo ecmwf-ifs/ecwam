@@ -59,7 +59,8 @@
      &            LWAMANOUT,                                            &
      &            NWRTOUTWAM,                                           &
      &            LSECONDORDER,                                         &
-     &            LWAM_USE_IO_SERV
+     &            LWAM_USE_IO_SERV,                                     &
+     &            LOUTMDLDCP
       USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
@@ -115,10 +116,11 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "iwam_get_unit.intfb.h"
+#include "wam_u2l1cr.intfb.h"
 #include "wposnam.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU05
-      INTEGER(KIND=JWIM) :: ISAT, IC, II
+      INTEGER(KIND=JWIM) :: ISAT, IC, II, LEN
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -191,7 +193,8 @@
      &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,                      &
      &   LWNEMOCOUDEBUG,                                                &
      &   LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                                &
-     &   LWAM_USE_IO_SERV
+     &   LWAM_USE_IO_SERV,                                              &
+     &   LOUTMDLDCP
 
 
       CHARACTER(LEN=14) :: CLOUT
@@ -330,6 +333,7 @@
 !     LLNORMAGAM : USE THE RENORMALISTION OF THE GROWTH RATE.
 !     LWAM_USE_IO_SERV: TRUE IF SPECTRAL AND INTEGRATED PARAMETER OUTPUT SHOULD BE
 !              DONE USING IFS IO SERVER
+!     LOUTMDLDCP : OUPUT MODEL DECOMPOSITION TO FILE
 !
 !     LNOCDIN: IF TRUE THEN GRIB INPUT OF A DRAG COEFFICIENT FIELD IS
 !              NOT REQUIRED.  
@@ -632,6 +636,8 @@
 
       LWAM_USE_IO_SERV = .FALSE.
 
+      LOUTMDLDCP = .FALSE.
+
       LWCOUNORMS = .FALSE.
       LLNORMIFS2WAM = .FALSE.
       LLNORMWAM2IFS = .FALSE.
@@ -683,6 +689,7 @@
       LCHKCONV = .TRUE.
       LBCWA = .FALSE.
 
+      NGRIB_HANDLE_IFS = -1
 
 ! ----------------------------------------------------------------------
 
@@ -820,6 +827,20 @@
       IF (CLOTSU(8) == 'H') IDELBC  = IDELBC*3600
 
 
+      CALL WAM_U2L1CR( YCLASS )
+
+
+
+      ICPLEN=LEN_TRIM(CPATH)
+      IF(ICPLEN.GT.0.AND.CPATH(ICPLEN:ICPLEN).EQ.'/') THEN
+        CPATH=CPATH(1:ICPLEN-1)
+        ICPLEN=ICPLEN-1
+      ENDIF
+
+!           **** CHECK LENGTH OF YEXPVER AND PUT IT RIGHT JUSTIFIED ****
+      LEN=LEN_TRIM(YEXPVER)
+      YEXPVER(5-LEN:4)=YEXPVER(1:LEN)
+      YEXPVER(1:4-LEN)='0000'
 
 
 !     RESET CERTAIN FLAGS:
@@ -870,6 +891,12 @@
         WRITE(6,*) '*** LLNORMWAMOUT_GLOBAL= ',LLNORMWAMOUT_GLOBAL
         WRITE(6,*) '*** LSMSSIG_WAM= ',LSMSSIG_WAM
         WRITE(6,*) '*** LWAM_USE_IO_SERV = ',LWAM_USE_IO_SERV
+        WRITE(6,*) '*** CPATH = ',CPATH(1:ICPLEN)
+        WRITE(6,*) '*** LOUTMDLDCP = ',LOUTMDLDCP
+        WRITE(6,*) '*** NLOCGRB = ',NLOCGRB
+        WRITE(6,*) '*** YEXPVER = ',YEXPVER
+        WRITE(6,*) '*** YCLASS = ',YCLASS
+        WRITE(6,*) '*** ISTREAM = ',ISTREAM
         WRITE(6,*) '==============================================='
       ENDIF
 
