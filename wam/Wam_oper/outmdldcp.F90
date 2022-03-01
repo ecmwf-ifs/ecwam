@@ -98,6 +98,8 @@ LFDBBAK = LFDB
 FFLAG(:) = .FALSE.
 GFLAG(:) = .FALSE.
 NFLAG(:) = .FALSE.
+LFDB = .FALSE. 
+
 
 ! Use the extra field codes (currently the last 5 fields of the list of potential output parameters:
 ! MPI RANK:
