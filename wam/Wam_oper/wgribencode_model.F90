@@ -1,7 +1,7 @@
-SUBROUTINE WGRIBENCODE_MODEL (IU06, ITEST, I1, I2, FIELD, &
-                        ITABLE, IPARAM, KLEV, IK, IM, &
-                        CDATE, IFCST, MARSTYPE, &
-                        IGRIB_HANDLE)
+SUBROUTINE WGRIBENCODE_MODEL (IU06, ITEST, I1, I2, FIELD,   &
+ &                            ITABLE, IPARAM, KLEV, IK, IM, &
+ &                            CDATE, IFCST, MARSTYPE,       &
+ &                            IGRIB_HANDLE)
 
 ! ----------------------------------------------------------------------
 
@@ -107,22 +107,22 @@ ELSE
    ENDIF
 ENDIF
 
-CALL WGRIBENCODE(  IU06, ITEST, &
-                    I1, I2, &
-                    FIELD, &
-                    ITABLE, IPARAM, &
-                    KLEV, &
-                    IK, IM, &
-                    CDATE, IFCST, MARSTYPE, &
-                    PPMISS, PPEPS, PPREC, PPRESOL, PPMIN_RESET, NTENCODE, &
-                    LGRHDIFS, &
-                    NDATE_TIME_WINDOW_END, &
-                    NGRBRESS, LNEWLVTP, LPADPOLES, &
-                    SIZE(NLONRGG), NLONRGG, IRGG, &
-                    AMONOP, AMOSOP, XDELLA, CLDOMAIN, &
-                    KCOUSTEP, LRSTST0, &
-                    ZMISS, &
-                    IGRIB_HANDLE)
+CALL WGRIBENCODE( IU06, ITEST, &
+ &                I1, I2, &
+ &                FIELD, &
+ &                ITABLE, IPARAM, &
+ &                KLEV, &
+ &                IK, IM, &
+ &                CDATE, IFCST, MARSTYPE, &
+ &                PPMISS, PPEPS, PPREC, PPRESOL, PPMIN_RESET, NTENCODE, &
+ &                LGRHDIFS, &
+ &                DATE_TIME_WINDOW_END, &
+ &                NGRBRESS, LNEWLVTP, LPADPOLES, &
+ &                SIZE(NLONRGG), NLONRGG, IRGG, &
+ &                AMONOP, AMOSOP, XDELLA, CLDOMAIN, &
+ &                KCOUSTEP, LRSTST0, &
+ &                ZMISS, &
+ &                IGRIB_HANDLE)
 
 CALL GSTATS(1709,1)
 IF (LHOOK) CALL DR_HOOK('WGRIBENCODE_MODEL',1,ZHOOK_HANDLE)
