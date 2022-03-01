@@ -96,6 +96,8 @@ LFDBBAK = LFDB
 FFLAG(:) = .FALSE.
 GFLAG(:) = .FALSE.
 NFLAG(:) = .FALSE.
+LFDB = .FALSE. 
+
 
 ! Use the extra field codes (currently the last 5 fields of the list of potential output parameters:
 !! see below that everyhting is hardcoded from JPPFLAG-8 to JPPFLAG
