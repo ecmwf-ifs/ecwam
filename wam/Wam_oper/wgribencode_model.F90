@@ -116,7 +116,7 @@ CALL WGRIBENCODE( IU06, ITEST, &
  &                CDATE, IFCST, MARSTYPE, &
  &                PPMISS, PPEPS, PPREC, PPRESOL, PPMIN_RESET, NTENCODE, &
  &                LGRHDIFS, &
- &                DATE_TIME_WINDOW_END, &
+ &                NDATE_TIME_WINDOW_END, &
  &                NGRBRESS, LNEWLVTP, LPADPOLES, &
  &                SIZE(NLONRGG), NLONRGG, IRGG, &
  &                AMONOP, AMOSOP, XDELLA, CLDOMAIN, &
