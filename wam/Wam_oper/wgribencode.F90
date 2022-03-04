@@ -7,7 +7,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 &                        CDATE, IFCST, MARSTYPE, &
 &                        PPMISS, PPEPS, PPREC, PPRESOL, PPMIN_RESET, NTENCODE, &
 &                        LGRHDIFS, &
-&                        DATE_TIME_WINDOW_END, &
+&                        NDATE_TIME_WINDOW_END, &
 &                        NGRBRESS, LNEWLVTP, LPADPOLES, &
 &                        NLONRGG_SIZE, NLONRGG, IRGG, &
 &                        AMONOP, AMOSOP, XDELLA, CLDOMAIN, &
@@ -86,7 +86,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       REAL(KIND=JWRB), INTENT(IN)      :: PPRESOL ! Maximun resolution possible when encoding spectra (parameter 251).
       REAL(KIND=JWRB), INTENT(IN)      :: PPMIN_RESET      ! Can be used to set the minimum of ppmin in wgribout to a lower value.
       INTEGER(KIND=JWIM), INTENT(IN)   :: NTENCODE         ! Total number of grid points for encoding
-      INTEGER(KIND=JWIM), INTENT(IN)   :: DATE_TIME_WINDOW_END
+      INTEGER(KIND=JWIM), INTENT(IN)   :: NDATE_TIME_WINDOW_END
       INTEGER(KIND=JWIM), INTENT(IN)   :: NGRBRESS         ! Number of bits used to encode spectra
       LOGICAL, INTENT(IN)   :: LNEWLVTP         ! If true the new levtype definition will be used.
       LOGICAL, INTENT(IN)   :: LPADPOLES        ! True if poles are padded when savind to grib.
@@ -350,8 +350,8 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
             ISS2=0
             WRITE(CDATE2,'(I4,5I2)')IY2,IM2,ID2,IH2,IMN2,ISS2
 
-            IDATERES=DATE_TIME_WINDOW_END
-            IF(IDATERES.NE.0) THEN
+            IDATERES=NDATE_TIME_WINDOW_END
+            IF (IDATERES /= 0) THEN
               IY1=IDATERES/1000000
               IDATERES=IDATERES-IY1*1000000
               IM1=IDATERES/10000
@@ -365,8 +365,13 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
               CALL DIFDATE(CDATE2,CDATE1,NWINOFF)
               NWINOFF=NWINOFF/3600
             ELSE
-              NWINOFF=12-MOD(IH2+3,12)
-              IF(IPARAM.EQ.251) THEN
+!             this only works for 12 hour analysis windows !!!1
+              IF (IH2+3 == 12 ) THEN
+                NWINOFF=0
+              ELSE 
+                NWINOFF=12-MOD(IH2+3,12)
+              ENDIF
+              IF (IPARAM == 251) THEN
                 CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',4)
               ENDIF
             ENDIF
