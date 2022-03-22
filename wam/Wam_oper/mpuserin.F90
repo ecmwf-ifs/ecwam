@@ -129,7 +129,7 @@
       CHARACTER(LEN=70) :: CLHEADER
       CHARACTER(LEN=72) :: NAMELIST_FILENAME 
 
-      LOGICAL :: LLEOF, LLOPENED
+      LOGICAL :: LLEOF 
 
 ! ----------------------------------------------------------------------
 
@@ -752,7 +752,6 @@
       LCHKCONV = .TRUE.
       LBCWA = .FALSE.
 
-      LLOPENED = .FALSE.
 
 
 ! ----------------------------------------------------------------------
