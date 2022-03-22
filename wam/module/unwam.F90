@@ -2325,17 +2325,17 @@ END INTERFACE
 
         DBG%FNAME = 'unwamdbg.%p.dat'
         CALL EXPAND_STRING(IRANK,NPROC,0,0,DBG%FNAME,1)
-        DBG%FHNDL = IWAM_GET_UNIT(IU06, DBG%FNAME, 'w', 'f', 0)
+        DBG%FHNDL = IWAM_GET_UNIT(IU06, DBG%FNAME, 'w', 'f', 0, 'READWRITE')
 
         IF(LLUNBINOUT) THEN
           XFN_HS%FNAME = 'erghs.bin'
-          XFN_HS%FHNDL = IWAM_GET_UNIT(IU06, XFN_HS%FNAME, 'w', 'u', 0)
+          XFN_HS%FHNDL = IWAM_GET_UNIT(IU06, XFN_HS%FNAME, 'w', 'u', 0, 'READWRITE')
 
           XFN_TM%FNAME = 'ergtm.bin'
-          XFN_TM%FHNDL = IWAM_GET_UNIT(IU06, XFN_TM%FNAME, 'w', 'u', 0)
+          XFN_TM%FHNDL = IWAM_GET_UNIT(IU06, XFN_TM%FNAME, 'w', 'u', 0, 'READWRITE')
 
           XFN_TEST%FNAME = 'ergtest.bin'
-          XFN_TEST%FHNDL = IWAM_GET_UNIT(IU06, XFN_TEST%FNAME, 'w', 'u', 0)
+          XFN_TEST%FHNDL = IWAM_GET_UNIT(IU06, XFN_TEST%FNAME, 'w', 'u', 0, 'READWRITE')
         ENDIF
 
       END SUBROUTINE SET_UNWAM_HANDLES

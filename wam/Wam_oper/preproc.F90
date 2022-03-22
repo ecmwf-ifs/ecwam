@@ -258,7 +258,7 @@
 !     NLONRGG IS ALLOCATED IN UIPREP
       ALLOCATE(ZDELLO(NY))
 
-      IU01 = IWAM_GET_UNIT(IU06, 'wam_topo', 'r', 'f', 0)
+      IU01 = IWAM_GET_UNIT(IU06, 'wam_topo', 'r', 'f', 0, 'READWRITE')
 
       FILENAME='wam_topo'
       LLEXIST=.FALSE.
@@ -274,12 +274,12 @@
         WRITE (IU06,*) '*************************************'
         CALL ABORT1
       ENDIF
-      IU01 = IWAM_GET_UNIT(IU06, FILENAME(1:LNAME), 'r', 'f', 0)
+      IU01 = IWAM_GET_UNIT(IU06, FILENAME(1:LNAME), 'r', 'f', 0, 'READWRITE')
 
       IF (IFORM.NE.2) THEN
-        IU07 = IWAM_GET_UNIT(IU06, 'wam_grid_tables', 'w', 'u', 0)
+        IU07 = IWAM_GET_UNIT(IU06, 'wam_grid_tables', 'w', 'u', 0, 'READWRITE')
       ELSE
-        IU17 = IWAM_GET_UNIT(IU06, 'wam_grid_tables_form', 'w', 'f', 0)
+        IU17 = IWAM_GET_UNIT(IU06, 'wam_grid_tables_form', 'w', 'f', 0, 'READWRITE')
       ENDIF
 
       DO ICL=0,NPROPAGS
@@ -287,32 +287,32 @@
         FILENAME='wam_subgrid_'//C1
         LFILE=0
         IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
-        IU08(ICL) = IWAM_GET_UNIT(IU06,FILENAME(1:LFILE) , 'w', 'u', 0)
+        IU08(ICL) = IWAM_GET_UNIT(IU06,FILENAME(1:LFILE) , 'w', 'u', 0, 'READWRITE')
       ENDDO
 
       IF (IBOUNC.EQ.1) THEN
 !       Information of the nested grid(s) that will be produce by a coarse grid run
         IF (IFORM.NE.2) THEN
-          IU09=IWAM_GET_UNIT(IU06,'wam_nested_grids_info','w', 'u', 0)
+          IU09=IWAM_GET_UNIT(IU06,'wam_nested_grids_info','w', 'u', 0, 'READWRITE')
         ELSE
-          IU19=IWAM_GET_UNIT(IU06,'wam_nested_grids_info_form','w','f',0)
+          IU19=IWAM_GET_UNIT(IU06,'wam_nested_grids_info_form','w','f',0,'READWRITE')
         ENDIF
       ENDIF
 
       IF (IBOUNF.EQ.1) THEN
 !       Information of the nested grid(s) that were produced by a coarse grid run
         IF (IFORM.NE.2) THEN
-          IU03=IWAM_GET_UNIT(IU06,'wam_nested_grids_from_coarse_info','r', 'u', 0)
+          IU03=IWAM_GET_UNIT(IU06,'wam_nested_grids_from_coarse_info','r', 'u', 0,'READWRITE')
         ELSE
-          IU03=IWAM_GET_UNIT(IU06,'wam_nested_grids_info_from_coarse_form', 'r','f',0)
+          IU03=IWAM_GET_UNIT(IU06,'wam_nested_grids_info_from_coarse_form','r','f',0,'READWRITE')
         ENDIF
 
 !       Information about the boundary points that will be needed for a fine
 !       grid run.
         IF (IFORM.NE.2) THEN
-          IU10=IWAM_GET_UNIT(IU06,'wam_boundary_grid_info', 'w', 'u', 0)
+          IU10=IWAM_GET_UNIT(IU06,'wam_boundary_grid_info', 'w', 'u', 0,'READWRITE')
         ELSE
-          IU20=IWAM_GET_UNIT(IU06,'wam_boundary_grid_info_form','w','f',0)
+          IU20=IWAM_GET_UNIT(IU06,'wam_boundary_grid_info_form','w','f',0,'READWRITE')
         ENDIF
       ENDIF
 

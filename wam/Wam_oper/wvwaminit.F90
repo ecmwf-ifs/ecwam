@@ -140,7 +140,7 @@
          WRITE(IU06,*) '************************************'
           CALL ABORT1
         ENDIF
-        IU07 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
+        IU07 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u',0,'READWRITE')
 
         IF(IPROPAGS.LT.0 .OR. IPROPAGS.GT.NPROPAGS) THEN
           WRITE(IU06,*) '************************************'
@@ -173,7 +173,7 @@
           WRITE(IU06,*) '************************************'
           CALL ABORT1
         ENDIF
-        IU08(IPROPAGS) = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) ,'r','u',0)
+        IU08(IPROPAGS) = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE),'r','u',0,'READWRITE')
       ENDIF
 
       KTAG=1

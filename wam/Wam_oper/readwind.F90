@@ -588,7 +588,7 @@
            ENDIF
 
            IF(LWDINTS) THEN
-             IUNITW=IWAM_GET_UNIT(IU06,CWDFILE, 'r', 'f', 0)
+             IUNITW=IWAM_GET_UNIT(IU06,CWDFILE, 'r', 'f', 0, 'READWRITE')
              OPEN(IUNITW,FILE=CWDFILE,FORM='FORMATTED')
              CWDDATE=CDATEA
            ELSE

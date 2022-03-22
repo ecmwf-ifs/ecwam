@@ -108,7 +108,7 @@
           WRITE (*,*) '*************************************'
           CALL ABORT1
         ENDIF
-        IUNIT=IWAM_GET_UNIT(IULOG, FILENAME(1:LFILE), 'r', 'u',0)
+        IUNIT=IWAM_GET_UNIT(IULOG, FILENAME(1:LFILE), 'r','u',0,'READWRITE')
       ENDIF
 
       IF(LLUNSTR .AND. .NOT.LRSTPARAL) THEN

@@ -230,7 +230,7 @@
      &                 ' MODEL RESTART --> USE FILE_TRANSFER TO COPY '// &
      &                 ' RESTART FILES' 
       ELSEIF (OPT.EQ.'G' .AND. LIP .EQ. 0) THEN
-        IUNIT=IWAM_GET_UNIT(IU06, FILENA(1:LNAME) , 'r', 'u', 0)
+        IUNIT=IWAM_GET_UNIT(IU06, FILENA(1:LNAME) , 'r', 'u', 0, 'READWRITE')
       ENDIF
 
 ! ----------------------------------------------------------------------

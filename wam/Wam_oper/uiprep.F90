@@ -159,7 +159,7 @@
 !        ---------------------
 
 
-      IU05 =  IWAM_GET_UNIT (IU06, 'procin', 'r', 'f', 0)
+      IU05 =  IWAM_GET_UNIT (IU06, 'procin', 'r', 'f', 0, 'READWRITE')
 
       READ (IU05, NALINE)
 
@@ -179,7 +179,7 @@
       FILENAME='grid_description'
       INQUIRE(FILE=FILENAME,EXIST=LLGRID)
       IF(LLGRID) THEN
-        IU=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0)
+        IU=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0,'READWRITE')
         OPEN(IU,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
         READ (IU,'(I4)') ISPECTRUNC 
         READ (IU,'(F8.3)') AMONOP

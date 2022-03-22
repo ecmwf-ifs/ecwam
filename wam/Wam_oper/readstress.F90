@@ -90,7 +90,7 @@
         WRITE (*,*) '*************************************'
         CALL ABORT1
       ENDIF
-      IUNIT=IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
+      IUNIT=IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0, 'READWRITE')
 
       READ(IUNIT) CDTPRO,CDATEWO,CDAWIFL,CDATEFL
 
