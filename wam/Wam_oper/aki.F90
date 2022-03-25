@@ -1,5 +1,4 @@
-      FUNCTION AKI (OM, BETA)
-
+REAL(KIND=JWRB) FUNCTION AKI(OM,BETA)
 ! ----------------------------------------------------------------------
 
 !**** *AKI* - FUNCTION TO COMPUTE WAVE NUMBER.
@@ -40,24 +39,20 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPCONS , ONLY : G     ,DKMAX
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB) :: AKI
+      REAL(KIND=JWRB), INTENT(IN) :: OM, BETA
 
 !*    *PARAMETER*  RELATIVE ERROR LIMIT OF NEWTON'S METHOD.
       REAL(KIND=JWRB), PARAMETER :: EBS = 0.0001_JWRB
 
-      REAL(KIND=JWRB), INTENT(IN) :: OM, BETA
-
       REAL(KIND=JWRB) :: AKM1, AKM2, AO, AKP, BO, TH, STH  
-      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('AKI',0,ZHOOK_HANDLE)
 
 !*    1. START VALUE:  MAXIMUM FROM DEEP  AND EXTREM SHALLOW WATER
 !                      WAVE NUMBER.
@@ -81,10 +76,8 @@
         TH = G*AO*TANH(BO)
         STH = SQRT(TH)
         AO = AO+(OM-STH)*STH*2.0_JWRB/(TH/AO+G*BO/COSH(BO)**2)
-        IF (ABS(AKP-AO).GT.EBS*AO) GO TO 2000
+        IF (ABS(AKP-AO) > EBS*AO) GO TO 2000
         AKI = AO
       ENDIF
 
-      IF (LHOOK) CALL DR_HOOK('AKI',1,ZHOOK_HANDLE)
-
-      END FUNCTION AKI
+END FUNCTION AKI

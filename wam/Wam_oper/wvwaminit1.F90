@@ -1,4 +1,4 @@
-      SUBROUTINE WVWAMINIT1(LDWCOUIFS,LDWCOU2W,LDWFLUX,LWCUR,LFDBOPIFS)
+      SUBROUTINE WVWAMINIT1(LDWCOUIFS, LDWCOU2W, LDWCOURNW, LDWCOUHMF, LDWFLUX, LFDBOPIFS)
 
 ! ----------------------------------------------------------------------
 
@@ -8,15 +8,13 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOURNW, LWCOUHMF, LWFLUX
       USE YOWCOUT  , ONLY : LFDB
       USE YOWMESPAS, ONLY : LFDBIOOUT
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,    &
-     &         MPMAXLENGTH
-      USE MPL_MODULE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,    NNEXT
 
-      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal, MyRankLocal
+      USE MPL_MODULE
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -24,8 +22,7 @@
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
-      LOGICAL :: LFDBOPIFS, LDWCOUIFS, LDWCOU2W, LDWFLUX
-      LOGICAL :: LWCUR
+      LOGICAL, INTENT(IN) :: LDWCOUIFS, LDWCOU2W, LDWCOURNW, LDWCOUHMF, LDWFLUX, LFDBOPIFS
 
 ! ----------------------------------------------------------------------
  
@@ -33,21 +30,18 @@
 
 ! RE-INITIALIZE LOGICALS IF COUPLED TO IFS
 
-      IF(LDWCOUIFS) THEN
+      IF (LDWCOUIFS) THEN
         LWCOU=LDWCOUIFS
         LWCOU2W=LDWCOU2W
+        LWCOURNW=LDWCOURNW
+        LWCOUHMF=LDWCOUHMF
         LWFLUX=LDWFLUX
         LFDB=LFDBOPIFS
         LFDBIOOUT=LFDBOPIFS
       ENDIF
 
-#if !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
-        MyRankGlobal=IRANK-1
-        MyRankLocal =IRANK-1
-#endif
-
       NPREVIOUS=IRANK-1
-      IF(IRANK.EQ.NPROC) THEN
+      IF (IRANK == NPROC) THEN
         NNEXT=0
       ELSE
         NNEXT=IRANK+1

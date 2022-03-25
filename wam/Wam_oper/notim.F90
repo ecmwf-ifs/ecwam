@@ -1,108 +1,75 @@
-      SUBROUTINE NOTIM (CDTWIS, CDTWIE,                                 &
-     &                  MIJS, MIJL,                                     &
-     &                  U10OLD, THWOLD, USOLD, TAUW, Z0OLD,             &
-     &                  ROAIRO, ZIDLOLD, CICOVER, CITHICK,              &
-     &                  IREAD, LWCUR)
+SUBROUTINE NOTIM (CDTWIS, CDTWIE,              &
+ &                NXS, NXE, NYS, NYE, FIELDG,  &
+ &                BLK2LOC, WVENVI, FF_NEXT,    &
+ &                IREAD, LWCUR, NEMO2WAM)
 
 ! ----------------------------------------------------------------------
-
-!     MODIFIED  J. BIDLOT  FEBRARY 1996  MESSAGE PASSING
-!               S. ABDALLA OCTOBER 2001  INCLUSION OF AIR DENSITY & Zi/L
-!               J BIDLOT AUGUST 2006 INCLUSION OF ICE MASK.
-!               J BIDLOT AUGUST 2008 REMOVE INFORMATION FROM COUPLED RUNS
-!                                    AND CLEAN UP OBSOLETE OPTIONS.
-
 
 !**** *NOTIM* - STEERING MODULE IF NO TIME INTERPOLATION WANTED.
 
 !*    PURPOSE.
 !     --------
 
-!       NOTIM NO TIME INTERPOLATION: PROCESS WINDFIELDS.
+!       NOTIM NO TIME INTERPOLATION: PROCESS FORCING FIELDS.
 
 !**   INTERFACE.
-!     ----------
+!     ----------  
 
-!       *CALL* *NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK,
-!                      IREAD, LWCUR)
-!          *CDTWIS* - DATE OF FIRST WIND FIELD.
-!          *CDTWIE* - DATE OF LAST FIRST WIND FIELD.
-!          *U10OLD* - WIND SPEED.
-!          *THWOLD* - WIND DIRECTION (RADIANS).
-!          *USOLD*  - FRICTION VELOCITY.
-!          *TAUW*   - WAVE STRESS.
-!          *Z0OLD*  - ROUGHNESS LENGTH IN M.
-!          *ROAIRO* - AIR DENSITY IN KG/M3.
-!          *ZIDLOLD*- Zi/L 
-!                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
-!          *CICOVER*- SEA ICE COVER.
-!          *CITHICK*- SEA ICE THICKNESS. 
-!          *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
-!          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
+!       *CALL* *NOTIM (CDTWIS, CDTWIE,
+!                      NXS, NXE, NYS, NYE, FIELDG,  &
+!                      BLK2LOC, WVENVI, FF_NEXT,  
+!                      IREAD, LWCUR, NEMO2WAM)
+!          *CDTWIS*   - DATE OF FIRST WIND FIELD.
+!          *CDTWIE*   - DATE OF LAST FIRST WIND FIELD.
+!          *NXS:NXE*  - FIRST DIMENSION OF FIELDG
+!          *NYS:NYE*  - SECOND DIMENSION OF FIELDG
+!          *FIELDG*   - INPUT FORCING FIELDS ON THE WAVE MODEL GRID
+!          *BLK2LOC*  - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!          *WVENVI*   - WAVE ENVIRONMENT.
+!          *FF_NEXT*  - DATA STRUCTURE WITH THE NEXT FORCING FIELDS
+!          *IREAD*    - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
+!          *LWCUR*    - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
+!          *NEMO2WAM* - FIELDS FRON OCEAN MODEL to WAM
 
-
-!     METHOD.
-!     -------
-
-!       NO TIME INTERPOLATION:
-!       WINDFIELDS ARE PROCESSED EVERY IDELWI SECONDS (U,V),
-!       THE WINDS INTERPOLATED IN SPACE ONLY (US,DS)
-
-!     EXTERNALS.
-!     ----------
-
-!       *ABORT1*     - TERMINATES PROCESSING.
-!       *AIRSEA*    - TOTAL STRESS IN SURFACE LAYER.
-!       *GETWND*    - READ A WINDFIELD AND COMPUTE WIND
-!                     FOR ALL BLOCKS (US,DS).
-!       *INCDATE*   - INCREMENT DATE.
-
-!     REFERENCE.
-!     ----------
-
-!       NONE.
 
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDLOC, ENVIRONMENT, FORCING_FIELDS, OCEAN2WAVE
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO   ,NPROMA_WAM
-      USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,FF_NEXT
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
+      USE YOWPHYS  , ONLY : XNLEV
+      USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO
+      USE YOWTEST  , ONLY : IU06
+      USE YOWWIND  , ONLY : CDATEWL  ,CDTNEXT
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
-#include "airsea.intfb.h"
 #include "getwnd.intfb.h"
 #include "incdate.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
-      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
-      
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(INOUT) ::            &
-     &               U10OLD, THWOLD, USOLD, Z0OLD, TAUW,                &
-     &               ROAIRO, ZIDLOLD, CICOVER, CITHICK
-
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
-
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(INOUT) :: FIELDG
+      TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: BLK2LOC
+      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: WVENVI
+      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FF_NEXT
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR
+      TYPE(OCEAN2WAVE), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: NEMO2WAM
 
 
-      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
-      INTEGER(KIND=JWIM) :: ILEV, IJ
       INTEGER(KIND=JWIM) :: ICODE_WND
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: U10, US, THW, ADS, ZIDL,  &
-     &                                        CICR, CITH
 
-      CHARACTER(LEN=14) :: CDTWIH, CDT, ZERO
+      CHARACTER(LEN=14) :: CDTWIH
 
       LOGICAL :: LWNDFILE, LCLOSEWND
 
@@ -114,50 +81,28 @@
 
       IF (LHOOK) CALL DR_HOOK('NOTIM',0,ZHOOK_HANDLE)
 
-      ZERO = ' '
-      CDTWIH = CDTWIS
+ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
+ &        JFROMIJ => BLK2LOC%JFROMIJ, &
+ &        UCUR => WVENVI%UCUR, &
+ &        VCUR => WVENVI%VCUR, &
+ &        U10 => FF_NEXT%WSWAVE, &
+ &        US => FF_NEXT%UFRIC, &
+ &        THW => FF_NEXT%WDWAVE, &
+ &        ADS => FF_NEXT%AIRD, &
+ &        WSTAR => FF_NEXT%WSTAR, &
+ &        CICR => FF_NEXT%CICOVER, &
+ &        CITH => FF_NEXT%CITHICK, &
+ &        NEMOCICOVER => NEMO2WAM%NEMOCICOVER, &
+ &        NEMOCITHICK => NEMO2WAM%NEMOCITHICK)
 
-      NPROMA=NPROMA_WAM
+
+      CDTWIH = CDTWIS
 
       LCLOSEWND=.FALSE.
       IF (LWCOU) THEN
         LWNDFILE=.FALSE.
       ELSE
         LWNDFILE=.TRUE.
-      ENDIF
-
-      ILEV=1
-      IF (CDA.EQ.ZERO) THEN
-        CDA = CDTWIS
-        CALL GETWND (MIJS, MIJL,                                        &
-     &               U10OLD(MIJS), USOLD(MIJS),                         &
-     &               THWOLD(MIJS),                                      &
-     &               ROAIRO(MIJS), ZIDLOLD(MIJS),                       &
-     &               CICOVER(MIJS), CITHICK(MIJS),                      &
-     &               CDA, LWNDFILE, LCLOSEWND, IREAD,                   &
-     &               LWCUR, ICODE_WND)
-
-          CALL GSTATS(1493,0)
-!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-          DO JKGLO=MIJS,MIJL,NPROMA
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,MIJL)
-            CALL AIRSEA (U10OLD(KIJS), TAUW(KIJS), USOLD(KIJS),         &
-     &                   Z0OLD(KIJS), KIJS, KIJL, ILEV, ICODE_WND)
-          ENDDO
-!$OMP     END PARALLEL DO
-          CALL GSTATS(1493,1)
-
-        IF (ITEST.GE.3) THEN
-          WRITE(IU06,'(''       SUB. NOTIM: FIRST WIND FIELD '',        &
-     &     ''SAVED IN COMMON WIND'')')
-        ENDIF
-
-        IF (CDA.EQ.CDTWIE) THEN
-          IF (LHOOK) CALL DR_HOOK('NOTIM',1,ZHOOK_HANDLE)
-          RETURN
-        ENDIF
-        CALL INCDATE (CDTWIH,IDELWO)
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -171,7 +116,7 @@
 !*    3.2 SAVE BLOCKED WIND FIELD.
 !         ------------------------
 
-      IF (IDELPRO.GT.IDELWO) THEN
+      IF (IDELPRO > IDELWO) THEN
 !*      WIND FIELD IS NOT CONSTANT FOR ONE PROPAGATION TIME STEP:
 !       THIS OPTION IS NO LONGER AVAILABLE !!!
         WRITE (IU06,*) ' '
@@ -179,7 +124,7 @@
         WRITE (IU06,*) ' *                                *'
         WRITE (IU06,*) ' *   FATAL ERROR IN SUB. NOTIM:   *'
         WRITE (IU06,*) ' *   ==========================   *'
-        WRITE (IU06,*) ' *   THE OPTION IDELPRO.GT.IDELWO *'
+        WRITE (IU06,*) ' *   THE OPTION IDELPRO > IDELWO  *'
         WRITE (IU06,*) ' *      IS LONGER AVAILABLE !!!!! *'
         WRITE (IU06,*) ' *                                *'
         WRITE (IU06,*) ' *          PROGRAM ABORTS        *'
@@ -189,47 +134,26 @@
       ELSE
 !*      WIND FIELD IS CONSTANT FOR ONE PROPAGATION TIME STEP:
 !       -----------------------------------------------------
-        NSTORE=1
 
-        IF (.NOT.ALLOCATED(CDTNEXT)) ALLOCATE(CDTNEXT(NSTORE))
+        CDTNEXT=CDTWIH
 
-        IF (.NOT.ALLOCATED(FF_NEXT))                                    &
-     &          ALLOCATE(FF_NEXT(MIJS:MIJL,NSTORE))
+        CALL GETWND (IFROMIJ, JFROMIJ,                      &
+     &               NXS, NXE, NYS, NYE, FIELDG,            &
+     &               UCUR, VCUR,                            &
+     &               U10, US,                               &
+     &               THW,                                   &
+     &               ADS, WSTAR,                            &
+     &               CICR, CITH,                            &
+     &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,    &
+     &               LWCUR, NEMOCICOVER, NEMOCITHICK,       &
+     &               ICODE_WND)
 
-        CDTNEXT(1)=CDTWIH
-
-        CALL GETWND (MIJS, MIJL,                                        &
-     &               U10(MIJS), US(MIJS),                               &
-     &               THW(MIJS),                                         &
-     &               ADS(MIJS), ZIDL(MIJS),                             &
-     &               CICR(MIJS), CITH(MIJS),                            &
-     &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,                &
-     &               LWCUR, ICODE_WND)
-
-        IF (ICODE_WND == 3 ) THEN
-          FF_NEXT(MIJS:MIJL,1)%WSWAVE = U10(MIJS:MIJL)
-        ELSE
-          FF_NEXT(MIJS:MIJL,1)%USTAR  = US(MIJS:MIJL)
-        ENDIF
-        FF_NEXT(MIJS:MIJL,1)%WDWAVE = THW(MIJS:MIJL)
-        FF_NEXT(MIJS:MIJL,1)%AIRD   = ADS(MIJS:MIJL)
-        FF_NEXT(MIJS:MIJL,1)%ZIDL   = ZIDL(MIJS:MIJL)
-        FF_NEXT(MIJS:MIJL,1)%CIFR   = CICR(MIJS:MIJL)
-        FF_NEXT(MIJS:MIJL,1)%CITH   = CITH(MIJS:MIJL)
-
-!        CALL GETWND (MIJS,MIJL, &
-!     &               FF_NEXT(MIJS,1)%WSWAVE, FF_NEXT(MIJS,1)%USTAR, &
-!     &               FF_NEXT(MIJS,1)%WDWAVE, &
-!     &               FF_NEXT(MIJS,1)%AIRD  , FF_NEXT(MIJS,1)%ZIDL, &
-!     &               FF_NEXT(MIJS,1)%CIFR  , FF_NEXT(MIJS,1)%CITH, &
-!     &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD, &
-!     &               LWCUR, ICODE_WND)
 
 !*      UPDATE WIND FIELD REQUEST TIME.
         CALL INCDATE (CDTWIH,IDELWO)
 
 !*      IF TIME LEFT BRANCH NOT ALLOWED TO LOOP ANYMORE 
-        IF (CDTWIH.LE.CDTWIE) THEN
+        IF (CDTWIH <= CDTWIE) THEN
           WRITE (IU06,*) ' '
           WRITE (IU06,*) ' ********************************************'
           WRITE (IU06,*) ' *                                          *'
@@ -245,14 +169,10 @@
           CALL ABORT1
         ENDIF
 
-        IF (ITEST.GE.3) THEN
-          WRITE(IU06,*) '      SUB. NOTIM: NEW FORCING FIELDS GENERATED'
-        ENDIF
-        IF (LHOOK) CALL DR_HOOK('NOTIM',1,ZHOOK_HANDLE)
-        RETURN
-
       ENDIF
+
+END ASSOCIATE
 
       IF (LHOOK) CALL DR_HOOK('NOTIM',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE NOTIM
+END SUBROUTINE NOTIM

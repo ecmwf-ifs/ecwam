@@ -1,4 +1,4 @@
-      FUNCTION TRANSF_SNL(XK0,D,XNU,SIG_TH)
+REAL(KIND=JWRB) FUNCTION TRANSF_SNL(XK0,D,XNU,SIG_TH)
  
 !***  DETERMINE NARROW BAND LIMIT NONLINEAR TRANSFER FUNCTION            
  
@@ -15,21 +15,21 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPCONS , ONLY : G     ,DKMAX
-      USE YOWSHAL , ONLY : BATHYMAX, XKDMIN
+      USE YOWSHAL  , ONLY : BATHYMAX, XKDMIN
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
                      
 !----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB) :: TRANSF_SNL
+      REAL(KIND=JWRB), INTENT(IN) :: XK0,D,XNU,SIG_TH
 
       REAL(KIND=JWRB), PARAMETER :: EPS=0.0001_JWRB
       REAL(KIND=JWRB), PARAMETER :: TRANSF_SNL_MIN=0.1_JWRB
       REAL(KIND=JWRB), PARAMETER :: TRANSF_SNL_MAX=10._JWRB
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: XK0,D,XNU,SIG_TH
       REAL(KIND=JWRB) :: X,XK,T_0,T_0_SQ,OM,C_0,V_G,V_G_SQ,DV_G
       REAL(KIND=JWRB) :: XNL_1,XNL_2,XNL_3,XNL_4,XNL
       REAL(KIND=JWRB) :: C_S_SQ,ALP,ZFAC
@@ -41,9 +41,9 @@
 !*    1. DETERMINE TRANSFER FUNCTION.
 !     ------------------------------
 
-      IF(D.LT.BATHYMAX .AND. D.GT.0._JWRB) THEN
+      IF (D < BATHYMAX .AND. D > 0._JWRB) THEN
         X   = XK0*D
-        IF ( X .GT. DKMAX) THEN
+        IF ( X > DKMAX) THEN
           TRANSF_SNL = 1._JWRB
         ELSE
           XK  = MAX(XK0,XKDMIN/D)
@@ -53,7 +53,7 @@
           OM  = SQRT(G*XK*T_0)
           C_0 = OM/XK
           C_S_SQ = G*D
-          IF(X .LT. EPS) THEN
+          IF (X < EPS) THEN
             V_G = C_0
           ELSE
             V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
@@ -79,4 +79,4 @@
 
       IF (LHOOK) CALL DR_HOOK('TRANSF_SNL',1,ZHOOK_HANDLE)
 
-      END FUNCTION TRANSF_SNL
+END FUNCTION TRANSF_SNL

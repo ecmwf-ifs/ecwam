@@ -1,11 +1,13 @@
-      SUBROUTINE CURRENT2WAM (FILNM,IREAD,CDATEIN)
+      SUBROUTINE CURRENT2WAM (FILNM, IREAD, CDATEIN,        &
+     &                        IFROMIJ, JFROMIJ,             &
+     &                        NXS, NXE, NYS, NYE, FIELDG,   &
+     &                        UCUR, VCUR)
 
 !--------------------------------------------------------------------
 
 !**** *CURRENT2WAM* 
 
 !     J. BIDLOT    ECMWF  NOVEMBER 2002.
-!     J. BIDLOT    ECMWF  AUGUST 2008: USE *WAMCUR*
 !     J. BIDLOT    ECMWF  APRIL 2010: USE GRIBAPI 
 
 !     PURPOSE.
@@ -16,11 +18,21 @@
 
 !**   INTERFACE
 !     ---------
-!     *CALL* *CURRENT2WAM(FILNM,IREAD,CDATEIN)*
+!     *CALL* *CURRENT2WAM(FILNM, IREAD, CDATEIN,
+!                         IFROMIJ, JFROMIJ,
+!                         NXS, NXE, NYS, NYE, FIELDG,
+!                         UCUR, VCUR)
 
 !     *FILNM*     DATA INPUT FILENAME.
 !     *IREAD*     RANK OF THE PROCESS WHICH INPUTS THE DATA. 
-!     *CDATEIN*    DATE OF THE DECODED DATA. 
+!     *CDATEIN*   DATE OF THE DECODED DATA. 
+!     *IFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!     *JFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!     *NXS:NXE*  FIRST DIMENSION OF FIELDG
+!     *NYS:NYE*  SECOND DIMENSION OF FIELDG
+!     *FIELDG*   INPUT FORCING FIELDS ON THE WAVE MODEL GRID
+!     *UCUR*      U-COMPONENT OF SURFACE CURRENT
+!     *VCUR*      V-COMPONENT OF SURFACE CURRENT
 
 
 !     METHOD.
@@ -33,22 +45,19 @@
 !---------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
-      USE YOWCURR  , ONLY : U        ,V        ,CURRENT_MAX
+      USE YOWCURR  , ONLY : CURRENT_MAX
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
-      USE YOWGRID  , ONLY : IGL      ,NLONRGG
-      USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
-     &            IFROMIJ  ,JFROMIJ
-      USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
-     &            NPRECI
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
+      USE YOWMAP   , ONLY : IRGG     ,NLONRGG
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
+      USE YOWPARAM , ONLY : NGY
       USE YOWPCONS , ONLY : ZMISS    ,EPSMIN
-      USE YOWSTAT  , ONLY : NPROMA_WAM 
       USE YOWSPEC  , ONLY : NSTART   ,NEND
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEST  , ONLY : IU06
       USE YOWPD, ONLY : MNP => npa
       USE YOWUNPOOL ,ONLY : LLUNSTR
-      USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE
@@ -57,6 +66,7 @@
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "grib2wgrid.intfb.h"
 #include "kgribsize.intfb.h"
@@ -64,6 +74,11 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       CHARACTER(LEN=24), INTENT(IN) :: FILNM
       CHARACTER(LEN=14), INTENT(INOUT) :: CDATEIN
+      INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(IN) :: FIELDG
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NCHNK), INTENT(OUT) :: UCUR, VCUR
+
 
       INTEGER(KIND=JWIM) :: NBIT = 1000000
 
@@ -72,17 +87,17 @@
       INTEGER(KIND=JWIM) :: KRET, IVAR, KPLENG, KLEN, KLENG, IDM, KDM, MDM
       INTEGER(KIND=JWIM) :: IRET, ISIZE
       INTEGER(KIND=JWIM) :: KK, MM
-      INTEGER(KIND=JWIM) :: IFORP, IPARAM, KZLEV, IG, IJ, IC, IX, JY
+      INTEGER(KIND=JWIM) :: IFORP, IPARAM, KZLEV, ICHNK, IJ, IC, IX, JY
       INTEGER(KIND=JWIM) :: IBUF(2)
       INTEGER(KIND=JWIM), ALLOCATABLE :: INGRIB(:)
-      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NYFF)
+      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NGY)
 
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL(KIND=JWRB), PARAMETER :: WLOWEST=0.0001_JWRB
       REAL(KIND=JWRB) :: ZDUM1, ZDUM2
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: FIELD(NXFF,NYFF)
+      REAL(KIND=JWRB) :: FIELD(NXS:NXE, NYS:NYE)
 
       CHARACTER(LEN=14) :: CDATEIN_OLD 
 
@@ -96,7 +111,7 @@
 
       IF (LHOOK) CALL DR_HOOK('CURRENT2WAM',0,ZHOOK_HANDLE)
 
-      IF(LLUNSTR) THEN
+      IF (LLUNSTR) THEN
         NLONRGG_LOC(:)=MNP
       ELSE
         NLONRGG_LOC(:)=NLONRGG(:)
@@ -106,7 +121,7 @@
       ZDUM1 = 0._JWRB
       ZDUM2 = 0._JWRB
 
-      IF ((LMESSPASS .AND. (IRANK.EQ.IREAD)) .OR. .NOT.LMESSPASS) THEN
+      IF (IRANK == IREAD) THEN
 
         IF (FRSTIME) THEN
           KFILE_HANDLE1=-99
@@ -120,24 +135,23 @@
 
       READCURRENT: DO IVAR=1,2
 
-        IF ((LMESSPASS .AND. (IRANK.EQ.IREAD)) .OR.                     &
-     &      .NOT.LMESSPASS) THEN
+        IF (IRANK == IREAD) THEN
 1021        ISIZE=NBIT
             KBYTES=ISIZE*NPRECI
-            IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
+            IF (.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
             CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE1,INGRIB,KBYTES,IRET)
-            IF(IRET.EQ.JPGRIB_BUFFER_TOO_SMALL) THEN
+            IF (IRET == JPGRIB_BUFFER_TOO_SMALL) THEN
 !!!           *IGRIB_READ_FROM_FILE* does not read through the file if
 !!!            the size is too small, so figure out the size and read again.
               CALL KGRIBSIZE(IU06, KBYTES, NBIT, 'CURRENT2WAM')
               DEALLOCATE(INGRIB)
               GOTO 1021
-            ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
+            ELSEIF (IRET == JPGRIB_END_OF_FILE) THEN
               WRITE(IU06,*) '**************************************'
               WRITE(IU06,*) '* CURRENT2WAM: END OF FILE ENCOUNTED *'
               WRITE(IU06,*) '**************************************'
               CALL ABORT1
-            ELSEIF(IRET.NE.JPGRIB_SUCCESS) THEN
+            ELSEIF (IRET /= JPGRIB_SUCCESS) THEN
                WRITE(IU06,*) '************************************'
                WRITE(IU06,*) '* CURRENT2WAM: FILE HANDLING ERROR *'
                WRITE(IU06,*) '************************************'
@@ -151,17 +165,17 @@
 
 !       BROADCAST GRIB DATA TO OTHER PE'S
         CALL GSTATS(622,0)
-        IF(LMESSPASS .AND. NPROC.GT.1) THEN
+        IF (NPROC > 1) THEN
 
           CALL MPL_BARRIER(CDSTRING='CURRENT2WAM: INGRIB ')
 
-          IF(IRANK.EQ.IREAD) THEN
+          IF (IRANK == IREAD) THEN
             IBUF(1)=ISIZE
             IBUF(2)=KLEN
           ENDIF
           CALL MPL_BROADCAST(IBUF(1:2),KROOT=IREAD,KTAG=IVAR,           &
      &                       CDSTRING='CURRENT2WAM IBUF:')
-          IF(IRANK.NE.IREAD) THEN
+          IF (IRANK /= IREAD) THEN
             ISIZE=IBUF(1)
             KLEN=IBUF(2)
             ALLOCATE(INGRIB(ISIZE))
@@ -180,19 +194,19 @@
 
         KK=0
         MM=0
-        CALL GRIB2WGRID (IU06, ITEST, NPROMA_WAM,                       &
+        CALL GRIB2WGRID (IU06, NPROMA_WAM,                              &
      &                   KGRIB_HANDLE, INGRIB, ISIZE,                   &
      &                   LLUNSTR,                                       &
-     &                   NXFF, NYFF, NLONRGG_LOC,                       &
-     &                   IRGG, XDELLA, ZDELLO,                          &
+     &                   NGY, IRGG, NLONRGG_LOC,                        &
+     &                   NXS, NXE, NYS, NYE,                            &
      &                   FIELDG%XLON, FIELDG%YLAT,                      &
      &                   ZMISS, ZDUM1, ZDUM2,                           &
-     &                   CDATEIN, IFORP, IPARAM,KZLEV,KK,MM, FIELD)
+     &                   CDATEIN, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
 
 
         CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
-        IF(IVAR.EQ.2 .AND. CDATEIN.NE.CDATEIN_OLD) THEN
+        IF (IVAR == 2 .AND. CDATEIN /= CDATEIN_OLD) THEN
           WRITE(IU06,*) ' *****************************************'
           WRITE(IU06,*) ' *                                       *'
           WRITE(IU06,*) ' *    FATAL ERROR IN SUB. CURRENT2WAM    *'
@@ -211,40 +225,40 @@
        CDATEIN_OLD=CDATEIN
 
 
-        IF(IPARAM.EQ.131) THEN
-           DO IG = 1,IGL
-             DO IJ =  NINF, NSUP
-!!!            VALUES FOR THE HALO ARE ALSO NEEDED !!!
-!!!            HENCE NINF TO NSUP.
-               IX = IFROMIJ(IJ,IG)
-               JY = JFROMIJ(IJ,IG)
-               U(IJ,IG) = FIELD(IX,JY)
-!              SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
-!              OCEAN MODEL. THEY ARE SET TO 0.
-!              0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
-               IF(ABS(U(IJ,IG)).LE.WLOWEST) U(IJ,IG)=0.0_JWRB
-               IF(U(IJ,IG).LE.ZMISS) U(IJ,IG)=0.0_JWRB
-               U(IJ,IG)=SIGN(MIN(ABS(U(IJ,IG)),CURRENT_MAX),U(IJ,IG))
-             ENDDO
-             U(NINF-1,IG)=0.0_JWRB
-           ENDDO
-        ELSEIF(IPARAM.EQ.132) THEN
-           DO IG = 1,IGL
-             DO IJ =  NINF, NSUP
-!!!            VALUES FOR THE HALO ARE ALSO NEEDED !!!
-!!!            HENCE NINF TO NSUP.
-               IX = IFROMIJ(IJ,IG)
-               JY = JFROMIJ(IJ,IG)
-               V(IJ,IG) = FIELD(IX,JY)
-!              SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
-!              OCEAN MODEL. THEY ARE SET TO 0.
-!              0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
-               IF(ABS(V(IJ,IG)).LE.WLOWEST) V(IJ,IG)=0.0_JWRB
-               IF(V(IJ,IG).LE.ZMISS) V(IJ,IG)=0.0_JWRB
-               V(IJ,IG)=SIGN(MIN(ABS(V(IJ,IG)),CURRENT_MAX),V(IJ,IG))
-             ENDDO
-             V(NINF-1,IG)=0.0_JWRB
-           ENDDO
+        IF (IPARAM == 131) THEN
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
+          DO ICHNK = 1, NCHNK
+            DO IJ = 1, NPROMA_WAM 
+              IX = IFROMIJ(IJ,ICHNK)
+              JY = JFROMIJ(IJ,ICHNK)
+              UCUR(IJ,ICHNK) = FIELD(IX,JY)
+!             SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
+!             OCEAN MODEL. THEY ARE SET TO 0.
+!             0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
+              IF (ABS(UCUR(IJ,ICHNK)) <= WLOWEST) UCUR(IJ,ICHNK)=0.0_JWRB
+              IF (UCUR(IJ,ICHNK) <= ZMISS) UCUR(IJ,ICHNK)=0.0_JWRB
+              UCUR(IJ,ICHNK)=SIGN(MIN(ABS(UCUR(IJ,ICHNK)),CURRENT_MAX),UCUR(IJ,ICHNK))
+            ENDDO
+          ENDDO
+!$OMP     END PARALLEL DO
+
+        ELSEIF (IPARAM == 132) THEN
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
+          DO ICHNK = 1, NCHNK
+            DO IJ = 1, NPROMA_WAM 
+              IX = IFROMIJ(IJ,ICHNK)
+              JY = JFROMIJ(IJ,ICHNK)
+              VCUR(IJ,ICHNK) = FIELD(IX,JY)
+!             SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
+!             OCEAN MODEL. THEY ARE SET TO 0.
+!             0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
+              IF (ABS(VCUR(IJ,ICHNK)) <= WLOWEST) VCUR(IJ,ICHNK)=0.0_JWRB
+              IF (VCUR(IJ,ICHNK) <= ZMISS) VCUR(IJ,ICHNK)=0.0_JWRB
+              VCUR(IJ,ICHNK)=SIGN(MIN(ABS(VCUR(IJ,ICHNK)),CURRENT_MAX),VCUR(IJ,ICHNK))
+            ENDDO
+          ENDDO
+!$OMP     END PARALLEL DO
+
         ELSE
           WRITE(IU06,*) ' *****************************************'
           WRITE(IU06,*) ' *                                       *'

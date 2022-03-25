@@ -1,4 +1,4 @@
-      INTEGER FUNCTION JAFU (CL, J, IAN)
+INTEGER(KIND=JWIM) FUNCTION JAFU (CL, J, IAN)
 
 ! ----------------------------------------------------------------------
 
@@ -42,16 +42,15 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       IMPLICIT NONE
+      REAL(KIND=JWRB), INTENT(IN):: CL
+      INTEGER(KIND=JWIM), INTENT(IN) :: J, IAN
 
-      INTEGER(KIND=JWIM) :: J, IAN
       INTEGER(KIND=JWIM) :: IDPH, JA
-      REAL(KIND=JWRB):: CL
 
       IDPH = CL
       JA = J+IDPH
-      IF (JA.LE.0)   JA = IAN+JA-1
-      IF (JA.GE.IAN) JA = JA-IAN+1
+      IF (JA <= 0)   JA = IAN+JA-1
+      IF (JA >= IAN) JA = JA-IAN+1
       JAFU = JA
 
-      RETURN
-      END FUNCTION JAFU
+END FUNCTION JAFU

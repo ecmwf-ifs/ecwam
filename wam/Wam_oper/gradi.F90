@@ -1,5 +1,8 @@
-      SUBROUTINE GRADI (MIJS, MIJL, IREFRA, DDPHI, DDLAM, DUPHI,       &
-     &                  DULAM, DVPHI, DVLAM)
+SUBROUTINE GRADI (KIJS, KIJL, NINF, NSUP, IREFRA,   &
+ &                  BLK2GLO,                        &
+ &                  DPTHEXT, UEXT, VEXT,            &
+ &                  DDPHI, DDLAM, DUPHI,            &
+ &                  DULAM, DVPHI, DVLAM)
 
 ! ----------------------------------------------------------------------
 
@@ -16,11 +19,16 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GRADI (MIJS, MIJL,IREFRA, DDPHI, DDLAM, DUPHI,
+!       *CALL* *GRADI (KIJS, KIJL, NINF, NSUP, IREFRA,
+!                      BLK2GLO,
+!                      DPTHEXT, UEXT, VEXT,
+!                      DDPHI, DDLAM, DUPHI,
 !                      DULAM, DVPHI, DVLAM)*
-!          *MIJS*   - STARTING INDEX
-!          *MIJL*   - ENDING INDEX
+!          *KIJS*   - STARTING INDEX
+!          *KIJL*   - ENDING INDEX
+!          *NINF:NSUP+1* : DIMENSION OF DPTHEXT, UEXT, VEXT 
 !          *IREFRA* - REFRACTION OPTION.
+!          *BLK2GLO*- BLOCK TO GRID TRANSFORMATION
 !          *DDPHI*  - LATITUDE DEPTH GRADIENT.
 !          *DDLAM*  - LONGITUDE DEPTH GRADIENT.
 !          *DUPHI*  - LATITUDE  U-COMPONENT GRADIENT.
@@ -46,32 +54,37 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
-      USE YOWCURR  , ONLY : U        ,V        ,CURRENT_GRADIENT_MAX
+      USE YOWCURR  , ONLY : CURRENT_GRADIENT_MAX
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,COSPH
-      USE YOWMAP   , ONLY : KXLT
-      USE YOWMPP   , ONLY : NINF
-      USE YOWSHAL  , ONLY : DEPTH
+      USE YOWPARAM , ONLY : NIBLO
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: NINF 
+      INTEGER(KIND=JWIM), INTENT(IN) :: NSUP 
       INTEGER(KIND=JWIM), INTENT(IN) :: IREFRA
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(OUT) :: DDPHI
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(OUT) :: DDLAM
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(OUT) :: DUPHI
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(OUT) :: DULAM
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(OUT) :: DVPHI
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(OUT) :: DVLAM
+      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: DPTHEXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: UEXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: VEXT 
+
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(OUT) :: DDPHI
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(OUT) :: DDLAM
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(OUT) :: DUPHI
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(OUT) :: DULAM
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(OUT) :: DVPHI
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(OUT) :: DVLAM
 
 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: NLAND, IJ, IPP, IPM, IPP2, IPM2, ILP, ILM, KX
       REAL(KIND=JWRB) :: DPTP, DPTM, UP, UM, VP, VM 
       REAL(KIND=JWRB) :: CGMAX
@@ -80,13 +93,15 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
+
+ASSOCIATE(KXLT => BLK2GLO%KXLT)
+
 
 !*    1. INITIALISE.
 !        -----------
 
-      IG = 1
-      NLAND=NINF-1
+      NLAND=NSUP+1
       ONEO2DELPHI = 0.5_JWRB/DELPHI
 
 ! ----------------------------------------------------------------------
@@ -94,39 +109,39 @@
 !*    2. CALCULATE DEPTH GRADIENTS.
 !        --------------------------
 
-      IF (IREFRA.EQ.1 .OR. IREFRA.EQ.3) THEN
-        DO IJ=MIJS,MIJL
+      IF (IREFRA == 1 .OR. IREFRA == 3) THEN
+        DO IJ=KIJS,KIJL
           IPP = KLAT(IJ,2,1)
           IPM = KLAT(IJ,1,1)
           IPP2 = KLAT(IJ,2,2)
           IPM2 = KLAT(IJ,1,2)
-          IF (IPP.NE.NLAND  .AND. IPM.NE.NLAND .AND.                    &
-     &        IPP2.NE.NLAND .AND. IPM2.NE.NLAND      ) THEN
-            DPTP=WLAT(IJ,2)*DEPTH(IPP,IG)+(1.0_JWRB-WLAT(IJ,2))*DEPTH(IPP2,IG)
-            DPTM=WLAT(IJ,1)*DEPTH(IPM,IG)+(1.0_JWRB-WLAT(IJ,1))*DEPTH(IPM2,IG)
+          IF (IPP /= NLAND  .AND. IPM /= NLAND .AND.                    &
+     &        IPP2 /= NLAND .AND. IPM2 /= NLAND ) THEN
+            DPTP=WLAT(IJ,2)*DPTHEXT(IPP)+(1.0_JWRB-WLAT(IJ,2))*DPTHEXT(IPP2)
+            DPTM=WLAT(IJ,1)*DPTHEXT(IPM)+(1.0_JWRB-WLAT(IJ,1))*DPTHEXT(IPM2)
             DDPHI(IJ) = (DPTP-DPTM)*ONEO2DELPHI
-          ELSEIF (IPP.NE.NLAND .AND. IPM.NE.NLAND) THEN
-            DPTP=DEPTH(IPP,IG)
-            DPTM=DEPTH(IPM,IG)
+          ELSEIF (IPP /= NLAND .AND. IPM /= NLAND) THEN
+            DPTP=DPTHEXT(IPP)
+            DPTM=DPTHEXT(IPM)
             DDPHI(IJ) = (DPTP-DPTM)*ONEO2DELPHI
-          ELSEIF (IPP2.NE.NLAND .AND. IPM2.NE.NLAND) THEN
-            DPTP=DEPTH(IPP2,IG)
-            DPTM=DEPTH(IPM2,IG)
+          ELSEIF (IPP2 /= NLAND .AND. IPM2 /= NLAND) THEN
+            DPTP=DPTHEXT(IPP2)
+            DPTM=DPTHEXT(IPM2)
             DDPHI(IJ) = (DPTP-DPTM)*ONEO2DELPHI
           ELSE
             DDPHI(IJ) = 0.0_JWRB
           ENDIF
           ILP = KLON(IJ,2)
           ILM = KLON(IJ,1)
-          KX  = KXLT(IJ,IG)
-          IF (ILP.NE.NLAND .AND. ILM.NE.NLAND) THEN
-            DDLAM(IJ)=(DEPTH(ILP,IG)-DEPTH(ILM,IG))/(2._JWRB*DELLAM(KX))
+          KX  = KXLT(IJ)
+          IF (ILP /= NLAND .AND. ILM /= NLAND) THEN
+            DDLAM(IJ)=(DPTHEXT(ILP)-DPTHEXT(ILM))/(2._JWRB*DELLAM(KX))
           ELSE
             DDLAM(IJ) = 0.0_JWRB 
           ENDIF
         ENDDO
       ELSE
-        DO IJ=MIJS,MIJL
+        DO IJ=KIJS,KIJL
           DDPHI(IJ) = 0.0_JWRB
           DDLAM(IJ) = 0.0_JWRB
         ENDDO
@@ -137,32 +152,32 @@
 !*    3. CALCULATE CURRENT VELOCITY GRADIENTS.
 !        -------------------------------------
 
-      IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
-        DO IJ=MIJS,MIJL
+      IF (IREFRA == 2 .OR. IREFRA == 3) THEN
+        DO IJ=KIJS,KIJL
           IPP = KLAT(IJ,2,1)
 !         exact 0 means that the current field was not defined, hence
 !         no gradient should be extrapolated
-          IF (U(IPP,IG).EQ.0.0_JWRB .AND. V(IPP,IG).EQ.0.0_JWRB) IPP = NLAND
+          IF (UEXT(IPP) == 0.0_JWRB .AND. VEXT(IPP) == 0.0_JWRB) IPP = NLAND
           IPM = KLAT(IJ,1,1)
-          IF (U(IPM,IG).EQ.0.0_JWRB .AND. V(IPM,IG).EQ.0.0_JWRB) IPM = NLAND
+          IF (UEXT(IPM) == 0.0_JWRB .AND. VEXT(IPM) == 0.0_JWRB) IPM = NLAND
           IPP2 = KLAT(IJ,2,2)
-          IF (U(IPP2,IG).EQ.0.0_JWRB .AND. V(IPP2,IG).EQ.0.0_JWRB) IPP2 = NLAND
+          IF (UEXT(IPP2) == 0.0_JWRB .AND. VEXT(IPP2) == 0.0_JWRB) IPP2 = NLAND
           IPM2 = KLAT(IJ,1,2)
-          IF (U(IPM2,IG).EQ.0.0_JWRB .AND. V(IPM2,IG).EQ.0.0_JWRB) IPM2 = NLAND
+          IF (UEXT(IPM2) == 0.0_JWRB .AND. VEXT(IPM2) == 0.0_JWRB) IPM2 = NLAND
 
-          IF (IPP.NE.NLAND .AND. IPM.NE.NLAND .AND.                     &
-     &        IPP2.NE.NLAND .AND. IPM2.NE.NLAND) THEN
-            UP = WLAT(IJ,2)*U(IPP,IG)+(1.0_JWRB-WLAT(IJ,2))*U(IPP2,IG)
-            VP = WLAT(IJ,2)*V(IPP,IG)+(1.0_JWRB-WLAT(IJ,2))*V(IPP2,IG)
-            UM = WLAT(IJ,1)*U(IPM,IG)+(1.0_JWRB-WLAT(IJ,1))*U(IPM2,IG)
-            VM = WLAT(IJ,1)*V(IPM,IG)+(1.0_JWRB-WLAT(IJ,1))*V(IPM2,IG)
+          IF (IPP /= NLAND .AND. IPM /= NLAND .AND.                     &
+     &        IPP2 /= NLAND .AND. IPM2 /= NLAND) THEN
+            UP = WLAT(IJ,2)*UEXT(IPP)+(1.0_JWRB-WLAT(IJ,2))*UEXT(IPP2)
+            VP = WLAT(IJ,2)*VEXT(IPP)+(1.0_JWRB-WLAT(IJ,2))*VEXT(IPP2)
+            UM = WLAT(IJ,1)*UEXT(IPM)+(1.0_JWRB-WLAT(IJ,1))*UEXT(IPM2)
+            VM = WLAT(IJ,1)*VEXT(IPM)+(1.0_JWRB-WLAT(IJ,1))*VEXT(IPM2)
             DUPHI(IJ) = (UP-UM)*ONEO2DELPHI
             DVPHI(IJ) = (VP-VM)*ONEO2DELPHI
-          ELSEIF (IPP.NE.NLAND .AND. IPM.NE.NLAND) THEN
-            UP = U(IPP,IG)
-            VP = V(IPP,IG)
-            UM = U(IPM,IG)
-            VM = V(IPM,IG)
+          ELSEIF (IPP /= NLAND .AND. IPM /= NLAND) THEN
+            UP = UEXT(IPP)
+            VP = VEXT(IPP)
+            UM = UEXT(IPM)
+            VM = VEXT(IPM)
             DUPHI(IJ) = (UP-UM)*ONEO2DELPHI
             DVPHI(IJ) = (VP-VM)*ONEO2DELPHI
           ELSE
@@ -173,21 +188,21 @@
           ILP = KLON(IJ,2)
 !         exact 0 means that the current field was not defined, hence
 !         no gradient should be extrapolated
-          IF (U(ILP,IG).EQ.0.0_JWRB .AND. V(ILP,IG).EQ.0.0_JWRB) ILP=NLAND
+          IF (UEXT(ILP) == 0.0_JWRB .AND. VEXT(ILP) == 0.0_JWRB) ILP=NLAND
           ILM = KLON(IJ,1)
-          IF (U(ILM,IG).EQ.0.0_JWRB .AND. V(ILM,IG).EQ.0.0_JWRB) ILM=NLAND
-          KX  = KXLT(IJ,IG)
-          IF (ILP.NE.NLAND .AND. ILM.NE.NLAND) THEN
-            DULAM(IJ) = (U(ILP,IG)-U(ILM,IG))/(2.0_JWRB*DELLAM(KX))
-            DVLAM(IJ) = (V(ILP,IG)-V(ILM,IG))/(2.0_JWRB*DELLAM(KX))
+          IF (UEXT(ILM) == 0.0_JWRB .AND. VEXT(ILM) == 0.0_JWRB) ILM=NLAND
+          KX  = KXLT(IJ)
+          IF (ILP /= NLAND .AND. ILM /= NLAND) THEN
+            DULAM(IJ) = (UEXT(ILP)-UEXT(ILM))/(2.0_JWRB*DELLAM(KX))
+            DVLAM(IJ) = (VEXT(ILP)-VEXT(ILM))/(2.0_JWRB*DELLAM(KX))
           ELSE
             DULAM(IJ) = 0.0_JWRB
             DVLAM(IJ) = 0.0_JWRB
           ENDIF
         ENDDO
 
-        DO IJ=MIJS,MIJL
-          KX  = KXLT(IJ,IG)
+        DO IJ=KIJS,KIJL
+          KX  = KXLT(IJ)
           CGMAX = CURRENT_GRADIENT_MAX*COSPH(KX)
           DUPHI(IJ) = SIGN(MIN(ABS(DUPHI(IJ)),CGMAX),DUPHI(IJ))
           DVPHI(IJ) = SIGN(MIN(ABS(DVPHI(IJ)),CGMAX),DVPHI(IJ))
@@ -196,7 +211,7 @@
         ENDDO
 
       ELSE
-        DO IJ=MIJS,MIJL
+        DO IJ=KIJS,KIJL
           DUPHI(IJ) = 0.0_JWRB
           DVPHI(IJ) = 0.0_JWRB
           DULAM(IJ) = 0.0_JWRB
@@ -204,6 +219,7 @@
         ENDDO
       ENDIF
 
-      IF (LHOOK) CALL DR_HOOK('GRADI',1,ZHOOK_HANDLE)
+END ASSOCIATE
+IF (LHOOK) CALL DR_HOOK('GRADI',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE GRADI
+END SUBROUTINE GRADI

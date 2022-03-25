@@ -115,19 +115,20 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
 
       INTEGER(KIND=JWIM) :: ICLASS, ISTEP, ISTEP_HRS 
-      INTEGER(KIND=JWIM) :: IC, JC, ITABPAR, IDATE, ITIME
+      INTEGER(KIND=JWIM) :: IC, ITABPAR, IDATE, ITIME
       INTEGER(KIND=JWIM) :: ICOUNT, NN, I, J, JSN, KK, MM
       INTEGER(KIND=JWIM) :: IY1,IM1,ID1,IH1,IMN1,ISS1,IDATERES,IRET
       INTEGER(KIND=JWIM) :: IY2,IM2,ID2,IH2,IMN2,ISS2
       INTEGER(KIND=JWIM) :: IERR
-      INTEGER(KIND=JWIM) :: ISIZE
       INTEGER(KIND=JWIM) :: NWINOFF
+      INTEGER(KIND=JWIM) :: NPROMA, MTHREADS, JC, JCS, JCL, JJ, ITHRS
+!$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
       REAL(KIND=JWRB) :: TEMP
-      REAL(KIND=JWRB) :: PMISS 
-      REAL(KIND=JWRB) :: PPMAX, PPMIN, DELTAPP, ABSPPREC
+      REAL(KIND=JWRB) :: ZMINSPEC, PPMAX, PPMIN, DELTAPP, ABSPPREC
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE :: VALUES(:)
+      REAL(KIND=JWRB), ALLOCATABLE :: VALM(:)
 
       CHARACTER(LEN=12) :: C12
       CHARACTER(LEN=14) :: CDATE1, CDATE2
@@ -137,44 +138,44 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
       !CALL GSTATS(1709,0)
 
-      IF(ITEST.GT.0) THEN
+      IF (ITEST > 0) THEN
         WRITE(IU06,*) '   SUB. WGRIBENCODE CALLED FOR ',IPARAM
         CALL FLUSH(IU06)
       ENDIF
 
       ALLOCATE(VALUES(NTENCODE))
 
+      MTHREADS=1
+!$    MTHREADS=OMP_GET_MAX_THREADS()
+      NPROMA=NTENCODE/MTHREADS + 1
+
+
 !*    0. PUT FIELD INTO GLOBAL MATRIX VALUES.
 !        -----------------------------------
-      IF(IPARAM.EQ.251) THEN
-        PMISS=0._JWRB
-      ELSE
-        PMISS=ZMISS
-      ENDIF
 
-      IF(IRGG.EQ.1 .OR. CLDOMAIN == 'm' ) THEN
+      IF (IRGG == 1 .OR. CLDOMAIN == 'm' ) THEN
         ICOUNT=1
-      ELSEIF(CLDOMAIN == 's' ) THEN
+      ELSEIF (CLDOMAIN == 's' ) THEN
         ICOUNT=1
       ELSE
         ICOUNT = (NINT((90._JWRB - AMONOP ) / XDELLA))*I1 + 1
-        VALUES=PMISS
+        VALUES(:)=ZMISS
       ENDIF
 
 !     PAD THE POLES IF INCLUDED IN THE GRID
-      IF(LPADPOLES) THEN
-        IF((NINT((90._JWRB - AMONOP ) / XDELLA)).EQ.0) THEN
+      IF (LPADPOLES) THEN
+        IF ((NINT((90._JWRB - AMONOP ) / XDELLA)) == 0) THEN
           TEMP=0._JWRB
           NN=0
           J=2
           JSN=I2-J+1
           DO I=1,NLONRGG(JSN)
-            IF(FIELD(I,J).NE.ZMISS) THEN
+            IF (FIELD(I,J) /= ZMISS) THEN
               TEMP=TEMP+FIELD(I,J)
               NN=NN+1
             ENDIF
           ENDDO
-          IF(NN.GT.0) THEN
+          IF (NN > 0) THEN
             TEMP=TEMP/NN
           ELSE
             TEMP=ZMISS
@@ -185,18 +186,18 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
             FIELD(I,J)=TEMP
           ENDDO
         ENDIF
-        IF((NINT((-90._JWRB - AMOSOP ) / XDELLA)).EQ.0) THEN
+        IF ((NINT((-90._JWRB - AMOSOP ) / XDELLA)) == 0) THEN
           TEMP=0._JWRB
           NN=0
           J=I2-1
           JSN=I2-J+1
           DO I=1,NLONRGG(JSN)
-            IF(FIELD(I,J).NE.ZMISS) THEN
+            IF (FIELD(I,J) /= ZMISS) THEN
               TEMP=TEMP+FIELD(I,J)
               NN=NN+1
             ENDIF
           ENDDO
-          IF(NN.GT.0) THEN
+          IF (NN > 0) THEN
             TEMP=TEMP/NN
           ELSE
             TEMP=ZMISS
@@ -211,52 +212,53 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
 !     FILL THE ENCODING ARRAY
 !     -----------------------
+      DO J = 1, I2
+        JSN = I2-J+1
+        VALUES(ICOUNT:ICOUNT+NLONRGG(JSN))=FIELD(1:NLONRGG(JSN), J)
+        ICOUNT=ICOUNT+NLONRGG(JSN)
+      ENDDO
 
-      IF(IPARAM.EQ.251) THEN
+      IF (IPARAM == 251) THEN
+
+!       spectra are encoded on a log10 scale and small below a certain threshold are set to missing
         DELTAPP=(2**NGRBRESS-1)*PPRESOL
         ABSPPREC=ABS(PPREC)
-        DO J=1,I2
-          JSN=I2-J+1
-          DO I=1,NLONRGG(JSN)
-            IF(FIELD(I,J).NE.ZMISS) THEN
-              VALUES(ICOUNT)=FIELD(I,J)
+        ZMINSPEC = LOG10(PPEPS)+ABSPPREC
+
+        ALLOCATE(VALM(MTHREADS))
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC, JCS, JCL, JJ, ITHRS)
+        DO JC= 1, NTENCODE, NPROMA
+          JCS = JC
+          JCL = MIN(JCS+NPROMA-1, NTENCODE)
+          ITHRS = JC/NPROMA + 1
+          VALM(ITHRS) = ZMINSPEC 
+          DO JJ = JCS, JCL 
+            IF(VALUES(JJ) /= ZMISS ) THEN
+              VALUES(JJ) = LOG10(VALUES(JJ)+PPEPS)+ABSPPREC
+              VALM(ITHRS) = MAX(VALM(ITHRS), VALUES(JJ))
             ELSE
-              VALUES(ICOUNT)=PMISS
+              VALUES(JJ) = ZMINSPEC
             ENDIF
-            ICOUNT=ICOUNT+1
           ENDDO
-        ENDDO
-
-        !CALL GSTATS(1709,2)
-        !CALL GSTATS(1495,0)
-!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC)
-        DO JC=1,NTENCODE
-          VALUES(JC) = LOG10(VALUES(JC)+PPEPS)+ABSPPREC
-        ENDDO
-!$OMP END PARALLEL DO
-        PPMAX=VALUES(1)
-        DO JC=2,NTENCODE
-          PPMAX=MAX(PPMAX,VALUES(JC))
-        ENDDO
-        PPMIN=MIN(PPMISS,PPMAX-DELTAPP)
-        PPMIN=MIN(PPMIN,PPMIN_RESET)
-!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC)
-        DO JC=1,NTENCODE
-          IF ( VALUES(JC) .LE. PPMIN ) VALUES(JC)=ZMISS
         ENDDO
 !$OMP END PARALLEL DO
 
-      !CALL GSTATS(1495,1)
-      !CALL GSTATS(1709,3)
+        PPMAX=MAXVAL(VALM(:))
+        DEALLOCATE(VALM)
 
-      ELSE
-        DO J=1,I2
-          JSN=I2-J+1
-          DO I=1,NLONRGG(JSN)
-            VALUES(ICOUNT)=FIELD(I,J)
-            ICOUNT=ICOUNT+1
+        PPMIN=MIN(PPMISS, PPMAX-DELTAPP)
+        PPMIN=MIN(PPMIN, PPMIN_RESET)
+
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC, JCS, JCL, JJ)
+        DO JC= 1, NTENCODE, NPROMA
+          JCS = JC
+          JCL = MIN(JCS+NPROMA-1, NTENCODE)
+          DO JJ = JCS, JCL 
+            IF ( VALUES(JJ) <= PPMIN ) VALUES(JJ)=ZMISS
           ENDDO
         ENDDO
+!$OMP END PARALLEL DO
+
       ENDIF
 
 !*    1. FIX PARAMETERS AND PACK DATA.
@@ -268,21 +270,21 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'missingValue',ZMISS)
 
 !     GRIB TABLE AND PARAMETER NUMBER
-      IF(ITABLE.EQ.128) THEN
+      IF (ITABLE == 128) THEN
 !       it seems that then default table is not used when defining paramId !
         ITABPAR=IPARAM
       ELSE
         ITABPAR=ITABLE*1000+IPARAM
       ENDIF
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR,IERR)
-      IF(IERR.NE.0)THEN
+      IF (IERR /= 0)THEN
         WRITE(*,*) ' *********************************************'
         WRITE(IU06,*) ' GRIB_API ERROR WHILE SETTING paramId ',ITABPAR
         WRITE(*,*) ' GRIB_API ERROR WHILE SETTING paramId ',ITABPAR
         WRITE(*,*) ' GRIB_API ERROR CODE ', IERR
         WRITE(IU06,*) ' GRIB_API ERROR CODE ', IERR
         CALl FLUSH(IU06)
-        IF(IERR.EQ.-36)THEN
+        IF (IERR == -36)THEN
           WRITE(*,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
           WRITE(*,*) ' PARAMETERS KNOWN BY GRIB_API !!!' 
           WRITE(*,*) ' IN THE MEAN TIME, THE PROGRAM WILL CONTINUE.' 
@@ -303,8 +305,8 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       ENDIF
 
 !     LEVEL DEFINITION
-      IF(.NOT.LNEWLVTP) THEN
-        IF(KLEV.NE.0) THEN
+      IF (.NOT.LNEWLVTP) THEN
+        IF (KLEV /= 0) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',105)
         ELSE
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',102)
@@ -312,11 +314,10 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       ENDIF
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',KLEV)
 
-
-      IF(.NOT. LGRHDIFS .OR. & 
-        (MARSTYPE .EQ. 'an' .AND. IFCST .EQ. 0) .OR. &
-        (MARSTYPE .EQ. '4v') .OR. &
-        (MARSTYPE .EQ. 'fg' .AND. IFCST .EQ. 0) ) THEN
+      IF (.NOT. LGRHDIFS .OR. & 
+     &   (MARSTYPE == 'an' .AND. IFCST == 0) .OR. &
+     &   (MARSTYPE == '4v') .OR. &
+         (MARSTYPE == 'fg' .AND. IFCST == 0) ) THEN
 
         READ(CDATE(1:8),'(I8)') IDATE
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'date',IDATE)
@@ -330,11 +331,11 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'timeRangeIndicator',10)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'endStep',IFCST)
         
-        IF ( MARSTYPE .EQ. 'fg' .AND. IFCST .EQ. 0 ) THEN
+        IF ( MARSTYPE == 'fg' .AND. IFCST == 0 ) THEN
           ICLASS = 1
-        ELSEIF ( MARSTYPE .EQ. '4v' ) THEN
+        ELSEIF ( MARSTYPE == '4v' ) THEN
           ICLASS = 6
-        ELSEIF ( MARSTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
+        ELSEIF ( MARSTYPE == 'an' .AND. IFCST == 0 ) THEN
           ICLASS = 2
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',C12)
           IF (C12(1:4) == 'ewla' .OR. C12(1:4) == 'lwwv') THEN
@@ -379,9 +380,9 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE, &
              'offsetToEndOf4DvarWindow',NWINOFF)
           ENDIF 
-        ELSEIF ( MARSTYPE .EQ. 'cf' ) THEN
+        ELSEIF ( MARSTYPE == 'cf' ) THEN
           ICLASS = 10 
-        ELSEIF ( MARSTYPE .EQ. 'pf' ) THEN
+        ELSEIF ( MARSTYPE == 'pf' ) THEN
           ICLASS = 11 
         ELSE
           ICLASS = 9
@@ -389,8 +390,8 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'type',ICLASS)
 
-        IF (ICLASS.NE.9.AND.ICLASS.NE.10.AND.ICLASS.NE.11 &
-           .AND.ICLASS.NE.6.AND.IFCST.GT.0) THEN
+        IF (ICLASS /= 9 .AND. ICLASS /= 10 .AND. ICLASS /= 11 &
+           .AND. ICLASS /= 6 .AND. IFCST > 0) THEN
           WRITE(IU06,*)' SUB: WGRIBENCODE: THIS IS A FORECAST'
           WRITE(IU06,*)' BUT MARSTYPE DOES NOT KNOW ABOUT IT'
           WRITE(IU06,*)'  '
@@ -404,7 +405,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 !       MOST OF IT WAS ALREADY OBTAINED WHEN CLONE OF IFS HANDLE WAS TAKEN
 !       IN *PRESET_WGRIB_TEMPLATE*
 
-        IF(LRSTST0) THEN
+        IF (LRSTST0) THEN
 !         NEED TO TEMPORARLY RESET THE IFS FORECAST STEP
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepUnits','s')
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'endStep',ISTEP)
@@ -424,7 +425,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
       ENDIF
 
-      IF(IPARAM.EQ.251) THEN
+      IF (IPARAM == 251) THEN
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'directionNumber',IK)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'frequencyNumber',IM)
       ENDIF

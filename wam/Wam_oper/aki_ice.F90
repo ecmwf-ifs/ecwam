@@ -1,4 +1,4 @@
-      FUNCTION AKI_ICE (G,XK,DEPTH,RHOW,CITH)
+REAL(KIND=JWRB) FUNCTION AKI_ICE (G,XK,DEPTH,RHOW,CITH)
 
 ! ----------------------------------------------------------------------
 
@@ -53,7 +53,7 @@
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB) :: AKI_ICE
+      REAL(KIND=JWRB), INTENT(IN) :: G, XK, DEPTH, RHOW, CITH
 
 !     ICE PROPERTIES (assumed fixed for now) 
       REAL(KIND=JWRB), PARAMETER :: YMICE=5.5E+9_JWRB   ! typical value of Young modulus of sea ice
@@ -65,12 +65,11 @@
 !     MAXIMUM WAVE NUMBER
       REAL(KIND=JWRB), PARAMETER :: AKI_MAX = 20.0_JWRB
 
-      REAL(KIND=JWRB), INTENT(IN) :: G, XK, DEPTH, RHOW, CITH
       REAL(KIND=JWRB) :: FICSTF, RDH
       REAL(KIND=JWRB) :: OM2, AKI, AKIOLD, F, FPRIME, AKID 
 
 
-      IF(CITH.LE.0.0_JWRB) THEN
+      IF (CITH <= 0.0_JWRB) THEN
         AKI=XK
       ELSE
 !       BENDING STIFFNESS / WATER DENSITY
@@ -88,8 +87,8 @@
         AKIOLD=0.0_JWRB
         AKI=MIN(XK ,(OM2/MAX(FICSTF,1.0_JWRB))**0.2_JWRB)
 
-        DO WHILE (ABS(AKI-AKIOLD).GT.EBS*AKIOLD .AND.                   &
-     &            AKI.LT.AKI_MAX                                        &
+        DO WHILE (ABS(AKI-AKIOLD) > EBS*AKIOLD .AND.                   &
+     &            AKI < AKI_MAX                                        &
      &           )
           AKIOLD=AKI 
           AKID=MIN(DEPTH*AKI,50.0_JWRB)
@@ -97,11 +96,11 @@
           FPRIME=5._JWRB*FICSTF*AKI**4+G-OM2*(RDH-DEPTH/(SINH(AKID)**2))
           AKI = AKI-F/FPRIME
 !         in case of overshoot because it is trying to find a very large wave number
-          IF(AKI.LE.0.0_JWRB) AKI=AKI_MAX
+          IF (AKI <= 0.0_JWRB) AKI=AKI_MAX
         ENDDO
 
       ENDIF
 
       AKI_ICE = AKI
 
-      END FUNCTION AKI_ICE
+END FUNCTION AKI_ICE

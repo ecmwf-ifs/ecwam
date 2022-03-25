@@ -1,5 +1,9 @@
-      SUBROUTINE SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,&
-     &                   ROAIRN, WSTAR, SL, SPOS, XLLWS)
+      SUBROUTINE SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, & 
+     &                   WAVNUM, CINV, XK2CG,           &
+     &                   WDWAVE, WSWAVE, UFRIC, Z0M,    &
+     &                   COSWDIF, SINWDIF2,             & 
+     &                   RAORW, WSTAR, RNFAC,           &
+     &                   FLD, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -8,22 +12,34 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-!    &                   ROAIRN,WSTAR, SL, SPOS, XLLWS)
-!            *F* - SPECTRUM.
-!           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
-!          *IJS* - INDEX OF FIRST GRIDPOINT.
-!          *IJL* - INDEX OF LAST GRIDPOINT.
-!       *THWNEW* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
+!     *CALL* *SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1,
+!    &                WAVNUM, CINV, XK2CG,
+!    &                WDWAVE, UFRIC, Z0M,
+!    &                COSWDIF, SINWDIF2,
+!    &                RAORW, WSTAR, FLD, SL, SPOS, XLLWS)
+!         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
+!                - IF = 2 THEN GUSTINESS PARAMETERISATION
+!         *LLSNEG* - IF TRUE THEN THE NEGATIVE SINPUT WILL BE COMPUTED
+!         *KIJS* - INDEX OF FIRST GRIDPOINT.
+!         *KIJL* - INDEX OF LAST GRIDPOINT.
+!          *FL1* - SPECTRUM.
+!       *WAVNUM* - WAVE NUMBER.
+!         *CINV* - INVERSE PHASE VELOCITY.
+!       *XK2CG*  - (WAVE NUMBER)**2 * GROUP SPPED.
+!       *WDWAVE* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                  NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                  CLOCKWISE FROM NORTH).
-!        *USNEW* - NEW FRICTION VELOCITY IN M/S.
-!        *Z0NEW* - ROUGHNESS LENGTH IN M.
-!       *ROAIRN* - AIR DENSITY IN KG/M3
+!        *UFRIC* - FRICTION VELOCITY IN M/S.
+!        *Z0M*   - ROUGHNESS LENGTH IN M.
+!      *COSWDIF* - COS(TH(K)-WDWAVE(IJ))
+!     *SINWDIF2* - SIN(TH(K)-WDWAVE(IJ))**2
+!        *RAORW* - RATIO AIR DENSITY TO WATER DENSITY.
 !        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
+!        *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
+!          *FLD* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !           *SL* - TOTAL SOURCE FUNCTION ARRAY.
 !         *SPOS* - POSITIVE SOURCE FUNCTION ARRAY.
-!         *XLLWS*- 1 WHERE SINPUT IS POSITIVE
+!        *XLLWS* - = 1 WHERE SINPUT IS POSITIVE
 
 !     METHOD.
 !     -------
@@ -45,7 +61,8 @@
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : IPHYS
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -53,26 +70,41 @@
 #include "sinput_ard.intfb.h"
 #include "sinput_jan.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: NGST
+      LOGICAL, INTENT(IN) :: LLSNEG
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN, WSTAR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL, SPOS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, XK2CG
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: RAORW, WSTAR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(IN) :: COSWDIF, SINWDIF2
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
+
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('SINPUT',0,ZHOOK_HANDLE)
 
       SELECT CASE (IPHYS)
       CASE(0)
-        CALL SINPUT_JAN (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
-     &                   ROAIRN, WSTAR, SL, SPOS, XLLWS)
+        CALL SINPUT_JAN (NGST, LLSNEG, KIJS, KIJL, FL1,  &
+     &                   WAVNUM, CINV, XK2CG,            &
+     &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
+     &                   COSWDIF, SINWDIF2,              & 
+     &                   RAORW, WSTAR, RNFAC,            &
+     &                   FLD, SL, SPOS, XLLWS)
       CASE(1) 
-        CALL SINPUT_ARD (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
-     &                   ROAIRN, WSTAR, SL, SPOS, XLLWS)
+        CALL SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1,  &
+     &                   WAVNUM, CINV, XK2CG,            &
+     &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
+     &                   COSWDIF, SINWDIF2,              & 
+     &                   RAORW, WSTAR, RNFAC,            &
+     &                   FLD, SL, SPOS, XLLWS)
       END SELECT 
 
       IF (LHOOK) CALL DR_HOOK('SINPUT',1,ZHOOK_HANDLE)

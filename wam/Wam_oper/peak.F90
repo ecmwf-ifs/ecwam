@@ -1,4 +1,4 @@
-      SUBROUTINE PEAK (IJS, IJL, IG, FETCH, FPMAX, U10OLD)
+      SUBROUTINE PEAK (KIJS, KIJL, FETCH, FPMAX, U10, FP, ALPHAJ)
 
 ! ----------------------------------------------------------------------
 
@@ -18,14 +18,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PEAK (IJL, IJS, IG, FETCH, FPMAX,U10OLD)*
-!          *IJS*     INTEGER  FIRST POINT IN BLOCK.
-!          *IJL*     INTEGER  LAST  POINT IN BLOCK.
-!          *IG*      INTEGER  BLOCK NUMBER.
+!       *CALL* *PEAK (KIJL, KIJS, FETCH, FPMAX, U10, FP, ALPHAJ)*
+!          *KIJS*    INTEGER  FIRST POINT IN BLOCK.
+!          *KIJL*    INTEGER  LAST  POINT IN BLOCK.
 !          *FETCH*   REAL     FETCH TO BE USED (METRES).
 !          *FPMAX*   REAL     MAXIMUM PEAK FREQUENCY (HERTZ).
-!          *U10OLD*  INTERMEDIATE STORAGE OF MODULUS OF WIND
-!                    VELOCITY.
+!          *U10*     REAL     WIND SPEED.
+!          *FP*      REAL     PEAK FREQUENCY.
+!          *ALPHAJ*  REAL     ALPHA PARAMETER.
 
 !     METHOD.
 !     -------
@@ -33,8 +33,8 @@
 !       FP = A * (G*FETCH/U_10**2)**D    A = 2.84
 !       FP = MAX [FP, 0.13]              D = -3./10.
 !       FP = MIN [FP, FRMAX*U_10/G]      b = 0.033
-!       ALPHJ = B * FP-**2/3             B = 0.033
-!       ALPHJ = MAX [ALPHJ, 0.0081]
+!       ALPHAJ = B * FP-**2/3            B = 0.033
+!       ALPHAJ = MAX [ALPHAJ, 0.0081]
 !       FP = G/U_10*FP
 
 !     EXTERNALS.
@@ -53,24 +53,23 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS    ,    &
-     &            FP       ,ALPHJ
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NBLO
+      USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS
       USE YOWPCONS , ONLY : G
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IG
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
       REAL(KIND=JWRB), INTENT(IN) :: FETCH, FPMAX
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: U10
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(OUT) :: FP
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(INOUT) :: ALPHAJ 
+
 
       INTEGER(KIND=JWIM) :: IJ
-      REAL(KIND=JWRB) :: GX, U10, GXU, UG
+      REAL(KIND=JWRB) :: GX, GXU, UG
 
 ! ----------------------------------------------------------------------
 
@@ -78,16 +77,15 @@
 !        -------------------------------
 
       GX = G * FETCH
-      DO IJ = IJS, IJL
-        IF (U10OLD(IJ,IG) .GT. 0.1E-08_JWRB) THEN
-          U10 = U10OLD(IJ,IG)
-          GXU = GX/(U10*U10)
-          UG = G/U10
+      DO IJ = KIJS, KIJL
+        IF (U10(IJ) > 0.1E-08_JWRB) THEN
+          GXU = GX/(U10(IJ)*U10(IJ))
+          UG = G/U10(IJ)
           FP(IJ) = AJONS * GXU ** DJONS
           FP(IJ) = MAX(0.13_JWRB, FP(IJ))
           FP(IJ) = MIN(FP(IJ), FPMAX/UG)
-          ALPHJ(IJ) = BJONS * FP(IJ)** EJONS
-          ALPHJ(IJ) = MAX(ALPHJ(IJ), 0.0081_JWRB)
+          ALPHAJ(IJ) = BJONS * FP(IJ)**EJONS
+          ALPHAJ(IJ) = MAX(ALPHAJ(IJ), 0.0081_JWRB)
           FP(IJ) = FP(IJ)*UG
         ELSE
           FP(IJ) = 0.0_JWRB

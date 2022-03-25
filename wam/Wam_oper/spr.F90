@@ -63,7 +63,7 @@
 
       DO K=1,NANG
         THE = COS(THETA(K)-THETAQ)
-        IF (THE.GT.0.0_JWRB) THEN
+        IF (THE > 0.0_JWRB) THEN
           ST(K) = ZDP*THE**2
           IF(ST(K).LT.0.1E-08_JWRB) ST(K)=0.0_JWRB
         ELSE

@@ -1,4 +1,4 @@
-      SUBROUTINE UIPREP (IFORM, ML, KL, LLGRID)
+      SUBROUTINE UIPREP (IFORM, LLGRID)
 
 ! ----------------------------------------------------------------------
 
@@ -14,12 +14,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *UIPREP (IFORM, ML, KL, LLGRID)*
+!       *CALL* *UIPREP (IFORM, LLGRID)*
 !          *IFORM*   - OUTPUT FORMAT OPTION = 1 UNFORMATED
 !                                           = 2 FORMATED
 !                                           OTHERWISE BOTH
-!          *ML*      - NUMBER OF FREQUENCIES.
-!          *KL*      - NUMBER OF DIRECTIONS.
 !          *LLGRID*  - TRUE IF THE GRID DEFINITION HAS BEEN SPECIFIED
 !                      IN INPUT FILE grid_description
 
@@ -48,8 +46,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
-     &            NBLO     ,NIBLO    ,CLDOMAIN
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
+     &            NGX      ,NGY      ,NIBLO    ,CLDOMAIN
       USE YOWCPBO  , ONLY : IBOUNC   ,GBOUNC_MAX, GBOUNC ,              &
      &            AMOSOC   ,AMONOC   ,AMOEAC   ,AMOWEC
       USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,    &
@@ -57,13 +55,11 @@
       USE YOWCOUT  , ONLY : NGOUT
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,FRATIO
-      USE YOWGRID  , ONLY : NLONRGG
 
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,              &
-     &            XDELLA   ,XDELLO   ,LLOBSTRCT,LAQUA
+     &            XDELLA   ,XDELLO   ,NLONRGG  ,LLOBSTRCT,LAQUA
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD 
-      USE YOWSTAT  , ONLY : IPHYS
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWUNPOOL, ONLY : LLUNSTR, LPREPROC, LVECTOR, IVECTOR
 
@@ -72,11 +68,11 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "adjust.intfb.h"
+#include "iwam_get_unit.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(OUT) :: IFORM, ML, KL
+      INTEGER(KIND=JWIM), INTENT(OUT) :: IFORM
       LOGICAL, INTENT(OUT) :: LLGRID
 
-      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
       INTEGER(KIND=JWIM) :: K, M, I, II, KSN
       INTEGER(KIND=JWIM) :: IU05, IU
       INTEGER(KIND=JWIM) :: IFRE1, ISPECTRUNC
@@ -95,14 +91,14 @@
 
 ! ----------------------------------------------------------------------
 
-      NAMELIST /NALINE/ CLINE, ML, KL, FR1, IRGG, XDELLA, XDELLO,       &
+      NAMELIST /NALINE/ CLINE, NFRE, NFRE_RED, FR1, IFRE1, NANG,        &
+     &                  IRGG, XDELLA, XDELLO,                           &
      &                  AMOSOP, AMONOP, AMOWEP, AMOEAP,                 &
      &                  IFORM, ITEST, ITESTB,                           &
-     &                  IPHYS,                                          &
      &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC, &
-     &                  NBLO, NIBLO, CLDOMAIN,LLOBSTRCT,                &
+     &                  NIBLO, CLDOMAIN,LLOBSTRCT,                      &
      &                  NDEPTH   ,DEPTHA   ,DEPTHD,                     &
-     &                  IFRE1, LAQUA, LLUNSTR, LPREPROC
+     &                  LAQUA, LLUNSTR, LPREPROC
 
       NAMELIST /NACORR/ ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
       NAMELIST /NAOUTP/ ZOUTLAT, ZOUTLONG 
@@ -119,9 +115,11 @@
       LPREPROC = .FALSE. 
       LVECTOR   =.FALSE.
       IVECTOR   = 1
-      ML     =   0
-      KL     =   0
+      NFRE     =   0
+      NFRE_RED =   0
       FR1    =   0.0_JWRB
+      IFRE1 = 1
+      NANG   =   0
       IRGG   =  -1
       XDELLA =   0.0_JWRB
       XDELLO =   0.0_JWRB
@@ -132,8 +130,6 @@
       IFORM  =  -1
       ITEST  =  -1
       ITESTB =  -1
-!      IPHYS  =   0  ! ECMWF PHYSICS
-      IPHYS  =   1  ! ARDHUIN PHYSICS
       IBOUNC =  -1
       IBOUNF =  -1
       AMOSOC =-100.0_JWRB
@@ -144,12 +140,10 @@
       NDEPTH = 74
       DEPTHA = 1.0_JWRB
       DEPTHD = 1.1_JWRB
-      IFRE1 = 1
       LAQUA =.FALSE. ! to force an aqua planet on irregular grid with xdella
 
 !     THE FOLLOWING DEFAULT VALUES INDICATES THAT THEY ARE DETERMINED
 !     INTERNALLY BY PREPROC EXCEPT IF PROVIDED IN THE NAMELIST
-      NBLO   = -1
       NIBLO  = -1 ! 
       CLDOMAIN= '-'
 
@@ -163,7 +157,36 @@
 
       READ (IU05, NALINE)
 
-      ALLOCATE(FR(ML))
+      IF (NFRE_RED > NFRE ) THEN
+        WRITE (IU06,*) '**********************************************'
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '*       FATAL ERROR IN SUB. UIPREP           *'
+        WRITE (IU06,*) '*       ==========================           *'
+        WRITE (IU06,*) '* THE REDUCED NUMBER OF FREQUENCIES NFRE_RED *'
+        WRITE (IU06,*) '* IS LARGER THAN THE TOTAL NUMNBER NFRE  !!  *'
+        WRITE (IU06,*) '* NFRE_RED = ', NFRE_RED
+        WRITE (IU06,*) '* NFRE     = ', NFRE
+        WRITE (IU06,*) '**********************************************'
+        CALL ABORT1 
+      ENDIF
+
+      IF (LLUNSTR .AND. NFRE_RED /= NFRE ) THEN
+        WRITE (IU06,*) '**********************************************'
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '*       FATAL ERROR IN SUB. UIPREP           *'
+        WRITE (IU06,*) '*       ==========================           *'
+        WRITE (IU06,*) '* THE REDUCED NUMBER OF FREQUENCIES NFRE_RED *'
+        WRITE (IU06,*) '* IS DIFFERENT THAN THE TOTAL NUMNBER NFRE   *'
+        WRITE (IU06,*) '* NFRE_RED = ', NFRE_RED
+        WRITE (IU06,*) '* NFRE     = ', NFRE
+        WRITE (IU06,*) '* LLUNSTR  = ', LLUNSTR
+        WRITE (IU06,*) '* The software has not yet been adapted     *'
+        WRITE (IU06,*) '* Use NFRE_RED = NFRE = ',NFRE
+        WRITE (IU06,*) '**********************************************'
+        CALL ABORT1 
+      ENDIF
+
+      ALLOCATE(FR(NFRE))
 
       FR(IFRE1) = FR1
       DO M=IFRE1-1,1,-1
@@ -178,17 +201,18 @@
 
       FILENAME='grid_description'
       INQUIRE(FILE=FILENAME,EXIST=LLGRID)
-      IF(LLGRID) THEN
+      IF (LLGRID) THEN
         IU=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0,'READWRITE')
         OPEN(IU,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
-        READ (IU,'(I4)') ISPECTRUNC 
-        READ (IU,'(F8.3)') AMONOP
-        READ (IU,'(F8.3)') AMOSOP
-        READ (IU,'(F8.3)') AMOWEP
-        READ (IU,'(F8.3)') AMOEAP
-        READ (IU,'(I4)') IPER
-        READ (IU,'(I4)') IRGG
-        READ (IU,'(I4)') NY
+        READ (IU,*) ISPECTRUNC
+        READ (IU,*) AMONOP
+        READ (IU,*) AMOSOP
+        READ (IU,*) AMOWEP
+        READ (IU,*) AMOEAP
+        READ (IU,*) IPER
+        READ (IU,*) IRGG
+        READ (IU,*) NY
+        WRITE(IU06,*) "grid_description read in "
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -199,28 +223,25 @@
 
 !*    2.1 FREQUENCY AND DIRECTION GRID DEFINITIONS.
 
-      WRITE (IU06,*) "   PHYSICS BASED ON IPHYS = ",IPHYS
       WRITE (IU06,'("   FREQUENCY / DIRECTION GRID"/)')
-      WRITE (IU06,'("   NUMBER OF FREQUENCIES IS ML = ",I6)') ML
-      IF(IFRE1.NE.1) THEN
+      WRITE (IU06,'("   NUMBER OF FREQUENCIES IS NFRE = ",I6)') NFRE
+      WRITE (IU06,'("   REDUCED NUMBER OF FREQ IS NFRE_RED = ",I6)') NFRE_RED
+      IF (IFRE1 /= 1) THEN
         WRITE (IU06,'("!!MINIMUM FREQUENCY WAS RESET TO",F10.6)') FR(1)
       ELSE
         WRITE (IU06,'("  MINIMUM FREQUENCY IS  FR(1) = ",F10.6)') FR(1)
       ENDIF
-      WRITE (IU06,'("   NUMBER OF DIRECTIONS  IS KL = ",I6)') KL
+      WRITE (IU06,'("   NUMBER OF DIRECTIONS  IS NANG = ",I6)') NANG
 
 !     SET DIMENSIONS.
 
-      NFRE = ML
-      NANG = KL
-
       GBOUNC = 0
       DO II=1,GBOUNC_MAX
-        IF(AMOSOC(II).EQ.-100.0_JWRB .AND. AMONOC(II).EQ.-100.0_JWRB .AND. &
-     &    AMOWEC(II).EQ.0.0_JWRB .AND. AMOEAC(II).EQ.0.0_JWRB)EXIT
+        IF (AMOSOC(II) == -100.0_JWRB .AND. AMONOC(II) == -100.0_JWRB .AND. &
+     &    AMOWEC(II) == 0.0_JWRB .AND. AMOEAC(II) == 0.0_JWRB)EXIT
         GBOUNC=II
       ENDDO
-      IF(IBOUNC .EQ. 1 .AND. GBOUNC.LE.0 ) THEN
+      IF (IBOUNC == 1 .AND. GBOUNC <= 0 ) THEN
         WRITE (IU06,*) '**********************************************'
         WRITE (IU06,*) '*                                            *'
         WRITE (IU06,*) '*       FATAL ERROR IN SUB. UIPREP           *'
@@ -238,13 +259,13 @@
 !*    2.2 OUTPUT GRID DEFINITIONS.
 
       WRITE (IU06,'(/"  OUTPUT GRID"/)')
-      IF (IRGG.EQ.1) THEN
+      IF (IRGG == 1) THEN
         WRITE(IU06,'("   USE A REDUCED GAUSSIAN GRID")')
       ELSE
         WRITE(IU06,'("   USE A REGULAR LON LAT GRID")')
       ENDIF      
 
-      IF(LAQUA) THEN
+      IF (LAQUA) THEN
         LLOBSTRCT=.FALSE.
         WRITE(IU06,*) ' '
         WRITE(IU06,*) '   AN AQUA PLANET WAS REQUESTED '
@@ -252,7 +273,7 @@
         WRITE(IU06,*) ' '
       ENDIF
 
-      IF(LLOBSTRCT) THEN
+      IF (LLOBSTRCT) THEN
         WRITE(IU06,*) ' '
         WRITE(IU06,*) '   THE NEW FORM OF BATHYMETRY INPUT IS USED IN'
         WRITE(IU06,*) '   CONJUNCTION WITH THE OBSTRUCTION COEFFICIENT'
@@ -263,18 +284,24 @@
 
 !*    SET DIMENSIONS.
 
-      IF(LLGRID) THEN
+      IF (LLGRID) THEN
         XDELLA = (AMONOP-AMOSOP)/(NY-1)
         ALLOCATE(NLONRGG(NY))
 
         NX = 0
         DO K=1,NY
           KSN=NY-K+1
-          READ(IU,'(I4)') NLONRGG(KSN)
+          READ(IU,*) NLONRGG(KSN)
           NX = MAX(NX,NLONRGG(KSN))
         ENDDO
 
-        XDELLO = (AMOEAP-AMOWEP)/(NX-1)
+        IF (IPER == 1) THEN
+          XDELLO  = 360._JWRB/REAL(NX)
+          AMOEAP = AMOWEP + 360._JWRB - XDELLO
+        ELSE
+          XDELLO = (AMOEAP-AMOWEP)/(NX-1)
+        ENDIF
+
 
         NGX = NX
         NGY = NY
@@ -283,7 +310,7 @@
 
       ELSE
 !       RESET FOR AQUA PLANET IF SELECTED
-        IF(LAQUA) THEN
+        IF (LAQUA) THEN
           NY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
           WRITE (IU06,*) ' !! RESETING TO AQUA PLANET CONFIGURATION !!'
           AMONOP=90.0_JWRB
@@ -293,7 +320,7 @@
         ENDIF
 
         IPER = 0
-        IF (ABS(AMOEAP-AMOWEP+1.5_JWRB*XDELLO) .GE. 360.0_JWRB ) IPER = 1
+        IF (ABS(AMOEAP-AMOWEP+1.5_JWRB*XDELLO) >= 360.0_JWRB ) IPER = 1
         NX = NINT((AMOEAP-AMOWEP)/XDELLO) + 1
         NY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
 
@@ -308,10 +335,10 @@
       WRITE (IU06,'("    SOUTHERN LAT  NORTHERN LAT ",                  &
      &  " WESTERN LONG "," EASTERN LONG",                               &
      &  /,2X,4F14.3)') AMOSOP, AMONOP, AMOWEP, AMOEAP
-      IF (IPER.EQ.1) WRITE (IU06,*) '   THE GRID IS EAST-WEST PERIODIC'
+      IF (IPER == 1) WRITE (IU06,*) '   THE GRID IS EAST-WEST PERIODIC'
 
-      IF(CLDOMAIN == '-' ) THEN
-        IF (IPER.EQ.1) THEN
+      IF (CLDOMAIN == '-' ) THEN
+        IF (IPER == 1) THEN
           CLDOMAIN = 'g'
         ELSE
           CLDOMAIN = 'm'
@@ -331,7 +358,7 @@
 !*    2.3 OUTPUT GRID CORRECTIONS READ FROM NAMELIST NACORR.
 !         --------------------------------------------------
 
-      IF(LLOBSTRCT) THEN
+      IF (LLOBSTRCT) THEN
 !     when the new bathymetry used, it is assumed that there is not
 !     any need for manual correction of the data since it should have
 !     been taken care when creating the file. 
@@ -354,7 +381,7 @@
         CORR: DO
         READ(IU05, NACORR, ERR=3000, IOSTAT=IOS, END=2300)
         NOUT=NOUT+1
-        IF (NOUT.GT.IOUTA) THEN
+        IF (NOUT > IOUTA) THEN
           ALLOCATE(XDUMP(IOUTA))
           IOUTANEW=IOUTA+100
           WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++'
@@ -425,7 +452,7 @@
         ENDIF
       ENDDO CORR
       ENDIF
- 2300 IF (NOUT.GT.0) THEN
+ 2300 IF (NOUT > 0) THEN
         WRITE (IU06,'(/4X," AREAS TO BE CORRECTED IN OUTPUT GRID",      &
      &   /,4X,"  NO.   SOUTHERN LAT ",                                  &
      &   " NORTHERN LAT  WESTERN LONG ",                                &
@@ -452,7 +479,7 @@
       OUTPP: DO
         READ(IU05, NAOUTP, ERR=3000, IOSTAT=IOS, END=2400)
         NGOUT = NGOUT + 1
-        IF (NGOUT.GT.MOUTP) THEN
+        IF (NGOUT > MOUTP) THEN
           ALLOCATE(XDUMP(MOUTP))
           MOUTPNEW=MOUTP+100
           WRITE (IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
@@ -489,7 +516,7 @@
           OUTLONG(NGOUT) = ZOUTLONG
         ENDIF
       ENDDO OUTPP
- 2400 IF (NGOUT.GT.0) THEN
+ 2400 IF (NGOUT > 0) THEN
         WRITE (IU06,'(" OUTPUT POINTS FOR SPECTRA AS DEFINED",          &
      &   " BY USER INPUT",/,                                            &
      &   "     NO.    LAT.   LONG.")')
@@ -536,7 +563,7 @@
 !*    2.6 NESTED GRID INFORMATION.
 !         ------------------------
 
-      IF ((IBOUNC.EQ.1.OR.IBOUNF.EQ.1) .AND. IRGG.EQ.1) THEN
+      IF ((IBOUNC == 1 .OR. IBOUNF == 1) .AND. IRGG == 1) THEN
         WRITE (IU06,*) '**********************************************'
         WRITE (IU06,*) '*                                            *'
         WRITE (IU06,*) '*       FATAL ERROR IN SUB. UIPREP           *'
@@ -558,7 +585,7 @@
 
       WRITE (IU06,'(" COARSE GRID OPTION IS IBOUNC = ",I3)') IBOUNC
 
-      IF (IBOUNC .EQ. 1) THEN
+      IF (IBOUNC == 1) THEN
 
         DO I=1,GBOUNC
           CALL ADJUST (AMOWEC(I), AMOEAC(I))
@@ -580,10 +607,10 @@
           DS=ABS(NINT((AMOSOC(I) - AMOSOP)/ XDELLA)-((AMOSOC(I)-AMOSOP)/ XDELLA))
           DN=ABS(NINT((AMONOC(I) - AMONOP)/ XDELLA)-((AMONOC(I)-AMONOP)/ XDELLA))
 
-          IF ((DW .GT. 1.E-10_JWRB) .OR.                                &
-     &        (DE .GT. 1.E-10_JWRB) .OR.                                &
-     &        (DS .GT. 1.E-10_JWRB) .OR.                                &
-     &        (DN .GT. 1.E-10_JWRB)) THEN
+          IF ((DW > 1.E-10_JWRB) .OR.                                &
+     &        (DE > 1.E-10_JWRB) .OR.                                &
+     &        (DS > 1.E-10_JWRB) .OR.                                &
+     &        (DN > 1.E-10_JWRB)) THEN
             WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
             WRITE (IU06,*) '+                                        +'
             WRITE (IU06,*) '+    WARNING ERROR IN SUB. UIPREP        +'
@@ -606,10 +633,10 @@
 !*    2.6.1.2 INCLUDES THE COARSE GRID THE NEST GRID?
 !             ---------------------------------------
 
-          IF ((IPER.NE.1) .AND.                                          &
-     &     (AMOWEP.GT.AMOWEC(I)     .OR. AMOEAC(I).GT.AMOEAP     ) .AND. &
-     &     (AMOWEP.GT.AMOWEC(I)+360..OR. AMOEAC(I)+360..GT.AMOEAP) .AND. &
-     &     (AMOWEP.GT.AMOWEC(I)-360..OR. AMOEAC(I)-360..GT.AMOEAP)) THEN
+          IF ((IPER /= 1) .AND.                                                   &
+     &     (AMOWEP > AMOWEC(I)           .OR. AMOEAC(I) > AMOEAP     ) .AND.      &
+     &     (AMOWEP > AMOWEC(I)+360._JWRB .OR. AMOEAC(I)+360._JWRB > AMOEAP) .AND. &
+     &     (AMOWEP > AMOWEC(I)-360._JWRB .OR. AMOEAC(I)-360._JWRB > AMOEAP)) THEN
 
             WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
             WRITE (IU06,*) '+                                        +'
@@ -626,8 +653,8 @@
             WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
             IBOUNC = 0
           ENDIF
-          IF (AMOSOP .GT. AMOSOC(I) .OR. AMONOC(I) .GT. AMONOP .OR.     &
-     &     AMOSOC(I) .GE. AMONOC(I)) THEN
+          IF (AMOSOP > AMOSOC(I) .OR. AMONOC(I) > AMONOP .OR.     &
+     &        AMOSOC(I) >= AMONOC(I)) THEN
             WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
             WRITE (IU06,*) '+                                        +'
             WRITE (IU06,*) '+     WARNING ERROR IN SUB. UIPREP       +'
@@ -654,7 +681,7 @@
 !           -----------------
 
       WRITE (IU06,'(" FINE GRID OPTION IS   IBOUNF = ",I3)') IBOUNF
-      IF (IBOUNF .EQ. 1) THEN
+      IF (IBOUNF == 1) THEN
         WRITE (IU06,*) '   THIS IS A FINE GRID RUN, INPUT FROM',        &
      &   ' A COARSE GRID IS EXPECTED'
       ELSE

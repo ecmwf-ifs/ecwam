@@ -116,36 +116,6 @@
 !       DIRECTIONS.
 !       OTHER ARRAYS ARE WRITTEN ACCORDING TO THEIR DIMENSIONS.
 
-!     EXTERNALS.
-!     ----------
-
-!       *ADJUST*    - CORRECTS LONGITUDE INPUT.
-!       *AKI*       - COMPUTES WAVE NUMBER.
-!       *CHECK*     - CHECKS CONSISTENCY OF BLOCK OVERLAPS.
-!       *FINDB*     - FIND BLOCK AND GRID POINT NUMBERS.
-!       *JAFU*      - ANGULAR INDEX OF NON LINEAR INTERACTION
-!       *INIWCST*   - SETS GLOBAL CONSTANTS.
-!       *LOCINT*    - INTERPOLATE TO BLOCKS.
-!       *MBLOCK*    - PREPARES ONE BLOCK
-!       *MBOUNC*    - MAKE COARSE GRID BOUNDARY.
-!       *MBOUNF*    - MAKE FINE   GRID BOUNDARY.
-!       *MBOXB*     - MAKE BOX FOR FINE GRID IN COARSE GRID.
-!       *MCOUT*     - PREPARES OUTPUT MODULE COUT
-!       *MFREDIR*   - COMPUTES FREQUENCY/DIRECTION MODULE FREDIR
-!       *MGRID*     - ARRANGES GRID FOR MODEL.
-!       *MINTF*     - MAKE INTERPOLATION TABLES FOR BOUNDARY INPUT.
-!       *MTABS*     - COMPUTES TABLES USED FOR SHALLOW WATER
-!       *MUBUF*     - COMPUTES MODULE UBUF.
-!       *NLWEIGT*   - COMPUTES NON LINEAR WEIGHTS IN MODULE INDNL
-!       *OUTCOM*    - OUTPUT OF COMPUTED MODULES
-!       *PACKI*     - PACKS AN INTEGER ARRAY.
-!       *PACKR*     - PACKS A REAL ARRAY.
-!       *SECONDHH*  - COMPUTES TABLES FOR SECOND HARMONICS EVALUATION
-!       *STRESS*    - STRESS TABLE.
-!       *TAUHF*     - HIGH FREQUENCY STRESS TABLE.
-!       *TOPOAR*    - PREPARE TOPOGRAPHY FOR GRID.
-!       *UIPREP*    - READS USER INPUT
-
 !     REFERENCE.
 !     ----------
 
@@ -155,27 +125,18 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,    &
-     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,    &
-     &            BSWKM
-      USE YOWPARAM , ONLY : NIBLO    ,NBLO     ,NIBLD    ,NBLD     ,    &
-     &            NIBLC    ,NBLC
+      USE YOWPARAM , ONLY : NIBLO    ,NIBLD    ,NIBLC    ,              &
+     &            NANG     ,NFRE     ,NFRE_RED
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
-      USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA   ,    &
-     &            XNLEV    ,TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            TH       ,COSTH    ,SINTH
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
-     &            NLONRGG  ,IGL
+      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
-     &            XDELLO   ,ZDELLO   ,LAQUA
-      USE YOWPHYS  , ONLY : ALPHAPMAX
-      USE YOWSTAT  , ONLY : IPHYS
+     &            XDELLO   ,ZDELLO   ,NLONRGG  ,LAQUA
       USE YOWSHAL  , ONLY : BATHYMAX
-      USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
+      USE YOWTEST  , ONLY : IU06
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
       USE YOWUNIT  , ONLY : NPROPAGS ,IU07     ,IU08
       USE YOWUNPOOL ,ONLY : LLUNSTR  ,LPREPROC
@@ -186,6 +147,7 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "check.intfb.h"
+#include "iwam_get_unit.intfb.h"
 #include "iniwcst.intfb.h"
 #include "mbounc.intfb.h"
 #include "mbounf.intfb.h"
@@ -202,9 +164,7 @@
 #include "uiprep.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU01, IU02, IU03, IU09, IU10, IU17,IU19,IU20
-      INTEGER(KIND=JWIM) :: IG
-      INTEGER(KIND=JWIM) :: K, IX, ICL, IFORM, ML, KL, LNAME,IINPC,LFILE
-      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
+      INTEGER(KIND=JWIM) :: K, IX, ICL, IFORM, LNAME,IINPC,LFILE
 
       REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JWRB) :: OLDRAD
@@ -219,7 +179,6 @@
 
 ! ----------------------------------------------------------------------
 
-      LMESSPASS=.FALSE.
       PRPLRADI=1.0_JWRB
 
       CALL INIWCST(PRPLRADI)
@@ -235,7 +194,7 @@
 !*    2. USER INPUT AND LINEPRINTER PROTOCOL.
 !        ------------------------------------
 
-      CALL UIPREP (IFORM, ML, KL, LLGRID)
+      CALL UIPREP (IFORM, LLGRID)
 
 ! ----------------------------------------------------------------------
 
@@ -244,13 +203,13 @@
 
       ALLOCATE(BATHY(NX, NY))
 
-!     FR(KL) IS ALLOCATED IN UIPREP 
-      ALLOCATE(DFIM(ML)) 
-      ALLOCATE(GOM(ML)) 
-      ALLOCATE(C(ML)) 
-      ALLOCATE(TH(KL)) 
-      ALLOCATE(COSTH(KL)) 
-      ALLOCATE(SINTH(KL)) 
+!     FR IS ALLOCATED IN UIPREP 
+      ALLOCATE(DFIM(NFRE)) 
+      ALLOCATE(GOM(NFRE)) 
+      ALLOCATE(C(NFRE)) 
+      ALLOCATE(TH(NANG)) 
+      ALLOCATE(COSTH(NANG)) 
+      ALLOCATE(SINTH(NANG)) 
 
       ALLOCATE(DELLAM(NY)) 
       ALLOCATE(SINPH(NY)) 
@@ -264,7 +223,7 @@
       LLEXIST=.FALSE.
       LNAME = LEN_TRIM(FILENAME)
       INQUIRE(FILE=FILENAME(1:LNAME),EXIST=LLEXIST)
-      IF(.NOT. LLEXIST) THEN
+      IF (.NOT. LLEXIST) THEN
         WRITE (IU06,*) '*************************************'
         WRITE (IU06,*) '*                                   *'
         WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
@@ -276,7 +235,7 @@
       ENDIF
       IU01 = IWAM_GET_UNIT(IU06, FILENAME(1:LNAME), 'r', 'f', 0, 'READWRITE')
 
-      IF (IFORM.NE.2) THEN
+      IF (IFORM /= 2) THEN
         IU07 = IWAM_GET_UNIT(IU06, 'wam_grid_tables', 'w', 'u', 0, 'READWRITE')
       ELSE
         IU17 = IWAM_GET_UNIT(IU06, 'wam_grid_tables_form', 'w', 'f', 0, 'READWRITE')
@@ -286,31 +245,31 @@
         WRITE(C1,'(I1)') ICL
         FILENAME='wam_subgrid_'//C1
         LFILE=0
-        IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
+        IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
         IU08(ICL) = IWAM_GET_UNIT(IU06,FILENAME(1:LFILE) , 'w', 'u', 0, 'READWRITE')
       ENDDO
 
-      IF (IBOUNC.EQ.1) THEN
+      IF (IBOUNC == 1) THEN
 !       Information of the nested grid(s) that will be produce by a coarse grid run
-        IF (IFORM.NE.2) THEN
+        IF (IFORM /= 2) THEN
           IU09=IWAM_GET_UNIT(IU06,'wam_nested_grids_info','w', 'u', 0, 'READWRITE')
         ELSE
           IU19=IWAM_GET_UNIT(IU06,'wam_nested_grids_info_form','w','f',0,'READWRITE')
         ENDIF
       ENDIF
 
-      IF (IBOUNF.EQ.1) THEN
+      IF (IBOUNF == 1) THEN
 !       Information of the nested grid(s) that were produced by a coarse grid run
-        IF (IFORM.NE.2) THEN
-          IU03=IWAM_GET_UNIT(IU06,'wam_nested_grids_from_coarse_info','r', 'u', 0,'READWRITE')
+        IF (IFORM /= 2) THEN
+          IU03=IWAM_GET_UNIT(IU06,'wam_nested_grids_from_coarse_info','r', 'u', 0, 'READWRITE')
         ELSE
           IU03=IWAM_GET_UNIT(IU06,'wam_nested_grids_info_from_coarse_form','r','f',0,'READWRITE')
         ENDIF
 
 !       Information about the boundary points that will be needed for a fine
 !       grid run.
-        IF (IFORM.NE.2) THEN
-          IU10=IWAM_GET_UNIT(IU06,'wam_boundary_grid_info', 'w', 'u', 0,'READWRITE')
+        IF (IFORM /= 2) THEN
+          IU10=IWAM_GET_UNIT(IU06,'wam_boundary_grid_info', 'w', 'u', 0, 'READWRITE')
         ELSE
           IU20=IWAM_GET_UNIT(IU06,'wam_boundary_grid_info_form','w','f',0,'READWRITE')
         ENDIF
@@ -322,7 +281,6 @@
 !*       AND GRID INCREMENTS IN RADIANS AND METRES.
 !        ------------------------------------------
 
-      IGL=0
       DELPHI = XDELLA*CIRC/360.0_JWRB
       OLDRAD=OLDPI/180.0_JWRB
       DO K=1,NY
@@ -330,35 +288,27 @@
         XLATD      = (AMOSOP + REAL(K-1)*XDELLA)
         SINPH(K)   = SIN(XLAT)
         COSPH(K)   = COS(XLAT)
-        IF(.NOT.LLGRID) THEN
-          IF (IRGG.EQ.1) THEN
-            IF (XDELLA.EQ.0.25_JWRB .AND. AMOWEP.EQ.-98.0_JWRB .AND.    &
-     &          AMOSOP.EQ.9.0_JWRB .AND. AMOEAP.EQ.42.0_JWRB .AND.      &
-     &          AMONOP.EQ.81.0_JWRB) THEN
-!         the old value for pi has to be taken in order to reproduce
-!         exactly the irregular grid of the operational LAW model 0.25
-              NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
-            ELSE
+        IF (.NOT.LLGRID) THEN
+          IF (IRGG == 1) THEN
 #ifdef _CRAYFTN
               NLONRGG(K) = MAX(NINT(NX*COSD(XLATD)),2)
 #else
               NLONRGG(K) = MAX(NINT(NX*COS(RAD*XLATD)),2)
 #endif
-            ENDIF
-            IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
+            IF (MOD(NLONRGG(K),2) == 1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
             NLONRGG(K) = NX
           ENDIF      
         ENDIF      
 
         PLONS=(AMOEAP-AMOWEP) + IPER*XDELLO
-        IF(NX.EQ.1.AND.NY.EQ.1) THEN
+        IF (NX == 1 .AND. NY == 1) THEN
           NLONRGG(K) = NX
           ZDELLO(K)  = XDELLO
           DELLAM(K)  = ZDELLO(K)*CIRC/360.0_JWRB
           EXIT
         ENDIF
-        IF(IPER.EQ.1) THEN
+        IF (IPER == 1) THEN
           ZDELLO(K)  = 360.0_JWRB/REAL(NLONRGG(K))
         ELSE
           ZDELLO(K)  = PLONS/REAL(NLONRGG(K)-1)
@@ -370,7 +320,7 @@
       XLATMAX=87.5_JWRB
       COSPHMIN=COS(XLATMAX*RAD)
       DO K=1,NY
-        IF(COSPH(K).LE.COSPHMIN) THEN
+        IF (COSPH(K) <= COSPHMIN) THEN
           COSPH(K)=COS(XLATMAX*RAD)
           SINPH(K)=SIN(XLATMAX*RAD)
         ENDIF
@@ -385,7 +335,7 @@
 !*    4.1 MODULE FREDIR (FREQUENCY/DIRECTION CONST).
 !         ------------------------------------------
 
-      CALL MFREDIR (ML, KL)
+      CALL MFREDIR
 
 !*    4.2 MODULE INDNL (WEIGHT OF NON-LINEAR INTERACTION).
 !         ------------------------------------------------
@@ -395,91 +345,7 @@
 !*    4.3 MODULE SHALLOW (SHALLOW WATER TABLES).
 !         --------------------------------------
 
-      CALL MTABS (ML, KL)
-
-!*    4.4 MODULE COUPLE.
-!         --------------
-      IF (IPHYS.EQ.0) THEN
-!       ECMWF PHYSICS:
-        IF(ML.GT.30) THEN
-          ALPHA   = 0.0060_JWRB
-        ELSE
-          ALPHA   = 0.0075_JWRB
-        ENDIF
-!!!        ALPHA   = 0.00525
-        BETAMAX = 1.20_JWRB
-        ZALP    = 0.008_JWRB
-        ALPHAPMAX = 0.03_JWRB
-        TAUWSHELTER=0.0_JWRB
-        TAILFACTOR=2.5_JWRB
-!!!        TAILFACTOR_PM=3.4
-        TAILFACTOR_PM=0.0_JWRB   ! i.e. not used
-
-!!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
-        EGRCRV = 1108.0_JWRB
-        AGRCRV = 0.06E+6_JWRB
-        BGRCRV = 9.70_JWRB
-        AFCRV = 4.0E-4_JWRB
-        BFCRV = -3.0_JWRB
-        ESH = 1711.0_JWRB
-        ASH = 8.0E-4_JWRB 
-        BSH = 0.96_JWRB 
-        ASWKM=0.0981_JWRB
-        BSWKM=0.425_JWRB
-
-      ELSE IF (IPHYS.EQ.1) THEN
-!       METEO FRANCE PHYSICS WITH HIGH FREQUENCy TAIL FROM ECMWF PHYSICS
-!        ALPHA   = 0.0065
-!        BETAMAX = 1.52
-!        ZALP    = 0.0060
-!        ALPHAPMAX = 0.03
-!        TAUWSHELTER=0.5
-!        TAILFACTOR=2.5
-!        TAILFACTOR_PM=0.0
-!       TEST 471 adapted to ECWAM
-
-        ALPHA   = 0.0065_JWRB
-        BETAMAX = 1.40_JWRB
-        ZALP    = 0.008_JWRB
-        ALPHAPMAX = 0.031_JWRB
-        TAUWSHELTER=0.25_JWRB
-        TAILFACTOR=2.5_JWRB
-        TAILFACTOR_PM=3.0_JWRB
-
-!!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
-        EGRCRV = 1065.0_JWRB
-        AGRCRV = 0.0655E+6_JWRB
-        BGRCRV =  10.906_JWRB
-        AFCRV = 2.453E-4_JWRB
-        BFCRV = -3.1236_JWRB
-        ESH = 1711.0_JWRB
-        ASH = 8.0E-4_JWRB 
-        BSH = 0.96_JWRB 
-        ASWKM=0.0981_JWRB
-        BSWKM=0.425_JWRB
-
-      ELSE
-        WRITE (IU06,*) '*************************************'
-        WRITE (IU06,*) '*                                   *'
-        WRITE (IU06,*) '*  ERROR IN PREPROC                 *'
-        WRITE (IU06,*) '*  UKNOWN PHYSICS SELECTION :       *'
-        WRITE (IU06,*) '*  IPHYS =' , IPHYS
-        WRITE (IU06,*) '*                                   *'
-        WRITE (IU06,*) '*************************************'
-        CALL ABORT1
-      ENDIF
-
-      XKAPPA  = 0.40_JWRB
-
-!*    UP TO JPLEVC LEVELS CAN BE SPECIFIED.
-
-      XNLEV(1)= 10.0_JWRB
-
-!*    4.4 MODULE TABLE (STRESS TABLES).
-!         -----------------------------
-
-!!! HAS BEEN REPLACED WITH USING TAUT_Z0
-
+      CALL MTABS
 
 !*    4.5 HIGHER HARMONICS TABLES
 !         -----------------------
@@ -504,12 +370,8 @@
 !*        REQUESTED RESOLUTION.
 !         ---------------------------------------------------------
 
-      IF(.NOT.LAQUA) THEN
+      IF (.NOT.LAQUA) THEN
         CALL TOPOAR (IU01, BATHY)
-        IF (ITEST.GT.0) THEN
-          WRITE (IU06,*) ' SUB TOPOAR DONE'
-          CALL FLUSH(IU06)
-        ENDIF
       ELSE
 !       AQUA PLANET SET TO DEEP EVERYWHERE
 !       EXCEPT AT THE POLES THAT ARE EXCLUDED AS LAND.
@@ -524,10 +386,6 @@
 !         ----------------------
 
       CALL MGRID (BATHY)
-      IF (ITEST.GT.0) THEN 
-        WRITE (IU06,*) ' SUB MGRID DONE'
-        CALL FLUSH(IU06)
-      ENDIF
 
       IF (LLUNSTR .AND. LPREPROC) THEN
 
@@ -536,15 +394,12 @@
       END IF ! LLUNSTR
 
       NIBLD=0
-      NBLD=0
       NIBLC=0
-      NBLC=0
 
 !*    5.3 COMPUTE OUTPUT POINT INDICES (MODULE YOWCOUT).
 !         ----------------------------------------------
 
       CALL MCOUT
-      IF (ITEST.GT.0) WRITE (IU06,*) ' SUB MCOUT DONE'
 
 ! ----------------------------------------------------------------------
 
@@ -554,12 +409,10 @@
 
 !*    6.1 COMPUTE FINE GRID NEST INFORMATION (MODULE YOWFPBO).
 !         ---------------------------------------------------
-!AR: We just omit the nest informations in this module since it is anyway broken ...
       IF (.NOT. LLUNSTR) THEN
 
-        IF (IBOUNF.EQ.1) THEN
+        IF (IBOUNF == 1) THEN
           CALL MBOUNF (IU03, IU10, IU20, IFORM, IINPC)
-          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB MBOUNF DONE'
         ELSE
           IINPC  = 0
           NBOUNF = 0
@@ -568,9 +421,8 @@
 !*    6.2 COMPUTE COARSE GRID NEST INFORMATION (MODULE YOWCPBO).
 !         -----------------------------------------------------
 
-        IF (IBOUNC.EQ.1) THEN
+        IF (IBOUNC == 1) THEN
           CALL MBOUNC (IU09, IU19, IFORM)
-          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB MBOUNC DONE'
         ELSE
           NBOUNC = 0
         ENDIF
@@ -587,13 +439,8 @@
 !*    8. GENERATE AND WRITE MODULE UBUF.
 !        -------------------------------
 
-        DO IG=1,IGL
-          CALL MUBUF (IU01, BATHY, IG, ML, IU08, NPROPAGS)
-          IF (ITEST.GT.0) THEN
-            WRITE (IU06,*) ' SUB MUBUF DONE FOR BLOCK ',IG
-          ENDIF
-        ENDDO
-!
+          CALL MUBUF (IU01, BATHY, IU08, NPROPAGS)
+ 
       END IF ! .NOT. LLUNSTR
 
 
@@ -603,7 +450,6 @@
 !        ------------------
 
       CALL OUTCOM (IU07, IU17, IFORM)
-      IF (ITEST.GT.0) WRITE (IU06,*) ' SUB OUTCOM DONE'
 
 ! ----------------------------------------------------------------------
 
@@ -611,6 +457,6 @@
 !*        OUTPUT OF NECESSARY DIMENSIONS.
 !         --------------------------------------------------
 
-      CALL CHECK (ML, KL, IINPC)
-  
+      CALL CHECK (IINPC)
+ 
       END PROGRAM

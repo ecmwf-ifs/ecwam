@@ -1,4 +1,4 @@
-      SUBROUTINE SCOSFL (F, IJS, IJL, MM, MEANCOSFL)
+      SUBROUTINE SCOSFL (KIJS, KIJL, F, MM, MEANCOSFL)
 
 ! ----------------------------------------------------------------------
 
@@ -15,11 +15,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SCOSFL (F, IJS, IJL, MM, MEANCOSFL)*
-!          *F*  - SPECTRUM.
-!          *IJS* - INDEX OF FIRST GRIDPOINT
-!          *IJL* - INDEX OF LAST GRIDPOINT
-!          *MM*  - FREQUENCY INDEX (array)
+!       *CALL* *SCOSFL (KIJS, KIJL, F, MM, MEANCOSFL)*
+!          *KIJS* - INDEX OF FIRST GRIDPOINT
+!          *KIJL* - INDEX OF LAST GRIDPOINT
+!          *F*    - SPECTRUM.
+!          *MM*   - FREQUENCY INDEX (array)
 !          *MEANCOSFL* - CENTERED FOURIER COEFFICIENT
 
 !     METHOD.
@@ -44,21 +44,22 @@
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWFRED  , ONLY : DELTH    ,TH       ,COSTH    ,SINTH
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: MEANCOSFL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(IN) :: F
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: MM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: MEANCOSFL
 
 
       INTEGER(KIND=JWIM) :: IJ, K
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: MEANDIR, SI, CI
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: MEANDIR, SI, CI
 
 ! ----------------------------------------------------------------------
 
@@ -67,7 +68,7 @@
 !*    1. INITIALISE ARRAYS
 !        -----------------
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         SI(IJ) = 0.0_JWRB
         CI(IJ) = 0.0_JWRB
         MEANCOSFL(IJ) = 0.0_JWRB
@@ -79,14 +80,14 @@
 !        -------------------
 
       DO K=1,NANG
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           SI(IJ) = SI(IJ)+SINTH(K)*F(IJ,K,MM(IJ))
           CI(IJ) = CI(IJ)+COSTH(K)*F(IJ,K,MM(IJ))
         ENDDO
       ENDDO
 
-      DO IJ=IJS,IJL
-        IF (CI(IJ).EQ.0.0_JWRB .AND. SI(IJ).EQ.0.0_JWRB) THEN
+      DO IJ=KIJS,KIJL
+        IF (CI(IJ) == 0.0_JWRB .AND. SI(IJ) == 0.0_JWRB) THEN
           MEANDIR(IJ) = 0.0_JWRB
         ELSE
           MEANDIR(IJ) = ATAN2(SI(IJ),CI(IJ))
@@ -97,11 +98,11 @@
 !        -----------------------------
 
       DO K=1,NANG
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           MEANCOSFL(IJ)=MEANCOSFL(IJ)+COS(TH(K)-MEANDIR(IJ))*F(IJ,K,MM(IJ)) 
         ENDDO
       ENDDO
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         MEANCOSFL(IJ) = DELTH*MEANCOSFL(IJ)
       ENDDO
 

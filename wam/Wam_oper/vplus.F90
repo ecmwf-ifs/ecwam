@@ -1,10 +1,4 @@
-!
-!-----------------------------------------------------------------------
-!
-!***  *REAL(KIND=JWRB) FUNCTION* *VPLUS(XI,XJ,XK,THI,THJ,THK)
-!
-!-----------------------------------------------------------------------
-      REAL(KIND=JWRB) FUNCTION VPLUS(XI,XJ,XK,THI,THJ,THK)
+REAL(KIND=JWRB) FUNCTION VPLUS(XI,XJ,XK,THI,THJ,THK)
 !
 !***  *VPLUS*  DETERMINES THE SECOND-ORDER TRANSFER COEFFICIENT 
 !              FOR THREE WAVE INTERACTIONS OF GRAVITY WAVES.
@@ -44,8 +38,10 @@
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 
-      REAL(KIND=JWRB) :: DEL1, RI, RJ, RK, XI, XJ, XK,                  &
-     &                   THI, THJ, THK, OI, OJ, OK, QI, QJ, QK,         &
+      REAL(KIND=JWRB), INTENT(IN) :: XI, XJ, XK, THI, THJ, THK
+
+      REAL(KIND=JWRB) :: DEL1, RI, RJ, RK,                              &
+     &                   OI, OJ, OK, QI, QJ, QK,                        &
      &                   RIJ, RIK, RJK, SQIJK, SQIKJ, SQJKI,            &
      &                   ZCONST, OMEG
 !
@@ -77,5 +73,4 @@
 
       VPLUS=ZCONST*( (RIJ+QI*QJ)*SQIJK + (RIK+QI*QK)*SQIKJ + (RJK+QJ*QK)*SQJKI )
 
-      END FUNCTION VPLUS
-
+END FUNCTION VPLUS

@@ -1,4 +1,4 @@
-      SUBROUTINE CIWAF (IJS,IJL,CICOVER,CITHICK,CIWA)
+      SUBROUTINE CIWAF (KIJS, KIJL, CGROUP, CICOVER, CITHICK, CIWA)
 
 ! ----------------------------------------------------------------------
 
@@ -13,14 +13,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *CIWAF (IJS,IJL,CICOVER,CITHICK,CIWA)
+!       *CALL* *CIWAF (KIJS, KIJL, CGROUP, CICOVER, CITHICK, CIWA)
 
-!
-!          *IJS*     - INDEX OF FIRST POINT.
-!          *IJL*     - INDEX OF LAST POINT.
-!          *CICOVER*  -SEA ICE COVER.
-!          *CITHICK*  -SEA ICE THICKNESS. 
-!          *CIWA*     -SEA ICE WAVE ATTENUATION FACTOR. 
+!          *KIJS*     - INDEX OF FIRST POINT.
+!          *KIJL*     - INDEX OF LAST POINT.
+!          *CGROUP*   - GROUP SPEED.
+!          *CICOVER*  - SEA ICE COVER.
+!          *CITHICK*  - SEA ICE THICKNESS. 
+!          *CIWA*     - SEA ICE WAVE ATTENUATION FACTOR. 
 
 !     METHOD.
 !     -------
@@ -38,24 +38,24 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR       ,GOM
+      USE YOWFRED  , ONLY : FR
       USE YOWICE   , ONLY : NICT   ,NICH     ,TICMIN   ,HICMIN   ,      &
      &              DTIC   ,DHIC   ,CIDEAC   ,CIBLOCK
       USE YOWPARAM , ONLY : NFRE
       USE YOWPCONS , ONLY : EPSMIN
-      USE YOWSHAL  , ONLY : TCGOND   ,INDEP 
-      USE YOWSTAT  , ONLY : IDELT   ,ISHALLO 
-      USE YOWTEST  , ONLY : IU06    ,ITEST
+      USE YOWSTAT  , ONLY : IDELT
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL 
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: CICOVER
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: CITHICK
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(OUT) :: CIWA
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL 
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: CGROUP
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: CITHICK
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL,NFRE), INTENT(OUT) :: CIWA
+
 
       INTEGER(KIND=JWIM) :: ICM, I, MAXICM
       INTEGER(KIND=JWIM) :: M, IJ
@@ -67,8 +67,8 @@
       REAL(KIND=JWRB) :: A, B, C
       REAL(KIND=JWRB) :: CIDEAC_INT, WT, WT1, WH, WH1 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: DINV
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE) :: ALP 
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL) :: DINV
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL,NFRE) :: ALP 
 
 ! ----------------------------------------------------------------------
 
@@ -88,8 +88,8 @@
 !     for the limit value for sea ice = 0 (CIDMAX=A)
 !     to insure that CIDMEAN will be increasing with increasing sea ice cover
       MAXICM=INT(LOG(A/CIDMIN)/LOG(CIFRGMT))
-      DO IJ=IJS,IJL
-        IF(CITHICK(IJ).GT.0.0_JWRB) THEN
+      DO IJ=KIJS,KIJL
+        IF(CITHICK(IJ) > 0.0_JWRB) THEN
           ! sea ice foes maxmimum size (m)
 !!!       testing making it function of sea ice cover
           CIDMAX=A+C*CICOVER(IJ)
@@ -117,8 +117,8 @@
         IT1=MAX(1,MIN(IT1,NICT))
         WT1=MAX(MIN(1.0_JWRB,(TW-(TICMIN+(IT-1)*DTIC))/DTIC),0.0_JWRB)
         WT=1.0_JWRB-WT1
-        DO IJ=IJS,IJL
-          IF(CITHICK(IJ).GT.0.0_JWRB) THEN
+        DO IJ=KIJS,KIJL
+          IF(CITHICK(IJ) > 0.0_JWRB) THEN
             IH=FLOOR((CITHICK(IJ)-HICMIN)/DHIC+1)
             IH=MAX(1,MIN(IH,NICH))
             IH1=IH+1
@@ -135,33 +135,18 @@
         ENDDO
       ENDDO
 
-      IF (ISHALLO.NE.1) THEN
-        DO M=1,NFRE
-          DO IJ=IJS,IJL
-            X=ALP(IJ,M)*TCGOND(INDEP(IJ),M)*IDELT
-            IF(X.LT.EPSMIN) THEN
-              CIWA(IJ,M)=1.0_JWRB
-            ELSE IF(CICOVER(IJ).GT.CIBLOCK) THEN
-              CIWA(IJ,M)=0.0_JWRB
-            ELSE
-              CIWA(IJ,M)=EXP(-MIN(X,50.0_JWRB))
-            ENDIF
-          ENDDO
+      DO M=1,NFRE
+        DO IJ=KIJS,KIJL
+          X=ALP(IJ,M)*CGROUP(IJ,M)*IDELT
+          IF(X.LT.EPSMIN) THEN
+            CIWA(IJ,M)=1.0_JWRB
+          ELSE IF(CICOVER(IJ) > CIBLOCK) THEN
+            CIWA(IJ,M)=0.0_JWRB
+          ELSE
+            CIWA(IJ,M)=EXP(-MIN(X,50.0_JWRB))
+          ENDIF
         ENDDO
-      ELSE
-        DO M=1,NFRE
-          DO IJ=IJS,IJL
-            X=ALP(IJ,M)*GOM(M)*IDELT
-            IF(X.LT.EPSMIN) THEN
-              CIWA(IJ,M)=1.0_JWRB
-            ELSE IF(CICOVER(IJ).GT.CIBLOCK) THEN
-              CIWA(IJ,M)=0.0_JWRB
-            ELSE
-              CIWA(IJ,M)=EXP(-MIN(X,50.0_JWRB))
-            ENDIF
-          ENDDO
-        ENDDO
-      ENDIF
+      ENDDO
 
       IF (LHOOK) CALL DR_HOOK('CIWAF',1,ZHOOK_HANDLE)
 

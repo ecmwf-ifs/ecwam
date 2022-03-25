@@ -1,4 +1,4 @@
-      SUBROUTINE WDIRSPREAD (F, IJS, IJL, EMEAN, LLPEAKF, WDIRSPRD)
+      SUBROUTINE WDIRSPREAD (KIJS, KIJL, F, EMEAN, LLPEAKF, WDIRSPRD)
 
 ! ----------------------------------------------------------------------
 
@@ -15,13 +15,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *WDIRSPREAD (F, IJS, IJL, LLPEAKF, WDIRSPRD)*
-!          *F*     - SPECTRUM.
-!          *IJS*   - INDEX OF FIRST GRIDPOINT.
-!          *IJL*   - INDEX OF LAST GRIDPOINT.
-!          *EMEAN* - MEAN WAVE ENERGY FOR THE WAVE SYSTEM (INPUT).
-!          *LLPEAKF* - TRUE IF THE DIRECTIONAL SPREAD IS BASED ON 
-!                      THE PEAK FREQUENCY.
+!       *CALL* *WDIRSPREAD (KIJS, KIJL, F, LLPEAKF, WDIRSPRD)*
+!          *KIJS*     - INDEX OF FIRST GRIDPOINT.
+!          *KIJL*     - INDEX OF LAST GRIDPOINT.
+!          *F*        - SPECTRUM.
+!          *EMEAN*    - MEAN WAVE ENERGY FOR THE WAVE SYSTEM (INPUT).
+!          *LLPEAKF*  - TRUE IF THE DIRECTIONAL SPREAD IS BASED ON 
+!                       THE PEAK FREQUENCY.
 !          *WDIRSPRD* - DIRECTIONAL SPREAD.
 
 !     METHOD.
@@ -48,6 +48,7 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,WETAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
+
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
@@ -55,17 +56,19 @@
 #include "peakfri.intfb.h"
 #include "scosfl.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: EMEAN
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EMEAN
       LOGICAL, INTENT(IN) :: LLPEAKF
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: WDIRSPRD
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: WDIRSPRD
+
 
       INTEGER(KIND=JWIM) :: IJ, M
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: IFRINDEX
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL) :: IFRINDEX
       REAL(KIND=JWRB) :: COEF_FR, ONE
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: F1D 
 
 ! ----------------------------------------------------------------------
 
@@ -77,16 +80,16 @@
       ONE=1.0_JWRB
       COEF_FR=WETAIL*FR(NFRE)
 
-      DO IJ = IJS,IJL
+      DO IJ = KIJS,KIJL
         WDIRSPRD(IJ) = 0.0_JWRB
       ENDDO
 
       IF(LLPEAKF) THEN
 !     COMPUTATION IS BASED ON THE PEAK FREQUENCY
-        CALL PEAKFRI (F, IJS, IJL, IFRINDEX, TEMP)
-        CALL SCOSFL (F, IJS, IJL, IFRINDEX, WDIRSPRD)
-        DO IJ = IJS,IJL
-          IF(TEMP(IJ).GT.0.0_JWRB) THEN
+        CALL PEAKFRI (KIJS, KIJL, F, IFRINDEX, TEMP, F1D)
+        CALL SCOSFL (KIJS, KIJL, F, IFRINDEX, WDIRSPRD)
+        DO IJ = KIJS,KIJL
+          IF(TEMP(IJ) > 0.0_JWRB) THEN
             WDIRSPRD(IJ) = MIN(WDIRSPRD(IJ)/TEMP(IJ),ONE)
           ELSE
             WDIRSPRD(IJ) = ONE 
@@ -97,22 +100,22 @@
 !     COMPUTATION IS BASED ON THE WHOLE FREQUENCY RANGE
         DO M = 1,NFRE
           IFRINDEX=M
-          CALL SCOSFL (F, IJS, IJL, IFRINDEX, TEMP)
-          DO IJ = IJS,IJL
+          CALL SCOSFL (KIJS, KIJL, F, IFRINDEX, TEMP)
+          DO IJ = KIJS,KIJL
             WDIRSPRD(IJ) = WDIRSPRD(IJ) + TEMP(IJ)*DFIM(M)
           ENDDO
         ENDDO
    
 !       ADD TAIL CONTRIBUTION
 !       note that it uses TEMP because the last call to SCOSFL is made
-        DO IJ = IJS,IJL
+        DO IJ = KIJS,KIJL
 !         the division by delth is needed since dfim contains delth
           WDIRSPRD(IJ) = WDIRSPRD(IJ)/DELTH + TEMP(IJ)*COEF_FR
         ENDDO
 
 !       NORMALISATION
-        DO IJ = IJS,IJL
-          IF(EMEAN(IJ).GT.EPSMIN) THEN
+        DO IJ = KIJS,KIJL
+          IF(EMEAN(IJ) > EPSMIN) THEN
             WDIRSPRD(IJ) = MIN(WDIRSPRD(IJ)/EMEAN(IJ),ONE)
           ELSE
             WDIRSPRD(IJ) = ONE 
@@ -123,7 +126,7 @@
 
 !     COMPUTE THE ACTUAL SPREAD
 
-      DO IJ = IJS,IJL
+      DO IJ = KIJS,KIJL
         WDIRSPRD(IJ) = SQRT(2.0_JWRB*(ONE-WDIRSPRD(IJ)))
       ENDDO
 

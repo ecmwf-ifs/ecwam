@@ -1,12 +1,8 @@
-      SUBROUTINE MEANSQS(F, IJS, IJL, USNEW, FM, SM)
+      SUBROUTINE MEANSQS(XKMSS, KIJS, KIJL, F, WAVNUM, USTAR, COSWDIF, XMSS)
 
 ! ----------------------------------------------------------------------
 
-!**** *MEANSQS* - COMPUTATION OF MEAN SQUARE SLOPE.
-
-!     P.A.E.M. JANSSEN
-!     J. BIDLOT  ECMWF  FEBRUARY 1996  MESSAGE PASSING
-
+!**** *MEANSQS* - COMPUTATION OF MEAN SQUARE SLOPE UP TO WAVE NUMBER XKMSS.
 
 !*    PURPOSE.
 !     --------
@@ -16,13 +12,15 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MEANSQS (F, IJS, IJL, USNEW, FM, SM)*
-!              *F*   - SPECTRUM.
-!              *IJS* - INDEX OF FIRST GRIDPOINT
-!              *IJL* - INDEX OF LAST GRIDPOINT
-!              *USNEW*     NEW FRICTION VELOCITY IN M/S (INPUT).
-!              *FM*  - MEAN WAVE FREQUENCY (INPUT).
-!              *SM*  - MEAN SQUARE SLOPE (OUTPUT).
+!       *CALL* *MEANSQS (XKMSS, KIJS, KIJL, F, WAVNUM, USTAR, COSWDIF, XMSS)*
+!              *XKMSS*   - WAVE NUMBER CUT OFF
+!              *KIJS*    - INDEX OF FIRST GRIDPOINT
+!              *KIJL*    - INDEX OF LAST GRIDPOINT
+!              *F*       - SPECTRUM.
+!              *WAVNUM*  - WAVE NUMBER.
+!              *USTAR*   - NEW FRICTION VELOCITY IN M/S (INPUT).
+!              *COSWDIF* - COSINE (WIND SPEED DIRECTION - WAVES DIRECTIONS)
+!              *XMSS*    - MEAN SQUARE SLOPE (OUTPUT).
 
 !     METHOD.
 !     -------
@@ -43,108 +41,66 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
-      USE YOWFRED  , ONLY : FR       ,DFIM_SIM ,DELTH
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP
-      USE YOWSTAT  , ONLY : ISHALLO
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWPCONS , ONLY : G        ,GM1      ,ZPI
+      USE YOWFRED  , ONLY : FR       ,ZPIFR    ,FRATIO
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), PARAMETER :: XLAMBDAC=0.0628_JWRB
-      REAL(KIND=JWRB), PARAMETER :: SURFT=0.000075_JWRB
+#include "halphap.intfb.h"
+#include "meansqs_gc.intfb.h"
+#include "meansqs_lf.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM) :: IJ, M, K
+      REAL(KIND=JWRB), INTENT(IN) :: XKMSS 
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USTAR
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG), INTENT(IN) :: COSWDIF 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: XMSS 
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, FM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) ::  SM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 
-      REAL(KIND=JWRB) :: FS, XKC, FC, CONST1, CONST2, CP, XI, ALPHAP, CONST3 
+      INTEGER(KIND=JWIM) :: IJ, NFRE_MSS, NFRE_EFF
+
+      REAL(KIND=JWRB) :: XLOGFS, FCUT
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NFRE_ODD) :: FD
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) ::  TEMP1, TEMP2
+      REAL(KIND=JWRB), DIMENSION(NFRE) :: FD
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP1, TEMP2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XMSSLF, XMSS_TAIL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: HALP, FRGC
 
 ! ----------------------------------------------------------------------
+
       IF (LHOOK) CALL DR_HOOK('MEANSQS',0,ZHOOK_HANDLE)
 
+!*    1. COMPUTE THE GRAVITY-CAPILLARY CONTRIBUTION TO MSS 
+!        -------------------------------------------------
 
-!*    1. INITIALISE MEAN FREQUENCY ARRAY AND TAIL FACTOR.
-!        ------------------------------------------------
+!     COMPUTE THE PHILLIPS PARAMETER
+      CALL HALPHAP(KIJS, KIJL, WAVNUM, COSWDIF, F, HALP)
 
-      DO IJ=IJS,IJL
-        SM(IJ) = EPSMIN
+!     GRAVITY-CAPILLARY CONTRIBUTION TO MSS
+      CALL MEANSQS_GC(XKMSS, KIJS, KIJL, HALP, USTAR, XMSS, FRGC)
+
+!     MODEL SPECTRUM PART
+      FCUT = SQRT(G*XKMSS)/ZPI
+      NFRE_MSS = INT(LOG(FCUT/FR(1))/LOG(FRATIO))+1 
+      NFRE_EFF = MIN(NFRE,NFRE_MSS)
+
+      CALL MEANSQS_LF (NFRE_EFF, KIJS, KIJL, F, WAVNUM, XMSSLF)
+      XMSS(:) = XMSS(:) + XMSSLF(:)
+
+!     ADD TAIL CORRECTION TO MEAN SQUARE SLOPE (between FR(NFRE_EFF) and FRGC).
+
+      XLOGFS = LOG(FR(NFRE_EFF))
+      DO IJ=KIJS,KIJL
+        XMSS_TAIL(IJ) = 2.0_JWRB*HALP(IJ)*MAX((LOG(MIN(FRGC(IJ),FCUT)) - XLOGFS), 0.0_JWRB)
+        XMSS(IJ) = XMSS(IJ) + XMSS_TAIL(IJ)
       ENDDO
-
-! ----------------------------------------------------------------------
-
-!*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
-!        ------------------------------------------
-
-      IF (ISHALLO.EQ.1) THEN
-
-!*    2.1 DEEP WATER INTEGRATION.
-!         -----------------------
-
-        DO M=1,NFRE_ODD
-          FD(M) = DFIM_SIM(M)*(ZPI*FR(M))**4/G**2
-        ENDDO
-
-        DO M=1,NFRE_ODD
-          DO IJ=IJS,IJL
-            TEMP2(IJ) = 0.0_JWRB
-          ENDDO
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
-            ENDDO
-          ENDDO
-          DO IJ=IJS,IJL
-            SM(IJ) = SM(IJ)+FD(M)*TEMP2(IJ)
-          ENDDO
-        ENDDO
-!SHALLOW
-      ELSE
-
-!*    2.2 SHALLOW WATER INTEGRATION.
-!         --------------------------
-
-        DO M=1,NFRE_ODD
-          DO IJ=IJS,IJL
-            TEMP1(IJ) = DFIM_SIM(M)*TFAK(INDEP(IJ),M)**2
-            TEMP2(IJ) = 0.0_JWRB
-          ENDDO
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
-            ENDDO
-          ENDDO
-          DO IJ=IJS,IJL
-            SM(IJ) = SM(IJ)+TEMP1(IJ)*TEMP2(IJ)
-          ENDDO
-        ENDDO
-      ENDIF
-!SHALLOW
-
-!*    3. ADD TAIL CORRECTION TO MEAN SQUARE SLOPE.
-!        ------------------------------------------
-
-!! not applied !!
-!!      FS     = FR(NFRE_ODD)      
-!!      XKC    = ZPI/XLAMBDAC
-!!      FC     = SQRT(G*XKC+SURFT*XKC**3)/ZPI
-!!      CONST2 = ZPI**4*FS**5/G**2
-!!      DO IJ=IJS,IJL      
-!!        CONST1    = 0.0_JWRB*LOG(FC/FS)  
-!!        CP        = G/(ZPI*FM(IJ))
-!!        XI        = CP/USNEW(IJ)
-!!        ALPHAP    = MAX(0.21_JWRB/XI,0.0040_JWRB)
-!!        CONST3    = CONST2*DELTH*TEMP2(IJ)
-!!        SM(IJ) = SM(IJ)+CONST1*CONST3
-!!      ENDDO
 
       IF (LHOOK) CALL DR_HOOK('MEANSQS',1,ZHOOK_HANDLE)
 

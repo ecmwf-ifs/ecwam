@@ -1,4 +1,4 @@
-SUBROUTINE OUTSPEC (FL, CICOVER)
+SUBROUTINE OUTSPEC (FL1, FF_NOW)
 
 !----------------------------------------------------------------------
 
@@ -15,17 +15,17 @@ SUBROUTINE OUTSPEC (FL, CICOVER)
 !**   INTERFACE.
 !     ----------
 
-!     SUBROUTINE OUTSPEC (FL, CICOVER)
+!     SUBROUTINE OUTSPEC (FL1, FF_NOW)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
-!      *FL*        REAL      LOCAL SPECTRA OF CURRENT PE.
-!      *CICOVER*   REAL      SEA ICE COVER.
+!      *FL1*       REAL      LOCAL SPECTRA OF CURRENT PE.
+!      *FF_NOW*    REAL      FOR SEA ICE COVER.
 
 !     METHOD.
 !     -------
 
-!           ENCODE SPECTRA PER FREQUENCY AND DIRECTION
+!      ENCODE SPECTRA PER FREQUENCY AND DIRECTION
 !      INTO GRIB AND WRITE TO FDB OR TO A SINGLE FILE.
 
 !     EXTERNALS.
@@ -39,73 +39,99 @@ SUBROUTINE OUTSPEC (FL, CICOVER)
 !-------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCOUP  , ONLY : LWCOU, LIFS_IO_SERV_ENABLED,                &
-                            OUTWSPEC_IO_SERV_HANDLER
+     &                      OUTWSPEC_IO_SERV_HANDLER
       USE YOWCOUT  , ONLY : LWAM_USE_IO_SERV
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
       USE YOWICE   , ONLY : LICERUN  ,CITHRSH  ,FLMIN
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
-      USE YOWSPEC  , ONLY : NSTART   ,NEND
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDATEA   ,    &
-     &            MARSTYPE ,LLSOURCE
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+     &                      MARSTYPE ,LLSOURCE
+
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
 
 !-----------------------------------------------------------------------
+
       IMPLICIT NONE
+
 #include "outwspec_io_serv.intfb.h"
 #include "outwspec.intfb.h"
 #include "difdate.intfb.h"
 
-      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP, NANG, NFRE), INTENT(IN) :: FL 
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: CICOVER
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL1
+      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FF_NOW
 
-      INTEGER(KIND=JWIM) :: IG 
+
       INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IJSG, IJLG, IJSB, IJLB, KIJS, KIJL, ICHNK
       INTEGER(KIND=JWIM) :: IFCST
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP, NANG, NFRE) :: SPEC
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM) :: ZMASK
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:, :, :) :: SPEC
 
       CHARACTER(LEN=14) :: CDATE 
 
 !-----------------------------------------------------------------------
-      IF (LHOOK) CALL DR_HOOK('OUTSPEC',0,ZHOOK_HANDLE)
-      
+IF (LHOOK) CALL DR_HOOK('OUTSPEC',0,ZHOOK_HANDLE)
+
+ASSOCIATE(CICOVER => FF_NOW%CICOVER)
+
       CALL GSTATS(2080,0)
 
-      IF (ITEST.GT.1) THEN
-        WRITE(IU06,*) '*      THIS IS OUTSPEC         *'
-        CALL FLUSH (IU06)
-      ENDIF
-
-      IG=1
+      IJSG = IJFROMCHNK(1,1)
+      IJLG = IJSG + SUM(KIJL4CHNK) - 1
+      ALLOCATE(SPEC(IJSG:IJLG, NANG, NFRE))
 
 !*    APPLY SEA ICE MASK TO THE OUTPUT SPECTRA (IF NEEDED)
       IF (LICERUN .AND. LLSOURCE) THEN
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=NSTART(IRANK),NEND(IRANK)
-              IF (CICOVER(IJ,IG).GT.CITHRSH) THEN
-                SPEC(IJ,K,M) = FLMIN 
-              ELSE
-                SPEC(IJ,K,M) = FL(IJ,K,M)
-              ENDIF
-            ENDDO
-          ENDDO
-        ENDDO
+!$OMP    PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, KIJS, KIJL, IJSB, IJLB, ZMASK, K, M)
+         DO ICHNK = 1, NCHNK
+
+           DO IJ = 1, KIJL4CHNK(ICHNK)
+             IF (CICOVER(IJ, ICHNK) > CITHRSH) THEN
+               ZMASK(IJ) = 1.0_JWRB
+             ELSE
+               ZMASK(IJ) = 0.0_JWRB
+             ENDIF
+           ENDDO
+
+           KIJS = 1
+           IJSB = IJFROMCHNK(KIJS, ICHNK)
+           KIJL = KIJL4CHNK(ICHNK)
+           IJLB = IJFROMCHNK(KIJL, ICHNK)
+
+           DO M = 1, NFRE
+             DO K = 1, NANG
+               SPEC(IJSB:IJLB,K,M) = (1.0_JWRB - ZMASK(KIJS:KIJL)) * FL1(KIJS:KIJL,K,M,ICHNK) + ZMASK(KIJS:KIJL)*FLMIN
+             ENDDO
+           ENDDO
+         ENDDO
+!$OMP    END PARALLEL DO
+
       ELSE
-        SPEC(:,:,:) = FL(:,:,:)
+
+!$OMP    PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, KIJL, IJSB, IJLB)
+         DO ICHNK = 1, NCHNK
+           KIJS = 1
+           IJSB = IJFROMCHNK(KIJS, ICHNK)
+           KIJL = KIJL4CHNK(ICHNK)
+           IJLB = IJFROMCHNK(KIJL, ICHNK)
+
+           SPEC(IJSB:IJLB, :, :) = FL1(KIJS:KIJL, :, :, ICHNK)
+         ENDDO
+!$OMP    END PARALLEL DO
       ENDIF
 
-      IF(CDTPRO.LE.CDATEF) THEN
+      IF (CDTPRO <= CDATEF) THEN
 !*    0.1.  THIS IS AN ANALYSIS DATE.
-        IF (LWCOU .AND. MARSTYPE .EQ. 'fg') THEN
+        IF (LWCOU .AND. MARSTYPE == 'fg') THEN
           CDATE=CDATEA
           CALL DIFDATE (CDATEA, CDTPRO, IFCST)
           IFCST = IFCST/3600
-        ELSEIF (LWCOU .AND. MARSTYPE .EQ. '4v') THEN
+        ELSEIF (LWCOU .AND. MARSTYPE == '4v') THEN
           CDATE=CDATEA
           CALL DIFDATE (CDATEA, CDTPRO, IFCST)
           IFCST = IFCST/3600
@@ -127,13 +153,17 @@ SUBROUTINE OUTSPEC (FL, CICOVER)
       ! Use IFS IO server?
       IF (LWCOU .AND. LIFS_IO_SERV_ENABLED .AND. LWAM_USE_IO_SERV) THEN
         IF (.NOT.ASSOCIATED(OUTWSPEC_IO_SERV_HANDLER)) CALL ABOR1('OUTWSPEC_IO_SERV_HANDLER IS NOT INITIALIZED')
-        CALL OUTWSPEC_IO_SERV_HANDLER(SPEC, MARSTYPE, CDATE, IFCST)
+        CALL OUTWSPEC_IO_SERV_HANDLER(IJSG, IJLG, SPEC, MARSTYPE, CDATE, IFCST)
       ELSE
-        CALL OUTWSPEC(SPEC, MARSTYPE, CDATE, IFCST)
+        CALL OUTWSPEC(IJSG, IJLG, SPEC, MARSTYPE, CDATE, IFCST)
       ENDIF
 
       CALL GSTATS(2080,1)
 
-      IF (LHOOK) CALL DR_HOOK('OUTWSPEC',1,ZHOOK_HANDLE)
+      DEALLOCATE(SPEC)
+
+END ASSOCIATE
+
+IF (LHOOK) CALL DR_HOOK('OUTWSPEC',1,ZHOOK_HANDLE)
 
 END SUBROUTINE OUTSPEC

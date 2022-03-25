@@ -1,10 +1,12 @@
-      SUBROUTINE WAMCUR (U, V, IJS, IJL)
+      SUBROUTINE WAMCUR (NXS, NXE, NYS, NYE, FIELDG,    &
+     &                   KIJS, KIJL, IFROMIJ, JFROMIJ,  &
+     &                   U, V)
 
 ! ----------------------------------------------------------------------
 
 !**** *WAMCUR* - TRANSFORMS INPUT CURRENTS TO BLOCKED WAM POINTS.
 
-!     J. BIDLOR  AUGUST 2008 :: REDEFINE WAMCUR TO BLOCk TRANSFORM.
+!     J. BIDLOT  AUGUST 2008 :: REDEFINE WAMCUR TO BLOCK TRANSFORM.
 
 !*    PURPOSE.
 !     --------
@@ -16,11 +18,16 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL WAMCUR (U, V, IJS, IJL)*
-!          *U*   - INTERPOLATED U CURRENT AT ALL POINTS AND BLOCKS.
-!          *V*   - INTERPOLATED V CURRENT AT ALL POINTS.
-!          *IJS*    - INDEX OF FIRST GRIDPOINT
-!          *IJL*    - INDEX OF LAST GRIDPOINT
+!       *CALL WAMCUR (NXS, NXE, NYS, NYE, FIELDG,
+!                     KIJS, KIJL, IFROMIJ, JFROMIJ, U, V)*
+!          *NXS:NXE*  FIRST DIMENSION OF FIELDG
+!          *NYS:NYE*  SECOND DIMENSION OF FIELDG
+!          *FIELDG* - INPUT FORCING FIELDS ON THE WAVE MODEL GRID
+!          *KIJS:KIJL*  - DIMENSION OF PASSED ARRAYS
+!          *IFROMIJ* - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!          *JFROMIJ* - POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
+!          *U*       - INTERPOLATED U CURRENT AT ALL POINTS AND BLOCKS.
+!          *V*       - INTERPOLATED V CURRENT AT ALL POINTS.
 
 !     METHOD.
 !     -------
@@ -32,20 +39,22 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCURR  , ONLY : CURRENT_MAX
-      USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
-      USE YOWPARAM , ONLY : NGY      ,NBLO
-      USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWWIND  , ONLY : FIELDG
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: U, V
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(IN) :: FIELDG
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(OUT) :: U, V
+
 
       INTEGER (KIND=JWIM):: IJ, IX, JY
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -57,9 +66,9 @@
 
       IF (LHOOK) CALL DR_HOOK('WAMCUR',0,ZHOOK_HANDLE)
 
-      DO IJ = IJS,IJL
-        IX = IFROMIJ(IJ,1)
-        JY = JFROMIJ(IJ,1)
+      DO IJ = KIJS, KIJL
+        IX = IFROMIJ(IJ)
+        JY = JFROMIJ(IJ)
         U(IJ) = FIELDG(IX,JY)%UCUR
         U(IJ) = SIGN(MIN(ABS(U(IJ)),CURRENT_MAX),U(IJ))
         V(IJ) = FIELDG(IX,JY)%VCUR

@@ -1,4 +1,4 @@
-      SUBROUTINE INITIALINT (IU06, ITEST, NCA, NRA,                     &
+      SUBROUTINE INITIALINT (IU06, NCA, NRA,                     &
      &                       NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,   &
      &                       AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC, &
      &                       ILONRGG,                                   &
@@ -29,14 +29,13 @@
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!      *CALL* *INITIALINT* (IU06, ITEST, NCA, NRA,
+!      *CALL* *INITIALINT* (IU06, NCA, NRA,
 !    &                      NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
 !    &                      AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
 !    &                      ILONRGG,
 !    &                      LLINTERPOL,DK1, DII1, DIIP1, KK, II, IIP)
 
 !        *IU06*   - OUTPUT UNIT.
-!        *ITEST*  - TEST MESSAGE LEVEL.
 !       ATMOSPHERIC MODEL GRID:
 !        *NCA*    - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !        *NRA*    - NUMBER OF ATM. ROWS OF LATITUDES
@@ -81,7 +80,7 @@
 #include "abort1.intfb.h"
 #include "adjust.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, NCA, NRA
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, NCA, NRA
       INTEGER(KIND=JWIM), INTENT(IN) :: NGX, NGY, KRGG
       INTEGER(KIND=JWIM), INTENT(INOUT) :: IPERIODIC
       INTEGER(KIND=JWIM), DIMENSION(NGY), INTENT(IN) :: KLONRGG
@@ -150,7 +149,7 @@
         CALL ABORT1
       ENDIF
 
-      IF (JRGG.EQ.1) THEN
+      IF (JRGG == 1) THEN
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'PLPresent',IPLPRESENT)
         IF (IPLPRESENT == 1) THEN
           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                            &
@@ -170,11 +169,11 @@
         ENDDO
         IR=0
         DO J=1,NB_PL
-          IF (PL(J).NE.0) IR=IR+1
+          IF (PL(J) /= 0) IR=IR+1
         ENDDO
         NR=IR
 
-      ELSEIF (JRGG.EQ.0) THEN
+      ELSEIF (JRGG == 0) THEN
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Ni',IVAL)
         NC=IVAL
       ELSE
@@ -184,7 +183,7 @@
         CALL ABORT1
       ENDIF
 
-      IF (NC.NE.NCA .OR. NR.NE.NRA) THEN
+      IF (NC /= NCA .OR. NR /= NRA) THEN
         WRITE(IU06,*) '***************************************'
         WRITE(IU06,*) '***************************************'
         WRITE(IU06,*) '*                                     *'
@@ -205,7 +204,7 @@
         WRITE(IU06,*) '***************************************'
       ENDIF
 
-      IF (IREPR.NE.0 .AND. IREPR.NE.4) THEN
+      IF (IREPR /= 0 .AND. IREPR /= 4) THEN
         WRITE(IU06,*) '***************************************'
         WRITE(IU06,*) '*                                     *'
         WRITE(IU06,*) '*  FATAL ERROR IN SUB. INITIALINT     *'
@@ -221,9 +220,9 @@
       ENDIF
 
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'jScansPositively',ISCAN)
-      IF (ISCAN.EQ.0) THEN
+      IF (ISCAN == 0) THEN
         LLSCANNS=.TRUE.
-      ELSEIF (ISCAN.EQ.1) THEN
+      ELSEIF (ISCAN == 1) THEN
         LLSCANNS=.FALSE.
       ELSE
         WRITE(IU06,*) '***********************************'
@@ -258,7 +257,7 @@
 !!!   THE AMBIGOUS DEFINITION FOR IRREGULAR GRIDS. FOR NON WAVE FIELDS,
 !!!   A GAUSSIAN GRID IMPLIES THAT THE GRID IS GLOBAL, THEREFORE
 !!!   RMOEAP IS IMPLICITLY KNOWN.
-      IF (IREPR.EQ.4) THEN
+      IF (IREPR == 4) THEN
         DELLO = 360.0_JWRB/MAX(1,NC)
         RMOEAP = RMOWEP+360.0_JWRB - DELLO
         IPERIODIC = 1
@@ -269,18 +268,18 @@
         CALL ADJUST (RMOWEP, RMOEAP)
         IPERIODIC = 0
         DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
-        IF (RMOEAP-RMOWEP+1.5_JWRB*DELLO.GE.360.0_JWRB) IPERIODIC = 1
+        IF (RMOEAP-RMOWEP+1.5_JWRB*DELLO >= 360.0_JWRB) IPERIODIC = 1
       ENDIF
 
-      IF (JRGG.EQ.1) THEN
+      IF (JRGG == 1) THEN
         ISTART=1
-        DO WHILE(PL(ISTART).EQ.0 .AND. ISTART.LT.NB_PL)
+        DO WHILE(PL(ISTART) == 0 .AND. ISTART > NB_PL)
           ISTART=ISTART+1
         ENDDO
         ISTART=ISTART-1
 
         ISTOP=0
-        DO WHILE(PL(NB_PL-ISTOP).EQ.0 .AND. ISTOP.LT.NB_PL)
+        DO WHILE(PL(NB_PL-ISTOP) == 0 .AND. ISTOP < NB_PL)
           ISTOP=ISTOP+1
         ENDDO
 
@@ -298,7 +297,7 @@
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                              &
      &                      'latitudeOfLastGridPointInDegrees',YLAST)
 
-        IF (ISTART.NE.0 .OR. ISTOP.NE.0) THEN
+        IF (ISTART /= 0 .OR. ISTOP /= 0) THEN
           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                            &
      &                       'jDirectionIncrementInDegrees',DELLA)
 
@@ -314,7 +313,7 @@
           RMOSOP = YFRST 
         ENDIF
 
-      ELSEIF (JRGG.EQ.0) THEN
+      ELSEIF (JRGG == 0) THEN
         ILONRGG(:)=NC
       ELSE
         WRITE(IU06,*)                                                   &
@@ -336,7 +335,7 @@
       KRMONOP=NINT(RMONOP*100.0_JWRB)
       KRMOSOP=NINT(RMOSOP*100.0_JWRB)
 
-      IF (IPERIODIC.EQ.1) THEN
+      IF (IPERIODIC == 1) THEN
         DELLO=360.0_JWRB/MAX(1,NC)
         DO J=1,NR
           JSN=NR-J+1
@@ -350,12 +349,12 @@
         ENDDO
       ENDIF
 
-      IF (KAMONOP.GT.KRMONOP .OR. KAMONOP.LT.KRMOSOP .OR.               &
-     &    KAMOSOP.LT.KRMOSOP .OR. KAMOSOP.GT.KRMONOP .OR.               &
-     &    (JRGG.EQ.0 .AND. IREPR.NE.4 .AND. IPERIODIC.NE.1              &
-     &     .AND. KAMOWEP.LT.KRMOWEP) .OR.                               &
-     &    (JRGG.EQ.0 .AND. IREPR.NE.4 .AND. IPERIODIC.NE.1              &
-     &     .AND. KAMOEAP.GT.NINT((RMOEAP+DELLO)*100.0_JWRB)) ) THEN
+      IF (KAMONOP > KRMONOP .OR. KAMONOP < KRMOSOP .OR.               &
+     &    KAMOSOP < KRMOSOP .OR. KAMOSOP > KRMONOP .OR.               &
+     &    (JRGG == 0 .AND. IREPR /= 4 .AND. IPERIODIC /= 1            &
+     &     .AND. KAMOWEP < KRMOWEP) .OR.                              &
+     &    (JRGG == 0 .AND. IREPR /= 4 .AND. IPERIODIC /= 1            &
+     &     .AND. KAMOEAP > NINT((RMOEAP+DELLO)*100.0_JWRB)) ) THEN
 
          WRITE(IU06,*) '                               '
          WRITE(IU06,*) ' SUB. INITIALINT :             '
@@ -372,15 +371,15 @@
 
       LLINTERPOL=.TRUE.
 
-      IF (KAMONOP.EQ.KRMONOP .AND. KAMOSOP.EQ.KRMOSOP .AND.             &
-     &    KAMOWEP.EQ.KRMOWEP .AND. KAMOEAP.EQ.KRMOEAP      ) THEN
-         IF (JRGG.EQ.KRGG .AND. NC.EQ.NGX .AND. NR.EQ.NGY) THEN
+      IF (KAMONOP == KRMONOP .AND. KAMOSOP == KRMOSOP .AND.             &
+     &    KAMOWEP == KRMOWEP .AND. KAMOEAP == KRMOEAP      ) THEN
+         IF (JRGG == KRGG .AND. NC == NGX .AND. NR == NGY) THEN
 
             LLINTERPOL=.FALSE.
 
-            IF (KRGG.EQ.1) THEN
+            IF (KRGG == 1) THEN
               DO J=1,NGY
-                IF (ILONRGG(J).NE.KLONRGG(J)) THEN
+                IF (ILONRGG(J) /= KLONRGG(J)) THEN
                   LLINTERPOL=.TRUE.
                   EXIT
                 ENDIF
@@ -397,11 +396,11 @@
 
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' THE FIELDS FROM ATM. MODEL'
-        IF (IREPR.EQ.0 .AND. JRGG.EQ.0) THEN
+        IF (IREPR == 0 .AND. JRGG == 0) THEN
           WRITE(IU06,*) ' ON A REGULAR LATITUDE/LONGITUDE GRID '
-        ELSEIF (IREPR.EQ.0 .AND. JRGG.EQ.1) THEN
+        ELSEIF (IREPR == 0 .AND. JRGG == 1) THEN
           WRITE(IU06,*) ' ON A REDUCED LATITUDE/LONGITUDE GRID '
-        ELSEIF (IREPR.EQ.4 .AND. JRGG.EQ.0) THEN
+        ELSEIF (IREPR == 4 .AND. JRGG == 0) THEN
           WRITE(IU06,*) ' ON A REGULAR GAUSSIAN GRID '
         ELSE
           WRITE(IU06,*) ' ON A REDUCED GAUSSIAN GRID '

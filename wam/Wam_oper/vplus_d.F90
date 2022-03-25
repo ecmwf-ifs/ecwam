@@ -1,10 +1,4 @@
-!----------------------------------------------------------------
-
-!***  *REAL(KIND=JWRB) FUNCTION* *VPLUS_D(XI,XJ,XK,THI,THJ,THK,OI,OJ,OK)
-
-!-----------------------------------------------------------------------
-
-      REAL(KIND=JWRB) FUNCTION VPLUS_D(XI,XJ,XK,XIJ,XIK,XJK,XOI,XOJ,XOK)
+REAL(KIND=JWRB) FUNCTION VPLUS_D(XI,XJ,XK,XIJ,XIK,XJK,XOI,XOJ,XOK)
 
 !***  *VPLUS_D*  DETERMINES THE NONLINEAR TRANSFER COEFFICIENT FOR THREE
 !                WAVE INTERACTIONS OF DEEP-WATER WAVES.
@@ -42,7 +36,7 @@
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB) :: XI,XJ,XK,XIJ,XIK,XJK,XOI,XOJ,XOK
+      REAL(KIND=JWRB), INTENT(IN) :: XI,XJ,XK,XIJ,XIK,XJK,XOI,XOJ,XOK
 
       REAL(KIND=JWRB), PARAMETER :: DEL1=1.0E-10_JWRB
 
@@ -63,4 +57,4 @@
       VPLUS_D=ZCONST*( (XIJ+RI*RJ)*SQIJK + (XIK+RI*RK)*SQIKJ            &
      &               + (XJK+RJ*RK)*SQJKI )
 
-      END FUNCTION VPLUS_D
+END FUNCTION VPLUS_D

@@ -12,8 +12,6 @@
 
 !*    PURPOSE.
 !     --------
-!     READ LMESSPASS AND LFDB FROM USER INPUT SKIPPING ALL THE OTHER
-!     INPUT PARAMETER WHICH WILL BE READ IN WITH USERIN.
 
 !**   INTERFACE.
 !     ----------
@@ -38,7 +36,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH, &
-     &            HSALTCUT, LALTGRDOUT, LALTPAS, LALTPASSIV,            &
+     &            HSALTCUT, LALTGRDOUT, LALTPAS,                        &
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX ,LWVFLX_SNL,    &
@@ -48,7 +46,7 @@
      &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT,           &
      &            LWNEMOCOUCUR,                                         &
      &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOTAUOC, NEMOFRCO,  &
-     &            LLCAPCHNK
+     &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,GFLAG    ,                                  &
      &            GFLAG20  ,NFLAG    ,                                  &
@@ -58,29 +56,33 @@
      &            LRSTPARALW,LRSTPARALR,LRSTINFDAT,                     &
      &            NTRAIN   ,                                            &
      &            IPFGTBL  ,                                            &
-     &            LLOUTERS ,                                            &
      &            LWAMANOUT,                                            &
      &            NWRTOUTWAM,                                           &
      &            LSECONDORDER,                                         &
-     &            LWAM_USE_IO_SERV
+     &            LWAM_USE_IO_SERV,                                     &
+     &            LOUTMDLDCP
       USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
+      USE YOWFRED  , ONLY : XKMSS_CUTOFF 
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G, IMDLGRBID_M
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LCIWABR  ,              &
-     &            CITHRSH  ,CIBLOCK  ,LICETH   ,                        &
-     &            CITHRSH_SAT, CITHRSH_TAIL    ,CDICWA
-      USE YOWMESPAS, ONLY : LMESSPASS,                                  &
-     &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
+      USE YOWGRID  , ONLY : NPROMA_WAM
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI, LCIWABR  ,  &
+     &            LICETH
+      USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
+      USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
+     &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
+
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
-     &            IDELPRO  ,IDELT    ,IDELWI   ,                        &
+     &            IFRELFMAX, DELPRO_LF, IDELPRO  ,IDELT  ,IDELWI   ,    &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
      &            IDELBC   ,                                            &
-     &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,    &
+     &            ICASE    ,ISHALLO  ,                                  &
+     &            IPHYS    ,                                            &
      &            ISNONLIN ,                                            &
      &            IDAMPING ,                                            &
      &            LBIWBK   ,                                            &
@@ -89,8 +91,7 @@
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,    &
-     &            LGUST    ,LADEN    ,NPROMA_WAM,LSUBGRID ,LLSOURCE ,   &
-     &            LNSESTART,                                            &
+     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,LNSESTART,    &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            LRELWIND ,                                            &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
@@ -99,7 +100,6 @@
      &            PATH     ,CPATH    ,CWI
       USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LVECTOR, IVECTOR
       USE UNSTRUCT_BOUND , ONLY : LBCWA
-      USE UNWAM    , ONLY : USE_DIRECT_WIND_FILE
       USE UNWAM    , ONLY : LIMPLICIT, JGS_DIFF_SOLVERTHR,              &
      &            SOURCE_IMPL, WAE_SOLVERTHR,                           &
      &            LNONL, BLOCK_GAUSS_SEIDEL,                            &
@@ -108,18 +108,19 @@
      &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,    &
      &            IASSIM   ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "mpcrtbl.intfb.h"
+#include "iwam_get_unit.intfb.h"
+#include "wam_u2l1cr.intfb.h"
 #include "wposnam.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU05
-      INTEGER(KIND=JWIM) :: ISAT, IC, II
-      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
+      INTEGER(KIND=JWIM) :: ISAT, IC, II, LEN
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -135,13 +136,13 @@
 
       NAMELIST /NALINE/ CLHEADER,                                       &
      &   CBPLTDT, CEPLTDT, CDATEF,                                      &
-     &   IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU, IDELALT,               &
-     &   IDELINT, IDELINS, IDELSPT, IDELSPS, IDELRES,                   &
+     &   IFRELFMAX, DELPRO_LF, IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU,  &
+     &   IDELALT, IDELINT, IDELRES,                                     &
      &   IDELCUR, CDATECURA,                                            &
      &   LLCFLCUROFF,                                                   &
      &   CLOTSU, CDATER, CDATES,                                        &
      &   FFLAG,  GFLAG, NFLAG,                                          &
-     &   LLOUTERS,                                                      &
+     &   XKMSS_CUTOFF,                                                  &
      &   LFDB, LGRIBIN, LGRIBOUT, LFDBIOOUT,                            &
      &   LRSTPARALW, LRSTPARALR, LRSTINFDAT,                            &
      &   LWAMANOUT,                                                     &
@@ -150,16 +151,18 @@
      &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI,                   &
      &   IPROPAGS,                                                      &
      &   IREFRA,                                                        &
+     &   IPHYS,                                                         &
      &   ISNONLIN,                                                      &
      &   IDAMPING,                                                      &
      &   LBIWBK  ,                                                      &
      &   LMASKICE,                                                      &
+     &   LWAMRSETCI,                                                    &
      &   IBOUNC, IBOUNF,                                                &
      &   IDELBC, CBCPREF,                                               &
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
      &   IMDLGRBID_G, IMDLGRBID_M,                                      &
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
-     &   LMESSPASS, LWCOU, LNOCDIN, LODBRALT,                           &
+     &   LWCOU, LNOCDIN, LODBRALT,                                      &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
      &   IBUFRSAT, CSATNAME,                                            &
      &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,                   &
@@ -172,7 +175,6 @@
      &   LNSESTART,                                                     &
      &   LLUNSTR, LPREPROC, LVECTOR, IVECTOR,                           &
      &   WAE_SOLVERTHR, JGS_DIFF_SOLVERTHR,                             &
-     &   USE_DIRECT_WIND_FILE,                                          &
      &   LIMPLICIT,                                                     &
      &   SOURCE_IMPL,                                                   &
      &   LNONL, BLOCK_GAUSS_SEIDEL,                                     &
@@ -190,8 +192,9 @@
      &   LWNEMOCOURECV,                                                 &
      &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,                      &
      &   LWNEMOCOUDEBUG,                                                &
-     &   LLCAPCHNK,                                                     &
-     &   LWAM_USE_IO_SERV
+     &   LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                                &
+     &   LWAM_USE_IO_SERV,                                              &
+     &   LOUTMDLDCP
 
 
       CHARACTER(LEN=14) :: CLOUT
@@ -212,7 +215,13 @@
 !     CBPLTDT: USER INPUT START DATE OF RUN.
 !     CEPLTDT: USER INPUT END DATE OF RUN.
 !     CDATEF: BEGIN DATE OF FORECAST.
-!     IDELPRO: PROPAGATION TIME STEP.
+!     IFRELFMAX: INDEX FOR THE LAST FREQUENCY THAT WILL BR PROPAGATED WITH TIME STEP DELPRO_LF (see below).
+!     DELPRO_LF: PROPAGATION TIME STEP FOR THE ALL WAVES WITH FREQUENCIES <= FR(IFRELFMAX).
+!                if 1 <= IFRELFMAX <= NFRE
+!                IF COUPLED TO IFS, THE INPUT VALUE OF DELPRO_LF WILL BE
+!                THE UPPER BOUND ON THE TIME STEP, IT WILL BE SET SO THAT IT IS A FRACTION OF IDELPRO,
+!                WHILE STILL SATSISFYING THE LIMIT IMPOSED BY THE UPPER BOUND.
+!     IDELPRO: PROPAGATION TIME STEP FOR THE ALL WAVES WITH FREQUENCIES > FR(IFRELFMAX).
 !              IF COUPLED TO IFS, THE INPUT VALUE OF IDELPRO WILL BE
 !              THE UPPER BOUND ON THE TIME STEP, WHICH WOULD OTHERWISE
 !              BE SET TO THE COUPLING TIME STEP.
@@ -245,96 +254,17 @@
 !     GFLAG: OUTPUT FLAG FOR OUTPUT TO GRIB OF EACH OUTPUT TYPE.
 !     NFLAG: OUTPUT FLAG FOR USER OUTPUT DISPLAY OF FIELD NORM FOR
 !            EACH OUTPUT TYPE.
-!     LLOUTERS : IF TRUE CALL OUTERS: OUTPUT OF SATELLITE COLOCATION SPECTRA
+!     XKMSS_CUTOFF: IF DIFFERENT FROM 0., SETS THE MAXIMUM WAVE NUMBER TO BE USED IN
+!                   THE CALCULATION OF THE MEAN SQUARE SLOPE.
+!                   OTHERWISE, USE XK_GC(NWAV_GC)
 !     TYPE OF INTEGRATED PARAMETERS IN FFLAG GFLAG (see OUTINT) :
-!     1  : WAVE HEIGHT (M)
-!     2  : MEAN WAVE DIRECTION (DEG.)
-!     3  : WAVE MEAN PERIOD BASED ON THE 1/f INTEGRATION OF F (s.)
-!     4  : FRICTION VELOCITY (M/S) (not in grib) 
-!     5  : WIND DIRECTION (DEG.)
-!     6  : PEAK WAVE PRERIOD (s)
-!     7  : DRAG COEFFICIENT (-)
-!     8  : NORMALISED WAVE STRESS (-) (not not grib)
-!     9  : MEAN SQUARE SLOPE (-)
-!     10 : WIND SPEED (M/S)
-!     11 : WIND SEA WAVE HEIGHT (M)
-!     12 : SWELL WAVE HEIGHT (M)
-!     13 : MEAN WIND SEA DIRECTION (DEG.)
-!     14 : MEAN SWELL DIRECTION (DEG.)
-!     15 : MEAN WIND SEA PERIOD (s)
-!     16 : MEAN SWELL PERIOD (s) 
-!     17 :
-!     18 :
-!     19 :
-!     20 :
-!     21 :
-!     22 : ALTIMETER WAVE HEIGHT (M)
-!     23 : CORRECTED ALTIMETER WAVE HEIGHT (M)
-!     24 : ALTIMETER RANGE RELATIVE CORRECTION (-)
-!     25 : MEAN PERIOD BASED ON f * F INTEGRATION OF F (s.) 
-!     26 : MEAN PERIOD BASED ON f**2 * F INTEGRATION OF F (s.) 
-!     27 : MEAN DIRECTIONAL SPREAD (-) 
-!     28 : WIND SEA MEAN PERIOD BASED ON f * F INTEGRATION OF F (s.) 
-!     29 : SWELL MEAN PERIOD BASED ON f * F INTEGRATION OF F (s.) 
-!     30 : WINDSEA MEAN PERIOD BASED ON f**2 * F INTEGRATION OF F (s.) 
-!     31 : SWELL MEAN PERIOD BASED ON f**2 * F INTEGRATION OF F (s.) 
-!     32 : WINDSEA MEAN DIRECTIONAL SPREAD (-) 
-!     33 : SWELL MEAN DIRECTIONAL SPREAD (-) 
-!     34 : KURTOSIS DERIVED FROM WAVE SPECTRA (-)
-!     35 : BENJAMIN-FEIR INDEX (-) 
-!     36 : PEAKEDNESS FACTOR OR GODA QUALITY FACTOR (-) 
-!     37 : MODEL BATHYMETRY (m)
-!     38 : MAXIMUM WAVE HEIGHT (m)
-!     39 : MAXIMUM WAVE PERIOD (S)
-!     40 : U-COMPONENT OF STOKES DRIFT (m/s) 
-!     41 : V-COMPONENT OF STOKES DRIFT (m/s) 
-!     42 : U-COMPONENT OF SURFACE CURRENT (m/s) 
-!     43 : V-COMPONENT OF SURFACE CURRENT (m/s) 
-!     44 : NORMALIZED ENERGY FLUX INTO OCEAN 
-!     45 : NORMALIZED ENERGY FLUX INTO WAVES 
-!     46 : NORMALIZED STRESS INTO OCEAN 
-!     47 : TRAIN 1 WAVE HEIGHT (M)
-!     48 : TRAIN 1 MEAN WAVE DIRECTION (DEG.)
-!     49 : TRAIN 1 WAVE MEAN PERIOD BASED ON THE 1/f INTEGRATION OF F (s.)
-!     50 : TRAIN 2 WAVE HEIGHT (M)
-!     51 : TRAIN 2 MEAN WAVE DIRECTION (DEG.)
-!     52 : TRAIN 2 WAVE MEAN PERIOD BASED ON THE 1/f INTEGRATION OF F (s.)
-!     53 : TRAIN 3 WAVE HEIGHT (M)
-!     54 : TRAIN 3 MEAN WAVE DIRECTION (DEG.)
-!     55 : TRAIN 3 WAVE MEAN PERIOD BASED ON THE 1/f INTEGRATION OF F (s.)
-!     56 : MEAN SQUARE WAVE STRAIN IN THE SEA ICE.  
-!     57 : SIGNIFICANT WAVE HEIGHT WITH PERIOD > 10s (m)
-!     58 : SURFACE AIR DENSITY (kg m**-3)
-!     59 : CONVECTIVE VELOCITY SCALE (m/s)
-!     60 : SEA ICE COVER (-)
-!     61 : SEA ICE THICKNESS (m)
-!     62 : SPECTRAL SKWENESS (-)
-!     63 : NEMO SST (K)
-!     64 : NEMO SEA ICE COVER (-)
-!     65 : NEMO SEA ICE THICKNESS (m)
-!     66 : NEMO ZONAL CURRENT (m/s)
-!     67 : NEMO MERIDIONAL CURRENT (m/s)
-!     68 : WAVE ENERGY FLUX MAGNITUDE  (W/m)
-!     69 : WAVE ENERGY FLUX MEAN DIRECTION (Degree true)
-!     70 : SIGNIFICANT WAVE HEIGHT OF ALL WAVES WITH PERIOD BETWEEN 10 AND 12 SECONDS (m)
-!     71 : SIGNIFICANT WAVE HEIGHT OF ALL WAVES WITH PERIOD BETWEEN 12 AND 14 SECONDS (m)
-!     72 : SIGNIFICANT WAVE HEIGHT OF ALL WAVES WITH PERIOD BETWEEN 14 AND 17 SECONDS (m)
-!     73 : SIGNIFICANT WAVE HEIGHT OF ALL WAVES WITH PERIOD BETWEEN 17 AND 21 SECONDS (m)
-!     74 : SIGNIFICANT WAVE HEIGHT OF ALL WAVES WITH PERIOD BETWEEN 21 AND 25 SECONDS (m)
-!     75 : SIGNIFICANT WAVE HEIGHT OF ALL WAVES WITH PERIOD BETWEEN 25 AND 30 SECONDS (m)
-
-!     JPPFLAG-4 : 1st EXTRA EXPERIMENTAL FIELD
-!     JPPFLAG-3 : 2nd EXTRA EXPERIMENTAL FIELD
-!     JPPFLAG-2 : 3rd EXTRA EXPERIMENTAL FIELD
-!     JPPFLAG-1 : 4th EXTRA EXPERIMENTAL FIELD
-!     JPPFLAG   : 5th EXTRA EXPERIMENTAL FIELD
-
-!     LFDB: TRUE IF INTEGRATED PARAMETERS ARE WRITTEN OUT TO FDB.
+!     GFLAG and FFLAG SEE *MPCRTBL* for a definition of which parameters they control
+!     LFDB: TRUE IF INTEGRATED PARAMETERS ARE WRITTEN OUT TO FDB (see WVWAMINIT1 when coupled to IFS).
 !     LGRIBIN : IF TRUE THE WAVE SPECTRA IS INPUT IN GRIB FORMAT, ELSE
 !               THE BINARY RESTART FILES ARE USED.
 !     LGRIBOUT : IF TRUE THE WAVE SPECTRA IS OUTPUT IN GRIB FORMAT, ELSE
 !                THE BINARY RESTART FILES ARE PRODUCED.
-!     LFDBIOOUT : IF TRUE THE GRIB SPECTRA OUTPUT IS SENT TO THE FDB.
+!     LFDBIOOUT : IF TRUE THE GRIB SPECTRA OUTPUT IS SENT TO THE FDB (See WVWAMINIT1 when coupled to IFS).
 !     NWRTOUTWAM: STRIDE WITH WHICH FDB OUTPUT PE's ARE SELECTED.
 !     LRSTPARALW: IF TRUE BINARY RESTART FILES WILL BE WRITTEN in PARALLEL
 !                 IF THAT OPTION IS USED.
@@ -344,7 +274,7 @@
 !     LSECONDORDER : IF TRUE THEN SECOND ORDER CORRECTIOn IS APPLIED TO
 !                    OUTPUT INTEGRATED PARAMETERS.
 !     ICASE: 1 FOR SPHERICAL COORDINATES ELSE CARTESIAN COORDINATES.
-!     ISHALLO: 1 FOR DEEP WATER MODE ELSE SHALLOW WATER MODEL.
+!     ISHALLO: THIS OPTION IS DEPRICATED. IT IS ALWAYS SHALLOW WATER FORMULATION
 !     IREFRA: 0 MODEL RUNS WITHOUT REFRACTION.
 !             1 MODEL RUNS WITH DEPTH REFRACTION ONLY.
 !             2 MODEL RUNS WITH CURRENT REFRACTION ONLY.
@@ -353,6 +283,7 @@
 !     ITESTB: MAX BLOCK NUMBER FOR OUTPUT IN BLOCK LOOPS.
 !     IREST: 1 FOR THE PRODUCTION OF RESTART FILE(S).
 !     IASSI: 1 ASSIMILATION IS DONE IF ANALYSIS RUN.
+!     IPHYS:  WAVE PHYSICS PACKAGE (0 or 1)
 !     ISNONLIN : 0 FOR OLD SNONLIN, 1 FOR NEW SNONLIN.
 !     IDAMPING : 0 NO WAVE DAMPING, 1 WAVE DAMPING ON.
 !                ONLY MEANINGFUl FOR IPHYS=0
@@ -380,8 +311,7 @@
 !              or MONTHLY FORECAST RUNS
 !     NMETNB : METHOD NUMBER TO BE USED FOR GRIBBING OF SEASONAL DATA.
 !              or MONTHLY FORECAST RUNS
-!     LMESSPASS: TRUE FOR MESSAGE PASSING ARCHITECHTURE.
-!     LWCOU: FALSE FOR UNCOUPLED RUN.
+!     LWCOU: FALSE FOR UNCOUPLED RUN (see WVWAMINIT1 if coupled to IFS).
 !     NEMO COUPLING FLAGS:
 !     LWNEMOCOU: FALSE FOR NO COUPLING TO NEMO RUN.
 !     NEMOFRCO: NEMO COUPLING FREQ IN WAM TIME STEPS
@@ -399,8 +329,11 @@
 !     LWNEMOCOUDEBUG: FALSE IF NO DEBUGGING OUTPUT IN WAM<->NEMO COUPLING
 !
 !     LLCAPCHNK : CAP CHARNOCK FOR HIGH WINDS.
+!     LLGCBZ0 : USE MODEL FOR BACKGROUND ROUGHNESS.
+!     LLNORMAGAM : USE THE RENORMALISTION OF THE GROWTH RATE.
 !     LWAM_USE_IO_SERV: TRUE IF SPECTRAL AND INTEGRATED PARAMETER OUTPUT SHOULD BE
 !              DONE USING IFS IO SERVER
+!     LOUTMDLDCP : OUPUT MODEL DECOMPOSITION TO FILE
 !
 !     LNOCDIN: IF TRUE THEN GRIB INPUT OF A DRAG COEFFICIENT FIELD IS
 !              NOT REQUIRED.  
@@ -483,13 +416,17 @@
 !               FIEDS ARE PROVIDED WITH THE WIND FIELDS TO GENERATE THE
 !               SEA ICE MASK (TRUE BY DEFAULT). 
 !     LCIWABR : FLAG CONTROLLING THE USE OF SEA ICE BOTTOM FRICTION ATTENUATION  
+!     LMASKICE  SET TO TRUE IF ICE MASK IS APPLIED
+!     LWAMRSETCI SET TO TRUE IF FIELDS THAT ARE EXCHANGED WITH THE ATMOSPHERE AND THE OCEAN
+!                ARE RESET TO WHAT WOULD BE USED IF THERE WERE NO WAVE MODELS.
+
 !     LICETH  : FLAG CONTROLLING WHETHER OR NOT SEA ICE THICKNESS FILEDS
 !               ARE PROVIDED WITH THE WIND FIELDS (FALSE BY DEFAULT). 
 !     LLSOURCE : FLAG CONTROLLING WHETHER OR NOT THE SOURCE TERM CONTRIBUTION 
 !                IS COMPUTED.
 !     LNSESTART : FLAG CONTROLLING WHETHER OR NOT THE INITIAL SPECTRA ARE
 !                 RESET TO NOISE LEVEL.
-!     LSMSSIG_WAM : .T. = send signals to SMS or ECFLOW (ECMWF supervisor)
+!     LSMSSIG_WAM : .T. = send signals to ECFLOW (ECMWF supervisor)
 !     CMETER :  SMS or ECFLOW meter command (ECMWF supervisor)
 !     CEVENT :  SMS or ECFLOW event command (ECMWF supervisor)
 
@@ -525,6 +462,8 @@
       CBPLTDT   =  ZERO
       CEPLTDT   =  ZERO
       CDATEF    =  ZERO
+      IFRELFMAX = 0
+      DELPRO_LF =  0.0_JWRB
       IDELPRO   =  0
       IDELT     =  0
       IDELWO    =  0
@@ -532,13 +471,6 @@
       IDELALT   =  21600 
       IDELINT   =  0
 
-!!!! obsolete should be removed as soon as I can update scripts
-      IDELINS   =  0
-      IDELSPT   =  0
-      IDELSPS   =  0
-!!!!
-
-      IDELRES   =  0
       IDELCUR   =  0
       CDATECURA = ZERO
       LLCFLCUROFF = .TRUE.
@@ -558,7 +490,7 @@
       NFLAG(IRCD)  = .TRUE. 
       NFLAG(IRU10) = .TRUE. 
 
-      LLOUTERS = .FALSE.
+      XKMSS_CUTOFF = 0.0_JWRB
 
       LSECONDORDER = .TRUE.
 
@@ -572,7 +504,8 @@
       LRSTINFDAT= .FALSE.
       LODBRALT  = .FALSE.
       ICASE     = 1 
-      ISHALLO   = 0 
+      ISHALLO   = 0   !! depricated 
+      IPHYS     = 1
       ISNONLIN  = 1 
       IDAMPING  = 1 
       IPROPAGS  = 0 
@@ -598,7 +531,6 @@
       NTOTENS   = 0
       NSYSNB    = -1
       NMETNB    = -1
-      LMESSPASS = .TRUE.
 
       NOUTT     = 0
 
@@ -699,8 +631,12 @@
       LWNEMOCOUDEBUG = .FALSE.
 
       LLCAPCHNK = .FALSE.
+      LLGCBZ0 = .TRUE.
+      LLNORMAGAM = .TRUE.
 
       LWAM_USE_IO_SERV = .FALSE.
+
+      LOUTMDLDCP = .FALSE.
 
       LWCOUNORMS = .FALSE.
       LLNORMIFS2WAM = .FALSE.
@@ -716,9 +652,11 @@
 
       LICERUN = .TRUE.
 
-      LCIWABR = .TRUE.
+      LCIWABR = .FALSE.
 
       LMASKICE = .FALSE.
+
+      LWAMRSETCI = .TRUE.
 
       LICETH = .FALSE.
 
@@ -740,7 +678,6 @@
       LVECTOR=.FALSE.
       IVECTOR=1
       LPREPROC=.FALSE.
-      USE_DIRECT_WIND_FILE=.FALSE.
       JGS_DIFF_SOLVERTHR = 1.E-5_JWRU
       WAE_SOLVERTHR = 1.E-10_JWRU
       LIMPLICIT = .FALSE.
@@ -752,6 +689,7 @@
       LCHKCONV = .TRUE.
       LBCWA = .FALSE.
 
+      NGRIB_HANDLE_IFS = -1
 
 
 ! ----------------------------------------------------------------------
@@ -761,8 +699,9 @@
 
       NAMELIST_FILENAME='wam_namelist' 
       WRITE(IU06,*) ' '
+      WRITE(IU06,*) 'THE WAVE MODEL NAMELIST IS BEING READ '
       IU05 =  IWAM_GET_UNIT (IU06, NAMELIST_FILENAME, 's', 'f', 0, 'READ')
-  
+
       CALL WPOSNAM (IU05, 'NALINE', LLEOF)
       IF (.NOT. LLEOF) THEN
         READ (IU05, NALINE)
@@ -778,6 +717,7 @@
         CALL ABORT1
       ENDIF
 
+      ! when coupled to IFS, the control will come from it via calls to wavemdl
       IF (LWCOU) LSMSSIG_WAM=.FALSE.
 
 
@@ -878,21 +818,38 @@
       CLOSE(IU05)
 
 !           **** MODEL TIME STEPS ****
-      IF (CLMTSU(1) .EQ. 'H') IDELPRO = IDELPRO*3600
-      IF (CLMTSU(2) .EQ. 'H') IDELT   = IDELT*3600
-      IF (CLMTSU(3) .EQ. 'H') IDELWO  = IDELWO*3600
-      IF (CLMTSU(4) .EQ. 'H') IDELWI  = IDELWI*3600
+      IF (CLMTSU(1) == 'H') IDELPRO = IDELPRO*3600
+      IF (CLMTSU(2) == 'H') IDELT   = IDELT*3600
+      IF (CLMTSU(3) == 'H') IDELWO  = IDELWO*3600
+      IF (CLMTSU(4) == 'H') IDELWI  = IDELWI*3600
 !           **** OUTPUT TIME IN FIXED INTERVALS ****
-      IF (CLOTSU(1) .EQ. 'H') IDELINT = IDELINT*3600
-      IF (CLOTSU(7) .EQ. 'H') IDELRES = IDELRES*3600
-      IF (CLOTSU(8) .EQ. 'H') IDELBC  = IDELBC*3600
+      IF (CLOTSU(1) == 'H') IDELINT = IDELINT*3600
+      IF (CLOTSU(7) == 'H') IDELRES = IDELRES*3600
+      IF (CLOTSU(8) == 'H') IDELBC  = IDELBC*3600
+
+
+      CALL WAM_U2L1CR( YCLASS )
+
+
+
+      ICPLEN=LEN_TRIM(CPATH)
+      IF(ICPLEN.GT.0.AND.CPATH(ICPLEN:ICPLEN).EQ.'/') THEN
+        CPATH=CPATH(1:ICPLEN-1)
+        ICPLEN=ICPLEN-1
+      ENDIF
+
+!           **** CHECK LENGTH OF YEXPVER AND PUT IT RIGHT JUSTIFIED ****
+      LEN=LEN_TRIM(YEXPVER)
+      YEXPVER(5-LEN:4)=YEXPVER(1:LEN)
+      YEXPVER(1:4-LEN)='0000'
 
 
 !     RESET CERTAIN FLAGS:
 
+      IF(IFRELFMAX <= 0) DELPRO_LF = REAL(IDELPRO, JWRB)
+
 !     WE SHOULD RECEIVE DATA FROM NEMO
-      IF (LWNEMOCOUCIC.OR.LWNEMOCOUCIT.OR.LWNEMOCOUCUR)                 &
-     &   LWNEMOCOURECV = .TRUE.
+      IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT .OR. LWNEMOCOUCUR) LWNEMOCOURECV = .TRUE.
 
 
 ! Here we set LL1D = .TRUE. for the case of LLUNSTR in order to omit the mapping for the parallel strucutured grid
@@ -903,10 +860,9 @@
 
 !     Some are printed below
 
-      IF (IRANK.EQ.1) THEN
+      IF (IRANK == 1) THEN
         WRITE(6,*) '==============================================='
         WRITE(6,*) '*** MPUSERIN has read the following settings'
-        WRITE(6,*) '*** LMESSPASS = ',LMESSPASS
         WRITE(6,*) '*** LFDB = ',LFDB
         WRITE(6,*) '*** LRSTPARALW = ',LRSTPARALW
         WRITE(6,*) '*** LRSTPARALR = ',LRSTPARALR
@@ -936,6 +892,12 @@
         WRITE(6,*) '*** LLNORMWAMOUT_GLOBAL= ',LLNORMWAMOUT_GLOBAL
         WRITE(6,*) '*** LSMSSIG_WAM= ',LSMSSIG_WAM
         WRITE(6,*) '*** LWAM_USE_IO_SERV = ',LWAM_USE_IO_SERV
+        WRITE(6,*) '*** CPATH = ',CPATH(1:ICPLEN)
+        WRITE(6,*) '*** LOUTMDLDCP = ',LOUTMDLDCP
+        WRITE(6,*) '*** NLOCGRB = ',NLOCGRB
+        WRITE(6,*) '*** YEXPVER = ',YEXPVER
+        WRITE(6,*) '*** YCLASS = ',YCLASS
+        WRITE(6,*) '*** ISTREAM = ',ISTREAM
         WRITE(6,*) '==============================================='
       ENDIF
 

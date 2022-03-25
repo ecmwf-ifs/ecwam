@@ -69,7 +69,6 @@
 
       INTEGER(KIND=JWIM) :: I, ISP, ISM, M, K
       INTEGER(KIND=JWIM) :: KLP1, IC, KH, KLH, KS, ISG, K1, K11, K2, K21, IKN
-!!      INTEGER(KIND=JWIM) :: JAFU
       INTEGER(KIND=JWIM), ALLOCATABLE :: JA1(:,:)
       INTEGER(KIND=JWIM), ALLOCATABLE :: JA2(:,:)
 
@@ -87,6 +86,7 @@
       ISM = FLOOR(LOG10(1.0_JWRB-ALAMD)/F1P1+.0000001_JWRB)
 
       MFRSTLW=1+ISM
+
       MLSTHG=NFRE-ISM
 
       KFRH=-ISM+ISP+2
@@ -133,11 +133,11 @@
       IC = 1
       DO KH=1,2
         KLH = NANG 
-        IF (KH.EQ.2) KLH=KLP1
+        IF (KH == 2) KLH=KLP1
         DO K=1,KLH
           KS = K
-          IF (KH.GT.1) KS=KLP1-K+1
-          IF (KS.GT.NANG) GO TO 1002
+          IF (KH > 1) KS=KLP1-K+1
+          IF (KS > NANG) GO TO 1002
           CH = IC*CL1
           JA1(KS,KH) = JAFU(CH,K,KLP1)
           CH = IC*CL2
@@ -170,26 +170,26 @@
         CL2H = ISG*CL2
         DO K=1,NANG
           KS = K
-          IF (KH.EQ.2) KS = NANG-K+2
-          IF (K.EQ.1) KS = 1
+          IF (KH == 2) KS = NANG-K+2
+          IF (K == 1) KS = 1
           K1 = JA1(K,KH)
           K1W(KS,KH) = K1
-          IF (CL1H.LT.0.0_JWRB) THEN
+          IF (CL1H < 0.0_JWRB) THEN
             K11 = K1-1
-            IF (K11.LT.1) K11 = NANG 
+            IF (K11 < 1) K11 = NANG 
           ELSE
             K11 = K1+1
-            IF (K11.GT.NANG) K11 = 1
+            IF (K11 > NANG) K11 = 1
           ENDIF
           K11W(KS,KH) = K11
           K2 = JA2(K,KH)
           K2W(KS,KH) = K2
-          IF (CL2H.LT.0) THEN
+          IF (CL2H < 0) THEN
             K21 = K2-1
-            IF (K21.LT.1) K21 = NANG 
+            IF (K21 < 1) K21 = NANG 
           ELSE
             K21 = K2+1
-            IF (K21.GT.NANG) K21 = 1
+            IF (K21 > NANG) K21 = 1
           ENDIF
           K21W(KS,KH) = K21
         ENDDO
@@ -219,23 +219,27 @@
         IKP1(M) = IKP(M)+1
         FKLAP(M) = (FLP-FKP)/(FRLON(IKP1(M))-FKP)
         FKLAP1(M) = 1.0_JWRB-FKLAP(M)
-        IF (FRLON(MFRSTLW).GE.FLM) THEN
-          IKM(M) = 1
-          IKM1(M) = 1
-          FKLAM(M) = 0.0_JWRB
-          FKLAM1(M) = 0.0_JWRB
-        ELSE
-          IKN = M+ISM
+
+        IKN = M+ISM
+        IF (IKN >= MFRSTLW) THEN
           IKM(M) = IKN
           FKM = FRLON(IKM(M))
           IKM1(M) = IKM(M)+1
           FKLAM(M) = (FLM-FKM)/(FRLON(IKM1(M))-FKM)
           FKLAM1(M) = 1.0_JWRB-FKLAM(M)
-          IF (IKN.LT.MFRSTLW) THEN
-            IKM(M) = 1
-            FKLAM1(M) = 0.0_JWRB
-          ENDIF
+        ELSEIF (IKN+1 == MFRSTLW) THEN
+          IKM(M) = 1 
+          IKM1(M) = MFRSTLW 
+          FKM = FRLON(IKM1(M))/FRATIO
+          FKLAM(M) = (FLM-FKM)/(FRLON(IKM1(M))-FKM)
+          FKLAM1(M) = 0.0_JWRB
+        ELSE
+          IKM(M) = 1
+          FKLAM(M) = 0.0_JWRB
+          IKM1(M) = 1
+          FKLAM1(M) = 0.0_JWRB
         ENDIF
+
       ENDDO
 
 !*    3. COMPUTE TAIL FREQUENCY RATIOS.
