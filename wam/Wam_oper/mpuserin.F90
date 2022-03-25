@@ -129,7 +129,7 @@
       CHARACTER(LEN=70) :: CLHEADER
       CHARACTER(LEN=72) :: NAMELIST_FILENAME 
 
-      LOGICAL :: LLEOF
+      LOGICAL :: LLEOF 
 
 ! ----------------------------------------------------------------------
 
@@ -753,6 +753,7 @@
       LBCWA = .FALSE.
 
 
+
 ! ----------------------------------------------------------------------
 
 !*    1. READ NAMELIST NALINE.
@@ -760,8 +761,8 @@
 
       NAMELIST_FILENAME='wam_namelist' 
       WRITE(IU06,*) ' '
-      IU05 =  IWAM_GET_UNIT (IU06, NAMELIST_FILENAME, 's', 'f', 0)
-
+      IU05 =  IWAM_GET_UNIT (IU06, NAMELIST_FILENAME, 's', 'f', 0, 'READ')
+  
       CALL WPOSNAM (IU05, 'NALINE', LLEOF)
       IF (.NOT. LLEOF) THEN
         READ (IU05, NALINE)

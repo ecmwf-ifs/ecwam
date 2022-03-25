@@ -548,7 +548,7 @@
             WRITE(IU06,*) '************************************'
             CALL ABORT1
           ENDIF
-          IU09 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
+          IU09 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0, 'READWRITE')
         ELSE
           IU09 = 9
         ENDIF
@@ -574,7 +574,7 @@
             WRITE(IU06,*) '************************************'
             CALL ABORT1
           ENDIF
-          IU10 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
+          IU10 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0, 'READWRITE')
         ELSE
           IU10 = 10
         ENDIF
@@ -1271,7 +1271,7 @@
       IF (IBOUNC.EQ.1) THEN
         IF ((LMESSPASS.AND.IRANK.EQ.1).OR..NOT.LMESSPASS) THEN
           DO II=1,GBOUNC
-            IU19(II)=IWAM_GET_UNIT(IU06, CBCPREF(II), 'w', 'u', 0)
+            IU19(II)=IWAM_GET_UNIT(IU06, CBCPREF(II), 'w', 'u', 0, 'READWRITE')
 !           make the unit available for a silly fort.unit output
 !           we will need to recode this a bit better !!!
 

@@ -1246,7 +1246,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
               CEPLTDT = CDATEF
 
-              IU04 = IWAM_GET_UNIT (IU06,CWI(1:ICPLEN+8) , 'w', 'f', 0)
+              IU04 = IWAM_GET_UNIT (IU06,CWI(1:ICPLEN+8) , 'w', 'f', 0, 'READWRITE')
 
               CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,     &
      &                      IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,  &
@@ -1266,7 +1266,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
                 CALL INCDATE(CDTRCF,IDELPRO)
                 IU04 =  IWAM_GET_UNIT (IU06,CWI(1:ICPLEN+8)//'.'//      &
      &                              CDTRCF(1:8)//'_'//CDTRCF(9:14),     &
-     &                              'w', 'f', 0)
+     &                              'w', 'f', 0, 'READWRITE')
                 CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,   &
      &                        IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,&
      &                        IASSI, NFCST, ISTAT, CDTCUR,              &

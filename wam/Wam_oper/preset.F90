@@ -267,7 +267,7 @@
       IU05 = 5
       IU06 = 6
 
-      IU07 = IWAM_GET_UNIT(IU06, 'wam_grid_tables', 'r', 'u', 0)
+      IU07 = IWAM_GET_UNIT(IU06, 'wam_grid_tables', 'r', 'u', 0, 'READWRITE')
 
       IU12 = 12
       IU14 = 14
