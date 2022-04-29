@@ -236,12 +236,12 @@ ASSOCIATE(PHIEPS  => INTFLDS%PHIEPS,  &
         IF (LWNEMOCOU .AND. LNUPD) THEN
           NPHIEPS(IJ) = PHIEPS(IJ)
           NTAUOC(IJ)  = TAUOC(IJ)
-          IF (EM_OC(IJ) /= 0.0_JWRB) THEN
+          IF (EM_OC(IJ)/=0.0_JWRB) THEN
              NSWH(IJ) = 4.0_JWRO*SQRT(EM_OC(IJ))
           ELSE
              NSWH(IJ) = 0.0_JWRO
           ENDIF
-          IF (F1_OC(IJ) /= 0.0_JWRB) THEN
+          IF (F1_OC(IJ)/=0.0_JWRB) THEN
              NMWP(IJ) = 1.0_JWRO/F1_OC(IJ)
           ELSE
              NMWP(IJ) = 0.0_JWRO
