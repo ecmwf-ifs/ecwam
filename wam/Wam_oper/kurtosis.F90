@@ -1,7 +1,7 @@
       SUBROUTINE KURTOSIS(KIJS, KIJL, FL1,                        &
      &                    DEPTH,                                  &
      &                    C3, C4, BF2, QP, HMAX, TMAX,            &
-     &                    ETA_M, R, XNSLC, SIG_TH, EPS)
+     &                    ETA_M, R, XNSLC, SIG_TH, EPS, XNU)
  
 !***  *KURTOSIS*   DETERMINES SKEWNESS C3, KURTOSIS C4, THE SQUARE OF THE
 !                  BENJAMIN-FEIR INDEX BFI2, GODA'S PEAKEDNESS PARAMETER QP, 
@@ -25,10 +25,10 @@
 !                              HMAXN AND TMAX
 !     INTERFACE.
 !     ----------
-!           *CALL*  *KURTOSIS(FL1, KIJS, KIJL,
+!           *CALL*  *KURTOSIS(KIJS, KIJL, FL1,
 !                             DEPTH,
 !                             C3, C4, BF2, QP, HMAX, TMAX,
-!                             ETA_M, R, XNSLC)
+!                             ETA_M, R, XNSLC, SIG_YH, EPS, XNU)
 !                      INPUT:
 !                           *FL1*    - 2-DIMENSIONAL SPECTRUM
 !                           *KIJS*   - STARTING INDEX
@@ -46,6 +46,8 @@
 !                           *XNSLC* - NUMBER OF EVENTS
 !                           *SIG_TH*- RELATIVE WIDTH IN DIRECTION
 !                           *EPS*   - WAVE STEEPNESS
+!                           *XNU*   - RELATIVE SPECTRAL WIDTH
+
 
  
 !     METHOD.
@@ -196,7 +198,7 @@
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: C3, C4, BF2, QP, HMAX, TMAX
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: ETA_M, R, XNSLC, SIG_TH, EPS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: ETA_M, R, XNSLC, SIG_TH, EPS, XNU
 
       INTEGER(KIND=JWIM) :: IJ, M, K
 
@@ -218,7 +220,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SUM0,SUM1,SUM2,SUM4,SUM40,SUM6
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XKP,SIG_OM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SIG_HM
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: F_M,XNU,OM_UP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: F_M,OM_UP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: AA,BB,C4_DYN,C4_B
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FFMAX
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: FF 
@@ -383,6 +385,12 @@
           HMAX(IJ) = HMAXN(IJ)*HS
         ELSE
           HMAX(IJ) = 0._JWRB
+        ENDIF
+      ENDDO 
+
+      DO IJ=KIJS,KIJL
+        IF (SUM0(IJ) <= 0._JWRB) THEN
+          XNU(IJ) = 0._JWRB
         ENDIF
       ENDDO 
 

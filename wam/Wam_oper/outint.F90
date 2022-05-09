@@ -1,4 +1,4 @@
-      SUBROUTINE OUTINT(CDATE, IFCST, BOUT)
+      SUBROUTINE OUTINT(CDATE, CDATED, IFCST, BOUT)
 
 ! ----------------------------------------------------------------------
 
@@ -9,8 +9,10 @@
 
 !**   INTERFACE.
 !     ----------
-!       *CALL* *OUTINT(CDATE, IFCST, BOUT)
-!          *CDATE*   - DATE AND TIME.
+!       *CALL* *OUTINT(CDATE, CDATED, IFCST, BOUT)
+!          *CDATE*   - ACTUAL DATE AND TIME. IF NOT A FORECAST (IFCST<=0), OTHERWISE
+!                      DATE AND TIME OF THE START OF THE FOERCAST.
+!          *CDATED*  - DATE USED FOR NAMING THE OUTPUT FILE (if data written to files)
 !          *IFCST*   - FORECAST STEP IN HOURS.
 !          *BOUT*    - OUTPUT PARAMETERS BUFFER
 
@@ -58,7 +60,7 @@
 #include "out_onegrdpt.intfb.h"
 #include "wgribenout.intfb.h"
 
-      CHARACTER(LEN=14), INTENT(IN) :: CDATE
+      CHARACTER(LEN=14), INTENT(IN) :: CDATE, CDATED
       INTEGER(KIND=JWIM), INTENT(IN) :: IFCST
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK), INTENT(IN) :: BOUT
 
@@ -118,7 +120,7 @@
          ELSE
            FILEID = 'MPP'
          ENDIF
-         CALL GRSTNAME(CDATE,CDATEF,IFCST,FILEID,ICPLEN,CPATH,OUTFILEN)
+         CALL GRSTNAME(CDATED,CDATEF,IFCST,FILEID,ICPLEN,CPATH,OUTFILEN)
          LFILE=LEN_TRIM(OUTFILEN)
          CALL IGRIB_OPEN_FILE(IUOUT,OUTFILEN(1:LFILE),'w')
          WRITE(IU06,*) '  INTEGRATED PARAMETERS WRITTEN TO FILE ',OUTFILEN(1:LFILE)
