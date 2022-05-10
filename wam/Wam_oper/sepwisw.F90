@@ -272,7 +272,7 @@
 !     if there isn't any windsea energy, set the windsea mean direction
 !     to the wind direction.
       DO IJ=KIJS,KIJL
-        IF (ESEA(IJ) <= 0.0_JWRB) THEN
+        IF (ESEA(IJ) <= 1.0E-9_JWRB) THEN
           THWISEA(IJ)=WDWAVE(IJ)
         ENDIF
       ENDDO
