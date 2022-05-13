@@ -584,7 +584,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !$    MTHREADS=OMP_GET_MAX_THREADS()
 
       WRITE(IU06,*) '  '
-      WRITE(IU06,*) ' PARALLEL ORGANISATION : '
+      WRITE(IU06,*) ' PAALLEL ORGANISATION : '
       WRITE(IU06,*) ' NPROC      : ', NPROC
       WRITE(IU06,*) ' MTHREADS   : ', MTHREADS
       WRITE(IU06,*) ' NPROMA_WAM : ', NPROMA_WAM
@@ -659,6 +659,10 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !     INITIALISATION FOR SDISS_ARD
       IF (IPHYS == 1) CALL INIT_SDISS_ARDH
 
+      WRITE(IU06,*) '  '
+      WRITE(IU06,*) '    SUB. INITMDL: end arrays initialisation'
+      WRITE(IU06,*) '  '
+      CALL FLUSH (IU06)
 
 ! ----------------------------------------------------------------------
 
@@ -668,6 +672,10 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       CALL GETSTRESS(BLK2LOC, WVENVI, FF_NOW, NEMO2WAM,   &
      &               NBLKS, NBLKE, IREAD) 
+
+      WRITE(IU06,*) '    SUB. INITMDL: integrated paramaters READ IN'
+      WRITE(IU06,*) '  '
+      CALL FLUSH (IU06)
 
       CDATEWL = CDTPRO
 
