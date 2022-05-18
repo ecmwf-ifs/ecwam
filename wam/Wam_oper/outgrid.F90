@@ -81,7 +81,6 @@
         RETURN
       ENDIF
  
-
 !     SENDING TO RELEVANT PE'S
 !     ------------------------
 
@@ -97,7 +96,6 @@
       
 !     LOADING THE COMMUNICATION BUFFER
         ALLOCATE(ZSENDBUF(NFLDPPEMAX * MPMAXLENGTH,NPROC))
-
         ICNT(:)=0
 
         DO ICT = 1, JPPFLAG
