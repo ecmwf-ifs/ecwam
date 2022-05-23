@@ -286,7 +286,7 @@
       IF (LWNEMOCOU) THEN
         IF (IRANK == 1) WRITE (IU06,*)'CALLING NEMOGCMCOUP_INIT'
 #ifdef WITH_NEMO
-        CALL NEMOGCMCOUP_INIT( MPL_COMM, NEMOINIDATE, NEMOINITIME,      &
+        CALL NEMOGCMCOUP_INIT( IRANK-1, MPL_COMM, NEMOINIDATE, NEMOINITIME,      &
      &                         NEMOITINI, NEMOITEND, NEMOTSTEP,         &
      &                         .TRUE., -1, .FALSE. )
 #endif
