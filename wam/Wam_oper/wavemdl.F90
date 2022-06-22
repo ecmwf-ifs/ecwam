@@ -598,11 +598,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !*    2.1  INTEGRATE THE WAVE SPECTRA FORWARD IN TIME.
 !          -------------------------------------------
 
-#ifdef ECMWF
       IF (LWCOU) THEN
         CALL CHKOOPS(LDUPDATEOOPS=.TRUE.)
       ENDIF
-#endif
 
       CALL SETMARSTYPE
 
@@ -616,8 +614,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !          THE DATA ASSIMILATION SOFTWARE IS NOT AVAILABLE
 !          FOR GENERAL DISSIMINATION !
 !          ---------------------------------------------
-
-#ifdef ECMWF
 
       IF (IASSI == 1) THEN
 
@@ -643,11 +639,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
  &                      WAM2NEMO, NEMO2WAM, FL1)
         ENDIF
       ENDIF
-#endif
 
 
-#ifdef ECMWF
-!     SMS METER:
+!     ECFLOW METER:
       IF (LSMSSIG_WAM) THEN
 
         CALL MPL_BARRIER(CDSTRING='WAVEMDL:')
@@ -675,7 +669,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           ENDIF
         ENDIF
       ENDIF
-#endif
 
 !----------------------------------------------------------------------
 
