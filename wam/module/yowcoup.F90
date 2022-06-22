@@ -6,6 +6,7 @@
 
 #include "outwspec_io_serv.intfb.h"
 #include "outint_io_serv.intfb.h"
+#include "ifstowam.intfb.h"
 
       !*    ** *COUPL* - PARAMETERS FOR COUPLING.
 
@@ -72,6 +73,7 @@
 
       PROCEDURE(OUTWSPEC_IO_SERV), POINTER :: OUTWSPEC_IO_SERV_HANDLER=> NULL()
       PROCEDURE(OUTINT_IO_SERV)  , POINTER :: OUTINT_IO_SERV_HANDLER  => NULL()
+      PROCEDURE(IFSTOWAM)        , POINTER :: IFSTOWAM_HANDLER        => NULL()
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------

@@ -76,7 +76,7 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : WVGRIDLOC, ENVIRONMENT, FORCING_FIELDS, OCEAN2WAVE
 
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUSAMEGRID, LWNEMOCOU, LWNEMOCOURECV
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUSAMEGRID, LWNEMOCOU, LWNEMOCOURECV, IFSTOWAM_HANDLER
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,    &
@@ -85,6 +85,7 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWWIND  , ONLY : CDATEWL   ,CDAWIFL
 
+      USE YOWABORT , ONLY : WAM_ABORT
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 
@@ -95,7 +96,6 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
 #include "abort1.intfb.h"
 #include "getcurr.intfb.h"
 #include "getfrstwnd.intfb.h"
-#include "ifstowam.intfb.h"
 #include "incdate.intfb.h"
 #include "init_fieldg.intfb.h"
 #include "notim.intfb.h"
@@ -191,10 +191,11 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
 !         -----------------------------------------------------------
 
       IF (LWCOU) THEN
-        CALL IFSTOWAM (BLK2LOC,                    &
- &                     NFIELDS, NGPTOTG, NC, NR,   &
- &                     FIELDS, LWCUR, MASK_IN,     &
- &                     NXS, NXE, NYS, NYE, FIELDG)
+        IF (.NOT.ASSOCIATED(IFSTOWAM_HANDLER)) CALL WAM_ABORT('IFSTOWAM_HANDLER IS NOT INITIALIZED')
+        CALL IFSTOWAM_HANDLER (BLK2LOC,                    &
+ &                             NFIELDS, NGPTOTG, NC, NR,   &
+ &                             FIELDS, LWCUR, MASK_IN,     &
+ &                             NXS, NXE, NYS, NYE, FIELDG)
       ELSE
         LWCOUSAMEGRID = .FALSE.
       ENDIF
