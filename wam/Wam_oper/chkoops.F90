@@ -29,10 +29,9 @@
       USE YOWSTAT  , ONLY : IASSI, IASSI_ORIG 
       USE YOWTEST  , ONLY : IU06
       USE YOWCOUT  , ONLY : LWAMANOUT, LWAMANOUT_ORIG
+      USE YOWCOUP  , ONLY : IFSNUPTRA, IFSMUPTRA, IFSCONTEXT
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE ALGORITHM_STATE_MOD, ONLY : GET_NUPTRA, GET_MUPTRA, &
-     &                                GET_ALGOR_TYPE
 
 ! ----------------------------------------------------------------------
 
@@ -40,7 +39,6 @@
 
       LOGICAL, OPTIONAL, INTENT(IN) :: LDUPDATEOOPS
 
-      INTEGER(KIND=JWIM) :: NUPTRA
       INTEGER(KIND=JWIM), SAVE :: NTRAJ
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       LOGICAL :: LUPDATEOOPS
@@ -60,7 +58,7 @@
       LUPDATEOOPS = .FALSE.
       IF(PRESENT(LDUPDATEOOPS)) LUPDATEOOPS = LDUPDATEOOPS
 
-      IF (LUPDATEOOPS .AND. GET_ALGOR_TYPE() == 'OOPS') THEN
+      IF (LUPDATEOOPS .AND. IFSCONTEXT == 'OOPS') THEN
         ! OOPS-IFS may do wave assimilation only in the outer loop MUPTRA - 1
         IF (LFRST_OOPS) THEN
           LFRST_OOPS = .FALSE.
@@ -68,10 +66,8 @@
           LWAMANOUT_ORIG = LWAMANOUT
         ENDIF
 
-        NUPTRA = GET_NUPTRA()
-
-        IF( NTRAJ /= NUPTRA ) THEN 
-          IF (NUPTRA /= GET_MUPTRA() - 1) THEN
+        IF( NTRAJ /= IFSNUPTRA ) THEN
+          IF (IFSNUPTRA /= IFSMUPTRA - 1) THEN
             IASSI = 0
             LWAMANOUT = .FALSE.
           ELSE
@@ -81,13 +77,13 @@
 
           WRITE(IU06,*) ''
           WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++++ '
-          WRITE(IU06,*) ' SUB. CHKOOPS CALLED FROM ', GET_ALGOR_TYPE(), &
- &                      ' FOR NUPTRA: ', NUPTRA, ' AND MUPTRA: ', GET_MUPTRA() 
+          WRITE(IU06,*) ' SUB. CHKOOPS CALLED FROM ', IFSCONTEXT, &
+ &                      ' FOR NUPTRA: ', IFSNUPTRA, ' AND MUPTRA: ', IFSMUPTRA
           WRITE(IU06,*) ' --> IASSI reset to', IASSI 
           WRITE(IU06,*) ' --> LWAMANOUT reset to', LWAMANOUT
           WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++++ '
 
-           NTRAJ = NUPTRA
+           NTRAJ = IFSNUPTRA
         ENDIF
 
       ENDIF

@@ -72,7 +72,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOURNW, LWCOUHMF,     &
      &            KCOUSTEP , LWFLUX, LWVFLX_SNL,                        &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
-     &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM
+     &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                       &
+     &            IFSCONTEXT
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,                                            &
      &            GFLAG    ,                                            &
@@ -140,9 +141,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            IASSIM   ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC, WSPMIN
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-#ifdef ECMWF
-      USE ALGORITHM_STATE_MOD, ONLY : GET_ALGOR_TYPE
-#endif
       USE YOWABORT, ONLY : WAM_ABORT
       USE YOWGRIB
 
@@ -199,12 +197,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       NPROC_RST=0
 
 
-#ifdef ECMWF
 !     IN OOPS MODE, CERTAIN NAMELIST INPUT ARE OVER-RULED:
       IF (LWCOU) THEN
         CALL CHKOOPS(LDUPDATEOOPS=.TRUE.)
       ENDIF
-#endif
 
 !*    1. ANALYSE NAMELIST NALINE.
 !        ------------------------
@@ -413,8 +409,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' '
       ENDIF
 
-#ifdef ECMWF
-      IF (GET_ALGOR_TYPE() /= 'OOPS') THEN
+      IF (IFSCONTEXT /= 'OOPS') THEN
         ! THIS CODE IS PROTECTED TO ENSURE OOPS SINGLE EXECUTABLE MODE
         ! WORKS CORRECTLY
         IF (GFLAG(IRALTHS) .AND. (IASSI /= 1 .OR. .NOT.LALTAS)) THEN
@@ -427,7 +422,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           GFLAG(IRALTRC) = .FALSE.
         ENDIF
       ENDIF
-#endif
 
 
 !     SET INTEGRATED OUTPUT PARAMETER TABLE FOR MESSAGE PASSING
