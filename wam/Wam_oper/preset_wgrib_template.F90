@@ -44,7 +44,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
 
       USE YOWCOUP  , ONLY : LWCOUSAMEGRID
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRIBHD, ONLY :                                             &
+      USE YOWGRIBHD, ONLY : NGRIB_VERSION,                              &
      &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESI ,    &
      &            NGRBRESS, LGRHDIFS ,LNEWLVTP 
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
@@ -119,8 +119,20 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
       IF (.NOT. LGRHDIFS .OR. LLCRT) THEN
         IGRIB_HANDLE=-99
-        CALL IGRIB_NEW_FROM_SAMPLES(IGRIB_HANDLE,'gg_sfc_grib1')
-        !!! see below : this is a limitation of grib1   !!!!
+        IF ( NGRIB_VERSION == 1 ) THEN
+          CALL IGRIB_NEW_FROM_SAMPLES(IGRIB_HANDLE,'gg_sfc_grib1')
+          !!! see below : this is a limitation of grib1   !!!!
+        ELSEIF ( NGRIB_VERSION == 2 ) THEN
+          CALL IGRIB_NEW_FROM_SAMPLES(IGRIB_HANDLE,'gg_sfc_grib2')
+        ELSE
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) '*******************************************'
+          WRITE(IU06,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!! '
+          WRITE(IU06,*) ' UNKNOWN NGRIB_VERSION ', NGRIB_VERSION
+          WRITE(IU06,*) '*******************************************'
+          WRITE(IU06,*) ''
+          CALL ABORT1
+        ENDIF
       ELSE
          IGRIB_HANDLE=-99
          CALL IGRIB_CLONE(NGRIB_HANDLE_IFS,IGRIB_HANDLE)
@@ -511,8 +523,12 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         IF ( IQGAUSS /= 1 ) THEN
           RMOEAP = AMOEAP
         ELSE
-          !!! this is a limitation of grib1   !!!!
-          RMOEAP = REAL(INT(1000._JWRB*AMOEAP),JWRB)/1000._JWRB
+          IF ( NGRIB_VERSION == 1 ) THEN
+            !!! this is a limitation of grib1   !!!!
+            RMOEAP = REAL(INT(1000._JWRB*AMOEAP),JWRB)/1000._JWRB
+          ELSE
+            RMOEAP = AMOEAP
+          ENDIF
         ENDIF
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
      &                      'longitudeOfLastGridPointInDegrees',RMOEAP)
