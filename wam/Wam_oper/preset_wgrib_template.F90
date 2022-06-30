@@ -149,6 +149,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 !     PRODUCT DEFINITION.
 !     -------------------
 
+      IF ( IGRIB_VERSION == 2 ) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'discipline',10)
+
+
 !     MODEL IDENTIFICATION.
       IF ( CLDOMAIN == 'g' ) THEN
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier', &
