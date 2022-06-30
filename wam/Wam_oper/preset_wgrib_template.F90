@@ -111,6 +111,24 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         IGRIB_VERSION = NGRIB_VERSION
       ENDIF
 
+!!!! it seems that grib2 is not yet ready for spectra 
+!!!! for the time being revert to using grib 1
+      IF (CT == "S") THEN
+        IF ( IGRIB_VERSION == 2 ) THEN
+          IGRIB_VERSION=1
+
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) '*******************************************************'
+          WRITE(IU06,*) ' WARNING IN PRESET_WGRIB_TEMPLATE !!!!! '
+          WRITE(IU06,*) ' IGRIB_VERSION = 2 FOR SPECTRA NOT YET IMPLEMENTED !!! '
+          WRITE(IU06,*) ' REVERT TO USING GRIB 1' 
+          WRITE(IU06,*) '*******************************************************'
+          WRITE(IU06,*) ''
+
+        ENDIF
+      ENDIF
+
+
       IF( PRESENT(LLCREATE) ) THEN
         LLCRT = LLCREATE
       ELSE
@@ -150,6 +168,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 !     -------------------
 
       IF (CT == "S") THEN
+!!!1 not yet tested , it might be another discipline !!!
         IF ( IGRIB_VERSION == 2 ) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'discipline',192)
       ELSE
         IF ( IGRIB_VERSION == 2 ) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'discipline',10)
@@ -183,6 +202,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ! LOCAL MARS TABLE USED.
 
         IF (CT == "S") THEN
+!!!1 not yet tested , it might be another discipline !!!
           IF ( IGRIB_VERSION == 1 ) THEN
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber', 13)
             ! set localFlag to 3 to prevent use of offsetToEndOf4DvarWindow
