@@ -179,10 +179,12 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ! LOCAL MARS TABLE USED.
 
         IF (CT == "S") THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber', 13)
-          ! set localFlag to 3 to prevent use of offsetToEndOf4DvarWindow
-          ! not used in uncoupled mode.
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',3)
+          IF ( IGRIB_VERSION == 1 ) THEN
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber', 13)
+            ! set localFlag to 3 to prevent use of offsetToEndOf4DvarWindow
+            ! not used in uncoupled mode.
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',3)
+          ENDIF
         ELSE
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber', NLOCGRB)
         ENDIF
