@@ -151,8 +151,6 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
       IF ( IGRIB_VERSION == 2 ) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'discipline',10)
 
-write(0,*) 'debile preset_wgrib '
-
 
 !     MODEL IDENTIFICATION.
       IF ( CLDOMAIN == 'g' ) THEN
@@ -213,11 +211,12 @@ write(0,*) 'debile preset_wgrib '
           CALL ABORT1
         ENDIF
 
-        ! ENSEMBLE FORECAST NUMBER
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'perturbationNumber',NENSFNB)
-        ! TOTAL ENSEMBLE FORECAST NUMBER
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'numberOfForecastsInEnsemble', &
-     &                       NTOTENS)
+        IF ( IGRIB_VERSION == 1 .OR. ( IGRIB_VERSION == 2 .AND. NTOTENS > 0 )  ) THEN
+          ! ENSEMBLE FORECAST NUMBER
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'perturbationNumber',NENSFNB)
+          ! TOTAL ENSEMBLE FORECAST NUMBER
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'numberOfForecastsInEnsemble', NTOTENS)
+        ENDIF
 
         IF (CT == "S") THEN
 !         special case for spectra....
