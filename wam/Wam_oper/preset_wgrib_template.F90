@@ -217,41 +217,44 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ENDIF
 
         IF (CT == "S") THEN
-!         special case for spectra....
-!         (for seasonal or monthly forecast only)
-          IF ( ISTREAM .EQ. 1082 .OR.                                   &
-     &         ISTREAM .EQ. 1095 .OR.                                   &
-     &         ISTREAM .EQ. 1203 .OR.                                   &
-     &         ISTREAM .EQ. 1204 ) THEN
-            KSYSNB=NSYSNB
-            KMETNB=NMETNB
-          ELSE
-            KSYSNB=65535
-            KMETNB=65535
-          ENDIF
-          ! SYSTEM NUMBER
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'systemNumber',KSYSNB)
-          ! METHOD NUMBER
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'methodNumber',KMETNB)
 
-          IF (ISTREAM == 1204 .OR.                                       &
-     &        ISTREAM == 1078 .OR.                                       &
-     &        ISTREAM == 1079 .OR.                                       &
-     &        ISTREAM == 1084 .OR.                                       &
-     &        ISTREAM == 1085                                            &
-     &        ) THEN
-            KREFDATE=IREFDATE
-          ELSE
-            KREFDATE=0 
-          ENDIF
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'referenceDate',KREFDATE)
+          IF ( IGRIB_VERSION == 1 ) THEN
+!           special case for spectra....
+!           (for seasonal or monthly forecast only)
+            IF ( ISTREAM .EQ. 1082 .OR.                                   &
+     &           ISTREAM .EQ. 1095 .OR.                                   &
+     &           ISTREAM .EQ. 1203 .OR.                                   &
+     &           ISTREAM .EQ. 1204 ) THEN
+              KSYSNB=NSYSNB
+              KMETNB=NMETNB
+            ELSE
+              KSYSNB=65535
+              KMETNB=65535
+            ENDIF
+            ! SYSTEM NUMBER
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'systemNumber',KSYSNB)
+            ! METHOD NUMBER
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'methodNumber',KMETNB)
 
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateFrom',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateTo',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseDate',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseTime',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legNumber',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'oceanAtmosphereCoupling',0)
+            IF (ISTREAM == 1204 .OR.                                       &
+     &          ISTREAM == 1078 .OR.                                       &
+     &          ISTREAM == 1079 .OR.                                       &
+     &          ISTREAM == 1084 .OR.                                       &
+     &          ISTREAM == 1085                                            &
+     &          ) THEN
+              KREFDATE=IREFDATE
+            ELSE
+              KREFDATE=0 
+            ENDIF
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'referenceDate',KREFDATE)
+
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateFrom',0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateTo',0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseDate',0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseTime',0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legNumber',0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'oceanAtmosphereCoupling',0)
+          ENDIF
 
 
         ELSEIF (NLOCGRB == 18 ) THEN
