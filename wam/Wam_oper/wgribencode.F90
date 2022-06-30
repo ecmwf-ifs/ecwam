@@ -8,7 +8,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 &                        PPMISS, PPEPS, PPREC, PPRESOL, PPMIN_RESET, NTENCODE, &
 &                        LGRHDIFS, &
 &                        NDATE_TIME_WINDOW_END, &
-&                        NGRBRESS, LNEWLVTP, LPADPOLES, &
+&                        NGRBRESS, LPADPOLES, &
 &                        NLONRGG_SIZE, NLONRGG, IRGG, &
 &                        AMONOP, AMOSOP, XDELLA, CLDOMAIN, &
 &                        KCOUSTEP, LRSTST0, &
@@ -89,7 +89,6 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       INTEGER(KIND=JWIM), INTENT(IN)   :: NTENCODE         ! Total number of grid points for encoding
       INTEGER(KIND=JWIM), INTENT(IN)   :: NDATE_TIME_WINDOW_END
       INTEGER(KIND=JWIM), INTENT(IN)   :: NGRBRESS         ! Number of bits used to encode spectra
-      LOGICAL, INTENT(IN)   :: LNEWLVTP         ! If true the new levtype definition will be used.
       LOGICAL, INTENT(IN)   :: LPADPOLES        ! True if poles are padded when savind to grib.
 
       ! From yowgrid
@@ -116,7 +115,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
 
       INTEGER(KIND=JWIM) :: ICLASS, ISTEP, ISTEP_HRS 
-      INTEGER(KIND=JWIM) :: IC, ITABPAR, IDATE, ITIME
+      INTEGER(KIND=JWIM) :: IC, ITABPAR, IDATE, ITIME, ILEVTYPE
       INTEGER(KIND=JWIM) :: ICOUNT, NN, I, J, JSN, KK, MM
       INTEGER(KIND=JWIM) :: IY1,IM1,ID1,IH1,IMN1,ISS1,IDATERES,IRET
       INTEGER(KIND=JWIM) :: IY2,IM2,ID2,IH2,IMN2,ISS2
@@ -306,7 +305,8 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       ENDIF
 
 !     LEVEL DEFINITION
-      IF (.NOT.LNEWLVTP) THEN
+      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'levtype',ILEVTYPE, KRET=IRET)
+      IF (IRET == JPGRIB_SUCCESS) THEN
         IF (KLEV /= 0) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',105)
         ELSE

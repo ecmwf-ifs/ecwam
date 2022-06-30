@@ -95,7 +95,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR, XKMSS_CUTOFF, NWAV_GC, XK_GC
-      USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G,IMDLGRBID_M
+      USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS ,IMDLGRBID_G,IMDLGRBID_M
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI ,LCIWABR  ,  &
      &            CITHRSH  ,CIBLOCK  ,LICETH   ,                        &
@@ -224,22 +224,18 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       IF (LGRHDIFS) THEN
 !       GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
         CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'stream',IFS_STREAM)
-        IF (.NOT.LNEWLVTP) THEN
-          CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,      &
-     &                      MARSFCTYPE, ISTREAM, LASTREAM)
-          IF (CSTREAM == '****') THEN
-            WRITE(IU06,*) '*****************************************'
-            WRITE(IU06,*) ''
-            WRITE(IU06,*) ' ERROR IN USERIN !!!!'
-            WRITE(IU06,*) ' IFS STREAM UNKNOWN '
-            WRITE(IU06,*) ' IFS STREAM = ', IFS_STREAM
-            WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
-            WRITE(IU06,*) ''
-            WRITE(IU06,*) '*****************************************'
-            CALL ABORT1
-          ENDIF
-        ELSE
-          ISTREAM=IFS_STREAM
+        CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,      &
+     &                    MARSFCTYPE, ISTREAM, LASTREAM)
+        IF (CSTREAM == '****') THEN
+          WRITE(IU06,*) '*****************************************'
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) ' ERROR IN USERIN !!!!'
+          WRITE(IU06,*) ' IFS STREAM UNKNOWN '
+          WRITE(IU06,*) ' IFS STREAM = ', IFS_STREAM
+          WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) '*****************************************'
+          CALL ABORT1
         ENDIF
       ELSEIF (ISTREAM <= 0) THEN
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'

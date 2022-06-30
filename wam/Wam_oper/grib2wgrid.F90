@@ -359,7 +359,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
         CALL ABORT1
       ENDIF
 
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'levtype',ILEVTYPE)
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'levtype',ILEVTYPE, KRET=IRET)
+      IF (IRET /= JPGRIB_SUCCESS) ILEVTYPE=0
+
       IF (ILOC >= 0) THEN
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'stream',ISTREAM)
       ELSE
@@ -368,9 +370,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       IDUM=0
       CALL WSTREAM_STRG(ISTREAM,CSTREAM,IDUM,IDUM,CDUM,IDUM,LASTREAM)
 
-      IF (CSTREAM == '****' .OR.                                        &
-     &   (LASTREAM .AND. ILEVTYPE /= 209 .AND. ILEVTYPE /= 212 .AND.    &
-     &    .NOT.LLOCEAN) ) THEN 
+      IF (CSTREAM == '****' .OR.  ( LASTREAM .AND. .NOT.LLOCEAN) ) THEN
         LLNONWAVE=.TRUE.
       ELSE
         LLNONWAVE=.FALSE.

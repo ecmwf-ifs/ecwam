@@ -47,7 +47,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : NGRIB_VERSION,                              &
      &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESI ,    &
-     &            NGRBRESS, LGRHDIFS ,LNEWLVTP 
+     &            NGRBRESS, LGRHDIFS
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWMAP   , ONLY : IRGG     ,IQGAUSS  ,AMOWEP   ,AMOSOP   ,    &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,NLONRGG
@@ -183,16 +183,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
       ENDIF
 
       IF ( IGRIB_VERSION == 1 ) THEN
-        IF (.NOT.LNEWLVTP) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',102)
-        ELSE
-          ! if this change check wgribout and intwaminput.
-          IF (CT == "S") THEN
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',212)
-          ELSE
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',209)
-          ENDIF
-        ENDIF
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',102)
       ENDIF
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',0)
 
@@ -407,23 +398,21 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
 !       RESET STREAM IF NEEDED
         CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'stream',IFS_STREAM)
-        IF (.NOT.LNEWLVTP) THEN
-!         GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
-          CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,       &
-     &                      MARSFCTYPE, ISTREAM, LASTREAM) 
-          IF (CSTREAM == '****') THEN
-            WRITE(IU06,*) '*****************************************'
-            WRITE(IU06,*) ''
-            WRITE(IU06,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!'
-            WRITE(IU06,*) ' IFS STREAM UNKNOWN '
-            WRITE(IU06,*) ' INPUT ISTREAM = ', IFS_STREAM
-            WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
-            WRITE(IU06,*) ''
-            WRITE(IU06,*) '*****************************************'
-            CALL ABORT1
-          ENDIF
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
+!       GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
+        CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,       &
+     &                    MARSFCTYPE, ISTREAM, LASTREAM) 
+        IF (CSTREAM == '****') THEN
+          WRITE(IU06,*) '*****************************************'
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!'
+          WRITE(IU06,*) ' IFS STREAM UNKNOWN '
+          WRITE(IU06,*) ' INPUT ISTREAM = ', IFS_STREAM
+          WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) '*****************************************'
+          CALL ABORT1
         ENDIF
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
 
       ENDIF
 

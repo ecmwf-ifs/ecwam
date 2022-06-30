@@ -65,7 +65,7 @@
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : XKMSS_CUTOFF 
-      USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G, IMDLGRBID_M
+      USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS ,IMDLGRBID_G, IMDLGRBID_M
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI, LCIWABR  ,  &
@@ -183,7 +183,7 @@
      &   LBCWA,                                                         &
      &   LSMSSIG_WAM,CMETER,CEVENT,                                     &
      &   LLWSWAVE, LLWDWAVE,                                            &
-     &   NPROMA_WAM, LL1D, LGRHDIFS ,LNEWLVTP,                          &
+     &   NPROMA_WAM, LL1D, LGRHDIFS ,                                   &
      &   LWCOUNORMS, LLNORMIFS2WAM, LLNORMWAM2IFS, LLNORMWAMOUT,        &
      &   LLNORMWAMOUT_GLOBAL,                                           &
      &   LICERUN, LCIWABR, LICETH,                                      &
@@ -412,8 +412,6 @@
 !     LGRHDIFS : FLAGS CONTROLLING WHETHER OR NOT GRIB HEADER INFORMATION
 !                IS COPIED FROM THE ATMOSPHERIC MODEL (ONLY USEFULL IF
 !                COUPLED TO THE IFS).
-!     LNEWLVTP : FLAG CONTROLLING WHETHER OR NOT THE NEW GRIB LEVTYPE
-!                DEFINITIONS ARE USED.
 !     LICERUN : FLAG CONTROLLING WHETHER OR NOT SEA ICE FRACTION (OR SST)
 !               FIEDS ARE PROVIDED WITH THE WIND FIELDS TO GENERATE THE
 !               SEA ICE MASK (TRUE BY DEFAULT). 
@@ -649,8 +647,6 @@
       LGRHDIFS = .FALSE.
 
       NGRIB_VERSION = 1
-
-      LNEWLVTP = .FALSE.
 
       LBIWBK = .TRUE.
 

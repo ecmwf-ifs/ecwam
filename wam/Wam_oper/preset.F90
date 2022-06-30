@@ -72,7 +72,7 @@ PROGRAM preset
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,    &
-     &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
+     &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL     , NTOTIJ  ,    &
      &            NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK,             & 
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
@@ -293,14 +293,13 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       NTOTENS = 0
       NENSFNB = 0  
-      ISTREAM =1045 !! if changed to an ifs stream also change LNEWLVTP
+      ISTREAM =1045
       NLOCGRB   = 1
       NSYSNB  = -1
       NMETNB  = -1
       IREFDATE= 0
 
       LGRHDIFS=.FALSE.
-      LNEWLVTP=.FALSE.
 
       LWCUR=.FALSE.
 
