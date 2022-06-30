@@ -162,16 +162,16 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
       ENDIF
 
       IF ( IGRIB_VERSION == 1 ) THEN
-      IF (.NOT.LNEWLVTP) THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',102)
-      ELSE
-        ! if this change check wgribout and intwaminput.
-        IF (CT == "S") THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',212)
+        IF (.NOT.LNEWLVTP) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',102)
         ELSE
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',209)
+          ! if this change check wgribout and intwaminput.
+          IF (CT == "S") THEN
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',212)
+          ELSE
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',209)
+          ENDIF
         ENDIF
-      ENDIF
       ENDIF
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',0)
 
@@ -461,8 +461,10 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
         IF ( IQGAUSS == 1 ) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','reduced_gg')
-          IREPR=4
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'dataRepresentationType',IREPR)
+          IF ( IGRIB_VERSION == 1 )  ) THEN
+            IREPR=4
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'dataRepresentationType',IREPR)
+          ENDIF
         ELSE
           IF (IRGG == 0) THEN
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','regular_ll')
