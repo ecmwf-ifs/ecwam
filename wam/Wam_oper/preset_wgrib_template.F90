@@ -154,11 +154,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
 !     MODEL IDENTIFICATION.
       IF ( CLDOMAIN == 'g' ) THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier', &
-     &                       IMDLGRBID_G)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier', IMDLGRBID_G)
       ELSE
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier', &
-     &                       IMDLGRBID_M)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier', IMDLGRBID_M)
       ENDIF
 
       IF ( IGRIB_VERSION == 1 ) THEN
@@ -328,14 +326,12 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           ! if not used in the IFS template.
           IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',3)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'systemNumber',          &
-     &                         IDUM,KRET=IRET)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'systemNumber', IDUM,KRET=IRET)
           IF (IRET /= 0) THEN
              KSYSNB=65535
-             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'systemNumber',KSYSNB)
+             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'systemNumber', KSYSNB)
           ENDIF
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'methodNumber',          &
-     &                         IDUM,KRET=IRET)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'methodNumber', IDUM,KRET=IRET)
           IF (IRET /= 0) THEN
              KMETNB=65535
              CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'methodNumber',KMETNB)
