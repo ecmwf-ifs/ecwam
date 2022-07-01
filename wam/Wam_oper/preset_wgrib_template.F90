@@ -419,9 +419,6 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
 !     SPECIFIC ENTRIES FOR SPECTRAL DATA
       IF (CT == "S") THEN
-!????debile
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'additionalFlagPresent',1)
-
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'numberOfDirections',NANG)
         IDIRSCALING = 1000
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'directionScalingFactor',      &

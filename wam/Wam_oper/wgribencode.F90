@@ -19,8 +19,6 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
 !****  *WGRIBENCODE*  ENCODES WAM MODEL FIELD INTO GRIB CODE AND OUTPUT
 
-!       J. BIDLOT    ECMWF JULY 2009: USE GRIB API 
-
 !       PURPOSE.
 !       --------
 !         SUBROUTINE PACKS WAVE FIELDS INTO THE GRIB CODE
@@ -61,7 +59,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE GRIB_API_INTERFACE
+      USE ECCODES_INTERFACE
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
@@ -117,7 +115,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       INTEGER(KIND=JWIM) :: ICLASS, ISTEP, ISTEP_HRS 
       INTEGER(KIND=JWIM) :: IC, ITABPAR, IDATE, ITIME, IGRIB_VERSION, ILEVTYPE
       INTEGER(KIND=JWIM) :: ICOUNT, NN, I, J, JSN, KK, MM
-      INTEGER(KIND=JWIM) :: IY1,IM1,ID1,IH1,IMN1,ISS1,IDATERES,IRET
+      INTEGER(KIND=JWIM) :: IY1,IM1,ID1,IH1,IMN1,ISS1,IDATERES
       INTEGER(KIND=JWIM) :: IY2,IM2,ID2,IH2,IMN2,ISS2
       INTEGER(KIND=JWIM) :: IERR
       INTEGER(KIND=JWIM) :: NWINOFF
@@ -264,6 +262,8 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 !*    1. FIX PARAMETERS AND PACK DATA.
 !        -----------------------------
 
+      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'editionNumber',IGRIB_VERSION )
+
 !     SPECIFIC VALUES :
 
 !     MISSING DATA:
@@ -277,37 +277,38 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
         ITABPAR=ITABLE*1000+IPARAM
       ENDIF
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR,IERR)
-      IF (IERR /= 0)THEN
-        WRITE(*,*) ' *********************************************'
-        WRITE(IU06,*) ' GRIB_API ERROR WHILE SETTING paramId ',ITABPAR
-        WRITE(*,*) ' GRIB_API ERROR WHILE SETTING paramId ',ITABPAR
-        WRITE(*,*) ' GRIB_API ERROR CODE ', IERR
-        WRITE(IU06,*) ' GRIB_API ERROR CODE ', IERR
+      IF (IERR /= 0) THEN
+        WRITE(0,*) ' *********************************************'
+        WRITE(IU06,*) ' ECCODES ERROR WHILE SETTING paramId ',ITABPAR
+        WRITE(0,*) ' ECCODES ERROR WHILE SETTING paramId ',ITABPAR
+        WRITE(0,*) ' ECCODES ERROR CODE ', IERR
+        WRITE(IU06,*) ' ECCODES ERROR CODE ', IERR
         CALl FLUSH(IU06)
-        IF (IERR == -36)THEN
+        IF (IERR == -36) THEN
+          ITABPAR = 212*1000+IPARAM
           WRITE(0,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
-          WRITE(0,*) ' PARAMETERS KNOWN BY GRIB_API !!!' 
+          WRITE(0,*) ' PARAMETERS KNOWN BY ECCODES !!!' 
           WRITE(0,*) ' IN THE MEAN TIME, THE PROGRAM WILL CONTINUE.' 
-          WRITE(0,*) ' USING WAVE PARAMETER 084' 
+          WRITE(0,*) ' USING EXPERIMENTAL PARAMETER TABLE 212' 
+          WRITE(0,*) ' WITH paramId= ', ITABPAR
           WRITE(0,*) ' *********************************************'
           WRITE(IU06,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
-          WRITE(IU06,*) ' PARAMETERS KNOWN BY GRIB_API !!!' 
-          WRITE(IU06,*) ' IN THE MEAN TIME, THE PROGRAM WILL CONTINUE.' 
-          WRITE(IU06,*) ' USING WAVE PARAMETER 084' 
+          WRITE(IU06,*) ' PARAMETERS KNOWN BY ECCODES !!!' 
+          WRITE(IU06,*) ' USING EXPERIMENTAL PARAMETER TABLE 212' 
+          WRITE(IU06,*) ' WITH paramId= ', ITABPAR
           WRITE(IU06,*) ' *********************************************'
 
-          ITABPAR=ITABLE*1000+84
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR)
+          ENDIF
         ELSE
-          WRITE(*,*) ' *********************************************'
+          WRITE(0,*) ' *********************************************'
           CALL ABORT1
         ENDIF
       ENDIF
 
 !     LEVEL DEFINITION
-      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'editionNumber',IGRIB_VERSION )
       IF ( IGRIB_VERSION == 1) THEN
-        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'levtype',ILEVTYPE, KRET=IRET)
+        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'levtype',ILEVTYPE)
         IF (KLEV /= 0) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',105)
         ELSE
