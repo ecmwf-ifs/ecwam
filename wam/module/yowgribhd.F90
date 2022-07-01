@@ -28,6 +28,7 @@
 
       LOGICAL :: LGRHDIFS
       LOGICAL :: LPADPOLES=.TRUE.
+      LOGICAL :: LL_GRID_SIMPLE_MATRIX=.TRUE.
 
 !*    VARIABLE.   TYPE.     PURPOSE.
 !     ---------   -------   --------
@@ -70,6 +71,8 @@
 !     LGRHDIFS    LOGICAL   IF TRUE THEN GRIB HEADER WILL USE INFORMATION 
 !                           AS PROVIDED BY THE IFS.
 !     LPADPOLES   LOGICAL   TRUE IF POLES ARE PADDED WHEN SAVIND TO GRIB.
+!     LL_GRID_SIMPLE_MATRIX IF TRUE THEN THE 2D SPECTRA WILL USE THE LEGACY grid_simple_matrix
+!                           TO ENCODE THE 2D SPECTRA in GRIB1. THIS SHOULD BE PHASED OUT as soon as feasible!
 
  
 ! ----------------------------------------------------------------------

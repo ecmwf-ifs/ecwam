@@ -45,7 +45,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
 
       USE YOWCOUP  , ONLY : LWCOUSAMEGRID
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRIBHD, ONLY : NGRIB_VERSION,                              &
+      USE YOWGRIBHD, ONLY : NGRIB_VERSION,  LL_GRID_SIMPLE_MATRIX,      &
      &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESI ,    &
      &            NGRBRESS, LGRHDIFS
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
@@ -121,7 +121,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           WRITE(IU06,*) '*******************************************************'
           WRITE(IU06,*) ' WARNING IN PRESET_WGRIB_TEMPLATE !!!!! '
           WRITE(IU06,*) ' IGRIB_VERSION = 2 FOR SPECTRA NOT YET IMPLEMENTED !!! '
-          WRITE(IU06,*) ' REVERT TO USING GRIB 1' 
+          WRITE(IU06,*) ' REVERT TO USING GRIB 1 FOR THE SPECTRA' 
           WRITE(IU06,*) '*******************************************************'
           WRITE(IU06,*) ''
 
@@ -443,27 +443,30 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         DEALLOCATE(SCFR)
 
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'bitsPerValue', IBITSPERVALUE)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'additionalFlagPresent',1)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfPacking',               &
-     &                       'grid_simple_matrix')
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NR',1)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC',1)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC1',NANG)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC2',NFRE_RED)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'physicalFlag1',1)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'physicalFlag2',2)
-        DO IC=1,NANG
-          REAL4 = TH(IC)*DEG
-!!!          ZTHETA(IC)=TRANSFER (REAL4, 1)
-          ZTHETA(IC)=REAL4
-        ENDDO
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'coefsFirst',ZTHETA)
-        DO IC=1,NFRE_RED
-          REAL4 = FR(IC)
-!!!          ZFREQ(IC)=TRANSFER (REAL4, 1)
-          ZFREQ(IC)=REAL4
-        ENDDO
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'coefsSecond',ZFREQ)
+
+!       LEGACY FROM WHEM SPECTRA WERE OUPUT AS PARAMETER 250 IN GRIB1: 
+        IF ( LL_GRID_SIMPLE_MATRIX .AND. IGRIB_VERSION == 1 ) THEN 
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'additionalFlagPresent',1)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfPacking', 'grid_simple_matrix')
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NR',1)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC',1)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC1',NANG)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC2',NFRE_RED)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'physicalFlag1',1)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'physicalFlag2',2)
+          DO IC=1,NANG
+            REAL4 = TH(IC)*DEG
+!!!            ZTHETA(IC)=TRANSFER (REAL4, 1)
+            ZTHETA(IC)=REAL4
+          ENDDO
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'coefsFirst',ZTHETA)
+          DO IC=1,NFRE_RED
+            REAL4 = FR(IC)
+!!!            ZFREQ(IC)=TRANSFER (REAL4, 1)
+            ZFREQ(IC)=REAL4
+          ENDDO
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'coefsSecond',ZFREQ)
+        ENDIF
 
       ENDIF
 
