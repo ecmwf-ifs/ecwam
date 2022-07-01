@@ -279,6 +279,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR,IERR)
       IF (IERR /= 0) THEN
         WRITE(0,*) ' *********************************************'
+        WRITE(IU06,*) ' *********************************************'
         WRITE(IU06,*) ' ECCODES ERROR WHILE SETTING paramId ',ITABPAR
         WRITE(0,*) ' ECCODES ERROR WHILE SETTING paramId ',ITABPAR
         WRITE(0,*) ' ECCODES ERROR CODE ', IERR
