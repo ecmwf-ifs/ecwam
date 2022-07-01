@@ -286,6 +286,8 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
         CALl FLUSH(IU06)
         IF (IERR == -36) THEN
           ITABPAR = 212*1000+IPARAM
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR)
+
           WRITE(0,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
           WRITE(0,*) ' PARAMETERS KNOWN BY ECCODES !!!' 
           WRITE(0,*) ' IN THE MEAN TIME, THE PROGRAM WILL CONTINUE.' 
@@ -298,8 +300,6 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
           WRITE(IU06,*) ' WITH paramId= ', ITABPAR
           WRITE(IU06,*) ' *********************************************'
 
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR)
-          ENDIF
         ELSE
           WRITE(0,*) ' *********************************************'
           CALL ABORT1
