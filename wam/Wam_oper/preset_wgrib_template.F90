@@ -115,7 +115,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 !!!! for the time being revert to using grib 1
       IF (CT == "S") THEN
         IF ( IGRIB_VERSION == 2 ) THEN
-          IGRIB_VERSION=1
+!!!!         IGRIB_VERSION=1
 
           WRITE(IU06,*) ''
           WRITE(IU06,*) '*******************************************************'
@@ -419,6 +419,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
 !     SPECIFIC ENTRIES FOR SPECTRAL DATA
       IF (CT == "S") THEN
+!????debile
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'additionalFlagPresent',1)
+
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'numberOfDirections',NANG)
         IDIRSCALING = 1000
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'directionScalingFactor',      &
