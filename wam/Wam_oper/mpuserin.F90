@@ -66,7 +66,7 @@
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : XKMSS_CUTOFF 
       USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS ,IMDLGRBID_G, IMDLGRBID_M, &
-     &                      LL_GRID_SIMPLE_MATRIX
+     &                      LNEWLVTP, LL_GRID_SIMPLE_MATRIX
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI, LCIWABR  ,  &
@@ -184,7 +184,7 @@
      &   LBCWA,                                                         &
      &   LSMSSIG_WAM,CMETER,CEVENT,                                     &
      &   LLWSWAVE, LLWDWAVE,                                            &
-     &   NPROMA_WAM, LL1D, LGRHDIFS , LL_GRID_SIMPLE_MATRIX,            &
+     &   NPROMA_WAM, LL1D, LGRHDIFS , LNEWLVTP, LL_GRID_SIMPLE_MATRIX,  &
      &   LWCOUNORMS, LLNORMIFS2WAM, LLNORMWAM2IFS, LLNORMWAMOUT,        &
      &   LLNORMWAMOUT_GLOBAL,                                           &
      &   LICERUN, LCIWABR, LICETH,                                      &
@@ -413,6 +413,8 @@
 !     LGRHDIFS : FLAGS CONTROLLING WHETHER OR NOT GRIB HEADER INFORMATION
 !                IS COPIED FROM THE ATMOSPHERIC MODEL (ONLY USEFULL IF
 !                COUPLED TO THE IFS).
+!     LNEWLVTP : FLAG CONTROLLING WHETHER OR NOT THE NEW GRIB LEVTYPE
+!                DEFINITIONS ARE USED.
 !     LL_GRID_SIMPLE_MATRIX IF TRUE THEN THE 2D SPECTRA WILL USE THE LEGACY grid_simple_matrix
 !                           TO ENCODE THE 2D SPECTRA in GRIB1. THIS SHOULD BE PHASED OUT as soon as feasible!
 !     LICERUN : FLAG CONTROLLING WHETHER OR NOT SEA ICE FRACTION (OR SST)
@@ -648,9 +650,12 @@
       LLNORMWAMOUT_GLOBAL = .FALSE.
 
       LGRHDIFS = .FALSE.
-      LL_GRID_SIMPLE_MATRIX = .TRUE.
 
       NGRIB_VERSION = 1
+
+      LNEWLVTP = .FALSE.
+
+      LL_GRID_SIMPLE_MATRIX = .TRUE.
 
       LBIWBK = .TRUE.
 

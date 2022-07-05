@@ -47,7 +47,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : NGRIB_VERSION,  LL_GRID_SIMPLE_MATRIX,      &
      &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESI ,    &
-     &            NGRBRESS, LGRHDIFS
+     &            NGRBRESS, LGRHDIFS ,LNEWLVTP 
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWMAP   , ONLY : IRGG     ,IQGAUSS  ,AMOWEP   ,AMOSOP   ,    &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,NLONRGG
@@ -184,8 +184,18 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
       ENDIF
 
       IF ( IGRIB_VERSION == 1 ) THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',102)
+        IF (.NOT.LNEWLVTP) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',102)
+        ELSE
+          ! if this change check wgribout and intwaminput.
+          IF (CT == "S") THEN
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',212)
+          ELSE
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',209)
+          ENDIF
+        ENDIF
       ENDIF
+
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',0)
 
 !     DEFINE YOUR OWN LOCAL HEADER
@@ -341,79 +351,65 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 !         SPECTRA USE THEIR OWN GRIB TABLE !!!
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',13)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,                         &
-     &                        'offsetToEndOf4DvarWindow',IDUM,KRET=IRET)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'offsetToEndOf4DvarWindow',IDUM, KRET=IRET)
           ! set localFlag to 3 to prevent use of offsetToEndOf4DvarWindow
           ! if not used in the IFS template.
           IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',3)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'systemNumber', IDUM,KRET=IRET)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'systemNumber', IDUM, KRET=IRET)
           IF (IRET /= 0) THEN
              KSYSNB=65535
              CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'systemNumber', KSYSNB)
           ENDIF
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'methodNumber', IDUM,KRET=IRET)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'methodNumber', IDUM, KRET=IRET)
           IF (IRET /= 0) THEN
              KMETNB=65535
              CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'methodNumber',KMETNB)
           ENDIF
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'referenceDate',         &
-     &                         IDUM,KRET=IRET)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'referenceDate', IDUM, KRET=IRET) 
           IF (IRET /= 0) THEN
              KREFDATE=0 
              CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'referenceDate',KREFDATE)
           ENDIF
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'climateDateFrom',       &
-     &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
-     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateFrom',0)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'climateDateFrom', IDUM, KRET=IRET)
+          IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateFrom',0)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'climateDateTo',         &
-     &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
-     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateTo',0)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'climateDateTo', IDUM, KRET=IRET)
+          IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateTo',0)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legBaseDate',           &
-     &                         IDUM,KRET=IRET) 
-          IF (IRET /= 0)                                                 &
-     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseDate',0)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legBaseDate', IDUM, KRET=IRET)
+          IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseDate',0)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legBaseTime',           &
-     &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
-     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseTime',0)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legBaseTime', IDUM, KRET=IRET)
+          IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseTime',0)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legNumber',             &
-     &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
-     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legNumber',0)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legNumber', IDUM, KRET=IRET)
+          IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legNumber',0)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,                         &
-     &                         'oceanAtmosphereCoupling',                &
-     &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
-     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                           &
-     &                           'oceanAtmosphereCoupling',0)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'oceanAtmosphereCoupling', IDUM, KRET=IRET)
+          IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'oceanAtmosphereCoupling',0) 
         ENDIF
 
 !       RESET STREAM IF NEEDED
         CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'stream',IFS_STREAM)
-!       GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
-        CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,       &
-     &                    MARSFCTYPE, ISTREAM, LASTREAM) 
-        IF (CSTREAM == '****') THEN
-          WRITE(IU06,*) '*****************************************'
-          WRITE(IU06,*) ''
-          WRITE(IU06,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!'
-          WRITE(IU06,*) ' IFS STREAM UNKNOWN '
-          WRITE(IU06,*) ' INPUT ISTREAM = ', IFS_STREAM
-          WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
-          WRITE(IU06,*) ''
-          WRITE(IU06,*) '*****************************************'
-          CALL ABORT1
+        IF (.NOT.LNEWLVTP) THEN
+!         GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
+          CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,       &
+     &                      MARSFCTYPE, ISTREAM, LASTREAM) 
+          IF (CSTREAM == '****') THEN
+            WRITE(IU06,*) '*****************************************'
+            WRITE(IU06,*) ''
+            WRITE(IU06,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!'
+            WRITE(IU06,*) ' IFS STREAM UNKNOWN '
+            WRITE(IU06,*) ' INPUT ISTREAM = ', IFS_STREAM
+            WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
+            WRITE(IU06,*) ''
+            WRITE(IU06,*) '*****************************************'
+            CALL ABORT1
+          ENDIF
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
         ENDIF
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
 
       ENDIF
 
