@@ -90,7 +90,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE GRIB_API_INTERFACE
+      USE YOWGRIB
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
                                                                         
 ! ----------------------------------------------------------------------

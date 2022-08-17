@@ -59,7 +59,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE GRIB_API_INTERFACE
+      USE YOWGRIB
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------

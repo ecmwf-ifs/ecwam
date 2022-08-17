@@ -105,7 +105,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
 
       USE MPL_MODULE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE GRIB_API_INTERFACE
+      USE YOWGRIB
 
 ! --------------------------------------------------------------------- 
 

@@ -73,7 +73,7 @@ SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE GRIB_API_INTERFACE
+      USE YOWGRIB
 
 ! ----------------------------------------------------------------------
 

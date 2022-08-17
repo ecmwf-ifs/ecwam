@@ -71,7 +71,7 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE
-      USE GRIB_API_INTERFACE
+      USE YOWGRIB
 
 ! ----------------------------------------------------------------------
 

@@ -72,7 +72,7 @@
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
-      USE GRIB_API_INTERFACE
+      USE YOWGRIB
 
 ! ----------------------------------------------------------------------
 

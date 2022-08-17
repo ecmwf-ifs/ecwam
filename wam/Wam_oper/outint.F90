@@ -48,7 +48,7 @@
       USE YOWUNIT  , ONLY : IU20
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE GRIB_API_INTERFACE
+      USE YOWGRIB
 
 ! ----------------------------------------------------------------------
 

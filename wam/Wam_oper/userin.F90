@@ -143,8 +143,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 #ifdef ECMWF
       USE ALGORITHM_STATE_MOD, ONLY : GET_ALGOR_TYPE
 #endif
-      USE GRIB_API_INTERFACE
       USE YOWABORT, ONLY : WAM_ABORT
+      USE YOWGRIB
 
 ! ----------------------------------------------------------------------
 

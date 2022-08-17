@@ -34,7 +34,7 @@ USE YOWTEXT  , ONLY : ICPLEN, CPATH
 
 
 USE YOMHOOK  ,ONLY  : LHOOK ,DR_HOOK, JPHOOK
-USE GRIB_API_INTERFACE
+USE YOWGRIB
 
 ! ----------------------------------------------------------------------
 
