@@ -1,3 +1,4 @@
+#define __FILENAME__ "mpuserin.F90"
 
       SUBROUTINE MPUSERIN
 
@@ -111,13 +112,14 @@
       USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWABORT, ONLY : WAM_ABORT
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "abort1.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "wam_u2l1cr.intfb.h"
+#include "mpcrtbl.intfb.h"
 #include "wposnam.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU05
@@ -129,7 +131,7 @@
       CHARACTER(LEN=1) :: CLMTSU(4), CLOTSU(8)
       CHARACTER(LEN=2) :: C2
       CHARACTER(LEN=70) :: CLHEADER
-      CHARACTER(LEN=72) :: NAMELIST_FILENAME 
+      CHARACTER(LEN=:), ALLOCATABLE :: NAMELIST_FILENAME
 
       LOGICAL :: LLEOF 
 
@@ -723,7 +725,7 @@
         WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
-        CALL ABORT1
+        CALL WAM_ABORT("Could not read namelist '"//NAMELIST_FILENAME//"'",__FILENAME__,__LINE__)
       ENDIF
 
       ! when coupled to IFS, the control will come from it via calls to wavemdl

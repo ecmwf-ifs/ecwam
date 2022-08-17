@@ -1,3 +1,5 @@
+#define __FILENAME__ "difdate.F90"
+
 ! ======================================================================
 
       SUBROUTINE DIFDATE (CDATE1, CDATE2, KSHIFT)
@@ -61,7 +63,7 @@
 !----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-
+      USE YOWABORT, ONLY : WAM_ABORT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 !----------------------------------------------------------------------
@@ -103,7 +105,7 @@
         WRITE(6, CLFMT ) CDATE1
         WRITE(*, CLFMT ) CDATE1
         LLND = .FALSE.
-        CALL ABORT1
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
       ELSEIF (IL==12) THEN
         LLND = .TRUE.
         READ(CDATE1,'(I4, 5I2)')IYEAR1,IMON1,IDAY1,IHOUR1,IMIN1
@@ -133,7 +135,7 @@
         WRITE(6, *) ' '
         WRITE(6, *) ' DIFDATE:  FATAL@! DATE1 IS 0 CHARACTER LONG'
         WRITE(6, *) ' '
-        CALL ABORT1
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
       ELSE
         WRITE(6, *) ' '
         WRITE(CLFMT,'(A61, I2.2, A2)')                                  &
@@ -141,7 +143,7 @@
      &    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE1
         WRITE(6, *) ' '
-        CALL ABORT1
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
       ENDIF
 
 !*        SPLIT CDATE2.
@@ -183,7 +185,7 @@
         WRITE(6, *) ' '
         WRITE(6, *) ' DIFDATE:  FATAL@! DATE2 IS 0 CHARACTER LONG'
         WRITE(6, *) ' '
-        CALL ABORT1
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
       ELSE
         WRITE(6, *) ' '
         WRITE(CLFMT,'(A61, I2.2, A2)')                                  &
@@ -191,7 +193,7 @@
      &    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE2
         WRITE(6, *) ' '
-        CALL ABORT1
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
       ENDIF
 
       IRET=0

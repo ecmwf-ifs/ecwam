@@ -1,4 +1,6 @@
-      SUBROUTINE UIPREP (IFORM, LLGRID)
+#define __FILENAME__ "uiprep.F90"
+
+    SUBROUTINE UIPREP (IFORM, LLGRID)
 
 ! ----------------------------------------------------------------------
 
@@ -62,11 +64,11 @@
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD 
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWUNPOOL, ONLY : LLUNSTR, LPREPROC, LVECTOR, IVECTOR
+      USE YOWABORT, ONLY : WAM_ABORT
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "abort1.intfb.h"
 #include "adjust.intfb.h"
 #include "iwam_get_unit.intfb.h"
 
@@ -88,6 +90,7 @@
       REAL(KIND=JWRB), ALLOCATABLE :: XDUMP(:)
 
       CHARACTER(LEN=70) :: CLINE, FILENAME
+      LOGICAL :: LLEXISTS
 
 ! ----------------------------------------------------------------------
 
@@ -153,8 +156,20 @@
 !        ---------------------
 
 
-      IU05 =  IWAM_GET_UNIT (IU06, 'procin', 'r', 'f', 0, 'READWRITE')
+      INQUIRE(FILE="procin", EXIST=LLEXISTS)
+      IF (.NOT. LLEXISTS) THEN
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*)'+                                          +'
+        WRITE(IU06,*)'+ SUBROUTINE UIPREP :                      +'
+        WRITE(IU06,*)'+ READ NAMELIST FAILED                     +'
+        WRITE(IU06,*)'+ NAMELIST FILENAME: procin                +'
+        WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
+        WRITE(IU06,*)'+                                          +'
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
+        CALL WAM_ABORT("Expected namelist file does not exist: 'procin'",__FILENAME__,__LINE__)
+      ENDIF
 
+      IU05 =  IWAM_GET_UNIT (IU06, 'procin', 'r', 'f', 0, 'READ')
       READ (IU05, NALINE)
 
       IF (NFRE_RED > NFRE ) THEN
@@ -167,7 +182,7 @@
         WRITE (IU06,*) '* NFRE_RED = ', NFRE_RED
         WRITE (IU06,*) '* NFRE     = ', NFRE
         WRITE (IU06,*) '**********************************************'
-        CALL ABORT1 
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
       ENDIF
 
       IF (LLUNSTR .AND. NFRE_RED /= NFRE ) THEN
@@ -183,8 +198,12 @@
         WRITE (IU06,*) '* The software has not yet been adapted     *'
         WRITE (IU06,*) '* Use NFRE_RED = NFRE = ',NFRE
         WRITE (IU06,*) '**********************************************'
-        CALL ABORT1 
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
       ENDIF
+
+      IF( NFRE <= 0 ) CALL WAM_ABORT( "Expected positive value for NFRE", __FILENAME__, __LINE__ )
+      IF( FR1  <= 0 ) CALL WAM_ABORT( "Expected positive value for FR1",  __FILENAME__, __LINE__ )
+      IF( NANG <= 0 ) CALL WAM_ABORT( "Expected positive value for NANG", __FILENAME__, __LINE__ )
 
       ALLOCATE(FR(NFRE))
 
@@ -250,7 +269,7 @@
         WRITE (IU06,*) '* REQUESTED BUT NO BOUNDING BOX VALUES WERE  *'
         WRITE (IU06,*) '* SUPPLIED IN THE NAMELIST!                  *'
         WRITE (IU06,*) '**********************************************'
-        CALL ABORT1 
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
       ENDIF
 
 
@@ -291,7 +310,13 @@
         NX = 0
         DO K=1,NY
           KSN=NY-K+1
-          READ(IU,*) NLONRGG(KSN)
+          READ(IU,*,IOSTAT=IOS) NLONRGG(KSN)
+          IF( IOS < 0 ) THEN
+            CALL WAM_ABORT("End of file reached before finishing NLONRGG",__FILENAME__,__LINE__)
+          ENDIF
+          IF( NLONRGG(KSN) <= 0 ) THEN
+            CALL WAM_ABORT("Expected positive value of NLONRGG",__FILENAME__,__LINE__)
+          ENDIF
           NX = MAX(NX,NLONRGG(KSN))
         ENDDO
 
@@ -576,7 +601,7 @@
         WRITE (IU06,*) '* IBOUNF = ',IBOUNF
         WRITE (IU06,*) '*                                            *'
         WRITE (IU06,*) '**********************************************'
-        CALL ABORT1 
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
       ENDIF
 
 
@@ -626,7 +651,7 @@
             WRITE (IU06,*) DS, AMOSOC(I), AMOSOP
             WRITE (IU06,*) DN, AMONOC(I), AMONOP
             IBOUNC = 0
-            CALL ABORT1 
+            CALL WAM_ABORT(__FILENAME__,__LINE__)
           ENDIF
 
 
@@ -708,6 +733,6 @@
       WRITE (IU06,*) '*  ERROR WHILE READING NAMELIST  STATUS=', IOS
       WRITE (IU06,*) '*                                            *'
       WRITE (IU06,*) '**********************************************'
-      CALL ABORT1 
+      CALL WAM_ABORT(__FILENAME__,__LINE__)
 
       END SUBROUTINE UIPREP

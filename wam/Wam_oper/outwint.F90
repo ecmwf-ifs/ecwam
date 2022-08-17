@@ -1,4 +1,6 @@
-      SUBROUTINE OUTWINT(BOUT)
+#define __FILENAME__ "outwint.F90"
+
+SUBROUTINE OUTWINT(BOUT)
 
 ! ----------------------------------------------------------------------
 
@@ -29,6 +31,7 @@
       USE YOWSTAT  , ONLY : CDATEA, CDATEF, CDTPRO, MARSTYPE
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK, DR_HOOK, JPHOOK
+      USE YOWABORT, ONLY : WAM_ABORT
 
 ! ----------------------------------------------------------------------
 
@@ -107,7 +110,10 @@
 
       ! Use IFS IO server?
       IF (LWCOU .AND. LIFS_IO_SERV_ENABLED .AND. LWAM_USE_IO_SERV) THEN
-          IF (.NOT.ASSOCIATED(OUTINT_IO_SERV_HANDLER)) CALL ABOR1('OUTINT_IO_SERV_HANDLER IS NOT INITIALIZED')
+          IF (.NOT.ASSOCIATED(OUTINT_IO_SERV_HANDLER)) THEN
+            CALL WAM_ABORT('OUTINT_IO_SERV_HANDLER IS NOT INITIALIZED', &
+              & __FILENAME__, __LINE__)
+          ENDIF
           CALL OUTINT_IO_SERV_HANDLER(NIPRMOUT, BOUT, INFOBOUT, MARSTYPE, CDATE, IFCST)
       ELSE
           CALL OUTINT(CDATE, CDATED, IFCST, BOUT)

@@ -17,12 +17,11 @@
 
 !     METHOD.
 !     -------
-!     CALL MPABORT OR ABORT
+!     CALL WAM_ABORT
 
 !     EXTERNALS.
 !     ----------
-!       MPABORT
-!       ABORT
+!       WAM_ABORT
 
 !     REFERENCE.
 !     ----------
@@ -31,17 +30,12 @@
 ! ----------------------------------------------------------------------
 
       USE YOWTEST, ONLY: IU06
-
+      USE YOWABORT, ONLY : WAM_ABORT
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "mpabort.intfb.h"
-
-      CHARACTER (LEN = 30) :: CDMESSAGE
 
       CALL FLUSH (IU06)
-
-      CDMESSAGE = '!! *** WAVE MODEL HAS ABORTED *** !!!!'
-      CALL MPABORT (CDMESSAGE)
+      CALL WAM_ABORT()
 
       END SUBROUTINE ABORT1

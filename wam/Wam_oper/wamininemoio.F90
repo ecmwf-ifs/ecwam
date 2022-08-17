@@ -1,4 +1,6 @@
-      SUBROUTINE WAMININEMOIO(LNEMOIO,LNEMOIOSERVER)
+#define __FILENAME__ "wamininemoio.F90"
+
+SUBROUTINE WAMININEMOIO(LNEMOIO,LNEMOIOSERVER)
 !     
 !**** *WAMININEMOIO*  - Initialize NEMO IO server (if present)
 !     
@@ -41,6 +43,8 @@
 
       USE MPL_MODULE
       USE MPL_MPIF
+
+      USE YOWABORT, ONLY : WAM_ABORT
       
 !     -----------------------------------------------------------
 
@@ -70,8 +74,9 @@
       CASE ('yes') 
          LNEMOIO    =.TRUE.
       CASE DEFAULT
-         CALL ABOR1('Invalid value of NEMOIO environment variable'//    &
-     &              'in ininemoio.F90')
+         CALL WAM_ABORT('Invalid value of NEMOIO environment variable'//    &
+     &              'in ininemoio.F90', &
+     &              __FILENAME__, __LINE__)
       END SELECT
 
       IF (LNEMOIO) THEN

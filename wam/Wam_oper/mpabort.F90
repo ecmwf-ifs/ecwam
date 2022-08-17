@@ -22,9 +22,8 @@
 !     EXTERNALS.
 !     ----------
 !       MPCLOSE_UNIT
-!       ABOR1
+!       WAM_ABORT
 
-!       ABORT
 !     REFERENCE.
 !     ----------
 !       NONE.
@@ -32,8 +31,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU  
-      USE MPL_MODULE
-      USE SDL_MOD
+      USE YOWABORT, ONLY : WAM_ABORT
 
 ! ----------------------------------------------------------------------
 
@@ -44,13 +42,11 @@
 
       LOGICAL :: LLABORT=.TRUE.
 
-!     FLUSH UNITS
-      CALL MPCLOSE_UNIT
-
       IF (LWCOU) THEN
-        CALL ABOR1(CDMESSAGE)
+        CALL WAM_ABORT(CDMESSAGE)
         STOP 2
       ELSE
+        CALL MPCLOSE_UNIT
         STOP 1
       ENDIF
 

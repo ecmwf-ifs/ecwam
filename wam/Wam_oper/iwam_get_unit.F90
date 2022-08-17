@@ -1,3 +1,5 @@
+#define __FILENAME__ "iwam_get_unit.F90"
+
 INTEGER(KIND=JWIM) FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL, CDACTION)
 
 !     FIND A FREE UNIT TO ACCESS A FILE (CDNAME) AND OPEN IT.
@@ -5,11 +7,11 @@ INTEGER(KIND=JWIM) FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL
 !--------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWABORT, ONLY : WAM_ABORT
 
 !--------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "abort1.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KUSO
       CHARACTER(LEN=*),  INTENT(IN) :: CDNAME, CDACTION
@@ -24,6 +26,8 @@ INTEGER(KIND=JWIM) FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL
 
       CHARACTER(LEN=20) :: CLACCESS, CLFORM, CLPOSITION
 
+      CHARACTER(len=1024) :: CERRMSG
+
 ! ----------------------------------------------------------------------
 
       CLACCESS   = "SEQUENTIAL"
@@ -37,13 +41,13 @@ INTEGER(KIND=JWIM) FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL
       IF ( ILEN == 0) then
         WRITE(*,*) '!!!!!!!!! PROBLEM IN WAM IWAM_GET_UNIT !!!!!!'
         WRITE(*,*) '!!!!!!!!! LENGTH OF FILENAME=0  !!!!!!'
-        CALL ABORT1
+        CALL WAM_ABORT("Filename must not be empty",__FILENAME__,__LINE__)
       ENDIF
       ILEN=LEN_TRIM(CDNAME)
       IF ( ILEN == 0) then
         WRITE(*,*) '!!!!!!!!! PROBLEM IN WAM IWAM_GET_UNIT !!!!!!'
         WRITE(*,*) '!!!!!!!!! FILENAME ALL BLANKS   !!!!!!'
-        CALL ABORT1
+        CALL WAM_ABORT("Filename must not be empty",__FILENAME__,__LINE__)
       ENDIF
          
       INQUIRE ( FILE=CDNAME, OPENED=LLOPENED, NUMBER=JUME)
@@ -63,7 +67,8 @@ INTEGER(KIND=JWIM) FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL
           WRITE(*,*) '!!!!!!!!! NO FREE UNIT FOUND BETWEEN !'
           WRITE(*,*) '!!!!!!!!! ',MINUNIT,' AND ',MAXUNIT
           WRITE(*,*) '!!!!!!!!! CALL ABORT                 !'
-          CALL ABORT1
+          WRITE(CERRMSG,'(A,I0,A,I0,A,A,A)') "No free unit found between ",MINUNIT," and ",MAXUNIT," to open file '",TRIM(CDNAME),"'"
+          CALL WAM_ABORT(CERRMSG,__FILENAME__,__LINE__)
         ENDIF
         IF (KUSO >= 0 ) WRITE(KUSO,2004)        &
      &   '  IWAM_GET_UNIT: U=',JUME,              &

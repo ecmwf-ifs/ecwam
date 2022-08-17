@@ -1,3 +1,5 @@
+#define __FILENAME__ "outspec.F90"
+
 SUBROUTINE OUTSPEC (FL1, FF_NOW)
 
 !----------------------------------------------------------------------
@@ -51,6 +53,7 @@ SUBROUTINE OUTSPEC (FL1, FF_NOW)
      &                      MARSTYPE ,LLSOURCE
 
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
+      USE YOWABORT, ONLY : WAM_ABORT
 
 !-----------------------------------------------------------------------
 
@@ -156,7 +159,10 @@ ASSOCIATE(CICOVER => FF_NOW%CICOVER)
       
       ! Use IFS IO server?
       IF (LWCOU .AND. LIFS_IO_SERV_ENABLED .AND. LWAM_USE_IO_SERV) THEN
-        IF (.NOT.ASSOCIATED(OUTWSPEC_IO_SERV_HANDLER)) CALL ABOR1('OUTWSPEC_IO_SERV_HANDLER IS NOT INITIALIZED')
+        IF (.NOT.ASSOCIATED(OUTWSPEC_IO_SERV_HANDLER)) THEN
+          CALL WAM_ABORT('OUTWSPEC_IO_SERV_HANDLER IS NOT INITIALIZED',&
+            & __FILENAME__, __LINE__ )
+        ENDIF
         CALL OUTWSPEC_IO_SERV_HANDLER(IJSG, IJLG, SPEC, MARSTYPE, CDATE, IFCST)
       ELSE
         CALL OUTWSPEC(IJSG, IJLG, SPEC, MARSTYPE, CDATE, CDATED, IFCST)

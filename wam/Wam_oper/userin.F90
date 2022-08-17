@@ -1,3 +1,5 @@
+#define __FILENAME__ "userin.F90"
+
 SUBROUTINE USERIN (IFORCA, LWCUR)
 
 ! ----------------------------------------------------------------------
@@ -49,7 +51,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !     EXTERNALS.
 !     ----------
 
-!       *ABORT1*    - TERMINATES PROCESSING.
+!       *WAM_ABORT* - TERMINATES PROCESSING.
 !       *DIFDATE*   - COMPUTES A TIME DIFFERENCE.
 !       *WPOSNAM*   - POSITION NAMELIST FOR READING AND CONTROLLED
 !                     TRAPPING OF EOF.
@@ -142,6 +144,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE ALGORITHM_STATE_MOD, ONLY : GET_ALGOR_TYPE
 #endif
       USE GRIB_API_INTERFACE
+      USE YOWABORT, ONLY : WAM_ABORT
 
 ! ----------------------------------------------------------------------
 
@@ -206,10 +209,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !*    1. ANALYSE NAMELIST NALINE.
 !        ------------------------
 
-      IF (IDAMPING /=0 .AND. IDAMPING /= 1) THEN
+      IF (IDAMPING /= 0 .AND. IDAMPING /= 1) THEN
         WRITE(IU06,*) ' WRONG VALUE FOR IDAMPING !!!'
         WRITE(IU06,*) ' IDAMPING =',IDAMPING
-        CALL ABORT1
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
       ENDIF
 
       IF (.NOT.LWCOU .AND. LODBRALT) THEN
@@ -237,7 +240,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
             WRITE(IU06,*) ''
             WRITE(IU06,*) '*****************************************'
-            CALL ABORT1
+            CALL WAM_ABORT(__FILENAME__,__LINE__)
           ENDIF
         ELSE
           ISTREAM=IFS_STREAM
@@ -251,7 +254,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
-        CALL ABORT1
+        CALL WAM_ABORT("Expected positive value for ISTREAM",__FILENAME__,__LINE__)
       ENDIF
 
       IF (ISTREAM <= 0) THEN
@@ -263,7 +266,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
-        CALL ABORT1
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
       ENDIF
 
       IF (LWNEMOCOU .AND. .NOT.LWNEMOCOUSEND .AND. .NOT.LWNEMOCOURECV) THEN
@@ -275,7 +278,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) '+ THIS IS NOT SUPPOSED TO WORK                +'
         WRITE(IU06,*) '+                                             +'
         WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++++'
-        CALL ABORT1
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
       ENDIF
 
       IF (.NOT.LWCOU) THEN
@@ -508,7 +511,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*)'+                                           +'
             WRITE(IU06,*)'+   ABORT SERVICE ROUTINE CALLED BY USERIN  +'
             WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
-            CALL ABORT1
+            CALL WAM_ABORT(__FILENAME__,__LINE__)
           ELSE
             WRITE(IU06,*)'+ PARALLEL READ OPTION WAS SELECTED         +'
           ENDIF
@@ -565,7 +568,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*)'+                                           +'
             WRITE(IU06,*)'+   ABORT SERVICE ROUTINE CALLED BY USERIN  +'
             WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
-            CALL ABORT1
+            CALL WAM_ABORT(__FILENAME__,__LINE__)
           ENDIF
         ENDIF
 
@@ -577,7 +580,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
           WRITE(IU06,*)'+                                          +'
           WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
-          CALL ABORT1
+          CALL WAM_ABORT(__FILENAME__,__LINE__)
         ENDIF
 
         CALL FLUSH(IU06)
@@ -726,7 +729,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' !!!! THIS ISNONLIN IS NOT YET AVAILABLE !!!'
         WRITE(IU06,*) ' !!!! WARNING: ISNONLIN = ',ISNONLIN
         WRITE(IU06,*) ' '
-        CALL ABORT1
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
       ENDIF
       IF (LLNORMAGAM) THEN
         WRITE(IU06,*) ' RE-NORMALISATION OF WIND INPUT GROWTH RATE'
@@ -766,7 +769,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           WRITE(IU06,*) ' !!!! WARNING: '
           WRITE(IU06,*) ' !!!! THIS OPTION IS NOT YET AVAILABLE !!!'
           WRITE(IU06,*) ' '
-          CALL ABORT1
+          CALL WAM_ABORT(__FILENAME__,__LINE__)
         ENDIF
       ELSE
         WRITE(IU06,*) ' PROPAGATION: THE SINGLE QUADRANT SCHEME'
@@ -1611,7 +1614,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*) '+ PROGRAM WILL ABORT '
             WRITE(IU06,*) '+                                       +'
             WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
-            CALL ABORT1
+            CALL WAM_ABORT(__FILENAME__,__LINE__)
           ENDIF
         ENDDO
       ENDIF
@@ -1633,7 +1636,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.       *'
         WRITE(IU06,*) '* ---------------   --------------        *'
         WRITE(IU06,*) '*******************************************'
-        CALL ABORT1
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
       ELSE
 
         IF (LHOOK) CALL DR_HOOK('USERIN',1,ZHOOK_HANDLE)

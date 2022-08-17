@@ -1,3 +1,5 @@
+#define __FILENAME__ "wvwaminit.F90"
+
       SUBROUTINE WVWAMINIT (LLCOUPLED, IULOG, LLRNL,                    &
      &                      NGAUSSW, NLON, NLAT, RSOUTW, RNORTW)
 
@@ -36,13 +38,13 @@
      &            LWVWAMINIT
       USE YOWSTAT  , ONLY : IPROPAGS
       USE YOWUNPOOL, ONLY : LLUNSTR
+      USE YOWABORT, ONLY : WAM_ABORT
 
       USE MPL_MODULE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
-#include "abort1.intfb.h"
 #include "expand_string.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "mpuserin.intfb.h"
@@ -141,13 +143,11 @@
           WRITE(IU06,*) '*                                  *'
           WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVWAMINIT   *'
           WRITE(IU06,*) '*  =============================   *'
-          WRITE(IU06,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),  &
-     &    ' IS MISSING !!!!'
-          WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),     &
-     &    ' IS MISSING !!!!'
+          WRITE(IU06,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE), ' IS MISSING !!!!'
           WRITE(IU06,*) '*                                  *'
-         WRITE(IU06,*) '************************************'
-          CALL ABORT1
+          WRITE(IU06,*) '************************************'
+          CALL WAM_ABORT("WAVE MODEL INPUT FILE '"//FILENAME(1:LFILE)//"' IS MISSING !!!",&
+                        &__FILENAME__,__LINE__)
         ENDIF
         IU07 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u',0,'READWRITE')
 
@@ -159,7 +159,7 @@
           WRITE(IU06,*) '*  IPROPAGS= ',IPROPAGS
           WRITE(IU06,*) '*                                  *'
           WRITE(IU06,*) '************************************'
-          CALL ABORT1
+          CALL WAM_ABORT("Wrong value for IPROPAGS",__FILENAME__,__LINE__)
         ENDIF
 
         WRITE(C1,'(I1)') IPROPAGS 
@@ -174,13 +174,11 @@
           WRITE(IU06,*) '*                                  *'
           WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVWAMINIT   *'
           WRITE(IU06,*) '*  =============================   *'
-          WRITE(IU06,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),  &
-     &    ' IS MISSING !!!!'
-          WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),     &
-     &    ' IS MISSING !!!!'
+          WRITE(IU06,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE), ' IS MISSING !!!!'
           WRITE(IU06,*) '*                                  *'
           WRITE(IU06,*) '************************************'
-          CALL ABORT1
+          CALL WAM_ABORT("WAVE MODEL INPUT FILE '"//FILENAME(1:LFILE)//"' IS MISSING !!!",&
+                        &__FILENAME__,__LINE__)
         ENDIF
         IU08(IPROPAGS) = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE),'r','u',0,'READWRITE')
       ENDIF

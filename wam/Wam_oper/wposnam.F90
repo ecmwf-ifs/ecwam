@@ -1,3 +1,5 @@
+#define __FILENAME__ "wposnam.F90"
+
       SUBROUTINE WPOSNAM(KULNAM, CDNAML, LDEOF)
 
 !**** *WPOSNAM* - position namelist file for reading
@@ -41,12 +43,12 @@
 !        Original : 93-06-22 from Mats Hamrud as posnam
 !     --------------------------------------------------------------
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE,  ONLY : JWIM
+      USE YOWABORT, ONLY : WAM_ABORT
 
 !     --------------------------------------------------------------
 
       IMPLICIT NONE
-#include "abort1.intfb.h"
 
       LOGICAL, INTENT(OUT)      :: LDEOF
       INTEGER(KIND=JWIM), INTENT(IN)       :: KULNAM
@@ -91,7 +93,7 @@
       WRITE(*,*) '*********************'
       WRITE(*,*) 'READ ERROR IN WPOSNAM ' 
       WRITE(*,*) '*********************'
-      CALL ABORT1
+      CALL WAM_ABORT("READ ERROR IN WPOSNAM",__FILENAME__,__LINE__)
 
       RETURN
 
