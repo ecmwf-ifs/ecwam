@@ -98,6 +98,7 @@
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
+      USE YOWASSI, ONLY : WAM_ODB_OPEN,  WAM_ODB_CLOSE
 
 ! ----------------------------------------------------------------------
 
@@ -156,9 +157,6 @@
       LOGICAL :: LFDBIFS
 
       DATA LLSTOP, LLWRRE, LLNORMWAMOUT_GLOBAL  / 3*.FALSE. /
-
-!     For ODB:
-      INTEGER(KIND=JWIM) :: INFO(1)
 
 ! ----------------------------------------------------------------------
 
@@ -230,7 +228,9 @@
 
 !     1.2 OPEN ODB DATABASE TO RETRIEVE SATELLITE DATA
 !         --------------------------------------------
-      IF (LODBRALT) CALL OPENDB('ECMA','OLD',INFO,0)
+      IF (LODBRALT) THEN
+        CALL WAM_ODB_OPEN()
+      ENDIF
 
 !     ------------------------------------------------------------------
 
@@ -317,7 +317,9 @@
 
 !     3. CLOSE ODB DATABASE OF SATELLITE DATA
 !        ------------------------------------
-      IF (LODBRALT) CALL CLOSEDB(.TRUE.)
+      IF (LODBRALT) THEN
+        CALL WAM_ODB_CLOSE()
+      ENDIF
 
 
 !    4.  TERMINATE MESSAGE PASSING PROTOCOL 

@@ -135,6 +135,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
+      USE YOWASSI  , ONLY : WAMASSI
       USE YOWGRIB
       USE MPL_MODULE
 ! ---------------------------------------------------------------------
@@ -150,7 +151,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 #include "outbeta.intfb.h"
 #include "prewind.intfb.h"
 #include "setmarstype.intfb.h"
-#include "wamassi.intfb.h"
 #include "wamodel.intfb.h"
 
 !     INITIAL DATE OF THE RUN
