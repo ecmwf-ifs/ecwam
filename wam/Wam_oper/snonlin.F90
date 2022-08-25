@@ -74,7 +74,9 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "peak_ang.intfb.h"
 #include "transf.intfb.h"
+#include "transf_snl.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
@@ -100,6 +102,7 @@
       REAL(KIND=JWRB) :: FKLAMA2, FKLAMB2, FKLAM12, FKLAM22
       REAL(KIND=JWRB) :: SAP, SAM, FIJ, FAD1, FAD2, FCEN
 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XNU, SIG_TH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FTEMP, AD, DELAD, DELAP, DELAM, ENHFR
 
 
@@ -130,10 +133,24 @@
           ENDDO
         ENDDO
         DO MC=NFRE+1,MLSTHG
-           XK = GM1*(ZPIFR(NFRE)*FRATIO**(MC-NFRE))**2
-           DO IJ = KIJS, KIJL 
-             ENH(IJ,MC) = MAX(MIN(ENH_MAX,TRANSF(XK,DEPTH(IJ))),ENH_MIN)
-           ENDDO
+          XK = GM1*(ZPIFR(NFRE)*FRATIO**(MC-NFRE))**2
+          DO IJ = KIJS, KIJL 
+            ENH(IJ,MC) = MAX(MIN(ENH_MAX,TRANSF(XK,DEPTH(IJ))),ENH_MIN)
+          ENDDO
+        ENDDO
+
+      CASE(2)      
+        CALL PEAK_ANG(KIJS, KIJL, FL1, XNU, SIG_TH)
+        DO MC=1,NFRE
+          DO IJ = KIJS, KIJL 
+            ENH(IJ,MC) = TRANSF_SNL(WAVNUM(IJ,MC), DEPTH(IJ), XNU(IJ), SIG_TH(IJ))
+          ENDDO
+        ENDDO
+        DO MC=NFRE+1,MLSTHG
+          XK = GM1*(ZPIFR(NFRE)*FRATIO**(MC-NFRE))**2
+          DO IJ = KIJS, KIJL 
+            ENH(IJ,MC) = TRANSF_SNL(XK, DEPTH(IJ), XNU(IJ), SIG_TH(IJ))
+          ENDDO
         ENDDO
       END SELECT
 

@@ -1,4 +1,4 @@
-SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
+SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVALUE)
 
 !----------------------------------------------------------------------
 
@@ -23,6 +23,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
 !                IGRIB_HANDLE : GRIB HANDLE THAT WILL BE CREATED. 
 
 !                OPTIONAL INPUT:
+!                NGRIBV         GRIB VERSION TO BE USED (if absent then = NGRIB_VERSION)  
 !                LLCREATE       IF TRUE, FORCE CREATION OF TEMPLATE FROM FILE
 !                NBITSPERVALUE  NUMBER OF BITS FOR CODING. 
 !                               IF PRESENT, IT WILL OVERRULE NGRBRESI AND NGRBRESS
@@ -44,7 +45,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
 
       USE YOWCOUP  , ONLY : LWCOUSAMEGRID
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRIBHD, ONLY :                                             &
+      USE YOWGRIBHD, ONLY : NGRIB_VERSION,  LL_GRID_SIMPLE_MATRIX,      &
      &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESI ,    &
      &            NGRBRESS, LGRHDIFS ,LNEWLVTP 
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
@@ -68,13 +69,14 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
 
       CHARACTER(LEN=1), INTENT(IN) :: CT 
       INTEGER(KIND=JWIM), INTENT(OUT) :: IGRIB_HANDLE
+      INTEGER, INTENT(IN), OPTIONAL :: NGRIBV  
       LOGICAL, INTENT(IN), OPTIONAL :: LLCREATE
       INTEGER(KIND=JWIM) , INTENT(IN), OPTIONAL :: NBITSPERVALUE
 
       INTEGER(KIND=JWIM) :: IC, JC, KST,JSN, KK, MM
       INTEGER(KIND=JWIM) :: ICLASS,ICENTRE,IFS_STREAM
       INTEGER(KIND=JWIM) :: IREPR, IRESFLAGS
-      INTEGER(KIND=JWIM) :: IBITSPERVALUE
+      INTEGER(KIND=JWIM) :: IGRIB_VERSION, IBITSPERVALUE
       INTEGER(KIND=JWIM) :: IDIRSCALING, IFRESCALING
       INTEGER(KIND=JWIM) :: NY
       INTEGER(KIND=JWIM) :: KSYSNB, KMETNB, KREFDATE
@@ -103,6 +105,31 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
 
 IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
+      IF( PRESENT(NGRIBV) ) THEN
+        IGRIB_VERSION = NGRIBV  
+      ELSE
+        IGRIB_VERSION = NGRIB_VERSION
+      ENDIF
+
+!!!! it seems that grib2 is not yet ready for spectra 
+!!!! for the time being revert to using grib 1
+      IF (CT == "S") THEN
+        IF ( IGRIB_VERSION == 2 ) THEN
+
+         IGRIB_VERSION=1
+
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) '*******************************************************'
+          WRITE(IU06,*) ' WARNING IN PRESET_WGRIB_TEMPLATE !!!!! '
+          WRITE(IU06,*) ' IGRIB_VERSION = 2 FOR SPECTRA NOT YET IMPLEMENTED !!! '
+          WRITE(IU06,*) ' REVERT TO USING GRIB 1 FOR THE SPECTRA' 
+          WRITE(IU06,*) '*******************************************************'
+          WRITE(IU06,*) ''
+
+        ENDIF
+      ENDIF
+
+
       IF( PRESENT(LLCREATE) ) THEN
         LLCRT = LLCREATE
       ELSE
@@ -119,8 +146,20 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
       IF (.NOT. LGRHDIFS .OR. LLCRT) THEN
         IGRIB_HANDLE=-99
-        CALL IGRIB_NEW_FROM_SAMPLES(IGRIB_HANDLE,'gg_sfc_grib1')
-        !!! see below : this is a limitation of grib1   !!!!
+        IF ( IGRIB_VERSION == 1 ) THEN
+          CALL IGRIB_NEW_FROM_SAMPLES(IGRIB_HANDLE,'gg_sfc_grib1')
+          !!! see below : this is a limitation of grib1   !!!!
+        ELSEIF ( IGRIB_VERSION == 2 ) THEN
+          CALL IGRIB_NEW_FROM_SAMPLES(IGRIB_HANDLE,'gg_sfc_grib2')
+        ELSE
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) '*******************************************'
+          WRITE(IU06,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!! '
+          WRITE(IU06,*) ' UNKNOWN IGRIB_VERSION ', IGRIB_VERSION
+          WRITE(IU06,*) '*******************************************'
+          WRITE(IU06,*) ''
+          CALL ABORT1
+        ENDIF
       ELSE
          IGRIB_HANDLE=-99
          CALL IGRIB_CLONE(NGRIB_HANDLE_IFS,IGRIB_HANDLE)
@@ -129,25 +168,34 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 !     PRODUCT DEFINITION.
 !     -------------------
 
-!     MODEL IDENTIFICATION.
-      IF ( CLDOMAIN == 'g' ) THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier', &
-     &                       IMDLGRBID_G)
+      IF (CT == "S") THEN
+!!!1 not yet tested , it might be another discipline !!!
+        IF ( IGRIB_VERSION == 2 ) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'discipline',192)
       ELSE
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier', &
-     &                       IMDLGRBID_M)
+        IF ( IGRIB_VERSION == 2 ) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'discipline',10)
       ENDIF
 
-      IF (.NOT.LNEWLVTP) THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',102)
+
+!     MODEL IDENTIFICATION.
+      IF ( CLDOMAIN == 'g' ) THEN
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier', IMDLGRBID_G)
       ELSE
-        ! if this change check wgribout and intwaminput.
-        IF (CT == "S") THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',212)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier', IMDLGRBID_M)
+      ENDIF
+
+      IF ( IGRIB_VERSION == 1 ) THEN
+        IF (.NOT.LNEWLVTP) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',102)
         ELSE
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',209)
+          ! if this change check wgribout and intwaminput.
+          IF (CT == "S") THEN
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',212)
+          ELSE
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',209)
+          ENDIF
         ENDIF
       ENDIF
+
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',0)
 
 !     DEFINE YOUR OWN LOCAL HEADER
@@ -156,14 +204,15 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ! LOCAL MARS TABLE USED.
 
         IF (CT == "S") THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',    &
-     &                         13)
-          ! set localFlag to 3 to prevent use of offsetToEndOf4DvarWindow
-          ! not used in uncoupled mode.
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',3)
+!!!1 not yet tested , it might be another discipline !!!
+          IF ( IGRIB_VERSION == 1 ) THEN
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber', 13)
+            ! set localFlag to 3 to prevent use of offsetToEndOf4DvarWindow
+            ! not used in uncoupled mode.
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',3)
+          ENDIF
         ELSE
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',    &
-     &                         NLOCGRB)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber', NLOCGRB)
         ENDIF
 
         ! EXPERIMENT VERSION
@@ -186,48 +235,52 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           CALL ABORT1
         ENDIF
 
-        ! ENSEMBLE FORECAST NUMBER
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'perturbationNumber',NENSFNB)
-        ! TOTAL ENSEMBLE FORECAST NUMBER
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'numberOfForecastsInEnsemble', &
-     &                       NTOTENS)
+        IF ( IGRIB_VERSION == 1 .OR. ( IGRIB_VERSION == 2 .AND. NTOTENS > 0 )  ) THEN
+          ! ENSEMBLE FORECAST NUMBER
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'perturbationNumber',NENSFNB)
+          ! TOTAL ENSEMBLE FORECAST NUMBER
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'numberOfForecastsInEnsemble', NTOTENS)
+        ENDIF
 
         IF (CT == "S") THEN
-!         special case for spectra....
-!         (for seasonal or monthly forecast only)
-          IF ( ISTREAM .EQ. 1082 .OR.                                   &
-     &         ISTREAM .EQ. 1095 .OR.                                   &
-     &         ISTREAM .EQ. 1203 .OR.                                   &
-     &         ISTREAM .EQ. 1204 ) THEN
-            KSYSNB=NSYSNB
-            KMETNB=NMETNB
-          ELSE
-            KSYSNB=65535
-            KMETNB=65535
-          ENDIF
-          ! SYSTEM NUMBER
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'systemNumber',KSYSNB)
-          ! METHOD NUMBER
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'methodNumber',KMETNB)
 
-          IF (ISTREAM == 1204 .OR.                                       &
-     &        ISTREAM == 1078 .OR.                                       &
-     &        ISTREAM == 1079 .OR.                                       &
-     &        ISTREAM == 1084 .OR.                                       &
-     &        ISTREAM == 1085                                            &
-     &        ) THEN
-            KREFDATE=IREFDATE
-          ELSE
-            KREFDATE=0 
-          ENDIF
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'referenceDate',KREFDATE)
+          IF ( IGRIB_VERSION == 1 ) THEN
+!           special case for spectra....
+!           (for seasonal or monthly forecast only)
+            IF ( ISTREAM .EQ. 1082 .OR.                                   &
+     &           ISTREAM .EQ. 1095 .OR.                                   &
+     &           ISTREAM .EQ. 1203 .OR.                                   &
+     &           ISTREAM .EQ. 1204 ) THEN
+              KSYSNB=NSYSNB
+              KMETNB=NMETNB
+            ELSE
+              KSYSNB=65535
+              KMETNB=65535
+            ENDIF
+            ! SYSTEM NUMBER
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'systemNumber',KSYSNB)
+            ! METHOD NUMBER
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'methodNumber',KMETNB)
 
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateFrom',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateTo',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseDate',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseTime',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legNumber',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'oceanAtmosphereCoupling',0)
+            IF (ISTREAM == 1204 .OR.                                       &
+     &          ISTREAM == 1078 .OR.                                       &
+     &          ISTREAM == 1079 .OR.                                       &
+     &          ISTREAM == 1084 .OR.                                       &
+     &          ISTREAM == 1085                                            &
+     &          ) THEN
+              KREFDATE=IREFDATE
+            ELSE
+              KREFDATE=0 
+            ENDIF
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'referenceDate',KREFDATE)
+
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateFrom',0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateTo',0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseDate',0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseTime',0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legNumber',0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'oceanAtmosphereCoupling',0)
+          ENDIF
 
 
         ELSEIF (NLOCGRB == 18 ) THEN
@@ -298,62 +351,44 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 !         SPECTRA USE THEIR OWN GRIB TABLE !!!
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',13)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,                         &
-     &                        'offsetToEndOf4DvarWindow',IDUM,KRET=IRET)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'offsetToEndOf4DvarWindow',IDUM, KRET=IRET)
           ! set localFlag to 3 to prevent use of offsetToEndOf4DvarWindow
           ! if not used in the IFS template.
           IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',3)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'systemNumber',          &
-     &                         IDUM,KRET=IRET)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'systemNumber', IDUM, KRET=IRET)
           IF (IRET /= 0) THEN
              KSYSNB=65535
-             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'systemNumber',KSYSNB)
+             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'systemNumber', KSYSNB)
           ENDIF
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'methodNumber',          &
-     &                         IDUM,KRET=IRET)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'methodNumber', IDUM, KRET=IRET)
           IF (IRET /= 0) THEN
              KMETNB=65535
              CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'methodNumber',KMETNB)
           ENDIF
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'referenceDate',         &
-     &                         IDUM,KRET=IRET)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'referenceDate', IDUM, KRET=IRET) 
           IF (IRET /= 0) THEN
              KREFDATE=0 
              CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'referenceDate',KREFDATE)
           ENDIF
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'climateDateFrom',       &
-     &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
-     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateFrom',0)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'climateDateFrom', IDUM, KRET=IRET)
+          IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateFrom',0)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'climateDateTo',         &
-     &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
-     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateTo',0)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'climateDateTo', IDUM, KRET=IRET)
+          IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateTo',0)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legBaseDate',           &
-     &                         IDUM,KRET=IRET) 
-          IF (IRET /= 0)                                                 &
-     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseDate',0)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legBaseDate', IDUM, KRET=IRET)
+          IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseDate',0)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legBaseTime',           &
-     &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
-     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseTime',0)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legBaseTime', IDUM, KRET=IRET)
+          IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseTime',0)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legNumber',             &
-     &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
-     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legNumber',0)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legNumber', IDUM, KRET=IRET)
+          IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legNumber',0)
 
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,                         &
-     &                         'oceanAtmosphereCoupling',                &
-     &                         IDUM,KRET=IRET)
-          IF (IRET /= 0)                                                 &
-     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                           &
-     &                           'oceanAtmosphereCoupling',0)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'oceanAtmosphereCoupling', IDUM, KRET=IRET)
+          IF (IRET /= 0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'oceanAtmosphereCoupling',0) 
         ENDIF
 
 !       RESET STREAM IF NEEDED
@@ -405,27 +440,30 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         DEALLOCATE(SCFR)
 
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'bitsPerValue', IBITSPERVALUE)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'additionalFlagPresent',1)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfPacking',               &
-     &                       'grid_simple_matrix')
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NR',1)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC',1)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC1',NANG)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC2',NFRE_RED)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'physicalFlag1',1)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'physicalFlag2',2)
-        DO IC=1,NANG
-          REAL4 = TH(IC)*DEG
-!!!          ZTHETA(IC)=TRANSFER (REAL4, 1)
-          ZTHETA(IC)=REAL4
-        ENDDO
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'coefsFirst',ZTHETA)
-        DO IC=1,NFRE_RED
-          REAL4 = FR(IC)
-!!!          ZFREQ(IC)=TRANSFER (REAL4, 1)
-          ZFREQ(IC)=REAL4
-        ENDDO
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'coefsSecond',ZFREQ)
+
+!       LEGACY FROM WHEM SPECTRA WERE OUPUT AS PARAMETER 250 IN GRIB1: 
+        IF ( LL_GRID_SIMPLE_MATRIX .AND. IGRIB_VERSION == 1 ) THEN 
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'additionalFlagPresent',1)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfPacking', 'grid_simple_matrix')
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NR',1)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC',1)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC1',NANG)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC2',NFRE_RED)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'physicalFlag1',1)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'physicalFlag2',2)
+          DO IC=1,NANG
+            REAL4 = TH(IC)*DEG
+!!!            ZTHETA(IC)=TRANSFER (REAL4, 1)
+            ZTHETA(IC)=REAL4
+          ENDDO
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'coefsFirst',ZTHETA)
+          DO IC=1,NFRE_RED
+            REAL4 = FR(IC)
+!!!            ZFREQ(IC)=TRANSFER (REAL4, 1)
+            ZFREQ(IC)=REAL4
+          ENDDO
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'coefsSecond',ZFREQ)
+        ENDIF
 
       ENDIF
 
@@ -435,8 +473,10 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
         IF ( IQGAUSS == 1 ) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','reduced_gg')
-          IREPR=4
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'dataRepresentationType',IREPR)
+          IF ( IGRIB_VERSION == 1 ) THEN
+            IREPR=4
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'dataRepresentationType',IREPR)
+          ENDIF
         ELSE
           IF (IRGG == 0) THEN
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','regular_ll')
@@ -511,8 +551,12 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         IF ( IQGAUSS /= 1 ) THEN
           RMOEAP = AMOEAP
         ELSE
-          !!! this is a limitation of grib1   !!!!
-          RMOEAP = REAL(INT(1000._JWRB*AMOEAP),JWRB)/1000._JWRB
+          IF ( IGRIB_VERSION == 1 ) THEN
+            !!! this is a limitation of grib1   !!!!
+            RMOEAP = REAL(INT(1000._JWRB*AMOEAP),JWRB)/1000._JWRB
+          ELSE
+            RMOEAP = AMOEAP
+          ENDIF
         ENDIF
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
      &                      'longitudeOfLastGridPointInDegrees',RMOEAP)

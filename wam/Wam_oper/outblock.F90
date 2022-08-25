@@ -102,7 +102,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
 !! not active: alternative ways to determine wave height extremes 
 !!      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST
 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ETA_M, R, XNSLC, SIG_TH, EPS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ETA_M, R, XNSLC, SIG_TH, EPS, XNU
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FLD1, FLD2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ESWELL ,FSWELL ,THSWELL, P1SWELL, P2SWELL, SPRDSWELL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ESEA   ,FSEA   ,THWISEA, P1SEA  , P2SEA  , SPRDSEA
@@ -197,7 +197,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       CALL KURTOSIS(KIJS, KIJL, FL1,                          &
      &              DEPTH,                                    &
      &              C3, C4, BF, QP, HMAX, TMAX,               &
-     &              ETA_M, R, XNSLC, SIG_TH, EPS)
+     &              ETA_M, R, XNSLC, SIG_TH, EPS, XNU)
 
 !! not active: alternative ways to determine wave height extremes 
 !!      CALL W_MAXH (KIJS, KIJL, FL1, DEPTH, WAVNUM,            &

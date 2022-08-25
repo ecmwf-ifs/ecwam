@@ -1,4 +1,4 @@
-       PROGRAM preproc 
+PROGRAM preproc 
 
 ! ----------------------------------------------------------------------
 
@@ -133,6 +133,7 @@
      &            TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
+     &            KXLTMIN  ,KXLTMAX  ,                                  &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
      &            XDELLO   ,ZDELLO   ,NLONRGG  ,LAQUA
       USE YOWSHAL  , ONLY : BATHYMAX
@@ -326,6 +327,13 @@
         ENDIF
       ENDDO 
 
+      IF (ALLOCATED(KXLTMIN)) DEALLOCATE(KXLTMIN)
+      ALLOCATE(KXLTMIN(1))
+      KXLTMIN(1) = 1
+      IF (ALLOCATED(KXLTMAX)) DEALLOCATE(KXLTMAX)
+      ALLOCATE(KXLTMAX(1))
+      KXLTMAX(1) = NY
+
 ! ----------------------------------------------------------------------
 
 !*    4. COMPUTE GRID INDEPENDENT MODULE.
@@ -459,4 +467,4 @@
 
       CALL CHECK (IINPC)
  
-      END PROGRAM
+END PROGRAM

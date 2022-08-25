@@ -10,6 +10,7 @@
       INTEGER(KIND=JWIM) :: IMDLGRBID_M=218
       INTEGER(KIND=JWIM) :: NDATE_TIME_WINDOW_END
       INTEGER(KIND=JWIM) :: NWINOFF
+      INTEGER(KIND=JWIM) :: NGRIB_VERSION   ! grib version for output
 
       REAL(KIND=JWRB), PARAMETER :: PPMISS=-3.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: PPEPS=1.0E-10_JWRB
@@ -28,6 +29,7 @@
       LOGICAL :: LGRHDIFS
       LOGICAL :: LNEWLVTP
       LOGICAL :: LPADPOLES=.TRUE.
+      LOGICAL :: LL_GRID_SIMPLE_MATRIX=.TRUE.
 
 !*    VARIABLE.   TYPE.     PURPOSE.
 !     ---------   -------   --------
@@ -71,6 +73,8 @@
 !                           AS PROVIDED BY THE IFS.
 !     LNEWLVTP    LOGICAL   IF TRUE THE NEW LEVTYPE DEFINITION WILL BE USED.
 !     LPADPOLES   LOGICAL   TRUE IF POLES ARE PADDED WHEN SAVIND TO GRIB.
+!     LL_GRID_SIMPLE_MATRIX IF TRUE THEN THE 2D SPECTRA WILL USE THE LEGACY grid_simple_matrix
+!                           TO ENCODE THE 2D SPECTRA in GRIB1. THIS SHOULD BE PHASED OUT as soon as feasible!
 
  
 ! ----------------------------------------------------------------------

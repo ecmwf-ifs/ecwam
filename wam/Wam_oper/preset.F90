@@ -72,7 +72,8 @@ PROGRAM preset
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,    &
-     &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
+     &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP ,    &
+     &            NGRIB_VERSION
       USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL     , NTOTIJ  ,    &
      &            NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK,             & 
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
@@ -294,7 +295,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       NTOTENS = 0
       NENSFNB = 0  
       ISTREAM =1045 !! if changed to an ifs stream also change LNEWLVTP
-      NLOCGRB   = 1
+      NLOCGRB = 1
       NSYSNB  = -1
       NMETNB  = -1
       IREFDATE= 0
@@ -432,6 +433,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !*    3.* SET GRIB HEADERS FOR INPUTS/OUTPUTS
 !         -----------------------------------
       IF (.NOT. LGRHDIFS) THEN
+!!!!! We might need to impose girb2 at later stage
+        NGRIB_VERSION = 1
+
 !       FOR INTEGRATED PARAMETERS
         CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
 !       FOR SPECTRA 

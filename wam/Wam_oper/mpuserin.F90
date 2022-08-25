@@ -65,7 +65,8 @@
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : XKMSS_CUTOFF 
-      USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G, IMDLGRBID_M
+      USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS ,IMDLGRBID_G, IMDLGRBID_M, &
+     &                      LNEWLVTP, LL_GRID_SIMPLE_MATRIX
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI, LCIWABR  ,  &
@@ -160,6 +161,7 @@
      &   IBOUNC, IBOUNF,                                                &
      &   IDELBC, CBCPREF,                                               &
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
+     &   NGRIB_VERSION,                                                 &
      &   IMDLGRBID_G, IMDLGRBID_M,                                      &
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
      &   LWCOU, LNOCDIN, LODBRALT,                                      &
@@ -182,7 +184,7 @@
      &   LBCWA,                                                         &
      &   LSMSSIG_WAM,CMETER,CEVENT,                                     &
      &   LLWSWAVE, LLWDWAVE,                                            &
-     &   NPROMA_WAM, LL1D, LGRHDIFS ,LNEWLVTP,                          &
+     &   NPROMA_WAM, LL1D, LGRHDIFS , LNEWLVTP, LL_GRID_SIMPLE_MATRIX,  &
      &   LWCOUNORMS, LLNORMIFS2WAM, LLNORMWAM2IFS, LLNORMWAMOUT,        &
      &   LLNORMWAMOUT_GLOBAL,                                           &
      &   LICERUN, LCIWABR, LICETH,                                      &
@@ -284,7 +286,7 @@
 !     IREST: 1 FOR THE PRODUCTION OF RESTART FILE(S).
 !     IASSI: 1 ASSIMILATION IS DONE IF ANALYSIS RUN.
 !     IPHYS:  WAVE PHYSICS PACKAGE (0 or 1)
-!     ISNONLIN : 0 FOR OLD SNONLIN, 1 FOR NEW SNONLIN.
+!     ISNONLIN : 0 FOR OLD SNONLIN, 1 FOR NEW SNONLIN, 2 FOR LATEST BASED ON JANSSEN 2018 (ECMWF TM 813).
 !     IDAMPING : 0 NO WAVE DAMPING, 1 WAVE DAMPING ON.
 !                ONLY MEANINGFUl FOR IPHYS=0
 !     IBOUNC: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (COARSE GRID).
@@ -301,6 +303,7 @@
 !     YEXPVER: EXPERIMENT VERSION USED TO CODE DATA IN GRIB.
 !     CPATH: PATH FOR OUTPUT TO DISK (USED WHENEVER OUTPUT IS NOT
 !            TO THE FIELD DATA BASE (SEE LFDBIOOUT)).
+!     NGRIB_VERSION: GRIB VERSION FOR OUTPUT.
 !     IMDLGRBID_G: GLOBAL MODEL IDENTIFICATION NUMBER FOR GRIB CODING.
 !                  DEFAULT VALUE SET IN YOWGRIBHD.
 !     IMDLGRBID_M: LAW MODEL IDENTIFICATION NUMBER FOR GRIB CODING.
@@ -412,6 +415,8 @@
 !                COUPLED TO THE IFS).
 !     LNEWLVTP : FLAG CONTROLLING WHETHER OR NOT THE NEW GRIB LEVTYPE
 !                DEFINITIONS ARE USED.
+!     LL_GRID_SIMPLE_MATRIX IF TRUE THEN THE 2D SPECTRA WILL USE THE LEGACY grid_simple_matrix
+!                           TO ENCODE THE 2D SPECTRA in GRIB1. THIS SHOULD BE PHASED OUT as soon as feasible!
 !     LICERUN : FLAG CONTROLLING WHETHER OR NOT SEA ICE FRACTION (OR SST)
 !               FIEDS ARE PROVIDED WITH THE WIND FIELDS TO GENERATE THE
 !               SEA ICE MASK (TRUE BY DEFAULT). 
@@ -646,7 +651,11 @@
 
       LGRHDIFS = .FALSE.
 
+      NGRIB_VERSION = 1
+
       LNEWLVTP = .FALSE.
+
+      LL_GRID_SIMPLE_MATRIX = .TRUE.
 
       LBIWBK = .TRUE.
 
