@@ -84,7 +84,6 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE MPL_MPIF
       USE YOWCOUP  , ONLY : LWCOU, LWCOU2W, LWCOURNW , LWCOUHMF, LWFLUX,&
      &                      LWNEMOCOU,                                  &
      &                      NEMOINIDATE, NEMOINITIME               ,    &
@@ -95,7 +94,7 @@
       USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO                       ,    &
      &            IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO
       USE YOWALTAS , ONLY : LODBRALT
-      USE MPL_MODULE
+      USE MPL_MODULE, ONLY : MPL_INIT, MPL_END, MPL_COMM
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
       USE YOWASSI, ONLY : WAM_ODB_OPEN,  WAM_ODB_CLOSE
