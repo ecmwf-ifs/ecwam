@@ -35,7 +35,10 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWGRIB
+      USE YOWGRIB  , ONLY : JPKSIZE_T, &
+                          & IGRIB_GET_VALUE, &
+                          & IGRIB_GET_MESSAGE_SIZE, &
+                          & IGRIB_WRITE_BYTES
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------

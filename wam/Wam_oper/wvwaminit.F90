@@ -40,7 +40,7 @@
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOWABORT, ONLY : WAM_ABORT
 
-      USE MPL_MODULE
+      USE MPL_MODULE, ONLY : MPL_MYRANK, MPL_NPROC, MPL_BARRIER
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------

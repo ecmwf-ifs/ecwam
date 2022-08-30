@@ -68,7 +68,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
      &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE MPL_MODULE
+      USE MPL_MODULE, ONLY : MPL_BROADCAST
 
 !----------------------------------------------------------------------
 

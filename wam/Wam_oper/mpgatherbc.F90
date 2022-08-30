@@ -32,7 +32,9 @@ SUBROUTINE MPGATHERBC(IRECV, NSCFLD,                   &
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LL1D
       USE YOWSPEC  , ONLY : IJ2NEWIJ ,NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06
-      USE MPL_MODULE
+      USE MPL_MODULE, ONLY : MPL_SEND, MPL_RECV, MPL_WAIT, MPL_BARRIER, &
+                           & MPL_ABORT, &
+                           & JP_NON_BLOCKING_STANDARD, JP_BLOCKING_STANDARD
 
 !----------------------------------------------------------------------
       IMPLICIT NONE

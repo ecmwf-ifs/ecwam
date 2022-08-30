@@ -33,8 +33,15 @@ USE YOWTEXT  , ONLY : ICPLEN, CPATH
 
 
 
-USE YOMHOOK  ,ONLY  : LHOOK ,DR_HOOK, JPHOOK
-USE YOWGRIB
+USE YOMHOOK  , ONLY : LHOOK ,DR_HOOK, JPHOOK
+USE YOWGRIB  , ONLY : JPKSIZE_T, &
+                    & IGRIB_OPEN_FILE, &
+                    & IGRIB_CLOSE_FILE, &
+                    & IGRIB_WRITE_BYTES, &
+                    & IGRIB_GET_MESSAGE, &
+                    & IGRIB_GET_MESSAGE_SIZE, &
+                    & IGRIB_CLONE, &
+                    & IGRIB_RELEASE
 
 ! ----------------------------------------------------------------------
 

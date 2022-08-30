@@ -56,7 +56,8 @@ SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMPP   , ONLY : NPRECI
-      USE YOWGRIB
+      USE YOWGRIB  , ONLY : IGRIB_GET_MESSAGE, IGRIB_GET_MESSAGE_SIZE, &
+                          & IGRIB_RELEASE, JPKSIZE_T
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------

@@ -70,8 +70,13 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
       USE YOWWIND  , ONLY : NXFFS    ,NXFFE    ,NYFFS    ,NYFFE
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE MPL_MODULE
-      USE YOWGRIB
+      USE MPL_MODULE, ONLY : MPL_RECV, MPL_SEND, MPL_WAIT, MPL_ABORT, &
+                           & MPL_BARRIER, &
+                           & JP_NON_BLOCKING_STANDARD, JP_BLOCKING_STANDARD
+      USE YOWGRIB, ONLY : IGRIB_OPEN_FILE, IGRIB_CLOSE_FILE, IGRIB_RELEASE, &
+                        & IGRIB_READ_FROM_FILE, IGRIB_NEW_FROM_MESSAGE, &
+                        & JPGRIB_SUCCESS, JPGRIB_BUFFER_TOO_SMALL, &
+                        & JPGRIB_END_OF_FILE, JPKSIZE_T
 
 ! ----------------------------------------------------------------------
 

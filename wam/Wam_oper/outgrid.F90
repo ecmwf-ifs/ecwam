@@ -30,7 +30,8 @@
       USE YOWUNPOOL, ONLY : NIBLO_FD, NIBLO_OUT, OUT_METHOD, LLUNSTR
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE MPL_MODULE
+      USE MPL_MODULE, ONLY : MPL_RECV, MPL_SEND, MPL_WAIT, &
+                           & JP_NON_BLOCKING_STANDARD
 
 ! ----------------------------------------------------------------------
 

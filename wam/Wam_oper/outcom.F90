@@ -90,7 +90,7 @@
      &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
       USE YOWUNPOOL ,ONLY : LLUNSTR  ,LPREPROC
 
-      USE UNWAM
+      USE UNWAM , ONLY : UNWAM_OUT
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE

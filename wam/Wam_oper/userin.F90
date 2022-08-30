@@ -142,7 +142,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC, WSPMIN
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWABORT, ONLY : WAM_ABORT
-      USE YOWGRIB
+      USE YOWGRIB , ONLY : IGRIB_GET_VALUE
 
 ! ----------------------------------------------------------------------
 

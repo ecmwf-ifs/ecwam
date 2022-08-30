@@ -47,8 +47,8 @@
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
       USE YOWUNIT  , ONLY : IU20
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE YOWGRIB
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWGRIB  , ONLY : IGRIB_OPEN_FILE, IGRIB_CLOSE_FILE
 
 ! ----------------------------------------------------------------------
 

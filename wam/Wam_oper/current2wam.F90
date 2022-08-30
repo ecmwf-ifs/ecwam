@@ -60,8 +60,11 @@
       USE YOWUNPOOL ,ONLY : LLUNSTR
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE MPL_MODULE
-      USE YOWGRIB
+      USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_BROADCAST
+      USE YOWGRIB , ONLY : IGRIB_NEW_FROM_MESSAGE, IGRIB_OPEN_FILE, &
+                         & IGRIB_READ_FROM_FILE, IGRIB_RELEASE, &
+                         & JPGRIB_BUFFER_TOO_SMALL, JPGRIB_END_OF_FILE, &
+                         & JPGRIB_SUCCESS, JPKSIZE_T
 
 !-----------------------------------------------------------------------
 

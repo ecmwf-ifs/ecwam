@@ -54,8 +54,15 @@ USE YOWSPEC  , ONLY : NSTART   ,NEND
 USE YOWTEST  , ONLY : IU06     ,ITEST
 USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
 USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
-USE MPL_MODULE
-USE YOWGRIB
+USE MPL_MODULE, ONLY : MPL_ABORT, MPL_ALLTOALLV, MPL_SEND, MPL_RECV, &
+                     & MPL_WAIT, MPL_BARRIER, JP_NON_BLOCKING_STANDARD
+USE YOWGRIB  , ONLY : JPKSIZE_T, &
+                    & IGRIB_OPEN_FILE, &
+                    & IGRIB_CLOSE_FILE, &
+                    & IGRIB_GET_MESSAGE, &
+                    & IGRIB_GET_MESSAGE_SIZE, &
+                    & IGRIB_NEW_FROM_MESSAGE, &
+                    & IGRIB_RELEASE
 
 !-----------------------------------------------------------------------
       IMPLICIT NONE

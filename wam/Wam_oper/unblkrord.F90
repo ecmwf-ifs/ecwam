@@ -41,7 +41,6 @@
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOWPD, ONLY : RANK
       USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK, JPHOOK
-      USE MPL_MODULE
 
 !----------------------------------------------------------------------
 

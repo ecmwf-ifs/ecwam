@@ -61,7 +61,8 @@ SUBROUTINE MPFLDTOIFS(IJS, IJL, BLK2GLO, NWVFIELDS, BLOCK,       &
       USE YOWTEST  , ONLY : IU06
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE MPL_MODULE
+      USE MPL_MODULE, ONLY : MPL_ALLGATHERV, MPL_SEND, MPL_RECV, MPL_WAIT, &
+                           & JP_NON_BLOCKING_STANDARD, JP_BLOCKING_STANDARD
 !----------------------------------------------------------------------
 
       IMPLICIT NONE

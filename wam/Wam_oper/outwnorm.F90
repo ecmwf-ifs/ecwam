@@ -33,7 +33,6 @@
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06
 
-      USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK, DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------

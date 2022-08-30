@@ -136,8 +136,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWASSI  , ONLY : WAMASSI
-      USE YOWGRIB
-      USE MPL_MODULE
+      USE YOWGRIB  , ONLY : IGRIB_GET_VALUE
+      USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_GATHERV
 ! ---------------------------------------------------------------------
 
       IMPLICIT NONE

@@ -60,7 +60,10 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
      &            IREFDATE
       USE YOWTEST  , ONLY : IU06
 
-      USE YOWGRIB
+      USE YOWGRIB  , ONLY : IGRIB_NEW_FROM_SAMPLES, &
+                          & IGRIB_CLONE, &
+                          & IGRIB_SET_VALUE, &
+                          & IGRIB_GET_VALUE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
       IMPLICIT NONE

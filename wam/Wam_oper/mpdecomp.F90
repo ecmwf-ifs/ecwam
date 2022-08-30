@@ -138,9 +138,8 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
 
       USE YOWUNPOOL, ONLY : LLUNSTR, LLR8TOR4
       USE YOWPD, ONLY : MNP => npa, RANK
-      USE UNWAM
 
-      USE MPL_MODULE
+      USE MPL_MODULE, ONLY : MPL_BROADCAST, MPL_ALLGATHERV, MPL_SCATTERV
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 !----------------------------------------------------------------------

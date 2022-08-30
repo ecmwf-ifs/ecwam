@@ -53,7 +53,8 @@
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOWPD,     ONLY : RANK, MYRANK, NP,  MNP=>NPA, EXCHANGE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE MPL_MODULE
+      USE MPL_MODULE, ONLY : MPL_SEND, MPL_RECV, MPL_WAIT, MPL_ABORT, &
+                           & JP_NON_BLOCKING_STANDARD
 
 !----------------------------------------------------------------------
 

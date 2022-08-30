@@ -13,7 +13,6 @@
       USE YOWMESPAS, ONLY : LFDBIOOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,    NNEXT
 
-      USE MPL_MODULE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------

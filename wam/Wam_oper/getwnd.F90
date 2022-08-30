@@ -72,8 +72,8 @@ SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
       USE YOWWIND  , ONLY : IUNITW
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE YOWGRIB
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWGRIB  , ONLY : IGRIB_CLOSE_FILE
 
 ! ----------------------------------------------------------------------
 

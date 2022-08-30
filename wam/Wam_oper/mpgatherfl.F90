@@ -50,7 +50,7 @@
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOWPD, ONLY : RANK, MYRANK, NP
       USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK, JPHOOK
-      USE MPL_MODULE
+      USE MPL_MODULE, ONLY : MPL_GATHERV
 
 !----------------------------------------------------------------------
 

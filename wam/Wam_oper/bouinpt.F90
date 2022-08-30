@@ -56,7 +56,9 @@ SUBROUTINE BOUINPT (IU02, FL1, NSTART, NEND)
      &                      IDELPRO
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE MPL_MODULE
+      USE MPL_MODULE, ONLY : MPL_BROADCAST, MPL_SEND, MPL_RECV, MPL_WAIT, &
+                           & MPL_ABORT, JP_BLOCKING_STANDARD, &
+                           & JP_NON_BLOCKING_STANDARD
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE

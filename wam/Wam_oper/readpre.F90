@@ -78,7 +78,7 @@ SUBROUTINE READPRE (IU07)
      &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
       USE YOWTEST  , ONLY : IU06
       USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LLR8TOR4
-      USE UNWAM
+      USE UNWAM     ,ONLY : INIT_UNWAM, UNWAM_IN, SET_UNWAM_HANDLES
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------

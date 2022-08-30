@@ -103,9 +103,15 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
       USE YOWPD, ONLY : MNP => npa
       USE YOWUNPOOL ,ONLY : LLUNSTR
 
-      USE MPL_MODULE
+      USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_BROADCAST
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE YOWGRIB
+      USE YOWGRIB, ONLY : JPKSIZE_T, &
+                        & JPGRIB_BUFFER_TOO_SMALL, JPGRIB_END_OF_FILE, &
+                        & JPGRIB_SUCCESS, &
+                        & IGRIB_NEW_FROM_MESSAGE, &
+                        & IGRIB_OPEN_FILE, &
+                        & IGRIB_READ_FROM_FILE, &
+                        & IGRIB_RELEASE
 
 ! --------------------------------------------------------------------- 
 
