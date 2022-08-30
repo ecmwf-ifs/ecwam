@@ -4,10 +4,6 @@
 
       IMPLICIT NONE
 
-#include "outwspec_io_serv.intfb.h"
-#include "outint_io_serv.intfb.h"
-#include "ifstowam.intfb.h"
-
       !*    ** *COUPL* - PARAMETERS FOR COUPLING.
 
       LOGICAL :: LLCAPCHNK 
@@ -163,4 +159,72 @@
 !      IFSMUPTRA     Corresponds to ALGORITHM_STATE_MOD%GET_MUPTRA()
 !
 ! ----------------------------------------------------------------------
+
+CONTAINS
+
+      !----------------------------------------------------------------------------------------
+
+      SUBROUTINE IFSTOWAM (BLK2LOC,                      &
+            &              NFIELDS, NGPTOTG, NCA, NRA,   &
+            &              FIELDS, LWCUR, MASK_IN,       &
+            &              NXS, NXE, NYS, NYE, FIELDG)
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB
+      USE YOWDRVTYPE  , ONLY : WVGRIDLOC, FORCING_FIELDS
+      USE YOWGRID     , ONLY : NPROMA_WAM, NCHNK
+      USE YOWABORT    , ONLY : WAM_ABORT
+      TYPE(WVGRIDLOC),    INTENT(IN) :: BLK2LOC(NPROMA_WAM,NCHNK)
+      INTEGER(KIND=JWIM), INTENT(IN) :: NFIELDS, NGPTOTG, NCA, NRA
+      REAL(KIND=JWRB),    INTENT(IN) :: FIELDS(NGPTOTG,NFIELDS)
+      LOGICAL,            INTENT(IN) :: LWCUR
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: MASK_IN(NGPTOTG)
+      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(INOUT) :: FIELDG(NXS:NXE, NYS:NYE)
+
+      IF (.NOT.ASSOCIATED(IFSTOWAM_HANDLER)) CALL WAM_ABORT('IFSTOWAM_HANDLER IS NOT INITIALIZED')
+      CALL IFSTOWAM_HANDLER (BLK2LOC,                    &
+           &                 NFIELDS, NGPTOTG, NCA, NRA, &
+           &                 FIELDS, LWCUR, MASK_IN,     &
+           &                 NXS, NXE, NYS, NYE, FIELDG)
+
+      END SUBROUTINE IFSTOWAM
+
+      !----------------------------------------------------------------------------------------
+
+      SUBROUTINE OUTWSPEC_IO_SERV (IJS, IJL, SPEC, MARSTYPE, CDATE, IFCST)
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB
+      USE YOWPARAM,     ONLY : NANG, NFRE
+      USE YOWABORT,     ONLY : WAM_ABORT
+      IMPLICIT NONE
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB),    INTENT(IN) :: SPEC(IJS:IJL, NANG, NFRE)
+      CHARACTER(LEN=2),   INTENT(IN) :: MARSTYPE
+      CHARACTER(LEN=14),  INTENT(IN) :: CDATE
+      INTEGER,            INTENT(IN) :: IFCST
+
+      IF (.NOT.ASSOCIATED(OUTWSPEC_IO_SERV_HANDLER)) CALL WAM_ABORT('OUTWSPEC_IO_SERV_HANDLER IS NOT INITIALIZED')
+      CALL OUTWSPEC_IO_SERV_HANDLER (IJS, IJL, SPEC, MARSTYPE, CDATE, IFCST)
+
+      END SUBROUTINE OUTWSPEC_IO_SERV
+
+      !----------------------------------------------------------------------------------------
+
+      SUBROUTINE OUTINT_IO_SERV (NIPRMOUT, BOUT, INFOBOUT, MARSTYPE, CDATE, IFCST)
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB
+      USE YOWGRID     , ONLY : NPROMA_WAM, NCHNK
+      USE YOWABORT,     ONLY : WAM_ABORT
+      IMPLICIT NONE
+      INTEGER(KIND=JWIM),  INTENT(IN) :: NIPRMOUT
+      REAL(KIND=JWRB),     INTENT(IN) :: BOUT(NPROMA_WAM, NIPRMOUT, NCHNK)
+      INTEGER(KIND=JWIM),  INTENT(IN) :: INFOBOUT(NIPRMOUT, 3)
+      CHARACTER(LEN=2),    INTENT(IN) :: MARSTYPE
+      CHARACTER(LEN=14),   INTENT(IN) :: CDATE
+      INTEGER (KIND=JWIM), INTENT(IN) :: IFCST
+
+      IF (.NOT.ASSOCIATED(OUTINT_IO_SERV_HANDLER)) CALL WAM_ABORT('OUTINT_IO_SERV_HANDLER IS NOT INITIALIZED')
+      CALL OUTINT_IO_SERV_HANDLER (NIPRMOUT, BOUT, INFOBOUT, MARSTYPE, CDATE, IFCST)
+
+      END SUBROUTINE OUTINT_IO_SERV
+
+      !----------------------------------------------------------------------------------------
+
       END MODULE YOWCOUP

@@ -109,7 +109,6 @@ PROGRAM preset
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
      &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE    ,    &
      &                      LLNEWCURR, WSPMIN   ,FF_NEXT
-      USE YOWCOUP, ONLY : IFSTOWAM_HANDLER
       USE YOWPD, ONLY : MNP => npa
       USE UNSTRUCT_BOUND, ONLY : IOBPD
 

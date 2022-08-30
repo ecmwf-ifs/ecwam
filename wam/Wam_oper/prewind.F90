@@ -76,7 +76,7 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : WVGRIDLOC, ENVIRONMENT, FORCING_FIELDS, OCEAN2WAVE
 
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUSAMEGRID, LWNEMOCOU, LWNEMOCOURECV, IFSTOWAM_HANDLER
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUSAMEGRID, LWNEMOCOU, LWNEMOCOURECV, IFSTOWAM
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,    &
@@ -191,11 +191,10 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
 !         -----------------------------------------------------------
 
       IF (LWCOU) THEN
-        IF (.NOT.ASSOCIATED(IFSTOWAM_HANDLER)) CALL WAM_ABORT('IFSTOWAM_HANDLER IS NOT INITIALIZED')
-        CALL IFSTOWAM_HANDLER (BLK2LOC,                    &
- &                             NFIELDS, NGPTOTG, NC, NR,   &
- &                             FIELDS, LWCUR, MASK_IN,     &
- &                             NXS, NXE, NYS, NYE, FIELDG)
+        CALL IFSTOWAM (BLK2LOC,                    &
+ &                     NFIELDS, NGPTOTG, NC, NR,   &
+ &                     FIELDS, LWCUR, MASK_IN,     &
+ &                     NXS, NXE, NYS, NYE, FIELDG)
       ELSE
         LWCOUSAMEGRID = .FALSE.
       ENDIF
