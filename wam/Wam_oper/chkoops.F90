@@ -58,7 +58,7 @@
       LUPDATEOOPS = .FALSE.
       IF(PRESENT(LDUPDATEOOPS)) LUPDATEOOPS = LDUPDATEOOPS
 
-      IF (LUPDATEOOPS .AND. IFSCONTEXT == 'OOPS') THEN
+      IF (LUPDATEOOPS .AND. TRIM(IFSCONTEXT) == 'OOPS') THEN
         ! OOPS-IFS may do wave assimilation only in the outer loop MUPTRA - 1
         IF (LFRST_OOPS) THEN
           LFRST_OOPS = .FALSE.

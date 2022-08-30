@@ -44,7 +44,6 @@
 
       IF (LWCOU) THEN
         CALL WAM_ABORT(CDMESSAGE)
-        STOP 2
       ELSE
         CALL MPCLOSE_UNIT
         STOP 1
