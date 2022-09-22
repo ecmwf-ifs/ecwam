@@ -67,7 +67,8 @@ INTEGER(KIND=JWIM) FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL
           WRITE(*,*) '!!!!!!!!! NO FREE UNIT FOUND BETWEEN !'
           WRITE(*,*) '!!!!!!!!! ',MINUNIT,' AND ',MAXUNIT
           WRITE(*,*) '!!!!!!!!! CALL ABORT                 !'
-          WRITE(CERRMSG,'(A,I0,A,I0,A,A,A)') "No free unit found between ",MINUNIT," and ",MAXUNIT," to open file '",TRIM(CDNAME),"'"
+          WRITE(CERRMSG,'(A,I0,A,I0,A,A,A)') "No free unit found between ",MINUNIT," and ",&
+     &                                       MAXUNIT," to open file '",TRIM(CDNAME),"'"
           CALL WAM_ABORT(CERRMSG,__FILENAME__,__LINE__)
         ENDIF
         IF (KUSO >= 0 ) WRITE(KUSO,2004)        &

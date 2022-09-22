@@ -10,9 +10,15 @@
 #ifndef _INCLUDES_F90_
 #define _INCLUDES_F90_
 
+#ifdef __FILENAME__
+#define ABORT(var1) call abort((var1), line=__LINE__, file=__FILENAME__)
+#define PARALLEL_ABORT(var1, var2) call abort((var1), errno=(var2), line=__LINE__, file=__FILENAME__)
+#define WARN(var1) call warn((var1), line=__LINE__,  file=__FILENAME__)
+#else
 #define ABORT(var1) call abort((var1), line=__LINE__, file=__FILE__)
 #define PARALLEL_ABORT(var1, var2) call abort((var1), errno=(var2), line=__LINE__, file=__FILE__)
 #define WARN(var1) call warn((var1), line=__LINE__,  file=__FILE__)
+#endif
 
 ! gfortran version 
 #ifdef __GFORTRAN__

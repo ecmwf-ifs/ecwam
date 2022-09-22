@@ -545,7 +545,8 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
               WRITE(IU06,*) '* XLAT= ',XLAT,' XLON= ',XLON 
               WRITE(IU06,*) '* DEPTH= ',DEPTH_EXT(IJ)
               IF (.NOT. LLCFLCUROFF .OR. ICALL > 1 ) THEN 
-                WRITE(0,*) '* CTUW: SUMW IS NOT <1 AND >0, BUT*',ICALL,IJ,K,M,SUMWN(IJ,K,M),XLAT,XLON,DEPTH_EXT(IJ),U_EXT(IJ),V_EXT(IJ)
+                WRITE(0,*) '* CTUW: SUMW IS NOT <1 AND >0, BUT*',ICALL,IJ,K,M,SUMWN(IJ,K,M),XLAT,&
+     &                     XLON,DEPTH_EXT(IJ),U_EXT(IJ),V_EXT(IJ)
               ENDIF
               DO IP=1,2
               DO IC=1,2
