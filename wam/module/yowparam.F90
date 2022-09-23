@@ -33,6 +33,10 @@
       LOGICAL :: LL1D
       LOGICAL :: LWDINTS
 
+      ! Moved here from yowunpool
+      LOGICAL :: LLUNSTR
+      LOGICAL :: LLR8TOR4 = .FALSE. ! Is input in fact legacy REAL*8 & NKIND == 4 ?
+
 !*     VARIABLE.   TYPE.     PURPOSE.
 !       ---------   -------   --------
 !      *IMDLGRDID* INTEGER   MODEL GRID IDENTIFICATION NUMBER.

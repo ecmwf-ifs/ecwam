@@ -1,3 +1,4 @@
+#define __FILENAME__ "init_fieldg.F90"
 SUBROUTINE INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,     &
  &                     NXS, NXE, NYS, NYE, FIELDG) 
 
@@ -38,14 +39,15 @@ SUBROUTINE INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,     &
 
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO, NLONRGG
-      USE YOWPARAM , ONLY : NGY
+      USE YOWPARAM , ONLY : NGY      ,LLUNSTR
       USE YOWPCONS , ONLY : ZMISS    ,ROAIR    ,WSTAR0
       USE YOWPHYS  , ONLY : PRCHAR
       USE YOWWIND  , ONLY : WSPMIN
-      USE YOWUNPOOL ,ONLY : LLUNSTR
-      USE YOWPD    , ONLY : MNP=>npa , XP=>x, YP=>y
-
+#ifdef WAM_HAVE_UNWAM
+      USE YOWPD    , ONLY : XP=>x, YP=>y
+#endif
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWABORT, ONLY : WAM_ABORT
 
 ! ----------------------------------------------------------------------
 
@@ -67,6 +69,12 @@ SUBROUTINE INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,     &
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('INIT_FIELDG',0,ZHOOK_HANDLE)
+
+IF (LLUNSTR) THEN
+#ifndef WAM_HAVE_UNWAM
+  CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
+ENDIF
 
 
       CALL GSTATS(1501,0)
@@ -119,8 +127,10 @@ IF (LHOOK) CALL DR_HOOK('INIT_FIELDG',0,ZHOOK_HANDLE)
             JY = BLK2LOC(IJ,ICHNK)%JFROMIJ
             JSN= BLK2LOC(IJ,ICHNK)%KFROMIJ
             IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
               FIELDG(IX,JY)%XLON = XP(IJ)
               FIELDG(IX,JY)%YLAT = YP(IJ)
+#endif
             ELSE
               FIELDG(IX,JY)%XLON = AMOWEP + (IX-1)*ZDELLO(JSN)
               FIELDG(IX,JY)%YLAT = AMOSOP + (JSN-1)*XDELLA

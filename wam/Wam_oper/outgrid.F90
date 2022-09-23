@@ -1,3 +1,4 @@
+#define __FILENAME__ "outgrid.F90"
       SUBROUTINE OUTGRID(BOUT)
 ! ----------------------------------------------------------------------
 
@@ -20,15 +21,17 @@
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC  ,NPROMA_WAM, NCHNK, KIJL4CHNK
       USE YOWINTP  , ONLY : GOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH ,KTAG
-      USE YOWPARAM , ONLY : NIBLO    ,NGX      ,NGY
+      USE YOWPARAM , ONLY : NIBLO    ,NGX      ,NGY         ,LLUNSTR
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE
       USE YOWTEST  , ONLY : IU06
-      USE OUTPUT_STRUCT, ONLY : ARR_OUT_RECV, LocalPosICT
+#ifdef WAM_HAVE_UNWAM
       USE OUTPUT_STRUCT, ONLY : INITIAL_OUTPUT_INITS_NEXTGEN
       USE OUTPUT_STRUCT, ONLY : SET_UP_ARR_OUT_RECV
-      USE YOWUNPOOL, ONLY : NIBLO_FD, NIBLO_OUT, OUT_METHOD, LLUNSTR
-
+      USE OUTPUT_STRUCT, ONLY : ARR_OUT_RECV, LocalPosICT
+      USE YOWUNPOOL, ONLY : NIBLO_FD, OUT_METHOD
+#endif
+      USE YOWABORT  ,ONLY : WAM_ABORT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE, ONLY : MPL_RECV, MPL_SEND, MPL_WAIT, &
                            & JP_NON_BLOCKING_STANDARD
@@ -55,6 +58,8 @@
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: GTEMP
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: ZSENDBUF, ZRECVBUF
 
+      INTEGER(KIND=JWIM) :: NIBLO_OUT
+
       LOGICAL, SAVE :: HaveMPI_arrays = .FALSE.
 !----------------------------------------------------------------------
 
@@ -71,10 +76,16 @@
           NFLDPPEMAX=MAX(NFLDPPEMAX,NFLDPPE(IPFGTBL(ICT)))
         ENDIF
       ENDDO
-      IF ( .NOT. HaveMPI_arrays ) THEN
-        IF (LLUNSTR .AND. (OUT_METHOD == 2)) THEN
-           CALL INITIAL_OUTPUT_INITS_NEXTGEN
-        END IF
+      IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
+        IF ( .NOT. HaveMPI_arrays ) THEN
+          IF (OUT_METHOD == 2) THEN
+            CALL INITIAL_OUTPUT_INITS_NEXTGEN
+          ENDIF
+        ENDIF
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       END IF
       HaveMPI_arrays=.TRUE.
       IF (NFLDTOT == 0) THEN
@@ -112,17 +123,19 @@
             ENDDO
           ENDIF
         ENDDO
+      ELSE
+#ifdef WAM_HAVE_UNWAM
 
-      ELSEIF (OUT_METHOD == 1) THEN
+        IF (OUT_METHOD == 1) THEN
       
 !!!!! this will need to be adapted to use BOUT
-        WRITE(0,*) '!!! ********************************* !!'
-        WRITE(0,*) '!!! in outgrid. Not yet ready !!!' 
-        WRITE(0,*) '!!! ********************************* !!'
-        CALL ABORT1
+          WRITE(0,*) '!!! ********************************* !!'
+          WRITE(0,*) '!!! in outgrid. Not yet ready !!!'
+          WRITE(0,*) '!!! ********************************* !!'
+          CALL ABORT1
 
 !     LOADING THE COMMUNICATION BUFFER
-        ALLOCATE(ZSENDBUF(NFLDPPEMAX * MPMAXLENGTH,NPROC))
+          ALLOCATE(ZSENDBUF(NFLDPPEMAX * MPMAXLENGTH,NPROC))
 
 !        ICNT(:)=0
 !        DO ICT=1,JPPFLAG
@@ -134,21 +147,25 @@
 !            ENDDO
 !          ENDIF
 !        ENDDO
-      ELSE
+        ELSE
 
 !!!!! this will need to be adapted to use BOUT
-        WRITE(0,*) '!!! ********************************* !!'
-        WRITE(0,*) '!!! in outgrid. Not yet ready !!!' 
-        WRITE(0,*) '!!! ********************************* !!'
-        CALL ABORT1
+          WRITE(0,*) '!!! ********************************* !!'
+          WRITE(0,*) '!!! in outgrid. Not yet ready !!!'
+          WRITE(0,*) '!!! ********************************* !!'
+          CALL ABORT1
 
 !!!        CALL SET_UP_ARR_OUT_RECV(IJSLOC, IJLLOC, BOUT(IJSLOC:IJLLOC,:), NFLDPPE)
+        END IF
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       END IF
 
 
 !     GLOBAL EXCHANGE
 
-      IF ((.NOT.LLUNSTR) .OR. (OUT_METHOD == 1)) THEN
+      IF (.NOT.LLUNSTR) THEN
         CALL GSTATS(693,0)
         IR=0
         IF (NFLDPPE(IRANK) > 0) THEN
@@ -174,14 +191,54 @@
 !       NOW WAIT FOR ALL TO COMPLETE
         CALL MPL_WAIT(KREQUEST=IREQ(1:IR),CDSTRING='OUTGRID:')
         CALL GSTATS(693,1)
+      ELSE
+#ifdef WAM_HAVE_UNWAM
+        IF (OUT_METHOD == 1) THEN
+          CALL GSTATS(693,0)
+          IR=0
+          IF (NFLDPPE(IRANK) > 0) THEN
+            ALLOCATE(ZRECVBUF(NFLDPPE(IRANK)*MPMAXLENGTH,NPROC))
+            DO IPR=1,NPROC
+              IR=IR+1
+              CALL MPL_RECV(ZRECVBUF(1:IRECVCOUNTS(IPR),IPR),KSOURCE=IPR, &
+       &        KTAG=KTAG,                                                &
+       &        KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),      &
+       &        CDSTRING='OUTGRID:')
+            ENDDO
+          ENDIF
+
+          DO IPR=1,NPROC
+            IF (NFLDPPE(IPR) > 0) THEN
+              IR=IR+1
+              CALL MPL_SEND(ZSENDBUF(1:ICNT(IPR),IPR),KDEST=IPR,          &
+       &        KTAG=KTAG,                                                &
+       &        KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),      &
+       &        CDSTRING='OUTGRID:')
+            ENDIF
+          ENDDO
+  !       NOW WAIT FOR ALL TO COMPLETE
+          CALL MPL_WAIT(KREQUEST=IREQ(1:IR),CDSTRING='OUTGRID:')
+          CALL GSTATS(693,1)
+        END IF
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       END IF
 
 
 !     RETRIEVE THE INFORMATION
 !     ------------------------
 
-      IF (LLUNSTR .AND. (OUT_METHOD == 2)) THEN
-        NIBLO_OUT = NIBLO_FD
+      IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
+        IF (OUT_METHOD == 2) THEN
+          NIBLO_OUT = NIBLO_FD
+        ELSE
+          NIBLO_OUT = NIBLO
+        ENDIF
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       ELSE
         NIBLO_OUT = NIBLO
       END IF
@@ -201,7 +258,7 @@
       IFLD=1
       DO WHILE ( IFLD <= NFLDPPE(IRANK) .AND. ICT <= JPPFLAG )
         IF (IPFGTBL(ICT) == IRANK ) THEN
-          IF (.NOT.(LLUNSTR) .OR. (OUT_METHOD == 1)) THEN
+          IF (.NOT.(LLUNSTR)) THEN
             DO IPR=1,NPROC
               ICOUNT=ICNT(IPR)
               DO IJ=NBLKS(IPR),NBLKE(IPR)
@@ -211,7 +268,22 @@
               ICNT(IPR)=ICOUNT
             ENDDO
           ELSE
-            GTEMP=ARR_OUT_RECV(LocalPosICT(ICT),:)
+#ifdef WAM_HAVE_UNWAM
+            IF (OUT_METHOD == 1) THEN
+              DO IPR=1,NPROC
+                ICOUNT=ICNT(IPR)
+                DO IJ=NBLKS(IPR),NBLKE(IPR)
+                  ICOUNT=ICOUNT+1
+                  GTEMP(IJ)=ZRECVBUF(ICOUNT,IPR)
+                ENDDO
+                ICNT(IPR)=ICOUNT
+              ENDDO
+            ELSE
+              GTEMP=ARR_OUT_RECV(LocalPosICT(ICT),:)
+            ENDIF
+#else
+            CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
           END IF
 
           CALL MAKEGRID (GTEMP, GOUT(IFLD,:,:), ZMISS)

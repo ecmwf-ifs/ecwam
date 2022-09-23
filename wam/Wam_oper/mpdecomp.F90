@@ -1,3 +1,4 @@
+#define __FILENAME__ "mpdecomp.F90"
 SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
 
 !****  *MPDECOMP* - EVEN DECOMPOSITION OF THE GRID DOMAIN
@@ -118,8 +119,8 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
      &            KMNOP    ,KMSOP
       USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG     ,    &
      &                      NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NIBLO    ,              &
-     &            NGX      ,NGY      ,LL1D     ,KWAMVER
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NIBLO    ,LLUNSTR  ,    &
+     &            NGX      ,NGY      ,LL1D     ,KWAMVER  ,LLR8TOR4
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI
       USE YOWSHAL  , ONLY : DEPTH_INPUT, WVENVI,BATHYMAX 
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID
@@ -136,11 +137,13 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
       USE YOWWIND  , ONLY : NXFFS    ,NXFFE    ,NYFFS    ,NYFFE,        &
      &                      NXFFS_LOC,NXFFE_LOC,NYFFS_LOC,NYFFE_LOC
 
-      USE YOWUNPOOL, ONLY : LLUNSTR, LLR8TOR4
+#ifdef WAM_HAVE_UNWAM
       USE YOWPD, ONLY : MNP => npa, RANK
+#endif
 
       USE MPL_MODULE, ONLY : MPL_BROADCAST, MPL_ALLGATHERV, MPL_SCATTERV
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWABORT , ONLY : WAM_ABORT
 
 !----------------------------------------------------------------------
 
@@ -240,6 +243,7 @@ CALL FLUSH (IU06)
 
 
 IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
 
       !! UNSTRUCTURED GRID : !! (This is still very experimental !!)
 
@@ -283,7 +287,9 @@ IF (LLUNSTR) THEN
         NXFFE=MNP
         NYFFS=1
         NYFFE=1
-
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
 
 ELSE
       !! NON UNSTRUCTURED GRID : !!

@@ -131,7 +131,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                      FF_NEXT  ,                                  &
      &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE,        &
      &                      NXFFS_LOC,NXFFE_LOC,NYFFS_LOC,NYFFE_LOC
-      USE YOWUNPOOL,ONLY  : LLUNSTR
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS

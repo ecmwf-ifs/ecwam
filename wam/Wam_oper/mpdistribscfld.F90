@@ -1,3 +1,4 @@
+#define __FILENAME__ "mpdistribscfld.F90"
       SUBROUTINE MPDISTRIBSCFLD(ISEND, ITAG, NBLKS, NBLKE, FIELD)
 
 ! ----------------------------------------------------------------------
@@ -44,12 +45,14 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH
-      USE YOWPARAM , ONLY : NIBLO
-      USE YOWUNPOOL, ONLY : LLUNSTR
-      USE YOWPD,     ONLY : RANK, MYRANK, NP,  MNP=>NPA, EXCHANGE
+      USE YOWPARAM , ONLY : NIBLO    ,LLUNSTR
+#ifdef WAM_HAVE_UNWAM
+      USE YOWPD,     ONLY : RANK, MNP=>NPA, EXCHANGE
+#endif
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE,ONLY : MPL_SEND, MPL_RECV, MPL_WAIT, MPL_ABORT, &
                           & JP_NON_BLOCKING_STANDARD
+      USE YOWABORT  ,ONLY : WAM_ABORT
 
 !----------------------------------------------------------------------
 
@@ -116,10 +119,14 @@
       CALL GSTATS(624,1)
 
       IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
         ALLOCATE(AC(MNP))
         DO IP = 1, RANK(IRANK)%NP
           AC(IP) = REAL(ZCOMBUFR(IP), KIND=JWRU)  !DBLE(ZCOMBUFR(IP))
         ENDDO
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       ELSE
         KCOUNT=0
         DO IJ=NBLKS(IRANK),NBLKE(IRANK)
@@ -142,11 +149,15 @@
 !!! it's not very prety but when unstructured, you also need to have the values on the halo
 !!! it should be combined with the previous exchange
       IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
         CALL EXCHANGE(AC)
         DO IP = 1 , MNP
           FIELD(IP) = AC(IP)
         ENDDO
         DEALLOCATE(AC)
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('MPDISTIBSCFLD',1,ZHOOK_HANDLE)

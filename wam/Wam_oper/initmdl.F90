@@ -1,3 +1,4 @@
+#define __FILENAME__ "initmdl.F90"
 SUBROUTINE INITMDL (NADV,                                 &
  &                  IREAD,                                &
  &                  BLK2GLO,  BLK2LOC,                    &
@@ -175,7 +176,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
      &                      NGX      ,NGY      ,                        &
-     &                      NIBLO    ,NIBLD    ,NIBLC
+     &                      NIBLO    ,NIBLD    ,NIBLC    ,LLUNSTR
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
      &                      RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
       USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
@@ -203,10 +204,12 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      NXFFS    , NXFFE   ,NYFFS    , NYFFE   ,    &
      &                      LLNEWCURR,LLWSWAVE ,LLWDWAVE ,FF_NEXT
 
-      USE YOWUNPOOL, ONLY : LLUNSTR, OUT_METHOD
-      USE UNSTRUCT_BOUND , ONLY : IOBP
+#ifdef WAM_HAVE_UNWAM
+      USE YOWUNPOOL, ONLY : OUT_METHOD
       USE OUTPUT_STRUCT, ONLY : INITIAL_OUTPUT_INITS
-
+      USE UNSTRUCT_BOUND , ONLY : IOBP
+#endif
+      USE YOWABORT , ONLY : WAM_ABORT
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 ! -------------------------------------------------------------------
 
@@ -623,6 +626,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
         IF (.NOT. LLUNSTR) THEN
           IOBND(KIJS:KIJL, ICHNK) = 1
         ELSE
+#ifdef WAM_HAVE_UNWAM
           DO IPRM = KIJS, KIJL
             IJ = IJFROMCHNK(IPRM, ICHNK)
             IF (IJ /= 0) THEN
@@ -633,6 +637,9 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
               ENDIF
             ENDIF
           ENDDO
+#else
+          CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
         ENDIF
 
 !       SET DEPTH MINIMUM
@@ -875,9 +882,13 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
 
       IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
         IF (OUT_METHOD == 1) THEN
           CALL INITIAL_OUTPUT_INITS
         END IF
+#else
+          CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       ENDIF
 
 !     NOTE THAT CURRENT REFRACTION TERMS ARE NOW COMPUTED WHEN

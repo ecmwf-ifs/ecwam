@@ -1,3 +1,4 @@
+#define __FILENAME__ "readstress.F90"
       SUBROUTINE READSTRESS(IJINF, IJSUP, NREAL, RFIELD, FILENAME, LRSTPARAL)
 
 ! ----------------------------------------------------------------------
@@ -29,12 +30,15 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMPP   , ONLY : NPROC
-      USE YOWPARAM , ONLY : LL1D
+      USE YOWPARAM , ONLY : LL1D     ,LLUNSTR
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWSPEC  , ONLY : IJ2NEWIJ
       USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
-      USE YOWUNPOOL, ONLY : LLUNSTR
+      USE YOWABORT,  ONLY : WAM_ABORT
+#ifdef WAM_HAVE_UNWAM
+      USE YOWUNBLKRORD, ONLY : UNBLKRORD
+#endif
 
       USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK, JPHOOK
 
@@ -43,8 +47,6 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "iwam_get_unit.intfb.h"
-#include "unblkrord.intfb.h"
-
       INTEGER(KIND=JWIM), INTENT(IN) :: IJINF, IJSUP, NREAL
       REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP,NREAL),INTENT(OUT) :: RFIELD
       CHARACTER(LEN=296), INTENT(IN) :: FILENAME
@@ -90,10 +92,14 @@
 
 
       IF (LLUNSTR .AND. .NOT.LRSTPARAL) THEN
+#ifdef WAM_HAVE_UNWAM
         DO IFLD=1,NREAL
           READ(IUNIT)(RFIELD_G(IJ),IJ=IJINF,IJSUP)
           CALL UNBLKRORD(-1,IJINF,IJSUP,1,1,1,1,RFIELD(1,IFLD),RFIELD_G(1))
         ENDDO
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       ELSEIF (LRSTPARAL .OR. LL1D .OR. NPROC == 1) THEN
 !     ALL PE'S READ OR 1D DECOMPOSITION 
         DO IFLD=1,NREAL

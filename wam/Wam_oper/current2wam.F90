@@ -1,3 +1,4 @@
+#define __FILENAME__ "current2wam.F90"
       SUBROUTINE CURRENT2WAM (FILNM, IREAD, CDATEIN,        &
      &                        IFROMIJ, JFROMIJ,             &
      &                        NXS, NXE, NYS, NYE, FIELDG,   &
@@ -52,12 +53,13 @@
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWMAP   , ONLY : IRGG     ,NLONRGG
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
-      USE YOWPARAM , ONLY : NGY
+      USE YOWPARAM , ONLY : NGY      ,LLUNSTR
       USE YOWPCONS , ONLY : ZMISS    ,EPSMIN
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06
+#ifdef WAM_HAVE_UNWAM
       USE YOWPD, ONLY : MNP => npa
-      USE YOWUNPOOL ,ONLY : LLUNSTR
+#endif
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_BROADCAST
@@ -65,6 +67,7 @@
                          & IGRIB_READ_FROM_FILE, IGRIB_RELEASE, &
                          & JPGRIB_BUFFER_TOO_SMALL, JPGRIB_END_OF_FILE, &
                          & JPGRIB_SUCCESS, JPKSIZE_T
+      USE YOWABORT, ONLY : WAM_ABORT
 
 !-----------------------------------------------------------------------
 
@@ -115,7 +118,11 @@
       IF (LHOOK) CALL DR_HOOK('CURRENT2WAM',0,ZHOOK_HANDLE)
 
       IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
         NLONRGG_LOC(:)=MNP
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       ELSE
         NLONRGG_LOC(:)=NLONRGG(:)
       ENDIF

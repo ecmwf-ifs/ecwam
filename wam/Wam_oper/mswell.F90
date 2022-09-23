@@ -115,7 +115,7 @@
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,RAD      ,R       ,ZMISS
-      USE UNWAM    , ONLY : SPHERICAL_COORDINATE_DISTANCE
+      USE YOWSPHERE, ONLY : SPHERICAL_COORDINATE_DISTANCE
 
 ! ----------------------------------------------------------------------
 

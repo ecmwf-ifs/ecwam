@@ -1,3 +1,4 @@
+#define __FILENAME__ "inwgrib.F90"
       SUBROUTINE INWGRIB (FILNM, IREAD, CDATE, IPARAM, KZLEV,  & 
      &                    NXS, NXE, NYS, NYE, FIELDG, FIELD)
 
@@ -42,13 +43,14 @@
 
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
-      USE YOWPARAM , ONLY : NGY      ,NIBLO
+      USE YOWPARAM , ONLY : NGY      ,NIBLO    ,LLUNSTR
       USE YOWMAP   , ONLY : IRGG     ,NLONRGG
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI 
       USE YOWPCONS , ONLY : ZMISS
       USE YOWTEST  , ONLY : IU06
+#ifdef WAM_HAVE_UNWAM
       USE YOWPD, ONLY : MNP => npa
-      USE YOWUNPOOL ,ONLY : LLUNSTR
+#endif
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_BROADCAST
@@ -56,6 +58,7 @@
                         & IGRIB_NEW_FROM_MESSAGE, IGRIB_READ_FROM_FILE, &
                         & JPKSIZE_T, JPGRIB_BUFFER_TOO_SMALL, &
                         & JPGRIB_END_OF_FILE, JPGRIB_SUCCESS
+      USE YOWABORT, ONLY : WAM_ABORT
 
 ! ----------------------------------------------------------------------
 
@@ -97,7 +100,11 @@
       NBIT=NIBLO
 
       IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
         NLONRGG_LOC(:)=MNP
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       ELSE
         NLONRGG_LOC(:)=NLONRGG(:)
       ENDIF

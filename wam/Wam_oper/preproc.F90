@@ -1,3 +1,4 @@
+#define __FILENAME__ "preproc.F90"
 PROGRAM preproc 
 
 ! ----------------------------------------------------------------------
@@ -126,7 +127,7 @@ PROGRAM preproc
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM , ONLY : NIBLO    ,NIBLD    ,NIBLC    ,              &
-     &            NANG     ,NFRE     ,NFRE_RED
+     &            NANG     ,NFRE     ,NFRE_RED ,LLUNSTR
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
@@ -140,8 +141,11 @@ PROGRAM preproc
       USE YOWTEST  , ONLY : IU06
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
       USE YOWUNIT  , ONLY : NPROPAGS ,IU07     ,IU08
-      USE YOWUNPOOL ,ONLY : LLUNSTR  ,LPREPROC
-      USE UNWAM
+#ifdef WAM_HAVE_UNWAM
+      USE YOWUNPOOL ,ONLY : LPREPROC
+      USE UNWAM     ,ONLY : INIT_UNWAM
+#endif
+      USE YOWABORT , ONLY : WAM_ABORT
 
 ! ----------------------------------------------------------------------
 
@@ -395,10 +399,14 @@ PROGRAM preproc
 
       CALL MGRID (BATHY)
 
-      IF (LLUNSTR .AND. LPREPROC) THEN
-
-        CALL INIT_UNWAM
-
+      IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
+        IF (LPREPROC) THEN
+          CALL INIT_UNWAM
+        ENDIF
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       END IF ! LLUNSTR
 
       NIBLD=0

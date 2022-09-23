@@ -1,3 +1,4 @@
+#define __FILENAME__ "readpre.F90"
 SUBROUTINE READPRE (IU07)
 
 ! ----------------------------------------------------------------------
@@ -66,7 +67,7 @@ SUBROUTINE READPRE (IU07)
      &            IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
-     &            NGX      ,NGY      ,                                  &
+     &            NGX      ,NGY      ,LLR8TOR4 ,LLUNSTR  ,              &
      &            NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,IMDLGRDID
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH_INPUT,DEPTHA   ,DEPTHD   ,  &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST  ,TOOSHALLOW
@@ -77,8 +78,11 @@ SUBROUTINE READPRE (IU07)
      &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,    &
      &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
       USE YOWTEST  , ONLY : IU06
-      USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LLR8TOR4
+      USE YOWABORT, ONLY : WAM_ABORT
+#ifdef WAM_HAVE_UNWAM
+      USE YOWUNPOOL, ONLY : LPREPROC
       USE UNWAM     ,ONLY : INIT_UNWAM, UNWAM_IN, SET_UNWAM_HANDLES
+#endif
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
@@ -266,9 +270,15 @@ SUBROUTINE READPRE (IU07)
         CALL READREC(18)
 
 !       THE UNSTRUCTURED BITS (if pre-computed by PREPROC)
-        IF (LLUNSTR .AND. LPREPROC) THEN
-          CALL SET_UNWAM_HANDLES
-          CALL UNWAM_IN(IU07)
+        IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
+          IF (LPREPROC) THEN
+            CALL SET_UNWAM_HANDLES
+            CALL UNWAM_IN(IU07)
+          ENDIF
+#else
+          CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
         END IF
 
       ENDIF
@@ -286,8 +296,14 @@ SUBROUTINE READPRE (IU07)
 
 !     RECALCULATE THE UNSTRUCTURED BITS (if not read in)
 
-      IF (LLUNSTR .AND. .NOT. LPREPROC) THEN
-        CALL INIT_UNWAM
+      IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
+        IF (.NOT.LPREPROC) THEN
+          CALL INIT_UNWAM
+        ENDIF
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('READPRE',1,ZHOOK_HANDLE)

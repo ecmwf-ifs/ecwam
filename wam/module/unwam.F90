@@ -74,7 +74,6 @@ PUBLIC :: PROPAG_UNWAM, &
      &    INIT_UNWAM, &
      &    UNWAM_IN, &
      &    SET_UNWAM_HANDLES, &
-     &    SPHERICAL_COORDINATE_DISTANCE, &
      &    UNWAM_OUT, &
      &    EXCHANGE_FOR_FL1
 
@@ -90,7 +89,6 @@ PUBLIC :: PROPAG_UNWAM, &
       LOGICAL, PUBLIC :: L_SOLVER_NORM
       LOGICAL, PUBLIC :: LCHKCONV
 
-
 INTERFACE PROPAG_UNWAM 
   MODULE PROCEDURE PROPAG_UNWAM
 END INTERFACE
@@ -105,10 +103,6 @@ END INTERFACE
 
 INTERFACE SET_UNWAM_HANDLES 
   MODULE PROCEDURE SET_UNWAM_HANDLES
-END INTERFACE
-
-INTERFACE SPHERICAL_COORDINATE_DISTANCE
-  MODULE PROCEDURE SPHERICAL_COORDINATE_DISTANCE
 END INTERFACE
 
 INTERFACE UNWAM_OUT
@@ -1592,77 +1586,6 @@ END INTERFACE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SPHERICAL_COORDINATE_DISTANCE(LON1, LON2, LAT1, LAT2, DIST)
-!     Purpose.: computes the distance on a sphere of radius=1 between (LON1,LAT1) and (LON2,LAT2)
-!     --------
-
-!        Explicit arguments :  
-!        --------------------   
-
-!        Implicit arguments :     N1.d0
-!        --------------------
-
-!     Method.
-!     -------
-
-!     Externals.
-!     ----------
-
-!     Reference.
-!     ----------
-!     http://en.wikipedia.org/wiki/Great-circle_distance
-
-!     Author.
-!     -------
-
-!     Modifications.
-!     --------------
-!     --------------------------------------------------------------
-      USE YOWPCONS , ONLY : RAD
-
-      IMPLICIT NONE
-
-      REAL(KIND=JWRU), INTENT(IN) :: LON1, LON2, LAT1, LAT2
-      REAL(KIND=JWRU), INTENT(OUT) :: DIST
-      REAL(KIND=JWRU) :: SLAT, SLON, C1, C2
-
-      SLAT = SIN(0.5_JWRU*(LAT1-LAT2)*RAD)**2
-      SLON = SIN(0.5_JWRU*(LON1-LON2)*RAD)**2
-      C1=COS(LAT1*RAD)
-      C2=COS(LAT2*RAD)
-      DIST = SQRT(MAX(SLAT+C1*C2*SLON,0.0_JWRU))
-
-      IF (DIST .ge. 1.0_JWRU) THEN
-        DIST=0.0_JWRU
-      ELSE
-        DIST = 2.0_JWRU*ASIN(DIST) 
-      END IF
-      END SUBROUTINE SPHERICAL_COORDINATE_DISTANCE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE SPHERICAL_COORDINATE_AREA(LON1, LON2, LON3, LAT1, LAT2, LAT3, AREA)
-      IMPLICIT NONE
-      REAL(KIND=JWRU), INTENT(IN) :: LON1, LON2, LON3, LAT1, LAT2, LAT3
-      REAL(KIND=JWRU), INTENT(OUT) :: AREA
-      REAL(KIND=JWRU) :: DistA, DistB, DistC, DistS
-      REAL(KIND=JWRU) :: eTan1, eTan2, eTan3, eTan4
-      REAL(KIND=JWRU) :: eProd, sqrtProd
-      CALL SPHERICAL_COORDINATE_DISTANCE(LON1, LON2, LAT1, LAT2, DistA)
-      CALL SPHERICAL_COORDINATE_DISTANCE(LON1, LON3, LAT1, LAT3, DistB)
-      CALL SPHERICAL_COORDINATE_DISTANCE(LON2, LON3, LAT2, LAT3, DistC)
-      DistS=0.5_JWRU*(DistA + DistB + DistC)
-      eTan1=tan(0.5_JWRU*DistS)
-      eTan2=tan(0.5_JWRU*(DistS - DistA))
-      eTan3=tan(0.5_JWRU*(DistS - DistB))
-      eTan4=tan(0.5_JWRU*(DistS - DistC))
-      eProd=eTan1*eTan2*eTan3*eTan4
-      sqrtProd=SQRT(eProd)
-      AREA=4.0_JWRU*ATAN(sqrtProd)
-      END SUBROUTINE SPHERICAL_COORDINATE_AREA
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE CORRECT_SINGLE_DXP(DXP)
       IMPLICIT NONE
       REAL(KIND=JWRU), INTENT(INOUT) :: DXP
@@ -1682,6 +1605,8 @@ END INTERFACE
       use YOWERROR,  ONLY: PARALLEL_ABORT
       USE YOWFRED  , ONLY : FR
       USE YOWTEST  , ONLY : IU06
+      USE YOWSPHERE, ONLY : SPHERICAL_COORDINATE_DISTANCE, &
+                          & SPHERICAL_COORDINATE_AREA
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM) :: IERR, IPGL

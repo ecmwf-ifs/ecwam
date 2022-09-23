@@ -1,3 +1,4 @@
+#define __FILENAME__ "writefl.F90"
       SUBROUTINE WRITEFL(FL, IJINF, IJSUP, KINF, KSUP, MINF, MSUP,      &
      &                   FILENAME, IUNIT, LOUNIT, LRSTPARAL)
 
@@ -46,10 +47,13 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMPP   , ONLY : NPROC
-      USE YOWPARAM , ONLY : LL1D
+      USE YOWPARAM , ONLY : LL1D, LLUNSTR
       USE YOWSPEC  , ONLY : IJ2NEWIJ
       USE YOWTEST  , ONLY : IU06
-      USE YOWUNPOOL, ONLY : LLUNSTR
+      USE YOWABORT , ONLY : WAM_ABORT
+#ifdef WAM_HAVE_UNWAM
+      USE YOWUNBLKRORD, ONLY : UNBLKRORD
+#endif
 
       USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK, JPHOOK
 
@@ -57,7 +61,6 @@
 
       IMPLICIT NONE
 #include "iwam_get_unit.intfb.h"
-#include "unblkrord.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJINF, IJSUP, KINF, KSUP, MINF, MSUP
       INTEGER(KIND=JWIM), INTENT(INOUT) :: IUNIT
@@ -88,13 +91,16 @@
       ENDIF
 
       IF (LLUNSTR .AND. .NOT.LRSTPARAL) THEN
+#ifdef WAM_HAVE_UNWAM
         FL_G(0,:,:)=0.0_JWRB
         CALL UNBLKRORD(1,IJINF,IJSUP,KINF,KSUP,MINF,MSUP,               &
      &                 FL(IJINF:IJSUP,KINF:KSUP,MINF:MSUP),             &
      &               FL_G(IJINF:IJSUP,KINF:KSUP,MINF:MSUP))
 
         WRITE(IUNIT) (((FL_G(IJ,J2,J3),IJ=IJINF,IJSUP),J2=KINF,KSUP),J3=MINF,MSUP)
-
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       ELSEIF (LRSTPARAL .OR. LL1D .OR. NPROC == 1) THEN
         WRITE(IUNIT) (((FL(IJ,J2,J3),IJ=IJINF,IJSUP),J2=KINF,KSUP),J3=MINF,MSUP)
       ELSE

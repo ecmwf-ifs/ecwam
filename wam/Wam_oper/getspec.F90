@@ -1,3 +1,4 @@
+#define __FILENAME__ "getspec.F90"
 SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
@@ -59,14 +60,15 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,                        &
      &                      KTAG     ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
-     &                      NGY      ,NIBLO    ,CLDOMAIN
+     &                      NGY      ,NIBLO    ,CLDOMAIN ,LLUNSTR
       USE YOWPCONS , ONLY : G        ,DEG      ,R        ,ZMISS    ,    &
      &                      EPSMIN
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,IREFRA  ,LNSESTART
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
+#ifdef WAM_HAVE_UNWAM
       USE YOWPD, ONLY : MNP => npa
-      USE YOWUNPOOL ,ONLY : LLUNSTR
+#endif
       USE YOWWIND  , ONLY : NXFFS    ,NXFFE    ,NYFFS    ,NYFFE
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -77,6 +79,7 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
                         & IGRIB_READ_FROM_FILE, IGRIB_NEW_FROM_MESSAGE, &
                         & JPGRIB_SUCCESS, JPGRIB_BUFFER_TOO_SMALL, &
                         & JPGRIB_END_OF_FILE, JPKSIZE_T
+      USE YOWABORT, ONLY : WAM_ABORT
 
 ! ----------------------------------------------------------------------
 
@@ -221,7 +224,11 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
         ISTEP=MAX(NPROC-1,1)
 
         IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
           NLONRGG_LOC(:)=MNP
+#else
+          CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
         ELSE
           NLONRGG_LOC(:)=NLONRGG(:)
         ENDIF

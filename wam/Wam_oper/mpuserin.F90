@@ -75,7 +75,8 @@
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
-     &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
+     &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN ,    &
+     &            LLUNSTR
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
 
@@ -100,12 +101,14 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,   &
      &            PATH     ,CPATH    ,CWI
-      USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LVECTOR, IVECTOR
-      USE UNSTRUCT_BOUND , ONLY : LBCWA
+#ifdef WAM_HAVE_UNWAM
+      USE YOWUNPOOL, ONLY : LPREPROC, LVECTOR, IVECTOR
       USE UNWAM    , ONLY : LIMPLICIT, JGS_DIFF_SOLVERTHR,              &
      &            SOURCE_IMPL, WAE_SOLVERTHR,                           &
      &            LNONL, BLOCK_GAUSS_SEIDEL,                            &
      &            LLIMT, L_SOLVER_NORM, LCHKCONV
+     USE UNSTRUCT_BOUND , ONLY : LBCWA
+#endif
       USE YOWWAMI  , ONLY : CBEGDT   ,CENDDT   ,CBPLTDT  ,CEPLTDT  ,    &
      &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,    &
      &            IASSIM   ,NFCST    ,ISTAT
@@ -134,6 +137,25 @@
       CHARACTER(LEN=:), ALLOCATABLE :: NAMELIST_FILENAME
 
       LOGICAL :: LLEOF 
+
+#ifndef WAM_HAVE_UNWAM
+      ! dummy read namelist read variables otherwise present in UNWAM module
+      REAL(KIND=JWRU) :: WAE_SOLVERTHR
+      REAL(KIND=JWRU) :: JGS_DIFF_SOLVERTHR
+      LOGICAL         :: LIMPLICIT
+      LOGICAL         :: SOURCE_IMPL
+      LOGICAL         :: LNONL
+      LOGICAL         :: BLOCK_GAUSS_SEIDEL
+      LOGICAL         :: LLIMT
+      LOGICAL         :: L_SOLVER_NORM
+      LOGICAL         :: LCHKCONV
+      ! dummy read namelist read variables otherwise present in UNSTRUCT_BOUND module
+      LOGICAL         :: LBCWA
+      ! dummy read namelist read variables otherwise present in YOWUNPOOL module
+      LOGICAL            :: LPREPROC
+      LOGICAL            :: LVECTOR
+      INTEGER(KIND=JWIM) :: IVECTOR
+#endif
 
 ! ----------------------------------------------------------------------
 

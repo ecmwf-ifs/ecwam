@@ -8,7 +8,6 @@
 
          IMPLICIT NONE
 
-         LOGICAL :: LLUNSTR
          LOGICAL :: LPREPROC
          LOGICAL :: LLUNBINOUT ! controls output into erghs.bin, ergtm.bin and ergtest.bin
 
@@ -40,7 +39,7 @@
 
          INTEGER(KIND=JWIM) :: OUT_METHOD = 2
          INTEGER(KIND=JWIM) :: MaxLen
-         INTEGER(KIND=JWIM) :: NIBLO_FD, NIBLO_OUT
+         INTEGER(KIND=JWIM) :: NIBLO_FD
          
 !         INTEGER(KIND=JWIM)                :: MNP ! Number of nodes ...
 !         INTEGER(KIND=JWIM)                :: MNE ! Number of elements ...
@@ -76,7 +75,6 @@
          LOGICAL                :: LADVTEST = .FALSE. ! switch for testing advection ... 
          LOGICAL                :: LSPHE    = .TRUE.  ! spherical coordinates 
          LOGICAL                :: LVECTOR  = .FALSE. 
-         LOGICAL                :: LLR8TOR4 = .FALSE. ! Is input in fact legacy REAL*8 & NKIND == 4 ?
 
 !         REAL(KIND=JWRU), ALLOCATABLE    :: WBACOLD(:,:,:)
 !         REAL(KIND=JWRU), ALLOCATABLE    :: DSPEC(:,:,:)

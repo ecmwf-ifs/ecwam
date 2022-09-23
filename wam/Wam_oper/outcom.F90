@@ -1,3 +1,4 @@
+#define __FILENAME__ "outcom.F90"
       SUBROUTINE OUTCOM (IU07, IU17, IFORM)
 
 ! ----------------------------------------------------------------------
@@ -63,7 +64,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED  ,             &
      &            NGX      ,NGY      ,                                  &
      &            NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,              &
-     &            NIBLC    ,CLDOMAIN ,IMDLGRDID
+     &            NIBLC    ,CLDOMAIN ,IMDLGRDID,LLUNSTR
       USE YOWCPBO  , ONLY : NBOUNC
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
@@ -88,9 +89,13 @@
      &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,    &
      &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,    &
      &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
-      USE YOWUNPOOL ,ONLY : LLUNSTR  ,LPREPROC
+      USE YOWABORT, ONLY : WAM_ABORT
 
+#ifdef WAM_HAVE_UNWAM
       USE UNWAM , ONLY : UNWAM_OUT
+      USE YOWUNPOOL ,ONLY : LPREPROC
+#endif
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -304,8 +309,14 @@
      &  NBOUNC, NBOUNF, NBINP, NIBL1, NIBLD, NIBLC,                     &
      &  ITAUMAX, JUMAX, IUSTAR, IALPHA, NDEPTH, IDUM, IPER)
 
-      IF (LLUNSTR .AND. LPREPROC) THEN
-        CALL UNWAM_OUT(IU07)
+      IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
+        IF (LPREPROC) THEN
+          CALL UNWAM_OUT(IU07)
+        ENDIF
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       END IF
 
       END SUBROUTINE OUTCOM

@@ -1,3 +1,4 @@
+#define __FILENAME__ "makegrid.F90"
       SUBROUTINE MAKEGRID (BLOCK, GRID, PMISS)
 
 ! ----------------------------------------------------------------------
@@ -43,36 +44,42 @@
 
       USE YOWMAP   , ONLY : BLK2GLO  ,AMOWEP   ,AMONOP   ,    &
      &            XDELLA   ,ZDELLO   ,IPER
-      USE YOWMPP   , ONLY : NPROC
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
-      USE YOWUNPOOL, ONLY : LLUNSTR  ,IE_OUTPTS
-      USE YOWUNPOOL, ONLY : NIBLO_OUT, OUT_METHOD
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,LLUNSTR
+#ifdef WAM_HAVE_UNWAM
+      USE YOWUNPOOL, ONLY : OUT_METHOD, IE_OUTPTS
       USE OUTPUT_STRUCT, ONLY : IXarr, IYarr
-      USE YOWPD,     ONLY : NODES=>nodes_global,INE_GLOBAL,rank, np
+      USE YOWPD,     ONLY : NODES=>nodes_global,INE_GLOBAL
       USE OUTPUT_STRUCT, ONLY : INTELEMENT_IPOL
+      USE YOWUNBLKRORD, ONLY : UNBLKRORD
+#endif
+      USE YOWABORT  ,ONLY : WAM_ABORT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-#include "unblkrord.intfb.h"
-
-      REAL(KIND=JWRB), DIMENSION(NIBLO_OUT), INTENT(INOUT) :: BLOCK
+      REAL(KIND=JWRB), INTENT(INOUT) :: BLOCK(:)
       REAL(KIND=JWRB), INTENT(IN) :: PMISS
       REAL(KIND=JWRB), INTENT(OUT) :: GRID(NGX,NGY)
 
-      INTEGER(KIND=JWIM) :: IY, IX, J, I, IJ, IE, KI, IR, IP
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+      REAL(KIND=JWRU) :: PMS8
+      INTEGER(KIND=JWIM) :: I, J
+
+#ifdef WAM_HAVE_UNWAM
+      INTEGER(KIND=JWIM) :: IY, IX, IJ, IE, KI, IR, IP
       INTEGER(KIND=JWIM) :: NI(3)
 
-      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE :: BLOCK_G(:)
 
       REAL(KIND=JWRU) :: XLO, XLA
-      REAL(KIND=JWRU) :: GRID8, PMS8
+      REAL(KIND=JWRU) :: GRID8
       REAL(KIND=JWRU) :: XYELE(2,3), SKALAR(3)
 
       LOGICAL :: LLCLST
 
       INTEGER(KIND=JWIM) :: iNode
+      INTEGER(KIND=JWIM) :: NIBLO_OUT
+#endif
 
 ! ----------------------------------------------------------------------
 
@@ -95,9 +102,11 @@
 !     ---------------------
 
       IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
+        NIBLO_OUT=SIZE(BLOCK)
         IF (OUT_METHOD == 1) THEN
           ALLOCATE(BLOCK_G(NIBLO_OUT))
-          CALL UNBLKRORD(1, 1, NIBLO, 1, 1, 1, 1, BLOCK(1), BLOCK_G(1))
+          CALL UNBLKRORD(1, 1, NIBLO, 1, 1, 1, 1, BLOCK, BLOCK_G)
 !!! I believe one could have an openmp loop here !!!!
           DO IY=1,NGY
             XLA = REAL(AMONOP-REAL(IY-1,JWRB)*XDELLA,JWRU)
@@ -136,6 +145,9 @@
           IY = NGY-BLK2GLO(IJ)%KXLT+1
           GRID(IX,IY) = BLOCK(IJ)
         ENDDO
+#else
+      CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       ENDIF ! LLUNSTR
 
       CALL GSTATS(1996,1)

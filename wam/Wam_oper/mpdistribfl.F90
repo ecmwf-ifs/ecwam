@@ -1,3 +1,4 @@
+#define __FILENAME__ "mpdistribfl.F90"
       SUBROUTINE MPDISTRIBFL(ISEND, ITAG, NBLKS, NBLKE, KINF, KSUP,     &
      &                       MINF, MSUP, FL)
 
@@ -49,12 +50,14 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH
-      USE YOWPARAM , ONLY : NIBLO
-      USE YOWUNPOOL, ONLY : LLUNSTR
-      USE YOWPD,     ONLY : RANK, MYRANK, NP,  MNP=>NPA, EXCHANGE
+      USE YOWPARAM , ONLY : NIBLO    ,LLUNSTR
+#ifdef WAM_HAVE_UNWAM
+      USE YOWPD,     ONLY : RANK, MNP=>NPA, EXCHANGE
+#endif
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE, ONLY : MPL_SEND, MPL_RECV, MPL_WAIT, MPL_ABORT, &
                            & JP_NON_BLOCKING_STANDARD
+      USE YOWABORT, ONLY : WAM_ABORT
 
 !----------------------------------------------------------------------
 
@@ -119,6 +122,7 @@
      &   ('MPL_RECV ERROR in MPDISTRIBFL MISMATCHED TAGS' )
 
       IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
         ALLOCATE(AC(MNP,KINF:KSUP,MINF:MSUP))
         DO M=MINF,MSUP
           DO K=KINF,KSUP
@@ -127,6 +131,9 @@
             ENDDO
           ENDDO 
         ENDDO
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       ELSE
         KCOUNT=0
         DO M=MINF,MSUP
@@ -152,6 +159,7 @@
 !!! it's not very prety but when unstructured, you also need to have the values on the halo
 !!! it should be combined with the previous exchange
       IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
         DO M=MINF,MSUP
           DO K=KINF,KSUP
             CALL EXCHANGE(AC(:,K,M))
@@ -161,6 +169,9 @@
           ENDDO
         ENDDO
         DEALLOCATE(AC)
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('MPDISTRIBFL',1,ZHOOK_HANDLE)

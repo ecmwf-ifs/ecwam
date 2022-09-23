@@ -1,3 +1,4 @@
+#define __FILENAME__ "readwind.F90"
 SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
  &                   NXS, NXE, NYS, NYE, FIELDG)
 
@@ -94,14 +95,15 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
       USE YOWPARAM , ONLY : NGY      ,NIBLO    ,CLDOMAIN ,              &
      &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,LWDINTS  ,    &
-     &            SWAMPCIFR
+     &            SWAMPCIFR,LLUNSTR
       USE YOWSTAT  , ONLY : CDATEA   ,IDELWI   ,LADEN    ,LGUST
       USE YOWTEST  , ONLY : IU06
       USE YOWWNDG  , ONLY : ICODE    ,IWPER    ,ICOORD 
       USE YOWWIND  , ONLY : IUNITW   , NBITW    ,CWDFILE ,LLWSWAVE ,LLWDWAVE 
       USE YOWPCONS , ONLY : RAD      ,ZMISS    ,ROAIR    ,WSTAR0
+#ifdef WAM_HAVE_UNWAM
       USE YOWPD, ONLY : MNP => npa
-      USE YOWUNPOOL ,ONLY : LLUNSTR
+#endif
 
       USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_BROADCAST
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -112,6 +114,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
                         & IGRIB_OPEN_FILE, &
                         & IGRIB_READ_FROM_FILE, &
                         & IGRIB_RELEASE
+      USE YOWABORT, ONLY : WAM_ABORT
 
 ! --------------------------------------------------------------------- 
 
@@ -161,7 +164,11 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
       IF (LHOOK) CALL DR_HOOK('READWIND',0,ZHOOK_HANDLE)
 
       IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
         NLONRGG_LOC(:)=MNP
+#else
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       ELSE
         NLONRGG_LOC(:) = NLONRGG(:)
       ENDIF

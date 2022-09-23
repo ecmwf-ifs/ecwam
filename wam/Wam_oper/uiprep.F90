@@ -49,7 +49,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
-     &            NGX      ,NGY      ,NIBLO    ,CLDOMAIN
+     &            NGX      ,NGY      ,NIBLO    ,CLDOMAIN ,LLUNSTR
       USE YOWCPBO  , ONLY : IBOUNC   ,GBOUNC_MAX, GBOUNC ,              &
      &            AMOSOC   ,AMONOC   ,AMOEAC   ,AMOWEC
       USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,    &
@@ -63,7 +63,9 @@
      &            XDELLA   ,XDELLO   ,NLONRGG  ,LLOBSTRCT,LAQUA
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD 
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
-      USE YOWUNPOOL, ONLY : LLUNSTR, LPREPROC, LVECTOR, IVECTOR
+#ifdef WAM_HAVE_UNWAM
+      USE YOWUNPOOL, ONLY : LPREPROC, LVECTOR, IVECTOR
+#endif
       USE YOWABORT, ONLY : WAM_ABORT
 
 ! ----------------------------------------------------------------------
@@ -91,6 +93,12 @@
 
       CHARACTER(LEN=70) :: CLINE, FILENAME
       LOGICAL :: LLEXISTS
+
+#ifndef WAM_HAVE_UNWAM
+      LOGICAL            :: LPREPROC
+      LOGICAL            :: LVECTOR
+      INTEGER(KIND=JWIM) :: IVECTOR
+#endif
 
 ! ----------------------------------------------------------------------
 

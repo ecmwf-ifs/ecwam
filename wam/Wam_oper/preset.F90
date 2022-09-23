@@ -85,7 +85,7 @@ PROGRAM preset
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG     ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
-     &            NIBLO    ,SWAMPWIND,CLDOMAIN ,LL1D
+     &            NIBLO    ,SWAMPWIND,CLDOMAIN ,LL1D     ,LLUNSTR
       USE YOWPCONS , ONLY : G        ,RAD      ,DEG      ,ZMISS    ,    &
      &            ROAIR
       USE YOWSHAL  , ONLY : DEPTH_INPUT, WVENVI, BATHYMAX
@@ -104,7 +104,9 @@ PROGRAM preset
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,USERID   ,RUNID    ,PATH     ,    &
      &            CPATH
-      USE YOWUNPOOL ,ONLY : LLUNSTR  ,LPREPROC
+#ifdef WAM_HAVE_UNWAM
+      USE YOWUNPOOL ,ONLY : LPREPROC
+#endif
       USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
      &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE    ,    &
@@ -164,6 +166,10 @@ PROGRAM preset
       LOGICAL :: LLINIT_FIELDG
       LOGICAL :: LWCUR
       LOGICAL :: LLINIALL, LLOCAL
+
+#ifndef WAM_HAVE_UNWAM
+      LOGICAL::LPREPROC
+#endif
 
 ! ----------------------------------------------------------------------
 
