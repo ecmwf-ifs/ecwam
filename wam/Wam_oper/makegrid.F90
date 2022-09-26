@@ -105,7 +105,7 @@
         NIBLO_OUT=SIZE(BLOCK)
         IF (OUT_METHOD == 1) THEN
           ALLOCATE(BLOCK_G(NIBLO_OUT))
-          CALL UNBLKRORD(1, 1, NIBLO, 1, 1, 1, 1, BLOCK, BLOCK_G)
+          CALL UNBLKRORD(1, 1, NIBLO_OUT, 1, 1, 1, 1, BLOCK, BLOCK_G)
 !!! I believe one could have an openmp loop here !!!!
           DO IY=1,NGY
             XLA = REAL(AMONOP-REAL(IY-1,JWRB)*XDELLA,JWRU)
