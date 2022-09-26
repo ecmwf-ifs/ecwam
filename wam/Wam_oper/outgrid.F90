@@ -1,4 +1,3 @@
-#define __FILENAME__ "outgrid.F90"
       SUBROUTINE OUTGRID(BOUT)
 ! ----------------------------------------------------------------------
 

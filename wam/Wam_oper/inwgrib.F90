@@ -1,4 +1,3 @@
-#define __FILENAME__ "inwgrib.F90"
       SUBROUTINE INWGRIB (FILNM, IREAD, CDATE, IPARAM, KZLEV,  & 
      &                    NXS, NXE, NYS, NYE, FIELDG, FIELD)
 

@@ -1,5 +1,3 @@
-#define __FILENAME__ "outspec.F90"
-
 SUBROUTINE OUTSPEC (FL1, FF_NOW)
 
 !----------------------------------------------------------------------

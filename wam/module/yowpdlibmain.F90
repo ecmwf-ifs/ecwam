@@ -3,7 +3,6 @@
 !> \author Thomas Huxhorn
 !> \date 2011-2012
 
-#define __FILENAME__ "yowpdlibmain.F90"
 #include "yowincludes.h"
 
 module yowpdlibMain

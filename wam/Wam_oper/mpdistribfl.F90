@@ -1,4 +1,3 @@
-#define __FILENAME__ "mpdistribfl.F90"
       SUBROUTINE MPDISTRIBFL(ISEND, ITAG, NBLKS, NBLKE, KINF, KSUP,     &
      &                       MINF, MSUP, FL)
 

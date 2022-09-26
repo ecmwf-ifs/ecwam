@@ -1,4 +1,3 @@
-#define __FILENAME__ "writestress.F90"
       SUBROUTINE WRITESTRESS(IJINF, IJSUP, NREAL, RFIELD, FILENAME, LRSTPARAL) 
 
 ! ----------------------------------------------------------------------

@@ -1,4 +1,3 @@
-#define __FILENAME__ "current2wam.F90"
       SUBROUTINE CURRENT2WAM (FILNM, IREAD, CDATEIN,        &
      &                        IFROMIJ, JFROMIJ,             &
      &                        NXS, NXE, NYS, NYE, FIELDG,   &

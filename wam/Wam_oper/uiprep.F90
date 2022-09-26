@@ -1,5 +1,3 @@
-#define __FILENAME__ "uiprep.F90"
-
     SUBROUTINE UIPREP (IFORM, LLGRID)
 
 ! ----------------------------------------------------------------------

@@ -3,7 +3,6 @@
 !> \author Mathieu Dutour, Thomas Huxhorn
 !> \data 2014
 
-#define __FILENAME__ "yowchecksmodule.F90"
 #include "yowincludes.h"
 
 module yowChecksModule  

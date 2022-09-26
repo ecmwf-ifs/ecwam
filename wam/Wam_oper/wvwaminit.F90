@@ -1,5 +1,3 @@
-#define __FILENAME__ "wvwaminit.F90"
-
       SUBROUTINE WVWAMINIT (LLCOUPLED, IULOG, LLRNL,                    &
      &                      NGAUSSW, NLON, NLAT, RSOUTW, RNORTW)
 

@@ -1,5 +1,3 @@
-#define __FILENAME__ "difdate.F90"
-
 ! ======================================================================
 
       SUBROUTINE DIFDATE (CDATE1, CDATE2, KSHIFT)

@@ -1,4 +1,3 @@
-#define __FILENAME__ "initmdl.F90"
 SUBROUTINE INITMDL (NADV,                                 &
  &                  IREAD,                                &
  &                  BLK2GLO,  BLK2LOC,                    &

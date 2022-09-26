@@ -1,4 +1,3 @@
-#define __FILENAME__ "getspec.F90"
 SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 

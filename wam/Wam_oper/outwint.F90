@@ -1,5 +1,3 @@
-#define __FILENAME__ "outwint.F90"
-
 SUBROUTINE OUTWINT(BOUT)
 
 ! ----------------------------------------------------------------------

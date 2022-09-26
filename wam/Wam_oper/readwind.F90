@@ -1,4 +1,3 @@
-#define __FILENAME__ "readwind.F90"
 SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
  &                   NXS, NXE, NYS, NYE, FIELDG)
 

@@ -1,4 +1,3 @@
-#define __FILENAME__ "readfl.F90"
       SUBROUTINE READFL(FL, IJINF, IJSUP, KINF, KSUP, MINF, MSUP,       &
      &                  FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARAL)
 

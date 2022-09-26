@@ -1,5 +1,3 @@
-#define __FILENAME__ "get_preset_wgrib_template.F90"
-
 SUBROUTINE GET_PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE)
 
 !----------------------------------------------------------------------

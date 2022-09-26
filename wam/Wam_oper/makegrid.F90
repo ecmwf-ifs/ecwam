@@ -1,4 +1,3 @@
-#define __FILENAME__ "makegrid.F90"
       SUBROUTINE MAKEGRID (BLOCK, GRID, PMISS)
 
 ! ----------------------------------------------------------------------

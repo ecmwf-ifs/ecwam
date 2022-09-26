@@ -1,4 +1,3 @@
-#define __FILENAME__ "mpdistribscfld.F90"
       SUBROUTINE MPDISTRIBSCFLD(ISEND, ITAG, NBLKS, NBLKE, FIELD)
 
 ! ----------------------------------------------------------------------

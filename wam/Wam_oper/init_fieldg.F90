@@ -1,4 +1,3 @@
-#define __FILENAME__ "init_fieldg.F90"
 SUBROUTINE INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,     &
  &                     NXS, NXE, NYS, NYE, FIELDG) 
 

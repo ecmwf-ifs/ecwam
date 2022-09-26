@@ -1,4 +1,3 @@
-#define __FILENAME__ "outcom.F90"
       SUBROUTINE OUTCOM (IU07, IU17, IFORM)
 
 ! ----------------------------------------------------------------------

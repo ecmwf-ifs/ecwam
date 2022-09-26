@@ -1,4 +1,3 @@
-#define __FILENAME__ "writefl.F90"
       SUBROUTINE WRITEFL(FL, IJINF, IJSUP, KINF, KSUP, MINF, MSUP,      &
      &                   FILENAME, IUNIT, LOUNIT, LRSTPARAL)
 

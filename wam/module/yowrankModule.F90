@@ -3,7 +3,6 @@
 !> \author Thomas Huxhorn
 !> \date 2013
 
-#define __FILENAME__ "yowrankModule.F90"
 #include "yowincludes.h"
 
 !> Provides access to some information of all threads e.g. iplg

@@ -1,4 +1,3 @@
-#define __FILENAME__ "readstress.F90"
       SUBROUTINE READSTRESS(IJINF, IJSUP, NREAL, RFIELD, FILENAME, LRSTPARAL)
 
 ! ----------------------------------------------------------------------

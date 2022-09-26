@@ -1,5 +1,3 @@
-#define __FILENAME__ "yowassi.F90"
-
 MODULE YOWASSI
     !! This module provides interfaces for callback functions that need to
     !! be registered for Data assimilation routines

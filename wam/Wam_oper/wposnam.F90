@@ -1,5 +1,3 @@
-#define __FILENAME__ "wposnam.F90"
-
       SUBROUTINE WPOSNAM(KULNAM, CDNAML, LDEOF)
 
 !**** *WPOSNAM* - position namelist file for reading

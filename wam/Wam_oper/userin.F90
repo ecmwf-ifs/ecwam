@@ -1,5 +1,3 @@
-#define __FILENAME__ "userin.F90"
-
 SUBROUTINE USERIN (IFORCA, LWCUR)
 
 ! ----------------------------------------------------------------------
