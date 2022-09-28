@@ -33,6 +33,23 @@ module yowExchangeModule
     !> global node IDs to send
     integer(KIND=JWIM), allocatable :: nodesToSend(:)
 
+#ifdef WAM_HAVE_MPI_F08
+    !> MPI datatypes for 1D exchange
+    type(mpi_datatype) :: p1DRsendType = MPI_DATATYPE_NULL
+    type(mpi_datatype) :: p1DRrecvType = MPI_DATATYPE_NULL
+    type(mpi_datatype) :: p1DIsendType = MPI_DATATYPE_NULL
+    type(mpi_datatype) :: p1DIrecvType = MPI_DATATYPE_NULL
+    !> MPI datatypes for 2D exchange
+    type(mpi_datatype) :: p2DRsendType1 = MPI_DATATYPE_NULL
+    type(mpi_datatype) :: p2DRrecvType1 = MPI_DATATYPE_NULL
+    type(mpi_datatype) :: p2DRsendType2 = MPI_DATATYPE_NULL
+    type(mpi_datatype) :: p2DRrecvType2 = MPI_DATATYPE_NULL
+    !> MPI datatypes for 3D exchange
+    type(mpi_datatype) :: p3DR8sendType = MPI_DATATYPE_NULL
+    type(mpi_datatype) :: p3DR8recvType = MPI_DATATYPE_NULL
+    type(mpi_datatype) :: p3DR4sendType = MPI_DATATYPE_NULL
+    type(mpi_datatype) :: p3DR4recvType = MPI_DATATYPE_NULL
+#else
     !> MPI datatypes for 1D exchange
     integer(KIND=JWIM) :: p1DRsendType = MPI_DATATYPE_NULL
     integer(KIND=JWIM) :: p1DRrecvType = MPI_DATATYPE_NULL
@@ -48,7 +65,7 @@ module yowExchangeModule
     integer(KIND=JWIM) :: p3DR8recvType = MPI_DATATYPE_NULL
     integer(KIND=JWIM) :: p3DR4sendType = MPI_DATATYPE_NULL
     integer(KIND=JWIM) :: p3DR4recvType = MPI_DATATYPE_NULL
-
+#endif
     contains
 !     procedure :: exchangeGhostIds
 !     final :: finalizeNeighborDomain
@@ -244,8 +261,13 @@ module yowExchangeModule
     real(kind=rkind), intent(inout) :: U(:)
 
     integer(KIND=JWIM) :: i, ierr, tag
+#ifdef WAM_HAVE_MPI_F08
+    type(mpi_request) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
+    type(mpi_status)  :: recvStat(nConnDomains), sendStat(nConnDomains)
+#else
     integer(KIND=JWIM) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
     integer(KIND=JWIM) :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
+#endif
     character(len=200) errstr
 
     if(size(U) /= npa) then
@@ -304,8 +326,13 @@ module yowExchangeModule
     integer(KIND=JWIM), intent(inout) :: U(:)
 
     integer(KIND=JWIM) :: i, ierr, tag
+#ifdef WAM_HAVE_MPI_F08
+    type(mpi_request) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
+    type(mpi_status)  :: recvStat(nConnDomains), sendStat(nConnDomains)
+#else
     integer(KIND=JWIM) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
     integer(KIND=JWIM) :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
+#endif
     character(len=200) errstr
 
     if(size(U) /= npa) then
@@ -365,8 +392,13 @@ module yowExchangeModule
     real(kind=rkind), intent(inout) :: U(:,:)
 
     integer(KIND=JWIM) :: i, ierr, tag
+#ifdef WAM_HAVE_MPI_F08
+    type(mpi_request) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
+    type(mpi_status)  :: recvStat(nConnDomains), sendStat(nConnDomains)
+#else
     integer(KIND=JWIM) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
     integer(KIND=JWIM) :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
+#endif
     character(len=200) errstr
 
     if(size(U,2) /= npa) then
@@ -467,8 +499,13 @@ module yowExchangeModule
     real(kind=8), intent(inout) :: U(:,:,:)
 
     integer(KIND=JWIM) :: i, ierr, tag
+#ifdef WAM_HAVE_MPI_F08
+    type(mpi_request) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
+    type(mpi_status)  :: recvStat(nConnDomains), sendStat(nConnDomains)
+#else
     integer(KIND=JWIM) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
     integer(KIND=JWIM) :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
+#endif
     character(len=200) errstr
 
     if(size(U,3) /= npa) then
@@ -537,8 +574,13 @@ module yowExchangeModule
     real(kind=4), intent(inout) :: U(:,:,:)
 
     integer(KIND=JWIM) :: i, ierr, tag
+#ifdef WAM_HAVE_MPI_F08
+    type(mpi_request) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
+    type(mpi_status)  :: recvStat(nConnDomains), sendStat(nConnDomains)
+#else
     integer(KIND=JWIM) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
     integer(KIND=JWIM) :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
+#endif
     character(len=200) errstr
 
     if(size(U,3) /= npa) then

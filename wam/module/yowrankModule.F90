@@ -57,8 +57,13 @@ module yowRankModule
     use yowMpiModule
     implicit none
     integer(KIND=JWIM) :: i, ierr, stat
+#ifdef WAM_HAVE_MPI_F08
+    type(mpi_request)  :: sendRqst(nTasks), recvRqst(nTasks)
+    type(mpi_status)   :: recvStat(nTasks), sendStat(nTasks)
+#else
     integer(KIND=JWIM) :: sendRqst(nTasks), recvRqst(nTasks)
     integer(KIND=JWIM) :: recvStat(MPI_STATUS_SIZE, nTasks), sendStat(MPI_STATUS_SIZE, nTasks)
+#endif
 
     ! step1 exchange np
     ! step2 exchange npa

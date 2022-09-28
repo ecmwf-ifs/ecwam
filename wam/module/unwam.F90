@@ -1,14 +1,13 @@
       MODULE UNWAM
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE MPL_MPIF
-      USE MPL_MODULE  , ONLY : MPL_ALLREDUCE
       USE YOWPARAM    , ONLY : NANG, NFRE, NFRE_RED
       USE YOWSTAT     , ONLY : IREFRA
       USE YOWFRED     , ONLY : COSTH, SINTH
       USE yowpd, only: MNE=>ne, INE, MNP=>npa, NP_RES => np
       USE yowpd, only: XP=>x, YP=>y, DEP=>z
       USE yowpd, only: exchange
+      USE yowMpiModule
       USE UNSTRUCT_BOUND , ONLY : SPSIG, IWBMNP, IWBNDLC, LBCWA
       USE UNSTRUCT_BOUND , ONLY : IOBP, IOBPD, IOBWB
       USE UNSTRUCT_BOUND,  ONLY : WBAC
@@ -1508,7 +1507,7 @@ END INTERFACE
 !     --------------
 !        Original : Aron Roland, 11,2011
 !     --------------------------------------------------------------
-      USE MPL_MPIF
+      USE yowMpiModule
       USE YOWUNPOOL, ONLY : DEGRAD, REARTH
       USE YOWUNPOOL, ONLY : BND, DBG, GRID, FILEDEF
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
@@ -2372,7 +2371,7 @@ END INTERFACE
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR(FL1,FLNEW)
-      USE MPL_MPIF
+      USE yowMpiModule
       USE YOWUNPOOL
       USE yowpd, only: comm
       USE YOWMPP   , ONLY : NINF, NSUP
@@ -3129,7 +3128,7 @@ END INTERFACE
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE IMPLICIT_N_SCHEME_BLOCK(FL1, FLNEW)
-      USE MPL_MPIF
+      USE yowMpiModule
       USE yowpd, only : comm
       USE yowpd, only : np_global
       USE YOWMPP, ONLY : NINF, NSUP
@@ -3507,7 +3506,7 @@ END INTERFACE
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_HPCF(FL1,FLNEW)
-      USE MPL_MPIF
+      USE yowMpiModule
       USE YOWUNPOOL
       USE yowpd, ONLY : comm
       USE yowexchangemodule

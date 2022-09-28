@@ -24,7 +24,12 @@ module yowChecksModule
     real(rkind), intent(in) :: ACin(npa)
     
     integer(KIND=JWIM) :: fhdl, oRank, IP, IPglobal
-    integer(KIND=JWIM) :: status(MPI_STATUS_SIZE), ierr
+#ifdef WAM_HAVE_MPI_F08
+    type(mpi_status) :: status
+#else
+    integer(KIND=JWIM) :: status(MPI_STATUS_SIZE)
+#endif
+    integer(KIND=JWIM) :: ierr
     integer(KIND=JWIM) :: nTimeSeen(np_global)
     real(rkind) :: newVal, sumError
     real(rkind) :: ACtotal(np_global)
@@ -88,7 +93,12 @@ module yowChecksModule
     implicit none
     real(rkind), intent(in) :: ACin(npa)
     integer(KIND=JWIM) :: oRank, IP, IPglobal
-    integer(KIND=JWIM) :: status(MPI_STATUS_SIZE), ierr
+#ifdef WAM_HAVE_MPI_F08
+    type(mpi_status)   :: status
+#else
+    integer(KIND=JWIM) :: status(MPI_STATUS_SIZE)
+#endif
+    integer(KIND=JWIM) :: ierr
     integer(KIND=JWIM) :: nTimeSeen(np_global)
     real(rkind) :: newVal, GlobalSum
     real(rkind) :: ACtotal(np_global)

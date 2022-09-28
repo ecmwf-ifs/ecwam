@@ -31,18 +31,32 @@ module yowDatapool
 
   !> MPI Communicator.
   !> Should be MPI_COMM_WORLD. If pdlib is run into a existing MPI enviroment, comm is set to a new communicator
+#ifdef WAM_HAVE_MPI_F08
+  type(mpi_comm),public,save :: comm = MPI_COMM_WORLD
+#else
   integer(KIND=JWIM),public,save :: comm = MPI_COMM_WORLD
-
+#endif
   !> MPI integer Type.
   !> Should be MPI_integer
+#ifdef WAM_HAVE_MPI_F08
+  type(mpi_datatype),parameter :: itype = MPI_integer
+#else
   integer(KIND=JWIM),parameter :: itype = MPI_integer
-
+#endif
   !> MPI Real Type
   !> Shpuld be MPI_REAL8
 #ifdef USE_SINGLE
-  integer(KIND=JWIM), parameter :: rtype = MPI_REAL4
+#ifdef WAM_HAVE_MPI_F08
+  type(mpi_datatype), parameter :: rtype = MPI_REAL4
 #else
-  integer(KIND=JWIM), parameter :: rtype = MPI_REAL8  
+  integer(KIND=JWIM), parameter :: rtype = MPI_REAL4
+#endif
+#else
+#ifdef WAM_HAVE_MPI_F08
+  type(mpi_datatype), parameter :: rtype = MPI_REAL8
+#else
+  integer(KIND=JWIM), parameter :: rtype = MPI_REAL8
+#endif
 #endif
 
 end module yowDatapool

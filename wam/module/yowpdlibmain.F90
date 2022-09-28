@@ -45,9 +45,14 @@ module yowpdlibMain
   !> @overload initPD1
   !> @param[in] MPIComm MPI communicator to use with pdlib
   subroutine initPD2(filename, MPIcomm)
+    use yowMPIModule
     implicit none
     character(len=*), intent(in) :: filename
+#ifdef WAM_HAVE_MPI_F08
+    type(mpi_comm), intent(in) :: MPIcomm
+#else
     integer(KIND=JWIM), intent(in) :: MPIcomm
+#endif
 
     integer(KIND=JWIM) :: MNP, MNE
     integer(KIND=JWIM), allocatable :: INE(:,:)
@@ -75,13 +80,17 @@ module yowpdlibMain
   !> alter: np_global, nodes_global(), ne_global, elements(), INE_global
   subroutine initFromGrid(MNP, XP, YP, DEP, MNE, INE, MPIcomm)
     use yowExchangeModule, only : n2ndDim, n3ndDim
+    use yowMpiModule
     implicit none
     integer(KIND=JWIM), intent(in) :: MNP, MNE
     integer(KIND=JWIM), intent(in) :: INE(3,MNE)
     real(kind=rkind), intent(in) :: XP(MNP), YP(MNP), DEP(MNP)
+#ifdef WAM_HAVE_MPI_F08
+    type(mpi_comm), intent(in) :: MPIcomm
+#else
     integer(KIND=JWIM), intent(in) :: MPIcomm
+#endif
 
-    
     call initFromGridDim(MNP, XP, YP, DEP, MNE, INE, n2ndDim, n3ndDim, MPIcomm)
   end subroutine
 
@@ -102,12 +111,17 @@ module yowpdlibMain
       use yowSidepool,       only: ns, ns_global
       use yowExchangeModule, only: nConnDomains, setDimSize
       use yowRankModule,     only: initRankModule
+      use yowMpiModule
     implicit none
     integer(KIND=JWIM), intent(in) :: MNP, MNE
     integer(KIND=JWIM), intent(in) :: INE(3,MNE)
     real(kind=rkind), intent(in) :: XP(MNP), YP(MNP), DEP(MNP)
     integer(KIND=JWIM), intent(in) :: secDim, thirdDim
+#ifdef WAM_HAVE_MPI_F08
+    type(mpi_comm), intent(in) :: MPIcomm
+#else
     integer(KIND=JWIM), intent(in) :: MPIcomm
+#endif
 
     call setDimSize(secDim, thirdDim)
     call initMPI(MPIcomm)
@@ -165,7 +179,11 @@ module yowpdlibMain
     use yowError
     use yowMpiModule
     implicit none
-    integer(KIND=JWIM), intent(in) :: MPIcomm
+#ifdef WAM_HAVE_MPI_F08
+    type(mpi_comm), intent(in) :: MPIcomm
+#else
+  integer(KIND=JWIM), intent(in) :: MPIcomm
+#endif
     logical :: flag
     integer(KIND=JWIM) :: ierr
 
@@ -974,6 +992,15 @@ module yowpdlibMain
     integer(KIND=JWIM) :: ierr
     ! uniq tag that identify the sender and which information he sends
     integer(KIND=JWIM) :: tag
+#ifdef WAM_HAVE_MPI_F08
+    ! we use non-blocking send and recv subroutines
+    ! store the send status
+    type(mpi_request) :: sendRequest(nConnDomains)
+    ! store the revc status
+    type(mpi_request) :: recvRequest(nConnDomains)
+    ! status to verify if one communication fails or not
+    type(mpi_status) :: status(nConnDomains);
+#else
     ! we use non-blocking send and recv subroutines
     ! store the send status
     integer(KIND=JWIM) :: sendRequest(nConnDomains)
@@ -981,7 +1008,7 @@ module yowpdlibMain
     integer(KIND=JWIM) :: recvRequest(nConnDomains)
     ! status to verify if one communication fails or not
     integer(KIND=JWIM) :: status(MPI_STATUS_SIZE, nConnDomains);
-
+#endif
 
     type(t_node) , pointer :: node
 
