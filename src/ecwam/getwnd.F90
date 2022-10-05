@@ -167,9 +167,9 @@ IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
           WRITE (IU06,*) ' *      =======================         *'
           WRITE (IU06,*) ' * WIND DATE IS LATER THAN EXPECTED     *'
           IF (LWNDFILE) THEN
-            WRITE (IU06,*) ' * DATE READ IS    CDTWIR = ', CDTWIR
+            WRITE (IU06,*) ' * DATE READ IS     CDTWIR = ', CDTWIR
           ELSE
-            WRITE (IU06,*) ' * DECODED DATE IS CDTWIR = ', CDTWIR
+            WRITE (IU06,*) ' * DECODED DATE IS  CDTWIR = ', CDTWIR
           ENDIF
           WRITE (IU06,*) ' * DATE EXPECTED IS CDTWIS = ', CDTWIS
           WRITE (IU06,*) ' *                                      *'
