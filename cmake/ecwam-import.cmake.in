@@ -1,0 +1,51 @@
+# (C) Copyright 2022- ECMWF.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
+# Import for ecwam pproject
+#
+# This file is included during
+#
+#    find_package( ecwam [COMPONENTS (double|single)] [QUIET] [REQUIRED] )
+#
+# Supported COMPONENTS: double single
+#
+# If available following targets will be exported:
+# - ecwam_dp  Double precision ecwam library
+# - ecwam_sp  Single precision ecwam library
+#
+
+##################################################################
+## Export project variables
+
+set( ${CMAKE_FIND_PACKAGE_NAME}_VERSION_STR            @PROJECT_VERSION@ )
+set( ${CMAKE_FIND_PACKAGE_NAME}_HAVE_MPI               @HAVE_MPI@ )
+set( ${CMAKE_FIND_PACKAGE_NAME}_HAVE_OMP               @HAVE_OMP@ )
+set( ${CMAKE_FIND_PACKAGE_NAME}_HAVE_SINGLE_PRECISION  @HAVE_SINGLE_PRECISION@ )
+set( ${CMAKE_FIND_PACKAGE_NAME}_HAVE_DOUBLE_PRECISION  @HAVE_DOUBLE_PRECISION@ )
+set( ${CMAKE_FIND_PACKAGE_NAME}_HAVE_UNWAM             @HAVE_UNWAM@ )
+
+if( NOT ${CMAKE_FIND_PACKAGE_NAME}_FIND_QUIETLY )
+  message( STATUS "Found ecwam version ${${CMAKE_FIND_PACKAGE_NAME}_VERSION_STR}" )
+endif()
+
+##################################################################
+## Export project dependencies
+
+include( CMakeFindDependencyMacro )
+
+##################################################################
+## Handle components
+
+set( ${CMAKE_FIND_PACKAGE_NAME}_single_FOUND ${${CMAKE_FIND_PACKAGE_NAME}_HAVE_SINGLE_PRECISION} )
+set( ${CMAKE_FIND_PACKAGE_NAME}_double_FOUND ${${CMAKE_FIND_PACKAGE_NAME}_HAVE_DOUBLE_PRECISION} )
+
+foreach( _component ${${CMAKE_FIND_PACKAGE_NAME}_FIND_COMPONENTS} )
+  if( NOT ${CMAKE_FIND_PACKAGE_NAME}_${_component}_FOUND AND ${CMAKE_FIND_PACKAGE_NAME}_FIND_REQUIRED )
+    message( SEND_ERROR "${CMAKE_FIND_PACKAGE_NAME} was not build with support for COMPONENT ${_component}" )
+  endif()
+endforeach()
