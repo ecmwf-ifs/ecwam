@@ -51,6 +51,20 @@ ecbuild_add_option( FEATURE OCEAN_COUPLING
                     DESCRIPTION "Support ocean coupling"
                     CONDITION ${PNAME}_OCEANMODEL_LIBRARIES )
 
+ecbuild_add_option( FEATURE ECWAM_LAUNCH
+                    DEFAULT ON
+                    DESCRIPTION "Use share/ecwam/scripts/ecwam-launch script to run ecwam tests" )
+
+if( HAVE_ECWAM_LAUNCH )
+  # Overwrite meaning of mpiexec
+  set( ECWAM_LAUNCH ${CMAKE_CURRENT_SOURCE_DIR}/share/ecwam/scripts/ecwam-launch )
+  set( MPIEXEC_EXECUTABLE ${ECWAM_LAUNCH} )
+  set( MPIEXEC_NUMPROC_FLAG   -n )
+  set( MPIEXEC_NUMTHREAD_FLAG -c )
+  set( CMAKE_CROSSCOMPILING_EMULATOR ${ECWAM_LAUNCH} ) # For serial runs
+endif()
+
+
 ### Set third party libraries
 
 if( HAVE_SINGLE_PRECISION )
@@ -68,6 +82,7 @@ endif()
 
 include(ecwam_compile_flags)
 add_subdirectory(src)
+add_subdirectory(share)
 
 ### Tests
 
