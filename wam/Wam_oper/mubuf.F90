@@ -319,7 +319,7 @@
           IF (IMIN <= NLONRGG(K-1))  THEN
             IF (XMIN <= FLOAT(IMIN-1)) THEN
                IMIN2=IMIN-1
-              IF (IMIN < 1) THEN
+              IF (IMIN <= 1) THEN
 !!test                IMIN2=1
                 IMIN2=NLONRGG(K-1)
               ELSE
@@ -493,7 +493,7 @@
           IF (IRGG == 1) THEN
             IF (IMIN >= 1)  THEN
               IF (XMIN <= FLOAT(IMIN-1)) THEN
-                IF (IMIN < 1) THEN
+                IF (IMIN <= 1) THEN
                   IMIN2=1
                 ELSE
                   IMIN2=IMIN-1
@@ -538,7 +538,7 @@
           IF (IRGG == 1) THEN
             IF (IMIN <= NLONRGG(K-1))  THEN
               IF (XMIN <= FLOAT(IMIN-1)) THEN
-                IF (IMIN < 1) THEN
+                IF (IMIN <= 1) THEN
                   IMIN2=1
                 ELSE
                   IMIN2=IMIN-1
