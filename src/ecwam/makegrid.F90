@@ -64,8 +64,9 @@
       REAL(KIND=JWRU) :: PMS8
       INTEGER(KIND=JWIM) :: I, J
 
+      INTEGER(KIND=JWIM) :: IY, IX, IJ
 #ifdef WAM_HAVE_UNWAM
-      INTEGER(KIND=JWIM) :: IY, IX, IJ, IE, KI, IR, IP
+      INTEGER(KIND=JWIM) :: IE, KI, IR, IP
       INTEGER(KIND=JWIM) :: NI(3)
 
       REAL(KIND=JWRB), ALLOCATABLE :: BLOCK_G(:)
@@ -138,15 +139,15 @@
             GRID(IX,IY) = BLOCK(iNode)
           ENDDO
         ENDIF
+#else
+      CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
       ELSE
         DO IJ = 1, NIBLO 
           IX = BLK2GLO(IJ)%IXLG 
           IY = NGY-BLK2GLO(IJ)%KXLT+1
           GRID(IX,IY) = BLOCK(IJ)
         ENDDO
-#else
-      CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
-#endif
       ENDIF ! LLUNSTR
 
       CALL GSTATS(1996,1)

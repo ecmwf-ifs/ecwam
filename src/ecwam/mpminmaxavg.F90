@@ -118,11 +118,12 @@ IF (LHOOK) CALL DR_HOOK('MPMINMAXAVG',0,ZHOOK_HANDLE)
 
             IF (IRANK == IRECV) THEN
               DO IJOLD = 1, NIBLO
-                IF (LL1D .OR. LLUNSTR) THEN
+                IF (LL1D .OR. LLUNSTR .OR. NPROC == 1) THEN
                   IJ=IJOLD
                 ELSE
                   IJ=IJ2NEWIJ(IJOLD)
                 ENDIF
+
                 IF (ZGLOBAL(IJ) /= ZMISS) THEN
                   ZSUM(IT) = ZSUM(IT) + ZGLOBAL(IJ)
                   ZMIN(IT) = MIN(ZMIN(IT), ZGLOBAL(IJ))
