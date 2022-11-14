@@ -386,12 +386,12 @@ endif()
 
 if( HAVE_OCEAN_COUPLING )
   list(APPEND ECWAM_DEFINITIONS WITH_NEMO )
-  if( ${PNAME}_OCEAN_HAVE_SINGLE_PRECISION )
+  if( ${PNAME}_OCEANMODEL_HAVE_SINGLE_PRECISION )
     list(APPEND ECWAM_DEFINITIONS PARKIND1_SINGLE_NEMO )
   endif()
 else()
-  unset( ${PNAME}_OCEAN_LIBRARIES )
-  unset( ${PNAME}_OCEAN_INCLUDE_DIRS )
+  unset( ${PNAME}_OCEANMODEL_LIBRARIES )
+  unset( ${PNAME}_OCEANMODEL_INCLUDE_DIRS )
 endif()
 
 ecbuild_add_library(
@@ -399,12 +399,12 @@ ecbuild_add_library(
     SOURCES          ${ecwam_srcs}
     PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                      ${MPI_Fortran_LIBRARIES}
+                     ${${PNAME}_OCEANMODEL_LIBRARIES}
     PRIVATE_LIBS     eccodes_f90
                      ${MULTIO_LIBRARIES}
-                     ${${PNAME}_OCEAN_LIBRARIES}
                      ${OpenMP_Fortran_LIBRARIES}
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
-    PRIVATE_INCLUDES ${${PNAME}_OCEAN_INCLUDE_DIRS}
+    PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS}
     PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
 )
 

@@ -49,7 +49,7 @@ ecbuild_add_option( FEATURE UNWAM
 ecbuild_add_option( FEATURE OCEAN_COUPLING 
                     DEFAULT ON
                     DESCRIPTION "Support ocean coupling"
-                    CONDITION ${PNAME}_OCEAN_LIBRARIES )
+                    CONDITION ${PNAME}_OCEANMODEL_LIBRARIES )
 
 ### Set third party libraries
 
