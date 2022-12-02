@@ -84,7 +84,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            IRCD     ,IRU10    ,                                  &
      &            NASS     ,JPPFLAG  ,                                  &
      &            LRSTPARALR, LRSTPARALW,                               &
-     &            COUTNAME,                                             &
+     &            COUTDESCRIPTION,                                      &
      &            NTRAIN   ,                                            &
      &            IPFGTBL  ,                                            &
      &            LWAMANOUT,                                            &
@@ -1083,7 +1083,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       DO ITG = 1,JPPFLAG
         IF (FFLAG(ITG) .OR. GFLAG(ITG)) THEN
         WRITE(CITG,'(I3.3)') ITG
-        WRITE(IU06,*) CITG,COUTNAME(ITG),                               &
+        WRITE(IU06,*) CITG,COUTDESCRIPTION(ITG),                        &
      &   '...', FFLAG(ITG),'...',GFLAG(ITG),'...',IPFGTBL(ITG),'...',   &
      &   IPRMINFO(ITG,1)*1000+IPRMINFO(ITG,2)
         ENDIF

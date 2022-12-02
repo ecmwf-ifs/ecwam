@@ -40,7 +40,7 @@
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX ,LWVFLX_SNL,    &
      &            LWCOUNORMS, LLNORMIFS2WAM,LLNORMWAM2IFS,LLNORMWAMOUT, &
-     &            LLNORMWAMOUT_GLOBAL,                                  &
+     &            LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE,                &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
      &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT,           &
      &            LWNEMOCOUCUR,                                         &
@@ -208,7 +208,7 @@
      &   LLWSWAVE, LLWDWAVE,                                            &
      &   NPROMA_WAM, LL1D, LGRHDIFS , LNEWLVTP, LL_GRID_SIMPLE_MATRIX,  &
      &   LWCOUNORMS, LLNORMIFS2WAM, LLNORMWAM2IFS, LLNORMWAMOUT,        &
-     &   LLNORMWAMOUT_GLOBAL,                                           &
+     &   LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE,                         &
      &   LICERUN, LCIWABR, LICETH,                                      &
      &   LWVFLX_SNL,                                                    &
      &   LWNEMOCOU, NEMOFRCO,                                           &
@@ -670,6 +670,7 @@
       LLNORMWAM2IFS = .FALSE.
       LLNORMWAMOUT = .FALSE.
       LLNORMWAMOUT_GLOBAL = .FALSE.
+      CNORMWAMOUT_FILE = ''
 
       LGRHDIFS = .FALSE.
 
@@ -746,6 +747,10 @@
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
         CALL WAM_ABORT("Could not read namelist '"//NAMELIST_FILENAME//"'",__FILENAME__,__LINE__)
+      ENDIF
+
+      IF (IRANK > 1) THEN
+         CNORMWAMOUT_FILE = ''
       ENDIF
 
       ! when coupled to IFS, the control will come from it via calls to wavemdl
@@ -925,6 +930,7 @@
         WRITE(6,*) '*** LLNORMWAM2IFS= ',LLNORMWAM2IFS
         WRITE(6,*) '*** LLNORMWAMOUT= ',LLNORMWAMOUT
         WRITE(6,*) '*** LLNORMWAMOUT_GLOBAL= ',LLNORMWAMOUT_GLOBAL
+        WRITE(6,*) '*** CNORMWAMOUT_FILE= ',TRIM(CNORMWAMOUT_FILE)
         WRITE(6,*) '*** LSMSSIG_WAM= ',LSMSSIG_WAM
         WRITE(6,*) '*** LWAM_USE_IO_SERV = ',LWAM_USE_IO_SERV
         WRITE(6,*) '*** CPATH = ',CPATH(1:ICPLEN)

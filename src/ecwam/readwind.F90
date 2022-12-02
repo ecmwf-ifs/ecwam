@@ -267,6 +267,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
           IF (IRANK == IREAD) THEN
 1021        ISIZE=NBITW
             KBYTES=ISIZE*NPRECI
+
             IF (.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
             CALL IGRIB_READ_FROM_FILE(IUNITW,KGRIB,KBYTES,IRET)
             IF (IRET == JPGRIB_BUFFER_TOO_SMALL) THEN
@@ -276,15 +277,15 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
               DEALLOCATE(KGRIB)
               GOTO 1021
             ELSEIF (IRET == JPGRIB_END_OF_FILE) THEN
-              WRITE(IU06,*) '**********************************'
-              WRITE(IU06,*) '* READWIND: END OF FILE ENCOUNTED'
-              WRITE(IU06,*) '**********************************'
-              CALL ABORT1
+              WRITE(IU06,*) '******************************************'
+              WRITE(IU06,*) '* READWIND: GRIB END OF FILE ENCOUNTERED *'
+              WRITE(IU06,*) '******************************************'
+              CALL WAM_ABORT("READWIND: GRIB END OF FILE ENCOUNTERED",__FILENAME__,__LINE__)
             ELSEIF (IRET /= JPGRIB_SUCCESS) THEN
-              WRITE(IU06,*) '**********************************'
-              WRITE(IU06,*) '* READWIND: FILE HANDLING ERROR'
-              WRITE(IU06,*) '**********************************'
-              CALL ABORT1
+              WRITE(IU06,*) '**************************************'
+              WRITE(IU06,*) '* READWIND: GRIB FILE HANDLING ERROR *'
+              WRITE(IU06,*) '**************************************'
+              CALL WAM_ABORT("READWIND: GRIB FILE HANDLING ERROR ENCOUNTERED",__FILENAME__,__LINE__)
             ENDIF
           ENDIF
 
@@ -492,7 +493,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
             WRITE(IU06,*) ' + PARAM IS = ', IPARAM
             WRITE(IU06,*) ' +                                        +'
             WRITE(IU06,*) ' ++++++++++++++++++++++++++++++++++++++++++'
-            CALL ABORT1
+            CALL WAM_ABORT("SUSPUCIOUS WIND OR SEA ICE FIELD PARAM", __FILENAME__, __LINE__)
           ENDIF
 
           IF (LLABORT) THEN
@@ -527,7 +528,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
             ENDIF
             WRITE(IU06,*) ' +                                         +'
             WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++'
-            CALL ABORT1
+            CALL WAM_ABORT("ERROR in READWIND", __FILENAME__, __LINE__)
           ENDIF
 
           DEALLOCATE(KGRIB)

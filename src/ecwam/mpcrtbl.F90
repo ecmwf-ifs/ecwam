@@ -45,7 +45,7 @@
      &            IRWDIR, IRCD ,IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
      &            IRHS     ,IRTP     ,IRT1       ,IRPHIAW  ,IRPHIOC ,   &
      &            IRTAUOC   , IRHSWS   ,IRT1WS   ,IRBATHY  ,            &
-     &            IFRSTPARTI, NINFOBOUT,INFOBOUT
+     &            IFRSTPARTI, NINFOBOUT,INFOBOUT ,COUTDESCRIPTION
 !      *IPRMINFO* INTEGER    AUXILIARY INFORMATION FOR OUTPUT OF INTEGRATED PARAMETERS
 !                            IPRMINFO(:,1)  : GRIB TABLE NUMBER.
 !                            IPRMINFO(:,2)  : GRIB PARAMETER IDENTIFIER.
@@ -69,836 +69,348 @@
 
       IZLEV=NINT(XNLEV)
 
-      IR=0
-      COUTNAME(:) =' VARIABLE NOT DEFINED, see MPCRTBL'
+      COUTDESCRIPTION(:)='VARIABLE NOT DEFINED, see MPCRTBL'
+      COUTNAME(:)='undef'
       IPRMINFO(:,:)=0
 
-      IR=IR+1
 !     PARAMETER 001
-      IRHS=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SIGNIFICANT WAVE HEIGHT .........'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=229
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IRHS = DEFINE_PARAMETER( 1, 'swh', 140229, 0, .True., .True., &
+                             & 'SIGNIFICANT WAVE HEIGHT' )
 
-      IR=IR+1
 !     PARAMETER 002
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' MEAN WAVE DIRECTION .............'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=230
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 2, 'mwd', 140230, 0, .True., .True., &
+                           & 'MEAN WAVE DIRECTION' )
 
-      IR=IR+1
 !     PARAMETER 003
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE MEAN PERIOD (-1) ...........'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=232
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 3, 'mwp', 140232, 0, .True., .True., &
+                           & 'WAVE MEAN PERIOD (-1)' )
 
-      IR=IR+1
+
 !     PARAMETER 004
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' FRICTION VELOCITY ...............'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=084   !!! use a spare extra parameter number
+      ! Use a spare extra grib parameter number
+      IR = DEFINE_PARAMETER( 4, '004', 140084, 0, .False., .True., &
+                           & 'FRICTION VELOCITY' )
       IF(GFLAG(IR) ) THEN
         WRITE(IU06,*) ' ******************* NOTE ********************'
-        WRITE(IU06,*) ' GRIB OUTPUT POSSIBLE FOR ', COUTNAME(IR)
+        WRITE(IU06,*) ' GRIB OUTPUT POSSIBLE FOR ', COUTDESCRIPTION(IR)
         WRITE(IU06,*) ' USING SPARE PARAMETER NUMBER ', IPRMINFO(IR,2)
         WRITE(IU06,*) ' '
       ENDIF
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
 
-      IR=IR+1
 !     PARAMETER 005
-      IRWDIR=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE MODEL WIND DIRECTION........'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=249
-      IPRMINFO(IR,3)=IZLEV
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=0
+      IRWDIR = DEFINE_PARAMETER( 5, 'dwi', 140249, IZLEV, .False., .False., &
+                               & 'WAVE MODEL WIND DIRECTION' )
 
-      IR=IR+1
 !     PARAMETER 006
-      IRTP=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE PEAK PERIOD ................'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=231
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IRTP = DEFINE_PARAMETER( 6, 'pp1d', 140231, 0, .True., .True., &
+                             & 'WAVE PEAK PERIOD' )
 
-      IR=IR+1
 !     PARAMETER 007
-      IRCD=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' DRAG COEFFICIENT ................'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=233
-      IPRMINFO(IR,3)=IZLEV
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=0
+      IRCD = DEFINE_PARAMETER( 7, 'cdww', 140233, IZLEV, .False., .False., &
+                             & 'DRAG COEFFICIENT' )
 
-      IR=IR+1
 !     PARAMETER 008
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' NORMALISED WAVE STRESS .........'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=083   !!! use a spare extra parameter number
+      ! Use a spare extra grib parameter number
+      IR = DEFINE_PARAMETER( 8, '008', 140083, 0, .True., .True., &
+                           & 'NORMALISED WAVE STRESS' )
       IF(GFLAG(IR) ) THEN
         WRITE(IU06,*) ' ******************* NOTE ********************'
-        WRITE(IU06,*) ' GRIB OUTPUT POSSIBLE FOR ', COUTNAME(IR)
+        WRITE(IU06,*) ' GRIB OUTPUT POSSIBLE FOR ', COUTDESCRIPTION(IR)
         WRITE(IU06,*) ' USING SPARE PARAMETER NUMBER ', IPRMINFO(IR,2)
         WRITE(IU06,*) ' '
       ENDIF
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
 
-      IR=IR+1
 !     PARAMETER 009
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' MEAN SQUARE SLOPE................'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=244
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 9, 'msqs', 140244, 0, .True., .True., &
+                           & 'MEAN SQUARE SLOPE' )
 
-      IR=IR+1
 !     PARAMETER 010
-      IRU10=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE MODEL WIND SPEED............'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=245
-      IPRMINFO(IR,3)=IZLEV
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=0
+      IRU10 = DEFINE_PARAMETER( 10, 'wind', 140245, IZLEV, .False., .False., &
+                              & 'WAVE MODEL WIND SPEED' )
 
-      IR=IR+1
 !     PARAMETER 011
-      IRHSWS=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WIND SEA WAVE HEIGHT.............'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=234
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IRHSWS = DEFINE_PARAMETER( 11, 'shww', 140234, 0, .True., .True., &
+                               & 'WIND SEA WAVE HEIGHT' )
 
-      IR=IR+1
 !     PARAMETER 012
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' TOTAL SWELL WAVE HEIGHT..........'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=237
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 12, 'shts', 140237, 0, .True., .True., &
+                           & 'TOTAL SWELL WAVE HEIGHT' )
 
-      IR=IR+1
 !     PARAMETER 013
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WIND SEA MEAN DIRECTION..........'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=235
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 13, 'mdww', 140235, 0, .True., .True., &
+                           & 'WIND SEA MEAN DIRECTION' )
 
-      IR=IR+1
 !     PARAMETER 014
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' TOTAL SWELL WAVE MEAN DIRECTION..'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=238
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 14, 'mdts', 140238, 0, .True., .True., &
+                           & 'TOTAL SWELL WAVE MEAN DIRECTION' )
 
-      IR=IR+1
 !     PARAMETER 015
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WIND SEA MEAN PERIOD (-1) .......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=236
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 15, 'mpww', 140236, 0, .True., .True., &
+                           & 'WIND SEA MEAN PERIOD (-1)' )
 
-      IR=IR+1
 !     PARAMETER 016
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' TOTAL SWELL MEAN PERIOD (-1) ....'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=239
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 16, 'mpts', 140239, 0, .True., .True., &
+                           & 'TOTAL SWELL MEAN PERIOD (-1)' )
 
-      IR=IR+1
 !     PARAMETER 017
-      IRALTHS=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' ALTIMETER WAVE HEIGHT ...........'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=246
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IRALTHS = DEFINE_PARAMETER( 17, '017', 140246, 0, .True., .True., &
+                                & 'ALTIMETER WAVE HEIGHT' )
 
-      IR=IR+1
 !     PARAMETER 018
-      IRALTHSC=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' CORRECTED ALT WAVE HEIGHT .......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=247
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IRALTHSC = DEFINE_PARAMETER( 18, '018', 140247, 0, .True., .True., &
+                                 & 'CORRECTED ALT WAVE HEIGHT' )
 
-      IR=IR+1
 !     PARAMETER 019
-      IRALTRC=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' ALTIMETER RANGE CORRECTION ......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=248
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IRALTRC = DEFINE_PARAMETER( 19, '019', 140248, 0, .True., .True., &
+                                & 'ALTIMETER RANGE CORRECTION' )
 
-      IR=IR+1
 !     PARAMETER 020
-      IRT1=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE MEAN PERIOD (1) ............'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=220
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IRT1 = DEFINE_PARAMETER( 20, 'mp1', 140220, 0, .True., .True., &
+                             & 'WAVE MEAN PERIOD (1)' )
 
-      IR=IR+1
 !     PARAMETER 021
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE MEAN PERIOD (2) ............'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=221
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 21, 'mp2', 140221, 0, .True., .True., &
+                           & 'WAVE MEAN PERIOD (2)' )
 
-      IR=IR+1
 !     PARAMETER 022
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE DIRECTIONAL SPREAD .........'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=222
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 22, 'wdw', 140222, 0, .True., .True., &
+                           & 'WAVE DIRECTIONAL SPREAD' )
 
-      IR=IR+1
 !     PARAMETER 023
-      IRT1WS=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WIND SEA MEAN PERIOD (1) ........'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=223
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IRT1WS = DEFINE_PARAMETER( 23, 'p1ww', 140223, 0, .True., .True., &
+                               & 'WIND SEA MEAN PERIOD (1)' )
 
-      IR=IR+1
 !     PARAMETER 024
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' TOTAL SWELL MEAN PERIOD (1) .....'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=226
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 24, 'p1ps', 140226, 0, .True., .True., &
+                           & 'TOTAL SWELL MEAN PERIOD (1)' )
 
-      IR=IR+1
 !     PARAMETER 025
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WIND SEA MEAN PERIOD (2) ........'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=224
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 25, 'p2ww', 140224, 0, .True., .True., &
+                           & 'WIND SEA MEAN PERIOD (2)' )
 
-      IR=IR+1
 !     PARAMETER 026
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' TOTAL SWELL MEAN PERIOD (2) .....'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=227
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 26, 'p2ps', 140227, 0, .True., .True., &
+                           & 'TOTAL SWELL MEAN PERIOD (2)' )
 
-      IR=IR+1
 !     PARAMETER 027
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WIND SEA DIRECTIONAL SPREAD......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=225
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 27, 'dwww', 140225, 0, .True., .True., &
+                           & 'WIND SEA DIRECTIONAL SPREAD' )
 
-      IR=IR+1
 !     PARAMETER 028
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' TOTAL SWELL DIRECTIONAL SPREAD ..'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=228
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 28, 'dwps', 140228, 0, .True., .True., &
+                            & 'TOTAL SWELL DIRECTIONAL SPREAD' )
 
-      IR=IR+1
 !     PARAMETER 029
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE SPECTRAL KURTOSIS ..........'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=252
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 29, 'wsk', 140252, 0, .True., .True., &
+                           & 'WAVE SPECTRAL KURTOSIS' )
 
-      IR=IR+1
 !     PARAMETER 030
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' BENJAMIN-FEIR INDEX .............'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=253
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 30, 'bfi', 140253, 0, .True., .True., &
+                           & 'BENJAMIN-FEIR INDEX' )
 
-      IR=IR+1
 !     PARAMETER 031
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE SPECTRAL PEAKEDNESS ........'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=254
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 31, 'wsp', 140254, 0, .True., .True., &
+                           & 'WAVE SPECTRAL PEAKEDNESS' )
 
-      IR=IR+1
 !     PARAMETER 032
-      IRBATHY=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' BATHYMETRY ......................'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=219
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
+      IRBATHY = DEFINE_PARAMETER( 32, 'wmb', 140219, 0, .False., .True., &
+                                & 'BATHYMETRY' )
 
-      IR=IR+1
 !     PARAMETER 033
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' MAXIMUM WAVE HEIGHT .............'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=218
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 33, 'hmax', 140218, 0, .True., .True., &
+                           & 'MAXIMUM WAVE HEIGHT' )
 
-      IR=IR+1
 !     PARAMETER 034
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' MAXIMUM WAVE PERIOD .............'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=217
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 34, 'tmax', 140217, 0, .True., .True., &
+                           & 'MAXIMUM WAVE PERIOD' )
 
-      IR=IR+1
 !     PARAMETER 035
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' U-COMP SURFACE STOKES DRIFT .....'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=215
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 35, 'ust', 140215, 0, .True., .True., &
+                           & 'U-COMP SURFACE STOKES DRIFT' )
 
-      IR=IR+1
 !     PARAMETER 036
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' V-COMP SURFACE STOKES DRIFT .....'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=216
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 36, 'vst', 140216, 0, .True., .True., &
+                           & 'V-COMP SURFACE STOKES DRIFT' )
 
-      IR=IR+1
 !     PARAMETER 037
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' U-COMP SURFACE CURRENT ..........'
-      IPRMINFO(IR,1)=151
-      IPRMINFO(IR,2)=131
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 37, 'ocu', 151131, 0, .False., .True., &
+                           & 'U-COMP SURFACE CURRENT' )
 
-      IR=IR+1
 !     PARAMETER 038
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' V-COMP SURFACE CURRENT ..........'
-      IPRMINFO(IR,1)=151
-      IPRMINFO(IR,2)=132
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 38, 'vcu', 151132, 0, .False., .True., &
+                           & 'V-COMP SURFACE CURRENT' )
 
-      IR=IR+1
 !     PARAMETER 039
-      IRPHIOC=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' NORMALISED ENERGY FLUX TO OCEAN .'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=212
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
+      IRPHIOC = DEFINE_PARAMETER( 39, '039', 140212, 0, .False., .True., &
+                                & 'NORMALISED ENERGY FLUX TO OCEAN' )
 
-      IR=IR+1
 !     PARAMETER 040
-      IRPHIAW=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' NORMALISED ENERGY FLUX TO WAVES .'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=211
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
+      IRPHIAW = DEFINE_PARAMETER( 40, '040', 140211, 0, .False., .True., &
+                                & 'NORMALISED ENERGY FLUX TO WAVES' )
 
-      IR=IR+1
 !     PARAMETER 041
-      IRTAUOC=IR
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' NORMALISED MOMENTUM FLUX TO OCEAN'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=214
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
+      IRTAUOC = DEFINE_PARAMETER( 41, '041', 140214, 0, .False., .True., &
+                                & 'NORMALISED MOMENTUM FLUX TO OCEAN' )
 
-      IR=IR+1
 !     PARAMETER 042
       ITP=0 ! total number of partitions parameters
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SWELL PARTITION 1 WAVE HEIGHT ...'
+      IFRSTPARTI = DEFINE_PARAMETER( 42, '042', 140121, 0, .True., .True., &
+                                   & 'SWELL PARTITION 1 WAVE HEIGHT' )
       ITP=ITP+1
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=121
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
-!     swell partition index:
-      IFRSTPARTI=IR
 
-      IR=IR+1
 !     PARAMETER 043
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SWELL PARTITION 1 DIRECTION .....'
+      IR = DEFINE_PARAMETER( 43, '043', 140122, 0, .True., .True., &
+                           & 'SWELL PARTITION 1 DIRECTION' )
       ITP=ITP+1
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=122
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
 
-      IR=IR+1
 !     PARAMETER 044
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SWELL PARTITION 1 MEAN PERIOD ...'
+      IR = DEFINE_PARAMETER( 44, '044', 140123, 0, .True., .True., &
+                           & 'SWELL PARTITION 1 MEAN PERIOD' )
       ITP=ITP+1
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=123
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
 
-      IR=IR+1
 !     PARAMETER 045
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SWELL PARTITION 2 WAVE HEIGHT ...'
+      IR = DEFINE_PARAMETER( 45, '045', 140124, 0, .True., .True., &
+                           & 'SWELL PARTITION 2 WAVE HEIGHT' )
       ITP=ITP+1
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=124
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
 
-      IR=IR+1
 !     PARAMETER 046
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SWELL PARTITION 2 DIRECTION .....'
+      IR = DEFINE_PARAMETER( 46, '046', 140125, 0, .True., .True., &
+                           & 'SWELL PARTITION 2 DIRECTION' )
       ITP=ITP+1
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=125
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
 
-      IR=IR+1
+
 !     PARAMETER 047
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SWELL PARTITION 2 MEAN PERIOD ...'
+      IR = DEFINE_PARAMETER( 47, '047', 140126, 0, .True., .True., &
+                           & 'SWELL PARTITION 2 MEAN PERIOD' )
       ITP=ITP+1
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=126
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
 
-      IR=IR+1
 !     PARAMETER 048
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SWELL PARTITION 3 WAVE HEIGHT ...'
+      IR = DEFINE_PARAMETER( 48, '048', 140127, 0, .True., .True., &
+                           & 'SWELL PARTITION 3 WAVE HEIGHT' )
       ITP=ITP+1
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=127
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
 
-      IR=IR+1
 !     PARAMETER 049
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SWELL PARTITION 3 DIRECTION .....'
+      IR = DEFINE_PARAMETER( 49, '049', 140128, 0, .True., .True., &
+                           & 'SWELL PARTITION 3 DIRECTION' )
       ITP=ITP+1
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=128
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
 
-      IR=IR+1
 !     PARAMETER 050
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SWELL PARTITION 3 MEAN PERIOD ...'
+      IR = DEFINE_PARAMETER( 50, '050', 140129, 0, .True., .True., &
+                           & 'SWELL PARTITION 3 MEAN PERIOD' )
       ITP=ITP+1
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=129
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
 
-      IR=IR+1
 !     PARAMETER 051
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' MEAN SQUARE STRAIN IN ICE .......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=210
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 51, '051', 140210, 0, .False., .True., &
+                           & 'MEAN SQUARE STRAIN IN ICE' )
 
-      IR=IR+1
 !     PARAMETER 052
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE HEIGHT WITH PERIOD > 10s ...'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=120
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 52, '052', 140120, 0, .True., .True., &
+                           & 'WAVE HEIGHT WITH PERIOD > 10s' )
 
-      IR=IR+1
 !     PARAMETER 053
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SURFACE AIR DENSITY .............'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=209
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=0
+      IR = DEFINE_PARAMETER( 53, '053', 140209, 0, .False., .False., &
+                           & 'SURFACE AIR DENSITY' )
 
-      IR=IR+1
 !     PARAMETER 054
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' CONVECTIVE VELOCITY SCALE........'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=208
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=0
+      IR = DEFINE_PARAMETER( 54, '054', 140208, 0, .False., .False., &
+                           & 'CONVECTIVE VELOCITY SCALE' )
 
-      IR=IR+1
 !     PARAMETER 055
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SEA ICE COVER ...................'
-      IPRMINFO(IR,1)=128
-      IPRMINFO(IR,2)=31
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 55, 'ci', 128031, 0, .False., .True., &
+                           & 'SEA ICE COVER' )
 
-      IR=IR+1
 !     PARAMETER 056
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SEA ICE THICKNESS ...............'
-      IPRMINFO(IR,1)=3
-      IPRMINFO(IR,2)=92
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 56, '056', 003092, 0, .False., .True., &
+                           & 'SEA ICE THICKNESS' )
 
-      IR=IR+1
 !     PARAMETER 057
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SPECTRAL SKWENESS ...............'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=207
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 57, '057', 140207, 0, .True., .True., &
+                           & 'SPECTRAL SKWENESS' )
 
-      IR=IR+1
 !     PARAMETER 058
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' NEMO SST ........................'
-      IPRMINFO(IR,1)=151
-      IPRMINFO(IR,2)=159
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=0
+      IR = DEFINE_PARAMETER( 58, 'sst', 151159, 0, .False., .False., &
+                           & 'NEMO SST' )
 
-      IR=IR+1
 !     PARAMETER 059
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' NEMO SEA ICE COVER ..............'
-      IPRMINFO(IR,1)=3
-      IPRMINFO(IR,2)=91
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=0
+      IR = DEFINE_PARAMETER( 59, 'sst', 003091, 0, .False., .False., &
+                           & 'NEMO SEA ICE COVER' )
 
-      IR=IR+1
 !     PARAMETER 060
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' NEMO SEA ICE THICKNESS ..........'
-      IPRMINFO(IR,1)=3
-      IPRMINFO(IR,2)=92
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=0
+      IR = DEFINE_PARAMETER( 60, '060', 003092, 0, .False., .False., &
+                           & 'NEMO SEA ICE THICKNESS' )
 
-      IR=IR+1
 !     PARAMETER 061
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' NEMO ZONAL CURRENT ..............'
-      IPRMINFO(IR,1)=3
-      IPRMINFO(IR,2)=49
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=0
+      IR = DEFINE_PARAMETER( 61, 'ucurr', 003049, 0, .False., .False., &
+                           & 'NEMO ZONAL CURRENT' )
 
-      IR=IR+1
 !     PARAMETER 062
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' NEMO MERIDIONAL CURRENT .........'
-      IPRMINFO(IR,1)=3
-      IPRMINFO(IR,2)=50
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=0
+      IR = DEFINE_PARAMETER( 62, 'vcurr', 003050, 0, .False., .False., &
+                           & 'NEMO MERIDIONAL CURRENT' )
 
       IR=IR+1
 !     PARAMETER 063
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE ENERGY FLUX MAGNITUDE ......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=112
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 63, '063', 140112, 0, .True., .True., &
+                           & 'WAVE ENERGY FLUX MAGNITUDE' )
 
-      IR=IR+1
 !     PARAMETER 064
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE ENERGY FLUX DIRECTION ......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=113
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 64, '064', 140113, 0, .True., .True., &
+                           & 'WAVE ENERGY FLUX DIRECTION' )
 
-      IR=IR+1
 !     PARAMETER 065
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SIG. WAVE HEIGHT 10<=T<=12 ......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=114
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 65, '065', 140114, 0, .True., .True., &
+                           & 'SIG. WAVE HEIGHT 10<=T<=12' )
 
-      IR=IR+1
 !     PARAMETER 066
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SIG. WAVE HEIGHT 12<=T<=14 ......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=115
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 66, '066', 140115, 0, .True., .True., &
+                           & 'SIG. WAVE HEIGHT 12<=T<=14' )
 
-      IR=IR+1
 !     PARAMETER 067
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SIG. WAVE HEIGHT 14<=T<=17 ......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=116
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 67, '067', 140116, 0, .True., .True., &
+                           & 'SIG. WAVE HEIGHT 14<=T<=17' )
 
-      IR=IR+1
 !     PARAMETER 068
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SIG. WAVE HEIGHT 17<=T<=21 ......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=117
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 68, '068', 140117, 0, .True., .True., &
+                           & 'SIG. WAVE HEIGHT 17<=T<=21' )
 
-      IR=IR+1
 !     PARAMETER 069
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SIG. WAVE HEIGHT 21<=T<=25 ......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=118
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 69, '069', 140118, 0, .True., .True., &
+                           & 'SIG. WAVE HEIGHT 21<=T<=25' )
 
-      IR=IR+1
 !     PARAMETER 070
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SIG. WAVE HEIGHT 25<=T<=30 ......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=119
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 70, '070', 140119, 0, .True., .True., &
+                           & 'SIG. WAVE HEIGHT 25<=T<=30' )
 
-      IR=IR+1
 !     PARAMETER 071
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE INDUCED SEA LEVEL CORRECTION'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=098
+      IR = DEFINE_PARAMETER( 71, '071', 140098, 0, .True., .True., &
+                           & 'WAVE INDUCED SEA LEVEL CORRECTION' )
 
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
-
-      IR=IR+1
 !     PARAMETER 072
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' SPECTRAL WIDTH INDEX ........... '
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=099
+      IR = DEFINE_PARAMETER( 72, '072', 140099, 0, .True., .True., &
+                           & 'SPECTRAL WIDTH INDEX' )
 
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
-
-      IR=IR+1
 !     PARAMETER 073
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' NUMBER OF FREAK WAVES EVENT .....'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=100
+      IR = DEFINE_PARAMETER( 73, '073', 140100, 0, .True., .True., &
+                           & 'NUMBER OF FREAK WAVES EVENT' )
 
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=1
-      IPRMINFO(IR,5)=1
-
-      IR=IR+1
 !     PARAMETER 074
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' U-COMP ATMOSPHERIC STRESS .......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=101
+      IR = DEFINE_PARAMETER( 74, '074', 140101, 0, .False., .True., &
+                           & 'U-COMP ATMOSPHERIC STRESS' )
 
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
-
-      IR=IR+1
 !     PARAMETER 075
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' V-COMP ATMOSPHERIC STRESS .......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=102
+      IR = DEFINE_PARAMETER( 75, '075', 140102, 0, .False., .True., &
+                           & 'V-COMP ATMOSPHERIC STRESS' )
 
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
-
-      IR=IR+1
 !     PARAMETER 076
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' U-COMP STRESS INTO OCEANS .......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=103
+      IR = DEFINE_PARAMETER( 76, '076', 140103, 0, .False., .True., &
+                           & 'U-COMP STRESS INTO OCEANS' )
 
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
-
-      IR=IR+1
 !     PARAMETER 077
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' V-COMP STRESS INTO OCEANS .......'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=104
+      IR = DEFINE_PARAMETER( 77, '077', 140104, 0, .False., .True., &
+                           & 'V-COMP STRESS INTO OCEANS' )
 
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
-
-      IR=IR+1
 !     PARAMETER 078
-      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' TURB ENERGY FLUX INTO OCEANS ....'
-      IPRMINFO(IR,1)=140
-      IPRMINFO(IR,2)=105
-
-      IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
-      IPRMINFO(IR,5)=1
+      IR = DEFINE_PARAMETER( 78, '078', 140105, 0, .False., .True., &
+                           & 'TURB ENERGY FLUX INTO OCEANS' )
 
 !     add new definition here:
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -906,13 +418,9 @@
 
       DO IC=1,5
         ITG=JPPFLAG-5+IC
-        IF(ITG.GT.JPPFLAG) CALL MPABORT('IR > ITG IN MPCRTBL')
-        COUTNAME(ITG)=' EXTRA FIELD .....................'
-        IPRMINFO(ITG,1)=140
-        IPRMINFO(ITG,2)=79+IC
-        IPRMINFO(ITG,3)=0
-        IPRMINFO(ITG,4)=0
-        IPRMINFO(ITG,5)=0
+        WRITE(COUTNAME(ITG),'(I0.3)') ITG
+        ITG = DEFINE_PARAMETER( ITG, 'COUTNAME(ITG)', 140079+IC, 0, .False., .False., &
+                              & 'EXTRA_FIELD '//TRIM(COUTNAME(ITG)) )
       ENDDO
 
 
@@ -1001,5 +509,31 @@
 !!!      END DO
 !!!      IPFGTBL(JPPFLAG+1)=IPFGTBL(IFLAG)+1
 !!!      IF(IPFGTBL(JPPFLAG+1).GT.NPROC)IPFGTBL(JPPFLAG+1)=1
+
+
+      CONTAINS
+
+            INTEGER FUNCTION DEFINE_PARAMETER( KPARAMETER, CNAME, KGRIB_PARAMID, KGRIB_REFLEVEL, LSEA_ICE_MASK, &
+                                             & LSHALLOW_TO_MISSING, CDESCRIPTION )
+                  INTEGER(KIND=JWIM), INTENT(IN) :: KPARAMETER          !  PARAMETER INDEX
+                  CHARACTER(LEN=*),   INTENT(IN) :: CNAME               !  GRIB PARAMETER NAME
+                  CHARACTER(LEN=*),   INTENT(IN) :: CDESCRIPTION        !  PARAMETER DESCRIPTION
+                  INTEGER(KIND=JWIM), INTENT(IN) :: KGRIB_PARAMID       !  GRIB PARAMETER ID (6 digits : 3 for table, 3 for index)
+                  INTEGER(KIND=JWIM), INTENT(IN) :: KGRIB_REFLEVEL      !  GRIB REFERENCE LEVEL IN FULL METER
+                  LOGICAL,            INTENT(IN) :: LSEA_ICE_MASK       !  TRUE IF SEA ICE MASK IS IMPOSED ON OUTPUT FIELD.
+                  LOGICAL,            INTENT(IN) :: LSHALLOW_TO_MISSING !  TRUE IF TOO SHALLOW POINTS ARE SET TO MISSING
+
+                  IF(KPARAMETER.GT.JPPFLAG) CALL MPABORT('KPARAMETER > JPPFLAG IN MPCRTBL')
+
+                  COUTNAME(KPARAMETER)   = CNAME
+                  IPRMINFO(KPARAMETER,1) = KGRIB_PARAMID / 1000
+                  IPRMINFO(KPARAMETER,2) = KGRIB_PARAMID - 1000 * IPRMINFO(KPARAMETER,1)
+                  IPRMINFO(KPARAMETER,3) = KGRIB_REFLEVEL
+                  IF(LSEA_ICE_MASK)       IPRMINFO(KPARAMETER,4) = 1
+                  IF(LSHALLOW_TO_MISSING) IPRMINFO(KPARAMETER,5) = 1
+
+                  COUTDESCRIPTION(KPARAMETER) = CDESCRIPTION
+                  DEFINE_PARAMETER = KPARAMETER
+            END FUNCTION DEFINE_PARAMETER
 
       END SUBROUTINE MPCRTBL

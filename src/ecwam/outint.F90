@@ -135,6 +135,12 @@
         ICOUNT=0
         DO IFLAG = 1, JPPFLAG
           IF (GFLAG(IFLAG)) THEN
+            IF (IRANK == 1) THEN
+              IT=ITOBOUT(IFLAG)
+              ITABLE=INFOBOUT(IT,1)
+              IPARAM=INFOBOUT(IT,2)
+              IZLEV=INFOBOUT(IT,3)
+            ENDIF
             IF (IRANK == IPFGTBL(IFLAG)) THEN
               ICOUNT=ICOUNT+1
               IF (ICOUNT > SIZE(GOUT,1)) THEN
