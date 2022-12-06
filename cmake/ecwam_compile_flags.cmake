@@ -37,7 +37,7 @@ endif()
 if( NOT HAVE_SINGLE_PRECISION )
   ecbuild_add_fortran_flags( "${autopromote_flags}"   NAME autopromote )
 endif()
-ecbuild_add_fortran_flags( "${convertendian_flags}" NAME convert_bigendian )
+#ecbuild_add_fortran_flags( "${convertendian_flags}" NAME convert_bigendian )
 
 if( CMAKE_BUILD_TYPE MATCHES "Debug" )
   if( fpe_flags )
