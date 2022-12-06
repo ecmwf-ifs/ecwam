@@ -62,7 +62,6 @@ list( APPEND ecwam_srcs
   cireduce.F90
   ciwabr.F90
   ciwaf.F90
-  confile.F90
   ctuw.F90
   ctuwdrv.F90
   ctuwini.F90
