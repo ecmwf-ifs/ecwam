@@ -268,7 +268,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
-        CALL WAM_ABORT(__FILENAME__,__LINE__)
+        CALL WAM_ABORT("Expected positive value for ISTREAM",__FILENAME__,__LINE__)
       ENDIF
 
       IF (LWNEMOCOU .AND. .NOT.LWNEMOCOUSEND .AND. .NOT.LWNEMOCOURECV) THEN
@@ -1309,7 +1309,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !*    2.1 WIND OUTPUT AND PROPAGATION TIME STEP.
 !         --------------------------------------
 
-      IF ((IDELWO  < IDELPRO .AND. MOD(IDELPRO,IDELWO) /= 0) .OR.         &
+      IF ((IDELWO  < IDELPRO .AND. IDELWO /= 0 .AND. MOD(IDELPRO,IDELWO) /= 0) .OR. &
      &    (IDELWO >= IDELPRO .AND. MOD(IDELWO,IDELPRO) /= 0)) THEN
         WRITE(IU06,*) '*******************************************'
         WRITE(IU06,*) '*                                         *'
