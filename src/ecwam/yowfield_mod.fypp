@@ -10,19 +10,18 @@ MODULE YOWFIELD_MOD
    IMPLICIT NONE
 
 #:for obj in objtypes
-   TYPE ${obj.upper()}$_FIELD_MASK
-     LOGICAL :: ${', '.join(var[0].upper() for var in objdef[obj])}$
-   END TYPE ${obj.upper()}$_FIELD_MASK
-
+#!   TYPE ${obj.upper()}$_FIELD_MASK
+#!     LOGICAL :: ${', '.join(var[0].upper() for var in objdef[obj])}$
+#!   END TYPE ${obj.upper()}$_FIELD_MASK
+#!
    TYPE ${obj.upper()}$_FIELD
    #:for var, type, dim in objdef[obj]
-          #{if type == 'real'}#REAL(KIND=JWRB)#{else}#INTEGER(KIND=JWIM)#{endif}#, DIMENSION(${','.join(':' for _ in range(dim-1))}$), POINTER :: ${var.upper()}$
+          #{if type == 'real'}#REAL(KIND=JWRB)#{else}#INTEGER(KIND=JWIM)#{endif}#, DIMENSION(${','.join(':' for _ in range(dim-1))}$), POINTER :: ${var.upper()}$=>NULL()
    #:endfor
    #:for var, type, dim in objdef[obj]
-          CLASS(FIELD_#{if type == 'int'}#INT#{endif}#${dim}$D), POINTER :: F_${var.upper()}$
+          CLASS(FIELD_#{if type == 'int'}#INT#{endif}#${dim}$D), POINTER :: F_${var.upper()}$=>NULL()
    #:endfor
-          TYPE(${obj.upper()}$_FIELD_MASK) :: FIELD_OWNED
-
+#!          TYPE(${obj.upper()}$_FIELD_MASK) :: FIELD_OWNED
       CONTAINS
          PROCEDURE :: INIT => ${obj.upper()}$_FIELD_INIT
          PROCEDURE :: UPDATE_VIEW => ${obj.upper()}$_UPDATE_VIEW
@@ -53,10 +52,10 @@ MODULE YOWFIELD_MOD
       #:for var, type, dim in objdef[obj]
           IF(PRESENT(${var.upper()}$)) SELF%F_${var.upper()}$ => WRAP_${dim}$D_${type.upper()}$_FIELD(${var.upper()}$)
       #:endfor
-
-      #:for var, type, dim in objdef[obj]
-          SELF%FIELD_OWNED%${var.upper()}$ = .NOT. PRESENT(${var.upper()}$)
-      #:endfor
+#!
+#!      #:for var, type, dim in objdef[obj]
+#!          SELF%FIELD_OWNED%${var.upper()}$ = .NOT. PRESENT(${var.upper()}$)
+#!      #:endfor
       END SUBROUTINE ${obj.upper()}$_FIELD_INIT
   
       SUBROUTINE ${obj.upper()}$_UPDATE_VIEW(SELF, BLOCK_INDEX)
