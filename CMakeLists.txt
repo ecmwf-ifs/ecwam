@@ -20,9 +20,10 @@ ecbuild_enable_fortran( REQUIRED NO_MODULE_DIRECTORY )
 
 ### Dependencies
 
-ecbuild_find_package( fiat    REQUIRED )
-ecbuild_find_package( eccodes REQUIRED )
-
+ecbuild_find_package( fiat      REQUIRED )
+ecbuild_find_package( eccodes   REQUIRED )
+ecbuild_find_package( field_api REQUIRED )
+ecbuild_find_package( fypp      QUIET    )
 
 ### Options
 
@@ -64,6 +65,10 @@ if( HAVE_ECWAM_LAUNCH )
   set( CMAKE_CROSSCOMPILING_EMULATOR ${ECWAM_LAUNCH} ) # For serial runs
 endif()
 
+ecbuild_add_option( FEATURE RUN_FYPP
+                    DEFAULT OFF
+                    DESCRIPTION "Run fypp pre-processor"
+                    CONDITION ${HAVE_fypp} )
 
 ### Set third party libraries
 
