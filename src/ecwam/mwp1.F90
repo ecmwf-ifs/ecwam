@@ -46,6 +46,8 @@
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
+      USE, INTRINSIC :: IEEE_EXCEPTIONS
+
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
@@ -59,9 +61,14 @@
       REAL(KIND=JWRB) :: DELT25, COEF_FR, FR1M1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP, EM
 
+      LOGICAL :: LL_HALT_INVALID
+
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('MWP1',0,ZHOOK_HANDLE)
+
+      CALL IEEE_GET_HALTING_MODE(IEEE_INVALID, LL_HALT_INVALID)
+      IF (LL_HALT_INVALID)   CALL IEEE_SET_HALTING_MODE(IEEE_INVALID, .FALSE.)
 
       DO IJ=KIJS,KIJL
         EM(IJ) = 0.0_JWRB
@@ -100,6 +107,8 @@
           MEANWP1(IJ) = 0.0_JWRB
         ENDIF
       ENDDO
+
+      IF (LL_HALT_INVALID)   CALL IEEE_SET_HALTING_MODE(IEEE_INVALID, .TRUE.)
 
       IF (LHOOK) CALL DR_HOOK('MWP1',1,ZHOOK_HANDLE)
 

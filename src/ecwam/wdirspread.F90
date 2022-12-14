@@ -51,6 +51,8 @@
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
+      USE, INTRINSIC :: IEEE_EXCEPTIONS
+
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "peakfri.intfb.h"
@@ -70,9 +72,14 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: F1D 
 
+      LOGICAL :: LL_HALT_INVALID
+
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('WDIRSPREAD',0,ZHOOK_HANDLE)
+
+      CALL IEEE_GET_HALTING_MODE(IEEE_INVALID, LL_HALT_INVALID)
+      IF (LL_HALT_INVALID)   CALL IEEE_SET_HALTING_MODE(IEEE_INVALID, .FALSE.)
 
 !*    1. INITIALIZE ARRAYS
 !        -----------------
@@ -129,6 +136,8 @@
       DO IJ = KIJS,KIJL
         WDIRSPRD(IJ) = SQRT(2.0_JWRB*(ONE-WDIRSPRD(IJ)))
       ENDDO
+
+      IF (LL_HALT_INVALID)   CALL IEEE_SET_HALTING_MODE(IEEE_INVALID, .TRUE.)
 
       IF (LHOOK) CALL DR_HOOK('WDIRSPREAD',1,ZHOOK_HANDLE)
 
