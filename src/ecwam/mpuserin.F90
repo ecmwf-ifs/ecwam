@@ -896,6 +896,8 @@
       IF (IRANK == 1) THEN
         WRITE(6,*) '==============================================='
         WRITE(6,*) '*** MPUSERIN has read the following settings'
+        WRITE(6,*) '*** CBPLTDT=',CBPLTDT
+        WRITE(6,*) '*** CEPLTDT=',CEPLTDT
         WRITE(6,*) '*** LFDB = ',LFDB
         WRITE(6,*) '*** LRSTPARALW = ',LRSTPARALW
         WRITE(6,*) '*** LRSTPARALR = ',LRSTPARALR

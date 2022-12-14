@@ -93,10 +93,15 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO                       ,    &
      &            IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO
+      USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT
       USE YOWALTAS , ONLY : LODBRALT
       USE MPL_MODULE, ONLY : MPL_INIT, MPL_END, MPL_COMM
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWASSI, ONLY : WAM_ODB_OPEN,  WAM_ODB_CLOSE
+      USE EC_PARKIND, ONLY : JPRD
+      USE YOWTEST, ONLY : IU06
+      USE YOWGSTATS, ONLY : WAM_GSTATS_SETUP, WAM_GSTATS_PRINT, &
+     &                      WAM_GSTATS_FILE_OPEN, WAM_GSTATS_FILE_CLOSE
 
 ! ----------------------------------------------------------------------
 
@@ -109,6 +114,8 @@
 #include "wvwamdecomp.intfb.h"
 #include "wvwaminit.intfb.h"
 #include "wvwaminit1.intfb.h"
+#include "ec_meminfo.intfb.h"
+
 
 ! DIMENSION DUMMY COUPLED VARIABLES
       INTEGER(KIND=JWIM), PARAMETER :: NLONW=1
@@ -126,7 +133,7 @@
       INTEGER(KIND=JWIM) :: KSTOP, KSTPW
       INTEGER(KIND=JWIM) :: IDUM
       INTEGER(KIND=JWIM) :: NPR
-      INTEGER(KIND=JWIM) :: MAXLEN, IU06
+      INTEGER(KIND=JWIM) :: MAXLEN
       INTEGER(KIND=JWIM) :: KERROR
       INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
       INTEGER(KIND=JWIM) :: MASK_OUT(NLONW,NLATW)
@@ -140,7 +147,7 @@
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: RMISS
       REAL(KIND=JWRB) :: ZRCHAR
-      REAL(KIND=JWRB) :: time0, time
+      REAL(KIND=JWRB) :: time0, time, timestep_start, timestep0_start
       REAL(KIND=JWRB) :: wam_user_clock
 
       CHARACTER(LEN=3) :: DBNAME
@@ -153,6 +160,10 @@
       LOGICAL :: LWSTOKES
       LOGICAL :: LLRNL
       LOGICAL :: LFDBIFS
+
+      LOGICAL :: LGSTATS = .TRUE. ! gstats statistics
+      INTEGER :: IUGSTATS
+      INTEGER :: ISTEP = 0
 
       DATA LLSTOP, LLWRRE, LLNORMWAMOUT_GLOBAL  / 3*.FALSE. /
 
@@ -184,6 +195,8 @@
 
       IF (LHOOK) CALL DR_HOOK('RUNWAM',0,ZHOOK_HANDLE)
 
+      CALL EC_MEMINFO(6, "runwam:init", KCOMM=MPL_COMM, KBARR=1, KIOTASK=-1, KCALL=0)
+
 !     0.2 GET MODEL PARAMETERS
 !         --------------------
 
@@ -207,6 +220,10 @@
       CALL WVWAMINIT (LWCOU,IU06,LLRNL,NGAUSSW,NLON,NLAT,RSOUTW,RNORTW)
 
       CALL WVWAMINIT1 (LWCOU, LWCOU2W, LWCOURNW, LWCOUHMF, LWFLUX, LFDBIFS)
+
+      CALL WAM_GSTATS_SETUP()
+
+      CALL GSTATS(0,0)
 
 !     0.3 DETERMINE GRID DOMAIN DECOMPOSITION 
 !         -----------------------------------
@@ -263,7 +280,7 @@
      &                         NEMOITINI, NEMOITEND, NEMOTSTEP,         &
      &                         .TRUE., -1, .FALSE. )
 #endif
-        IF (IRANK == 1) THEN
+        IF (IU06 /= 6 .OR. IRANK == 1) THEN
           WRITE(IU06,*)'NEMO INITIAL DATE         : ',NEMOINIDATE
           WRITE(IU06,*)'NEMO INITIAL TIME         : ',NEMOINITIME
           WRITE(IU06,*)'NEMO INITIAL STEP         : ',NEMOITINI
@@ -284,7 +301,7 @@
           WRITE(IU06,*)'NEMO coupling interval is: ',NEMOTSTEP*NEMONSTEP
           CALL ABORT1
         ELSE
-          IF (IRANK == 1) THEN
+          IF (IU06 /= 6 .OR. IRANK == 1) THEN
             WRITE(IU06,*)'NEMONSTEP                 : ',NEMONSTEP
             WRITE(IU06,*)'NEMO coupling interval is : ',                &
      &                   NEMOTSTEP*NEMONSTEP
@@ -294,8 +311,13 @@
 
  20   CONTINUE
 
+      IF (IRANK==1) THEN
+        WRITE(6,'(4A)') " WAVEMDL STEPPING FROM DATE ", CBPLTDT, " TO DATE ", CEPLTDT
+      ENDIF
+      timestep0_start = - wam_user_clock()
       DO WHILE (CDTPRO < CDATEE .OR. CDTPRO == ZERO)
-       CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
+        timestep_start = - wam_user_clock()
+        CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW,                      &
      &             NFIELDS, NGPTOTG, NC, NR,                            &
      &             IGRIB_HANDLE_DUM, RMISS, ZRCHAR, FIELDS,             &
      &             NATMFLX,                                             &
@@ -308,9 +330,19 @@
      &             FRSTIME, NADV, PRPLRADI, PRPLRG,                     &
      &             RNU_ATM, RNUM_ATM,                                   &
      &             IDUM,IDUM, .FALSE.)
-
+        time = (timestep_start+wam_user_clock())*1.e-6
+        ISTEP = ISTEP+1
+        IF (IRANK==1) THEN
+          CALL WAM_MEMINFO(6,ISTEP)
+          WRITE(6,'(A,I3,3A,F8.2,A)') " WAVEMDL STEP ",ISTEP," TO DATE ", CDTPRO, &
+            & "  TOOK ",time," SECONDS"
+        ENDIF
         IF (LLSTOP) EXIT
       ENDDO
+      IF (IRANK==1) THEN
+        time = (timestep0_start+wam_user_clock())*1.e-6
+        WRITE(6,'(A,F8.2,A)') " WAVEMDL STEPS TOOK ",time," SECONDS"
+      ENDIF
 
 
 !     3. CLOSE ODB DATABASE OF SATELLITE DATA
@@ -319,25 +351,57 @@
         CALL WAM_ODB_CLOSE()
       ENDIF
 
+!    4.  FINALIZE RUNWAM
+!        ---------------
 
-!    4.  TERMINATE MESSAGE PASSING PROTOCOL 
-!        -----------------------------------
+      CALL GSTATS(0,1)
 
-      time=time0+wam_user_clock()
-      time=time*1E-06
-      WRITE (IU06,*) ' ++++++++++++++++++++++++++++++'
-      WRITE (IU06,*) ' + TOTAL USER TIME IN SECONDS +'
-      WRITE (IU06,*) ' + ', time 
-      WRITE (IU06,*) ' +                            +'
-      WRITE (IU06,*) ' + ON PE : ',IRANK   
-      WRITE (IU06,*) ' ++++++++++++++++++++++++++++++'
+      CALL WAM_GSTATS_FILE_OPEN(IUGSTATS)
+      IF (IUGSTATS == -1 ) IUGSTATS = IU06
+      CALL WAM_GSTATS_PRINT(IUGSTATS)
+      CALL WAM_GSTATS_FILE_CLOSE(IUGSTATS)
 
 #ifdef WITH_NEMO
       IF (LWNEMOCOU) CALL NEMOGCMCOUP_FINAL
 #endif
 
+      CALL EC_MEMINFO(6,"runwam:end",MPL_COMM,KBARR=1,KIOTASK=-1,KCALL=1)
+
+      time=time0+wam_user_clock()
+      time=time*1E-06
+      WRITE (IU06,'(A)') ' ++++++++++++++++++++++++++++++'
+      WRITE (IU06,'(A)') ' + TOTAL USER TIME IN SECONDS +'
+      WRITE (IU06,'(A,F18.2,A)') ' + ', time, '         +'
+      WRITE (IU06,'(A)') ' +                            +'
+      WRITE (IU06,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
+      WRITE (IU06,'(A)') ' ++++++++++++++++++++++++++++++'
+      IF (IRANK==1 .AND. IU06/=6) THEN
+        WRITE (6,'(A)') ' ++++++++++++++++++++++++++++++'
+        WRITE (6,'(A)') ' + TOTAL USER TIME IN SECONDS +'
+        WRITE (6,'(A,F18.2,A)') ' + ', time, '         +'
+        WRITE (6,'(A)') ' +                            +'
+        WRITE (6,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
+        WRITE (6,'(A)') ' ++++++++++++++++++++++++++++++'
+      ENDIF
+
       CALL MPCLOSE_UNIT
 
       IF (LHOOK) CALL DR_HOOK('RUNWAM',1,ZHOOK_HANDLE)
+
+CONTAINS
+
+SUBROUTINE WAM_MEMINFO(KOUT,KSTEP)
+USE EC_PARKIND, ONLY : JPIM
+IMPLICIT NONE
+INTEGER(KIND=JPIM), INTENT(IN) :: KOUT, KSTEP
+CHARACTER(LEN=32) CLSTEP
+INTEGER(KIND=JPIM) :: ICOMM
+#include "ec_meminfo.intfb.h"
+WRITE(CLSTEP,'(11X,"STEP",I5," :")') KSTEP
+ICOMM = -2 ! No headers from EC_MEMINFO by default
+IF (KSTEP == 1) ICOMM = -1 ! Print also headers
+CALL EC_MEMINFO(KOUT,TRIM(CLSTEP),ICOMM,KBARR=0,KIOTASK=-1,KCALL=-1)
+CALL EC_FLUSH(KOUT)
+END SUBROUTINE WAM_MEMINFO
 
       END SUBROUTINE RUNWAM

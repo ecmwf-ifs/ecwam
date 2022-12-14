@@ -314,6 +314,7 @@ list( APPEND ecwam_srcs
   yowgrib_handles.F90
   yowgribhd.F90
   yowgrid.F90
+  yowgstats.F90
   yowice.F90
   yowindn.F90
   yowintp.F90
