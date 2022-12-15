@@ -350,7 +350,7 @@ list( APPEND ecwam_srcs
 
 add_custom_command(
 	OUTPUT yowfield_mod.F90
-	COMMAND fypp ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
+	COMMAND fypp -m io -m yaml -m os ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp
 	VERBATIM)
 
