@@ -348,13 +348,11 @@ list( APPEND ecwam_srcs
   z0wave.F90
 )
 
-if( ${HAVE_RUN_FYPP} )
 add_custom_command(
 	OUTPUT yowfield_mod.F90
 	COMMAND fypp ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp
 	VERBATIM)
-endif()
 
 unset( MPI_Fortran_LIBRARIES )
 if( HAVE_UNWAM )
