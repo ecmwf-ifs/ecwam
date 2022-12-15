@@ -1,12 +1,15 @@
-#:set objtypes = ['frequency']
+#:set objtypes = ['frequency', 'environment', 'forcing_fields']
 #:set objdef = {'frequency': [('wavnum', 'real', 3), ('cinv', 'real', 3), ('cgroup', 'real', 3), ('xk2cg', 'real', 3), &
   &                        ('omosnh2kd', 'real', 3), ('stokfac', 'real', 3), ('ciwa', 'real', 3)]}
+$:objdef.update({'environment': [('indep', 'int', 2), ('iodp', 'int', 2), ('iobnd', 'int', 2), ('dellam1', 'real', 2), &
+  &  ('cosphm1', 'real', 2), ('depth', 'real', 2), ('emaxdpt', 'real', 2), ('ucur', 'real', 2), ('vcur', 'real', 2)]})
 #!
 #!
 MODULE YOWFIELD_MOD
 
    USE PARKIND_WAVE, ONLY : JWRB, JWIM
-   USE FIELD_MODULE, ONLY : FIELD_3D_WRAPPER, FIELD_3D
+   USE FIELD_MODULE, ONLY : FIELD_3D_WRAPPER, FIELD_3D, FIELD_INT2D, FIELD_INT2D_WRAPPER, FIELD_2D, FIELD_2D_WRAPPER, &
+ &                          FIELD_INT3D, FIELD_INT3D_WRAPPER
    IMPLICIT NONE
 
 #:for obj in objtypes
@@ -30,8 +33,8 @@ MODULE YOWFIELD_MOD
 
 #:endfor
    CONTAINS
-#:for type in ['real']
-   #:for dim in range(3, 4)
+#:for type in ['real', 'int']
+   #:for dim in range(2, 4)
       FUNCTION WRAP_${dim}$D_${type.upper()}$_FIELD(ARR) RESULT(FIELD)
         #{if type == 'real'}#REAL(KIND=JWRB)#{else}#INTEGER(KIND=JWIM)#{endif}#, DIMENSION(${','.join(':' for _ in range(dim))}$), INTENT(IN) :: ARR
          CLASS(FIELD_#{if type == 'int'}#INT#{endif}#${dim}$D_WRAPPER), POINTER :: FIELD
@@ -39,9 +42,9 @@ MODULE YOWFIELD_MOD
          ALLOCATE(FIELD)
          CALL FIELD%INIT(ARR)
       END FUNCTION WRAP_${dim}$D_${type.upper()}$_FIELD
+
    #:endfor
 #:endfor
-
 #:for obj in objtypes
       SUBROUTINE ${obj.upper()}$_FIELD_INIT(SELF, ${', '.join(var[0].upper() for var in objdef[obj])}$)
           CLASS(${obj.upper()}$_FIELD), INTENT(INOUT) :: SELF
@@ -66,6 +69,6 @@ MODULE YOWFIELD_MOD
           IF(ASSOCIATED(SELF%F_${var.upper()}$)) SELF%${var.upper()}$ => SELF%F_${var.upper()}$%GET_VIEW(BLOCK_INDEX)
       #:endfor
       END SUBROUTINE ${obj.upper()}$_UPDATE_VIEW
-#:endfor
 
+#:endfor
 END MODULE YOWFIELD_MOD
