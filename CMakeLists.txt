@@ -22,8 +22,6 @@ ecbuild_enable_fortran( REQUIRED NO_MODULE_DIRECTORY )
 
 ecbuild_find_package( fiat      REQUIRED )
 ecbuild_find_package( eccodes   REQUIRED )
-ecbuild_find_package( field_api REQUIRED )
-ecwam_find_fypp()
 
 ### Options
 
@@ -63,6 +61,17 @@ if( HAVE_ECWAM_LAUNCH )
   set( MPIEXEC_NUMPROC_FLAG   -n )
   set( MPIEXEC_NUMTHREAD_FLAG -c )
   set( CMAKE_CROSSCOMPILING_EMULATOR ${ECWAM_LAUNCH} ) # For serial runs
+endif()
+
+ecbuild_add_option( FEATURE FIELD_API
+                    DEFAULT OFF
+                    DESCRIPTION "Build using field_api"
+                    REQUIRED_PACKAGES "field_api" )
+
+### Optional dependencies
+
+if( HAVE_FIELD_API )
+   ecwam_find_python_mods()
 endif()
 
 ### Set third party libraries

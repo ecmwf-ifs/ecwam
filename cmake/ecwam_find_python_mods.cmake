@@ -6,9 +6,20 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
-macro( ecwam_find_fypp )
+macro( ecwam_find_python_mods )
+   ecbuild_find_python()
    find_program( FYPP_LOC fypp REQUIRED )
    if( FYPP_LOC )
      ecbuild_info( "${ECWAM_PROJECT_NAME} FOUND fypp" )
+   endif()
+   execute_process(
+       COMMAND python3 -c "import yaml"
+       RESULT_VARIABLE EXIT_CODE
+       OUTPUT_QUIET
+   )
+   if( EXIT_CODE EQUAL 0 )
+       ecbuild_info("${ECWAM_PROJECT_NAME} FOUND Python interpreter and required modules")
+   else()
+       ecbuild_critical("PyYAML is needed to build ${ECWAM_PROJECT_NAME} with field_api")
    endif()
 endmacro()
