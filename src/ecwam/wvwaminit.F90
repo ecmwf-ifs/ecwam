@@ -87,17 +87,21 @@
         LLEXIST=.TRUE.
         DO WHILE (LLEXIST)
           IU06=IU06+1
-          LOGFILENAME='logfile.%p'
+          CALL GET_ENVIRONMENT_VARIABLE("ECWAM_LOG_FILE",LOGFILENAME)
+          IF (LOGFILENAME == '') LOGFILENAME='wam.log'
+          IF (NPROC > 1 .AND. INDEX(LOGFILENAME, '%p') == 0) LOGFILENAME=TRIM(LOGFILENAME)//".%p"
           CALL EXPAND_STRING(IRANK,NPROC,0,0,LOGFILENAME,1)
           INQUIRE(UNIT=IU06, OPENED=LLEXIST)
           IF (.NOT. LLEXIST) THEN
             OPEN(IU06,FILE=LOGFILENAME,STATUS='UNKNOWN')
-            WRITE(IU06,*) ' STDOUT OF PE ', IRANK
-            WRITE(IU06,*) ' ============ '
+            WRITE(IU06,'(A,I0,A,I0)') '  # WAM LOG FILE OF PE ', IRANK, ' / ', NPROC
             WRITE(IU06,*) ' '
           ENDIF
         ENDDO
       ENDIF
+
+      WRITE(IU06,*) ' WAM SOFTWARE VERSION: ', KWAMVER
+      WRITE(IU06,*) ' '
 
 !     GET CONTROLLING FLAG FROM INPUT NAMELIST 
 !     ----------------------------------------
@@ -105,9 +109,6 @@
         CALL MPUSERIN
         LFRST=.FALSE.
       ENDIF
-
-      WRITE(IU06,*) ' WAM SOFTWARE VERSION: ', KWAMVER
-
 
 !     SET WAVE PHYSICS PACKAGE
 !     ------------------------
