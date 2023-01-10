@@ -1,0 +1,103 @@
+grid:        O48
+directions:  12
+frequencies: 25
+bathymetry:  aqua
+
+advection:
+    timestep: 1200
+physics:
+    timestep: 1200
+
+begin:     2022-01-01 00:00:00
+end:       2022-01-01 06:00:00
+
+nproma: 24
+
+forcings:
+    file:  data/forcings/era5_2022010100_36h_O48.grib
+    at:
+      - begin:     ${begin}
+        end:       ${end}
+        timestep:  01:00
+
+output:
+    fields:
+        name:
+          - swh         # Significant height of combined wind waves and swell
+        format: grib    # (default : grib) or binary
+        at:
+          - timestep: 01:00
+
+    restart:
+        format: binary # (default : binary) or grib
+        at:
+          - time: ${end}
+
+
+validation:
+
+  double_precision:
+
+    # initial time
+    - name: swh
+      time: 2022-01-01 00:00:00
+      average: 1.226633147925311e+00
+      relative_tolerance: 1.e-14
+      hashes: ['0x3FF3A04A146875B8']
+
+    # After 1h
+    - name: swh
+      time: 2022-01-01 01:00:00
+      average: 1.239167227865392e+00
+      relative_tolerance: 1.e-14
+      hashes: ['0x3FF3D3A103DF4F37']
+
+    # After 6h
+    - name: swh
+      time: 2022-01-01 06:00:00
+      average: 1.275481889400195e+00
+      relative_tolerance: 1.e-14
+      hashes: ['0x3FF4685FB299D375']
+    - name: swh
+      time: 2022-01-01 06:00:00
+      minimum:  8.529951782010523e-01
+      relative_tolerance: 1.e-14
+      hashes: ['0x3FEB4BBC8B409D62']
+    - name: swh
+      time: 2022-01-01 06:00:00
+      maximum:  6.566065640462422e+00
+      relative_tolerance: 1.e-14
+      hashes: ['0x401A43A6B614B39B']
+
+  single_precision:
+
+    # initial time
+    - name: swh
+      time: 2022-01-01 00:00:00
+      average: 1.227156758308411e+00
+      relative_tolerance: 1.e-6
+      hashes: ['0x3FF3A26F20000000']
+
+    # After 1h
+    - name: swh
+      time: 2022-01-01 01:00:00
+      average: 1.239601612091064e+00
+      relative_tolerance: 1.e-6
+      hashes: ['0x3FF3D56880000000']
+
+    # After 6h
+    - name: swh
+      time: 2022-01-01 06:00:00
+      average: 1.27588951587677e+00
+      relative_tolerance: 1.e-6
+      hashes: ['0x3FF46A0B20000000']
+    - name: swh
+      time: 2022-01-01 06:00:00
+      minimum:  8.529955744743347e-01
+      relative_tolerance: 1.e-6
+      hashes: ['0x3FEB4BBD60000000']
+    - name: swh
+      time: 2022-01-01 06:00:00
+      maximum:  6.566064834594727e+00
+      relative_tolerance: 1.e-6
+      hashes: ['0x401A43A680000000']
