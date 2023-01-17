@@ -78,6 +78,7 @@ REAL(KIND=JWRB) FUNCTION AKI_ICE (G,XK,DEPTH,RHOW,CITH)
       REAL(KIND=JWRB) :: OM2, AKI, AKIOLD, F, FPRIME, AKID 
 
 
+!$loki routine seq
       IF (CITH <= 0.0_JWRB) THEN
         AKI=XK
       ELSE

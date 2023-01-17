@@ -45,6 +45,7 @@ REAL(KIND=JWRB) FUNCTION TRANSF_SNL(XK0,D,XNU,SIG_TH)
 
 !----------------------------------------------------------------------
 
+!$loki routine seq
       IF (LHOOK) CALL DR_HOOK('TRANSF_SNL',0,ZHOOK_HANDLE)
 
 !*    1. DETERMINE TRANSFER FUNCTION.

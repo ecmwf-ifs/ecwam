@@ -69,6 +69,7 @@ REAL(KIND=JWRB) FUNCTION STRESS_GC(ANG_GC, USTAR, Z0, Z0MIN, HALP, RNFAC)
 
 ! ----------------------------------------------------------------------
 
+!$loki routine seq
 IF (LHOOK) CALL DR_HOOK('STRESS_GC',0,ZHOOK_HANDLE)
 
 !*    1.0  DETERMINE GRAV_CAP SPECTRUM, TAUWHF.

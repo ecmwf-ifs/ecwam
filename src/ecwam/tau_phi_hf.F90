@@ -48,6 +48,7 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 #include "ns_gc.intfb.h"
 
 ! ----------------------------------------------------------------------
+!$loki routine seq
 
 IF (LHOOK) CALL DR_HOOK('OMEGAGC',0,ZHOOK_HANDLE)
 

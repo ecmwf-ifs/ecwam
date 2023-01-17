@@ -84,6 +84,7 @@ CONTAINS
 
 
 ! ----------------------------------------------------------------------
+      !$loki routine seq
 
       IF (LHOOK) CALL DR_HOOK('WSIGSTAR',0,ZHOOK_HANDLE)
 
