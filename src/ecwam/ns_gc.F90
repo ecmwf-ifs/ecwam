@@ -35,6 +35,7 @@ USE YOWPCONS , ONLY : SQRTGOSURFT
 
       REAL(KIND=JWRB), INTENT(IN) :: USTAR
 
+!$loki routine seq
       REAL(KIND=JWRB) :: Y, XKS
 
 ! ----------------------------------------------------------------------
