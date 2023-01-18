@@ -174,6 +174,8 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
       IF (LHOOK) CALL DR_HOOK('GRIB2WGRID',0,ZHOOK_HANDLE)
 
+      LLNEAREST_LOC = .FALSE.
+
       CALL GSTATS(1703,0)
 
       CSTREAM='****'
