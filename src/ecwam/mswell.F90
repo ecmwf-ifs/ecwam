@@ -226,7 +226,7 @@
             ENDIF
           ENDDO
           E0=H0(ILOC)**2/16.0_JWRB
-          CEX=FLOAT(NSP+1)/NSP
+          CEX=REAL(NSP+1,JWRB)/REAL(NSP,JWRB)
           CS0=(NSP+1)*E0*OMEGAP(ILOC)**NSP
           DO M=1,NFRE
             OMEGA=ZPI*FR(M)

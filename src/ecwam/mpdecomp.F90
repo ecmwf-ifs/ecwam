@@ -508,7 +508,7 @@ ELSE
             IPROC=2*ICOUNT**2
           ENDDO
           IF (IPROC == NPR) THEN
-            NYDECOMP=INT(SQRT(FLOAT(NPR)/2))
+            NYDECOMP=INT(SQRT(REAL(NPR,JWRB)/2_JWRB))
             NXDECOMP=2*NYDECOMP
             NYCUT=NYDECOMP
           ELSE
@@ -519,7 +519,7 @@ ELSE
 !                     NYCUT=NYDECOMP,1,-1 until a solution to (1)
 !         is reached. 
             IPROC=0
-            NYDECOMP=INT(SQRT(FLOAT(NPR)/2))+1
+            NYDECOMP=INT(SQRT(REAL(NPR,JWRB)/2_JWRB))+1
             DO NXDECOMP=2*NYDECOMP,NYDECOMP,-1
               DO NYCUT=NYDECOMP,1,-1
                 IPROC=NYDECOMP*(NXDECOMP-1)+NYCUT
@@ -626,7 +626,7 @@ ELSE
 
 
         STAGGER=0.5_JWRB*(AMOEAP-AMOWEP+IPER*XDELLO)/NXDECOMP
-        STAGGER=FLOAT(NINT(100*STAGGER))/100.0_JWRB
+        STAGGER=REAL(NINT(100*STAGGER),JWRB)/100.0_JWRB
         ISTAGGER=NINT(STAGGER*XDELLOINV)
 
         IPROC=0
@@ -700,7 +700,7 @@ ELSE
             IX = BLK2GLO(IJ)%IXLG
             JSN= BLK2GLO(IJ)%KXLT
             XLON=AMOWEP+(IX-1)*ZDELLO(JSN)
-            XLON=FLOAT(NINT(100*XLON))/100.0_JWRB
+            XLON=REAL(NINT(100*XLON),JWRB)/100.0_JWRB
             IXLON(NLON(KXLAT),KXLAT)=NINT(XLON*XDELLOINV)
             IXLONMAX=MAX(IXLONMAX,IXLON(NLON(KXLAT),KXLAT))
           ENDDO
@@ -2288,7 +2288,7 @@ ELSE
             ELSEIF (MOD(KOBSLON(IJ,M,IC),1000) == 0) THEN
               OBSLON(IJ,M,IC)=1.0_JWRB
             ELSE
-              OBSLON(IJ,M,IC)=FLOAT(KOBSLON(IJ,M,IC))*0.001_JWRB
+              OBSLON(IJ,M,IC)=REAL(KOBSLON(IJ,M,IC),JWRB)*0.001_JWRB
             ENDIF
           ENDDO
         ENDDO
@@ -2302,7 +2302,7 @@ ELSE
             ELSEIF (MOD(KOBSLAT(IJ,M,IC),1000) == 0) THEN
               OBSLAT(IJ,M,IC)=1.0_JWRB
             ELSE
-              OBSLAT(IJ,M,IC)=FLOAT(KOBSLAT(IJ,M,IC))*0.001_JWRB
+              OBSLAT(IJ,M,IC)=REAL(KOBSLAT(IJ,M,IC),JWRB)*0.001_JWRB
             ENDIF
           ENDDO
         ENDDO
@@ -2333,7 +2333,7 @@ ELSE
               ELSEIF (MOD(KOBSRLON(IJ,M,IC),1000) == 0) THEN
                 OBSRLON(IJ,M,IC)=1.0_JWRB
               ELSE
-                OBSRLON(IJ,M,IC)=FLOAT(KOBSRLON(IJ,M,IC))*0.001_JWRB
+                OBSRLON(IJ,M,IC)=REAL(KOBSRLON(IJ,M,IC),JWRB)*0.001_JWRB
               ENDIF
             ENDDO
           ENDDO
@@ -2347,7 +2347,7 @@ ELSE
                ELSEIF (MOD(KOBSRLAT(IJ,M,IC),1000) == 0) THEN
               OBSRLAT(IJ,M,IC)=1.0_JWRB
               ELSE
-                OBSRLAT(IJ,M,IC)=FLOAT(KOBSRLAT(IJ,M,IC))*0.001_JWRB
+                OBSRLAT(IJ,M,IC)=REAL(KOBSRLAT(IJ,M,IC),JWRB)*0.001_JWRB
               ENDIF
             ENDDO
           ENDDO
@@ -2375,7 +2375,7 @@ ELSE
               ELSEIF (MOD(KOBSCOR(IJ,M,IC),1000) == 0) THEN
                 OBSCOR(IJ,M,IC)=1.0_JWRB
               ELSE
-                OBSCOR(IJ,M,IC)=FLOAT(KOBSCOR(IJ,M,IC))*0.001_JWRB
+                OBSCOR(IJ,M,IC)=REAL(KOBSCOR(IJ,M,IC),JWRB)*0.001_JWRB
               ENDIF
             ENDDO
           ENDDO

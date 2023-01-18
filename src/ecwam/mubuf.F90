@@ -75,7 +75,7 @@
       REAL(KIND=JWRB) :: XMIN, XPLUS, D0, D1, D2, D3, D4, D5, D6
       REAL(KIND=JWRB) :: XLON, XL, XP, TWOXDELLA
       REAL(KIND=JWRB) :: XLL, XPL, XLR, XPR
-      REAL(KIND=JWRB) ::  BATHY(NGX, NGY)
+      REAL(KIND=JWRB) :: BATHY(NGX, NGY)
 
       CHARACTER(LEN=5) :: CX
       CHARACTER(LEN=11) :: FORMAT
@@ -105,7 +105,7 @@
         I = BLK2GLO(IP)%IXLG
         K = BLK2GLO(IP)%KXLT
         IF (K > 1) THEN
-          XMIN = REAL(I-1)*ZDELLO(K)/ZDELLO(K-1)
+          XMIN = REAL(I-1,JWRB)*ZDELLO(K)/ZDELLO(K-1)
           IMIN = NINT(XMIN) + 1
 
 !         CLOSEST GRID POINT
@@ -118,7 +118,7 @@
 
 !         SECOND CLOSEST GRID POINT
           IF (IRGG == 1) THEN
-            IF (XMIN <= FLOAT(IMIN-1)) THEN
+            IF (XMIN <= REAL(IMIN-1,JWRB)) THEN
               IF (IMIN <= 1) THEN
                 IMIN2=1
               ELSE
@@ -145,7 +145,7 @@
         ENDIF
 
         IF (K < NY) THEN
-          XPLUS = REAL(I-1)*ZDELLO(K)/ZDELLO(K+1)
+          XPLUS = REAL(I-1,JWRB)*ZDELLO(K)/ZDELLO(K+1)
           IPLUS = NINT(XPLUS) + 1
           IF (BATHY(IPLUS,K+1) > -990.0_JWRB) THEN
             DO IH = IP,NIBLO
@@ -155,7 +155,7 @@
           ENDIF
 
           IF (IRGG == 1) THEN
-            IF (XPLUS <= FLOAT(IPLUS-1)) THEN
+            IF (XPLUS <= REAL(IPLUS-1,JWRB)) THEN
               IF (IPLUS <= 1) THEN
                 IPLUS2=1
               ELSE
@@ -246,7 +246,7 @@
       DO IP = 1,NIBLO
         I = BLK2GLO(IP)%IXLG
         K = BLK2GLO(IP)%KXLT 
-        XLON = REAL(I-1)*ZDELLO(K)
+        XLON = REAL(I-1,JWRB)*ZDELLO(K)
 
         IF (K > 1) THEN
 !         CLOSEST GRID POINT IN SW GRID CORNER POINT
@@ -257,7 +257,7 @@
 
           IF (IPER == 1 .AND. IMIN < 1)  THEN
             IMIN = IMIN + NLONRGG(K-1)
-            XMIN = XMIN + FLOAT(NLONRGG(K-1))
+            XMIN = XMIN + REAL(NLONRGG(K-1),JWRB)
           ENDIF
           IF (IMIN >= 1)  THEN
             IF (BATHY(IMIN,K-1) > -990.0_JWRB) THEN
@@ -270,7 +270,7 @@
 
 !         SECOND CLOSEST GRID POINT IN SW GRID CORNER POINT
           IF (IMIN >= 1)  THEN
-            IF (XMIN <= FLOAT(IMIN-1)) THEN
+            IF (XMIN <= REAL(IMIN-1,JWRB)) THEN
               IMIN2=IMIN-1
               IF (IMIN <= 1) THEN
 !!test                IMIN2=1
@@ -304,7 +304,7 @@
           IMIN = NINT(XMIN) + 1
           IF (IPER == 1 .AND. IMIN > NLONRGG(K-1))  THEN
             IMIN = IMIN - NLONRGG(K-1)
-            XMIN = XMIN - FLOAT(NLONRGG(K-1))
+            XMIN = XMIN - REAL(NLONRGG(K-1),JWRB)
           ENDIF
           IF (IMIN <= NLONRGG(K-1))  THEN
             IF (BATHY(IMIN,K-1) > -990.0_JWRB) THEN
@@ -317,7 +317,7 @@
 
 !         SECOND CLOSEST GRID POINT IN SE GRID CORNER
           IF (IMIN <= NLONRGG(K-1))  THEN
-            IF (XMIN <= FLOAT(IMIN-1)) THEN
+            IF (XMIN <= REAL(IMIN-1,JWRB)) THEN
                IMIN2=IMIN-1
               IF (IMIN <= 1) THEN
 !!test                IMIN2=1
@@ -354,7 +354,7 @@
           IPLUS = NINT(XPLUS) + 1
           IF (IPER == 1 .AND. IPLUS < 1)  THEN
             IPLUS = NLONRGG(K+1) + IPLUS 
-            XPLUS = XPLUS + FLOAT(NLONRGG(K+1))
+            XPLUS = XPLUS + REAL(NLONRGG(K+1),JWRB)
           ENDIF
 
           IF (IPLUS >= 1)  THEN
@@ -368,7 +368,7 @@
 
 !         SECOND CLOSEST GRID POINT IN NW GRID CORNER 
           IF (IPLUS >= 1)  THEN
-            IF (XPLUS <= FLOAT(IPLUS-1)) THEN
+            IF (XPLUS <= REAL(IPLUS-1,JWRB)) THEN
                IPLUS2=IPLUS-1
               IF (IPLUS <= 1) THEN
 !!test                IPLUS2=1
@@ -401,7 +401,7 @@
           IPLUS = NINT(XPLUS) + 1
           IF (IPER == 1 .AND. IPLUS > NLONRGG(K+1))  THEN
             IPLUS = IPLUS - NLONRGG(K+1)
-            XPLUS = XPLUS - FLOAT(NLONRGG(K+1))
+            XPLUS = XPLUS - REAL(NLONRGG(K+1),JWRB)
           ENDIF
 
           IF (IPLUS <= NLONRGG(K+1))  THEN
@@ -415,7 +415,7 @@
 
 !         SECOND CLOSEST GRID POINT IN NE GRID CORNER 
           IF (IPLUS <= NLONRGG(K+1))  THEN
-            IF (XPLUS <= FLOAT(IPLUS-1)) THEN
+            IF (XPLUS <= REAL(IPLUS-1,JWRB)) THEN
                IPLUS2=IPLUS-1
               IF (IPLUS <= 1) THEN
 !!test                IPLUS2=1
@@ -469,7 +469,7 @@
       DO IP = 1,NIBLO
         I = BLK2GLO(IP)%IXLG
         K = BLK2GLO(IP)%KXLT
-        XLON = REAL(I-1)*ZDELLO(K)
+        XLON = REAL(I-1,JWRB)*ZDELLO(K)
 
         IF (K > 1) THEN
 !         CLOSEST GRID POINT IN SW CORNER
@@ -478,7 +478,7 @@
           IMIN = NINT(XMIN) + 1
           IF (IPER == 1 .AND. IMIN .LT. 1)  THEN
             IMIN = IMIN + NLONRGG(K-1)
-            XMIN = XMIN + FLOAT(NLONRGG(K-1))
+            XMIN = XMIN + REAL(NLONRGG(K-1),JWRB)
           ENDIF
           IF (IMIN >= 1)  THEN
             IF (BATHY(IMIN,K-1) > -990.0_JWRB) THEN
@@ -492,7 +492,7 @@
 !         SECOND CLOSEST GRID POINT IN SW CORNER
           IF (IRGG == 1) THEN
             IF (IMIN >= 1)  THEN
-              IF (XMIN <= FLOAT(IMIN-1)) THEN
+              IF (XMIN <= REAL(IMIN-1,JWRB)) THEN
                 IF (IMIN <= 1) THEN
                   IMIN2=1
                 ELSE
@@ -523,7 +523,7 @@
           IMIN = NINT(XMIN) + 1
           IF (IPER == 1 .AND. IMIN .GT. NLONRGG(K-1))  THEN
             IMIN = IMIN - NLONRGG(K-1)
-            XMIN = XMIN - FLOAT(NLONRGG(K-1))
+            XMIN = XMIN - REAL(NLONRGG(K-1),JWRB)
           ENDIF
           IF (IMIN <= NLONRGG(K-1))  THEN
             IF (BATHY(IMIN,K-1) > -990.0_JWRB) THEN
@@ -537,7 +537,7 @@
 !         SECOND CLOSEST GRID POINT IN SE CORNER
           IF (IRGG == 1) THEN
             IF (IMIN <= NLONRGG(K-1))  THEN
-              IF (XMIN <= FLOAT(IMIN-1)) THEN
+              IF (XMIN <= REAL(IMIN-1,JWRB)) THEN
                 IF (IMIN <= 1) THEN
                   IMIN2=1
                 ELSE
@@ -571,7 +571,7 @@
           IPLUS = NINT(XPLUS) + 1
           IF (IPER == 1 .AND. IPLUS < 1)  THEN
             IPLUS = NLONRGG(K+1) + IPLUS 
-            XPLUS = XPLUS + FLOAT(NLONRGG(K+1))
+            XPLUS = XPLUS + REAL(NLONRGG(K+1),JWRB)
           ENDIF
 
           IF (IPLUS >= 1)  THEN
@@ -586,7 +586,7 @@
 !         SECOND CLOSEST GRID POINT IN NW CORNER 
           IF (IRGG == 1) THEN
             IF (IPLUS >= 1)  THEN
-              IF (XPLUS <= FLOAT(IPLUS-1)) THEN
+              IF (XPLUS <= REAL(IPLUS-1,JWRB)) THEN
                 IF (IPLUS <= 1) THEN
                   IPLUS2=1
                 ELSE
@@ -617,7 +617,7 @@
           IPLUS = NINT(XPLUS) + 1
           IF (IPER == 1 .AND. IPLUS > NLONRGG(K+1))  THEN
             IPLUS = IPLUS - NLONRGG(K+1)
-            XPLUS = XPLUS - FLOAT(NLONRGG(K+1))
+            XPLUS = XPLUS - REAL(NLONRGG(K+1),JWRB)
           ENDIF
 
           IF (IPLUS <= NLONRGG(K+1))  THEN
@@ -632,7 +632,7 @@
 !         SECOND CLOSEST GRID POINT IN NE CORNER 
           IF (IRGG == 1) THEN
             IF (IPLUS <= NLONRGG(K+1))  THEN
-              IF (XPLUS <= FLOAT(IPLUS-1)) THEN
+              IF (XPLUS <= REAL(IPLUS-1,JWRB)) THEN
                 IF (IPLUS <= 1) THEN
                   IPLUS2=1
                 ELSE
@@ -693,7 +693,7 @@
         DO IP = 1,NIBLO
           I = BLK2GLO(IP)%IXLG
           K = BLK2GLO(IP)%KXLT
-          D0 = FLOAT(I-1)*ZDELLO(K)
+          D0 = REAL(I-1,JWRB)*ZDELLO(K)
           D3=D0-0.5_JWRB*ZDELLO(K)
           D5=D0+0.5_JWRB*ZDELLO(K)
 
@@ -701,7 +701,7 @@
 !           SOUTHERN POINT 
             XMIN = D0/ZDELLO(K-1)
             IMIN = NINT(XMIN) + 1
-            XP=FLOAT(IMIN-1)*ZDELLO(K-1)
+            XP=REAL(IMIN-1,JWRB)*ZDELLO(K-1)
             D4=XP-0.5_JWRB*ZDELLO(K-1)
             D6=XP+0.5_JWRB*ZDELLO(K-1)
             IF (D0 <= XP) THEN
@@ -727,7 +727,7 @@
             XL=D0-XDELLA
             XMIN = XL/ZDELLO(K-1)
             IMIN = NINT(XMIN) + 1
-            XP=FLOAT(IMIN-1)*ZDELLO(K-1)
+            XP=REAL(IMIN-1,JWRB)*ZDELLO(K-1)
             D4=XP-0.5_JWRB*ZDELLO(K-1)
             D6=XP+0.5_JWRB*ZDELLO(K-1)
             IF (XL <= XP) THEN
@@ -764,7 +764,7 @@
 
             XMIN = XL/ZDELLO(K-1)
             IMIN = NINT(XMIN) + 1
-            XP=FLOAT(IMIN-1)*ZDELLO(K-1)
+            XP=REAL(IMIN-1,JWRB)*ZDELLO(K-1)
             XPL=XP-0.5_JWRB*ZDELLO(K-1)
             XPR=XP+0.5_JWRB*ZDELLO(K-1)
 
@@ -780,7 +780,7 @@
             XL=D0+XDELLA
             XMIN = XL/ZDELLO(K-1)
             IMIN = NINT(XMIN) + 1
-            XP=FLOAT(IMIN-1)*ZDELLO(K-1)
+            XP=REAL(IMIN-1,JWRB)*ZDELLO(K-1)
             D4=XP-0.5_JWRB*ZDELLO(K-1)
             D6=XP+0.5_JWRB*ZDELLO(K-1)
             IF (XL <= XP) THEN
@@ -817,7 +817,7 @@
 
             XMIN = XL/ZDELLO(K-1)
             IMIN = NINT(XMIN) + 1
-            XP=FLOAT(IMIN-1)*ZDELLO(K-1)
+            XP=REAL(IMIN-1,JWRB)*ZDELLO(K-1)
             XPL=XP-0.5_JWRB*ZDELLO(K-1)
             XPR=XP+0.5_JWRB*ZDELLO(K-1)
 
@@ -834,7 +834,7 @@
 !           NORTHERN POINT 
             XPLUS = D0/ZDELLO(K+1)
             IPLUS = NINT(XPLUS) + 1
-            XP=FLOAT(IPLUS-1)*ZDELLO(K+1)
+            XP=REAL(IPLUS-1,JWRB)*ZDELLO(K+1)
             D4=XP-0.5_JWRB*ZDELLO(K+1)
             D6=XP+0.5_JWRB*ZDELLO(K+1)
             IF (D0 <= XP) THEN
@@ -860,7 +860,7 @@
             XL=D0-XDELLA
             XPLUS = XL/ZDELLO(K+1)
             IPLUS = NINT(XPLUS) + 1
-            XP=FLOAT(IPLUS-1)*ZDELLO(K+1)
+            XP=REAL(IPLUS-1,JWRB)*ZDELLO(K+1)
             D4=XP-0.5_JWRB*ZDELLO(K+1)
             D6=XP+0.5_JWRB*ZDELLO(K+1)
             IF (XL <= XP) THEN
@@ -897,7 +897,7 @@
 
             XPLUS = XL/ZDELLO(K+1)
             IPLUS = NINT(XPLUS) + 1
-            XP=FLOAT(IPLUS-1)*ZDELLO(K+1)
+            XP=REAL(IPLUS-1,JWRB)*ZDELLO(K+1)
             XPL=XP-0.5_JWRB*ZDELLO(K+1)
             XPR=XP+0.5_JWRB*ZDELLO(K+1)
 
@@ -914,7 +914,7 @@
             XL=D0+XDELLA
             XPLUS = XL/ZDELLO(K+1)
             IPLUS = NINT(XPLUS) + 1
-            XP=FLOAT(IPLUS-1)*ZDELLO(K+1)
+            XP=REAL(IPLUS-1,JWRB)*ZDELLO(K+1)
             D4=XP-0.5_JWRB*ZDELLO(K+1)
             D6=XP+0.5_JWRB*ZDELLO(K+1)
             IF (XL <= XP) THEN
@@ -951,7 +951,7 @@
 
             XPLUS = XL/ZDELLO(K+1)
             IPLUS = NINT(XPLUS) + 1
-            XP=FLOAT(IPLUS-1)*ZDELLO(K+1)
+            XP=REAL(IPLUS-1,JWRB)*ZDELLO(K+1)
             XPL=XP-0.5_JWRB*ZDELLO(K+1)
             XPR=XP+0.5_JWRB*ZDELLO(K+1)
 
@@ -960,7 +960,7 @@
             ELSE
               D1=MIN(XLR,XPR)-MAX(XLL,XPL)
             ENDIF
-            WCOR(IP,1)=MIN(1.,D1/ZDELLO(K))
+            WCOR(IP,1)=MIN(1.0_JWRB,D1/ZDELLO(K))
 
           ENDIF
 

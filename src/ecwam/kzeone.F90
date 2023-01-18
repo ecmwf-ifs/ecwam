@@ -14,7 +14,7 @@
 ! VARIABLES.
 ! ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWRU
 
       IMPLICIT NONE
       REAL(KIND=JWRU) :: X, Y, X2, Y2, RE0, IM0, RE1, IM1,              &
@@ -141,9 +141,9 @@
       DO N=1,LL
         M = M + 8
         K = K - M
-        R1 = FLOAT(K-4)*R1
-        R2 = FLOAT(K)*R2
-        T1 = FLOAT(N)*P1
+        R1 = REAL(K-4,JWRU)*R1
+        R2 = REAL(K,JWRU)*R2
+        T1 = REAL(N,JWRU)*P1
         T2 = RTERM
         RTERM = (T2*X+ITERM*Y)/T1
         ITERM = (-T2*Y+ITERM*X)/T1

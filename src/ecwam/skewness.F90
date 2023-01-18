@@ -141,11 +141,11 @@
 !     ------------------------------------------------------
 
       DO I=0,3
-        XPI = 0.5_JWRB*FLOAT(I)
+        XPI = 0.5_JWRB*REAL(I,JWRB)
         DO J=0,2
-          XPJ = 0.5_JWRB*FLOAT(J)
+          XPJ = 0.5_JWRB*REAL(J,JWRB)
           DO K=0,2
-            XPK = 0.5_JWRB*FLOAT(K)
+            XPK = 0.5_JWRB*REAL(K,JWRB)
             DO IJ=1,NCOLL
               XN = XMU(IJ,2,0,0)**XPI*XMU(IJ,0,2,0)**XPJ*XMU(IJ,0,0,2)**XPK
               XLAMBDA(IJ,I,J,K) = XMU(IJ,I,J,K)/XN

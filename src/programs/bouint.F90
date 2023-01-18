@@ -232,7 +232,7 @@
 
          CALL GSFILE (IU06, IU02, 0, CDATE, CDATE, FILEDO, 'G')
 
-         XDELF = FLOAT(IDELPRF)
+         XDELF = REAL(IDELPRF,JWRB)
          IF(LREAL)THEN
            WRITE(IU02) REAL(XANG,4), REAL(XFRE,4), REAL(TH0,4),         &
      &       REAL(FR(1),4), REAL(CO,4), REAL(XBOU,4), REAL(XDELF,4)
