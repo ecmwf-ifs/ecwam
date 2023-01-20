@@ -1,11 +1,20 @@
 ecWAM
 *****
 
-The ECMWF wave model WAM
+The ECMWF wave model ecWAM
 
 Introduction
 ============
 
+The ECMWF Ocean Wave Model (ecWAM) describes the development and evolution of wind generated surface waves and their height, direction and period.
+ecWAM is solely concerned with ocean wave forecasting and does not model the ocean itself: dynamical modelling of the ocean can be done by an ocean model such as NEMO.
+
+- ecWAM may be used as a standalone tool that can produce a wave forecast driven by external forcings provided via GRIB files.
+- Alternatively it can be used in a coupled mode where it provides feedback and receives forcings from 
+  * the atmospheric forecast model IFS.
+  * the dynamic ocean model NEMO.
+
+For more information, please go to https://confluence.ecmwf.int/display/FUG/2.2+Ocean+Wave+Model+-+ECWAM
 
 License
 =======
@@ -29,13 +38,13 @@ Requirements
 - Fortran and C compiler, and optionally C++ compiler
 - CMake (see https://cmake.org)
 - ecbuild (see https://github.com/ecmwf/ecbuild)
-- fiat
-- eccodes
+- fiat (see https://github.com/ecmwf-ifs/fiat)
+- eccodes (see https://github.com/ecmwf/eccodes)
 
 Further optional dependencies:
 - MPI Fortran libraries
-- multio
-- NEMO
+- multio (see https://github.com/ecmwf/multio)
+- NEMO ocean model
 
 Building ecWAM
 --------------
@@ -76,7 +85,10 @@ More options to control compilation flags, only when defaults are not sufficient
  - `-DCMAKE_Fortran_FLAGS=<fortran-flags>`
  - `-DCMAKE_C_FLAGS=<c-flags>`
 
-Once this has finished successfully, run ``make`` and ``make install``.
+Once this has finished successfully, run `make` and `make install`.
+
+An informational tool `ecwam [--help] [--info] [--version] [--git]` is available upon compilation
+and can be used the to verify compilation options and version information of ecWAM.
 
 Optionally, tests can be run to check succesful compilation, when the feature TESTS is enabled (`-DENABLE_TESTS=ON`, default ON)
 
@@ -86,47 +98,100 @@ Optionally, tests can be run to check succesful compilation, when the feature TE
 Running ecWAM
 =============
 
-To run, use the scripts in the build or install directory.
-Outputs will be stored in "wamrun" directory
-
-1) Configuration options
+Following are instructions to run ecWAM as a standalone wave forecasting tool.
 
 A YAML configuration file is required. See [tests](tests) directory for examples.
 
-2) Create the bathymetry from ETOPO1 dataset
+To run, use the commands listed in following steps, located in the build or install `bin` directory.
+Each of following commands can be inquired with the `--help` argument.
+If `--run-dir` argument is not specified, or `ECWAM_RUN_DIR` environment variable is not set,
+then the current directory is used.
+If `--config` argument is not specified, it is assumed that a file called `config.yml`
+is present in the `<run-dir>`.
+
+
+1) Create bathymetry and grid tables
 
 ```shell
-share/ecwam/scripts/ecwam_run_create_bathymetry.sh --run-dir=$(pwd)/wamrun --config=<path-to-config.yml>
+ecwam-run-preproc --run-dir=<run-dir> --config=<path-to-config.yml>
 ```
 
-3) Create grid tables
+This command generates bathymetry data files as specified by configuration options.
+As bathymetry data files are large and require heavy computations they are
+cached for later use in a directory which can be chosen with the `--cache` argument, or
+`ECWAM_CACHE_PATH` environment variable.
+By default the cache path will be `$HOME/cache/ecwam` unless on the ECMWF HPC it is in
+`$HPCPERM/cache/ecwam`.
+Bathymetry data files can also be searched for in a hierarchy of cache-like directories
+specified with the `ECWAM_DATA_PATH` variable containing a ':'-separated list of paths
+(like `$PATH`). If not found, they are attempted to be downloaded from URL
+https://get.ecmwf.int/repository/ecwam. If still not available, they will be computed.
+The cache path will then be populated with computed, or downloaded data, 
+or with symbolic links to found data in the `ECWAM_DATA_PATH`s.
+
+Grid tables are always computed and never cached. THey are placed in the `<run-dir>`
+
+2) Create initial conditions
 
 ```shell
-share/ecwam/scripts/ecwam_run_preproc.sh --run-dir=$(pwd)/wamrun --config=<path-to-config.yml>
+ecwam-run-preset --run-dir=<run-dir> --config=<path-to-config.yml>
 ```
 
-4) Create initial conditions
+As a result files, binary files of the form `<run-dir>/restart/BLS*` and `<run-dir>/restart/LAW*` are created.
+They contain all initial conditions required for the wave model run from "cold start".
+This command requires surface wind and sea-ice-cover input, at initial simulation time, provided in GRIB format.
+The configuration file must specify this file. For several benchmark or test cases,
+they are retrieved in similar fashion as the bathymetry files (see above).
+
+This package also contains some scripts to generate MARS requests to retrieve data from the ECWMF operational
+forecast or from the ERA5 reanalysis data set. This is useful to generate new tests or for longer runs.
+
+3) Run wave model
 
 ```shell
-share/ecwam/scripts/ecwam_run_preset.sh --run-dir=$(pwd)/wamrun --config=<path-to-config.yml>
+ecwam-run-model --run-dir=<run-dir> --config=<path-to-config.yml>
 ```
 
-5) Run wave model
+With initial conditions, forcings, and grid tables in place we can run the actual wave model.
+The advection and physics time step needs to be configured via the configuration file in accordance
+the grid resolution.
+The configuration file offers options to output GRIB output fields at regular time intervals, or
+binary restart files similar to the initial condition files generated in step 2.
+After the run, the output files will be in `<run-dir>/output/` and log files will be in `<run-dir>/logs/model`.
+One log file called `statistics.log` contains computed norms which can be used to validate results.
+Such validation will occur automatically when the configuration file contains a `validation` section.
+See [tests](tests) directory for example configuration files.
 
-```shell
-share/ecwam/scripts/ecwam_run_model.sh --run-dir=$(pwd)/wamrun --config=<path-to-config.yml>
-```
+Running with MPI
+----------------
 
-These shell scripts set up running of wave model executables.
-Anything present in a environment variable `LAUNCH`
-will be prefixed to the launching of the executable.
-For instance to run with 4 MPI tasks you should, depending on the MPIEXEC:
-```
-export LAUNCH="mpirun -np 4"
-```
+Above commands by default run without MPI.
+To use MPI, or apply a custom command prefixed to the binary execution,
+there are following options:
 
-If `--run-dir` argument is not specified, or `RUN_DIR` environment variable is not set, then the current directory is used.
-If `--config` argument is not specified, it is assumed that a file called `config.yml` is pressent in the run-dir.
+- Use argument `--launch="ecwam-launch -np <NTASKS> -nt <NTHREADS>"`.
+  `ecwam-launch` is an internal "smart" launcher that chooses a good launcher
+  depending on availability and the used platform. It will also set
+  `export OMP_NUM_THREADS=<NTHREADS>` for you. The unit-tests are automatically
+  configured to use this when invoked via `ctest`.
+
+- Use arguments `-np <NTASKS> -nt <NTHREADS>`. This is equivalent to the above, and
+  internally uses the `ecwam-launch` launcher.
+
+- Use any other custom command, e.g. `--launch="srun -n <NTASKS> -c <NTHREADS>"` for full control.
+  Note that this does *not* automatically export the `OMP_NUM_THREADS` variable.
+
+Note that only `ecwam-run-model` currently supports MPI.
+
+Known issues
+============
+
+1) On macOS arm64 with gfortran 12.2, and Open MPI 4.1.4, and with compilation
+   with flag `-ffpe-trap=overflow`, the execution of `ecwam-preproc` and `ecwam-chief` 
+   needs to be launched with `mpirun -np 1`, even for serial runs in order to avoid
+   a floating point exception during during call to `MPI_INIT`.
+   The flag `-ffpe-trap=overflow` is set e.g. for `Debug` build type.
+   Floating point exceptions on arm64 manifest as a `SIGILL`.
 
 
 Reporting Bugs
