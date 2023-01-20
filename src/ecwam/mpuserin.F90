@@ -933,7 +933,7 @@
         WRITE(6,*) '*** CNORMWAMOUT_FILE= ',TRIM(CNORMWAMOUT_FILE)
         WRITE(6,*) '*** LSMSSIG_WAM= ',LSMSSIG_WAM
         WRITE(6,*) '*** LWAM_USE_IO_SERV = ',LWAM_USE_IO_SERV
-        WRITE(6,*) '*** CPATH = ',CPATH(1:ICPLEN)
+        WRITE(6,'(2A)') ' *** CPATH = ',CPATH(1:ICPLEN)
         WRITE(6,*) '*** LOUTMDLDCP = ',LOUTMDLDCP
         WRITE(6,*) '*** NLOCGRB = ',NLOCGRB
         WRITE(6,*) '*** YEXPVER = ',YEXPVER
