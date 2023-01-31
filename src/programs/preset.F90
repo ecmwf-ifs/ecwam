@@ -535,6 +535,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       FF_NOW(:,:)%TAUW = 0.1_JWRB*FF_NOW(:,:)%UFRIC
       FF_NOW(:,:)%TAUWDIR = 0.0_JWRB 
       FF_NOW(:,:)%Z0M = 0.00001_JWRB
+      FF_NOW(:,:)%Z0B = 0.0_JWRB
       FF_NOW(:,:)%CHRNCK = 0.018_JWRB
       FF_NOW(:,:)%AIRD = ROAIR      
       FF_NOW(:,:)%WSTAR = 0.0_JWRB
