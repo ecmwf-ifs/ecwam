@@ -208,57 +208,49 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
                LUPDTWGHT=.FALSE.
              ENDIF
 
-!$OMP        PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, K, M, IJ)
+!$OMP        PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
              DO JKGLO = IJSG, IJLG, NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1, IJLG)
-
                CALL PROPAGS2(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL, NANG, 1, NFRE_RED)
-
-!              SUB TIME STEPPING FOR FAST WAVES (see below) (only if IFRELFMAX > 0)
-               DO M = 1, IFRELFMAX 
-                 DO K = 1, NANG
-                   DO IJ = KIJS, KIJL
-                     FL1_EXT(IJ, K, M) = FL3_EXT(IJ, K, M)
-                   ENDDO
-                 ENDDO
-               ENDDO
-
              ENDDO
 !$OMP        END PARALLEL DO
 
-!            SUB TIME STEPPING FOR FAST WAVES
+
+!            SUB TIME STEPPING FOR FAST WAVES (only if IFRELFMAX > 0)
              IF (IFRELFMAX > 0 ) THEN
-                NSTEP_LF = NINT(REAL(IDELPRO, JWRB)/DELPRO_LF)
-                ISUBST = 2  ! The first step was done as part of the previous call to PROPAGS2
+               NSTEP_LF = NINT(REAL(IDELPRO, JWRB)/DELPRO_LF)
+               ISUBST = 2  ! The first step was done as part of the previous call to PROPAGS2
 
-                DO WHILE (ISUBST <= NSTEP_LF)
+               DO WHILE (ISUBST <= NSTEP_LF)
 
-                  CALL MPEXCHNG(FL1_EXT(:,:,1:IFRELFMAX), NANG, 1, IFRELFMAX)
+!$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, M, K, IJ)
+                 DO JKGLO = IJSG, IJLG, NPROMA
+                   KIJS=JKGLO
+                   KIJL=MIN(KIJS+NPROMA-1, IJLG)
+                   DO M = 1, IFRELFMAX 
+                     DO K = 1, NANG
+                       DO IJ = KIJS, KIJL
+                         FL1_EXT(IJ, K, M) = FL3_EXT(IJ, K, M)
+                       ENDDO
+                     ENDDO
+                   ENDDO
+                 ENDDO
+!$OMP            END PARALLEL DO
 
-!$OMP             PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, K, M, IJ)
-                  DO JKGLO = IJSG, IJLG, NPROMA
-                    KIJS=JKGLO
-                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
+                 CALL MPEXCHNG(FL1_EXT(:,:,1:IFRELFMAX), NANG, 1, IFRELFMAX)
 
-                    CALL PROPAGS2(FL1_EXT(:,:,1:IFRELFMAX), FL3_EXT(:,:,1:IFRELFMAX), NINF, NSUP, KIJS, KIJL, NANG, 1, IFRELFMAX)
+!$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
+                 DO JKGLO = IJSG, IJLG, NPROMA
+                   KIJS=JKGLO
+                   KIJL=MIN(KIJS+NPROMA-1, IJLG)
+                   CALL PROPAGS2(FL1_EXT(:,:,1:IFRELFMAX), FL3_EXT(:,:,1:IFRELFMAX), NINF, NSUP, KIJS, KIJL, NANG, 1, IFRELFMAX)
+                 ENDDO
+!$OMP            END PARALLEL DO
 
-                    IF (ISUBST < NSTEP_LF) THEN
-                      DO M = 1, IFRELFMAX 
-                        DO K = 1, NANG
-                          DO IJ = KIJS, KIJL
-                            FL1_EXT(IJ, K, M) = FL3_EXT(IJ, K, M)
-                          ENDDO
-                        ENDDO
-                      ENDDO
-                    ENDIF
+                 ISUBST = ISUBST + 1
 
-                  ENDDO
-!$OMP             END PARALLEL DO
-
-                  ISUBST = ISUBST + 1
-
-                ENDDO
+               ENDDO
              ENDIF  ! end sub time steps (if needed)
 
            CASE(1)
