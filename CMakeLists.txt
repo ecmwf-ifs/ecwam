@@ -88,6 +88,9 @@ add_subdirectory(share)
 
 add_subdirectory(tests)
 
+get_property(ecwam_test_configs GLOBAL PROPERTY ecwam_test_configs)
+ecwam_cache_bathymetry( ${ecwam_test_configs} )
+
 ### Documentation
 
 add_subdirectory(doc)

@@ -6,6 +6,16 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
+set_property( GLOBAL PROPERTY ecwam_test_configs )
+function( register_ecwam_test_config )
+  get_property( ecwam_test_configs GLOBAL PROPERTY ecwam_test_configs )
+  foreach( arg ${ARGV} )
+    list( APPEND ecwam_test_configs "${arg}")
+  endforeach()
+  list(REMOVE_DUPLICATES ecwam_test_configs)
+  set_property( GLOBAL PROPERTY ecwam_test_configs "${ecwam_test_configs}")
+endfunction()
+
 function( ecwam_add_test test_name )
 
     set( one_value_keywords MPI OMP CONFIG )
@@ -64,12 +74,12 @@ function( ecwam_add_test test_name )
 
     set( test_preproc_binary_dir ${CMAKE_CURRENT_BINARY_DIR}/${test_name_preproc} )
     set( run_dir_preproc ${test_preproc_binary_dir} )
-    if( ECWAM_TEST_DIR )
-      set( run_dir_preproc ${ECWAM_TEST_DIR}/${test_name_preproc} )
+    if( ECWAM_WORKSPACE )
+      set( run_dir_preproc ${ECWAM_WORKSPACE}/tests/${test_name_preproc} )
     endif()
 
     if( NOT TEST ${test_name_preproc} )
-      if( ECWAM_TEST_DIR )
+      if( ECWAM_WORKSPACE )
         execute_process(COMMAND "${CMAKE_COMMAND}" "-E" "create_symlink"
           "${run_dir_preproc}"
           "${test_preproc_binary_dir}"
@@ -116,12 +126,12 @@ function( ecwam_add_test test_name )
 
     set( test_preset_binary_dir ${CMAKE_CURRENT_BINARY_DIR}/${test_name_preset} )
     set( run_dir_preset ${test_preset_binary_dir} )
-    if( ECWAM_TEST_DIR )
-      set( run_dir_preset ${ECWAM_TEST_DIR}/${test_name_preset} )
+    if( ECWAM_WORKSPACE )
+      set( run_dir_preset ${ECWAM_WORKSPACE}/tests/${test_name_preset} )
     endif()
 
     if( NOT TEST ${test_name_preset} )
-      if( ECWAM_TEST_DIR )
+      if( ECWAM_WORKSPACE )
         execute_process(COMMAND "${CMAKE_COMMAND}" "-E" "create_symlink"
           "${run_dir_preset}"
           "${test_preset_binary_dir}"
@@ -169,8 +179,8 @@ function( ecwam_add_test test_name )
 
     set( test_binary_dir ${CMAKE_CURRENT_BINARY_DIR}/${test_name} )
     set( run_dir ${test_binary_dir} )
-    if( ECWAM_TEST_DIR )
-      set( run_dir ${ECWAM_TEST_DIR}/${test_name} )
+    if( ECWAM_WORKSPACE )
+      set( run_dir ${ECWAM_WORKSPACE}/tests/${test_name} )
       execute_process(COMMAND "${CMAKE_COMMAND}" "-E" "create_symlink"
         "${run_dir}"
         "${test_binary_dir}"
@@ -226,5 +236,7 @@ function( ecwam_add_test test_name )
     set( ecwam_environment OMP_NUM_THREADS=${ecwam_add_test_OMP} )
     list( APPEND ecwam_environment ECWAM_ENVIRONMENT=${run_dir}/ctest_env.sh )
     set_tests_properties( ${test_name} PROPERTIES ENVIRONMENT "${ecwam_environment}" )
+
+    register_ecwam_test_config( "${CMAKE_CURRENT_SOURCE_DIR}/${ecwam_add_test_CONFIG}" )
 
 endfunction()
