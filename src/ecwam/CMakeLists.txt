@@ -415,3 +415,15 @@ ecwam_target_fortran_module_directory(
 )
 
 ecwam_target_compile_definitions_FILENAME( ${ecwam} )
+
+### The file mubuf.F90, which is only used for "preproc" is sensitive to optimisations
+#   possibly leading to different wam_grid_<1,2,3> files.
+#   This in turn leads to non-neglibible differences
+#   of average 'swh' when running "chief".
+
+if( CMAKE_Fortran_COMPILER_ID MATCHES Intel )
+  set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
+elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
+  set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-ffp-contract=off" )
+endif()
+
