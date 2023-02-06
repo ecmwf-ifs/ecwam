@@ -115,6 +115,7 @@
 #include "wvwaminit.intfb.h"
 #include "wvwaminit1.intfb.h"
 #include "ec_meminfo.intfb.h"
+#include "wam_user_clock.intfb.h"
 
 
 ! DIMENSION DUMMY COUPLED VARIABLES
@@ -147,8 +148,7 @@
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: RMISS
       REAL(KIND=JWRB) :: ZRCHAR
-      REAL(KIND=JWRB) :: time0, time, timestep_start, timestep0_start
-      REAL(KIND=JWRB) :: wam_user_clock
+      REAL(KIND=JWRU) :: time0, time, timestep_start, timestep0_start
 
       CHARACTER(LEN=3) :: DBNAME
       CHARACTER(LEN=14) :: ZERO,CBEGDAT

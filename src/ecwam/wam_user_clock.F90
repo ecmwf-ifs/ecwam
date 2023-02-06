@@ -1,19 +1,19 @@
-      REAL FUNCTION WAM_USER_CLOCK()
+      FUNCTION WAM_USER_CLOCK()
 
 !   Returns system clock converted to micro-seconds
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWRU
 
       IMPLICIT NONE
-
+      REAL(JWRU) :: WAM_USER_CLOCK
       INTEGER(KIND=JWIM) :: ICOUNT,ICOUNT_RATE,ICOUNT_MAX
 
       CALL SYSTEM_CLOCK(ICOUNT,ICOUNT_RATE,ICOUNT_MAX)
       IF(ICOUNT.NE.HUGE(0)) THEN
-        WAM_USER_CLOCK = REAL(ICOUNT+0.0_JWRB) * 1.E6_JWRB /            &
-     &                   REAL(ICOUNT_RATE+0.0_JWRB)
+        WAM_USER_CLOCK = REAL(ICOUNT,JWRU) * 1.E6_JWRU /            &
+     &                   REAL(ICOUNT_RATE,JWRU)
       ELSE
-        WAM_USER_CLOCK = 0.0_JWRB
+        WAM_USER_CLOCK = 0.0_JWRU
       ENDIF    
 
       RETURN
