@@ -493,7 +493,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
             WRITE(IU06,*) ' + PARAM IS = ', IPARAM
             WRITE(IU06,*) ' +                                        +'
             WRITE(IU06,*) ' ++++++++++++++++++++++++++++++++++++++++++'
-            CALL WAM_ABORT("SUSPUCIOUS WIND OR SEA ICE FIELD PARAM", __FILENAME__, __LINE__)
+            CALL WAM_ABORT("SUSPICIOUS WIND OR SEA ICE FIELD PARAM", __FILENAME__, __LINE__)
           ENDIF
 
           IF (LLABORT) THEN
