@@ -67,6 +67,8 @@
 
       IF (LHOOK) CALL DR_HOOK('MWP1',0,ZHOOK_HANDLE)
 
+      ! Turn off Floating-Point-Exceptions in this scope to avoid FPE_INVALID in optimized code
+      !   with branch prediction. It is safe to do so as DIV_BY_ZERO is protected.
       CALL IEEE_GET_HALTING_MODE(IEEE_INVALID, LL_HALT_INVALID)
       IF (LL_HALT_INVALID)   CALL IEEE_SET_HALTING_MODE(IEEE_INVALID, .FALSE.)
 
