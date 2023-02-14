@@ -95,11 +95,11 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
       IMPLICIT NONE
 
-#include "cimsstrn.intfb.h"
 #include "ciwabr.intfb.h"
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
 #include "sbottom.intfb.h"
+#include "imphftail.intfb.h"
 #include "sdepthlim.intfb.h"
 #include "sdissip.intfb.h"
 #include "sdiwbk.intfb.h"
