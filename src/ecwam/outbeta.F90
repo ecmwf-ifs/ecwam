@@ -88,7 +88,7 @@ SUBROUTINE OUTBETA (KIJS, KIJL,                   &
 
       INTEGER(KIND=JWIM) :: IJ
 
-      REAL(KIND=JWRB) :: ZN, GUSM2, Z0ATM
+      REAL(KIND=JWRB) :: GUSM2, Z0ATM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: USM 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ALPHAMAXU10
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -102,10 +102,8 @@ IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
 !     ----------------------
 
       IF (LLGCBZ0) THEN
-        ZN = RNUM
         ALPHAMAXU10(:)=ALPHAMAX
       ELSE
-        ZN = 0.0_JWRB
         ALPHAMAXU10(:)=MIN(ALPHAMAX,AMAX+BMAX*U10(:))
       ENDIF
 
@@ -119,9 +117,9 @@ IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
 
       IF( PRESENT(CD) ) THEN
         DO IJ = KIJS,KIJL
-!!!     we are assuming here that z0 ~ ZN/USTAR + Charnock USTAR**2/g
+!!!     we are assuming here that z0 = RNUM/USTAR + Charnock USTAR**2/g
 !!!     in order to fit with what is used in the IFS.
-          Z0ATM = ZN*USM(IJ) + GM1 * BETAM(IJ) * USTAR(IJ)**2
+          Z0ATM = RNUM*USM(IJ) + GM1 * BETAM(IJ) * USTAR(IJ)**2
           CD(IJ) = ( XKAPPA / LOG( 1.0_JWRB + XNLEV/Z0ATM) )**2
         ENDDO
       ENDIF
