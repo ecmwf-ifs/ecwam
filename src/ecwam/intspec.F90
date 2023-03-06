@@ -1,3 +1,12 @@
+! (C) Copyright 1989- ECMWF.
+! 
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
+
       SUBROUTINE INTSPEC (NFRE, NANG, ML, KL, FR, DEL12, DEL1L,         &
      &                    F1, FMEAN1, EMEAN1, THETM1,                   &
      &                    F2, FMEAN2, EMEAN2, THETM2,                   &

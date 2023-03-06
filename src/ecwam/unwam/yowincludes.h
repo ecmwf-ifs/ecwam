@@ -1,3 +1,12 @@
+! (C) Copyright 2001- Aron Roland (Roland & Partner, Germany).
+!
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
+
 !> \file yowncludes.h
 !> some nice error macros.
 !> if you want line numbers and filename ist the error message, just use this macros\n
