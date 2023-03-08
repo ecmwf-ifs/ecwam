@@ -72,9 +72,9 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWINDN  , ONLY : IKP      ,IKP1     ,IKM      ,IKM1     ,    &
      &            K1W      ,K2W      ,K11W     ,K21W     ,AF11     ,    &
-     &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,    &
-     &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,    &
-     &            FRH      ,MFRSTLW  ,MLSTHG   ,                        &
+     &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,              &
+     &            DAL1     ,DAL2     ,                                  &
+     &            MFRSTLW  ,MLSTHG   ,                                  &
      &            KFRH     ,INLCOEF  ,RNLCOEF
       USE YOWSTAT  , ONLY : ISNONLIN
       USE YOWPCONS , ONLY : GM1
