@@ -417,8 +417,16 @@ if( HAVE_ECFLOW )
   list(APPEND ECWAM_PRIVATE_DEFINITIONS WAM_HAVE_ECFLOW)
 endif()
 
+# Using dynamic linking creates undefined references to the device
+# copies of module global variables
+set( LIBRARY_TYPE SHARED )
+if( HAVE_ACC )
+  set( LIBRARY_TYPE STATIC )
+endif()
+
 ecbuild_add_library(
     TARGET           ${ecwam}
+    TYPE             ${LIBRARY_TYPE}
     SOURCES          ${ecwam_srcs}
     PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                      ${MPI_Fortran_LIBRARIES}
@@ -428,6 +436,7 @@ ecbuild_add_library(
                      ${OpenMP_Fortran_LIBRARIES}
                      field_api_${prec}
                      $<${HAVE_ECFLOW}:ecflow_lightf>
+                     $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
     PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS}
     PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
@@ -455,6 +464,7 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHE
   set_source_files_properties(
       sbottom.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros "
   )
+  set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-Mnofma" )
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHES "Debug")
   string(REPLACE "-Ktrap=fp" "" ${PNAME}_Fortran_FLAGS_DEBUG ${${PNAME}_Fortran_FLAGS_DEBUG})
   set_source_files_properties( outbeta.F90 PROPERTIES COMPILE_OPTIONS "${${PNAME}_Fortran_FLAGS_DEBUG} -Ktrap=divz")
