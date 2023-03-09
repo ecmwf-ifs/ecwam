@@ -417,7 +417,7 @@ ecbuild_add_library(
     PRIVATE_LIBS     eccodes_f90
                      ${MULTIO_LIBRARIES}
                      ${OpenMP_Fortran_LIBRARIES}
-                     $<${HAVE_FIELD_API}:field_api>
+                     $<${HAVE_FIELD_API}:field_api_${prec}>
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
     PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS}
     PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
