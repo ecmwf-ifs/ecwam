@@ -409,8 +409,16 @@ else()
   unset( ${PNAME}_OCEANMODEL_INCLUDE_DIRS )
 endif()
 
+# Using dynamic linking creates undefined references to the device
+# copies of module global variables
+set( LIBRARY_TYPE SHARED )
+if( HAVE_ACC )
+  set( LIBRARY_TYPE STATIC )
+endif()
+
 ecbuild_add_library(
     TARGET           ${ecwam}
+    TYPE             ${LIBRARY_TYPE}
     SOURCES          ${ecwam_srcs}
     PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                      ${MPI_Fortran_LIBRARIES}
@@ -419,6 +427,7 @@ ecbuild_add_library(
                      ${MULTIO_LIBRARIES}
                      ${OpenMP_Fortran_LIBRARIES}
                      $<${HAVE_FIELD_API}:field_api_${prec}>
+                     $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
     PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS}
     PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
@@ -441,5 +450,7 @@ if( CMAKE_Fortran_COMPILER_ID MATCHES Intel )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
 elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-ffp-contract=off" )
+elseif( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
+  set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-Mnofma" )
 endif()
 

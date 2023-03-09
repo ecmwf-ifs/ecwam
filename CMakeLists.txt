@@ -90,6 +90,17 @@ if( HAVE_OMP )
   set( OpenMP_Fortran_LIBRARIES OpenMP::OpenMP_Fortran )
 endif()
 
+# Workaround for the fact that CMake only sets language components to FOUND,
+# so OpenACC_FOUND must be set manually
+find_package( OpenACC )
+if( OpenACC_Fortran_FOUND AND OpenACC_C_FOUND )
+  set( OpenACC_FOUND ON )
+endif()
+ecbuild_add_option( FEATURE ACC
+    DESCRIPTION "OpenACC" DEFAULT OFF
+    REQUIRED_PACKAGES "OpenACC" 
+    CONDITION CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND HAVE_FIELD_API)
+
 ### Sources
 
 include(ecwam_compile_flags)
