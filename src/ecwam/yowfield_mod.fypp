@@ -17,7 +17,7 @@ MODULE YOWFIELD_MOD
 
    USE PARKIND_WAVE, ONLY : JWRB, JWIM
    USE FIELD_MODULE, ONLY : FIELD_3D_WRAPPER, FIELD_3D, FIELD_INT2D, FIELD_INT2D_WRAPPER, FIELD_2D, FIELD_2D_WRAPPER, &
- &                          FIELD_INT3D, FIELD_INT3D_WRAPPER
+ &                          FIELD_INT3D, FIELD_INT3D_WRAPPER, FIELD_4D, FIELD_4D_WRAPPER, FIELD_INT4D, FIELD_INT4D_WRAPPER
    IMPLICIT NONE
 
 #:for obj in objtypes
@@ -37,7 +37,7 @@ MODULE YOWFIELD_MOD
 #:endfor
    CONTAINS
 #:for type in ['real', 'int']
-   #:for dim in range(2, 4)
+   #:for dim in range(2, 5)
       FUNCTION WRAP_${dim}$D_${type.upper()}$_FIELD(ARR) RESULT(FIELD)
         #{if type == 'real'}#REAL(KIND=JWRB)#{else}#INTEGER(KIND=JWIM)#{endif}#, DIMENSION(${','.join(':' for _ in range(dim))}$), INTENT(IN) :: ARR
          CLASS(FIELD_#{if type == 'int'}#INT#{endif}#${dim}$D_WRAPPER), POINTER :: FIELD

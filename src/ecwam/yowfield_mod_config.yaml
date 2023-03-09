@@ -15,6 +15,7 @@ objtypes:
  - forcing_fields
  - wave2ocean
  - intgt_param_fields
+ - source_contribs
 
 objdef:
   environment:
@@ -84,3 +85,7 @@ objdef:
    - [altwh, real, 2]
    - [caltwh, real, 2]
    - [raltcor, real, 2]
+  source_contribs:
+   - [fl1, real, 4]
+   - [xllws, real, 4]
+   - [mij, int, 2]
