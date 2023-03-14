@@ -171,4 +171,7 @@
 !     *LALTPASSIV*LOGICAL USE BY OIFIELD TO EXCLUDE PASSIVE DATA. 
 
 ! ----------------------------------------------------------------------
+!$acc declare create( bfcrv )
+!$acc declare create( afcrv )
+!$acc declare create( egrcrv )
       END MODULE YOWALTAS

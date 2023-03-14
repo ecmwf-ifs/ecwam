@@ -148,4 +148,5 @@
 !      *LWAM_USE_IO_SERV*    LOGICAL   CONTROLS WHETHER WAVE MODEL SHOULD USE IFS IO SERVER
 !      *LOUTMDLDCP*          LOGICAL, CONTROLS WHETHER THE MODEL MPI DECOMPOSITION IS WRITTEN OUT TO A FILE (see OUTMDLDCP) 
 ! ----------------------------------------------------------------------
+!$acc declare create( lwfluxout )
       END MODULE YOWCOUT

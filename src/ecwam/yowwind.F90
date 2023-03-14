@@ -87,5 +87,6 @@
 !      *LLNEWCURR* LOGICAL   TRUE IF NEW CURRENTS ARE PASSED FROM IFS
 !                            TO WAM
 ! ----------------------------------------------------------------------
+!$acc declare create( wspmin )
 
       END MODULE YOWWIND

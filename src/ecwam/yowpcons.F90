@@ -120,6 +120,11 @@
 !     *FM2FP*    REAL      EMPIRICAL FACTOR FOR THE CONVERSION OF WINDSEA MEAN FREQUENCY
 !                          TO WINDSEA PEAK FREQUENCY.
 !----------------------------------------------------------------------
+!$acc declare create( sqrtgosurft )
+!$acc declare create( g )
+!$acc declare create( zpi4gm2 )
+!$acc declare create( zpi4gm1 )
+!$acc declare create( zpi )
+!$acc declare create( gm1 )
 
       END MODULE YOWPCONS
-

@@ -91,4 +91,24 @@
 !                            COEFFICIENT FOUND IN SNONLIN
 
 ! ----------------------------------------------------------------------
+!$acc declare create( rnlcoef )
+!$acc declare create( inlcoef )
+!$acc declare create( kfrh )
+!$acc declare create( mlsthg )
+!$acc declare create( mfrstlw )
+!$acc declare create( dal2 )
+!$acc declare create( dal1 )
+!$acc declare create( fklam1 )
+!$acc declare create( fklam )
+!$acc declare create( fklap1 )
+!$acc declare create( fklap )
+!$acc declare create( af11 )
+!$acc declare create( k21w )
+!$acc declare create( k11w )
+!$acc declare create( k2w )
+!$acc declare create( k1w )
+!$acc declare create( ikm1 )
+!$acc declare create( ikm )
+!$acc declare create( ikp1 )
+!$acc declare create( ikp )
       END MODULE YOWINDN

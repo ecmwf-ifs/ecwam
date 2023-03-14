@@ -170,7 +170,19 @@
 !      IFSMUPTRA     Corresponds to ALGORITHM_STATE_MOD%GET_MUPTRA()
 !
 ! ----------------------------------------------------------------------
-
+!$acc declare create( llgcbz0 )
+!$acc declare create( llnormagam )
+!$acc declare create( wtauhf )
+!$acc declare create( x0tauhf )
+!$acc declare create( llcapchnk )
+!$acc declare create( lwnemocoustrn )
+!$acc declare create( lwnemocoustk )
+!$acc declare create( lwnemocousend )
+!$acc declare create( lwnemocou )
+!$acc declare create( lwcou )
+!$acc declare create( lwnemotauoc )
+!$acc declare create( lwvflx_snl )
+!$acc declare create( lwflux )
 CONTAINS
 
       !----------------------------------------------------------------------------------------

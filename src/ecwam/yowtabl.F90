@@ -139,4 +139,5 @@
 !       TFAKH     REAL      WAVENUMBER TABLE IN REDUCED SPACE
 !
 ! ----------------------------------------------------------------------
+!$acc declare create( swellft )
       END MODULE YOWTABL

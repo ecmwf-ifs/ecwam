@@ -91,4 +91,9 @@
 !                            (like it used to be done).
 ! ----------------------------------------------------------------------
 
+!$acc declare create( nfre )
+!$acc declare create( nang )
+!$acc declare create( nfre_odd )
+!$acc declare create( nfre_red )
+!$acc declare create( llunstr )
       END MODULE YOWPARAM

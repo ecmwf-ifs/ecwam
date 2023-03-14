@@ -28,4 +28,5 @@
 !      *ITESTB*    INTEGER   MAX BLOCK NUMBER FOR OUTPUT IN BLOCK LOOPS
 
 ! ----------------------------------------------------------------------
+!$acc declare create( iu06 )
       END MODULE YOWTEST
