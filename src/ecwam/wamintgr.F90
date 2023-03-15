@@ -71,7 +71,11 @@ USE YOWTABL, ONLY: swellft
 
 IMPLICIT NONE
 
-#include "implsch.intfb.h"
+#ifdef WAM_PHYS_GPU
+   USE IMPLSCH_SCC_MOD, ONLY: implsch_SCC
+#else
+   #include "implsch.intfb.h"
+#endif
 #include "incdate.intfb.h"
 #include "newwind.intfb.h"
 #include "propag_wam.intfb.h"
@@ -160,9 +164,49 @@ IF (CDATE >= CDTIMPNEXT) THEN
 &                           PHIAW=INTFLDS%PHIAW)
     CALL SRC_CONTRIBS%INIT(FL1=FL1, XLLWS=XLLWS, MIJ=MIJ)
 
+#ifdef WAM_PHYS_GPU
 !$acc update device(  &
 !$acc & dal2,k11w,lwnemotauoc,satweights,zpi4gm2,omxkm3_gc,rnum,zpifr,dfim_sim,chnkmin_u,z0rat,dthrn_u,ciblock,fklam1,ikp1,sinth,zpi4gm1,x0tauhf,af11,nfre,llgcbz0,bmaxokap,llunstr,flogsprdm1,gm1,lbiwbk,lwfluxout,xkm_gc,idamping,ikm1,cdicwa,dal1,indicessat,ndikcumul,fr,lwnemocousend,egrcrv,lwvflx_snl,sqrtgosurft,cithrsh,cdis,mlsthg,om3gmkm_gc,cofrm4,k1w,isnonlin,afcrv,licerun,cm_gc,fklap,zpi,llnormagam,lwnemocou,rnu,llcapchnk,cithrsh_tail,g,icode_cpl,nwav_gc,dfim,delth,k2w,dfimfr,dfimofr,swellft,ikp,rnlcoef,cdisvis,inlcoef,lwnemocoustrn,tauwshelter,k21w,nfre_odd,fklam,lwcou,lmaskice,lwamrsetci,nsdsnth,mfrstlw,z0tubmax,icode,wtauhf,kfrh,alpha,alphapmax,delkcc_gc_ns,alphamin,gamnconst,dfimfr2,nang,costh,bfcrv,delta_sdis,c2osqrtvg_gc,swellf5,xk_gc,xkmsqrtvgoc2_gc,delkcc_omxkm3_gc,nfre_red,lwflux,ang_gc_c,ikm,omega_gc,rhowg_dfim,cumulw,ang_gc_a,flmax,wspmin,th,tailfactor,idelt,ang_gc_b,dthrn_a,fklap1,lciwabr,iphys,betamaxoxkappa2,zalp,tailfactor_pm,lwnemocoustk,rn1_rn,fr5 &
 !$acc &  )
+      CALL WVPRPT_FIELD%UPDATE_DEVICE()
+      CALL WVENVI_FIELD%UPDATE_DEVICE()
+      CALL FF_NOW_FIELD%UPDATE_DEVICE()
+      CALL WAM2NEMO_FIELD%UPDATE_DEVICE()
+      CALL INTFLDS_FIELD%UPDATE_DEVICE()
+      CALL SRC_CONTRIBS%UPDATE_DEVICE()
+
+!$acc data copyin(NPROMA_WAM)
+!$acc parallel loop gang vector_length(NPROMA_WAM)
+      DO ICHNK=1,NCHNK
+        CALL WVPRPT_FIELD%UPDATE_DEVICE_VIEW(ICHNK)
+        CALL WVENVI_FIELD%UPDATE_DEVICE_VIEW(ICHNK)
+        CALL FF_NOW_FIELD%UPDATE_DEVICE_VIEW(ICHNK)
+        CALL WAM2NEMO_FIELD%UPDATE_DEVICE_VIEW(ICHNK)
+        CALL INTFLDS_FIELD%UPDATE_DEVICE_VIEW(ICHNK)
+        CALL SRC_CONTRIBS%UPDATE_DEVICE_VIEW(ICHNK)
+        
+        CALL IMPLSCH_SCC(1, NPROMA_WAM, SRC_CONTRIBS%FL1, WVPRPT_FIELD%WAVNUM, WVPRPT_FIELD%CGROUP, WVPRPT_FIELD%CIWA,  &
+        & WVPRPT_FIELD%CINV, WVPRPT_FIELD%XK2CG, WVPRPT_FIELD%STOKFAC, WVENVI_FIELD%EMAXDPT, WVENVI_FIELD%INDEP,  &
+        & WVENVI_FIELD%DEPTH, WVENVI_FIELD%IOBND, WVENVI_FIELD%IODP, FF_NOW_FIELD%AIRD, FF_NOW_FIELD%WDWAVE,  &
+        & FF_NOW_FIELD%CICOVER, FF_NOW_FIELD%WSWAVE, FF_NOW_FIELD%WSTAR, FF_NOW_FIELD%UFRIC, FF_NOW_FIELD%TAUW,  &
+        & FF_NOW_FIELD%TAUWDIR, FF_NOW_FIELD%Z0M, FF_NOW_FIELD%Z0B, FF_NOW_FIELD%CHRNCK, FF_NOW_FIELD%CITHICK,  &
+        & WAM2NEMO_FIELD%NEMOUSTOKES, WAM2NEMO_FIELD%NEMOVSTOKES, WAM2NEMO_FIELD%NEMOSTRN, WAM2NEMO_FIELD%NPHIEPS,  &
+        & WAM2NEMO_FIELD%NTAUOC, WAM2NEMO_FIELD%NSWH, WAM2NEMO_FIELD%NMWP, WAM2NEMO_FIELD%NEMOTAUX, WAM2NEMO_FIELD%NEMOTAUY,  &
+        & WAM2NEMO_FIELD%NEMOWSWAVE, WAM2NEMO_FIELD%NEMOPHIF, INTFLDS_FIELD%WSEMEAN, INTFLDS_FIELD%WSFMEAN,  &
+        & INTFLDS_FIELD%USTOKES, INTFLDS_FIELD%VSTOKES, INTFLDS_FIELD%STRNMS, INTFLDS_FIELD%TAUXD, INTFLDS_FIELD%TAUYD,  &
+        & INTFLDS_FIELD%TAUOCXD, INTFLDS_FIELD%TAUOCYD, INTFLDS_FIELD%TAUOC, INTFLDS_FIELD%PHIOCD, INTFLDS_FIELD%PHIEPS,  &
+        & INTFLDS_FIELD%PHIAW, SRC_CONTRIBS%MIJ, SRC_CONTRIBS%XLLWS)
+      END DO
+!$acc end parallel loop
+!$acc end data
+
+      CALL WVPRPT_FIELD%ENSURE_HOST()
+      CALL WVENVI_FIELD%ENSURE_HOST()
+      CALL FF_NOW_FIELD%ENSURE_HOST()
+      CALL WAM2NEMO_FIELD%ENSURE_HOST()
+      CALL INTFLDS_FIELD%ENSURE_HOST()
+      CALL SRC_CONTRIBS%ENSURE_HOST()
+#else
 !$OMP  PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK) FIRSTPRIVATE(WVPRPT_FIELD, WVENVI_FIELD, FF_NOW_FIELD, WAM2NEMO_FIELD, &
 !$OMP& INTFLDS_FIELD, SRC_CONTRIBS)
       DO ICHNK=1,NCHNK
@@ -184,9 +228,9 @@ IF (CDATE >= CDTIMPNEXT) THEN
         & INTFLDS_FIELD%USTOKES, INTFLDS_FIELD%VSTOKES, INTFLDS_FIELD%STRNMS, INTFLDS_FIELD%TAUXD, INTFLDS_FIELD%TAUYD,  &
         & INTFLDS_FIELD%TAUOCXD, INTFLDS_FIELD%TAUOCYD, INTFLDS_FIELD%TAUOC, INTFLDS_FIELD%PHIOCD, INTFLDS_FIELD%PHIEPS,  &
         & INTFLDS_FIELD%PHIAW, SRC_CONTRIBS%MIJ, SRC_CONTRIBS%XLLWS)
-        
       END DO
 !$OMP END PARALLEL DO
+#endif
     TIME1(2) = TIME1(2) + (TIME0+WAM_USER_CLOCK())*1.E-06
 
     IF (LWNEMOCOU) NEMONTAU = NEMONTAU + 1
