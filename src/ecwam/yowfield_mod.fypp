@@ -38,6 +38,11 @@ MODULE YOWFIELD_MOD
          PROCEDURE :: INIT => ${obj.upper()}$_FIELD_INIT
          PROCEDURE :: UPDATE_VIEW => ${obj.upper()}$_UPDATE_VIEW
          PROCEDURE :: FINAL => ${obj.upper()}$_FINAL
+#ifdef WAM_PHYS_GPU
+         PROCEDURE :: UPDATE_DEVICE => ${obj.upper()}$_UPDATE_DEVICE
+         PROCEDURE :: UPDATE_DEVICE_VIEW => ${obj.upper()}$_UPDATE_DEVICE_VIEW
+         PROCEDURE :: ENSURE_HOST => ${obj.upper()}$_ENSURE_HOST
+#endif
    END TYPE ${obj.upper()}$_FIELD
 
 #:endfor
@@ -72,6 +77,34 @@ MODULE YOWFIELD_MOD
           ENDIF
       #:endfor
       END SUBROUTINE ${obj.upper()}$_FINAL
+#ifdef WAM_PHYS_GPU
+      SUBROUTINE ${obj.upper()}$_UPDATE_DEVICE(SELF)
+          CLASS(${obj.upper()}$_FIELD), INTENT(INOUT) :: SELF
+          INTEGER(KIND=JWIM), POINTER :: INT_TMP_2D(:,:), INT_TMP_3D(:,:,:), INT_TMP_4D(:,:,:,:)
+          REAL(KIND=JWRB), POINTER :: REAL_TMP_2D(:,:), REAL_TMP_3D(:,:,:), REAL_TMP_4D(:,:,:,:)
+
+      #:for var, type, dim in objdef[obj]
+          IF(PRESENT(${var.upper()}$)) CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDWR(${type.upper()}$_TMP_${dim}$D)
+      #:endfor
+      END SUBROUTINE ${obj.upper()}$_UPDATE_DEVICE
+
+      SUBROUTINE ${obj.upper()}$_UPDATE_DEVICE_VIEW(SELF, BLOCK_INDEX)
+          CLASS(${obj.upper()}$_FIELD), INTENT(INOUT) :: SELF
+          INTEGER(KIND=JWIM), INTENT(IN) :: BLOCK_INDEX
+
+      #:for var, type, dim in objdef[obj]
+          IF(ASSOCIATED(SELF%F_${var.upper()}$)) SELF%${var.upper()}$ => SELF%F_${var.upper()}$%GET_DEVICE_VIEW(BLOCK_INDEX)
+      #:endfor
+      END SUBROUTINE ${obj.upper()}$_UPDATE_DEVICE_VIEW
+
+      SUBROUTINE ${obj.upper()}$_ENSURE_HOST(SELF)
+          CLASS(${obj.upper()}$_FIELD), INTENT(INOUT) :: SELF
+
+      #:for var, type, dim in objdef[obj]
+          IF(PRESENT(${var.upper()}$)) CALL SELF%F_${var.upper()}$%SYNC_HOST_RDWR()
+      #:endfor
+      END SUBROUTINE ${obj.upper()}$_ENSURE_HOST
+#endif
 
 #:endfor
 END MODULE YOWFIELD_MOD
