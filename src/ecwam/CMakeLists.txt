@@ -356,8 +356,9 @@ list( APPEND ecwam_srcs
   z0wave.F90
 )
 
-if( HAVE_WAM_PHYS_GPU )
-  list(APPEND ECWAM_DEFINITIONS WAM_PHYS_GPU )
+if(HAVE_WAM_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack")
+  list(APPEND ecwam_srcs wamintgr_loki_gpu.F90)
+  list(REMOVE_ITEM ecwam_srcs wamintgr.F90)
 endif()
 
 if( HAVE_GEN_DERIV_TYPES )
@@ -431,12 +432,10 @@ endif()
 ecbuild_add_library(
     TARGET           ${ecwam}
     TYPE             ${LIBRARY_TYPE}
-    DEFINITIONS      ${ECWAM_DEFINITIONS}
     SOURCES          ${ecwam_srcs}
     PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                      ${MPI_Fortran_LIBRARIES}
                      ${${PNAME}_OCEANMODEL_LIBRARIES}
-                     $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
     PRIVATE_LIBS     eccodes_f90
                      ${MULTIO_LIBRARIES}
                      ${OpenMP_Fortran_LIBRARIES}
@@ -444,7 +443,9 @@ ecbuild_add_library(
                      $<${HAVE_ECFLOW}:ecflow_lightf>
                      $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
+    PRIVATE_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
     PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS}
+    PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
 )
 
 ecwam_target_fortran_module_directory(
@@ -452,6 +453,10 @@ ecwam_target_fortran_module_directory(
     MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/${ecwam}
     INSTALL_DIRECTORY module/${ecwam}
 )
+
+if( HAVE_ACC )
+   target_compile_options( ${ecwam} PUBLIC "-gpu=gvmode,maxregcount:128" )
+endif()
 
 ecwam_target_compile_definitions_FILENAME( ${ecwam} )
 
@@ -482,4 +487,34 @@ endif()
 
 if( CMAKE_Fortran_COMPILER_ID MATCHES Intel AND HAVE_SINGLE_PRECISION )
   set_source_files_properties( grib2wgrid.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
+endif()
+
+if( HAVE_WAM_LOKI )
+
+  set( LOKI_FRONTEND "fp" CACHE STRING "Frontend parser for Loki source transformations" )
+  set( SCC_ARGS "")
+
+  if( ${LOKI_DEBUG} )
+     set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config )
+  else()
+     set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
+     target_compile_definitions( ${ecwam} PRIVATE WAM_GPU )
+     set( SCC_ARGS "TRIM_VECTOR_SECTIONS;GLOBAL_VAR_OFFLOAD")
+  endif()
+
+  # Apply Loki source file transformation to lib target
+  loki_transform_target( TARGET ${ecwam}
+    MODE ${LOKI_MODE}
+    DIRECTIVE openacc
+    FRONTEND ${LOKI_FRONTEND}
+    CONFIG ${LOKI_CONFIG_FILE}
+    PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_plan_ecwam.cmake
+    ${SCC_ARGS}
+    CPP
+    DEFINITIONS WAM_PHYS_GPU
+    INCLUDES ${ecwam_intfb_includes}
+    SOURCES
+      ${CMAKE_CURRENT_SOURCE_DIR}/
+  )
+
 endif()
