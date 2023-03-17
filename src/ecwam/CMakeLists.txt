@@ -347,6 +347,10 @@ list( APPEND ecwam_srcs
   z0wave.F90
 )
 
+if( HAVE_WAM_PHYS_GPU )
+  list(APPEND ECWAM_DEFINITIONS WAM_PHYS_GPU )
+endif()
+
 if( HAVE_GEN_DERIV_TYPES )
    list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
    add_custom_command(
@@ -419,18 +423,18 @@ endif()
 ecbuild_add_library(
     TARGET           ${ecwam}
     TYPE             ${LIBRARY_TYPE}
+    DEFINITIONS      ${ECWAM_DEFINITIONS}
     SOURCES          ${ecwam_srcs}
     PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                      ${MPI_Fortran_LIBRARIES}
                      ${${PNAME}_OCEANMODEL_LIBRARIES}
+                     $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
     PRIVATE_LIBS     eccodes_f90
                      ${MULTIO_LIBRARIES}
                      ${OpenMP_Fortran_LIBRARIES}
                      $<${HAVE_FIELD_API}:field_api_${prec}>
-                     $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
     PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS}
-    PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
 )
 
 ecwam_target_fortran_module_directory(
