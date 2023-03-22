@@ -172,7 +172,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         ENDDO
 
       ELSE
-        XNGAMCONST(:,:) = 0.0_JWRB
+        XNGAMCONST(KIJS:KIJL,:) = 0.0_JWRB
       ENDIF
 
 
@@ -344,11 +344,11 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 !        ---------------------------
 
       IF ( .NOT. LLNORMAGAM) THEN
-        GAMNORMA(:,:) = 1.0_JWRB
+        GAMNORMA(KIJS:KIJL,:) = 1.0_JWRB
       ENDIF
 
       IF ( .NOT. LLSNEG) THEN
-        DSTAB(:,:,:) = 0.0_JWRB
+        DSTAB(KIJS:KIJL,:,:) = 0.0_JWRB
       ENDIF
 
       DO M=1,NFRE
@@ -426,8 +426,8 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 
           DO IGST=1,NGST
 
-            SUMF(:) = 0.0_JWRB
-            SUMFSIN2(:) = 0.0_JWRB
+            SUMF(KIJS:KIJL) = 0.0_JWRB
+            SUMFSIN2(KIJS:KIJL) = 0.0_JWRB
             DO K=1,NANG
               DO IJ=KIJS,KIJL
                 SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)

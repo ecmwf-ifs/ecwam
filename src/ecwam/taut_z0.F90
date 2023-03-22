@@ -148,7 +148,7 @@ IF (LLGCBZ0) THEN
           ALPHAOG(IJ) = CHARNOCK_MIN*GM1
         ENDDO
       ELSE
-        ALPHAOG(:)= 0.0_JWRB
+        ALPHAOG(KIJS:KIJL)= 0.0_JWRB
       ENDIF
 
       DO IJ = KIJS, KIJL
