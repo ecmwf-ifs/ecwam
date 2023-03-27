@@ -195,6 +195,37 @@ there are following options:
 
 Note that only `ecwam-run-model` currently supports MPI.
 
+Running with source-term computation offloaded to the GPU
+=========================================================
+
+ecWam can be run with the source-term computation offloaded to the GPU. Please note that this is under active development
+and will change frequently.
+
+Building
+--------
+
+The [ecwam-bundle](https://git.ecmwf.int/users/nawd/repos/ecwam-bundle/browse?at=refs%2Fheads%2Fnaan-phys-gpu) is the recommended build option
+for the ecWam GPU enabled variant. The option `--with-phys-gpu` has to be specified at the build step. Arch files are provided for the nvhpc 
+suite on the ECMWF ATOS system.
+
+Environment variables
+---------------------
+
+In its current guise, the CUDA runtime is used to manage temporary arrays and needs a large `NV_ACC_CUDA_HEAPSIZE`, e.g.
+`NV_ACC_CUDA_HEAPSIZE=8G`.
+
+Currently, the nvhpc compiler suite cannot be used with the hpcx-openmpi suite and must instead use the version of openmpi
+bundled within. It's location is specified via the `MPI_HOME` environment variable at build-time. At run-time, we must
+specify the location of the `mpirun` executable manually, even if running with one process. This can be done via either of
+the following two options:
+```
+export LAUNCH="$MPI_HOME/bin/mpirun -np 1"
+export LAUNCH="srun -n 1"
+```
+
+Please note that `env.sh` must be sourced to set `MPI_HOME`. For running with multiple OpenMP threads and grids finer than `O48`, 
+`OMP_STACKSIZE` should be set to at least `256M`.
+
 Known issues
 ============
 
@@ -204,7 +235,6 @@ Known issues
    a floating point exception during during call to `MPI_INIT`.
    The flag `-ffpe-trap=overflow` is set e.g. for `Debug` build type.
    Floating point exceptions on arm64 manifest as a `SIGILL`.
-
 
 Reporting Bugs
 ==============
