@@ -47,6 +47,7 @@ Further optional dependencies:
 - multio (see https://github.com/ecmwf/multio)
 - ocean model (e.g. NEMO or FESOM)
 - fypp (see https://github.com/aradi/fypp)
+- loki (see https://github.com/ecmwf-ifs/loki)
 
 Some driver scripts to run tests and validate results rely on availability of:
 - md5sum (part of GNU Coreutils; on MacOS, install with `brew install coreutils`)
@@ -216,6 +217,38 @@ there are following options:
 
 Note that only `ecwam-run-model` currently supports MPI.
 
+Running with source-term computation offloaded to the GPU
+=========================================================
+The calculation of the source-terms in ecWam, i.e. the physics, can be offloaded for GPU execution. GPU optimised code is 
+generated at build-time using ECMWF's source-to-source translation toolchain Loki. Currently, two Loki transformations are supported 
+(in ascending order of performance):
+- Single-column-coalesced (scc): Fuse vector loops and promote to the outermost level to target the SIMT execution model
+- scc-stack: The scc transformation with a pool allocator used to allocate temporary arrays (the default)
+
+Currently, only the OpenACC programming model is supported.
+
+Building
+--------
+The recommended option for building the GPU enabled variants is to use the provided bundle, and pass the `--with-loki --with-acc`
+options. Different Loki transformations can also be chosen at build-time via the following bundle option: `--loki-mode=<trafo>`.
+
+The ecwam-bundle also provides appropriate arch files for the nvhpc suite on the ECMWF ATOS system.
+
+Running
+-------
+No extra run-time options are needed to run the GPU enabled ecWam. Please note that this means that if ecWam is built with 
+`--with-loki` and `--with-acc` bundle arguments, the source-term computation will necessarily be offloaded for GPU execution.
+For multi-GPU runs, the number of GPUs maps to the number of MPI ranks. Thus multiple GPUs can be requested by launching
+with multiple MPI ranks. The mapping of MPI ranks to GPUs assumes at most 4 GPUs per host node.
+
+Environment variables
+---------------------
+
+The Loki SCC transformation uses the CUDA runtime to manage temporary arrays and needs a large
+ `NV_ACC_CUDA_HEAPSIZE`, e.g. `NV_ACC_CUDA_HEAPSIZE=4G`.
+
+For running with multiple OpenMP threads and grids finer than `O48`, `OMP_STACKSIZE` should be set to at least `256M`.
+
 Known issues
 ============
 
@@ -225,7 +258,6 @@ Known issues
    a floating point exception during during call to `MPI_INIT`.
    The flag `-ffpe-trap=overflow` is set e.g. for `Debug` build type.
    Floating point exceptions on arm64 manifest as a `SIGILL`.
-
 
 Reporting Bugs
 ==============
