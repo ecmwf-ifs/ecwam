@@ -98,7 +98,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#ifdef WAM_HAVE_ASSI
+#ifdef WITH_WAMASSI
 #include "wam_setup_assi.intfb.h"
 #endif
 #include "runwam.intfb.h"
@@ -119,7 +119,7 @@
 !       DR_HOOK must be initialised after MPI
         IF (LHOOK) CALL DR_HOOK('CHIEF',0,ZHOOK_HANDLE)
 
-#ifdef WAM_HAVE_ASSI
+#ifdef WITH_WAMASSI
 !       Set up callback functions for data assimilation
         CALL WAM_SETUP_ASSI
 #endif
