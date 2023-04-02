@@ -356,7 +356,6 @@ if( HAVE_FIELD_API )
        VERBATIM)
 else()
    list( APPEND ecwam_srcs
-     yowfield_mod.F90
      field_module.F90
    )
 endif()
