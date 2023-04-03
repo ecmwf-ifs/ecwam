@@ -44,7 +44,7 @@ Requirements
 Further optional dependencies:
 - MPI Fortran libraries
 - multio (see https://github.com/ecmwf/multio)
-- NEMO ocean model
+- ocean model (e.g. NEMO or FESOM)
 
 Building ecWAM
 --------------
@@ -197,10 +197,15 @@ Known issues
 Reporting Bugs
 ==============
 
-TODO
+Please report bugs using a [GitHub issue](https://github.com/ecmwf-ifs/ecwam/issues).
+Support is given on a best-effort basis by package developers.
 
 Contributing
 ============
 
-TODO
+Contributions to ecWAM are welcome.
+In order to do so, please open an [issue](https://github.com/ecmwf-ifs/ecwam/issues) where
+a feature request or bug can be discussed.
+Then create a [pull request](https://github.com/ecmwf-ifs/ecwam/pulls) with your contribution and sign the
+[contributors license agreement (CLA)](http://claassistant.ecmwf.int/ecmwf-ifs/ecwam).
 
