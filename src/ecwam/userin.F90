@@ -1318,8 +1318,21 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !*    2.1 WIND OUTPUT AND PROPAGATION TIME STEP.
 !         --------------------------------------
 
-      IF ((IDELWO  < IDELPRO .AND. IDELWO /= 0 .AND. MOD(IDELPRO,IDELWO) /= 0) .OR. &
-     &    (IDELWO >= IDELPRO .AND. MOD(IDELWO,IDELPRO) /= 0)) THEN
+      IF ((IDELWO  < IDELPRO .AND. IDELWO /= 0) ) THEN
+        IF (MOD(IDELPRO,IDELWO) /= 0) THEN
+          WRITE(IU06,*) '*******************************************'
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+          WRITE(IU06,*) '*    ==========================           *'
+          WRITE(IU06,*) '* WIND OUTPUT TIMSTEP AND PROPAGATION     *'
+          WRITE(IU06,*) '* TIME STEP DO NOT HAVE INTEGER RATIO.    *'
+          WRITE(IU06,*) '* WIND OUTPUT TIMSTEP    IDELWO = ', IDELWO
+          WRITE(IU06,*) '* PROPAGATION TIME STEP IDELPRO = ', IDELPRO
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*******************************************'
+          LERROR = .TRUE.
+        ENDIF
+      ELSEIF ((IDELWO >= IDELPRO .AND. MOD(IDELWO,IDELPRO) /= 0)) THEN
         WRITE(IU06,*) '*******************************************'
         WRITE(IU06,*) '*                                         *'
         WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1353,19 +1366,21 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !*    2.3 SOURCE FUNCTION AND WIND OUTPUT TIMESTEP.
 !         -----------------------------------------
 
-      IF (MOD(IDELWO,IDELT) /= 0 .AND. MOD(IDELT,IDELWO) /= 0 ) THEN
-        WRITE(IU06,*) '*******************************************'
-        WRITE(IU06,*) '*                                         *'
-        WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
-        WRITE(IU06,*) '*    ==========================           *'
-        WRITE(IU06,*) '* THE SOURCE FUNCTION TIME STEP IS NOT    *'
-        WRITE(IU06,*) '* AN INTEGER MULTIPLE OF THE WIND OUTPUT  *'
-        WRITE(IU06,*) '* TIME STEP !                             *'
-        WRITE(IU06,*) '* SOURCE FUNCTION TIMESTEP IDELT = ', IDELT
-        WRITE(IU06,*) '* WIND OUTPUT TIMESTEP    IDELWO = ', IDELWO
-        WRITE(IU06,*) '*                                         *'
-        WRITE(IU06,*) '*******************************************'
-        LERROR = .TRUE.
+      IF (IDELWO /= 0) THEN
+        IF (MOD(IDELWO,IDELT) /= 0 .AND. MOD(IDELT,IDELWO) /= 0 ) THEN
+          WRITE(IU06,*) '*******************************************'
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+          WRITE(IU06,*) '*    ==========================           *'
+          WRITE(IU06,*) '* THE SOURCE FUNCTION TIME STEP IS NOT    *'
+          WRITE(IU06,*) '* AN INTEGER MULTIPLE OF THE WIND OUTPUT  *'
+          WRITE(IU06,*) '* TIME STEP !                             *'
+          WRITE(IU06,*) '* SOURCE FUNCTION TIMESTEP IDELT = ', IDELT
+          WRITE(IU06,*) '* WIND OUTPUT TIMESTEP    IDELWO = ', IDELWO
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*******************************************'
+          LERROR = .TRUE.
+        ENDIF
       ENDIF
 
 !*    2.4 WIND INPUT AND WIND OUTPUT TIMESTEP.
@@ -1390,18 +1405,20 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
           IDELWI = IDELWO
         ENDIF
-        IF ((IDELWO <= IDELWI .AND. MOD(IDELWI,IDELWO) /= 0)) THEN
-          WRITE(IU06,*) '*******************************************'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
-          WRITE(IU06,*) '*    ==========================           *'
-          WRITE(IU06,*) '* WIND INPUT  AND WIND OUTPUT             *'
-          WRITE(IU06,*) '* TIME STEP DO NOT HAVE INTEGER RATIO OR  *'
-          WRITE(IU06,*) '* WIND INPUT TIMESTEP   IDELWI = ', IDELWI
-          WRITE(IU06,*) '* WIND OUTPUT TIMESTEP  IDELWO = ', IDELWO
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*******************************************'
-          LERROR = .TRUE.
+        IF (IDELWO /= 0) THEN
+          IF ((IDELWO <= IDELWI .AND. MOD(IDELWI,IDELWO) /= 0)) THEN
+            WRITE(IU06,*) '*******************************************'
+            WRITE(IU06,*) '*                                         *'
+            WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+            WRITE(IU06,*) '*    ==========================           *'
+            WRITE(IU06,*) '* WIND INPUT  AND WIND OUTPUT             *'
+            WRITE(IU06,*) '* TIME STEP DO NOT HAVE INTEGER RATIO OR  *'
+            WRITE(IU06,*) '* WIND INPUT TIMESTEP   IDELWI = ', IDELWI
+            WRITE(IU06,*) '* WIND OUTPUT TIMESTEP  IDELWO = ', IDELWO
+            WRITE(IU06,*) '*                                         *'
+            WRITE(IU06,*) '*******************************************'
+            LERROR = .TRUE.
+          ENDIF
         ENDIF
       ELSE
         DO IC=1,NDELW_LST
@@ -1514,19 +1531,21 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         LERROR = .TRUE.
       ENDIF
 
-      IF (MOD(IDELBC,IDELPRO) /= 0 .AND. MOD(IDELBC,IDELWI) /= 0) THEN
-        WRITE(IU06,*) '*******************************************'
-        WRITE(IU06,*) '*                                         *'
-        WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
-        WRITE(IU06,*) '*    ==========================           *'
-        WRITE(IU06,*) '* NEW OUTPUT FILES ARE REQUESTED EVERY    *'
-        WRITE(IU06,*) '*    IDELBC = ',IDELBC,' SECONDS'
-        WRITE(IU06,*) '* IDELRES MUST BE MULTIPLES OF            *'
-        WRITE(IU06,*) '* THE WIND INPUT TIMESTEP   IDELWI = ', IDELWI
-        WRITE(IU06,*) '* THE PROPAGATION TIMESTEP IDELPRO = ',IDELPRO
-        WRITE(IU06,*) '*                                         *'
-        WRITE(IU06,*) '*******************************************'
-        LERROR = .TRUE.
+      IF (IDELWI /= 0) THEN
+        IF (MOD(IDELBC,IDELPRO) /= 0 .AND. MOD(IDELBC,IDELWI) /= 0) THEN
+          WRITE(IU06,*) '*******************************************'
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+          WRITE(IU06,*) '*    ==========================           *'
+          WRITE(IU06,*) '* NEW OUTPUT FILES ARE REQUESTED EVERY    *'
+          WRITE(IU06,*) '*    IDELBC = ',IDELBC,' SECONDS'
+          WRITE(IU06,*) '* IDELRES MUST BE MULTIPLES OF            *'
+          WRITE(IU06,*) '* THE WIND INPUT TIMESTEP   IDELWI = ', IDELWI
+          WRITE(IU06,*) '* THE PROPAGATION TIMESTEP IDELPRO = ',IDELPRO
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*******************************************'
+          LERROR = .TRUE.
+        ENDIF
       ENDIF
 
 !*    2.5 OUTPUT OPTION.
