@@ -11,7 +11,6 @@
 
 import yaml
 from datetime import datetime
-import numpy as np
 import argparse
 
 parser = argparse.ArgumentParser(
@@ -37,17 +36,16 @@ class Stats:
     def load(self,doc):
         self = Stats()
         def parse_line(self,line):
-            import numpy as np
             [time, index, name, avg_dec, avg_hex, min_dec, min_hex, max_dec, max_hex, non_missing] = line.split()
             entry = { 
                         'time': datetime.strptime(time, "%Y%m%d%H%M%S"),
                         'index': int(index),
                         'name': name,
-                        'average' : np.float64(avg_dec),
+                        'average' : float(avg_dec),
                         'average_hex' : avg_hex,
-                        'minimum': np.float64(min_dec),
+                        'minimum': float(min_dec),
                         'minimum_hex' : min_hex,
-                        'maximum': np.float64(max_dec),
+                        'maximum': float(max_dec),
                         'maximum_hex': max_hex,
                         'non_missing_points': int(non_missing)
                     }
@@ -142,15 +140,19 @@ for validate in validation_list:
     x = validation_stats[norm_type]
     hash  = validation_stats[norm_type+'_hex']
 
-    diff = np.abs(x-x_ref)
-    rdiff = diff/np.abs(x_ref)
+    diff = abs(x-x_ref)
+    rdiff = diff/abs(x_ref)
+
+    def format_float_scientific(val,precision):
+        format_str = "<21."+str(precision-1)+"e"
+        return format(val, format_str)
 
     print("Validating {norm: <8} {name: <6} at time {time} with reference {ref: <21} : {value: <21} (hash {hash})".format(
             norm=norm_type,
             name="'"+name+"'",
             time=time,
-            ref=np.format_float_scientific(x_ref,precision=16),
-            value=np.format_float_scientific(x,precision=16),
+            ref=format_float_scientific(x_ref,precision=16),
+            value=format_float_scientific(x,precision=16),
             hash=hash))
 
     if rdiff <= rtol:

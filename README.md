@@ -46,6 +46,10 @@ Further optional dependencies:
 - multio (see https://github.com/ecmwf/multio)
 - ocean model (e.g. NEMO or FESOM)
 
+Some driver scripts to run tests and validate results rely on availability of:
+- md5sum (part of GNU Coreutils; on MacOS, install with `brew install coreutils`)
+- Python with pyyaml package
+
 Building ecWAM
 --------------
 
@@ -204,8 +208,8 @@ Contributing
 ============
 
 Contributions to ecWAM are welcome.
-In order to do so, please open an [issue](https://github.com/ecmwf-ifs/ecwam/issues) where
+In order to do so, please open a [GitHub issue](https://github.com/ecmwf-ifs/ecwam/issues) where
 a feature request or bug can be discussed.
-Then create a [pull request](https://github.com/ecmwf-ifs/ecwam/pulls) with your contribution and sign the
+Then create a [pull request](https://github.com/ecmwf-ifs/ecwam/pulls) with your contribution.
+All contributors to the pull request need to sign the
 [contributors license agreement (CLA)](http://claassistant.ecmwf.int/ecmwf-ifs/ecwam).
-
