@@ -6,17 +6,11 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
-# Import for ecwam pproject
+# Import for ecwam project
 #
 # This file is included during
 #
-#    find_package( ecwam [COMPONENTS (double|single)] [QUIET] [REQUIRED] )
-#
-# Supported COMPONENTS: double single
-#
-# If available following targets will be exported:
-# - ecwam_dp  Double precision ecwam library
-# - ecwam_sp  Single precision ecwam library
+#    find_package( ecwam [QUIET] [REQUIRED] )
 #
 
 ##################################################################
@@ -30,22 +24,5 @@ set( ${CMAKE_FIND_PACKAGE_NAME}_HAVE_DOUBLE_PRECISION  @HAVE_DOUBLE_PRECISION@ )
 set( ${CMAKE_FIND_PACKAGE_NAME}_HAVE_UNWAM             @HAVE_UNWAM@ )
 
 if( NOT ${CMAKE_FIND_PACKAGE_NAME}_FIND_QUIETLY )
-  message( STATUS "Found ecwam version ${${CMAKE_FIND_PACKAGE_NAME}_VERSION_STR}" )
+  message( STATUS "Found ${CMAKE_FIND_PACKAGE_NAME} version ${${CMAKE_FIND_PACKAGE_NAME}_VERSION_STR}" )
 endif()
-
-##################################################################
-## Export project dependencies
-
-include( CMakeFindDependencyMacro )
-
-##################################################################
-## Handle components
-
-set( ${CMAKE_FIND_PACKAGE_NAME}_single_FOUND ${${CMAKE_FIND_PACKAGE_NAME}_HAVE_SINGLE_PRECISION} )
-set( ${CMAKE_FIND_PACKAGE_NAME}_double_FOUND ${${CMAKE_FIND_PACKAGE_NAME}_HAVE_DOUBLE_PRECISION} )
-
-foreach( _component ${${CMAKE_FIND_PACKAGE_NAME}_FIND_COMPONENTS} )
-  if( NOT ${CMAKE_FIND_PACKAGE_NAME}_${_component}_FOUND AND ${CMAKE_FIND_PACKAGE_NAME}_FIND_REQUIRED )
-    message( SEND_ERROR "${CMAKE_FIND_PACKAGE_NAME} was not build with support for COMPONENT ${_component}" )
-  endif()
-endforeach()
