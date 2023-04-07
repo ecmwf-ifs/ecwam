@@ -34,7 +34,7 @@ jobs:
         name:
           - linux gnu-10
           - linux clang-12
-          # - linux nvhpc-21.9
+          - linux nvhpc-21.9
           - linux intel
           - macos
 
@@ -65,14 +65,14 @@ jobs:
             compiler_fc: gfortran-10
             caching: true
 
-          # - name: linux nvhpc-21.9
-          #   os: ubuntu-20.04
-          #   compiler: nvhpc-21.9
-          #   compiler_cc: nvc
-          #   compiler_cxx: nvc++
-          #   compiler_fc: nvfortran
-          #   cmake_options: -DCMAKE_CXX_FLAGS=--diag_suppress177
-          #   caching: false
+          - name: linux nvhpc-21.9
+            os: ubuntu-20.04
+            compiler: nvhpc-21.9
+            compiler_cc: nvc
+            compiler_cxx: nvc++
+            compiler_fc: nvfortran
+            cmake_options: -DCMAKE_CXX_FLAGS=--diag_suppress177
+            caching: true
 
           - name : linux intel
             os: ubuntu-20.04
@@ -142,8 +142,8 @@ jobs:
         source /opt/nvhpc/env.sh
         echo "${NVHPC_DIR}/compilers/bin"                   >> $GITHUB_PATH
         [ -z ${MPI_HOME+x} ] || echo "MPI_HOME=${MPI_HOME}" >> $GITHUB_ENV
-        export LAUNCH_SERIAL="${MPI_HOME}/bin/mpirun -np 1"
-        echo "LAUNCH_SERIAL=\"${LAUNCH_SERIAL}\"" >> $GITHUB_ENV
+        echo "localhost slots=72" >> ${MPI_HOME}/etc/openmpi-default-hostfile
+        echo "ECWAM_LAUNCH_SERIAL_MPI=1" >> $GITHUB_ENV
 
 
     - name: Install Intel oneAPI compiler
@@ -172,7 +172,7 @@ jobs:
       id: build-test
       uses: ecmwf-actions/build-package@v2
       with:
-        self_coverage: true
+        self_coverage: false
         force_build: true
         cache_suffix: "${{ matrix.build_type }}-${{ env.CACHE_SUFFIX }}"
         recreate_cache: ${{ matrix.caching == false }}
