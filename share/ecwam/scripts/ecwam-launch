@@ -77,16 +77,18 @@ if command_exists srun ; then
 
 else
 
+# Use `mpirun -np 1` on macOS to avoid a SIGILL in Debug builds
+if [[ $(uname) == "Darwin" ]]; then
+  ECWAM_LAUNCH_SERIAL_MPI=1
+fi
+
+if [ -n "${ECWAM_LAUNCH_SERIAL_MPI}" ]; then
+  ECWAM_LAUNCH_NTASKS=${ECWAM_LAUNCH_NTASKS:-1}
+fi
+
 ### Serial when SLURM is not found
   if [ -z "${ECWAM_LAUNCH_NTASKS}" ]; then
     unset LAUNCH
-
-    # Use `mpirun -np 1` on macOS to avoid a SIGILL in Debug builds
-    if [[ $(uname) == "Darwin" ]]; then
-      if command_exists mpirun; then
-        LAUNCH="mpirun ${ECWAM_LAUNCH_ARGS} -np 1"
-      fi
-    fi
 
 ### mpirun/mpiexec
   elif command_exists mpirun; then
