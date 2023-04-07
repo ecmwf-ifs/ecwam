@@ -187,12 +187,12 @@ jobs:
         cmake_options: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.cmake_options }} -DENABLE_MPI=ON"
         ctest_options: "${{ matrix.ctest_options }}"
 
-  #  - name: Verify tools
-  #    run: |
-  #      export PATH=${{ steps.build-test.outputs.bin_path }}:$PATH
+    - name: Verify tools
+      run: |
+        export PATH=${{ steps.build-test.outputs.bin_path }}:$PATH
 
-  #      echo "+ fiat --info"
-  #      fiat --info
+        echo "+ ecwam --info"
+        ecwam --info
 
 #    - name: Codecov Upload
 #      if: steps.build-test.outputs.coverage_file
