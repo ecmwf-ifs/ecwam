@@ -77,7 +77,7 @@ SUBROUTINE MPFLDTOIFS(IJS, IJL, BLK2GLO, NWVFIELDS, BLOCK,       &
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
+      TYPE(WVGRIDGLO), INTENT(IN) :: BLK2GLO
       INTEGER(KIND=JWIM), INTENT(IN) :: NWVFIELDS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NWVFIELDS), INTENT(IN) :: BLOCK
       REAL(KIND=JWRB), DIMENSION(:,:,:), INTENT(INOUT) :: GRID
@@ -99,9 +99,6 @@ SUBROUTINE MPFLDTOIFS(IJS, IJL, BLK2GLO, NWVFIELDS, BLOCK,       &
 !----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('MPFLDTOIFS',0,ZHOOK_HANDLE)
-
-ASSOCIATE(IXLG => BLK2GLO%IXLG, &
- &        KXLT => BLK2GLO%KXLT)
 
       CALL GSTATS_BARRIER(734)
 
@@ -151,8 +148,8 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 !           TRANSFORM FROM BLOCK TO GRID
             DO IP=1,NPROC
               DO IJ = NSTART(IP), NEND(IP)
-               IX = IXLG(IJ)
-               IY = NGY- KXLT(IJ) +1
+               IX = BLK2GLO%IXLG(IJ)
+               IY = NGY- BLK2GLO%KXLT(IJ) +1
                GRID(IX,IY,IFLD) = ZBUFR(IJ)
               ENDDO
             ENDDO
@@ -177,8 +174,8 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
               DO IP=1,NPROC
                 LFROMTASK(IP)=0
                 DO IJ = NSTART(IP), NEND(IP)
-                  IX = IXLG(IJ)
-                  IY = NGY- KXLT(IJ) +1
+                  IX = BLK2GLO%IXLG(IJ)
+                  IY = NGY- BLK2GLO%KXLT(IJ) +1
                   IF (MASK_OUT(IX,IY) == 1) LFROMTASK(IP)=LFROMTASK(IP)+1
                 ENDDO
               ENDDO
@@ -198,8 +195,8 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                 IF (LFROMTASK(IP) > 0) THEN
                   ISTFROMTASK(IP)=ICOUNT+1
                   DO IJ = NSTART(IP), NEND(IP)
-                    IX = IXLG(IJ)
-                    IY = NGY- KXLT(IJ) +1
+                    IX = BLK2GLO%IXLG(IJ)
+                    IY = NGY- BLK2GLO%KXLT(IJ) +1
                     IF (MASK_OUT(IX,IY) == 1) THEN
                       ICOUNT=ICOUNT+1
                       IJFROMTASK(ICOUNT)=IJ
@@ -362,8 +359,8 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 !               TRANSFORM FROM BLOCK TO GRID
                 DO IC = IST,IEND
                   IJ=IJFROMTASK(IC)
-                  IX = IXLG(IJ)
-                  IY = NGY- KXLT(IJ) +1
+                  IX = BLK2GLO%IXLG(IJ)
+                  IY = NGY- BLK2GLO%KXLT(IJ) +1
                   GRID(IX,IY,IFLD) = ZRECVBUF(IC)
                 ENDDO
               ENDIF
@@ -379,8 +376,8 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 !         TRANSFORM FROM BLOCK TO GRID
           DO IP=1,NPROC
             DO IJ = NSTART(IP), NEND(IP)
-             IX = IXLG(IJ)
-             IY = NGY- KXLT(IJ) +1
+             IX = BLK2GLO%IXLG(IJ)
+             IY = NGY- BLK2GLO%KXLT(IJ) +1
              GRID(IX,IY,IFLD) = BLOCK(IJ,IFLD)
             ENDDO
           ENDDO
@@ -390,7 +387,6 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
       ENDDO
 
       CALL GSTATS(686,1)
-END ASSOCIATE
 IF (LHOOK) CALL DR_HOOK('MPFLDTOIFS',1,ZHOOK_HANDLE)
 
 END SUBROUTINE MPFLDTOIFS

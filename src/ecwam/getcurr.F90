@@ -7,9 +7,9 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE GETCURR(LWCUR, IREAD, IFROMIJ, JFROMIJ,   &
+SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
  &                 NXS, NXE, NYS, NYE, FIELDG,       &
- &                 NEMOUCUR, NEMOVCUR, UCUR, VCUR)
+ &                 NEMO2WAM, WVENVI)
 
 !****  *GETCURR* - READS SURFACE CURRENTS FROM FILE (IF UNCOUPLED)
 !                  OR EXTRACT THEM FROM FORCING_FIELDS DATA STRUCTURE (IF COUPLED)
@@ -54,7 +54,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IFROMIJ, JFROMIJ,   &
 ! ------------------------------------------------------------------- 
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU, JWRO
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, WVGRIDLOC, ENVIRONMENT, OCEAN2WAVE
 
       USE YOWCOUP  , ONLY : LWCOU, LWNEMOCOUCUR
 
@@ -81,11 +81,11 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IFROMIJ, JFROMIJ,   &
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR
-      INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
+      TYPE(ENVIRONMENT), INTENT(INOUT) :: WVENVI
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
-      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(IN) :: FIELDG
-      REAL(KIND=JWRO), DIMENSION (NPROMA_WAM, NCHNK), INTENT(IN) :: NEMOUCUR, NEMOVCUR
-      REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(INOUT) :: UCUR, VCUR
+      TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
+      TYPE(OCEAN2WAVE), INTENT(IN) :: NEMO2WAM
 
 
       INTEGER(KIND=JWIM) :: LIU
@@ -120,9 +120,10 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IFROMIJ, JFROMIJ,   &
 
           IF (CDTPRO >= CDTNEWCUR) THEN
 
-            OLDUCUR(:,:)=UCUR(:,:)
-            OLDVCUR(:,:)=VCUR(:,:)
-
+            DO ICHNK=1,NCHNK
+              OLDUCUR(:,ICHNK) = WVENVI%UCUR(:,ICHNK)
+              OLDVCUR(:,ICHNK) = WVENVI%VCUR(:,ICHNK)
+            ENDDO
             LLCURRENT=.FALSE.
 
             CALL INCDATE(CDTCUR,IDELCUR)
@@ -137,9 +138,9 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IFROMIJ, JFROMIJ,   &
                 DO ICHNK = 1, NCHNK
                   KIJS=1
                   KIJL=NPROMA_WAM
-                  CALL WAMCUR (NXS, NXE, NYS, NYE, FIELDG,                     &
- &                             KIJS, KIJL, IFROMIJ(:,ICHNK), JFROMIJ(:,ICHNK), &
- &                             UCUR(:,ICHNK), VCUR(:,ICHNK))
+                  CALL WAMCUR (NXS, NXE, NYS, NYE, FIELDG,                                     &
+ &                             KIJS, KIJL, BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK), &
+ &                             WVENVI%UCUR(:,ICHNK), WVENVI%VCUR(:,ICHNK))
                 ENDDO
 !$OMP           END PARALLEL DO
                 CALL GSTATS(1444,1)
@@ -153,16 +154,16 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IFROMIJ, JFROMIJ,   &
 !$OMP           PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
                 DO ICHNK = 1, NCHNK
                   DO IJ = 1, NPROMA_WAM
-                    IX = IFROMIJ(IJ,ICHNK)
-                    JY = JFROMIJ(IJ,ICHNK)
-                    IF (FIELDG(IX,JY)%LKFR <=  0.0_JWRB ) THEN
+                    IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
+                    JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
+                    IF (FIELDG%LKFR(IX,JY) <=  0.0_JWRB ) THEN
 !                     if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
-                      UCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMOUCUR(IJ,ICHNK)),CURRENT_MAX),NEMOUCUR(IJ,ICHNK))
-                      VCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMOVCUR(IJ,ICHNK)),CURRENT_MAX),NEMOVCUR(IJ,ICHNK))
+                      WVENVI%UCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOUCUR(IJ,ICHNK)),CURRENT_MAX),NEMO2WAM%NEMOUCUR(IJ,ICHNK))
+                      WVENVI%VCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOVCUR(IJ,ICHNK)),CURRENT_MAX),NEMO2WAM%NEMOVCUR(IJ,ICHNK))
                     ELSE
 !                     no currents over lakes and land
-                      UCUR(IJ,ICHNK) = 0.0_JWRB
-                      VCUR(IJ,ICHNK) = 0.0_JWRB
+                      WVENVI%UCUR(IJ,ICHNK) = 0.0_JWRB
+                      WVENVI%VCUR(IJ,ICHNK) = 0.0_JWRB
                     ENDIF
                   ENDDO
                 ENDDO
@@ -170,8 +171,10 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IFROMIJ, JFROMIJ,   &
                 CALL GSTATS(1444,1)
 
               ELSE
-                UCUR(:,:)=0.0_JWRB
-                VCUR(:,:)=0.0_JWRB
+                DO ICHNK=1, NCHNK
+                  WVENVI%UCUR(:,ICHNK)=0.0_JWRB
+                  WVENVI%VCUR(:,ICHNK)=0.0_JWRB
+                ENDDO
                 WRITE(IU06,*)' '
                 WRITE(IU06,*)'    ****************************'
                 WRITE(IU06,*)'     IREFRA = ',IREFRA
@@ -196,9 +199,9 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IFROMIJ, JFROMIJ,   &
                 CALL FLUSH(IU06)
 
                 CALL CURRENT2WAM (FILNM, IREAD, CDATEIN,        &
-     &                            IFROMIJ, JFROMIJ,             &
+     &                            BLK2LOC,                      &
      &                            NXS, NXE, NYS, NYE, FIELDG,   &
-     &                            UCUR, VCUR)
+     &                            WVENVI)
                 
 
                 IF (CDATEIN /= CDTCUR) THEN
@@ -215,8 +218,10 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IFROMIJ, JFROMIJ,   &
                 CALL ABORT1
                 ENDIF
               ELSE
-                UCUR(:,:)=0.0_JWRB
-                VCUR(:,:)=0.0_JWRB
+                DO ICHNK=1, NCHNK
+                  WVENVI%UCUR(:,ICHNK)=0.0_JWRB
+                  WVENVI%VCUR(:,ICHNK)=0.0_JWRB
+                ENDDO
                 WRITE(IU06,*)' '
                 WRITE(IU06,*)'    ****************************'
                 WRITE(IU06,*)'     FILE ',FILNM,' NOT FOUND '
@@ -235,7 +240,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD, IFROMIJ, JFROMIJ,   &
             KUPDATE = 0
             OUT: DO ICHNK = 1, NCHNK
               DO IJ = 1, KIJL4CHNK(ICHNK)
-                IF ( UCUR(IJ,ICHNK) /= OLDUCUR(IJ,ICHNK) .OR. VCUR(IJ,ICHNK) /= OLDVCUR(IJ,ICHNK) ) THEN
+                IF ( WVENVI%UCUR(IJ,ICHNK) /= OLDUCUR(IJ,ICHNK) .OR. WVENVI%VCUR(IJ,ICHNK) /= OLDVCUR(IJ,ICHNK) ) THEN
                   LLUPDATE=.TRUE.
                   KUPDATE = 1
                   EXIT OUT

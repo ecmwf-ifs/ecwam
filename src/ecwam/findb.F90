@@ -112,7 +112,7 @@
 !         -----------------------------------------
           IJARB(IO) = 0
           DO IJ = NSTART(IRANK),NEND(IRANK)
-            IF (BLK2GLO(IJ)%IXLG == IOLG .AND. BLK2GLO(IJ)%KXLT == IOLT) THEN
+            IF (BLK2GLO%IXLG(IJ) == IOLG .AND. BLK2GLO%KXLT(IJ) == IOLT) THEN
               IJARB(IO) = IJ
               EXIT
             ENDIF

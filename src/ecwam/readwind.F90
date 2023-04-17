@@ -139,7 +139,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
       CHARACTER(LEN=24), INTENT(INOUT) :: FILNM
       LOGICAL, INTENT(INOUT) :: LLNOTOPENED
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
-      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(INOUT) :: FIELDG
+      TYPE(FORCING_FIELDS), INTENT(INOUT) :: FIELDG
 
 
       INTEGER(KIND=JWIM) :: NFLD  
@@ -331,7 +331,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
      &                     LLUNSTR,                                     &
      &                     NGY, IRGG, NLONRGG_LOC,                      &
      &                     NXS, NXE, NYS, NYE,                          &
-     &                     FIELDG%XLON, FIELDG%YLAT,                    &
+     &                     FIELDG,                                      &
      &                     ZMISS, ZDUM, ZDUM,                           &
      &                     CDTWIR, IFORP, IPARAM, KZLEV, IDM, IDM, WORK)
 
@@ -344,7 +344,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
               DO J = NYS, NYE
                 JSN = NGY-J+1
                 DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
-                  FIELDG(I,J)%UWND=WORK(I,J)
+                  FIELDG%UWND(I,J)=WORK(I,J)
                 ENDDO
               ENDDO
               LLNOTREAD(IVAR)=.FALSE.
@@ -364,7 +364,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
               DO J = NYS, NYE
                 JSN = NGY-J+1
                 DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
-                  FIELDG(I,J)%VWND=WORK(I,J)
+                  FIELDG%VWND(I,J)=WORK(I,J)
                 ENDDO
               ENDDO
               LLNOTREAD(IVAR)=.FALSE.
@@ -385,7 +385,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
               DO J = NYS, NYE
                 JSN = NGY-J+1
                 DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
-                  FIELDG(I,J)%CICOVER=WORK(I,J)
+                  FIELDG%CICOVER(I,J)=WORK(I,J)
                 ENDDO
               ENDDO
               LLNOTREAD(IVAR)=.FALSE.
@@ -403,7 +403,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
               DO J = NYS, NYE
                 JSN = NGY-J+1
                 DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
-                  FIELDG(I,J)%CITHICK=WORK(I,J)
+                  FIELDG%CITHICK(I,J)=WORK(I,J)
                 ENDDO
               ENDDO
               LLNOTREAD(IVAR)=.FALSE.
@@ -423,9 +423,9 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
                   JSN = NGY-J+1
                   DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
                     IF (WORK(I,J) == ZMISS) THEN
-                      FIELDG(I,J)%WSWAVE=0.0_JWRB
+                      FIELDG%WSWAVE(I,J)=0.0_JWRB
                     ELSE
-                      FIELDG(I,J)%WSWAVE=WORK(I,J)
+                      FIELDG%WSWAVE(I,J)=WORK(I,J)
                     ENDIF
                   ENDDO
                 ENDDO
@@ -443,10 +443,10 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
                   JSN = NGY-J+1
                   DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
                     IF (WORK(I,J) == ZMISS) THEN
-                      FIELDG(I,J)%WDWAVE=0.0_JWRB
+                      FIELDG%WDWAVE(I,J)=0.0_JWRB
                     ELSE
 !                     re-convert to WAM convention
-                      FIELDG(I,J)%WDWAVE=RAD*(WORK(I,J)-180.0_JWRB)
+                      FIELDG%WDWAVE(I,J)=RAD*(WORK(I,J)-180.0_JWRB)
                     ENDIF
                   ENDDO
                 ENDDO
@@ -463,9 +463,9 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
                 JSN = NGY-J+1
                 DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
                   IF (WORK(I,J) == ZMISS) THEN
-                    FIELDG(I,J)%AIRD=ROAIR
+                    FIELDG%AIRD(I,J)=ROAIR
                   ELSE
-                    FIELDG(I,J)%AIRD=WORK(I,J)
+                    FIELDG%AIRD(I,J)=WORK(I,J)
                   ENDIF
                 ENDDO
               ENDDO
@@ -481,9 +481,9 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
                 JSN = NGY-J+1
                 DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
                   IF (WORK(I,J) == ZMISS) THEN
-                    FIELDG(I,J)%WSTAR = WSTAR0
+                    FIELDG%WSTAR(I,J) = WSTAR0
                   ELSE
-                    FIELDG(I,J)%WSTAR=WORK(I,J)
+                    FIELDG%WSTAR(I,J)=WORK(I,J)
                   ENDIF
                 ENDDO
               ENDDO
@@ -613,8 +613,8 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
 
         DO J = NYS, NYE
           DO I = NXS, NXE
-            FIELDG(I,J)%UWND=UWIND
-            FIELDG(I,J)%VWND=VWIND
+            FIELDG%UWND(I,J)=UWIND
+            FIELDG%VWND(I,J)=VWIND
           ENDDO
         ENDDO
 
@@ -622,12 +622,12 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
 !!!! a sea ice cover=SWAMPCIFR
         DO J = NYS, NYE/2
           DO I = NXS, NXE
-            FIELDG(I,J)%CICOVER=SWAMPCIFR
+            FIELDG%CICOVER(I,J)=SWAMPCIFR
           ENDDO
         ENDDO
         DO J=NYE/2+1,NYE
           DO I = NXS, NXE
-            FIELDG(I,J)%CICOVER=0.0_JWRB
+            FIELDG%CICOVER(I,J)=0.0_JWRB
           ENDDO
         ENDDO
 

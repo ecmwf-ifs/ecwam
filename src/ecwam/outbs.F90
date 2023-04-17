@@ -70,11 +70,11 @@ SUBROUTINE OUTBS (MIJ, FL1, XLLWS,                            &
       INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)          :: MIJ
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: XLLWS
-      TYPE(FREQUENCY), DIMENSION(NPROMA_WAM, NFRE, NCHNK), INTENT(IN)       :: WVPRPT
-      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)           :: WVENVI
-      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)     :: FF_NOW
-      TYPE(INTGT_PARAM_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)    :: INTFLDS
-      TYPE(OCEAN2WAVE), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)            :: NEMO2WAM
+      TYPE(FREQUENCY), INTENT(IN)                                           :: WVPRPT
+      TYPE(ENVIRONMENT), INTENT(IN)                                         :: WVENVI
+      TYPE(FORCING_FIELDS), INTENT(INOUT)                                   :: FF_NOW
+      TYPE(INTGT_PARAM_FIELDS), INTENT(IN)                                  :: INTFLDS
+      TYPE(OCEAN2WAVE), INTENT(IN)                                          :: NEMO2WAM
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK), INTENT(OUT)  :: BOUT
 
 
@@ -96,11 +96,24 @@ IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
       CALL GSTATS(1502,0)
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
       DO ICHNK = 1, NCHNK
-        CALL OUTBLOCK(1, NPROMA_WAM, MIJ(:,ICHNK),                         &
-     &                FL1(:,:,:,ICHNK), XLLWS(:,:,:,ICHNK),                &
-     &                WVPRPT(:,:,ICHNK),                                   &
-     &                WVENVI(:,ICHNK), FF_NOW(:,ICHNK), INTFLDS(:,ICHNK),  &
-     &                NEMO2WAM(:,ICHNK),                                   &
+        CALL OUTBLOCK(1, NPROMA_WAM, MIJ(:,ICHNK),                        &
+     &                FL1(:,:,:,ICHNK), XLLWS(:,:,:,ICHNK),               &
+     &                WVPRPT%WAVNUM(:,:,ICHNK), WVPRPT%CINV(:,:,ICHNK), WVPRPT%CGROUP(:,:,ICHNK), &
+     &                WVENVI%DEPTH(:,ICHNK), WVENVI%UCUR(:,ICHNK), WVENVI%VCUR(:,ICHNK), &
+     &                WVENVI%IODP(:,ICHNK),                               &
+     &                INTFLDS%ALTWH(:,ICHNK), INTFLDS%CALTWH(:,ICHNK), INTFLDS%RALTCOR(:,ICHNK), &
+     &                INTFLDS%USTOKES(:,ICHNK), INTFLDS%VSTOKES(:,ICHNK), INTFLDS%STRNMS(:,ICHNK), &
+     &                INTFLDS%TAUXD(:,ICHNK), INTFLDS%TAUYD(:,ICHNK), INTFLDS%TAUOCXD(:,ICHNK), &
+     &                INTFLDS%TAUOCYD(:,ICHNK), INTFLDS%TAUOC(:,ICHNK), INTFLDS%PHIOCD(:,ICHNK), &
+     &                INTFLDS%PHIEPS(:,ICHNK), INTFLDS%PHIAW(:,ICHNK), &
+     &                FF_NOW%AIRD(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK), FF_NOW%CICOVER(:,ICHNK), &
+     &                FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WSTAR(:,ICHNK), &
+     &                FF_NOW%UFRIC(:,ICHNK), FF_NOW%TAUW(:,ICHNK), &
+     &                FF_NOW%Z0M(:,ICHNK), FF_NOW%Z0B(:,ICHNK), FF_NOW%CHRNCK(:,ICHNK), &
+     &                FF_NOW%CITHICK(:,ICHNK), &
+     &                NEMO2WAM%NEMOSST(:, ICHNK), NEMO2WAM%NEMOCICOVER(:,ICHNK), &
+     &                NEMO2WAM%NEMOCITHICK(:, ICHNK), NEMO2WAM%NEMOUCUR(:,ICHNK), &
+     &                NEMO2WAM%NEMOVCUR(:, ICHNK), &
      &                BOUT(:,:,ICHNK))
       ENDDO
 !$OMP END PARALLEL DO

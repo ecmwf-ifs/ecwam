@@ -94,7 +94,7 @@
 
       IERR = 0
       DO IJ=IJS,IJL
-      IF (BLK2GLO(IJ)%IXLG /= 0 .OR. BLK2GLO(IJ)%KXLT /= 0) LST(BLK2GLO(IJ)%IXLG,BLK2GLO(IJ)%KXLT) = 'S'
+      IF (BLK2GLO%IXLG(IJ) /= 0 .OR. BLK2GLO%KXLT(IJ) /= 0) LST(BLK2GLO%IXLG(IJ),BLK2GLO%KXLT(IJ)) = 'S'
       ENDDO
 
 !*    2.1 INCLUDE OUTPUT POINTS.
@@ -120,7 +120,7 @@
             WRITE (IU06,*) ' ***************************************'
             IF (IERR > 20) CALL ABORT1
           ENDIF
-     IF (BLK2GLO(IJ)%IXLG /= 0 .OR. BLK2GLO(IJ)%KXLT /= 0) LST(BLK2GLO(IJ)%IXLG,BLK2GLO(IJ)%KXLT) = '+' 
+     IF (BLK2GLO%IXLG(IJ) /= 0 .OR. BLK2GLO%KXLT(IJ) /= 0) LST(BLK2GLO%IXLG(IJ),BLK2GLO%KXLT(IJ)) = '+' 
         ENDDO
       ENDIF
 
@@ -147,8 +147,8 @@
             WRITE (IU06,*) ' ***************************************'
             IF (IERR > 20) CALL ABORT1
           ENDIF
-          IF (BLK2GLO(IJ)%IXLG /= 0 .OR. BLK2GLO(IJ)%KXLT /= 0)                     &
-     &     LST(BLK2GLO(IJ)%IXLG,BLK2GLO(IJ)%KXLT) = '/'
+          IF (BLK2GLO%IXLG(IJ) /= 0 .OR. BLK2GLO%KXLT(IJ) /= 0)                     &
+     &     LST(BLK2GLO%IXLG(IJ),BLK2GLO%KXLT(IJ)) = '/'
         ENDDO
       ENDIF
 
@@ -175,8 +175,8 @@
             WRITE (IU06,*) ' ***************************************'
             IF (IERR > 20) CALL ABORT1
           ENDIF
-          IF (BLK2GLO(IJ)%IXLG /= 0 .OR. BLK2GLO(IJ)%KXLT /= 0)         &
-     &     LST(BLK2GLO(IJ)%IXLG,BLK2GLO(IJ)%KXLT) = 'B'
+          IF (BLK2GLO%IXLG(IJ) /= 0 .OR. BLK2GLO%KXLT(IJ) /= 0)         &
+     &     LST(BLK2GLO%IXLG(IJ),BLK2GLO%KXLT(IJ)) = 'B'
         ENDDO
       ENDIF
 

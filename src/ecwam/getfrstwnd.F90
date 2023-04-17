@@ -66,11 +66,11 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
       CHARACTER(LEN=14), INTENT(INOUT) :: CDTWIS
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIE
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
-      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(INOUT) :: FIELDG
-      TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: BLK2LOC
-      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: WVENVI
-      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FF_NOW
-      TYPE(OCEAN2WAVE), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: NEMO2WAM
+      TYPE(FORCING_FIELDS), INTENT(INOUT) :: FIELDG
+      TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
+      TYPE(ENVIRONMENT), INTENT(INOUT) :: WVENVI
+      TYPE(FORCING_FIELDS), INTENT(INOUT) :: FF_NOW
+      TYPE(OCEAN2WAVE), INTENT(INOUT) :: NEMO2WAM
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR
@@ -96,64 +96,44 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
 
 IF (LHOOK) CALL DR_HOOK('GETFRSTWND',0,ZHOOK_HANDLE)
 
-ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
- &        JFROMIJ => BLK2LOC%JFROMIJ, &
- &        UCUR => WVENVI%UCUR, &
- &        VCUR => WVENVI%VCUR, &
- &        WSWAVE => FF_NOW%WSWAVE, &
- &        WDWAVE => FF_NOW%WDWAVE, &
- &        UFRIC => FF_NOW%UFRIC, &
- &        Z0M => FF_NOW%Z0M, &
- &        AIRD => FF_NOW%AIRD, &
- &        WSTAR => FF_NOW%WSTAR, &
- &        CICOVER => FF_NOW%CICOVER, &
- &        CITHICK => FF_NOW%CITHICK, &
- &        NEMOCICOVER => NEMO2WAM%NEMOCICOVER, &
- &        NEMOCITHICK => NEMO2WAM%NEMOCITHICK)
+
+       ZERO = ' '
+       CDTWIH = CDTWIS
+
+       LCLOSEWND=.FALSE.
+       IF (LWCOU) THEN
+         LWNDFILE=.FALSE.
+       ELSE
+         LWNDFILE=.TRUE.
+       ENDIF
+
+       CDATEWL = CDTWIS
+       CALL GETWND (BLK2LOC,                               &
+     &              NXS, NXE, NYS, NYE, FIELDG,            &
+     &              WVENVI,                                &
+     &              FF_NOW,                                &
+     &              CDATEWL, LWNDFILE, LCLOSEWND, IREAD,   &
+     &              LWCUR, NEMO2WAM,                       &
+     &              ICODE_WND)
 
 
-      ZERO = ' '
-      CDTWIH = CDTWIS
+       CALL GSTATS(1444,0)
+!$OMP  PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, KIJS, KIJL)
+       DO ICHNK = 1, NCHNK
+         KIJS=1
+         KIJL=NPROMA_WAM
+         CALL CDUSTARZ0 (KIJS, KIJL, FF_NOW%WSWAVE(:,ICHNK), XNLEV,            &
+     &                   CD(:,ICHNK), FF_NOW%UFRIC(:,ICHNK), FF_NOW%Z0M(:,ICHNK))
+       ENDDO
+!$OMP  END PARALLEL DO
+       CALL GSTATS(1444,1)
 
-      LCLOSEWND=.FALSE.
-      IF (LWCOU) THEN
-        LWNDFILE=.FALSE.
-      ELSE
-        LWNDFILE=.TRUE.
-      ENDIF
-
-      CDATEWL = CDTWIS
-      CALL GETWND (IFROMIJ, JFROMIJ,                      &
-     &             NXS, NXE, NYS, NYE, FIELDG,            &
-     &             UCUR, VCUR,                            &
-     &             WSWAVE, UFRIC,                         &
-     &             WDWAVE,                                &
-     &             AIRD, WSTAR,                           &
-     &             CICOVER, CITHICK,                      &
-     &             CDATEWL, LWNDFILE, LCLOSEWND, IREAD,   &
-     &             LWCUR, NEMOCICOVER, NEMOCITHICK,       & 
-     &             ICODE_WND)
-
-
-        CALL GSTATS(1444,0)
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, KIJS, KIJL)
-        DO ICHNK = 1, NCHNK
-          KIJS=1
-          KIJL=NPROMA_WAM
-          CALL CDUSTARZ0 (KIJS, KIJL, WSWAVE(:,ICHNK), XNLEV,            &
-     &                    CD(:,ICHNK), UFRIC(:,ICHNK), Z0M(:,ICHNK))
-        ENDDO
-!$OMP   END PARALLEL DO
-        CALL GSTATS(1444,1)
-
-      IF (CDATEWL == CDTWIE) THEN
-        LLMORE = .FALSE.
-      ELSE
-        CALL INCDATE (CDTWIS, IDELWO)
-        LLMORE = .TRUE.
-      ENDIF
-
-END ASSOCIATE
+       IF (CDATEWL == CDTWIE) THEN
+         LLMORE = .FALSE.
+       ELSE
+         CALL INCDATE (CDTWIS, IDELWO)
+         LLMORE = .TRUE.
+       ENDIF
 
 IF (LHOOK) CALL DR_HOOK('GETFRSTWND',1,ZHOOK_HANDLE)
 

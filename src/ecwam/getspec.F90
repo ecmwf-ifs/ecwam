@@ -104,9 +104,9 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 #include "readfl.intfb.h"
 
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(OUT) :: FL1
-      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN)                          :: BLK2GLO
-      TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)              :: BLK2LOC
-      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)            :: WVENVI
+      TYPE(WVGRIDGLO), INTENT(IN)                                            :: BLK2GLO
+      TYPE(WVGRIDLOC), INTENT(IN)                                            :: BLK2LOC
+      TYPE(ENVIRONMENT), INTENT(IN)                                          :: WVENVI
       INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN)                       :: NBLKS, NBLKE
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
 
@@ -143,7 +143,7 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: ZRECVBUF
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:) :: RFL
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: FIELD
-      TYPE(FORCING_FIELDS), ALLOCATABLE, DIMENSION(:,:) :: FIELDG
+      TYPE(FORCING_FIELDS) :: FIELDG
 
       CHARACTER(LEN= 14) :: CDATE 
       CHARACTER(LEN=296) :: FILENAME
@@ -156,10 +156,6 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
-
-ASSOCIATE(IXLG => BLK2GLO%IXLG, &
- &        KXLT => BLK2GLO%KXLT, &
- &        EMAXDPT  => WVENVI%EMAXDPT)
 
       LFRSDECODE=.TRUE.
 
@@ -245,7 +241,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 
         LLINIALL = .FALSE.
         LLOCAL = .FALSE.
-        ALLOCATE(FIELDG(NXFFS:NXFFE,NYFFS:NYFFE))
+        CALL FIELDG%ALLOC(NXFFS, NYFFS, NXFFE, NYFFE)
         CALL INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,         &
      &                   NXFFS, NXFFE, NYFFS, NYFFE, FIELDG)
 
@@ -413,7 +409,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
      &                         LLUNSTR,                                    &
      &                         NGY, IRGG, NLONRGG_LOC,                     &
      &                         NXFFS, NXFFE, NYFFS, NYFFE,                 &
-     &                         FIELDG%XLON, FIELDG%YLAT,                   &
+     &                         FIELDG,                                     &
      &                         ZMISS, PPREC, PPEPS,                        &
      &                         CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
 
@@ -462,8 +458,8 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA_WAM-1, NIBLO)
                 DO IJ = KIJS, KIJL
-                  IX = IXLG(IJ)
-                  IY = NGY- KXLT(IJ) +1
+                  IX = BLK2GLO%IXLG(IJ)
+                  IY = NGY- BLK2GLO%KXLT(IJ) +1
                   WORK(IJ) = FIELD(IX,IY)
                 ENDDO
               ENDDO
@@ -650,7 +646,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 
         ENDDO ALL_FILE
 
-        DEALLOCATE(FIELDG)
+        CALL FIELDG%DEALLOC()
 
         IF (IRANK == IREAD) THEN
           CALL IGRIB_CLOSE_FILE(KFILE_HANDLE)
@@ -672,7 +668,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
             ENDDO
           ENDDO
 
-          CALL SDEPTHLIM(1, NPROMA_WAM, EMAXDPT(:,ICHNK), FL1(:,:,:,ICHNK))
+          CALL SDEPTHLIM(1, NPROMA_WAM, WVENVI%EMAXDPT(:,ICHNK), FL1(:,:,:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
 
@@ -782,7 +778,6 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
       WRITE(IU06,*) ' '
       CALL FLUSH (IU06)
 
-END ASSOCIATE
 IF (LHOOK) CALL DR_HOOK('GETSPEC',1,ZHOOK_HANDLE)
 
 END SUBROUTINE GETSPEC

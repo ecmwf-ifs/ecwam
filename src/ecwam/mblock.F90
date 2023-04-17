@@ -73,12 +73,12 @@
 
 
       ALLOCATE(DEPTH_INPUT(NIBLO))
-      ALLOCATE(BLK2GLO(NIBLO))
+      CALL BLK2GLO%ALLOC(NIBLO)
 
       DO IJ=1,NIBLO
         DEPTH_INPUT(IJ) = 0.0_JWRB
-        BLK2GLO(IJ)%IXLG = 0
-        BLK2GLO(IJ)%KXLT = 0
+        BLK2GLO%IXLG(IJ) = 0
+        BLK2GLO%KXLT(IJ) = 0
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -132,8 +132,8 @@
           IF (BATHY(I,K) > -990.0_JWRB) THEN
             IP = IP+1
             DEPTH_INPUT(IP) = BATHY(I,K)
-            BLK2GLO(IP)%IXLG = I
-            BLK2GLO(IP)%KXLT = K
+            BLK2GLO%IXLG(IP) = I
+            BLK2GLO%KXLT(IP) = K
           ENDIF
         ENDDO
       ENDDO

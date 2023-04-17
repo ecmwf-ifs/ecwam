@@ -81,7 +81,7 @@
       CHARACTER(LEN=14), INTENT(OUT) :: CDATE
       INTEGER(KIND=JWIM), INTENT(OUT) :: IPARAM, KZLEV
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
-      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(IN) :: FIELDG
+      TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
       REAL(KIND=JWRB), INTENT(OUT) :: FIELD(NXS:NXE, NYS:NYE)
 
 
@@ -202,7 +202,7 @@
      &                 LLUNSTR,                                         &
      &                 NGY, IRGG, NLONRGG_LOC,                          &
      &                 NXS, NXE, NYS, NYE,                              &
-     &                 FIELDG%XLON, FIELDG%YLAT,                        &
+     &                 FIELDG,                                          &
      &                 ZMISS, PPREC, PPEPS,                             &
      &                 CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
 

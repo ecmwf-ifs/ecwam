@@ -10,9 +10,16 @@
       SUBROUTINE WDFLUXES (KIJS, KIJL,                 &
      &                     MIJ,                        &
      &                     FL1, XLLWS,                 &
-     &                     WVPRPT,                     &
-     &                     WVENVI, FF_NOW,             &
-     &                     INTFLDS, WAM2NEMO)
+     &                     WAVNUM,CINV,XK2CG,STOKFAC,  &
+     &                     DEPTH, INDEP,        &
+     &                     AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR, &
+     &                     UFRIC, Z0M, Z0B, CHRNCK, CITHICK, &
+     &                     WSEMEAN, WSFMEAN, USTOKES, VSTOKES, STRNMS, &
+     &                     TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, PHIOCD, &
+     &                     PHIEPS, PHIAW, &
+     &                     NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN, &
+     &                     NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
+     &                     NEMOTAUY, NEMOWSWAVE, NEMOPHIF)
 
 ! ----------------------------------------------------------------------
 
@@ -46,7 +53,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU, JWRO
       USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN
 
@@ -73,11 +80,20 @@
       INTEGER(KIND=JWIM),  DIMENSION(KIJS:KIJL), INTENT(OUT) :: MIJ
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
-      TYPE(FREQUENCY), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WVPRPT
-      TYPE(ENVIRONMENT), DIMENSION(KIJS:KIJL), INTENT(IN) :: WVENVI
-      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW
-      TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
-      TYPE(WAVE2OCEAN), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WAM2NEMO
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: WAVNUM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: CINV
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: XK2CG
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: STOKFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: INDEP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: UFRIC, Z0M, Z0B, CHRNCK, CITHICK
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: PHIOCD, PHIEPS, PHIAW, USTOKES, VSTOKES
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSEMEAN, WSFMEAN, STRNMS
+      REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN
+      REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX
+      REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: NEMOTAUY, NEMOWSWAVE, NEMOPHIF
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
 
@@ -105,24 +121,6 @@
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
-
-ASSOCIATE(DEPTH => WVENVI%DEPTH, &
- &        INDEP => WVENVI%INDEP, &
- &        WAVNUM => WVPRPT%WAVNUM, &
- &        CINV => WVPRPT%CINV, &
- &        XK2CG => WVPRPT%XK2CG, &
- &        STOKFAC => WVPRPT%STOKFAC, &
- &        WSWAVE => FF_NOW%WSWAVE, &
- &        WDWAVE => FF_NOW%WDWAVE, &
- &        UFRIC => FF_NOW%UFRIC, &
- &        Z0M => FF_NOW%Z0M, &
- &        Z0B => FF_NOW%Z0B, &
- &        CHRNCK => FF_NOW%CHRNCK, &
- &        AIRD => FF_NOW%AIRD, &
- &        WSTAR => FF_NOW%WSTAR, &
- &        CICOVER => FF_NOW%CICOVER, &
- &        WSEMEAN => INTFLDS%WSEMEAN, &
- &        WSFMEAN => INTFLDS%WSFMEAN)
 
 !*    1. INITIALISATION.
 !        ---------------
@@ -159,7 +157,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                              &
      &             LUPDTUS,                                               &
      &             FL1,                                                   &
-     &             WAVNUM, CINV, XK2CG,                                   &
+     &             WAVNUM, CINV, XK2CG,              &
      &             WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER,           &
      &             COSWDIF, SINWDIF2,                                     &
      &             FMEAN, HALP, FMEANWS,                                  &
@@ -170,19 +168,23 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       IF (LCFLX) THEN
 
-        CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,    &
-     &                INDEP, WAVNUM, XK2CG,        &
-     &                EMEAN, F1MEAN, XKMEAN,       &
+        CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,                 &
+     &                INDEP, WAVNUM, XK2CG,&
+     &                EMEAN, F1MEAN, XKMEAN,                    &
      &                UFRIC, COSWDIF, RAORW) 
 
         IF (.NOT. LWVFLX_SNL) THEN
           CALL WNFLUXES (KIJS, KIJL,                        &
      &                   MIJ, RHOWGDFTH,                    &
-     &                   CINV,                              &
+     &                   CINV,                       &
      &                   SL, CICOVER,                       &
      &                   PHIWA,                             &
      &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
-     &                   UFRIC, AIRD, INTFLDS, WAM2NEMO,    &
+     &                   UFRIC, AIRD, &
+     &                   NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
+     &                   NEMOTAUY, NEMOWSWAVE, NEMOPHIF, &
+     &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, &
+     &                   PHIOCD, PHIEPS, PHIAW, &
      &                  .FALSE.)
         ENDIF
 
@@ -191,11 +193,15 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
         IF (LWVFLX_SNL) THEN
           CALL WNFLUXES (KIJS, KIJL,                        &
      &                   MIJ, RHOWGDFTH,                    &
-     &                   CINV,                              &
+     &                   CINV,                       &
      &                   SL, CICOVER,                       &
      &                   PHIWA,                             &
      &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
-     &                   UFRIC, AIRD, INTFLDS, WAM2NEMO,    &
+     &                   UFRIC, AIRD,   &
+     &                   NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
+     &                   NEMOTAUY, NEMOWSWAVE, NEMOPHIF, &
+     &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, &
+     &                   PHIOCD, PHIEPS, PHIAW, &
      &                  .FALSE.)
         ENDIF
 
@@ -213,12 +219,11 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
           ENDDO
         ENDIF
 
-        CALL STOKESTRN(KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, FF_NOW, INTFLDS, WAM2NEMO)
+        CALL STOKESTRN(KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, WSWAVE, WDWAVE, CICOVER, CITHICK, &
+&                      USTOKES, VSTOKES, STRNMS, NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN)
 
       ENDIF
 ! ----------------------------------------------------------------------
-END ASSOCIATE
 IF (LHOOK) CALL DR_HOOK('WDFLUXES',1,ZHOOK_HANDLE)
 
 END SUBROUTINE WDFLUXES
-

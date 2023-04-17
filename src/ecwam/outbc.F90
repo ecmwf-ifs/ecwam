@@ -56,7 +56,7 @@ SUBROUTINE OUTBC (FL1, BLK2GLO, IU19)
 #include "sthq.intfb.h"
 
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL1
-      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN)                         :: BLK2GLO
+      TYPE(WVGRIDGLO), INTENT(IN)                         :: BLK2GLO
       INTEGER(KIND=JWIM),DIMENSION(GBOUNC), INTENT(IN) :: IU19
 
 
@@ -102,8 +102,8 @@ SUBROUTINE OUTBC (FL1, BLK2GLO, IU19)
             ELSE
               IJ = IJ2NEWIJ(IJARC(NGOU))
             ENDIF
-            IX = BLK2GLO(IJ)%IXLG 
-            KX = BLK2GLO(IJ)%KXLT 
+            IX = BLK2GLO%IXLG(IJ)
+            KX = BLK2GLO%KXLT(IJ)
             XLON = AMOWEP + REAL(IX-1)*ZDELLO(KX)
             XLAT = AMOSOP + REAL(KX-1)*XDELLA
 

@@ -65,12 +65,12 @@ SUBROUTINE OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
 #include "setice.intfb.h"
 #include "wdfluxes.intfb.h"
 
-      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)           :: WVENVI
-      TYPE(FREQUENCY), DIMENSION(NPROMA_WAM, NFRE, NCHNK), INTENT(INOUT)       :: WVPRPT
-      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)        :: FF_NOW
-      TYPE(INTGT_PARAM_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)    :: INTFLDS
-      TYPE(WAVE2OCEAN), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)            :: WAM2NEMO
-      TYPE(OCEAN2WAVE), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)               :: NEMO2WAM
+      TYPE(ENVIRONMENT), INTENT(INOUT)                                         :: WVENVI
+      TYPE(FREQUENCY), INTENT(INOUT)                                           :: WVPRPT
+      TYPE(FORCING_FIELDS), INTENT(INOUT)                                      :: FF_NOW
+      TYPE(INTGT_PARAM_FIELDS), INTENT(INOUT)                                  :: INTFLDS
+      TYPE(WAVE2OCEAN), INTENT(INOUT)                                          :: WAM2NEMO
+      TYPE(OCEAN2WAVE), INTENT(IN)                                             :: NEMO2WAM
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
 
 
@@ -92,10 +92,6 @@ SUBROUTINE OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
 
 IF (LHOOK) CALL DR_HOOK('OUTSTEP0',0,ZHOOK_HANDLE)
 
-ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
- &        WDWAVE => FF_NOW%WDWAVE, &
- &        CICOVER => FF_NOW%CICOVER)
-
 
       LLFLUSH = .FALSE.
       LRSTST0=.FALSE.
@@ -113,9 +109,21 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
           CALL WDFLUXES (1, NPROMA_WAM,                          &
      &                   MIJ(:,ICHNK),                           &
      &                   FL1(:,:,:,ICHNK), XLLWS(:,:,:,ICHNK),   &
-     &                   WVPRPT(:,:,ICHNK),                      &
-     &                   WVENVI(:,ICHNK), FF_NOW(:,ICHNK),       &
-     &                   INTFLDS(:,ICHNK), WAM2NEMO(:,ICHNK) )
+     &                   WVPRPT%WAVNUM(:,:,ICHNK),WVPRPT%CINV(:,:,ICHNK), &
+     &                   WVPRPT%XK2CG(:,:,ICHNK),WVPRPT%STOKFAC(:,:,ICHNK), &
+     &                   WVENVI%DEPTH(:,ICHNK), WVENVI%INDEP(:,ICHNK), FF_NOW%AIRD(:,ICHNK), &
+     &                   FF_NOW%WDWAVE(:,ICHNK), FF_NOW%CICOVER(:,ICHNK), FF_NOW%WSWAVE(:,ICHNK), &
+     &                   FF_NOW%WSTAR(:,ICHNK), FF_NOW%UFRIC(:,ICHNK), FF_NOW%Z0M(:,ICHNK), &
+     &                   FF_NOW%Z0B(:,ICHNK), FF_NOW%CHRNCK(:,ICHNK), FF_NOW%CITHICK(:,ICHNK), &
+     &                   INTFLDS%WSEMEAN(:,ICHNK), INTFLDS%WSFMEAN(:,ICHNK), &
+     &                   INTFLDS%USTOKES(:,ICHNK), INTFLDS%VSTOKES(:,ICHNK), INTFLDS%STRNMS(:,ICHNK), &
+     &                   INTFLDS%TAUXD(:,ICHNK), INTFLDS%TAUYD(:,ICHNK), INTFLDS%TAUOCXD(:,ICHNK), &
+     &                   INTFLDS%TAUOCYD(:,ICHNK), INTFLDS%TAUOC(:,ICHNK), INTFLDS%PHIOCD(:,ICHNK), &
+     &                   INTFLDS%PHIEPS(:,ICHNK), INTFLDS%PHIAW(:,ICHNK), &
+     &                   WAM2NEMO%NEMOUSTOKES(:,ICHNK), WAM2NEMO%NEMOVSTOKES(:,ICHNK), WAM2NEMO%NEMOSTRN(:,ICHNK), &
+     &                   WAM2NEMO%NPHIEPS(:,ICHNK), WAM2NEMO%NTAUOC(:,ICHNK), WAM2NEMO%NSWH(:,ICHNK), &
+     &                   WAM2NEMO%NMWP(:,ICHNK), WAM2NEMO%NEMOTAUX(:,ICHNK), WAM2NEMO%NEMOTAUY(:,ICHNK), &
+     &                   WAM2NEMO%NEMOWSWAVE(:,ICHNK), WAM2NEMO%NEMOPHIF(:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
 
@@ -143,11 +151,11 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, K, COSWDIF)
         DO ICHNK = 1, NCHNK
           DO K = 1, NANG
-            COSWDIF(:,K) = COS(TH(K)-WDWAVE(:,ICHNK))
+            COSWDIF(:,K) = COS(TH(K)-FF_NOW%WDWAVE(:,ICHNK))
           ENDDO
 
           CALL SETICE(1, NPROMA_WAM, FL1(:,:,:,ICHNK) ,                &
-     &                CICOVER(:, ICHNK), WSWAVE(:, ICHNK), COSWDIF)
+     &                FF_NOW%CICOVER(:,ICHNK), FF_NOW%WSWAVE(:,ICHNK), COSWDIF)
 
         ENDDO
 !$OMP   END PARALLEL DO
@@ -242,7 +250,6 @@ ASSOCIATE(WSWAVE => FF_NOW%WSWAVE, &
       ENDIF
 
 
-END ASSOCIATE
 IF (LHOOK) CALL DR_HOOK('OUTSTEP0',1,ZHOOK_HANDLE)
 
 END SUBROUTINE OUTSTEP0

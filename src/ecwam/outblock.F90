@@ -9,9 +9,14 @@
 
 SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
  &                   FL1, XLLWS,                     & 
- &                   WVPRPT,                         &
- &                   WVENVI, FF_NOW, INTFLDS,        &
- &                   NEMO2WAM,                       &
+ &                   WAVNUM, CINV, CGROUP,           &
+ &                   DEPTH, UCUR, VCUR, IODP,        &
+ &                   ALTWH, CALTWH, RALTCOR, USTOKES, VSTOKES, STRNMS, &
+ &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, PHIOCD, &
+ &                   PHIEPS, PHIAW, &
+ &                   AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR, &
+ &                   UFRIC, TAUW, Z0M, Z0B, CHRNCK, CITHICK, &
+ &                   NEMOSST, NEMOCICOVER, NEMOCITHICK, NEMOUCUR, NEMOVCUR, &
  &                   BOUT)
 
 ! ----------------------------------------------------------------------
@@ -44,7 +49,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
 !      *BOUT*    - OUTPUT PARAMETER BUFFER
 
 ! ----------------------------------------------------------------------
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU, JWRO
       USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, OCEAN2WAVE
 
@@ -89,11 +94,21 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: MIJ
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1, XLLWS
-      TYPE(FREQUENCY), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WVPRPT
-      TYPE(ENVIRONMENT), DIMENSION(KIJS:KIJL), INTENT(IN) :: WVENVI
-      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(IN) :: FF_NOW
-      TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(IN) :: INTFLDS 
-      TYPE(OCEAN2WAVE), DIMENSION(KIJS:KIJL), INTENT(IN) :: NEMO2WAM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: WAVNUM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: CINV
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: CGROUP
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UCUR
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: VCUR
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IODP
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, TAUW, Z0M, Z0B, CHRNCK, CITHICK
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: ALTWH, CALTWH, RALTCOR, USTOKES, VSTOKES, STRNMS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, PHIOCD
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: PHIEPS, PHIAW
+      REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(IN) :: NEMOSST, NEMOCICOVER, NEMOCITHICK, NEMOUCUR, NEMOVCUR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NIPRMOUT), INTENT(OUT) :: BOUT
 
 
@@ -133,44 +148,6 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
 
 IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 
-ASSOCIATE(DEPTH => WVENVI%DEPTH, &
- &        IODP => WVENVI%IODP, &
- &        UCUR => WVENVI%UCUR, &
- &        VCUR => WVENVI%VCUR, &
- &        WAVNUM => WVPRPT%WAVNUM, &
- &        CINV => WVPRPT%CINV, &
- &        CGROUP => WVPRPT%CGROUP, &
- &        WSWAVE => FF_NOW%WSWAVE, &
- &        WDWAVE => FF_NOW%WDWAVE, &
- &        UFRIC => FF_NOW%UFRIC, &
- &        Z0M => FF_NOW%Z0M, &
- &        Z0B => FF_NOW%Z0B, &
- &        CHRNCK => FF_NOW%CHRNCK, &
- &        TAUW => FF_NOW%TAUW, &
- &        AIRD => FF_NOW%AIRD, &
- &        WSTAR => FF_NOW%WSTAR, &
- &        CICOVER => FF_NOW%CICOVER, &
- &        CITHICK => FF_NOW%CITHICK, &
- &        ALTWH   => INTFLDS%ALTWH  , &
- &        CALTWH  => INTFLDS%CALTWH , &
- &        RALTCOR => INTFLDS%RALTCOR, &
- &        USTOKES => INTFLDS%USTOKES, &
- &        VSTOKES => INTFLDS%VSTOKES, &
- &        STRNMS  => INTFLDS%STRNMS,  &
- &        PHIEPS  => INTFLDS%PHIEPS,  &
- &        PHIAW   => INTFLDS%PHIAW,   &
- &        TAUOC   => INTFLDS%TAUOC,   &
- &        TAUXD   => INTFLDS%TAUXD,   &
- &        TAUYD   => INTFLDS%TAUYD,   &
- &        TAUOCXD => INTFLDS%TAUOCXD, &
- &        TAUOCYD => INTFLDS%TAUOCYD, &
- &        PHIOCD  => INTFLDS%PHIOCD, &
- &        NEMOSST => NEMO2WAM%NEMOSST, &
- &        NEMOCICOVER => NEMO2WAM%NEMOCICOVER, &
- &        NEMOCITHICK => NEMO2WAM%NEMOCITHICK, &
- &        NEMOUCUR => NEMO2WAM%NEMOUCUR, &
- &        NEMOVCUR => NEMO2WAM%NEMOVCUR)
-
 !
 !*    1. COMPUTE MEAN PARAMETERS.
 !        ------------------------
@@ -204,7 +181,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       CALL DOMINANT_PERIOD (KIJS, KIJL, FL1, DP)
 
       CALL KURTOSIS(KIJS, KIJL, FL1,                          &
-     &              DEPTH,                                    &
+     &              DEPTH,                             &
      &              C3, C4, BF, QP, HMAX, TMAX,               &
      &              ETA_M, R, XNSLC, SIG_TH, EPS, XNU)
 
@@ -213,8 +190,8 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !!     &             CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST)
 
 !     WIND/SWELL PARAMETERS
-      CALL SEPWISW (KIJS, KIJL, MIJ, FL1, XLLWS, CINV,                    &
-     &              UFRIC, WSWAVE, WDWAVE, COSWDIF,                       &
+      CALL SEPWISW (KIJS, KIJL, MIJ, FL1, XLLWS, CINV,             &
+     &              UFRIC, WSWAVE, WDWAVE, COSWDIF,  &
      &              ESWELL, FSWELL, THSWELL, P1SWELL, P2SWELL, SPRDSWELL, &
      &              ESEA, FSEA, THWISEA, P1SEA, P2SEA, SPRDSEA,           &
      &              EMTRAIN, THTRAIN, PMTRAIN)
@@ -559,7 +536,7 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0 .OR. IPFGTBL(IR+1) /= 0) THEN
-           CALL WEFLUX (KIJS, KIJL, FL1, CGROUP,           &
+           CALL WEFLUX (KIJS, KIJL, FL1, CGROUP,    &
      &                  NFRE, NANG, DFIM, DELTH,           &
      &                  COSTH, SINTH,                      &
      &                  FLD1, FLD2)
@@ -667,7 +644,6 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !     APPLY SEA ICE MASK AND SEA MASK IF NECESSARY
       CALL OUTSETWMASK (KIJS, KIJL, IODP(KIJS:KIJL), CICOVER, BOUT)
 
-END ASSOCIATE
 IF (LHOOK) CALL DR_HOOK('OUTBLOCK',1,ZHOOK_HANDLE)
 
 END SUBROUTINE OUTBLOCK

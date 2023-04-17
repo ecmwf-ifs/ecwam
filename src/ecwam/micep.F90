@@ -87,7 +87,7 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
       INTEGER(KIND=JWIM), INTENT(IN) :: IPARAM, KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
-      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(IN) :: FIELDG
+      TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(INOUT) :: CICVR, CITH
       REAL(KIND=JWRO), DIMENSION (KIJS:KIJL), INTENT(IN) :: NEMOCICOVER, NEMOCITHICK
 
@@ -117,19 +117,19 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
           DO IJ=KIJS,KIJL
             IX = IFROMIJ(IJ)
             IY = JFROMIJ(IJ)
-            IF (FIELDG(IX,IY)%LKFR <= 0.0_JWRB ) THEN
+            IF (FIELDG%LKFR(IX,IY) <= 0.0_JWRB ) THEN
 !            if lake cover = 0, we assume open ocean point, then get sea ice directly from NEMO 
               CICVR(IJ) = NEMOCICOVER(IJ)
             ELSE
 !            get ice information from atmopsheric model
-              IF (FIELDG(IX,IY)%CICOVER == ZMISS .OR.                   &
-     &            FIELDG(IX,IY)%CICOVER < 0.01_JWRB .OR.                &
-     &            FIELDG(IX,IY)%CICOVER > 1.01_JWRB ) THEN 
+              IF (FIELDG%CICOVER(IX,IY) == ZMISS .OR.                   &
+     &            FIELDG%CICOVER(IX,IY) < 0.01_JWRB .OR.                &
+     &            FIELDG%CICOVER(IX,IY) > 1.01_JWRB ) THEN
                 CICVR(IJ) = 0.0_JWRB
-              ELSEIF (FIELDG(IX,IY)%CICOVER > 0.95_JWRB) THEN 
+              ELSEIF (FIELDG%CICOVER(IX,IY) > 0.95_JWRB) THEN
                 CICVR(IJ) = 1.0_JWRB
               ELSE
-                CICVR(IJ) = FIELDG(IX,IY)%CICOVER 
+                CICVR(IJ) = FIELDG%CICOVER(IX,IY)
               ENDIF
             ENDIF
           ENDDO
@@ -144,21 +144,21 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
         DO IJ=KIJS,KIJL
           IX = IFROMIJ(IJ)
           IY = JFROMIJ(IJ)
-          IF (FIELDG(IX,IY)%CICOVER == ZMISS .OR.                       &
-     &        FIELDG(IX,IY)%CICOVER < 0.01_JWRB .OR.                    &
-     &        FIELDG(IX,IY)%CICOVER > 1.01_JWRB ) THEN 
+          IF (FIELDG%CICOVER(IX,IY) == ZMISS .OR.                       &
+     &        FIELDG%CICOVER(IX,IY) < 0.01_JWRB .OR.                    &
+     &        FIELDG%CICOVER(IX,IY) > 1.01_JWRB ) THEN
             CICVR(IJ) = 0.0_JWRB
-          ELSEIF (FIELDG(IX,IY)%CICOVER .GT. 0.95_JWRB) THEN 
+          ELSEIF (FIELDG%CICOVER(IX,IY) .GT. 0.95_JWRB) THEN
             CICVR(IJ) = 1.0_JWRB
           ELSE
-            CICVR(IJ) = FIELDG(IX,IY)%CICOVER 
+            CICVR(IJ) = FIELDG%CICOVER(IX,IY)
           ENDIF
         ENDDO
       ELSEIF (IPARAM == 139) THEN
         DO IJ=KIJS,KIJL
           IX = IFROMIJ(IJ)
           IY = JFROMIJ(IJ)
-          IF (FIELDG(IX,IY)%CICOVER < 271.5_JWRB) THEN
+          IF (FIELDG%CICOVER(IX,IY) < 271.5_JWRB) THEN
             CICVR(IJ) = 1.0_JWRB
           ELSE
             CICVR(IJ) = 0.0_JWRB
@@ -195,7 +195,7 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
           DO IJ=KIJS,KIJL
             IX = IFROMIJ(IJ)
             IY = JFROMIJ(IJ)
-            IF (FIELDG(IX,IY)%LKFR <= 0.0_JWRB ) THEN
+            IF (FIELDG%LKFR(IX,IY) <= 0.0_JWRB ) THEN
 !             if lake cover = 0, we assume open ocean point, then get sea ice thickness directly from NEMO 
               IF (LNEMOICEREST) THEN
                 CITH(IJ)=NEMOCITHICK(IJ)

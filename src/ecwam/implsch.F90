@@ -8,9 +8,16 @@
 !
 
 SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
- &                  WVPRPT,                                  &
- &                  WVENVI, FF_NOW,                          &
- &                  INTFLDS, WAM2NEMO,                       &
+ &                  WAVNUM, CGROUP, CIWA, CINV, XK2CG, STOKFAC, &
+ &                  EMAXDPT, INDEP, DEPTH, IOBND, IODP,      &
+ &                  AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR, &
+ &                  UFRIC, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, CITHICK, &
+ &                  NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN, &
+ &                  NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
+ &                  NEMOTAUY, NEMOWSWAVE, NEMOPHIF, &
+ &                  WSEMEAN, WSFMEAN, USTOKES, VSTOKES, STRNMS, &
+ &                  TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, PHIOCD, &
+ &                  PHIEPS, PHIAW, &
  &                  MIJ, XLLWS)
 
 ! ----------------------------------------------------------------------
@@ -69,7 +76,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
 ! ----------------------------------------------------------------------
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU, JWRO
       USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,   &
  &                             INTGT_PARAM_FIELDS, WAVE2OCEAN
 
@@ -104,11 +111,27 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
-      TYPE(FREQUENCY), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WVPRPT
-      TYPE(ENVIRONMENT), DIMENSION(KIJS:KIJL), INTENT(IN) :: WVENVI
-      TYPE(FORCING_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: FF_NOW 
-      TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
-      TYPE(WAVE2OCEAN), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WAM2NEMO
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: WAVNUM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: CGROUP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: CIWA
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: CINV
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: XK2CG
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: STOKFAC
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EMAXDPT
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: INDEP
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IODP
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IOBND
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: UFRIC, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, CITHICK
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSEMEAN, WSFMEAN, USTOKES, VSTOKES, STRNMS
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, PHIOCD
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: PHIEPS, PHIAW
+      REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN
+      REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX
+      REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: NEMOTAUY, NEMOWSWAVE, NEMOPHIF
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(OUT) :: MIJ
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
@@ -144,31 +167,6 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
-
-ASSOCIATE(DEPTH => WVENVI%DEPTH, &
- &        INDEP => WVENVI%INDEP, &
- &        IODP => WVENVI%IODP, &
- &        IOBND => WVENVI%IOBND, &
- &        EMAXDPT => WVENVI%EMAXDPT, &
- &        WAVNUM => WVPRPT%WAVNUM, &
- &        CINV => WVPRPT%CINV, &
- &        CGROUP => WVPRPT%CGROUP, &
- &        XK2CG => WVPRPT%XK2CG, &
- &        STOKFAC => WVPRPT%STOKFAC, &
- &        CIWA => WVPRPT%CIWA, &
- &        WSWAVE => FF_NOW%WSWAVE, &
- &        WDWAVE => FF_NOW%WDWAVE, &
- &        UFRIC => FF_NOW%UFRIC, &
- &        Z0M => FF_NOW%Z0M, &
- &        Z0B => FF_NOW%Z0B, &
- &        CHRNCK => FF_NOW%CHRNCK, &
- &        TAUW => FF_NOW%TAUW, &
- &        TAUWDIR => FF_NOW%TAUWDIR, &
- &        AIRD => FF_NOW%AIRD, &
- &        WSTAR => FF_NOW%WSTAR, &
- &        CICOVER => FF_NOW%CICOVER, &
- &        WSEMEAN => INTFLDS%WSEMEAN, &
- &        WSFMEAN => INTFLDS%WSFMEAN)
 
 
 !*    1. INITIALISATION.
@@ -254,12 +252,14 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
         CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                      &
      &               LUPDTUS,                                       &
      &               FL1,                                           &
-     &               WAVNUM, CINV, XK2CG,                           &
-     &               WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER,   &
+     &               WAVNUM, CINV, XK2CG,      &
+     &               WSWAVE, WDWAVE, AIRD,     &
+     &               RAORW, WSTAR, CICOVER,           &
      &               COSWDIF, SINWDIF2,                             &
      &               FMEAN, HALP, FMEANWS,                          &
      &               FLM,                                           &
-     &               UFRIC, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, PHIWA, &
+     &               UFRIC, TAUW, TAUWDIR,     &
+     &               Z0M, Z0B, CHRNCK, PHIWA,  &
      &               FLD, SL, SPOS,                                 &
      &               MIJ, RHOWGDFTH, XLLWS)
 
@@ -268,9 +268,9 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
 
-      CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,  &
-     &              INDEP, WAVNUM, XK2CG,      &
-     &              EMEAN, F1MEAN, XKMEAN,     &
+      CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,                 &
+     &              INDEP, WAVNUM, XK2CG,&
+     &              EMEAN, F1MEAN, XKMEAN,                    &
      &              UFRIC, COSWDIF, RAORW)
 
 !     Save source term contributions relevant for the calculation of ocean fluxes
@@ -361,11 +361,15 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
       IF (LCFLX) THEN
         CALL WNFLUXES (KIJS, KIJL,                              &
      &                 MIJ, RHOWGDFTH,                          &
-     &                 CINV,                                    &
-     &                 SSOURCE, CICOVER,                        &
+     &                 CINV,                             &
+     &                 SSOURCE, CICOVER,                 &
      &                 PHIWA,                                   &
-     &                 EMEAN, F1MEAN, WSWAVE, WDWAVE,           &
-     &                 UFRIC, AIRD, INTFLDS, WAM2NEMO,          &
+     &                 EMEAN, F1MEAN, WSWAVE,            &
+     &                 WDWAVE, UFRIC, AIRD,&
+     &                 NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
+     &                 NEMOTAUY, NEMOWSWAVE, NEMOPHIF, &
+     &                 TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, &
+     &                 PHIOCD, PHIEPS, PHIAW, &
      &                 .TRUE.)
       ENDIF
 ! ----------------------------------------------------------------------
@@ -408,10 +412,10 @@ ASSOCIATE(DEPTH => WVENVI%DEPTH, &
 !*    2.7 SURFACE STOKES DRIFT AND STRAIN IN SEA ICE
 !         ------------------------------------------
 
-      CALL STOKESTRN(KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, FF_NOW, INTFLDS, WAM2NEMO)
+      CALL STOKESTRN(KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, WSWAVE, WDWAVE, CICOVER, CITHICK, &
+ &                   USTOKES, VSTOKES, STRNMS, NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN)
 
 ! ----------------------------------------------------------------------
-END ASSOCIATE
 IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
 
 
