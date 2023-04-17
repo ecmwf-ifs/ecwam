@@ -202,7 +202,7 @@
      &                 LLUNSTR,                                         &
      &                 NGY, IRGG, NLONRGG_LOC,                          &
      &                 NXS, NXE, NYS, NYE,                              &
-     &                 FIELDG,                                          &
+     &                 FIELDG%XLON, FIELDG%YLAT,                        &
      &                 ZMISS, PPREC, PPEPS,                             &
      &                 CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
 

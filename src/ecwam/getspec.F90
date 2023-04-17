@@ -409,7 +409,7 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
      &                         LLUNSTR,                                    &
      &                         NGY, IRGG, NLONRGG_LOC,                     &
      &                         NXFFS, NXFFE, NYFFS, NYFFE,                 &
-     &                         FIELDG,                                     &
+     &                         FIELDG%XLON, FIELDG%YLAT,                   &
      &                         ZMISS, PPREC, PPEPS,                        &
      &                         CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
 

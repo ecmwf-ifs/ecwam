@@ -331,7 +331,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
      &                     LLUNSTR,                                     &
      &                     NGY, IRGG, NLONRGG_LOC,                      &
      &                     NXS, NXE, NYS, NYE,                          &
-     &                     FIELDG,                                      &
+     &                     FIELDG%XLON, FIELDG%YLAT,                    &
      &                     ZMISS, ZDUM, ZDUM,                           &
      &                     CDTWIR, IFORP, IPARAM, KZLEV, IDM, IDM, WORK)
 

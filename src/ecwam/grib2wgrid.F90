@@ -12,7 +12,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
      &                 LLUNSTR,                                     &
      &                 NGY, KRGG, KLONRGG_LOC,                      &
      &                 NXS, NXE, NYS, NYE,                          &
-     &                 FIELDG,                                      &
+     &                 XLON, YLAT,                                  &
      &                 PMISS, PPREC, PPEPS,                         &
      &                 CDATE, IFORP, IPARAM, KZLEV, KKK, MMM, FIELD)
 ! ----------------------------------------------------------------------    
@@ -101,7 +101,6 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
       USE YOWGRIB   ,ONLY : IGRIB_GET_VALUE, IGRIB_SET_VALUE, JPGRIB_SUCCESS
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE YOWDRVTYPE,ONLY : FORCING_FIELDS
                                                                         
 ! ----------------------------------------------------------------------
 
@@ -120,8 +119,8 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       INTEGER(KIND=JWIM), INTENT(OUT) :: IFORP, IPARAM, KZLEV, KKK, MMM
 
       REAL(KIND=JWRB), INTENT(IN) :: PMISS, PPREC, PPEPS
-      REAL(KIND=JWRB), DIMENSION(NXS:NXE, NYS:NYE), INTENT(OUT) :: FIELD
-      TYPE(FORCING_FIELDS) ,INTENT(IN) :: FIELDG
+      REAL(KIND=JWRB) ,DIMENSION(NXS:NXE, NYS:NYE), INTENT(IN) :: XLON, YLAT
+      REAL(KIND=JWRB) ,DIMENSION(NXS:NXE, NYS:NYE), INTENT(OUT) :: FIELD
 
       CHARACTER(LEN=14), INTENT(OUT) :: CDATE
 
@@ -203,22 +202,22 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       OUTDM: DO K = NYS, NYE
         JSN = NGY-K+1
         DO I = NXS, MIN(KLONRGG_LOC(JSN), NXE)
-          IF (FIELDG%YLAT(I,K) == PMISS .OR. FIELDG%XLON(I,K) == PMISS) CYCLE
-          PMOWEP=FIELDG%XLON(I,K)
-          PMOSOP=FIELDG%YLAT(I,K)
-          PMOEAP=FIELDG%XLON(I,K)
-          PMONOP=FIELDG%YLAT(I,K)
+          IF (YLAT(I,K) == PMISS .OR. XLON(I,K) == PMISS) CYCLE
+          PMOWEP=XLON(I,K)
+          PMOSOP=YLAT(I,K)
+          PMOEAP=XLON(I,K)
+          PMONOP=YLAT(I,K)
           EXIT OUTDM
         ENDDO
       ENDDO OUTDM
       DO K = NYS, NYE
         JSN = NGY-K+1
         DO I = NXS, MIN(KLONRGG_LOC(JSN), NXE)
-          IF (FIELDG%YLAT(I,K) == PMISS .OR. FIELDG%XLON(I,K) == PMISS) CYCLE
-          PMOWEP=MIN(PMOWEP,FIELDG%XLON(I,K))
-          PMOSOP=MIN(PMOSOP,FIELDG%YLAT(I,K))
-          PMOEAP=MAX(PMOEAP,FIELDG%XLON(I,K))
-          PMONOP=MAX(PMONOP,FIELDG%YLAT(I,K))
+          IF (YLAT(I,K) == PMISS .OR. XLON(I,K) == PMISS) CYCLE
+          PMOWEP=MIN(PMOWEP,XLON(I,K))
+          PMOSOP=MIN(PMOSOP,YLAT(I,K))
+          PMOEAP=MAX(PMOEAP,XLON(I,K))
+          PMONOP=MAX(PMONOP,YLAT(I,K))
         ENDDO
       ENDDO
 
@@ -875,11 +874,11 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
           DO I = NXS, MIN(KLONRGG_LOC(JSN), NXE)
 
 !           *** skip all missing points !
-            IF (FIELDG%YLAT(I,K) == PMISS .OR. FIELDG%XLON(I,K) == PMISS) CYCLE
+            IF (YLAT(I,K) == PMISS .OR. XLON(I,K) == PMISS) CYCLE 
 
             LLSKIP=.FALSE.
             IF (.NOT.LLOCEAN) THEN
-              XK = RMONOP - FIELDG%YLAT(I,K)
+              XK = RMONOP - YLAT(I,K) 
               XK = (XK/DELLA)+0.5_JWRB*(1.0_JWRB+SIGN(1.0_JWRB,XK))
               KK = MAX(KKMIN,INT(XK))
 
@@ -889,11 +888,11 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
               DK1=ABS(XK-REAL(KK))
               DK2=1.0_JWRB-DK1
 
-              XI = FIELDG%XLON(I,K) - RMOWEP
+              XI = XLON(I,K) - RMOWEP
 
             ELSE
               KK=1
-              XK = FIELDG%YLAT(I,K)
+              XK = YLAT(I,K)
               DO WHILE (RLAT(KK) > XK .AND. KK <= NR) 
                 KK=KK+1
               ENDDO
@@ -906,7 +905,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
               DK2=1.0_JWRB-DK1
 
               RMOWEP_KK=RMOWEP-0.5_JWRB*DELLO*ISTAG*MOD(KK,2)
-              XI = FIELDG%XLON(I,K) - RMOWEP_KK
+              XI = XLON(I,K) - RMOWEP_KK 
 
             ENDIF
 
@@ -928,7 +927,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
             IF (LLOCEAN) THEN
 !             when the grid is staggered RMOWEP_KK varies
               RMOWEP_KK=RMOWEP-0.5_JWRB*DELLO*ISTAG*MOD(KK1,2)
-              XI = FIELDG%XLON(I,K) - RMOWEP_KK
+              XI = XLON(I,K) - RMOWEP_KK 
             ENDIF
 
             KSN1LIM=MIN(MAX(KSN1,1),NR)
