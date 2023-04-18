@@ -54,6 +54,11 @@ ecbuild_add_option( FEATURE ECWAM_LAUNCH
                     DEFAULT ON
                     DESCRIPTION "Use share/ecwam/scripts/ecwam-launch script to run ecwam tests" )
 
+ecbuild_add_option( FEATURE FIELD_API
+                    DEFAULT ON
+                    DESCRIPTION "Build using field_api"
+                    REQUIRED_PACKAGES "field_api" )
+
 if( HAVE_ECWAM_LAUNCH )
   # Overwrite meaning of mpiexec
   set( ECWAM_LAUNCH ${CMAKE_CURRENT_SOURCE_DIR}/share/ecwam/scripts/ecwam-launch )
@@ -63,16 +68,14 @@ if( HAVE_ECWAM_LAUNCH )
   set( CMAKE_CROSSCOMPILING_EMULATOR ${ECWAM_LAUNCH} ) # For serial runs
 endif()
 
-ecbuild_add_option( FEATURE FIELD_API
-                    DEFAULT OFF
-                    DESCRIPTION "Build using field_api"
-                    REQUIRED_PACKAGES "field_api" )
 
 ### Optional dependencies
 
-if( HAVE_FIELD_API )
-   ecwam_find_python_mods()
-endif()
+ecwam_find_python_mods()
+ecbuild_add_option( FEATURE GEN_DERIV_TYPES
+                    DEFAULT ON
+                    DESCRIPTION "Generate derived-type data structures using fypp pre-processor"
+                    CONDITION FYPP_FOUND AND PYYAML_FOUND )
 
 ### Set third party libraries
 
