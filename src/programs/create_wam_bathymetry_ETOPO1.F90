@@ -537,8 +537,7 @@ PROGRAM CREATE_BATHY_ETOPO1
              ENDIF
            ENDDO
 
-!          IF 40% OR MORE LAND, THEN AVERAGE OVER LAND POINTS
-!          OR THE CENTER OF THE GRID BOX IS LAND.
+!          IF 60% OR MORE LAND OR THE CENTER OF THE GRID BOX IS LAND, THEN AVERAGE OVER LAND POINTS
 !          ELSE AVERAGE OVER SEA POINTS
            PERCENTLAND(IX,K)=REAL(NLAND,JWRB)/REAL((NLAND+NSEA),JWRB)
            IF(PERCENTLAND(IX,K).GT.0.60_JWRB .OR.                            &
@@ -688,8 +687,8 @@ PROGRAM CREATE_BATHY_ETOPO1
       ENDIF
 
 
-!     CREATE OBSTRUCTIONS:
-!     --------------------
+!     CREATE OBSTRUCTIONS COEFFICIENTS:
+!     --------------------------------
 
       ALLOCATE(IOBSLAT(NX,NY,2))
       ALLOCATE(IOBSLON(NX,NY,2))
@@ -699,8 +698,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       WRITE(1,'(I4)') NFRE_RED
 
-!     IREINF IS USED TO REINFORCE LAND OBSTRUCTIONS FOR
-!     SMALL GRID SPACING.
+!     IREINF IS USED TO REINFORCE LAND OBSTRUCTIONS FOR SMALL GRID SPACING.
+!     IT WORKS BY ARTIFICIALLY INCREASING THE NUMBER OF SUB GRID POINTS DETECTED AS LAND
       IF(XDELLA.LE.0.5_JWRB) THEN
         IREINF=2
       ELSE
@@ -717,6 +716,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       IOBSRLAT(:,:,:)=1000
       IOBSRLON(:,:,:)=1000
 
+!     LOOP OVER ALL FREQUENCIES
       DO M=1,NFRE_RED
 
 !!!!    COMPUTE THE OBSTRUCTIONS ONLY WHEN IT IS MEANINGFUL
@@ -741,11 +741,9 @@ PROGRAM CREATE_BATHY_ETOPO1
         ENDDO
 
 
-!       COMPUTE THE THRESHOLD AT WHICH THE WAVES
-!       ARE OBSTRUCTED BY THE BOTTOM,
-!       EXCEPT IF WAM DEPTH OF THE SAME ORDER OF MAGITUDE.
-!       ALSO COMPUTE THE DEPTH THAT IS CONSIDERED TO BE FULLY BLOCKING
-!       AS IF IT WAS LAND.
+!       COMPUTE THE THRESHOLD AT WHICH THE WAVES ARE PARTIALLY OBSTRUCTED BY THE BOTTOM (ITHRSHOLD),
+!       EXCEPT IF WAM DEPTH OF THE SAME ORDER OF MAGITUDE (.NOT. LLEXCLTHRSHOLD) .
+!       ALSO COMPUTE THE DEPTH THAT IS CONSIDERED TO BE FULLY BLOCKING AS IF IT WAS LAND (IBLOCKDPT).
         DO K=1,NY
           DO IX=1,NLONRGG(K)
             IF(WAMDEPTH(IX,K).LT.0.0_JWRB) THEN
@@ -764,6 +762,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 !       NORTH-SOUTH OBSTRUCTIONS
 !       -----------------------
+!       LOOP OVER ADEVECTION DIRECTIONS
 !       IS=1 is for the south-north advection
 !       IS=2 is for the north-south advection
         WRITE(IU06,*) 'CREATE NORTH-SOUTH OBSTRUCTIONS '
@@ -773,6 +772,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !$OMP& PRIVATE(XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND) &
 !$OMP& PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST) &
 !$OMP& PRIVATE(NTOTPTS)
+!         LOOP OVER MODEL LATITUDES
           DO K=1,NY
             IF(IS.EQ.1) THEN
               KT=K
@@ -785,6 +785,7 @@ PROGRAM CREATE_BATHY_ETOPO1
               STEPT=0._JWRB
               STEPB=RESOL
             ENDIF
+!           LATIDUNAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
             XLATT=XLAT(KT)+STEPT
             XLATB=XLAT(KB)+STEPB
             ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
@@ -793,8 +794,10 @@ PROGRAM CREATE_BATHY_ETOPO1
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
+!           LOOP OVER ALL MODEL POINTS FOR A GIVEN LATITUDE
             DO IX=1,NLONRGG(K)
               IF(WAMDEPTH(IX,K).LT.0.0_JWRB) THEN
+!               SEA POINT GRID BOX LATITUNAL EXTEND :
                 XLONL=AMOWEP + (REAL(IX-1,JWRB)-0.5_JWRB)*ZDELLO(K)
                 IF(XLONL.GT.180._JWRB) then
                   XLONL=XLONL-360._JWRB
@@ -804,39 +807,47 @@ PROGRAM CREATE_BATHY_ETOPO1
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
-
+!               LONGITUDINAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
                 ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
                 ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
 
+!               COMPUTE THE OBSTRUCTIONS:
+!               TALLY THE NUMBER OF SUB GRID POINTS THAT ARE POTENTIALLY BLOCKING WAVE PROPAGATION (NOBSTRCT)
                 NOBSTRCT=0
 
+!               AWAY FROM THE DATELINE
                 IF(ILONL.LE.ILONR) THEN
                   NBLOCKLAND=0
+!                 LOOP OVER SUBGRID LONGITUDE LINE:
                   DO I=ILONL,ILONR
                     NIOBSLON=0
                     LLAND=.FALSE.
                     LREALLAND=.FALSE.
+!                   SCAN EACH SUBGRID LATTUDE:
                     DO J=ILATT,ILATB
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K) ) THEN
-!                     IF LAND THEN THE FULL LONGITUDE IS BLOCKED
-!                     IF THERE IS A SWITCH BACK TO SEA OR VICE VERSA
-!                     (SEE BELOW)
-!                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
-!                     ------------------------------------------
+!                       IF THE LONGITUDE LINE CONTAINS ACTUAL LAND (> 0) THEN THE FULL LONGITUDE WILL BLOCK ONLY IF
+!                       THERE IS A SWITCH BACK TO DEPTH < IBLOCKDPT OR VICE VERSA (see below).
+!                       THIS IS TO AVOID CREATING OBSTRUCTION WHEN APPROACHING THE COASTLINE.
+!                       ELSE IF THE LINE CONTAINS PSEUDO LAND AS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K) (IBLOCKDPT is negative)
+!                       THEN THE FULL LINE WILL BLOCK IF THERE IS NOT TOO MUCH LAND (see below).
+!                       AGAIN THIS IS TO AVOID CREATING OBSTRUCTION WHEN APPROACHING THE COASTLINE.
+
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
-     &                        LLEXCLTHRSHOLD(IX,K))THEN
-!                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
-!                     GRID POINTS BLOCKS
-!                     ------------------------------------------
+
+                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.  LLEXCLTHRSHOLD(IX,K)) THEN
+!                       IF SEA ABOVE THE THRESHOLD THEN ONLY THAT SUBGRID POINT BLOCKS
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
 
+!                   REVISIT THE LINE IF ANY SUBGRID LAND WAS DETECTED
                     IF(LLAND) THEN
                       IF(LREALLAND) THEN
+!                       LINE CONTAINS ACTUAL LAND SUBGRID POINT(S)
+!                       SEARCH FOR A CHANGE SEA-LAND-SEA OR VICE VERSA.
                         LNSW=.TRUE.  
                         IF(IDEPTH(I,ILATT).GE.IBLOCKDPT(IX,K)) THEN
                           L1ST=.TRUE.
@@ -855,7 +866,9 @@ PROGRAM CREATE_BATHY_ETOPO1
                           ENDIF
                         ENDDO
                         IF(LNSW) NIOBSLON=ILATB-ILATT+1
-                      ELSE
+
+                      ELSE 
+!                       SPEUDO LAND
                         IF(PERCENTSHALLOW(IX,K).GT.PSHALLOWTRHS) THEN
 !                         mostly shallow, do not enhance obstruction
                           NIOBSLON=ILATB-ILATT+1
@@ -871,41 +884,44 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
-     &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
-                  IOBSLAT(IX,K,IS)=                                     &
-     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+!                 TOTAL NUMBER OF SUBGRID POINTS, INCLUDING THE ARTIFICIALLY ENHANCED BLOCKING LINE(S)
+                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1) + (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
+
+!                 WAVE COMPONENT WILL BE ATTENUATED BY THE RATIO OF ALL BLOCKING SUBGRID POINTS TO THE TOTAL NUMBER OF POINTS
+                  IOBSLAT(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+
+
+!               AT THE DATELINE, DEALING WITH THE PERIODICITY (simplified version)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
+
                   DO I=1,ILONR
                     NIOBSLON=0
                     DO J=ILATT,ILATB
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       LLEXCLTHRSHOLD(IX,K))THEN
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) )THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
+
                   DO I=ILONL,ILON
                     NIOBSLON=0
                     DO J=ILATT,ILATB
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       LLEXCLTHRSHOLD(IX,K))THEN
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) )THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  IOBSLAT(IX,K,IS)=                                     &
-     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  IOBSLAT(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000) 
                 ENDIF
 
               ENDIF
@@ -913,6 +929,7 @@ PROGRAM CREATE_BATHY_ETOPO1
           ENDDO
 !$OMP END PARALLEL DO
         ENDDO
+
 
 !       EAST-WEST OBSTRUCTIONS
 !       -----------------------
@@ -925,7 +942,9 @@ PROGRAM CREATE_BATHY_ETOPO1
 !$OMP& PRIVATE(XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND) &
 !$OMP& PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST) &
 !$OMP& PRIVATE(NTOTPTS)
+!         LOOP OVER MODEL LATITUDES
           DO K=1,NY
+!           LATIDUNAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
             XLATT=XLAT(K)+0.5_JWRB*XDELLA
             XLATB=XLAT(K)-0.5_JWRB*XDELLA
             ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
@@ -934,8 +953,10 @@ PROGRAM CREATE_BATHY_ETOPO1
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
+!           LOOP OVER ALL MODEL POINTS FOR A GIVEN LATITUDE
             DO IX=1,NLONRGG(K)
               IF(WAMDEPTH(IX,K).LT.0.0_JWRB) THEN
+!               SEA POINT GRID BOX LONGITUDINAL EXTEND :
                 IF(IS.EQ.1) THEN
                   XLONL=AMOWEP + (REAL(IX-2,JWRB))*ZDELLO(K)
                   XLONR=AMOWEP + (REAL(IX-1,JWRB))*ZDELLO(K) -RESOL
@@ -950,38 +971,48 @@ PROGRAM CREATE_BATHY_ETOPO1
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
+!               LONGITUDINAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
                 ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
                 ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
 
+!               COMPUTE THE OBSTRUCTIONS:
+!               TALLY THE NUMBER OF SUB GRID POINTS THAT ARE POTENTIALLY BLOCKING WAVE PROPAGATION (NOBSTRCT)
                 NOBSTRCT=0
 
+!               AWAY FROM THE DATELINE
                 IF(ILONL.LE.ILONR) THEN
                   NBLOCKLAND=0
+!                 LOOP OVER SUBGRID LATITUDE LINE:
                   DO J=ILATT,ILATB
                     NIOBSLAT=0
                     LLAND=.FALSE.
                     LREALLAND=.FALSE.
+
+!                   SCAN EACH SUBGRID LONGITUDE:
                     DO I=ILONL,ILONR
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K) ) THEN
-!                     IF LAND THEN THE FULL LONGITUDE IS BLOCKED
-!                     IF THERE IS A SWITCH BACK TO SEA OR VICE VERSA
-!                     (SEE BELOW)
-!                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
-!                     ------------------------------------------
+!                       IF THE LATITUDE LINE CONTAINS ACTUAL LAND (> 0) THEN THE FULL LONGITUDE WILL BLOCK ONLY IF
+!                       THERE IS A SWITCH BACK TO DEPTH < IBLOCKDPT OR VICE VERSA (see below).
+!                       THIS IS TO AVOID CREATING OBSTRUCTION WHEN APPROACHING THE COASTLINE.
+!                       ELSE IF THE LINE CONTAINS PSEUDO LAND AS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K) (IBLOCKDPT is negative)
+!                       THEN THE FULL LINE WILL BLOCK IF THERE IS NOT TOO MUCH LAND (see below).
+!                       AGAIN THIS IS TO AVOID CREATING OBSTRUCTION WHEN APPROACHING THE COASTLINE.
+
                         LLAND=.TRUE.
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
-     &                        LLEXCLTHRSHOLD(IX,K))THEN
-!                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
-!                     GRID POINTS BLOCKS
-!                     ------------------------------------------
+
+                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) ) THEN
+!                       IF SEA ABOVE THE THRESHOLD THEN ONLY THAT SUBGRID POINT BLOCKS
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
 
+!                   REVISIT THE LINE IF ANY SUBGRID LAND WAS DETECTED
                     IF(LLAND) THEN
                       IF(LREALLAND) THEN
+!                       LINE CONTAINS ACTUAL LAND SUBGRID POINT(S)
+!                       SEARCH FOR A CHANGE SEA-LAND-SEA OR VICE VERSA.
                         LNSW=.TRUE.  
                         IF(IDEPTH(ILONL,J).GE.IBLOCKDPT(IX,K) ) THEN
                           L1ST=.TRUE.
@@ -1000,7 +1031,9 @@ PROGRAM CREATE_BATHY_ETOPO1
                           ENDIF
                         ENDDO
                         IF(LNSW) NIOBSLAT=ILONR-ILONL+1
+
                       ELSE
+!                       SPEUDO LAND
                         IF(PERCENTSHALLOW(IX,K).GT.PSHALLOWTRHS) THEN
                           NIOBSLAT=ILONR-ILONL+1
                         ELSEIF(PERCENTLAND(IX,K).LT.PLANDTRHS) THEN
@@ -1015,10 +1048,14 @@ PROGRAM CREATE_BATHY_ETOPO1
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
 
-                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
-     &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
-                  IOBSLON(IX,K,IS)=                                     &
-     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+!                 TOTAL NUMBER OF SUBGRID POINTS, INCLUDING THE ARTIFICIALLY ENHANCED BLOCKING LINE(S)
+                  NTOTPTS = (ILATB-ILATT+1)*(ILONR-ILONL+1) + (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1) 
+
+!                 WAVE COMPONENT WILL BE ATTENUATED BY THE RATIO OF ALL BLOCKING SUBGRID POINTS TO THE TOTAL NUMBER OF POINTS
+                  IOBSLON(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000) 
+
+
+!               AT THE DATELINE, DEALING WITH THE PERIODICITY (simplified version)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -1027,8 +1064,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         GOTO 1111 
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       LLEXCLTHRSHOLD(IX,K))THEN
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) ) THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
@@ -1036,16 +1072,16 @@ PROGRAM CREATE_BATHY_ETOPO1
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       LLEXCLTHRSHOLD(IX,K))THEN
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) )THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
 1111                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  IOBSLON(IX,K,IS)=                                     &
-     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+
+                  IOBSLON(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+
                 ENDIF
 
               ENDIF
@@ -1055,7 +1091,7 @@ PROGRAM CREATE_BATHY_ETOPO1
         ENDDO
 
 
-!       NORTH-WEST-SOUTH-EAST OBSTRUCTIONS
+!       NORTH-WEST-SOUTH-EAST OBSTRUCTIONS (for IPROPAGS = 1)
 !       ----------------------------------
 !       IS=1 is for the southeast-northwest advection
 !       IS=2 is for the northwest-southeast advection
@@ -1348,7 +1384,7 @@ PROGRAM CREATE_BATHY_ETOPO1
         ENDDO
 
 
-!       SOUTH-WEST-NORTH-EAST OBSTRUCTIONS
+!       SOUTH-WEST-NORTH-EAST OBSTRUCTIONS (for IPROPAGS = 1)
 !       ----------------------------------
 !       IS=1 is for the southwest-northeast advection
 !       IS=2 is for the northeast-southwest advection
@@ -1641,7 +1677,7 @@ PROGRAM CREATE_BATHY_ETOPO1
         ENDDO
 
 
-!       GRID CORNER POINT OBSTRUCTIONS
+!       GRID CORNER POINT OBSTRUCTIONS (for IPROPAGS = 2)
 !       ------------------------------
 !       IS=1 is for the northeast-southwest advection
 !       IS=2 is for the southeast-northwest advection
