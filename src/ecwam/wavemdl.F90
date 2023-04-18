@@ -20,7 +20,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &              FRSTIME, NADV, PRPLRADI, PRPLRG,              &
      &              RNU_ATM, RNUM_ATM,                            &
      &              IDATE_TIME_WINDOW_END, NSTEP,                 &
-     &              LDIFS_IO_SERV_ENABLED )
+     &              LDIFS_IO_SERV_ENABLED, TIME1 )
 
 !****  *WAVEMDL* - SUPERVISES EXECUTION OF THE WAVE MODEL
 
@@ -235,6 +235,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       INTEGER(KIND=JWIM), INTENT(IN) :: NSTEP
 !     IFS IO SERVER ENABLED
       LOGICAL, INTENT(IN) :: LDIFS_IO_SERV_ENABLED
+
+      REAL(KIND=JWRB), INTENT(INOUT) :: TIME1(2)
 
       INTEGER(KIND=JWIM) :: IJ, I, J, K, ICPLEN,ICPLEN_ECF
       INTEGER(KIND=JWIM) :: KDELWI, IDURAT
@@ -614,7 +616,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       CALL WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,            &
      &              WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS, &
-     &              WAM2NEMO, NEMO2WAM, FL1)
+     &              WAM2NEMO, NEMO2WAM, FL1, TIME1)
 
 
 !*    2.2  DATA ASSIMILATION

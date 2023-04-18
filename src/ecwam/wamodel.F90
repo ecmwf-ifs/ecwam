@@ -9,7 +9,7 @@
 
 SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
  &                  WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,  &
- &                  WAM2NEMO, NEMO2WAM, FL1)
+ &                  WAM2NEMO, NEMO2WAM, FL1, TIME1)
 
 ! ----------------------------------------------------------------------
 
@@ -123,6 +123,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       TYPE(WAVE2OCEAN), INTENT(INOUT)                                          :: WAM2NEMO
       TYPE(OCEAN2WAVE), INTENT(IN)                                             :: NEMO2WAM
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
+
+      REAL(KIND=JWRB), INTENT(INOUT) :: TIME1(2)
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, J, IRA, KADV, ICH
@@ -251,7 +253,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
           CALL WAMINTGR (CDTPRA, CDATE, CDATEWH, CDTIMP, CDTIMPNEXT, &
  &                       BLK2GLO,                                    &
  &                       WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,   &
- &                       WAM2NEMO, MIJ, FL1, XLLWS)
+ &                       WAM2NEMO, MIJ, FL1, XLLWS, TIME1)
           ILOOP = ILOOP +1
         ENDDO
 
