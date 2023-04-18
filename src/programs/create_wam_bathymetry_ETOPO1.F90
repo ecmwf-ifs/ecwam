@@ -835,7 +835,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
-                        NIOBSLON=NIOBSLON+1 
+!                       CAN EXIT SEE IF(LLAND) BELOW
+                        EXIT
 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.  LLEXCLTHRSHOLD(IX,K)) THEN
 !                       IF SEA ABOVE THE THRESHOLD THEN ONLY THAT SUBGRID POINT BLOCKS
@@ -1000,7 +1001,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                         LLAND=.TRUE.
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
-                        NIOBSLAT=NIOBSLAT+1 
+!                       CAN EXIT SEE IF(LLAND) BELOW
+                        EXIT
 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) ) THEN
 !                       IF SEA ABOVE THE THRESHOLD THEN ONLY THAT SUBGRID POINT BLOCKS
@@ -1157,7 +1159,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 !                     ------------------------------------------
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
-                        NIOBSLON=NIOBSLON+1 
+!                       CAN EXIT SEE IF(LLAND) BELOW
+                        EXIT
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
@@ -1298,7 +1301,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 !                     ------------------------------------------
                         LLAND=.TRUE.
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
-                        NIOBSLAT=NIOBSLAT+1 
+!                       CAN EXIT SEE IF(LLAND) BELOW
+                        EXIT
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
@@ -1450,7 +1454,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 !                     ------------------------------------------
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
-                        NIOBSLON=NIOBSLON+1 
+!                       CAN EXIT SEE IF(LLAND) BELOW
+                        EXIT
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
@@ -1591,7 +1596,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 !                     ------------------------------------------
                         LLAND=.TRUE.
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
-                        NIOBSLAT=NIOBSLAT+1 
+!                       CAN EXIT SEE IF(LLAND) BELOW
+                        EXIT
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
@@ -1756,7 +1762,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 !                     ------------------------------------------
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
-                        NIOBSLON=NIOBSLON+1 
+!                       CAN EXIT SEE IF(LLAND) BELOW
+                        EXIT
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
@@ -1902,7 +1909,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 !                     ------------------------------------------
                         LLAND=.TRUE.
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
-                        NIOBSLAT=NIOBSLAT+1 
+!                       CAN EXIT SEE IF(LLAND) BELOW
+                        EXIT
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
