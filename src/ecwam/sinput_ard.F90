@@ -723,7 +723,7 @@ CONTAINS
       USE YOWCOUP  , ONLY : LLNORMAGAM
       USE YOWFRED  , ONLY : ZPIFR    ,DELTH    ,TH
       USE YOWFRED  , ONLY : FR       ,TH       , ZPIFR
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE, NANG_PARAM
       USE YOWPCONS , ONLY : G        ,GM1      ,ZPI  , EPSUS
       USE YOWPHYS  , ONLY : ZALP     ,XKAPPA, BETAMAXOXKAPPA2
       USE YOWSTAT  , ONLY : IDAMPING
@@ -756,23 +756,22 @@ CONTAINS
       REAL(KIND=JWRB) :: ZNZ
       REAL(KIND=JWRB) :: X, ZLOG, ZLOG2X, ZBETA
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NGST) :: WSIN
-      REAL(KIND=JWRB), DIMENSION(NFRE) :: CONST
+      REAL(KIND=JWRB) :: TEMPD
+
+      REAL(KIND=JWRB), DIMENSION(2) :: WSIN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ZTANHKD 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SIG_N
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CNSN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SUMF, SUMFSIN2 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CSTRNFAC
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: XNGAMCONST
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: SIGDEV ,US, Z0, UCN, ZCN
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: USTPM1
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: XVD, UCND, CONST3_UCN2
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: UFAC1, UFAC2
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: TEMPD
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NGST) :: GAM0
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: UFAC1, UFAC2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: SIGDEV ,US, Z0, UCN, ZCN
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: USTPM1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: XVD, UCND, CONST3_UCN2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2,NANG_PARAM) :: GAM0
 
-      LOGICAL, DIMENSION(KIJS:KIJL,NANG) :: LZ
+      LOGICAL :: LZ
 
 ! ----------------------------------------------------------------------
 
@@ -786,40 +785,10 @@ CONTAINS
 
       CONSTN = DELTH/(XKAPPA*ZPI)
 
-!*    1. PRECALCULATED ANGULAR DEPENDENCE.
-!        ---------------------------------
-
-      DO K=1,NANG
-        DO IJ=KIJS,KIJL
-          IF (COSWDIF(IJ,K) > 0.01_JWRB) THEN
-            LZ(IJ,K) = .TRUE.
-            TEMPD(IJ,K) = XKAPPA/COSWDIF(IJ,K)
-          ELSE
-            LZ(IJ,K) = .FALSE.
-            TEMPD(IJ,K) = XKAPPA 
-          ENDIF
-        ENDDO
-      ENDDO
-
-      IF (LLNORMAGAM) THEN
-        DO IJ=KIJS,KIJL
-          CSTRNFAC(IJ) = CONSTN * RNFAC(IJ) / RAORW(IJ)
-        ENDDO
-        DO M=1,NFRE
-          DO IJ=KIJS,KIJL
-            XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*XK2CG(IJ,M)
-          ENDDO
-        ENDDO
-
-      ELSE
-        XNGAMCONST(KIJS:KIJL,:) = 0.0_JWRB
-      ENDIF
-
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
       DO IJ=KIJS,KIJL
         IF (NGST > 1) CALL WSIGSTAR (WSWAVE(IJ), UFRIC(IJ), Z0M(IJ), WSTAR(IJ), SIG_N(IJ))
       ENDDO
-
 
 !     DEFINE WHERE SINPUT WILL BE EVALUATED IN RELATIVE TERM WRT USTAR
 !     DEFINE ALSO THE RELATIVE WEIGHT OF EACH.
@@ -829,23 +798,13 @@ CONTAINS
         DO IJ=KIJS,KIJL
           SIGDEV(IJ,1) = 1.0_JWRB
         ENDDO
-      ELSE IF (NGST == 2) THEN
+      ELSE
         WSIN(1) = 0.5_JWRB 
         WSIN(2) = 0.5_JWRB 
         DO IJ=KIJS,KIJL
           SIGDEV(IJ,1) = 1.0_JWRB-SIG_N(IJ)
           SIGDEV(IJ,2) = 1.0_JWRB+SIG_N(IJ)
         ENDDO
-      ELSE
-         WRITE (IU06,*) '**************************************'
-         WRITE (IU06,*) '*    FATAL ERROR                     *'
-         WRITE (IU06,*) '*    ===========                     *'
-         WRITE (IU06,*) '* IN SINPUT_JAN: NGST > 2            *'
-         WRITE (IU06,*) '* NGST = ', NGST
-         WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.  *'
-         WRITE (IU06,*) '*                                    *'
-         WRITE (IU06,*) '**************************************'
-         CALL ABORT1
       ENDIF
 
 
@@ -874,27 +833,14 @@ CONTAINS
 !*    2. LOOP OVER FREQUENCIES.
 !        ----------------------
 
-      IF ( .NOT. LLNORMAGAM) THEN
-        GAMNORMA(KIJS:KIJL,:) = 1.0_JWRB
-      ENDIF
-
-      IF ( .NOT. LLSNEG) THEN
-        UFAC2(KIJS:KIJL,:) = 0.0_JWRB
-      ENDIF
-
       DO M=1,NFRE
-
-        CONST(M)=ZPIFR(M)*CONST1
 
 !*      PRECALCULATE FREQUENCY DEPENDENCE.
 !       ----------------------------------
 
         DO IJ=KIJS,KIJL
           ZTANHKD(IJ) = ZPIFR(M)**2/(G*WAVNUM(IJ,M)) 
-        ENDDO
-
-        DO IJ=KIJS,KIJL
-          CNSN(IJ) = CONST(M)*ZTANHKD(IJ)*RAORW(IJ)
+          CNSN(IJ) = CONST1*ZPIFR(M)*ZTANHKD(IJ)*RAORW(IJ)
         ENDDO
 
         DO IGST=1,NGST
@@ -910,28 +856,33 @@ CONTAINS
 !*    2.1 LOOP OVER DIRECTIONS.
 !         ---------------------
 
+        DO IJ=KIJS,KIJL
+          XLLWS(IJ,K,M)= 0.0_JWRB
+        ENDDO
 
 !       WIND INPUT:
         DO K=1,NANG
 
-          DO IJ=KIJS,KIJL
-            XLLWS(IJ,K,M)= 0.0_JWRB
-          ENDDO
-
           DO IGST=1,NGST
             DO IJ=KIJS,KIJL
-              IF (LZ(IJ,K)) THEN
-                ZLOG = ZCN(IJ,IGST) + TEMPD(IJ,K)*UCND(IJ,IGST)
+
+              IF (COSWDIF(IJ,K) > 0.01_JWRB) THEN
+                LZ = .TRUE.
+                TEMPD = XKAPPA/COSWDIF(IJ,K)
+              ELSE
+                LZ = .FALSE.
+                TEMPD = XKAPPA 
+              ENDIF
+
+              GAM0(IJ,IGST,K) = 0.0_JWRB
+              IF (LZ) THEN
+                ZLOG = ZCN(IJ,IGST) + TEMPD*UCND(IJ,IGST)
                 IF (ZLOG < 0.0_JWRB) THEN
                   X=COSWDIF(IJ,K)*UCN(IJ,IGST)
                   ZLOG2X=ZLOG*ZLOG*X
-                  GAM0(IJ,K,IGST) = ZLOG2X*ZLOG2X*EXP(ZLOG) * CNSN(IJ)
+                  GAM0(IJ,IGST,K) = ZLOG2X*ZLOG2X*EXP(ZLOG) * CNSN(IJ)
                   XLLWS(IJ,K,M)= 1.0_JWRB
-                ELSE
-                  GAM0(IJ,K,IGST) = 0.0_JWRB
                 ENDIF
-              ELSE
-                GAM0(IJ,K,IGST) = 0.0_JWRB
               ENDIF
             ENDDO
           ENDDO
@@ -947,60 +898,58 @@ CONTAINS
             SUMFSIN2(KIJS:KIJL) = 0.0_JWRB
             DO K=1,NANG
               DO IJ=KIJS,KIJL
-                SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)
-                SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SINWDIF2(IJ,K)
+                SUMF(IJ) = SUMF(IJ) + GAM0(IJ,IGST,K)*FL1(IJ,K,M)
+                SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,IGST,K)*FL1(IJ,K,M)*SINWDIF2(IJ,K)
               ENDDO
             ENDDO
 
             DO IJ=KIJS,KIJL
-              ZNZ = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)
+              CSTRNFAC(IJ) = CONSTN * RNFAC(IJ) / RAORW(IJ)
+              ZNZ = CSTRNFAC(IJ)*XK2CG(IJ,M)*USTPM1(IJ,IGST)
               GAMNORMA(IJ,IGST) = (1.0_JWRB + ZNZ*SUMFSIN2(IJ)) / (1.0_JWRB + ZNZ*SUMF(IJ))
             ENDDO
 
           ENDDO
-
+        ELSE
+          DO IGST=1,NGST
+            GAMNORMA(KIJS:KIJL,IGST) = 1.0_JWRB
+          ENDDO
         ENDIF
-
 
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            UFAC1(IJ,K) = WSIN(1)*GAM0(IJ,K,1)*GAMNORMA(IJ,1)
+            UFAC1(IJ) = WSIN(1)*GAM0(IJ,1,K)*GAMNORMA(IJ,1)
           ENDDO
           DO IGST=2,NGST
             DO IJ=KIJS,KIJL
-              UFAC1(IJ,K) = UFAC1(IJ,K) + WSIN(IGST)*GAM0(IJ,K,IGST)*GAMNORMA(IJ,IGST)
+              UFAC1(IJ) = UFAC1(IJ) + WSIN(IGST)*GAM0(IJ,IGST,K)*GAMNORMA(IJ,IGST)
             ENDDO
           ENDDO
-        ENDDO
 
-        IF (LLSNEG) THEN
+          UFAC2(KIJS:KIJL) = 0.0_JWRB
+          IF (LLSNEG) THEN
 !         SWELL DAMPING:
-          DO K=1,NANG
-            DO IGST=1,1
-              DO IJ=KIJS,KIJL
-                ZBETA = CONST3_UCN2(IJ,IGST)*(COSWDIF(IJ,K)-XVD(IJ,IGST))
-                UFAC2(IJ,K) = WSIN(IGST)*ZBETA
-              ENDDO
+            DO IJ=KIJS,KIJL
+              ZBETA = CONST3_UCN2(IJ,1)*(COSWDIF(IJ,K)-XVD(IJ,1))
+              UFAC2(IJ) = WSIN(1)*ZBETA
             ENDDO
             DO IGST=2,NGST
               DO IJ=KIJS,KIJL
                 ZBETA = CONST3_UCN2(IJ,IGST)*(COSWDIF(IJ,K)-XVD(IJ,IGST))
-                UFAC2(IJ,K) = UFAC2(IJ,K)+WSIN(IGST)*ZBETA
+                UFAC2(IJ) = UFAC2(IJ)+WSIN(IGST)*ZBETA
               ENDDO
             ENDDO
-          ENDDO
-        ENDIF
+          ENDIF
 
-!*    2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
-!         ------------------------------------------------
-
-        DO K=1,NANG
           DO IJ=KIJS,KIJL
-            FLD(IJ,K,M) = UFAC1(IJ,K) + UFAC2(IJ,K)*CNSN(IJ)
-            SPOS(IJ,K,M) = UFAC1(IJ,K)*FL1(IJ,K,M)
+            FLD(IJ,K,M) = UFAC1(IJ) + UFAC2(IJ)*CNSN(IJ)
+            SPOS(IJ,K,M) = UFAC1(IJ)*FL1(IJ,K,M)
             SL(IJ,K,M) = FLD(IJ,K,M)*FL1(IJ,K,M)
           ENDDO
         ENDDO
+
+!*    2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
+!         ------------------------------------------------
 
       ENDDO
 
