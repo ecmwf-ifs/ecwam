@@ -104,16 +104,17 @@
       LOGICAL, INTENT(IN) :: LLPHIWA
 
 
-      INTEGER(KIND=JWIM) :: IJ, M, K, I, J, II
+      INTEGER(KIND=JWIM) :: IJ, M, K, I, J, II, MAXIJ
 
       REAL(KIND=JWRB) :: TAUTOUS2
       REAL(KIND=JWRB) :: COSW, FCOSW2
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XSTRESS, YSTRESS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TAUHF, PHIHF
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: USDIRP, UST
+
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CMRHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: US2, TAUX, TAUY, TAUPX, TAUPY
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: USDIRP, UST
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SUMT, SUMX, SUMY
 
       LOGICAL :: LTAUWSHELTER
@@ -121,6 +122,11 @@
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('STRESSO',0,ZHOOK_HANDLE)
+
+      MAXIJ = -1
+      DO IJ=KIJS,KIJL
+         MAXIJ = MAX(MAXIJ, MIJ(IJ))
+      ENDDO
 
       DO IJ=KIJS,KIJL
         PHIWA(IJ)   = 0.0_JWRB
@@ -145,7 +151,7 @@
 
 !*    CALCULATE LOW-FREQUENCY CONTRIBUTION TO STRESS AND ENERGY FLUX (positive sinput).
 !     ---------------------------------------------------------------------------------
-      DO M=1,MAXVAL(MIJ(:))
+      DO M=1,MAXIJ
 !     THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
         K=1
         DO IJ=KIJS,KIJL
@@ -172,7 +178,7 @@
       ENDDO
 
       IF ( LLPHIWA ) THEN
-        DO M=1,MAXVAL(MIJ(:))
+        DO M=1,MAXIJ
 !       THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
           K=1
           DO IJ=KIJS,KIJL
