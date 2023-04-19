@@ -40,13 +40,12 @@
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
+      USE YOWFRED, ONLY: FR, DFIM, DELTH, WETAIL
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
-
-#include "semean.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EMAXDPT
@@ -54,15 +53,39 @@
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: DELT25
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP
       LOGICAL :: LLEPSMIN
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('SDEPTHLIM',0,ZHOOK_HANDLE)
 
-      LLEPSMIN=.TRUE.
-      CALL SEMEAN (FL1, KIJS, KIJL, EM, LLEPSMIN)
+      EM(KIJS:KIJL) = EPSMIN
+      DO M=1,NFRE
+        K=1
+        DO IJ=KIJS,KIJL
+          TEMP(IJ) = FL1(IJ,K,M)
+        ENDDO
+        DO K=2,NANG
+          DO IJ=KIJS,KIJL
+            TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,M)
+          ENDDO
+        ENDDO
+        DO IJ=KIJS,KIJL
+          EM(IJ) = EM(IJ) + DFIM(M)*TEMP(IJ)
+        ENDDO
+      ENDDO
+! ----------------------------------------------------------------------
+
+!*    3. ADD TAIL ENERGY.
+!        ----------------
+
+      DELT25 = WETAIL*FR(NFRE)*DELTH
+      DO IJ=KIJS,KIJL
+        EM(IJ) = EM(IJ) + DELT25*TEMP(IJ)
+      ENDDO
 
       DO IJ=KIJS,KIJL
         EM(IJ)=MIN(EMAXDPT(IJ)/EM(IJ), 1.0_JWRB)
