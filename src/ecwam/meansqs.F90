@@ -55,13 +55,13 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE TAU_PHI_HF_MOD, ONLY : MEANSQS_GC
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
 #include "halphap.intfb.h"
-#include "meansqs_gc.intfb.h"
 #include "meansqs_lf.intfb.h"
 
       REAL(KIND=JWRB), INTENT(IN) :: XKMSS 

@@ -124,7 +124,6 @@ list( APPEND ecwam_srcs
   mcout.F90
   means.F90
   meansqs.F90
-  meansqs_gc.F90
   meansqs_lf.F90
   mfredir.F90
   mgrid.F90
@@ -156,7 +155,6 @@ list( APPEND ecwam_srcs
   nlweigt.F90
   notim.F90
   ns_gc.F90
-  omegagc.F90
   out_onegrdpt.F90
   out_onegrdpt_sp.F90
   outbc.F90

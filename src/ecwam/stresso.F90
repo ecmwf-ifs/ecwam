@@ -87,11 +87,11 @@
       USE YOWSTAT  , ONLY : IPHYS
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE TAU_PHI_HF_MOD, ONLY : TAU_PHI_HF
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "tau_phi_hf.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(KIJS:KIJL)

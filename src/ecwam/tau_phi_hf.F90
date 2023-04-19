@@ -6,6 +6,58 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 !
+MODULE TAU_PHI_HF_MOD
+!CONTAINED SUBROUTINES:
+! - OMEGAGC
+! - TAU_PHI_HF
+! - MEANSQS_GC
+CONTAINS
+SUBROUTINE OMEGAGC(UST, NS, XKS, OMS)
+
+!***  DETERMINE THE CUT-OFF ANGULAR FREQUENCY FOR THE GRAV-CAPILLARY WAVES
+!     !!!! rounded to the closest index of XK_GC  !!!!!
+
+!     AUTHOR: PETER JANSSEN
+!     ------
+
+!     REFERENCES:
+!     ----------
+
+!     VIERS PAPER EQ.(29)
+
+!----------------------------------------------------------------------
+
+USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+USE YOWFRED  , ONLY : OMEGA_GC, XK_GC
+
+USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
+!----------------------------------------------------------------------
+
+IMPLICIT NONE
+
+REAL(KIND=JWRB), INTENT(IN) :: UST
+INTEGER(KIND=JWIM), INTENT(OUT) :: NS ! index in array XK_GC corresponding to XKS and OMS
+REAL(KIND=JWRB), INTENT(OUT) :: XKS   ! cut-off wave number
+REAL(KIND=JWRB), INTENT(OUT) :: OMS   ! cut-off angular frequency
+
+
+REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+   
+#include "ns_gc.intfb.h"
+
+! ----------------------------------------------------------------------
+
+IF (LHOOK) CALL DR_HOOK('OMEGAGC',0,ZHOOK_HANDLE)
+
+NS = NS_GC(UST)
+XKS = XK_GC(NS)
+OMS = OMEGA_GC(NS)
+
+IF (LHOOK) CALL DR_HOOK('OMEGAGC',1,ZHOOK_HANDLE)
+ 
+END SUBROUTINE OMEGAGC
 
 SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
  &                    FL1, AIRD, RNFAC,                          &
@@ -81,8 +133,6 @@ SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-
-#include "omegagc.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(KIJS:KIJL)
@@ -183,9 +233,8 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
 !     TAUHF :
       IF (LLGCBZ0) THEN
 
-        CALL OMEGAGC(KIJS, KIJL, UFRIC, NS, XKS, OMS)
-
         DO IJ=KIJS,KIJL
+          CALL OMEGAGC(UFRIC(IJ), NS(IJ), XKS(IJ), OMS(IJ))
           ZSUP(IJ) = MIN(LOG(OMS(IJ)*SQRTZ0OG(IJ)),ZSUPMAX)
         ENDDO
       ELSE
@@ -300,3 +349,79 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
 IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',1,ZHOOK_HANDLE)
 
 END SUBROUTINE TAU_PHI_HF
+
+SUBROUTINE MEANSQS_GC(XKMSS, KIJS, KIJL, HALP, USTAR, XMSSCG, FRGC)
+
+!***  DETERMINE MSS FOR GRAV-CAP WAVES UP TO WAVE NUMBER XKMSS
+
+!     AUTHOR: PETER JANSSEN
+!     ------
+
+!     REFERENCES:
+!     ----------
+
+!     VIERS PAPER EQ.(29)
+
+!----------------------------------------------------------------------
+
+USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+USE YOWFRED  , ONLY : NWAV_GC, XLOGKRATIOM1_GC, XKM_GC,           &
+ &                     VG_GC, C2OSQRTVG_GC, DELKCC_GC, DELKCC_GC_NS
+USE YOWPCONS , ONLY : G, ZPI,  SURFT
+
+USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
+!----------------------------------------------------------------------
+
+IMPLICIT NONE
+
+INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+
+REAL(KIND=JWRB), INTENT(IN) :: XKMSS ! WAVE NUMBER CUT-OFF
+REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: HALP  ! 1/2 Phillips parameter
+REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USTAR ! friction velocity
+REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: XMSSCG  ! mean square slope for gravity-capillary waves
+REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: FRGC  ! Frequency from which the gravity-capillary spectrum is approximated
+
+
+INTEGER(KIND=JWIM) :: IJ, I, NE
+INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL) :: NS
+REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XKS, OMS, COEF
+   
+!     INCLUDE FUNCTIONS FROM GRAVITY-CAPILLARY DISPERSION REALTIONS
+#include "gc_dispersion.h"
+
+! ----------------------------------------------------------------------
+
+IF (LHOOK) CALL DR_HOOK('MEANSQS_GC',0,ZHOOK_HANDLE)
+
+NE = MIN(MAX(NINT(LOG(XKMSS*XKM_GC(1))*XLOGKRATIOM1_GC ), 1), NWAV_GC)
+
+DO IJ = KIJS, KIJL
+  CALL OMEGAGC(USTAR(IJ), NS(IJ), XKS(IJ), OMS(IJ))
+  FRGC(IJ) = OMS(IJ)/ZPI
+  IF(XKS(IJ) > XKMSS) THEN
+    NS(IJ) = NE
+    XMSSCG(IJ) = 0.0_JWRB
+  ELSE
+    XMSSCG(IJ) = DELKCC_GC_NS(NS(IJ)) * XKM_GC(NS(IJ)) 
+  ENDIF
+ENDDO
+
+DO IJ = KIJS, KIJL
+  DO I = NS(IJ)+1, NE 
+!         ANALYTICAL FORM INERTIAL SUB RANGE F(k) = k**(-4)*BB
+!         BB = COEF(IJ)*SQRT(VG_GC(I))/C_GC(I)**2
+!         mss :  integral of k**2 F(k)  k dk
+    XMSSCG(IJ) = XMSSCG(IJ) + DELKCC_GC(I) * XKM_GC(I) 
+  ENDDO
+  COEF(IJ) = C2OSQRTVG_GC(NS(IJ))*HALP(IJ)
+  XMSSCG(IJ) = XMSSCG(IJ)*COEF(IJ)
+ENDDO
+
+IF (LHOOK) CALL DR_HOOK('MEANSQS_GC',1,ZHOOK_HANDLE)
+
+END SUBROUTINE MEANSQS_GC
+END MODULE TAU_PHI_HF_MOD
