@@ -72,12 +72,11 @@
       USE YOWSTAT  , ONLY : IPHYS
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE SINPUT_ARD_MOD, ONLY : SINPUT_JAN, SINPUT_ARD
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "sinput_ard.intfb.h"
-#include "sinput_jan.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NGST
       LOGICAL, INTENT(IN) :: LLSNEG

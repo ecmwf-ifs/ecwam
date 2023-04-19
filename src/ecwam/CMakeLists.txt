@@ -225,7 +225,6 @@ list( APPEND ecwam_srcs
   sinflx.F90
   sinput.F90
   sinput_ard.F90
-  sinput_jan.F90
   skewness.F90
   snonlin.F90
   spectra.F90
@@ -283,7 +282,6 @@ list( APPEND ecwam_srcs
   writefl.F90
   writestress.F90
   writsta.F90
-  wsigstar.F90
   wsmfen.F90
   wstream_strg.F90
   wvalloc.F90
