@@ -202,7 +202,7 @@ CONTAINS
 
       USE YOWCOUP  , ONLY : LLCAPCHNK,LLNORMAGAM
       USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH, ZPIFR, DELTH
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE, NANG_PARAM
       USE YOWPCONS , ONLY : G        ,GM1      ,EPSMIN, EPSUS, ZPI
       USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2,    &
      &                      RN1_RN, &
@@ -245,7 +245,10 @@ CONTAINS
       REAL(KIND=JWRB) :: TAUPX, TAUPY
       REAL(KIND=JWRB) :: DSTAB2
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NFRE) :: CONST, SIG, SIGM1, SIG2, COEF, COEF5, DFIM_SIG2
+
+      REAL(KIND=JWRB) :: SIG2, COEF, COEF5, DFIM_SIG2, COSLP
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CONSTF, CONST11, CONST22
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: Z0VIS, Z0NOZ, FWW
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: PVISC, PTURB
@@ -255,13 +258,13 @@ CONTAINS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CSTRNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FLP_AVG, SLP_AVG
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ROGOROAIR, AIRD_PVISC
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: XSTRESS, YSTRESS, FLP, SLP
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: USG2, TAUX, TAUY, USTP, USTPM1, USDIRP, UCN
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: UCNZALPD
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: XNGAMCONST
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DSTAB1, TEMP1, TEMP2
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NGST) :: COSLP, GAM0, DSTAB
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: XSTRESS, YSTRESS, FLP, SLP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: USG2, TAUX, TAUY, USTP, USTPM1, USDIRP, UCN
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: UCNZALPD
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2,NANG_PARAM) :: GAM0, DSTAB
 
       LOGICAL :: LTAUWSHELTER
 ! ----------------------------------------------------------------------
@@ -279,37 +282,21 @@ CONTAINS
         LTAUWSHELTER = .TRUE.
       ENDIF
 
-      IF (LLNORMAGAM) THEN
-        DO IJ=KIJS,KIJL
-          CSTRNFAC(IJ) = CONSTN * RNFAC(IJ) / RAORW(IJ)
-        ENDDO
-        DO M=1,NFRE
-          DO IJ=KIJS,KIJL
-            XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*XK2CG(IJ,M)
-          ENDDO
-        ENDDO
-
-      ELSE
-        XNGAMCONST(KIJS:KIJL,:) = 0.0_JWRB
-      ENDIF
-
-
-!     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
       DO IJ=KIJS,KIJL
         IF (NGST > 1) CALL WSIGSTAR (WSWAVE(IJ), UFRIC(IJ), Z0M(IJ), WSTAR(IJ), SIG_N(IJ))
       ENDDO
 
+
+      IF (LLNORMAGAM) THEN
+        DO IJ=KIJS,KIJL
+          CSTRNFAC(IJ) = CONSTN * RNFAC(IJ) / RAORW(IJ)
+        ENDDO
+      ENDIF
+
+
+!     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
+
 ! ----------------------------------------------------------------------
-
-      DO M=1,NFRE
-        SIG(M) = ZPIFR(M)
-        SIGM1(M) = 1.0_JWRB/SIG(M)
-        SIG2(M) = SIG(M)**2
-        DFIM_SIG2(M)=DFIM(M)*SIG2(M)
-        CONST(M)=SIG(M)*CONST1
-      ENDDO
-
-
       IF (LLSNEG) THEN
 !!!!  only for the negative sinput
          NU_AIR = RNU
@@ -329,8 +316,8 @@ CONTAINS
         ENDDO
 
         DO M=1,NFRE
-          COEF(M) =-SWELLF*16._JWRB*SIG2(M)/G
-          COEF5(M)=-SWELLF5*2._JWRB*SQRT(2._JWRB*NU_AIR*SIG(M))
+          SIG2 = ZPIFR(M)**2
+          DFIM_SIG2 = DFIM(M)*SIG2
 
           K=1
           DO IJ=KIJS,KIJL
@@ -343,7 +330,7 @@ CONTAINS
           ENDDO
 
           DO IJ=KIJS,KIJL
-            UORBT(IJ) = UORBT(IJ)+DFIM_SIG2(M)*TEMP(IJ)
+            UORBT(IJ) = UORBT(IJ)+DFIM_SIG2*TEMP(IJ)
             AORB(IJ) = AORB(IJ)+DFIM(M)*TEMP(IJ)
           ENDDO
         ENDDO
@@ -411,21 +398,11 @@ CONTAINS
         DO IJ=KIJS,KIJL
           USTP(IJ,1) = UFRIC(IJ)
         ENDDO
-      ELSE IF (NGST == 2) THEN
+      ELSE
         DO IJ=KIJS,KIJL
           USTP(IJ,1) = UFRIC(IJ)*(1.0_JWRB+SIG_N(IJ))
           USTP(IJ,2) = UFRIC(IJ)*(1.0_JWRB-SIG_N(IJ))
         ENDDO
-      ELSE
-         WRITE (IU06,*) '**************************************'
-         WRITE (IU06,*) '*    FATAL ERROR                     *'
-         WRITE (IU06,*) '*    ===========                     *'
-         WRITE (IU06,*) '* IN SINPUT_ARD: NGST > 2            *'
-         WRITE (IU06,*) '* NGST = ', NGST
-         WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.  *'
-         WRITE (IU06,*) '*                                    *'
-         WRITE (IU06,*) '**************************************'
-         CALL ABORT1
       ENDIF
 
       DO IGST=1,NGST
@@ -448,15 +425,6 @@ CONTAINS
         DO IJ=KIJS,KIJL
           ROGOROAIR(IJ) = G/RAORW(IJ)
         ENDDO
-
-      ELSE
-        DO IGST=1,NGST
-          DO K=1,NANG
-            DO IJ=KIJS,KIJL
-              COSLP(IJ,K,IGST) = COSWDIF(IJ,K)
-            ENDDO
-          ENDDO
-        ENDDO
       ENDIF
 
 
@@ -464,12 +432,18 @@ CONTAINS
 !        ---------------------------
 
       IF ( .NOT. LLNORMAGAM) THEN
-        GAMNORMA(KIJS:KIJL,:) = 1.0_JWRB
+        DO IGST=1,NGST
+          GAMNORMA(KIJS:KIJL,IGST) = 1.0_JWRB
+        ENDDO
       ENDIF
 
-      IF ( .NOT. LLSNEG) THEN
-        DSTAB(KIJS:KIJL,:,:) = 0.0_JWRB
-      ENDIF
+      IF (.NOT.LLSNEG) THEN
+        DO K=1,NANG
+          DO IGST=1,NGST
+            DSTAB(KIJS:KIJL, IGST, K) = 0.0_JWRB
+          ENDDO
+        ENDDO
+      END IF
 
       DO M=1,NFRE
 
@@ -481,14 +455,6 @@ CONTAINS
               USDIRP(IJ,IGST)=ATAN2(TAUPX,TAUPY)
               USTP(IJ,IGST)=(TAUPX**2+TAUPY**2)**0.25_JWRB
               USTPM1(IJ,IGST)=1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
-            ENDDO
-          ENDDO
-
-          DO IGST=1,NGST
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                COSLP(IJ,K,IGST) = COS(TH(K)-USDIRP(IJ,IGST))
-              ENDDO
             ENDDO
           ENDDO
 
@@ -509,7 +475,7 @@ CONTAINS
         ENDDO
         DO IJ=KIJS,KIJL
           ZCN(IJ) = LOG(WAVNUM(IJ,M)*Z0M(IJ))
-          CNSN(IJ) = CONST(M)*RAORW(IJ)
+          CNSN(IJ) = ZPIFR(M)*CONST1*RAORW(IJ)
         ENDDO
 
 !*    2.1 LOOP OVER DIRECTIONS.
@@ -521,66 +487,70 @@ CONTAINS
           ENDDO
         ENDDO
 
-        DO IGST=1,NGST
-          DO K=1,NANG
+        IF (LLSNEG) THEN
+!       SWELL DAMPING:
+
+          SIG2 = ZPIFR(M)**2
+          DFIM_SIG2 = DFIM(M)*SIG2
+
+          COEF = -SWELLF*16._JWRB*SIG2/G
+          COEF5 = -SWELLF5*2._JWRB*SQRT(2._JWRB*NU_AIR*ZPIFR(M))
+
+          DO IJ=KIJS,KIJL
+            DSTAB1(IJ) = COEF5*AIRD_PVISC(IJ)*WAVNUM(IJ,M)
+            TEMP1(IJ) = COEF*RAORW(IJ)
+          ENDDO
+        ENDIF
+
+        DO K=1,NANG
+          DO IGST=1,NGST
+
             DO IJ=KIJS,KIJL
-              IF (COSLP(IJ,K,IGST) > 0.01_JWRB) THEN
-                X    = COSLP(IJ,K,IGST)*UCN(IJ,IGST)
-                ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)/COSLP(IJ,K,IGST)
+              SUMF(IJ) = 0.0_JWRB
+              SUMFSIN2(IJ) = 0.0_JWRB
+
+              IF(LTAUWSHELTER)THEN
+                COSLP = COS(TH(K) - USDIRP(IJ,IGST))
+              ELSE
+                COSLP = COSWDIF(IJ, K)
+              ENDIF
+
+              GAM0(IJ,IGST,K) = 0._JWRB
+              IF (COSLP > 0.01_JWRB) THEN
+                X    = COSLP*UCN(IJ,IGST)
+                ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)/COSLP
                 IF (ZLOG < 0.0_JWRB) THEN
                   ZLOG2X=ZLOG*ZLOG*X
-                  GAM0(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X * CNSN(IJ)
+                  GAM0(IJ,IGST,K) = EXP(ZLOG)*ZLOG2X*ZLOG2X * CNSN(IJ)
                   XLLWS(IJ,K,M) = 1.0_JWRB
-                ELSE
-                  GAM0(IJ,K,IGST) = 0.0_JWRB
                 ENDIF
-              ELSE
-                GAM0(IJ,K,IGST) = 0.0_JWRB
               ENDIF
+
+              IF (LLSNEG) THEN
+                DSTAB2 = TEMP1(IJ)*(TEMP2(IJ)+(FU+FUD*COSLP)*USTP(IJ,IGST))
+                DSTAB(IJ,IGST,K) = DSTAB1(IJ)+PTURB(IJ)*DSTAB2
+              ENDIF
+
+              SUMF(IJ) = SUMF(IJ) + GAM0(IJ,IGST,K)*FL1(IJ,K,M)
+              SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,IGST,K)*FL1(IJ,K,M)*SINWDIF2(IJ,K)
             ENDDO
           ENDDO
         ENDDO
 
-
         IF (LLNORMAGAM) THEN
 
+          DO IJ=KIJS,KIJL
+            XNGAMCONST(IJ) = CSTRNFAC(IJ)*XK2CG(IJ, M)
+          ENDDO
           DO IGST=1,NGST
-
-            SUMF(KIJS:KIJL) = 0.0_JWRB
-            SUMFSIN2(KIJS:KIJL) = 0.0_JWRB
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)
-                SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SINWDIF2(IJ,K)
-              ENDDO
-            ENDDO
-
             DO IJ=KIJS,KIJL
-              ZNZ = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)
+              ZNZ = XNGAMCONST(IJ)*USTPM1(IJ,IGST)
               GAMNORMA(IJ,IGST) = (1.0_JWRB + ZNZ*SUMFSIN2(IJ)) / (1.0_JWRB + ZNZ*SUMF(IJ))
             ENDDO
-
           ENDDO
 
         ENDIF
 
-
-        IF (LLSNEG) THEN
-!       SWELL DAMPING:
-          DO IJ=KIJS,KIJL
-            DSTAB1(IJ) = COEF5(M)*AIRD_PVISC(IJ)*WAVNUM(IJ,M)
-            TEMP1(IJ) = COEF(M)*RAORW(IJ)
-          ENDDO
-
-          DO IGST=1,NGST
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                DSTAB2 = TEMP1(IJ)*(TEMP2(IJ)+(FU+FUD*COSLP(IJ,K,IGST))*USTP(IJ,IGST))
-                DSTAB(IJ,K,IGST) = DSTAB1(IJ)+PTURB(IJ)*DSTAB2
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDIF
 
 
 !*    2.2 UPDATE THE SHELTERING STRESS (in any),
@@ -592,8 +562,8 @@ CONTAINS
           DO IGST=1,NGST
             DO IJ=KIJS,KIJL
               ! SLP: only the positive contributions
-              SLP(IJ,IGST) =  GAM0(IJ,K,IGST) * GAMNORMA(IJ,IGST)
-              FLP(IJ,IGST) = SLP(IJ,IGST)+DSTAB(IJ,K,IGST)
+              SLP(IJ,IGST) =  GAM0(IJ,IGST,K) * GAMNORMA(IJ,IGST)
+              FLP(IJ,IGST) = SLP(IJ,IGST)+DSTAB(IJ,IGST,K)
             ENDDO
           ENDDO
 
@@ -617,10 +587,10 @@ CONTAINS
           ENDIF
 
           IGST=1
-            DO IJ=KIJS,KIJL
-              SLP_AVG(IJ) = SLP(IJ,IGST)
-              FLP_AVG(IJ) = FLP(IJ,IGST)
-            ENDDO
+          DO IJ=KIJS,KIJL
+            SLP_AVG(IJ) = SLP(IJ,IGST)
+            FLP_AVG(IJ) = FLP(IJ,IGST)
+          ENDDO
           DO IGST=2,NGST
             DO IJ=KIJS,KIJL
               SLP_AVG(IJ) = SLP_AVG(IJ)+SLP(IJ,IGST)
@@ -630,9 +600,6 @@ CONTAINS
 
           DO IJ=KIJS,KIJL
             SPOS(IJ,K,M) = AVG_GST*SLP_AVG(IJ)
-          ENDDO
-
-          DO IJ=KIJS,KIJL
             FLD(IJ,K,M) = AVG_GST*FLP_AVG(IJ)
             SL(IJ,K,M) = FLD(IJ,K,M)*FL1(IJ,K,M)
           ENDDO
