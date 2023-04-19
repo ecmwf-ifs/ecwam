@@ -32,9 +32,10 @@ SUBROUTINE HALPHAP(KIJS, KIJL, WAVNUM, COSWDIF, FL1, HALP)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR       , TH       , FR5      ,DELTH
-      USE YOWPARAM , ONLY : NANG     , NFRE
-      USE YOWPCONS , ONLY : G        , ZPI      ,ZPI4GM2
+      USE YOWFRED  , ONLY : FR       , TH       , FR5      ,DELTH, &
+ &                          WETAIL, FRTAIL, DFIM, DFIMOFR
+      USE YOWPARAM , ONLY : NANG     , NFRE, NANG_PARAM
+      USE YOWPCONS , ONLY : G        , ZPI      ,ZPI4GM2, EPSMIN
       USE YOWPHYS  , ONLY : ALPHAPMAX
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -42,9 +43,6 @@ SUBROUTINE HALPHAP(KIJS, KIJL, WAVNUM, COSWDIF, FL1, HALP)
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-
-#include "femean.intfb.h"
-#include "meansqs_lf.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM
@@ -56,10 +54,11 @@ SUBROUTINE HALPHAP(KIJS, KIJL, WAVNUM, COSWDIF, FL1, HALP)
 
       REAL(KIND=JWRB) :: ZLNFRNFRE
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: DELT25, DELT2, DEL2
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL) :: TEMP1, TEMP2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ALPHAP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XMSS, EM, FM, F1D 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: WD 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: FLWD
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG_PARAM) :: FLWD
 
 ! ----------------------------------------------------------------------
 
@@ -67,24 +66,54 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
       ZLNFRNFRE = LOG(FR(NFRE))
 
-      ! Find spectrum in wind direction
-      DO K = 1, NANG
-        DO IJ = KIJS, KIJL
-           WD(IJ,K) = 0.5_JWRB + 0.5_JWRB * SIGN(1.0_JWRB, COSWDIF(IJ,K))
-        ENDDO
-      ENDDO
+      DELT25 = WETAIL*FR(NFRE)*DELTH
+      DELT2 = FRTAIL*DELTH
 
+      ! Find spectrum in wind direction
       DO M = 1, NFRE
         DO K = 1, NANG
           DO IJ = KIJS, KIJL
-             FLWD(IJ,K,M) = FL1(IJ,K,M) * WD(IJ,K) 
+             FLWD(IJ,K) = FL1(IJ,K,M)*0.5_JWRB + 0.5_JWRB * SIGN(1.0_JWRB, COSWDIF(IJ,K))
           ENDDO
+        ENDDO
+
+        XMSS(KIJS:KIJL) = 0._JWRB
+        DO IJ = KIJS, KIJL
+          TEMP1(IJ) = DFIM(M)*WAVNUM(IJ,M)**2
+          TEMP2(IJ) = 0.0_JWRB
+        ENDDO
+        DO K = 1, NANG
+          DO IJ = KIJS, KIJL
+            TEMP2(IJ) = TEMP2(IJ)+FLWD(IJ,K)
+          ENDDO
+        ENDDO
+        DO IJ = KIJS, KIJL
+          XMSS(IJ) = XMSS(IJ)+TEMP1(IJ)*TEMP2(IJ)
+        ENDDO
+
+        K=1
+        EM(KIJS:KIJL) = 0._JWRB
+        FM(KIJS:KIJL) = 0._JWRB
+        DO IJ=KIJS,KIJL
+          TEMP2(IJ) = MAX(FLWD(IJ,K), EPSMIN)
+        ENDDO
+        DO K=2,NANG
+          DO IJ=KIJS,KIJL
+            TEMP2(IJ) = TEMP2(IJ)+ MAX(FLWD(IJ,K), EPSMIN)
+          ENDDO
+        ENDDO
+        DO IJ=KIJS,KIJL
+          EM(IJ) = EM(IJ)+TEMP2(IJ)*DFIM(M)
+          FM(IJ) = FM(IJ)+DFIMOFR(M)*TEMP2(IJ)
         ENDDO
       ENDDO
 
-      CALL MEANSQS_LF(NFRE, KIJS, KIJL, FLWD, WAVNUM, XMSS)
-
-      CALL FEMEAN (KIJS, KIJL, FLWD, EM, FM)
+      DO IJ=KIJS,KIJL
+        EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ)
+        FM(IJ) = FM(IJ)+DELT2*TEMP2(IJ)
+        FM(IJ) = EM(IJ)/FM(IJ)
+        FM(IJ) = MAX(FM(IJ),FR(1))
+      ENDDO
 
       DO IJ = KIJS, KIJL
         IF (EM(IJ) > 0.0_JWRB .AND. FM(IJ) < FR(NFRE-2) ) THEN
@@ -93,14 +122,14 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
             ! some odd cases, revert to tail value
             F1D(IJ) = 0.0_JWRB
             DO K = 1, NANG
-              F1D(IJ) = F1D(IJ) + FLWD(IJ,K,NFRE)*DELTH
+              F1D(IJ) = F1D(IJ) + FLWD(IJ,K)*DELTH
             ENDDO
             ALPHAP(IJ) = ZPI4GM2*FR5(NFRE)*F1D(IJ)
           ENDIF
         ELSE
           F1D(IJ) = 0.0_JWRB
           DO K = 1, NANG
-            F1D(IJ) = F1D(IJ) + FLWD(IJ,K,NFRE)*DELTH
+            F1D(IJ) = F1D(IJ) + FLWD(IJ,K)*DELTH
           ENDDO
           ALPHAP(IJ) = ZPI4GM2*FR5(NFRE)*F1D(IJ)
         ENDIF
