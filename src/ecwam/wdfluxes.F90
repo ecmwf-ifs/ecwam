@@ -98,8 +98,6 @@
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M
-      INTEGER(KIND=JWIM) :: ICALL, NCALL
-
       REAL(KIND=JWRB) :: TAU, XN, PHIDIAG, TAUO
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -152,9 +150,7 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
-      NCALL = 1
-      ICALL = 1
-      CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                              &
+      CALL SINFLX (1, KIJS, KIJL,                              &
      &             LUPDTUS,                                               &
      &             FL1,                                                   &
      &             WAVNUM, CINV, XK2CG,              &

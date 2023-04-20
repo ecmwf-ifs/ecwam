@@ -137,7 +137,6 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M
-      INTEGER(KIND=JWIM) :: ICALL, NCALL
 
       REAL(KIND=JWRB) :: DELT, DELTM, XIMP, DELT5
       REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB
@@ -162,7 +161,6 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: SSOURCE 
 
       LOGICAL :: LCFLX
-      LOGICAL :: LUPDTUS
 
 ! ----------------------------------------------------------------------
 
@@ -246,32 +244,22 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !*    2.3.1 ITERATIVELY UPDATE STRESS AND COMPUTE WIND INPUT TERMS. 
 !           -------------------------------------------------------
 
-      LUPDTUS = .TRUE.
-      NCALL = 2
-      DO ICALL = 1, NCALL 
-        CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                      &
-     &               LUPDTUS,                                       &
-     &               FL1,                                           &
-     &               WAVNUM, CINV, XK2CG,      &
-     &               WSWAVE, WDWAVE, AIRD,     &
-     &               RAORW, WSTAR, CICOVER,           &
-     &               COSWDIF, SINWDIF2,                             &
-     &               FMEAN, HALP, FMEANWS,                          &
-     &               FLM,                                           &
-     &               UFRIC, TAUW, TAUWDIR,     &
-     &               Z0M, Z0B, CHRNCK, PHIWA,  &
-     &               FLD, SL, SPOS,                                 &
-     &               MIJ, RHOWGDFTH, XLLWS)
-
-      ENDDO
+      CALL SINFLX (1, KIJS, KIJL, .TRUE., FL1, WAVNUM, CINV, XK2CG, WSWAVE, &
+   &               WDWAVE, AIRD, RAORW, WSTAR, CICOVER, COSWDIF, SINWDIF2, FMEAN, &
+   &               HALP, FMEANWS, FLM, UFRIC, TAUW, TAUWDIR,Z0M, Z0B, CHRNCK, PHIWA, &
+   &               FLD, SL, SPOS, MIJ, RHOWGDFTH, XLLWS)
+      CALL SINFLX (2, KIJS, KIJL, .TRUE., FL1, WAVNUM, CINV, XK2CG, WSWAVE, &
+   &               WDWAVE, AIRD, RAORW, WSTAR, CICOVER, COSWDIF, SINWDIF2, FMEAN, &
+   &               HALP, FMEANWS, FLM, UFRIC, TAUW, TAUWDIR,Z0M, Z0B, CHRNCK, PHIWA, &
+   &               FLD, SL, SPOS, MIJ, RHOWGDFTH, XLLWS)
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
 
-      CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,                 &
-     &              INDEP, WAVNUM, XK2CG,&
-     &              EMEAN, F1MEAN, XKMEAN,                    &
-     &              UFRIC, COSWDIF, RAORW)
+      CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,  &
+   &                INDEP, WAVNUM, XK2CG,      &
+   &                EMEAN, F1MEAN, XKMEAN,     &
+   &                UFRIC, COSWDIF, RAORW)
 
 !     Save source term contributions relevant for the calculation of ocean fluxes
       IF (LCFLX .AND. .NOT.LWVFLX_SNL) THEN

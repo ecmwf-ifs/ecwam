@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,                       &
+SUBROUTINE SINFLX (ICALL, KIJS, KIJL,                       &
  &                 LUPDTUS,                                        &
  &                 FL1,                                            &
  &                 WAVNUM, CINV, XK2CG,                            &
@@ -46,7 +46,6 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,                       &
 #include "stresso.intfb.h"
 
 INTEGER(KIND=JWIM), INTENT(IN) :: ICALL  !! CALL NUMBER.
-INTEGER(KIND=JWIM), INTENT(IN) :: NCALL  !! TOTAL NUMBER OF CALLS.
 INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL !! GRID POINT INDEXES.  
 
 LOGICAL, INTENT(IN) :: LUPDTUS  !! IF TRUE UFRIC AND Z0M WILL BE UPDATED (CALLING AIRSEA).
@@ -140,17 +139,15 @@ ENDIF
 
 ! COMPUTE WIND INPUT
 !!  FLD AND SL ARE INITIALISED IN SINPUT
-IF(ICALL < NCALL ) THEN
-  NGST = 1
+IF(ICALL == 1) THEN
   LLPHIWA = .FALSE.
   LLSNEG = .FALSE.
 ELSE
-  NGST = 2
   LLPHIWA = .TRUE.
   LLSNEG = .TRUE.
 ENDIF
 
-CALL SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, &
+CALL SINPUT (ICALL, LLSNEG, KIJS, KIJL, FL1, &
 &            WAVNUM, CINV, XK2CG,           &
 &            WDWAVE, WSWAVE, UFRIC, Z0M,    &
 &            COSWDIF, SINWDIF2,             &
