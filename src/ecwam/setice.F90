@@ -57,19 +57,12 @@
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CIREDUC, TEMP, ICEFREE 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG) :: SPRD
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('SETICE',0,ZHOOK_HANDLE)
 
 !*    1. SET SPECTRA TO NOISE LEVEL OVER ICE POINTS.
 !     ----------------------------------------------
-
-      DO K=1,NANG
-        DO IJ = KIJS, KIJL
-          SPRD(IJ,K)=MAX(0.0_JWRB, COSWDIF(IJ,K))**2
-        ENDDO
-      ENDDO
 
       DO IJ = KIJS,KIJL
         IF (CICOVER(IJ) > CITHRSH) THEN
@@ -87,7 +80,7 @@
       DO M = 1, NFRE
         DO K = 1, NANG
           DO IJ = KIJS,KIJL
-            FL1(IJ,K,M)=FL1(IJ,K,M)*ICEFREE(IJ)+TEMP(IJ)*SPRD(IJ,K)
+            FL1(IJ,K,M)=FL1(IJ,K,M)*ICEFREE(IJ)+TEMP(IJ)*MAX(0.0_JWRB, COSWDIF(IJ,K))**2
           ENDDO
         ENDDO
       ENDDO
