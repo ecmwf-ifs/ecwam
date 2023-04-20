@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE FEMEANWS (KIJS, KIJL, FL1, XLLWS, EM, FM)
+      SUBROUTINE FEMEANWS (KIJS, KIJL, FL1, XLLWS, FM, EM)
 
 ! ----------------------------------------------------------------------
 
@@ -64,14 +64,15 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(kIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1, XLLWS
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: EM, FM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: FM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT), OPTIONAL :: EM
 
 
       INTEGER(KIND=JWIM) :: IJ, M, K
 
       REAL(KIND=JWRB) :: DELT25, DELT2
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP2, EM_LOC
 
 ! ----------------------------------------------------------------------
 
@@ -81,7 +82,7 @@
 !        ------------------------------------------------
 
       DO IJ=KIJS,KIJL
-        EM(IJ) = EPSMIN
+        EM_LOC(IJ) = EPSMIN
         FM(IJ) = EPSMIN
       ENDDO
 
@@ -100,7 +101,7 @@
           ENDDO
         ENDDO
         DO IJ=KIJS,KIJL
-          EM(IJ) = EM(IJ)+DFIM(M)*TEMP2(IJ)
+          EM_LOC(IJ) = EM_LOC(IJ)+DFIM(M)*TEMP2(IJ)
           FM(IJ) = FM(IJ)+DFIMOFR(M)*TEMP2(IJ)
         ENDDO
       ENDDO
@@ -110,10 +111,16 @@
 !        ------------------------------------------
 
       DO IJ=KIJS,KIJL
-        EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ)
+        EM_LOC(IJ) = EM_LOC(IJ)+DELT25*TEMP2(IJ)
         FM(IJ) = FM(IJ)+DELT2*TEMP2(IJ)
-        FM(IJ) = EM(IJ)/FM(IJ)
+        FM(IJ) = EM_LOC(IJ)/FM(IJ)
       ENDDO
+
+      IF(PRESENT(EM))THEN
+        DO IJ=KIJS,KIJL
+           EM(IJ) = EM_LOC(IJ)
+        ENDDO
+      ENDIF
 
       IF (LHOOK) CALL DR_HOOK('FEMEANWS',1,ZHOOK_HANDLE)
 
