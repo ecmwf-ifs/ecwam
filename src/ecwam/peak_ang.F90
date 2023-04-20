@@ -59,15 +59,15 @@
 
       INTEGER(KIND=JWIM) :: NSH
       INTEGER(KIND=JWIM) :: IJ, M, K
-      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL)::MMAX, MMSTART, MMSTOP
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL) :: MMAX
+      INTEGER(KIND=JWIM) :: MMSTART, MMSTOP
       REAL(KIND=JWRB), PARAMETER :: CONST_SIG = 1.0_JWRB
       REAL(KIND=JWRB) :: R1
       REAL(KIND=JWRB) :: DELT25, COEF_FR, COEF_FR2
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: ZEPSILON
-      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL) :: SUM0, SUM1, SUM2, SUM4, XMAX
-      REAL,DIMENSION(KIJS:KIJL) :: TEMP
-      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL,NFRE) :: THMEAN, SUM_S, SUM_C
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL) :: SUM0, SUM1, SUM2, SUM4, XMAX, TEMP
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL) :: THMEAN, SUM_S, SUM_C
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('PEAK_ANG',0,ZHOOK_HANDLE)
@@ -145,38 +145,21 @@
         SUM2(IJ) = 0._JWRB
       ENDDO
  
-      DO M=1,NFRE
-        DO IJ=KIJS,KIJL
-          SUM_S(IJ,M) = 0._JWRB
-          SUM_C(IJ,M) = ZEPSILON 
-        ENDDO
-      ENDDO
+      DO IJ=KIJS,KIJL
+        MMSTART = MAX(1,MMAX(IJ)-NSH) 
+        MMSTOP  = MIN(NFRE,MMAX(IJ)+NSH)
 
-      DO M=1,NFRE
-        DO K=1,NANG
-          DO IJ=KIJS,KIJL
-            SUM_S(IJ,M) = SUM_S(IJ,M) +SINTH(K)*FL1(IJ,K,M)
-            SUM_C(IJ,M) = SUM_C(IJ,M) +COSTH(K)*FL1(IJ,K,M)
+        SUM_S(IJ) = 0._JWRB
+        SUM_C(IJ) = ZEPSILON 
+        DO M=MMSTART,MMSTOP
+          DO K=1,NANG
+            SUM_S(IJ) = SUM_S(IJ) +SINTH(K)*FL1(IJ,K,M)
+            SUM_C(IJ) = SUM_C(IJ) +COSTH(K)*FL1(IJ,K,M)
           ENDDO
-        ENDDO
-      ENDDO
-
-      DO M=1,NFRE
-        DO IJ=KIJS,KIJL
-          THMEAN(IJ,M) = ATAN2(SUM_S(IJ,M),SUM_C(IJ,M))
-        ENDDO
-      ENDDO
-
-      DO IJ=KIJS,KIJL
-        MMSTART(IJ) = MAX(1,MMAX(IJ)-NSH) 
-        MMSTOP(IJ)  = MIN(NFRE,MMAX(IJ)+NSH) 
-      ENDDO
-
-      DO IJ=KIJS,KIJL
-        DO M=MMSTART(IJ),MMSTOP(IJ)
+          THMEAN(IJ) = ATAN2(SUM_S(IJ),SUM_C(IJ))
           DO K=1,NANG
             SUM1(IJ) = SUM1(IJ) +FL1(IJ,K,M)*DFIM(M)
-            SUM2(IJ) = SUM2(IJ) +COS(TH(K)-THMEAN(IJ,M))*FL1(IJ,K,M)*DFIM(M)
+            SUM2(IJ) = SUM2(IJ) +COS(TH(K)-THMEAN(IJ))*FL1(IJ,K,M)*DFIM(M)
           ENDDO
         ENDDO
       ENDDO
