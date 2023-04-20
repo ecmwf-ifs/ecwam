@@ -61,7 +61,7 @@
 
       REAL(KIND=JWRB) :: AKM1, TFAC
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: TEMP2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: TEMP1, TEMP2
 
 ! ----------------------------------------------------------------------
 
@@ -71,24 +71,17 @@
 !     ----------------
 
       DO IJ=KIJS,KIJL
-        DO M=MIJ(IJ),NFRE
-          TEMP2(IJ,M) = 1.0_JWRB/XK2CG(IJ,M)/WAVNUM(IJ,M)
-        ENDDO
-      ENDDO
+        TEMP1(IJ) = 1.0_JWRB/XK2CG(IJ,MIJ(IJ))/WAVNUM(IJ,MIJ(IJ))
 
-      DO IJ=KIJS,KIJL
         DO M=MIJ(IJ)+1,NFRE
-          TEMP2(IJ,M) = TEMP2(IJ,M)/TEMP2(IJ,MIJ(IJ))
-        ENDDO
-      ENDDO
+          TEMP2(IJ) = 1.0_JWRB/XK2CG(IJ,M)/WAVNUM(IJ,M)
+          TEMP2(IJ) = TEMP2(IJ)/TEMP1(IJ)
 
 !*    MERGE TAIL INTO SPECTRA.
 !     ------------------------
-      DO K=1,NANG
-        DO IJ=KIJS,KIJL
-          TFAC = FL1(IJ,K,MIJ(IJ))
-          DO M=MIJ(IJ)+1,NFRE
-            FL1(IJ,K,M) = MAX(TEMP2(IJ,M)*TFAC,FLM(IJ,K))
+          DO K=1,NANG
+            TFAC = FL1(IJ,K,MIJ(IJ))
+            FL1(IJ,K,M) = MAX(TEMP2(IJ)*TFAC,FLM(IJ,K))
           ENDDO
         ENDDO
       ENDDO
