@@ -70,7 +70,7 @@
       INTEGER(KIND=JWIM):: IJ, K, M
       REAL(KIND=JWRB) :: CONST, ARG
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: SBO
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SBO
 
 ! ----------------------------------------------------------------------
 
@@ -82,18 +82,16 @@
           IF(DEPTH(IJ) < BATHYMAX) THEN
             ARG = 2.0_JWRB* DEPTH(IJ)*WAVNUM(IJ,M)
             ARG = MIN(ARG,50.0_JWRB)
-            SBO(IJ,M) = CONST*WAVNUM(IJ,M)/SINH(ARG)
+            SBO(IJ) = CONST*WAVNUM(IJ,M)/SINH(ARG)
           ELSE
-            SBO(IJ,M) = 0.0_JWRB
+            SBO(IJ) = 0.0_JWRB
           ENDIF
         ENDDO
-      ENDDO
 
-      DO M = 1, NFRE_RED
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            SL(IJ,K,M) = SL(IJ,K,M)+SBO(IJ,M)*FL1(IJ,K,M)
-            FLD(IJ,K,M) = FLD(IJ,K,M)+SBO(IJ,M)
+            SL(IJ,K,M) = SL(IJ,K,M)+SBO(IJ)*FL1(IJ,K,M)
+            FLD(IJ,K,M) = FLD(IJ,K,M)+SBO(IJ)
           ENDDO
         ENDDO
       ENDDO
