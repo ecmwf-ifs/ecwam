@@ -86,7 +86,6 @@
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, I, J, M2, K2, KK, NANGD
-      INTEGER(KIND=JWIM), DIMENSION(NANG) :: KKD
 
       REAL(KIND=JWRB) :: TPIINV, TPIINVH, TMP01, TMP02, TMP03
       REAL(KIND=JWRB) :: EPSR, SSDSC6M1, ZCOEF, ZCOEFM1
@@ -95,8 +94,7 @@
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 
-      REAL(KIND=JWRB), DIMENSION(NFRE) :: SIG, SSDSC2_SIG 
-      REAL(KIND=JWRB), DIMENSION(0:NANG/2) :: COSDTH
+      REAL(KIND=JWRB) :: SSDSC2_SIG 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FACTURB
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: FACSAT, FACWTRB, TEMP1 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: BTH0 !saturation spectrum
@@ -123,11 +121,6 @@
       TMP03 = 1.0_JWRB/(SDSBR*MICHE)
 
       SSDSC6M1=1._JWRB-SSDSC6
-
-      DO M=1,NFRE
-        SIG(M) = ZPIFR(M)
-        SSDSC2_SIG(M)=SSDSC2*SIG(M)
-      END DO
 
       DO M=1, NFRE
         DO IJ=KIJS,KIJL
@@ -167,16 +160,13 @@
       ! SATURATION TERM
 
       DO  M=1,NFRE
-        ZCOEF = SSDSC2_SIG(M)*SSDSC6
-        DO IJ=KIJS,KIJL
-          TEMP1(IJ,M) = ZCOEF * (MAX(0._JWRB, BTH0(IJ,M)*TMP03-SSDSC4))**IPSAT
-        ENDDO
-      ENDDO
-      DO  M=1,NFRE
-        ZCOEFM1 = SSDSC2_SIG(M)*SSDSC6M1
+        SSDSC2_SIG = SSDSC2*ZPIFR(M)
+        ZCOEF = SSDSC2_SIG*SSDSC6
+        ZCOEFM1 = SSDSC2_SIG*SSDSC6M1
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            D(IJ,K,M) = TEMP1(IJ,M) + ZCOEFM1 * (MAX(0._JWRB, BTH(IJ,K,M)*TMP03-SSDSC4))**IPSAT
+            D(IJ,K,M) = ZCOEF * (MAX(0._JWRB, BTH0(IJ,M)*TMP03-SSDSC4))**IPSAT + &
+            &           ZCOEFM1 * (MAX(0._JWRB, BTH(IJ,K,M)*TMP03-SSDSC4))**IPSAT
           ENDDO
         ENDDO
       ENDDO
@@ -196,15 +186,11 @@
 !!! wrong !!???        NDIKCUMUL = NINT(SSDSBRF1/(FRATIO-1.))
         NDIKCUMUL = NINT(-LOG(SSDSBRF1)/LOG(FRATIO))
 
-        DO KK=0,NANGD
-          COSDTH(KK)=COS(KK*DELTH)
-        ENDDO
-
         DO M=1,NFRE
           DO IJ=KIJS,KIJL
-            C_(IJ,M)=SIG(M)/WAVNUM(IJ,M)
+            C_(IJ,M)=ZPIFR(M)/WAVNUM(IJ,M)
             C_C(IJ,M)=C_(IJ,M)**2
-            DSIP(IJ,M)=TMP02*SIG(M)*XLOGDFRTH/CGROUP(IJ,M) !  coef*dtheta*dk = coef*dtheta*dsigma/cg
+            DSIP(IJ,M)=TMP02*ZPIFR(M)*XLOGDFRTH/CGROUP(IJ,M) !  coef*dtheta*dk = coef*dtheta*dsigma/cg
           ENDDO
         ENDDO
 
@@ -259,7 +245,7 @@
           DO M2=1,M-NDIKCUMUL
             DO KK=0,NANGD
               DO IJ=KIJS,KIJL
-                WCUMUL(IJ,KK,M2)=SQRT(ABS(C_C(IJ,M)+C_C(IJ,M2)-2.0_JWRB*C_(IJ,M)*C_(IJ,M2)*COSDTH(KK)))*TRPZ_DSIP(IJ,M2)
+                WCUMUL(IJ,KK,M2)=SQRT(ABS(C_C(IJ,M)+C_C(IJ,M2)-2.0_JWRB*C_(IJ,M)*C_(IJ,M2)*COS(KK*DELTH)))*TRPZ_DSIP(IJ,M2)
               ENDDO
             ENDDO
           ENDDO
@@ -270,13 +256,12 @@
           ! the expected rate of sweeping by larger breaking waves)
 
             DO K2=1,NANG
-              KKD(K2)=ABS(K2-K)
-              IF ( KKD(K2) > NANGD) KKD(K2)=KKD(K2)-NANGD
             ENDDO
 
             DO M2=1,M-NDIKCUMUL
               DO K2=1,NANG
-                KK=KKD(K2)
+                KK=ABS(K2-K)
+                IF ( KK > NANGD) KK=KK-NANGD
                 DO IJ=KIJS,KIJL
                   ! Integrates over frequencies M2 and directions K2 to 
                   ! Integration is performed from M2=1 to a frequency lower than M: IK-NDIKCUMUL
@@ -305,7 +290,7 @@
         ENDDO
         DO M=1, NFRE
           DO IJ=KIJS,KIJL
-            FACWTRB(IJ,M) = SIG(M)*WAVNUM(IJ,M)*FACTURB(IJ)
+            FACWTRB(IJ,M) = ZPIFR(M)*WAVNUM(IJ,M)*FACTURB(IJ)
           ENDDO
           DO K=1,NANG
             DO IJ=KIJS,KIJL
