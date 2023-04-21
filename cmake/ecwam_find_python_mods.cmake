@@ -11,7 +11,7 @@ macro( ecwam_find_python_mods )
    set(PYYAML_FOUND OFF)
 
    ecbuild_find_python()
-   find_program( FYPP_PATH fypp REQUIRED QUIET)
+   find_program( FYPP_PATH fypp QUIET)
    if( FYPP_PATH )
      ecbuild_info( "${ECWAM_PROJECT_NAME} FOUND fypp" )
      set(FYPP_FOUND ON)
