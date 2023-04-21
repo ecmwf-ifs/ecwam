@@ -38,16 +38,16 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
       REAL(KIND=JWRB), INTENT(IN) :: XKMSS ! WAVE NUMBER CUT-OFF
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: HALP  ! 1/2 Phillips parameter
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USTAR ! friction velocity
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: XMSSCG  ! mean square slope for gravity-capillary waves
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(OUT) :: FRGC  ! Frequency from which the gravity-capillary spectrum is approximated
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: HALP  ! 1/2 Phillips parameter
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: USTAR ! friction velocity
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(OUT) :: XMSSCG  ! mean square slope for gravity-capillary waves
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(OUT) :: FRGC  ! Frequency from which the gravity-capillary spectrum is approximated
 
 
       INTEGER(KIND=JWIM) :: IJ, I, NE
-      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL) :: NS
+      INTEGER(KIND=JWIM), DIMENSION(KIJL) :: NS
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: XKS, OMS, COEF
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: XKS, OMS, COEF
    
 !     INCLUDE FUNCTIONS FROM GRAVITY-CAPILLARY DISPERSION REALTIONS
 #include "gc_dispersion.h"
