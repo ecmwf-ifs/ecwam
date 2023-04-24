@@ -159,8 +159,8 @@ DO J = 1, NGY
 ENDDO
 !
 DO IJ = IJS, IJL
-   IX          = BLK2GLO(IJ)%IXLG
-   JSN         = BLK2GLO(IJ)%KXLT 
+   IX          = BLK2GLO%IXLG(IJ)
+   JSN         = BLK2GLO%KXLT(IJ)
    NLOCMSK(IJ) = 1
    NGLOIND(IJ) = IGLOBAL(IX,JSN)
 ENDDO

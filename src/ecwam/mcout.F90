@@ -98,8 +98,8 @@
      &             ''  POINT.'')')
       DO IO=1,NGOUT
         IF (IJAR(IO).GT.0) THEN
-          IX  = BLK2GLO(IJAR(IO))%IXLG
-          KX  = BLK2GLO(IJAR(IO))%KXLT
+          IX  = BLK2GLO%IXLG(IJAR(IO))
+          KX  = BLK2GLO%KXLT(IJAR(IO))
           ALONG = AMOWEP + (IX-1)*ZDELLO(KX)
           ALAT  = AMOSOP + (KX-1)*XDELLA
         ELSE

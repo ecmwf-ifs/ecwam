@@ -63,10 +63,10 @@ SUBROUTINE INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,     &
 
 #include "abort1.intfb.h"
 
-      TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: BLK2LOC
+      TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
       LOGICAL, INTENT(IN) :: LLINIALL, LLOCAL
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
-      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(INOUT) :: FIELDG
+      TYPE(FORCING_FIELDS), INTENT(INOUT) :: FIELDG
 
 
       INTEGER(KIND=JWIM) :: IJ, IX, JY, JSN
@@ -90,25 +90,25 @@ ENDIF
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JY, IX)
         DO JY = NYS, NYE
           DO IX = NXS, NXE
-            FIELDG(IX,JY)%XLON    = ZMISS 
-            FIELDG(IX,JY)%YLAT    = ZMISS
-            FIELDG(IX,JY)%UWND    = 0.0_JWRB
-            FIELDG(IX,JY)%VWND    = 0.0_JWRB
-            FIELDG(IX,JY)%WSWAVE  = WSPMIN 
-            FIELDG(IX,JY)%WDWAVE  = 0.0_JWRB
-            FIELDG(IX,JY)%UFRIC   = 0.0_JWRB
-            FIELDG(IX,JY)%CICOVER = 0.0_JWRB
-            FIELDG(IX,JY)%CITHICK = 0.0_JWRB
-            FIELDG(IX,JY)%LKFR    = 0.0_JWRB
-            FIELDG(IX,JY)%AIRD    = ROAIR
-            FIELDG(IX,JY)%WSTAR   = WSTAR0
-            FIELDG(IX,JY)%UCUR    = 0.0_JWRB
-            FIELDG(IX,JY)%VCUR    = 0.0_JWRB
-            FIELDG(IX,JY)%TAUW    = 0.0_JWRB
-            FIELDG(IX,JY)%TAUWDIR = 0.0_JWRB
-            FIELDG(IX,JY)%Z0M     = 0.0_JWRB
-            FIELDG(IX,JY)%Z0B     = 0.0_JWRB
-            FIELDG(IX,JY)%CHRNCK  = PRCHAR 
+            FIELDG%XLON(IX,JY)    = ZMISS
+            FIELDG%YLAT(IX,JY)    = ZMISS
+            FIELDG%UWND(IX,JY)    = 0.0_JWRB
+            FIELDG%VWND(IX,JY)    = 0.0_JWRB
+            FIELDG%WSWAVE(IX,JY)  = WSPMIN
+            FIELDG%WDWAVE(IX,JY)  = 0.0_JWRB
+            FIELDG%UFRIC(IX,JY)   = 0.0_JWRB
+            FIELDG%CICOVER(IX,JY) = 0.0_JWRB
+            FIELDG%CITHICK(IX,JY) = 0.0_JWRB
+            FIELDG%LKFR(IX,JY)    = 0.0_JWRB
+            FIELDG%AIRD(IX,JY)    = ROAIR
+            FIELDG%WSTAR(IX,JY)   = WSTAR0
+            FIELDG%UCUR(IX,JY)    = 0.0_JWRB
+            FIELDG%VCUR(IX,JY)    = 0.0_JWRB
+            FIELDG%TAUW(IX,JY)    = 0.0_JWRB
+            FIELDG%TAUWDIR(IX,JY) = 0.0_JWRB
+            FIELDG%Z0M(IX,JY)     = 0.0_JWRB
+            FIELDG%Z0B(IX,JY)     = 0.0_JWRB
+            FIELDG%CHRNCK(IX,JY)  = PRCHAR
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
@@ -116,8 +116,8 @@ ENDIF
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JY, IX)
         DO JY = NYS, NYE
           DO IX = NXS, NXE
-            FIELDG(IX,JY)%XLON   = ZMISS 
-            FIELDG(IX,JY)%YLAT   = ZMISS
+            FIELDG%XLON(IX,JY)   = ZMISS
+            FIELDG%YLAT(IX,JY)   = ZMISS
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
@@ -131,17 +131,17 @@ ENDIF
           KIJS=1
           KIJL=KIJL4CHNK(ICHNK)
           DO IJ=KIJS,KIJL
-            IX = BLK2LOC(IJ,ICHNK)%IFROMIJ
-            JY = BLK2LOC(IJ,ICHNK)%JFROMIJ
-            JSN= BLK2LOC(IJ,ICHNK)%KFROMIJ
+            IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
+            JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
+            JSN= BLK2LOC%KFROMIJ(IJ,ICHNK)
             IF (LLUNSTR) THEN
 #ifdef WAM_HAVE_UNWAM
-              FIELDG(IX,JY)%XLON = XP(IJ)
-              FIELDG(IX,JY)%YLAT = YP(IJ)
+              FIELDG%XLON(IX,JY) = XP(IJ)
+              FIELDG%YLAT(IX,JY) = YP(IJ)
 #endif
             ELSE
-              FIELDG(IX,JY)%XLON = AMOWEP + (IX-1)*ZDELLO(JSN)
-              FIELDG(IX,JY)%YLAT = AMOSOP + (JSN-1)*XDELLA
+              FIELDG%XLON(IX,JY) = AMOWEP + (IX-1)*ZDELLO(JSN)
+              FIELDG%YLAT(IX,JY) = AMOSOP + (JSN-1)*XDELLA
             ENDIF
           ENDDO
         ENDDO
@@ -158,8 +158,8 @@ ENDIF
           DO JY = NYS, NYE
             JSN = NGY-JY+1
             DO IX = NXS, MIN(NLONRGG(JSN), NXE)
-              FIELDG(IX,JY)%XLON = AMOWEP + (IX-1)*ZDELLO(JSN)
-              FIELDG(IX,JY)%YLAT = AMOSOP + (JSN-1)*XDELLA
+              FIELDG%XLON(IX,JY) = AMOWEP + (IX-1)*ZDELLO(JSN)
+              FIELDG%YLAT(IX,JY) = AMOSOP + (JSN-1)*XDELLA
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO

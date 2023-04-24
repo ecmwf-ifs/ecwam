@@ -7,15 +7,12 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
+SUBROUTINE GETWND (BLK2LOC,                               &
  &                 NXS, NXE, NYS, NYE, FIELDG,            &
- &                 UCUR, VCUR,                            &
- &                 U10, US,                               &
- &                 THW,                                   &
- &                 ADS, WSTAR,                            &
- &                 CICOVER, CITHICK,                      &
+ &                 WVENVI,                                &
+ &                 FF_NOW,                                &
  &                 CDTWIS, LWNDFILE, LCLOSEWND, IREAD,    &
- &                 LWCUR, NEMOCICOVER, NEMOCITHICK,       &
+ &                 LWCUR, NEMO2WAM,                       &
  &                 ICODE_WND)
 
 ! ----------------------------------------------------------------------
@@ -70,7 +67,7 @@ SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU, JWRO
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, WVGRIDLOC, ENVIRONMENT, FORCING_FIELDS, OCEAN2WAVE
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
@@ -93,19 +90,17 @@ SUBROUTINE GETWND (IFROMIJ, JFROMIJ,                      &
 #include "readwind.intfb.h"
 #include "wamwnd.intfb.h"
 
-      INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
-      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(INOUT) :: FIELDG
-      REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(IN) :: UCUR, VCUR
-      REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(INOUT) :: U10, US 
-      REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(OUT) :: THW
-      REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(OUT) :: ADS, WSTAR
-      REAL(KIND=JWRB), DIMENSION (NPROMA_WAM, NCHNK), INTENT(OUT) :: CICOVER, CITHICK
+      TYPE(FORCING_FIELDS), INTENT(INOUT) :: FIELDG
+      TYPE(ENVIRONMENT), INTENT(IN) :: WVENVI
+
+      TYPE(FORCING_FIELDS), INTENT(INOUT) :: FF_NOW
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS
       LOGICAL, INTENT(IN) :: LWNDFILE, LCLOSEWND
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR
-      REAL(KIND=JWRO), DIMENSION (NPROMA_WAM, NCHNK), INTENT(IN) :: NEMOCICOVER, NEMOCITHICK
+      TYPE(OCEAN2WAVE), INTENT(IN) :: NEMO2WAM
       INTEGER(KIND=JWIM), INTENT(OUT) :: ICODE_WND
 
 
@@ -210,20 +205,20 @@ IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
         DO ICHNK = 1, NCHNK
           KIJS=1
           KIJL=NPROMA_WAM
-          CALL WAMWND (KIJS, KIJL,                          &
-     &                 IFROMIJ(:,ICHNK), JFROMIJ(:,ICHNK),  &
-     &                 NXS, NXE, NYS, NYE, FIELDG,          &
-     &                 UCUR(:,ICHNK), VCUR(:,ICHNK),        &
-     &                 U10(:,ICHNK), US(:,ICHNK),           &
-     &                 THW(:,ICHNK), ADS(:,ICHNK),          &
-     &                 WSTAR(:,ICHNK), CITHICK(:,ICHNK),    &
+          CALL WAMWND (KIJS, KIJL,                                      &
+     &                 BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK),  &
+     &                 NXS, NXE, NYS, NYE, FIELDG,                      &
+     &                 WVENVI%UCUR(:,ICHNK), WVENVI%VCUR(:,ICHNK),          &
+     &                 FF_NOW%WSWAVE(:,ICHNK), FF_NOW%UFRIC(:,ICHNK),       &
+     &                 FF_NOW%WDWAVE(:,ICHNK), FF_NOW%AIRD(:,ICHNK),        &
+     &                 FF_NOW%WSTAR(:,ICHNK), FF_NOW%CITHICK(:,ICHNK),      &
      &                 LWCUR, ICODE_WND)
 
 
-          CALL MICEP(IPARAMCI, KIJS, KIJL, IFROMIJ(:,ICHNK), JFROMIJ(:,ICHNK),  &
-     &               NXS, NXE, NYS, NYE, FIELDG,                                &
-     &               CICOVER(:,ICHNK), CITHICK(:,ICHNK),                        &
-     &               NEMOCICOVER(:,ICHNK), NEMOCITHICK(:,ICHNK))
+          CALL MICEP(IPARAMCI, KIJS, KIJL, BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK),  &
+     &               NXS, NXE, NYS, NYE, FIELDG,                                            &
+     &               FF_NOW%CICOVER(:,ICHNK), FF_NOW%CITHICK(:,ICHNK),                          &
+     &               NEMO2WAM%NEMOCICOVER(:,ICHNK), NEMO2WAM%NEMOCITHICK(:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)

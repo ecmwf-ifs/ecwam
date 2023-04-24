@@ -130,7 +130,7 @@
       INTEGER(KIND=JWIM), DIMENSION(NGX,NGY), INTENT(IN) :: IIM, IIPM
       INTEGER(KIND=JWIM), DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
-      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(INOUT) :: FIELDG
+      TYPE(FORCING_FIELDS), INTENT(INOUT) :: FIELDG
 
 
       REAL(KIND=JWRB), INTENT(IN) :: XDELLA, AMOWEP, AMOSOP, AMOEAP, AMONOP, PMISS
@@ -184,15 +184,15 @@
 
             MASK_IN(IJBLOCK(I,J))=1
 
-            FIELDG(I,J)%UWND = FIELDS(IJBLOCK(I,J),1)
-            FIELDG(I,J)%VWND = FIELDS(IJBLOCK(I,J),2)
-            FIELDG(I,J)%AIRD = ZLADEN*FIELDS(IJBLOCK(I,J),3) + (1.0_JWRB-ZLADEN)*ROAIR
-            FIELDG(I,J)%WSTAR = ZLGUST*FIELDS(IJBLOCK(I,J),4) + (1.0_JWRB-ZLGUST)*WSTAR0
-            FIELDG(I,J)%CICOVER = FIELDS(IJBLOCK(I,J),5)
-            FIELDG(I,J)%LKFR = ZLLKC*FIELDS(IJBLOCK(I,J),6)
+            FIELDG%UWND(I,J) = FIELDS(IJBLOCK(I,J),1)
+            FIELDG%VWND(I,J) = FIELDS(IJBLOCK(I,J),2)
+            FIELDG%AIRD(I,J) = ZLADEN*FIELDS(IJBLOCK(I,J),3) + (1.0_JWRB-ZLADEN)*ROAIR
+            FIELDG%WSTAR(I,J) = ZLGUST*FIELDS(IJBLOCK(I,J),4) + (1.0_JWRB-ZLGUST)*WSTAR0
+            FIELDG%CICOVER(I,J) = FIELDS(IJBLOCK(I,J),5)
+            FIELDG%LKFR(I,J) = ZLLKC*FIELDS(IJBLOCK(I,J),6)
 
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
-            FIELDG(I,J)%CITHICK = 0.0_JWRB
+            FIELDG%CITHICK(I,J) = 0.0_JWRB
           ENDDO
 
           IF (LLNEWCURR) THEN
@@ -200,15 +200,15 @@
               DO IJ = KIJS, KIJLMAX
                 I = IFROMIJ(IJ)
                 J = JFROMIJ(IJ)
-                FIELDG(I,J)%UCUR = FIELDS(IJBLOCK(I,J),7)
-                FIELDG(I,J)%VCUR = FIELDS(IJBLOCK(I,J),8)
+                FIELDG%UCUR(I,J) = FIELDS(IJBLOCK(I,J),7)
+                FIELDG%VCUR(I,J) = FIELDS(IJBLOCK(I,J),8)
               ENDDO
             ELSE
               DO IJ = KIJS, KIJLMAX
                 I = IFROMIJ(IJ)
                 J = JFROMIJ(IJ)
-                FIELDG(I,J)%UCUR = 0.0_JWRB
-                FIELDG(I,J)%VCUR = 0.0_JWRB
+                FIELDG%UCUR(I,J) = 0.0_JWRB
+                FIELDG%VCUR(I,J) = 0.0_JWRB
               ENDDO
             ENDIF
           ENDIF
@@ -245,31 +245,31 @@
             MASK_IN(IJBLOCK(IIP,JJ1))=1
             MASK_IN(IJBLOCK(IIP1,JJ1))=1
 
-            FIELDG(I,J)%UWND=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),1) +      &
+            FIELDG%UWND(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),1) +      &
      &                      DII1*FIELDS(IJBLOCK(II1,JJ),1) ) +          &
      &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),1) +          &
      &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),1) )
 
-            FIELDG(I,J)%VWND=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),2) +      &
+            FIELDG%VWND(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),2) +      &
      &                      DII1*FIELDS(IJBLOCK(II1,JJ),2) ) +          &
      &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),2) +          &
      &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),2) )
 
             IF (LADEN) THEN
-              FIELDG(I,J)%AIRD=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),3) +    &
+              FIELDG%AIRD(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),3) +    &
      &                        DII1*FIELDS(IJBLOCK(II1,JJ),3) ) +        &
      &                  DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),3) +        &
      &                        DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),3) )
             ELSE
-              FIELDG(I,J)%AIRD = ROAIR
+              FIELDG%AIRD(I,J) = ROAIR
             ENDIF
             IF (LGUST) THEN
-              FIELDG(I,J)%WSTAR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),4) +   &
+              FIELDG%WSTAR(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),4) +   &
      &                         DII1*FIELDS(IJBLOCK(II1,JJ),4) ) +       &
      &                   DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),4) +       &
      &                         DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),4) )
             ELSE
-              FIELDG(I,J)%WSTAR = WSTAR0 
+              FIELDG%WSTAR(I,J) = WSTAR0 
             ENDIF
 
 !           FOR SEA ICE FRACTION
@@ -320,41 +320,41 @@
                   CI=PMISS
                 ENDIF
               ENDIF
-              FIELDG(I,J)%CICOVER=CI
+              FIELDG%CICOVER(I,J)=CI
             ELSE
-              FIELDG(I,J)%CICOVER=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),5) + &
+              FIELDG%CICOVER(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),5) + &
      &                      DII1*FIELDS(IJBLOCK(II1,JJ),5) ) +          &
      &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),5) +          &
      &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),5) )
             ENDIF
 
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
-            FIELDG(I,J)%CITHICK = 0.0_JWRB
+            FIELDG%CITHICK(I,J) = 0.0_JWRB
 
 
             IF (LLKC) THEN
-              FIELDG(I,J)%LKFR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),6) +    &
+              FIELDG%LKFR(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),6) +    &
      &                         DII1*FIELDS(IJBLOCK(II1,JJ),6) ) +       &
      &                   DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),6) +       &
      &                         DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),6) )
             ELSE
-              FIELDG(I,J)%LKFR = 0.0_JWRB
+              FIELDG%LKFR(I,J) = 0.0_JWRB
             ENDIF
 
             IF (LLNEWCURR) THEN
               IF (LWCUR) THEN
-                FIELDG(I,J)%UCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),7) +  &
+                FIELDG%UCUR(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),7) +  &
      &                           DII1*FIELDS(IJBLOCK(II1,JJ),7) ) +     &
      &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),7) +     &
      &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),7) )
 
-                FIELDG(I,J)%VCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),8) +  &
+                FIELDG%VCUR(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),8) +  &
      &                           DII1*FIELDS(IJBLOCK(II1,JJ),8) ) +     &
      &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),8) +     &
      &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),8) )
               ELSE
-                FIELDG(I,J)%UCUR = 0.0_JWRB
-                FIELDG(I,J)%VCUR = 0.0_JWRB
+                FIELDG%UCUR(I,J) = 0.0_JWRB
+                FIELDG%VCUR(I,J) = 0.0_JWRB
               ENDIF
             ENDIF
 

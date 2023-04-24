@@ -65,13 +65,13 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,              &
 
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
-      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(INOUT) :: FIELDG
-      TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: BLK2LOC
-      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: WVENVI
-      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FF_NEXT
+      TYPE(FORCING_FIELDS), INTENT(INOUT) :: FIELDG
+      TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
+      TYPE(ENVIRONMENT), INTENT(INOUT) :: WVENVI
+      TYPE(FORCING_FIELDS), INTENT(INOUT) :: FF_NEXT
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR
-      TYPE(OCEAN2WAVE), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: NEMO2WAM
+      TYPE(OCEAN2WAVE), INTENT(INOUT) :: NEMO2WAM
 
 
       INTEGER(KIND=JWIM) :: ICODE_WND
@@ -89,20 +89,6 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,              &
 !        --------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('NOTIM',0,ZHOOK_HANDLE)
-
-ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
- &        JFROMIJ => BLK2LOC%JFROMIJ, &
- &        UCUR => WVENVI%UCUR, &
- &        VCUR => WVENVI%VCUR, &
- &        U10 => FF_NEXT%WSWAVE, &
- &        US => FF_NEXT%UFRIC, &
- &        THW => FF_NEXT%WDWAVE, &
- &        ADS => FF_NEXT%AIRD, &
- &        WSTAR => FF_NEXT%WSTAR, &
- &        CICR => FF_NEXT%CICOVER, &
- &        CITH => FF_NEXT%CITHICK, &
- &        NEMOCICOVER => NEMO2WAM%NEMOCICOVER, &
- &        NEMOCITHICK => NEMO2WAM%NEMOCITHICK)
 
 
       CDTWIH = CDTWIS
@@ -146,15 +132,12 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
 
         CDTNEXT=CDTWIH
 
-        CALL GETWND (IFROMIJ, JFROMIJ,                      &
+        CALL GETWND (BLK2LOC,                               &
      &               NXS, NXE, NYS, NYE, FIELDG,            &
-     &               UCUR, VCUR,                            &
-     &               U10, US,                               &
-     &               THW,                                   &
-     &               ADS, WSTAR,                            &
-     &               CICR, CITH,                            &
+     &               WVENVI,                                &
+     &               FF_NEXT,                               &
      &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,    &
-     &               LWCUR, NEMOCICOVER, NEMOCITHICK,       &
+     &               LWCUR, NEMO2WAM,                       &
      &               ICODE_WND)
 
 
@@ -179,8 +162,6 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
         ENDIF
 
       ENDIF
-
-END ASSOCIATE
 
       IF (LHOOK) CALL DR_HOOK('NOTIM',1,ZHOOK_HANDLE)
 

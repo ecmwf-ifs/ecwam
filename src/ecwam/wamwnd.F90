@@ -98,7 +98,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
-      TYPE(FORCING_FIELDS), DIMENSION(NXS:NXE, NYS:NYE), INTENT(IN) :: FIELDG
+      TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
       INTEGER(KIND=JWIM), INTENT(IN) :: ICODE_WND
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(IN) :: UCUR, VCUR 
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(INOUT) :: U10, US
@@ -133,11 +133,11 @@
       DO IJ = KIJS, KIJL
         IX = IFROMIJ(IJ)
         JY = JFROMIJ(IJ)
-        UU(IJ) = FIELDG(IX,JY)%UWND
-        VV(IJ) = FIELDG(IX,JY)%VWND
-        ADS(IJ) = FIELDG(IX,JY)%AIRD
-        WSTAR(IJ)= FIELDG(IX,JY)%WSTAR
-        CITH(IJ)= FIELDG(IX,JY)%CITHICK
+        UU(IJ) = FIELDG%UWND(IX,JY)
+        VV(IJ) = FIELDG%VWND(IX,JY)
+        ADS(IJ) = FIELDG%AIRD(IX,JY)
+        WSTAR(IJ)= FIELDG%WSTAR(IX,JY)
+        CITH(IJ)= FIELDG%CITHICK(IX,JY)
       ENDDO
 
 
@@ -151,8 +151,8 @@
           DO IJ = KIJS, KIJL
             IX = IFROMIJ(IJ)
             JY = JFROMIJ(IJ)
-            U10(IJ) = FIELDG(IX,JY)%WSWAVE
-            THW(IJ) = FIELDG(IX,JY)%WDWAVE 
+            U10(IJ) = FIELDG%WSWAVE(IX,JY)
+            THW(IJ) = FIELDG%WDWAVE(IX,JY)
           ENDDO
 
 !         THERE MIGHT BE POINTS FOR WHICH NO WAM VALUES ARE AVAILABLE
@@ -196,11 +196,11 @@
             IX = IFROMIJ(IJ)
             JY = JFROMIJ(IJ)
 
-            IF (FIELDG(IX,JY)%WSWAVE /= ZMISS .AND.                      &
-     &          FIELDG(IX,JY)%WSWAVE > 0.0_JWRB ) THEN
+            IF (FIELDG%WSWAVE(IX,JY) /= ZMISS .AND.                      &
+     &          FIELDG%WSWAVE(IX,JY) > 0.0_JWRB ) THEN
               WSPEED(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
               IF (WSPEED(IJ) > 0.0_JWRB) THEN
-                RESCALE=FIELDG(IX,JY)%WSWAVE/WSPEED(IJ)
+                RESCALE=FIELDG%WSWAVE(IX,JY)/WSPEED(IJ)
                 UU(IJ) = UU(IJ) * RESCALE 
                 VV(IJ) = VV(IJ) * RESCALE
               ENDIF

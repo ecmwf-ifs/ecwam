@@ -73,7 +73,7 @@ SUBROUTINE INITNEMOCPL(BLK2LOC)
 
 ! LOCAL WAM GRID POINTS
 ! POINTERS FROM LOCAL GRID POINTS TO 2-D MAPS
-      TYPE(WVGRIDLOC), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: BLK2LOC
+      TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
 ! GLOBAL INDEX DEFINITON.      
       INTEGER(KIND=JWIM) :: IGLOBAL(NGX, NGY)
 ! INDICES
@@ -86,9 +86,6 @@ SUBROUTINE INITNEMOCPL(BLK2LOC)
 ! -------------------------------------------------------------------   
 
 IF (LHOOK) CALL DR_HOOK('INITNEMOCPL',0,ZHOOK_HANDLE)
-
-ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
- &        KFROMIJ => BLK2LOC%KFROMIJ)
 
       WRITE(IU06,*)
       WRITE(IU06,*)' **************************************************'
@@ -116,8 +113,8 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
       IC = 0
       DO ICHNK = 1, NCHNK
          DO IJ = 1, KIJL4CHNK(ICHNK)
-           IX   = IFROMIJ(IJ, ICHNK)
-           JSN  = KFROMIJ(IJ, ICHNK)
+           IX   = BLK2LOC%IFROMIJ(IJ,ICHNK)
+           JSN  = BLK2LOC%KFROMIJ(IJ,ICHNK)
            IC = IC + 1
            NLOCMSK(IC) = 1
            NGLOIND(IC) = IGLOBAL(IX,JSN)
@@ -130,8 +127,8 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
          IC = 0
          DO ICHNK = 1, NCHNK
            DO IJ = 1, KIJL4CHNK(ICHNK)
-             IX   = IFROMIJ(IJ, ICHNK)
-             JSN  = KFROMIJ(IJ, ICHNK)
+             IX   = BLK2LOC%IFROMIJ(IJ,ICHNK)
+             JSN  = BLK2LOC%KFROMIJ(IJ,ICHNK)
              IC = IC + 1
              WRITE(0,*) ICHNK, IJ, IX, JSN, NLONRGG(JSN), NGLOIND(IC)
            ENDDO
@@ -153,8 +150,6 @@ ASSOCIATE(IFROMIJ => BLK2LOC%IFROMIJ, &
      &                               NLOCMSK, NGLOIND, 0)
 #endif
 
-
-END ASSOCIATE
 
 IF (LHOOK) CALL DR_HOOK('INITNEMOCPL',1,ZHOOK_HANDLE)
 

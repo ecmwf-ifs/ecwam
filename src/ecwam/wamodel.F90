@@ -114,14 +114,14 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 
       INTEGER(KIND=JWIM), INTENT(IN)                                           :: NADV
       LOGICAL, INTENT(INOUT)                                                   :: LDSTOP, LDWRRE
-      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN)                            :: BLK2GLO
-      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)           :: WVENVI
-      TYPE(FREQUENCY), DIMENSION(NPROMA_WAM, NFRE, NCHNK), INTENT(INOUT)       :: WVPRPT
-      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)        :: FF_NOW
-      TYPE(FORCING_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)           :: FF_NEXT
-      TYPE(INTGT_PARAM_FIELDS), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)    :: INTFLDS
-      TYPE(WAVE2OCEAN), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT)            :: WAM2NEMO
-      TYPE(OCEAN2WAVE), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)               :: NEMO2WAM
+      TYPE(WVGRIDGLO), INTENT(IN)                                              :: BLK2GLO
+      TYPE(ENVIRONMENT), INTENT(INOUT)                                         :: WVENVI
+      TYPE(FREQUENCY), INTENT(INOUT)                                           :: WVPRPT
+      TYPE(FORCING_FIELDS), INTENT(INOUT)                                      :: FF_NOW
+      TYPE(FORCING_FIELDS), INTENT(IN)                                         :: FF_NEXT
+      TYPE(INTGT_PARAM_FIELDS), INTENT(INOUT)                                  :: INTFLDS
+      TYPE(WAVE2OCEAN), INTENT(INOUT)                                          :: WAM2NEMO
+      TYPE(OCEAN2WAVE), INTENT(IN)                                             :: NEMO2WAM
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
 
 
@@ -173,7 +173,8 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
         CALL GSTATS(1236,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
         DO ICHNK = 1, NCHNK
-          CALL UNSETICE(1, NPROMA_WAM, WVENVI(:,ICHNK), FF_NOW(:,ICHNK), FL1(:,:,:,ICHNK) )  
+          CALL UNSETICE(1, NPROMA_WAM, WVENVI%DEPTH(:,ICHNK), WVENVI%EMAXDPT(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK), &
+ &                      FF_NOW%WSWAVE(:,ICHNK), FF_NOW%CICOVER(:,ICHNK), FL1(:,:,:,ICHNK) )
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1236,1)

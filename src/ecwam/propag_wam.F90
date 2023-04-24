@@ -66,9 +66,9 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
 #include "propags2.intfb.h"
 #include "propdot.intfb.h"
 
-      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO
-      TYPE(ENVIRONMENT), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: WVENVI
-      TYPE(FREQUENCY), DIMENSION(NPROMA_WAM, NFRE, NCHNK), INTENT(IN) :: WVPRPT
+      TYPE(WVGRIDGLO), INTENT(IN) :: BLK2GLO
+      TYPE(ENVIRONMENT), INTENT(IN) :: WVENVI
+      TYPE(FREQUENCY), INTENT(IN) :: WVPRPT
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
 
 
@@ -95,15 +95,6 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
-
-ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
- &        COSPHM1 => WVENVI%COSPHM1, &
- &        DEPTH => WVENVI%DEPTH, &
- &        UCUR => WVENVI%UCUR, &
- &        VCUR => WVENVI%VCUR, &
- &        WAVNUM => WVPRPT%WAVNUM, &
- &        CGROUP => WVPRPT%CGROUP, &
- &        OMOSNH2KD => WVPRPT%OMOSNH2KD)
 
 
       IF (NIBLO > 1) THEN
@@ -166,9 +157,8 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 
 !            NEED HALO VALUES
              CALL  PROENVHALO (NINF, NSUP,                            &
-&                              WAVNUM, CGROUP, OMOSNH2KD,             &
-&                              DELLAM1, COSPHM1,                      & 
-&                              DEPTH, UCUR, VCUR,                     &
+&                              WVPRPT,                                &
+&                              WVENVI,                                &
 &                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
 &                              DELLAM1_EXT, COSPHM1_EXT,              & 
 &                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
@@ -201,9 +191,8 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
              IF (LUPDTWGHT) THEN
 !              NEED HALO VALUES
                CALL  PROENVHALO (NINF, NSUP,                            &
-&                                WAVNUM, CGROUP, OMOSNH2KD,             &
-&                                DELLAM1, COSPHM1,                      & 
-&                                DEPTH, UCUR, VCUR,                     &
+&                                WVPRPT,                                &
+&                                WVENVI,                                &
 &                                WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
 &                                DELLAM1_EXT, COSPHM1_EXT,              & 
 &                                DEPTH_EXT, UCUR_EXT, VCUR_EXT )
@@ -267,9 +256,8 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 
 !            NEED HALO VALUES
              CALL  PROENVHALO (NINF, NSUP,                            &
-&                              WAVNUM, CGROUP, OMOSNH2KD,             &
-&                              DELLAM1, COSPHM1,                      & 
-&                              DEPTH, UCUR, VCUR,                     &
+&                              WVPRPT,                                &
+&                              WVENVI,                                &
 &                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
 &                              DELLAM1_EXT, COSPHM1_EXT,              & 
 &                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
@@ -293,9 +281,8 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
 
 !            NEED HALO VALUES
              CALL  PROENVHALO (NINF, NSUP,                            &
-&                              WAVNUM, CGROUP, OMOSNH2KD,             &
-&                              DELLAM1, COSPHM1,                      & 
-&                              DEPTH, UCUR, VCUR,                     &
+&                              WVPRPT,                                &
+&                              WVENVI,                                &
 &                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
 &                              DELLAM1_EXT, COSPHM1_EXT,              & 
 &                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
@@ -352,7 +339,6 @@ ASSOCIATE(DELLAM1 => WVENVI%DELLAM1, &
       L1STCALL=.FALSE.
       LLCHKCFL=.FALSE.
 
-END ASSOCIATE
 IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',1,ZHOOK_HANDLE)
 
 END SUBROUTINE PROPAG_WAM

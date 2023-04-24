@@ -13,7 +13,11 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
  &                   SSURF, CICOVER,                   &
  &                   PHIWA,                            &
  &                   EM, F1, WSWAVE, WDWAVE,           &
- &                   UFRIC, AIRD, INTFLDS, WAM2NEMO,   &
+ &                   UFRIC, AIRD,   &
+ &                   NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
+ &                   NEMOTAUY, NEMOWSWAVE, NEMOPHIF, &
+ &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, &
+ &                   PHIOCD, PHIEPS, PHIAW, &
  &                   LNUPD)
 
 ! ----------------------------------------------------------------------
@@ -86,8 +90,10 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: PHIWA
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EM, F1, WSWAVE, WDWAVE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, AIRD
-      TYPE(INTGT_PARAM_FIELDS), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: INTFLDS
-      TYPE(WAVE2OCEAN), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WAM2NEMO
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: PHIOCD, PHIEPS, PHIAW
+      REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) ::  NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX
+      REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) ::  NEMOTAUY, NEMOWSWAVE, NEMOPHIF
       LOGICAL, INTENT(IN) :: LNUPD
 
 
@@ -127,23 +133,6 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
-
-ASSOCIATE(PHIEPS  => INTFLDS%PHIEPS,  &
- &        PHIAW   => INTFLDS%PHIAW,   &
- &        TAUOC   => INTFLDS%TAUOC,   &
- &        TAUXD   => INTFLDS%TAUXD,   &
- &        TAUYD   => INTFLDS%TAUYD,   &
- &        TAUOCXD => INTFLDS%TAUOCXD, &
- &        TAUOCYD => INTFLDS%TAUOCYD, &
- &        PHIOCD  => INTFLDS%PHIOCD, &
- &        NEMOTAUX  => WAM2NEMO%NEMOTAUX,  &
- &        NEMOTAUY => WAM2NEMO%NEMOTAUY,  &
- &        NEMOWSWAVE => WAM2NEMO%NEMOWSWAVE,  &
- &        NEMOPHIF => WAM2NEMO%NEMOPHIF, &
- &        NSWH  => WAM2NEMO%NSWH,  &
- &        NMWP  => WAM2NEMO%NMWP,  &
- &        NPHIEPS  => WAM2NEMO%NPHIEPS,  &
- &        NTAUOC  => WAM2NEMO%NTAUOC)
 
 
       EPSUS3 =  EPSUS*SQRT(EPSUS)
@@ -228,10 +217,10 @@ ASSOCIATE(PHIEPS  => INTFLDS%PHIEPS,  &
 
         TAUOCXD(IJ)= TAUXD(IJ)-OOVAL(IJ)*XSTRESS(IJ)
         TAUOCYD(IJ)= TAUYD(IJ)-OOVAL(IJ)*YSTRESS(IJ)
-        TAUO       = SQRT(TAUOCXD(IJ)**2+TAUOCYD(IJ)**2)
+        TAUO               = SQRT(TAUOCXD(IJ)**2+TAUOCYD(IJ)**2)
         TAUOC(IJ)  = MIN(MAX(TAUO/TAU,TAUOCMIN),TAUOCMAX)
 
-        XN        = AIRD(IJ)*MAX(USTAR(IJ)**3,EPSUS3)
+        XN                = AIRD(IJ)*MAX(USTAR(IJ)**3,EPSUS3)
         PHIOCD(IJ)= OOVAL(IJ)*(PHILF(IJ)-PHIWA(IJ))+(1.0_JWRB-OOVAL(IJ))*PHIOC_ICE*XN
 
         PHIEPS(IJ)= PHIOCD(IJ)/XN 
@@ -264,12 +253,11 @@ ASSOCIATE(PHIEPS  => INTFLDS%PHIEPS,  &
             NEMOTAUY(IJ) = NEMOTAUY(IJ) + TAUYD(IJ)
           ENDIF 
           NEMOWSWAVE(IJ) = NEMOWSWAVE(IJ) + WSWAVE(IJ)
-          NEMOPHIF(IJ)  = NEMOPHIF(IJ) + PHIOCD(IJ) 
+          NEMOPHIF(IJ)   = NEMOPHIF(IJ) + PHIOCD(IJ) 
         ENDIF
       ENDDO
 
 ! ----------------------------------------------------------------------
-END ASSOCIATE
 IF (LHOOK) CALL DR_HOOK('WNFLUXES',1,ZHOOK_HANDLE)
 
 END SUBROUTINE WNFLUXES

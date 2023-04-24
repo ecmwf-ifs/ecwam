@@ -58,7 +58,7 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
 !                                               THE SECOND CALL WILL TRY TO TEST WHETHER OR NOT
 !                                               CFL IS VIOLATED WHEN THE CURRENT REFRACTION TERMS ARE SET TO 0
 !                                               FOR THOSE POINTS WHERE IT WAS VIOLATED AT THE FIRST CALL  
-      TYPE(WVGRIDGLO), DIMENSION(NIBLO), INTENT(IN) :: BLK2GLO  ! BLOCK TO GRID TRANSFORMATION
+      TYPE(WVGRIDGLO), INTENT(IN) :: BLK2GLO  ! BLOCK TO GRID TRANSFORMATION
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP,2), INTENT(IN) :: WLATM1  ! 1 - WLAT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP,4), INTENT(IN) :: WCORM1  ! 1 - WCOR
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP,2), INTENT(IN) :: DP      ! COS PHI FACTOR
@@ -105,8 +105,6 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
 
 IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
-ASSOCIATE(IXLG => BLK2GLO%IXLG, &
- &        KXLT => BLK2GLO%KXLT)
 
       NLAND = NSUP+1
 
@@ -172,8 +170,8 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 !             LOOP OVER GRID POINTS
 !             ---------------------
               DO IJ=KIJS,KIJL
-                IX=IXLG(IJ)
-                KY=KXLT(IJ)
+                IX=BLK2GLO%IXLG(IJ)
+                KY=BLK2GLO%KXLT(IJ)
 
 !               FLUX VELOCITIES AT THE GRID BOX INTERFACE 
 
@@ -344,7 +342,7 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
         SM  = DELTH0*(SINTH(K)+SINTH(KM1))/R
 
         DO IJ = KIJS,KIJL
-          JH=KXLT(IJ)
+          JH=BLK2GLO%KXLT(IJ)
           TANPH = SINPH(JH)/COSPH(JH)
           DRGP(IJ) = TANPH*SP
           DRGM(IJ) = TANPH*SM
@@ -541,8 +539,8 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
 
 !           SUM < 1  ?
             IF (SUMWN(IJ,K,M) > 1.0_JWRB .OR. SUMWN(IJ,K,M) < 0.0_JWRB) THEN
-              IX=IXLG(IJ)
-              KY=KXLT(IJ)
+              IX=BLK2GLO%IXLG(IJ)
+              KY=BLK2GLO%KXLT(IJ)
               XLON=AMOWEP+(IX-1)*ZDELLO(KY)
               XLAT=AMOSOP+(KY-1)*XDELLA
               WRITE(IU06,*) '***********************************'
@@ -632,7 +630,6 @@ ASSOCIATE(IXLG => BLK2GLO%IXLG, &
         ENDDO  ! END LOOP ON FREQUENCIES
       ENDDO  ! END LOOP OVER DIRECTIONS
 
-END ASSOCIATE
 IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
 
       RETURN

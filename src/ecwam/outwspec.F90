@@ -219,8 +219,8 @@ DO IC=1,NN,ISTEP
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1, NEND(NPROC))
           DO IJ=KIJS,KIJL
-            IX = BLK2GLO(IJ)%IXLG 
-            IY = NGY- BLK2GLO(IJ)%KXLT +1
+            IX = BLK2GLO%IXLG(IJ)
+            IY = NGY- BLK2GLO%KXLT(IJ) +1
             FIELD(IX,IY) = ZRECVBUF(IJ)
           ENDDO
         ENDDO

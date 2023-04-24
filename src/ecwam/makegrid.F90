@@ -153,8 +153,8 @@
 #endif
       ELSE
         DO IJ = 1, NIBLO 
-          IX = BLK2GLO(IJ)%IXLG 
-          IY = NGY-BLK2GLO(IJ)%KXLT+1
+          IX = BLK2GLO%IXLG(IJ)
+          IY = NGY-BLK2GLO%KXLT(IJ)+1
           GRID(IX,IY) = BLOCK(IJ)
         ENDDO
       ENDIF ! LLUNSTR

@@ -111,8 +111,8 @@
       ENDDO
 
       DO IP = 1,NIBLO
-        I = BLK2GLO(IP)%IXLG
-        K = BLK2GLO(IP)%KXLT
+        I = BLK2GLO%IXLG(IP)
+        K = BLK2GLO%KXLT(IP)
         IF (K > 1) THEN
           XMIN = REAL(I-1,JWRB)*ZDELLO(K)/ZDELLO(K-1)
           IMIN = NINT(XMIN) + 1
@@ -120,7 +120,7 @@
 !         CLOSEST GRID POINT
           IF (BATHY(IMIN,K-1) > -990.0_JWRB) THEN
             DO IH = IP,1,-1
-              IF (BLK2GLO(IH)%IXLG == IMIN .AND. BLK2GLO(IH)%KXLT == K-1) EXIT 
+              IF (BLK2GLO%IXLG(IH) == IMIN .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
             ENDDO
             KLAT(IP,1,1) = IH
           ENDIF
@@ -143,7 +143,7 @@
 
             IF (BATHY(IMIN2,K-1) > -990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (BLK2GLO(IH)%IXLG == IMIN2 .AND. BLK2GLO(IH)%KXLT == K-1) EXIT 
+                IF (BLK2GLO%IXLG(IH) == IMIN2 .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
               ENDDO
               KLAT(IP,1,2) = IH
             ENDIF
@@ -158,7 +158,7 @@
           IPLUS = NINT(XPLUS) + 1
           IF (BATHY(IPLUS,K+1) > -990.0_JWRB) THEN
             DO IH = IP,NIBLO
-              IF (BLK2GLO(IH)%IXLG == IPLUS .AND. BLK2GLO(IH)%KXLT == K+1) EXIT 
+              IF (BLK2GLO%IXLG(IH) == IPLUS .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
             ENDDO
             KLAT(IP,2,1) = IH
           ENDIF
@@ -180,7 +180,7 @@
 
             IF (BATHY(IPLUS2,K+1) > -990.0_JWRB) THEN
               DO IH = IP,NIBLO
-                IF (BLK2GLO(IH)%IXLG == IPLUS2 .AND.  BLK2GLO(IH)%KXLT == K+1) EXIT
+                IF (BLK2GLO%IXLG(IH) == IPLUS2 .AND.  BLK2GLO%KXLT(IH) == K+1) EXIT
               ENDDO
               KLAT(IP,2,2) = MIN(IH,NIBLO)
             ENDIF
@@ -208,8 +208,8 @@
       ENDDO
 
       DO IP = 1,NIBLO
-        I = BLK2GLO(IP)%IXLG
-        K = BLK2GLO(IP)%KXLT 
+        I = BLK2GLO%IXLG(IP)
+        K = BLK2GLO%KXLT(IP)
         IF (I > 1) THEN
           IF (BATHY(I-1,K) > -990.0_JWRB) KLON(IP,1) = IP-1
         ELSE
@@ -253,9 +253,9 @@
       ENDDO
 
       DO IP = 1,NIBLO
-        I = BLK2GLO(IP)%IXLG
-        K = BLK2GLO(IP)%KXLT 
-        XLON = REAL(I-1,JWRB)*ZDELLO(K)
+        I = BLK2GLO%IXLG(IP)
+        K = BLK2GLO%KXLT(IP)
+        XLON = REAL(I-1)*ZDELLO(K)
 
         IF (K > 1) THEN
 !         CLOSEST GRID POINT IN SW GRID CORNER POINT
@@ -271,7 +271,7 @@
           IF (IMIN >= 1)  THEN
             IF (BATHY(IMIN,K-1) > -990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (BLK2GLO(IH)%IXLG == IMIN .AND. BLK2GLO(IH)%KXLT == K-1) EXIT
+                IF (BLK2GLO%IXLG(IH) == IMIN .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
               ENDDO
              KCOR(IP,3,1) = IH
             END IF
@@ -299,7 +299,7 @@
 
             IF (BATHY(IMIN2,K-1) > -990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (BLK2GLO(IH)%IXLG == IMIN2 .AND. BLK2GLO(IH)%KXLT == K-1) EXIT
+                IF (BLK2GLO%IXLG(IH) == IMIN2 .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
               ENDDO
               KCOR(IP,3,2) = IH
             ENDIF
@@ -318,7 +318,7 @@
           IF (IMIN <= NLONRGG(K-1))  THEN
             IF (BATHY(IMIN,K-1) > -990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (BLK2GLO(IH)%IXLG == IMIN .AND. BLK2GLO(IH)%KXLT == K-1) EXIT
+                IF (BLK2GLO%IXLG(IH) == IMIN .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
               ENDDO
              KCOR(IP,2,1) = IH
             END IF
@@ -346,7 +346,7 @@
 
             IF (BATHY(IMIN2,K-1) > -990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (BLK2GLO(IH)%IXLG == IMIN2 .AND. BLK2GLO(IH)%KXLT == K-1) EXIT
+                IF (BLK2GLO%IXLG(IH) == IMIN2 .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
               ENDDO
               KCOR(IP,2,2) = IH
             ENDIF
@@ -369,7 +369,7 @@
           IF (IPLUS >= 1)  THEN
             IF (BATHY(IPLUS,K+1) > -990.0_JWRB) THEN
               DO IH = IP,NIBLO
-                IF (BLK2GLO(IH)%IXLG == IPLUS .AND. BLK2GLO(IH)%KXLT == K+1) EXIT
+                IF (BLK2GLO%IXLG(IH) == IPLUS .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
               ENDDO
               KCOR(IP,4,1) = IH
             ENDIF
@@ -397,7 +397,7 @@
  
             IF (BATHY(IPLUS2,K+1) > -990.0_JWRB) THEN
               DO IH = IP,NIBLO
-                IF (BLK2GLO(IH)%IXLG == IPLUS2 .AND. BLK2GLO(IH)%KXLT == K+1) EXIT
+                IF (BLK2GLO%IXLG(IH) == IPLUS2 .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
               ENDDO
               KCOR(IP,4,2) = MIN(IH,NIBLO)
             ENDIF
@@ -416,7 +416,7 @@
           IF (IPLUS <= NLONRGG(K+1))  THEN
             IF (BATHY(IPLUS,K+1) > -990.0_JWRB) THEN
               DO IH = IP,NIBLO
-                IF (BLK2GLO(IH)%IXLG == IPLUS .AND. BLK2GLO(IH)%KXLT == K+1) EXIT
+                IF (BLK2GLO%IXLG(IH) == IPLUS .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
               ENDDO
               KCOR(IP,1,1) = IH
             ENDIF
@@ -444,7 +444,7 @@
 
             IF (BATHY(IPLUS2,K+1) > -990.0_JWRB) THEN
               DO IH = IP,NIBLO
-                IF (BLK2GLO(IH)%IXLG == IPLUS2 .AND. BLK2GLO(IH)%KXLT == K+1) EXIT
+                IF (BLK2GLO%IXLG(IH) == IPLUS2 .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
               ENDDO
               KCOR(IP,1,2) = MIN(IH,NIBLO)
             ENDIF
@@ -476,9 +476,9 @@
       ENDDO
 
       DO IP = 1,NIBLO
-        I = BLK2GLO(IP)%IXLG
-        K = BLK2GLO(IP)%KXLT
-        XLON = REAL(I-1,JWRB)*ZDELLO(K)
+        I = BLK2GLO%IXLG(IP)
+        K = BLK2GLO%KXLT(IP)
+        XLON = REAL(I-1)*ZDELLO(K)
 
         IF (K > 1) THEN
 !         CLOSEST GRID POINT IN SW CORNER
@@ -492,7 +492,7 @@
           IF (IMIN >= 1)  THEN
             IF (BATHY(IMIN,K-1) > -990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (BLK2GLO(IH)%IXLG == IMIN .AND. BLK2GLO(IH)%KXLT == K-1) EXIT
+                IF (BLK2GLO%IXLG(IH) == IMIN .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
               ENDDO
              KRLON(IP,1,1) = IH
             END IF
@@ -517,7 +517,7 @@
 
               IF (BATHY(IMIN2,K-1) > -990.0_JWRB) THEN
                 DO IH = IP,1,-1
-                  IF (BLK2GLO(IH)%IXLG == IMIN2 .AND. BLK2GLO(IH)%KXLT == K-1) EXIT
+                  IF (BLK2GLO%IXLG(IH) == IMIN2 .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
                 ENDDO
                 KRLON(IP,1,2) = IH
               ENDIF
@@ -537,7 +537,7 @@
           IF (IMIN <= NLONRGG(K-1))  THEN
             IF (BATHY(IMIN,K-1) > -990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (BLK2GLO(IH)%IXLG == IMIN .AND. BLK2GLO(IH)%KXLT == K-1) EXIT
+                IF (BLK2GLO%IXLG(IH) == IMIN .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
               ENDDO
              KRLAT(IP,1,1) = IH
             END IF
@@ -562,7 +562,7 @@
 
               IF (BATHY(IMIN2,K-1) > -990.0_JWRB) THEN
                 DO IH = IP,1,-1
-                  IF (BLK2GLO(IH)%IXLG == IMIN2 .AND. BLK2GLO(IH)%KXLT == K-1) EXIT
+                  IF (BLK2GLO%IXLG(IH) == IMIN2 .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
                 ENDDO
                 KRLAT(IP,1,2) = IH
               ENDIF
@@ -586,7 +586,7 @@
           IF (IPLUS >= 1)  THEN
             IF (BATHY(IPLUS,K+1) > -990.0_JWRB) THEN
               DO IH = IP,NIBLO
-                IF (BLK2GLO(IH)%IXLG == IPLUS .AND. BLK2GLO(IH)%KXLT == K+1) EXIT
+                IF (BLK2GLO%IXLG(IH) == IPLUS .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
               ENDDO
               KRLAT(IP,2,1) = IH
             ENDIF
@@ -611,7 +611,7 @@
  
               IF (BATHY(IPLUS2,K+1) > -990.0_JWRB) THEN
                 DO IH = IP,NIBLO
-                  IF (BLK2GLO(IH)%IXLG == IPLUS2 .AND. BLK2GLO(IH)%KXLT == K+1) EXIT
+                  IF (BLK2GLO%IXLG(IH) == IPLUS2 .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
                 ENDDO
                 KRLAT(IP,2,2) = MIN(IH,NIBLO)
               ENDIF
@@ -632,7 +632,7 @@
           IF (IPLUS <= NLONRGG(K+1))  THEN
             IF (BATHY(IPLUS,K+1) > -990.0_JWRB) THEN
               DO IH = IP,NIBLO
-                IF (BLK2GLO(IH)%IXLG == IPLUS .AND. BLK2GLO(IH)%KXLT == K+1) EXIT
+                IF (BLK2GLO%IXLG(IH) == IPLUS .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
               ENDDO
               KRLON(IP,2,1) = IH
             ENDIF
@@ -657,7 +657,7 @@
 
               IF (BATHY(IPLUS2,K+1) > -990.0_JWRB) THEN
                 DO IH = IP,NIBLO
-                  IF (BLK2GLO(IH)%IXLG == IPLUS2 .AND. BLK2GLO(IH)%KXLT == K+1) EXIT
+                  IF (BLK2GLO%IXLG(IH) == IPLUS2 .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
                 ENDDO
                 KRLON(IP,2,2) = MIN(IH,NIBLO)
               ENDIF
@@ -700,9 +700,9 @@
 
       IF (IRGG == 1) THEN
         DO IP = 1,NIBLO
-          I = BLK2GLO(IP)%IXLG
-          K = BLK2GLO(IP)%KXLT
-          D0 = REAL(I-1,JWRB)*ZDELLO(K)
+          I = BLK2GLO%IXLG(IP)
+          K = BLK2GLO%KXLT(IP)
+          D0 = FLOAT(I-1)*ZDELLO(K)
           D3=D0-0.5_JWRB*ZDELLO(K)
           D5=D0+0.5_JWRB*ZDELLO(K)
 
@@ -1068,8 +1068,8 @@
               ENDDO
             ENDDO
             DO IP = 1,NIBLO
-              I = BLK2GLO(IP)%IXLG
-              K = BLK2GLO(IP)%KXLT
+              I = BLK2GLO%IXLG(IP)
+              K = BLK2GLO%KXLT(IP)
               KDUM(IP)=IDUM(I,K)
             ENDDO
           ENDIF
@@ -1090,8 +1090,8 @@
               ENDDO
             ENDDO
             DO IP = 1,NIBLO
-              I = BLK2GLO(IP)%IXLG
-              K = BLK2GLO(IP)%KXLT
+              I = BLK2GLO%IXLG(IP)
+              K = BLK2GLO%KXLT(IP)
               KDUM(IP)=IDUM(I,K)
             ENDDO
           ENDIF
@@ -1112,8 +1112,8 @@
               ENDDO
             ENDDO
             DO IP = 1,NIBLO
-              I = BLK2GLO(IP)%IXLG
-              K = BLK2GLO(IP)%KXLT
+              I = BLK2GLO%IXLG(IP)
+              K = BLK2GLO%KXLT(IP)
               KDUM(IP)=IDUM(I,K)
             ENDDO
           ENDIF
@@ -1132,8 +1132,8 @@
               ENDDO
             ENDDO
             DO IP = 1,NIBLO
-              I = BLK2GLO(IP)%IXLG
-              K = BLK2GLO(IP)%KXLT
+              I = BLK2GLO%IXLG(IP)
+              K = BLK2GLO%KXLT(IP)
               KDUM(IP)=IDUM(I,K)
             ENDDO
           ENDIF
@@ -1152,8 +1152,8 @@
               ENDDO
             ENDDO
             DO IP = 1,NIBLO
-              I = BLK2GLO(IP)%IXLG
-              K = BLK2GLO(IP)%KXLT
+              I = BLK2GLO%IXLG(IP)
+              K = BLK2GLO%KXLT(IP)
               KDUM(IP)=IDUM(I,K)
             ENDDO
           ENDIF
