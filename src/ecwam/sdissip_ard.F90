@@ -112,6 +112,7 @@
       TPIINVH= 0.5_JWRB*TPIINV
       TMP03 = 1.0_JWRB/(SDSBR*MICHE)
       SSDSC6M1=1._JWRB-SSDSC6
+      NANGD=NANG/2
 
       DO M=1,NFRE
 
@@ -159,81 +160,73 @@
           ENDDO
 
           DO IJ=KIJS,KIJL
-            D(IJ,K,M) = ZCOEF * (MAX(0._JWRB, BTH0(IJ)*TMP03-SSDSC4))**IPSAT + &
+            D(IJ,K) = ZCOEF * (MAX(0._JWRB, BTH0(IJ)*TMP03-SSDSC4))**IPSAT + &
  &                      ZCOEFM1 * (MAX(0._JWRB, BTH(IJ)*TMP03-SSDSC4))**IPSAT
 
             ! cumulative term
-            SCUMUL(IJ,K,M) = 0._JWRB
+            SCUMUL(IJ,K) = 0._JWRB
             IF(BTH0(IJ) > SDSBR)THEN
-              SCUMUL(IJ,K,M) = MAX(SQRT(BTH(IJ)) - EPSR, 0._JWRB)**2
+              SCUMUL(IJ,K) = MAX(SQRT(BTH(IJ)) - EPSR, 0._JWRB)**2
             ENDIF
           ENDDO
 
         ENDDO
-      ENDDO
 
-
-      ! CUMULATIVE TERM
-      IF (SSDSC3 /= 0.0_JWRB) THEN
-
-        NANGD=NANG/2
-
-        DO M=NDIKCUMUL+1,NFRE
-          DO K=1,NANG
-          ! Correction of saturation level for shallow-water kinematics
-          ! Cumulative effect based on lambda   (breaking probability is
-          ! the expected rate of sweeping by larger breaking waves)
-
-            DO K2=1,NANG
-              KKD(K2)=ABS(K2-K)
-              IF ( KKD(K2) > NANGD) KKD(K2)=KKD(K2)-NANGD
-            ENDDO
-
-            DO IJ=KIJS,KIJL
-              RENEWALFREQ(IJ)=0.0_JWRB
-            ENDDO
-
-            DO M2=1,M-NDIKCUMUL
+        IF(M .GT. NDIKCUMUL)THEN
+          ! CUMULATIVE TERM
+          IF (SSDSC3 /= 0.0_JWRB) THEN
+    
+            DO K=1,NANG
+            ! Correction of saturation level for shallow-water kinematics
+            ! Cumulative effect based on lambda   (breaking probability is
+            ! the expected rate of sweeping by larger breaking waves)
+    
               DO K2=1,NANG
-                KK=KKD(K2)
-                DO IJ=KIJS,KIJL
-                  ! Integrates over frequencies M2 and directions K2 to 
-                  ! Integration is performed from M2=1 to a frequency lower than M: IK-NDIKCUMUL
-                  RENEWALFREQ(IJ)=RENEWALFREQ(IJ)+ CUMULW(INDEP(IJ),KK,M2,M)*SCUMUL(IJ,K2,M2)
+                KKD(K2)=ABS(K2-K)
+                IF ( KKD(K2) > NANGD) KKD(K2)=KKD(K2)-NANGD
+              ENDDO
+    
+              DO IJ=KIJS,KIJL
+                RENEWALFREQ(IJ)=0.0_JWRB
+              ENDDO
+    
+              DO M2=1,M-NDIKCUMUL
+                DO K2=1,NANG
+                  KK=KKD(K2)
+                  DO IJ=KIJS,KIJL
+                    ! Integrates over frequencies M2 and directions K2 to 
+                    ! Integration is performed from M2=1 to a frequency lower than M: IK-NDIKCUMUL
+                    RENEWALFREQ(IJ)=RENEWALFREQ(IJ)+ CUMULW(INDEP(IJ),KK,M2,M)*SCUMUL(IJ,K2)
+                  ENDDO
                 ENDDO
               ENDDO
+    
+              DO IJ=KIJS,KIJL
+                D(IJ,K)= D(IJ,K) + RENEWALFREQ(IJ)
+              ENDDO
             ENDDO
+          ENDIF
+        ENDIF
 
-            DO IJ=KIJS,KIJL
-              D(IJ,K,M)= D(IJ,K,M) + RENEWALFREQ(IJ)
-            ENDDO
+!       WAVE-TURBULENCE INTERACTION TERM
+        IF (SSDSC5 /= 0.0_JWRB) THEN
+          TMP01 = 2._JWRB*SSDSC5/G
+          DO IJ=KIJS,KIJL
+            FACTURB(IJ) = TMP01*RAORW(IJ)*UFRIC(IJ)*UFRIC(IJ)
           ENDDO
-        ENDDO
-      ENDIF
-
-
-!     WAVE-TURBULENCE INTERACTION TERM
-      IF (SSDSC5 /= 0.0_JWRB) THEN
-        TMP01 = 2._JWRB*SSDSC5/G
-        DO IJ=KIJS,KIJL
-          FACTURB(IJ) = TMP01*RAORW(IJ)*UFRIC(IJ)*UFRIC(IJ)
-        ENDDO
-        DO M=1, NFRE
-          DO K=1,NANG
-            DO IJ=KIJS,KIJL
-              D(IJ,K,M)= D(IJ,K,M)- ZPIFR(M)*WAVNUM(IJ,M)*FACTURB(IJ)*COSWDIF(IJ,K)
+            DO K=1,NANG
+              DO IJ=KIJS,KIJL
+                D(IJ,K)= D(IJ,K)- ZPIFR(M)*WAVNUM(IJ,M)*FACTURB(IJ)*COSWDIF(IJ,K)
+              ENDDO
             ENDDO
-          ENDDO
-        ENDDO
-      ENDIF
+        ENDIF
 
 
       ! ADD ALL CONTRIBUTIONS TO SOURCE TERM
-      DO  M=1, NFRE
         DO K=1, NANG
           DO IJ=KIJS,KIJL
-            SL(IJ,K,M) = SL(IJ,K,M)+D(IJ,K,M)*FL1(IJ,K,M)
-            FLD(IJ,K,M) = FLD(IJ,K,M)+D(IJ,K,M)
+            SL(IJ,K,M) = SL(IJ,K,M)+D(IJ,K)*FL1(IJ,K,M)
+            FLD(IJ,K,M) = FLD(IJ,K,M)+D(IJ,K)
           ENDDO
         ENDDO
       ENDDO
