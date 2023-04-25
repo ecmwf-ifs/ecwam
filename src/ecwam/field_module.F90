@@ -1,8 +1,17 @@
+! (C) Copyright 2022- ECMWF.
+! (C) Copyright 2022- Meteo-France.
+!
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
+
 ! Rank and shape definitions for simple templating
 !
 ! Note that the ranks encode coneptual dimensions here, eg. FIELD_2D encodes
 ! a surface field and FIELD_3D represents a field with a vertical component.
-
 MODULE FIELD_MODULE
   ! The FIELD types provided by this module provide data abstractions that
   ! decouple data storage in memory from the data views used in thread-parallel
