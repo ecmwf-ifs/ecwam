@@ -86,8 +86,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL, NANG), INTENT(IN) :: COSWDIF 
 
 
-      INTEGER(KIND=JWIM) :: IJ, K, M, I, J, M2, K2, KK, NANGD
-      INTEGER(KIND=JWIM), DIMENSION(NANG_PARAM) :: KKD
+      INTEGER(KIND=JWIM) :: IJ, K, M, I, J, M2, K2, KK
 
       REAL(KIND=JWRB) :: TPIINV, TPIINVH, TMP01, TMP03
       REAL(KIND=JWRB) :: EPSR, SSDSC6M1, ZCOEF, ZCOEFM1
@@ -112,25 +111,23 @@
       TPIINVH= 0.5_JWRB*TPIINV
       TMP03 = 1.0_JWRB/(SDSBR*MICHE)
       SSDSC6M1=1._JWRB-SSDSC6
-      NANGD=NANG/2
 
       DO M=1,NFRE
-
-      ! COMPUTE SATURATION SPECTRUM
-        DO IJ=KIJS,KIJL
-          BTH0(IJ) = 0.0_JWRB
-        ENDDO
 
         ! SATURATION TERM
         SSDSC2_SIG = SSDSC2*ZPIFR(M)
         ZCOEF = SSDSC2_SIG*SSDSC6
         ZCOEFM1 = SSDSC2_SIG*SSDSC6M1
 
+        ! COMPUTE SATURATION SPECTRUM
+        DO IJ=KIJS,KIJL
+          BTH0(IJ) = 0.0_JWRB
+        ENDDO
+
         DO K=1,NANG
           DO IJ=KIJS,KIJL
             BTH(IJ) = 0.0_JWRB
           ENDDO
-
           ! integrates in directional sector
           DO K2=1,NSDSNTH*2+1
             KK=INDICESSAT(K,K2)
@@ -142,31 +139,20 @@
             BTH(IJ)=BTH(IJ)*WAVNUM(IJ,M)*TPIINV*XK2CG(IJ,M)
             BTH0(IJ)=MAX(BTH0(IJ), BTH(IJ))
           ENDDO
+
+          DO IJ=KIJS,KIJL
+            D(IJ,K) = ZCOEFM1 * (MAX(0._JWRB, BTH(IJ)*TMP03-SSDSC4))**IPSAT
+          ENDDO
+
+          SCUMUL(IJ,K) = MAX(SQRT(BTH(IJ)) - EPSR, 0._JWRB)**2
         ENDDO
 
         DO K=1,NANG
+          ! cumulative term
           DO IJ=KIJS,KIJL
-            BTH(IJ) = 0.0_JWRB
-          ENDDO
-          ! integrates in directional sector
-          DO K2=1,NSDSNTH*2+1
-            KK=INDICESSAT(K,K2)
-            DO IJ=KIJS,KIJL
-              BTH(IJ) = BTH(IJ) + SATWEIGHTS(K,K2)*FL1(IJ,KK,M)
-            ENDDO
-          ENDDO
-          DO IJ=KIJS,KIJL
-            BTH(IJ)=BTH(IJ)*WAVNUM(IJ,M)*TPIINV*XK2CG(IJ,M)
-          ENDDO
-
-          DO IJ=KIJS,KIJL
-            D(IJ,K) = ZCOEF * (MAX(0._JWRB, BTH0(IJ)*TMP03-SSDSC4))**IPSAT + &
- &                      ZCOEFM1 * (MAX(0._JWRB, BTH(IJ)*TMP03-SSDSC4))**IPSAT
-
-            ! cumulative term
-            SCUMUL(IJ,K) = 0._JWRB
-            IF(BTH0(IJ) > SDSBR)THEN
-              SCUMUL(IJ,K) = MAX(SQRT(BTH(IJ)) - EPSR, 0._JWRB)**2
+            D(IJ,K) = D(IJ,K) + ZCOEF * (MAX(0._JWRB, BTH0(IJ)*TMP03-SSDSC4))**IPSAT
+            IF(BTH0(IJ) <= SDSBR)THEN
+              SCUMUL(IJ,K) = 0._JWRB
             ENDIF
           ENDDO
 
@@ -181,18 +167,14 @@
             ! Cumulative effect based on lambda   (breaking probability is
             ! the expected rate of sweeping by larger breaking waves)
     
-              DO K2=1,NANG
-                KKD(K2)=ABS(K2-K)
-                IF ( KKD(K2) > NANGD) KKD(K2)=KKD(K2)-NANGD
-              ENDDO
-    
               DO IJ=KIJS,KIJL
                 RENEWALFREQ(IJ)=0.0_JWRB
               ENDDO
     
               DO M2=1,M-NDIKCUMUL
                 DO K2=1,NANG
-                  KK=KKD(K2)
+                  KK=ABS(K2-K)
+                  IF ( KK > NANG/2) KK = KK-NANG/2
                   DO IJ=KIJS,KIJL
                     ! Integrates over frequencies M2 and directions K2 to 
                     ! Integration is performed from M2=1 to a frequency lower than M: IK-NDIKCUMUL
