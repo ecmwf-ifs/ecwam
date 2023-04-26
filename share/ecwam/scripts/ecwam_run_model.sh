@@ -284,7 +284,7 @@ echo "\n\n\t Running ${LAUNCH_PARALLEL} $(which ${MODEL}) took $DIFF seconds\n"
 
 trace_ls $(pwd)
 
-if [ "$(read_config validation.${precision}_precision) --default=NOTFOUND" != NOTFOUND ]; then
+if [ "$(read_config validation.${precision}_precision --default=NOTFOUND)" != NOTFOUND ]; then
   echo "\n\n"
   echo "*******************************************************************************"
   echo "Validation"
