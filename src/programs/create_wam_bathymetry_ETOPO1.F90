@@ -91,12 +91,38 @@ PROGRAM CREATE_BATHY_ETOPO1
 #include "iwam_get_unit.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 
+!!    Parameters that can be adapted to tune the obstruction scheme
+!!    *************************************************************
+!!    XKDMAX controls the overall impact of subnerged subgrid points in blocking waves (fully or locally)
+      REAL(KIND=JWRB), PARAMETER :: XKDMAX=1.5_JWRB
+
+!!    ALPR_DEEP controls the impact of submerged subgrid points in blocking waves as if they were subgrid land points
+      REAL(KIND=JWRB), PARAMETER :: ALPR_DEEP=0.025_JWRB
+
+!!    IREINF is used to reinforce land obstructions for small grid spacing (see below as it depends on XDELLA)
+!!    It works by artificially increasing the number of sub grid points detected as land
+      INTEGER(KIND=JWIM) :: IREINF
+!!    IREINF will also be used to reinforce fully blocking submerged obstructions for small grid spacings,
+!!    only if the relative count of subgrid submerged points in a grid box is less than PSHALLOWTRHS
+      REAL(KIND=JWRB) :: PSHALLOWTRHS = 0.8_JWRB 
+!!    and
+!!    If the relative count of subgrid land points in a grid box is less than PLANDTRHS then IREINF reinforcement can be applied
+      REAL(KIND=JWRB) :: PLANDTRHS = 0.3_JWRB
+
+
+!!    For a subgrid submerged feature to be blocking, the grid box mean depth need to be at least  XKEXTHRS_DEEP * blocking depth
+      REAL(KIND=JWRB), PARAMETER :: XKEXTHRS_DEEP=100.0_JWRB
+
+!!    ISWTHRS is used to compute a depth dependent linear reduction factor for ALPR_DEEP
+!!    i.e. ALPR_DEEP is linearly reduced for depth less than ISWTHRS to limit the impact of subgrid points in shallow waters.
+      INTEGER(KIND=JWIM), PARAMETER :: ISWTHRS=200
+
+
 
       INTEGER(KIND=JWIM), PARAMETER :: ILON=21601
       INTEGER(KIND=JWIM), PARAMETER :: ILAT=10801
       INTEGER(KIND=JWIM), PARAMETER :: NREF=500
       INTEGER(KIND=JWIM), PARAMETER :: NDPT=1000
-      INTEGER(KIND=JWIM), PARAMETER :: ISWTHRS=200
 
       INTEGER(KIND=JWIM) :: IU01, IU06, IU, IUNIT
       INTEGER(KIND=JWIM) :: I, J, IJ, K, KSN, M
@@ -109,7 +135,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM) :: NREFERENCE
       INTEGER(KIND=JWIM) :: IX, IXLP, NJM, NJP, NIM, NIP, IH
       INTEGER(KIND=JWIM) :: II, JJ, IK, NPTS, IDPT
-      INTEGER(KIND=JWIM) :: IREINF, ITEMPEW
+      INTEGER(KIND=JWIM) :: ITEMPEW
       INTEGER(KIND=JWIM) :: IS, KT, KB
       INTEGER(KIND=JWIM) :: NOBSTRCT, NIOBSLON, NBLOCKLAND, NTOTPTS
       INTEGER(KIND=JWIM) :: INVRES
@@ -124,17 +150,13 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSCOR
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
 
-      REAL(KIND=JWRB), PARAMETER :: SQRT2 = 2.0_JWRB
-      REAL(KIND=JWRB), PARAMETER :: XKDMAX=1.5_JWRB
-      REAL(KIND=JWRB), PARAMETER :: XKEXTHRS_DEEP=100.0_JWRB
-      REAL(KIND=JWRB), PARAMETER :: ALPR_DEEP=0.025_JWRB
+      REAL(KIND=JWRB), PARAMETER :: SQRT2 = SQRT(2.0_JWRB)
       REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JWRB) :: X60, FRATIO, FR1
       REAL(KIND=JWRB) :: XDELLA, XDELLO
       REAL(KIND=JWRB) :: AMOSOP, AMONOP, AMOWEP, AMOEAP
       REAL(KIND=JWRB) :: ALONL, ALONR, ALATB, ALATT, XLON
       REAL(KIND=JWRB) :: REXCLTHRSHOLD
-      REAL(KIND=JWRB) :: PLANDTRHS, PSHALLOWTRHS 
       REAL(KIND=JWRB) :: XLO, XLA, XI, YJ 
       REAL(KIND=JWRB) :: SEA, XLAND, SEASH 
       REAL(KIND=JWRB) :: OMEGA, XKDEEP, XX, DEPTH
@@ -262,8 +284,6 @@ PROGRAM CREATE_BATHY_ETOPO1
       NLANDCENTREPM=MAX(NLANDCENTREPM,1)
       NLANDCENTREMAX=(2*NLANDCENTREPM+1)**2
 
-      PLANDTRHS=0.3_JWRB
-      PSHALLOWTRHS=0.8_JWRB
 
       ALLOCATE(ZDELLO(NY))
       ALLOCATE(COSPH(NY))
@@ -698,11 +718,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       WRITE(1,'(I4)') NFRE_RED
 
-!     IREINF IS USED TO REINFORCE LAND OBSTRUCTIONS FOR SMALL GRID SPACING.
-!     IT WORKS BY ARTIFICIALLY INCREASING THE NUMBER OF SUB GRID POINTS DETECTED AS LAND
-      IF(XDELLA.LE.0.1_JWRB) THEN
-        IREINF=1
-      ELSEIF(XDELLA.LE.0.5_JWRB) THEN
+      IF(XDELLA.LE.0.5_JWRB) THEN
         IREINF=2
       ELSE
         IREINF=1
