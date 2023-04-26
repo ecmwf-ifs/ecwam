@@ -97,9 +97,15 @@ if( OpenACC_Fortran_FOUND AND OpenACC_C_FOUND )
   set( OpenACC_FOUND ON )
 endif()
 ecbuild_add_option( FEATURE ACC
-    DESCRIPTION "OpenACC" DEFAULT OFF
-    REQUIRED_PACKAGES "OpenACC" 
-    CONDITION CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND HAVE_FIELD_API)
+                    DESCRIPTION "OpenACC" DEFAULT OFF
+                    REQUIRED_PACKAGES "OpenACC" 
+                    CONDITION CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" )
+
+### Compute ecWam physics on the GPU
+ecbuild_add_option( FEATURE WAM_PHYS_GPU
+                    DEFAULT OFF
+                    DESCRIPTION "Run ecWam with physics offloaded to the GPU"
+                    CONDITION HAVE_ACC AND HAVE_FIELD_API )
 
 ### Sources
 
