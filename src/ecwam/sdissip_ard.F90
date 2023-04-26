@@ -144,7 +144,7 @@
             D(IJ,K) = ZCOEFM1 * (MAX(0._JWRB, BTH(IJ)*TMP03-SSDSC4))**IPSAT
           ENDDO
 
-          SCUMUL(IJ,K) = MAX(SQRT(BTH(IJ)) - EPSR, 0._JWRB)**2
+          SCUMUL(IJ,K) = MAX(SQRT(ABS(BTH(IJ))) - EPSR, 0._JWRB)**2
         ENDDO
 
         DO K=1,NANG
