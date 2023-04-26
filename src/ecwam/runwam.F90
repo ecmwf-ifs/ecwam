@@ -157,7 +157,7 @@
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: RMISS
       REAL(KIND=JWRB) :: ZRCHAR
-      REAL(KIND=JWRU) :: time0, time, timestep_start, timestep0_start, time1(2)
+      REAL(KIND=JWRU) :: time0, time, timestep_start, timestep0_start, time1(3)
 
       CHARACTER(LEN=3) :: DBNAME
       CHARACTER(LEN=14) :: ZERO,CBEGDAT
@@ -384,7 +384,9 @@
       WRITE (IU06,'(A,F18.2,A)') ' + ', time, '         +'
       WRITE (IU06,'(A)') ' + WAVE PROPAGATION TIME      +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', time1(1), '         +'
-      WRITE (IU06,'(A)') ' + SOURCE TERM TIME           +'
+      WRITE (IU06,'(A)') ' + SOURCE TERM TOTAL TIME     +'
+      WRITE (IU06,'(A,F18.2,A)') ' + ', time1(3), '         +'
+      WRITE (IU06,'(A)') ' + SOURCE TERM KERNEL TIME    +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', time1(2), '         +'
       WRITE (IU06,'(A)') ' +                            +'
       WRITE (IU06,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
@@ -395,7 +397,9 @@
         WRITE (6,'(A,F18.2,A)') ' + ', time, '         +'
         WRITE (6,'(A)') ' + WAVE PROPAGATION TIME      +'
         WRITE (6,'(A,F18.2,A)') ' + ', time1(1), '         +'
-        WRITE (6,'(A)') ' + SOURCE TERM TIME           +'
+        WRITE (6,'(A)') ' + SOURCE TERM TOTAL TIME     +'
+        WRITE (6,'(A,F18.2,A)') ' + ', time1(3), '         +'
+        WRITE (6,'(A)') ' + SOURCE TERM KERNEL TIME    +'
         WRITE (6,'(A,F18.2,A)') ' + ', time1(2), '         +'
         WRITE (6,'(A)') ' +                            +'
         WRITE (6,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
