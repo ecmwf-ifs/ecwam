@@ -229,6 +229,7 @@ list( APPEND ecwam_srcs
   snonlin.F90
   spectra.F90
   spr.F90
+  stack_mod.F90
   stat_nl.F90
   sthq.F90
   stokesdrift.F90
