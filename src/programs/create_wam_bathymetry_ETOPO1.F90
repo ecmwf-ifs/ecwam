@@ -117,6 +117,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 !!    i.e. ALPR_DEEP is linearly reduced for depth less than ISWTHRS to limit the impact of subgrid points in shallow waters.
       INTEGER(KIND=JWIM), PARAMETER :: ISWTHRS=200
 
+!!    PENHCOR is used to enhanced the corner onstructructions for IPROPAGS=2 
+      REAL(KIND=JWRB), PARAMETER :: PENHCOR = 2.0_JWRB
 
 
       INTEGER(KIND=JWIM), PARAMETER :: ILON=21601
@@ -150,7 +152,6 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSCOR
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
 
-      REAL(KIND=JWRB), PARAMETER :: SQRT2 = SQRT(2.0_JWRB)
       REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JWRB) :: X60, FRATIO, FR1
       REAL(KIND=JWRB) :: XDELLA, XDELLO
@@ -1996,7 +1997,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                   ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ENDIF
                 XX=REAL((IOBSCOR(IX,K,IS)*ITEMPEW),JWRB)
-                XX=SQRT2*SQRT(XX)
+                XX=PENHCOR*SQRT(XX)
                 IOBSCOR(IX,K,IS)=MIN(NINT(XX),1000)
 
               ENDIF
