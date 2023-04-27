@@ -46,7 +46,7 @@ USE YOWFIELD_MOD, ONLY : FREQUENCY_FIELD, ENVIRONMENT_FIELD, FORCING_FIELDS_FIEL
 
 USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
 #ifdef WAM_PHYS_GPU
-   USE IMPLSCH_SCC_MOD, ONLY: implsch_SCC
+USE IMPLSCH_SCC_MOD, ONLY: implsch_SCC
 #endif
 
 !.....Adding global variables to driver symbol table for offload instructions
@@ -75,7 +75,7 @@ USE YOWTABL, ONLY: swellft
 IMPLICIT NONE
 
 #ifndef WAM_PHYS_GPU
-   #include "implsch.intfb.h"
+#include "implsch.intfb.h"
 #endif
 #include "incdate.intfb.h"
 #include "newwind.intfb.h"
