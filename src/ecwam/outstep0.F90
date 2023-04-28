@@ -111,9 +111,12 @@ IF (LHOOK) CALL DR_HOOK('OUTSTEP0',0,ZHOOK_HANDLE)
      &                   FL1(:,:,:,ICHNK), XLLWS(:,:,:,ICHNK),   &
      &                   WVPRPT%WAVNUM(:,:,ICHNK),WVPRPT%CINV(:,:,ICHNK), &
      &                   WVPRPT%XK2CG(:,:,ICHNK),WVPRPT%STOKFAC(:,:,ICHNK), &
-     &                   WVENVI%DEPTH(:,ICHNK), WVENVI%INDEP(:,ICHNK), FF_NOW%AIRD(:,ICHNK), &
-     &                   FF_NOW%WDWAVE(:,ICHNK), FF_NOW%CICOVER(:,ICHNK), FF_NOW%WSWAVE(:,ICHNK), &
-     &                   FF_NOW%WSTAR(:,ICHNK), FF_NOW%UFRIC(:,ICHNK), FF_NOW%Z0M(:,ICHNK), &
+     &                   WVENVI%DEPTH(:,ICHNK), WVENVI%INDEP(:,ICHNK), &
+     &                   FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK), &
+     &                   FF_NOW%AIRD(:,ICHNK), FF_NOW%WSTAR(:,ICHNK), &
+     &                   FF_NOW%USTRA(:,ICHNK), FF_NOW%VSTRA(:,ICHNK), &
+     &                   FF_NOW%CICOVER(:,ICHNK), &
+     &                   FF_NOW%UFRIC(:,ICHNK), FF_NOW%Z0M(:,ICHNK), &
      &                   FF_NOW%Z0B(:,ICHNK), FF_NOW%CHRNCK(:,ICHNK), FF_NOW%CITHICK(:,ICHNK), &
      &                   INTFLDS%WSEMEAN(:,ICHNK), INTFLDS%WSFMEAN(:,ICHNK), &
      &                   INTFLDS%USTOKES(:,ICHNK), INTFLDS%VSTOKES(:,ICHNK), INTFLDS%STRNMS(:,ICHNK), &
