@@ -211,10 +211,11 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
      &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
      &                   UFRIC, AIRD,                       &
      &                   USTRA, VSTRA,                      &
-     &                   NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
-     &                   NEMOTAUY, NEMOWSWAVE, NEMOPHIF, &
-     &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, &
-     &                   PHIOCD, PHIEPS, PHIAW, &
+     &                   NPHIEPS, NTAUOC, NSWH, NMWP,       &
+     &                   NEMOTAUX, NEMOTAUY,                &
+     &                   NEMOWSWAVE, NEMOPHIF,              &
+     &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD,    &
+     &                   TAUOC, PHIOCD, PHIEPS, PHIAW,      &
      &                  .FALSE.)
         ENDIF
 
