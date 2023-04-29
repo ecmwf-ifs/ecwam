@@ -219,7 +219,7 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
 
         TAUOCXD(IJ)= TAUXD(IJ)-OOVAL(IJ)*XSTRESS(IJ)
         TAUOCYD(IJ)= TAUYD(IJ)-OOVAL(IJ)*YSTRESS(IJ)
-        TAUO               = SQRT(TAUOCXD(IJ)**2+TAUOCYD(IJ)**2)
+        TAUO       = SQRT(TAUOCXD(IJ)**2+TAUOCYD(IJ)**2)
         TAUOC(IJ)  = MIN(MAX(TAUO/TAU,TAUOCMIN),TAUOCMAX)
       ENDDO
 
@@ -236,7 +236,7 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
 
       DO IJ=KIJS,KIJL
 
-        XN                = AIRD(IJ)*MAX(USTAR(IJ)**3,EPSUS3)
+        XN        = AIRD(IJ)*MAX(USTAR(IJ)**3,EPSUS3)
         PHIOCD(IJ)= OOVAL(IJ)*(PHILF(IJ)-PHIWA(IJ))+(1.0_JWRB-OOVAL(IJ))*PHIOC_ICE*XN
 
         PHIEPS(IJ)= PHIOCD(IJ)/XN 
@@ -250,12 +250,12 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
         IF (LWNEMOCOU .AND. LNUPD) THEN
           NPHIEPS(IJ) = PHIEPS(IJ)
           NTAUOC(IJ)  = TAUOC(IJ)
-          IF (EM_OC(IJ)/=0.0_JWRB) THEN
+          IF (EM_OC(IJ) /= 0.0_JWRB) THEN
              NSWH(IJ) = 4.0_JWRO*SQRT(EM_OC(IJ))
           ELSE
              NSWH(IJ) = 0.0_JWRO
           ENDIF
-          IF (F1_OC(IJ)/=0.0_JWRB) THEN
+          IF (F1_OC(IJ) /= 0.0_JWRB) THEN
              NMWP(IJ) = 1.0_JWRO/F1_OC(IJ)
           ELSE
              NMWP(IJ) = 0.0_JWRO
