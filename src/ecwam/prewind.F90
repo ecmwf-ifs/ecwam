@@ -176,6 +176,7 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
 !         ---------------------------
 
       CALL FIELDG%ALLOC(NXS, NYS, NXE, NYE)
+
       IF (LLINIT_FIELDG) THEN
         LLINIALL=.TRUE.
         LLOCAL=.TRUE.
@@ -267,9 +268,9 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
       ENDIF
 
 
-      CALL FIELDG%DEALLOC()
 !*    2.5 DEALLOCATE GRID ARRAYS FOR INPUT FORCING FIELDS
 !         -----------------------------------------------
+      CALL FIELDG%DEALLOC()
 
 IF (LHOOK) CALL DR_HOOK('PREWIND',1,ZHOOK_HANDLE)
 
