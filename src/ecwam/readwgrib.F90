@@ -10,7 +10,7 @@
       SUBROUTINE READWGRIB(IU06, FILNM, IPARAM, CDATE,        &
      &                     BLK2LOC,                           &
      &                     NXS, NXE, NYS, NYE, FIELDG,        &
-     &                     CD, KZLEV, LLONLYPOS, IREAD, FIELD )
+     &                     FIELD, KZLEV, LLONLYPOS, IREAD )
 
 !-----------------------------------------------------------------------
 
@@ -104,8 +104,7 @@
       TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
       TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
-      TYPE(FORCING_FIELDS), INTENT(INOUT), OPTIONAL :: FIELD
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: CD
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NCHNK), INTENT(INOUT) :: FIELD 
       INTEGER(KIND=JWIM), INTENT(INOUT) :: KZLEV
       LOGICAL, INTENT(IN) :: LLONLYPOS
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
@@ -166,60 +165,31 @@
 
 ! TRANSFORM GRID DATA TO BLOCK DATA
 
-      IF (PRESENT(FIELD)) THEN
-         IF (LLONLYPOS) THEN
-           CALL GSTATS(1444,0)
-!$OMP      PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
-           DO ICHNK = 1, NCHNK
-             DO IJ = 1, NPROMA_WAM
-               IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
-               JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
-               IF (WORK(IX,JY) /= ZMISS .AND. WORK(IX,JY) > 0.0_JWRB) FIELD%WSWAVE(IJ,ICHNK) = WORK(IX,JY)
-             ENDDO
-           ENDDO
-!$OMP      END PARALLEL DO
-           CALL GSTATS(1444,1)
+      IF (LLONLYPOS) THEN
+        CALL GSTATS(1444,0)
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
+        DO ICHNK = 1, NCHNK
+          DO IJ = 1, NPROMA_WAM
+            IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
+            JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
+            IF (WORK(IX,JY) /= ZMISS .AND. WORK(IX,JY) > 0.0_JWRB) FIELD(IJ, ICHNK) = WORK(IX,JY)
+          ENDDO
+        ENDDO
+!$OMP   END PARALLEL DO
+        CALL GSTATS(1444,1)
 
-         ELSE
-           CALL GSTATS(1444,0)
-!$OMP      PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
-           DO ICHNK = 1, NCHNK
-             DO IJ = 1, NPROMA_WAM
-               IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
-               JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
-               IF (WORK(IX,JY) /= ZMISS) FIELD%WSWAVE(IJ,ICHNK) = WORK(IX,JY)
-             ENDDO
-           ENDDO
-!$OMP      END PARALLEL DO
-           CALL GSTATS(1444,1)
-         ENDIF
       ELSE
-         IF (LLONLYPOS) THEN
-           CALL GSTATS(1444,0)
-!$OMP      PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
-           DO ICHNK = 1, NCHNK
-             DO IJ = 1, NPROMA_WAM
-               IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
-               JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
-               IF (WORK(IX,JY) /= ZMISS .AND. WORK(IX,JY) > 0.0_JWRB) CD(IJ, ICHNK) = WORK(IX,JY)
-             ENDDO
-           ENDDO
-!$OMP      END PARALLEL DO
-           CALL GSTATS(1444,1)
-
-         ELSE
-           CALL GSTATS(1444,0)
-!$OMP      PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
-           DO ICHNK = 1, NCHNK
-             DO IJ = 1, NPROMA_WAM
-               IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
-               JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
-               IF (WORK(IX,JY) /= ZMISS) CD(IJ, ICHNK) = WORK(IX,JY)
-             ENDDO
-           ENDDO
-!$OMP      END PARALLEL DO
-           CALL GSTATS(1444,1)
-         ENDIF
+        CALL GSTATS(1444,0)
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
+        DO ICHNK = 1, NCHNK
+          DO IJ = 1, NPROMA_WAM
+            IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
+            JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
+            IF (WORK(IX,JY) /= ZMISS) FIELD(IJ, ICHNK) = WORK(IX,JY)
+          ENDDO
+        ENDDO
+!$OMP   END PARALLEL DO
+        CALL GSTATS(1444,1)
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('READWGRIB',1,ZHOOK_HANDLE)
