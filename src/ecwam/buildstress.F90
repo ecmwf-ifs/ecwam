@@ -153,7 +153,7 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
         CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,            &
      &                 BLK2LOC,                                &
      &                 NXFFS, NXFFE, NYFFS, NYFFE, FIELDG,     &
-     &                 WSWAVE, KZLEVUWAVE, LLONLYPOS, IREAD, FF_NOW)
+     &                 FF_NOW%WSWAVE , KZLEVUWAVE, LLONLYPOS, IREAD, FF_NOW)
 
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' A DATA FILE CONTAINING WIND SPEED INFORMATION'
