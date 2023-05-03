@@ -124,9 +124,11 @@
       IF (LHOOK) CALL DR_HOOK('STRESSO',0,ZHOOK_HANDLE)
 
       MAXIJ = -1
+      !$loki vector-reduction(max: MAXIJ)
       DO IJ=KIJS,KIJL
          MAXIJ = MAX(MAXIJ, MIJ(IJ))
       ENDDO
+      !$loki end vector-reduction(max: MAXIJ)
 
       DO IJ=KIJS,KIJL
         PHIWA(IJ)   = 0.0_JWRB
