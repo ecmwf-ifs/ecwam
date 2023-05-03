@@ -105,6 +105,7 @@ function cleanup() {
   [[ -f ${WORK_DIR}/drhook.prof.1  ]] && mv ${WORK_DIR}/drhook*        ${LOG_DIR}/
   [[ -f ${WORK_DIR}/gstats.xml     ]] && mv ${WORK_DIR}/gstats.xml     ${LOG_DIR}/
   [[ -f ${WORK_DIR}/gstats.1       ]] && mv ${WORK_DIR}/gstats*        ${LOG_DIR}/
+  [[ -f ${WORK_DIR}/gstats         ]] && mv ${WORK_DIR}/gstats         ${LOG_DIR}/
   [[ -f ${WORK_DIR}/statistics.log ]] && mv ${WORK_DIR}/statistics.log ${LOG_DIR}/
 
   # Delete symbolic links
