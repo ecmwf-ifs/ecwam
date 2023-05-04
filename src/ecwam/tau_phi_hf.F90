@@ -36,6 +36,7 @@ USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 !----------------------------------------------------------------------
 
 IMPLICIT NONE
+#include "ns_gc.intfb.h"
 
 REAL(KIND=JWRB), INTENT(IN) :: UST
 INTEGER(KIND=JWIM), INTENT(OUT) :: NS ! index in array XK_GC corresponding to XKS and OMS
@@ -45,7 +46,6 @@ REAL(KIND=JWRB), INTENT(OUT) :: OMS   ! cut-off angular frequency
 
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
    
-#include "ns_gc.intfb.h"
 
 ! ----------------------------------------------------------------------
 !$loki routine seq

@@ -68,7 +68,6 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-#include "abort1.intfb.h"
 #include "taut_z0.intfb.h"
 #include "z0wave.intfb.h"
 

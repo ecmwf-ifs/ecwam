@@ -33,9 +33,13 @@ REAL(KIND=JWRB) FUNCTION STRESS_GC(ANG_GC, USTAR, Z0, Z0MIN, HALP, RNFAC)
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
+
 !----------------------------------------------------------------------
 
       IMPLICIT NONE
+
+#include "ns_gc.intfb.h"
+#include "gc_dispersion.h"
 
       REAL(KIND=JWRB), INTENT(IN) :: ANG_GC  ! factor to account for angular spreading of the input.
       REAL(KIND=JWRB), INTENT(IN) :: USTAR ! friction velocity
@@ -64,8 +68,6 @@ REAL(KIND=JWRB) FUNCTION STRESS_GC(ANG_GC, USTAR, Z0, Z0MIN, HALP, RNFAC)
       REAL(KIND=JWRB), DIMENSION(NWAV_GC) :: GAM_W
    
 !     INCLUDE FUNCTIONS FROM GRAVITY-CAPILLARY DISPERSION REALTIONS
-#include "gc_dispersion.h"
-#include "ns_gc.intfb.h"
 
 ! ----------------------------------------------------------------------
 

@@ -91,10 +91,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
-! ----------------------------------------------------------------------
-
       IMPLICIT NONE
-
 #include "ciwabr.intfb.h"
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
@@ -108,6 +105,8 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 #include "snonlin.intfb.h"
 #include "stokestrn.intfb.h"
 #include "wnfluxes.intfb.h"
+! ----------------------------------------------------------------------
+
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
