@@ -108,6 +108,12 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
+      DO K = 1, NANG
+        DO IJ = KIJS, KIJL
+           FLWD(IJ,K) = FL1(IJ,K,NFRE)*0.5_JWRB + 0.5_JWRB * SIGN(1.0_JWRB, COSWDIF(IJ,K))
+        ENDDO
+      ENDDO
+
       DO IJ=KIJS,KIJL
         EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ)
         FM(IJ) = FM(IJ)+DELT2*TEMP2(IJ)
