@@ -282,6 +282,7 @@ CONTAINS
       ELSE
         LTAUWSHELTER = .TRUE.
       ENDIF
+      !$loki separator
 
       DO IJ=KIJS,KIJL
         IF (NGST > 1)THEN
@@ -738,7 +739,6 @@ CONTAINS
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "abort1.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NGST
       LOGICAL, INTENT(IN) :: LLSNEG
@@ -788,6 +788,7 @@ CONTAINS
       CONST3 = IDAMPING*CONST3
 
       CONSTN = DELTH/(XKAPPA*ZPI)
+      !$loki separator
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
       DO IJ=KIJS,KIJL
@@ -863,12 +864,11 @@ CONTAINS
 !*    2.1 LOOP OVER DIRECTIONS.
 !         ---------------------
 
-        DO IJ=KIJS,KIJL
-          XLLWS(IJ,K,M)= 0.0_JWRB
-        ENDDO
-
 !       WIND INPUT:
         DO K=1,NANG
+          DO IJ=KIJS,KIJL
+            XLLWS(IJ,K,M)= 0.0_JWRB
+          ENDDO
 
           DO IGST=1,NGST
             DO IJ=KIJS,KIJL
@@ -899,11 +899,10 @@ CONTAINS
 
         IF (LLNORMAGAM) THEN
 
-          DO IGST=1,NGST
-
-            SUMF(KIJS:KIJL) = 0.0_JWRB
-            SUMFSIN2(KIJS:KIJL) = 0.0_JWRB
-            DO K=1,NANG
+          SUMF(KIJS:KIJL) = 0.0_JWRB
+          SUMFSIN2(KIJS:KIJL) = 0.0_JWRB
+          DO K=1,NANG
+            DO IGST=1,NGST
               DO IJ=KIJS,KIJL
                 SUMF(IJ) = SUMF(IJ) + GAM0(IJ,IGST,K)*FL1(IJ,K,M)
                 SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,IGST,K)*FL1(IJ,K,M)*SINWDIF2(IJ,K)

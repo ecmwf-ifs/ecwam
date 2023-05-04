@@ -114,7 +114,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL) :: USDIRP, UST
 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: CMRHOWGDFTH
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: US2, TAUX, TAUY, TAUPX, TAUPY
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: TAUX, TAUY, TAUPX, TAUPY
       REAL(KIND=JWRB), DIMENSION(KIJL) :: SUMT, SUMX, SUMY
 
       LOGICAL :: LTAUWSHELTER
@@ -200,10 +200,6 @@
 !*    CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
 !     ----------------------------------------------------------------------------------
 
-      DO IJ=KIJS,KIJL
-        US2(IJ)=UFRIC(IJ)**2
-      ENDDO
-
       IF ( IPHYS == 0 .OR. TAUWSHELTER == 0.0_JWRB) THEN
         LTAUWSHELTER = .FALSE.
         DO IJ=KIJS,KIJL
@@ -213,8 +209,8 @@
       ELSE
         LTAUWSHELTER = .TRUE.
         DO IJ=KIJS,KIJL
-          TAUX(IJ)=US2(IJ)*SIN(WDWAVE(IJ))
-          TAUY(IJ)=US2(IJ)*COS(WDWAVE(IJ))
+          TAUX(IJ)=UFRIC(IJ)**2*SIN(WDWAVE(IJ))
+          TAUY(IJ)=UFRIC(IJ)**2*COS(WDWAVE(IJ))
           TAUPX(IJ)=TAUX(IJ)-TAUWSHELTER*XSTRESS(IJ)
           TAUPY(IJ)=TAUY(IJ)-TAUWSHELTER*YSTRESS(IJ)
           USDIRP(IJ)=ATAN2(TAUPX(IJ),TAUPY(IJ))
@@ -238,7 +234,7 @@
       IF ( .NOT. LLGCBZ0) THEN
         TAUTOUS2 = 1.0_JWRB/(1.0_JWRB+EPS1)
         DO IJ=KIJS,KIJL
-          TAUW(IJ) = MIN(TAUW(IJ),US2(IJ)*TAUTOUS2)
+          TAUW(IJ) = MIN(TAUW(IJ),UFRIC(IJ)**2*TAUTOUS2)
         ENDDO
       ENDIF
 

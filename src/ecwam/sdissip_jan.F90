@@ -89,7 +89,7 @@
 
       REAL(KIND=JWRB) :: SCDFM, CONSD, CONSS, DELTA_SDISM1, CVIS
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB),DIMENSION(KIJL) :: CM, TEMP1, SDS, X
+      REAL(KIND=JWRB),DIMENSION(KIJL) :: TEMP1, SDS, X
       REAL(KIND=JWRB),DIMENSION(KIJL) :: XK2
 
 ! ----------------------------------------------------------------------
