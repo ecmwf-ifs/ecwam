@@ -137,13 +137,20 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
 
 IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
 
-
       EPSUS3 =  EPSUS*SQRT(EPSUS)
 
       CITHRSH_INV=1._JWRB/MAX(CITHRSH,0.01_JWRB)
 
       EFD_FAC = 4.0_JWRB*EGRCRV/G**2 
       FFD_FAC = (EGRCRV/AFCRV)**(1.0_JWRB/BFCRV) * G
+
+      !$loki separator
+      MAXIJ = -1
+      !$loki vector-reduction(max: maxij)
+      DO IJ=KIJS,KIJL
+        MAXIJ = MAX(MAXIJ, MIJ(IJ))
+      ENDDO
+      !$loki end vector-reduction(max: maxij)
 
 !*    DETERMINE NORMALIZED FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
 !     -------------------------------------------------------------------

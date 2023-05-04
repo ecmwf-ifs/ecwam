@@ -306,9 +306,11 @@
 !*    2.1 LOOP OVER DIRECTIONS.
 !         ---------------------
 
-
 !       WIND INPUT:
         DO K=1,NANG
+          DO IJ=KIJS,KIJL
+            XLLWS(IJ,K,M)= 0.0_JWRB
+          ENDDO
 
           DO IJ=KIJS,KIJL
             XLLWS(IJ,K,M)= 0.0_JWRB

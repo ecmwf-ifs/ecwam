@@ -66,7 +66,7 @@
       REAL(KIND=JWRB) :: DELT25, COEF_FR, COEF_FR2
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: ZEPSILON
-      REAL(KIND=JWRB),DIMENSION(KIJL) :: SUM0, SUM1, SUM2, SUM4, XMAX, TEMP
+      REAL(KIND=JWRB),DIMENSION(KIJL) :: SUM0, SUM1, SUM2, XMAX, TEMP
       REAL(KIND=JWRB),DIMENSION(KIJL) :: THMEAN, SUM_S, SUM_C
 
 ! ----------------------------------------------------------------------
@@ -75,9 +75,8 @@
 !***  1. DETERMINE L-H SPECTRAL WIDTH OF THE 2-D SPECTRUM.
 !     ---------------------------------------------------
 
-      ZEPSILON=10._JWRB*EPSILON(ZEPSILON)
-
-      NSH = 1 + INT(LOG(1.5_JWRB)/LOG(FRATIO)) 
+      ZEPSILON = 10._JWRB*EPSILON(ZEPSILON)
+      NSH = 1 + INT(LOG(1.5_JWRB)/LOG(FRATIO))
 
       DO IJ=KIJS,KIJL
         SUM0(IJ)= ZEPSILON
@@ -148,10 +147,9 @@
       DO IJ=KIJS,KIJL
         MMSTART = MAX(1,MMAX(IJ)-NSH) 
         MMSTOP  = MIN(NFRE,MMAX(IJ)+NSH)
-
-        SUM_S(IJ) = 0._JWRB
-        SUM_C(IJ) = ZEPSILON 
         DO M=MMSTART,MMSTOP
+          SUM_S(IJ) = 0._JWRB
+          SUM_C(IJ) = ZEPSILON 
           DO K=1,NANG
             SUM_S(IJ) = SUM_S(IJ) +SINTH(K)*FL1(IJ,K,M)
             SUM_C(IJ) = SUM_C(IJ) +COSTH(K)*FL1(IJ,K,M)

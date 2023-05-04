@@ -68,7 +68,7 @@
       INTEGER(KIND=JWIM) :: K, M, IJ
       REAL(KIND=JWRB) :: EWH 
       REAL(KIND=JWRB) :: X, ALP
-      REAL(KIND=JWRB),DIMENSION(NFRE) :: XK2 
+      REAL(KIND=JWRB) :: XK2 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -91,8 +91,8 @@
             DO K=1,NANG
               DO IJ=KIJS,KIJL
                 EWH=4.0_JWRB*SQRT(MAX(EPSMIN,FL1(IJ,K,M)*DFIM(M)))
-                XK2(M)=WAVNUM(IJ,M)**2
-                ALP=CDICWA*XK2(M)*EWH
+                XK2=WAVNUM(IJ,M)**2
+                ALP=CDICWA*XK2*EWH
                 X=ALP*CGROUP(IJ,M)*IDELT
                 CIWAB(IJ,K,M)=1.0_JWRB-CICOVER(IJ)*(1.0_JWRB-EXP(-MIN(X,50.0_JWRB)))
               ENDDO
