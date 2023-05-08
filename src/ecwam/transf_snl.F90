@@ -39,13 +39,13 @@ REAL(KIND=JWRB) FUNCTION TRANSF_SNL(XK0,D,XNU,SIG_TH)
       REAL(KIND=JWRB), PARAMETER :: TRANSF_SNL_MAX=10._JWRB
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+!$loki routine seq
       REAL(KIND=JWRB) :: X,XK,T_0,T_0_SQ,OM,C_0,V_G,V_G_SQ,DV_G
       REAL(KIND=JWRB) :: XNL_1,XNL_2,XNL_3,XNL_4,XNL
       REAL(KIND=JWRB) :: C_S_SQ,ALP,ZFAC
 
 !----------------------------------------------------------------------
 
-!$loki routine seq
       IF (LHOOK) CALL DR_HOOK('TRANSF_SNL',0,ZHOOK_HANDLE)
 
 !*    1. DETERMINE TRANSFER FUNCTION.

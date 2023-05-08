@@ -341,9 +341,9 @@ CONTAINS
 
 !  Simple empirical fit to model drag coefficient
    FUNCTION CDM(U10)
+      !$loki routine seq
       REAL(KIND=JWRB), INTENT(IN) :: U10 
       REAL(KIND=JWRB) :: CDM
-      !$loki routine seq
 
       CDM = MAX(MIN(0.0006_JWRB+0.00008_JWRB*U10, 0.001_JWRB+0.0018_JWRB*EXP(-0.05_JWRB*(U10-33._JWRB))),0.001_JWRB)
    END FUNCTION CDM

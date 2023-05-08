@@ -74,11 +74,11 @@ REAL(KIND=JWRB) FUNCTION AKI_ICE (G,XK,DEPTH,RHOW,CITH)
 !     MAXIMUM WAVE NUMBER
       REAL(KIND=JWRB), PARAMETER :: AKI_MAX = 20.0_JWRB
 
+!$loki routine seq
       REAL(KIND=JWRB) :: FICSTF, RDH
       REAL(KIND=JWRB) :: OM2, AKI, AKIOLD, F, FPRIME, AKID 
 
 
-!$loki routine seq
       IF (CITH <= 0.0_JWRB) THEN
         AKI=XK
       ELSE

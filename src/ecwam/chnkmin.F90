@@ -47,12 +47,12 @@ REAL(KIND=JWRB) FUNCTION CHNKMIN (U10)
 
       IMPLICIT NONE
 
+!$loki routine seq
       REAL(KIND=JWRB), INTENT(IN) :: U10
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
-!$loki routine seq
       IF (LHOOK) CALL DR_HOOK('CHNKMIN',0,ZHOOK_HANDLE)
 
       CHNKMIN = ALPHAMIN + (ALPHA-ALPHAMIN)*0.5_JWRB*(1.0_JWRB-TANH(U10-CHNKMIN_U))

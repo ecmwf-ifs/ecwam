@@ -33,10 +33,9 @@ REAL(KIND=JWRB) FUNCTION TRANSF(XK,D)
       IMPLICIT NONE
 
       REAL(KIND=JWRB), INTENT(IN) :: XK,D
-
+!$loki routine seq
       REAL(KIND=JWRB) :: EPS,X,T_0,OM,C_0,V_G,DV_G,XNL_1,XNL_2,XNL
 
-!$loki routine seq
       EPS=0.0001_JWRB
 !
 !*    1. DETERMINE TRANSFER FUNCTION.

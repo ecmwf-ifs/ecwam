@@ -35,6 +35,7 @@ USE YOWPCONS , ONLY : SQRTGOSURFT
 
       REAL(KIND=JWRB), INTENT(IN) :: USTAR
 
+!$loki routine seq
       REAL(KIND=JWRB) :: Y, XKS
 
 ! ----------------------------------------------------------------------
@@ -43,7 +44,6 @@ USE YOWPCONS , ONLY : SQRTGOSURFT
 !!!Y = 1.0_JWRB/(1.48_JWRB+2.05_JWRB*UST)
 !!!Y = (1.0_JWRB + UST**2)/(1.0_JWRB+10.0_JWRB*UST**2)
 
-!$loki routine seq
 XKS = SQRTGOSURFT/(1.48_JWRB+2.05_JWRB*USTAR)
 
 NS_GC = MIN( INT(LOG(XKS*XKM_GC(1))*XLOGKRATIOM1_GC) + 1, NWAV_GC-1)
