@@ -77,7 +77,7 @@ SUBROUTINE READPRE (IU07)
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
      &            NGX      ,NGY      ,LLR8TOR4 ,LLUNSTR  ,              &
      &            NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,IMDLGRDID
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH_INPUT,DEPTHA   ,DEPTHD   ,  &
+      USE YOWSHAL  , ONLY : NDEPTH   ,BATHY    ,DEPTHA   ,DEPTHD   ,    &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST  ,TOOSHALLOW
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
      &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,              &
@@ -106,7 +106,6 @@ SUBROUTINE READPRE (IU07)
       INTEGER(KIND=JWIM) :: KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
       INTEGER(KIND=JWIM) :: NKIND !Precision of file when reading
 
-      REAL(KIND=JWRB), ALLOCATABLE :: BATHY(:,:) 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -304,11 +303,9 @@ SUBROUTINE READPRE (IU07)
       TOOSHALLOW=0.1_JWRB*DEPTHA
 
 
-!     DETERMINE DEPTH_INPUT AND BLK2GLO
-      IF (ALLOCATED(DEPTH_INPUT)) DEALLOCATE(DEPTH_INPUT)
-      ALLOCATE(DEPTH_INPUT(NIBLO))
+!     DETERMINE BLK2GLO
       IP = 0
-      DO K=1,NGX
+      DO K=1,NGY
         DO I=1,NLONRGG(K)
           IF (BATHY(I,K) > 0.0_JWRB) THEN
             IP = IP+1
@@ -319,7 +316,6 @@ SUBROUTINE READPRE (IU07)
           CALL ABORT1
       endif
 
-            DEPTH_INPUT(IP) = BATHY(I,K)
 !!!            BLK2GLO%IXLG(IP) = I
 !!!            BLK2GLO%KXLT(IP) = K
 

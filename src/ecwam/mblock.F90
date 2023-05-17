@@ -53,7 +53,6 @@
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMAP   , ONLY : BLK2GLO  ,NY       ,AMOSOP   ,XDELLA, NLONRGG
-      USE YOWSHAL  , ONLY : DEPTH_INPUT
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -72,11 +71,9 @@
 !        -------------------------------------------
 
 
-      ALLOCATE(DEPTH_INPUT(NIBLO))
       CALL BLK2GLO%ALLOC(NIBLO)
 
       DO IJ=1,NIBLO
-        DEPTH_INPUT(IJ) = 0.0_JWRB
         BLK2GLO%IXLG(IJ) = 0
         BLK2GLO%KXLT(IJ) = 0
       ENDDO
@@ -131,7 +128,6 @@
         DO I=1,NLONRGG(K)
           IF (BATHY(I,K) > -990.0_JWRB) THEN
             IP = IP+1
-            DEPTH_INPUT(IP) = BATHY(I,K)
             BLK2GLO%IXLG(IP) = I
             BLK2GLO%KXLT(IP) = K
           ENDIF

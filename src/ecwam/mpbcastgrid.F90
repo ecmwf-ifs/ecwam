@@ -67,7 +67,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
      &            NGX      ,NGY      ,                                  &
      &            NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH_INPUT,DEPTHA   ,DEPTHD   ,  &
+      USE YOWSHAL  , ONLY : NDEPTH   ,BATHY    ,DEPTHA   ,DEPTHD   ,    &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
      &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,              &
@@ -87,8 +87,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ISEND
       INTEGER(KIND=JWIM), INTENT(INOUT) :: ITAG
       INTEGER(KIND=JWIM), PARAMETER :: MFIRST=19
-      INTEGER(KIND=JWIM) :: I, J, IJ, K, K1, K2, M, M1, M2, IC, L,      &
-     &                      KDEPTH, NGOU
+      INTEGER(KIND=JWIM) :: I, J, IJ, K, K1, K2, M, M1, M2, IC, L, KDEPTH, NGOU 
       INTEGER(KIND=JWIM) :: IKCOUNT, KCOUNT
       INTEGER(KIND=JWIM) :: MIC, MZC 
       INTEGER(KIND=JWIM),ALLOCATABLE :: ICOMBUF(:)
@@ -220,7 +219,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
      &      8*NANG+NGOUT+2*NFREH*NFREH
         MZC=17+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+     &
      &      KFRH+                                                       &
-     &      NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF+              &
+     &      NGX*NGY+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF+              &
      &      2+2*NFREH+NANGH+NFREH*NDEPTH+5*NANGH*NDEPTH*NFREH*NFREH
 
 !       ENCODE MAIN MESSAGE BUFFERS (ON PE=ISEND) AND
@@ -263,8 +262,8 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             IF (.NOT.ALLOCATED(IJAR)) ALLOCATE(IJAR(NGOUT))
           ENDIF
 
-          IF (ALLOCATED(DEPTH_INPUT)) DEALLOCATE(DEPTH_INPUT)
-          ALLOCATE(DEPTH_INPUT(NIBLO))
+          IF (ALLOCATED(BATHY)) DEALLOCATE(BATHY)
+          ALLOCATE(BATHY(NGX,NGY))
 
           IF (.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
           IF (.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
@@ -476,10 +475,13 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             ICOMBUF(IKCOUNT)=IJAR(NGOU)
           ENDDO
 
-          DO IJ=1,NIBLO
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=DEPTH_INPUT(IJ)
+          DO K=1,NGY
+            DO I=1,NGX
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=BATHY(I,K)
+            ENDDO
           ENDDO
+
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=DEPTHA
           KCOUNT=KCOUNT+1
@@ -830,10 +832,13 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             IJAR(NGOU)=ICOMBUF(IKCOUNT)
           ENDDO
 
-          DO IJ=1,NIBLO
-            KCOUNT=KCOUNT+1
-            DEPTH_INPUT(IJ)=ZCOMBUF(KCOUNT)
+          DO K=1,NGY
+            DO I=1,NGX
+              KCOUNT=KCOUNT+1
+              BATHY(I,K)=ZCOMBUF(KCOUNT)
+            ENDDO
           ENDDO
+
           KCOUNT=KCOUNT+1
           DEPTHA=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1

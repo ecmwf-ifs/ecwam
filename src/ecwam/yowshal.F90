@@ -26,7 +26,7 @@
       REAL(KIND=JWRB)              :: DEPTHD
       REAL(KIND=JWRB)              :: TOOSHALLOW
 
-      REAL(KIND=JWRB), ALLOCATABLE :: DEPTH_INPUT(:)   !!! should be removed as soon as possible
+      REAL(KIND=JWRB), ALLOCATABLE :: BATHY(:,:)   !!! should be removed as soon as possible
 
       REAL(KIND=JWRB), ALLOCATABLE :: TCGOND(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: TFAK(:,:)
