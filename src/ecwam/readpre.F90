@@ -108,6 +108,8 @@ SUBROUTINE READPRE (IU07)
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
+      LOGICAL, ALLOCATABLE :: LLOCEANMASK(:,:)
+
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('READPRE',0,ZHOOK_HANDLE)
@@ -182,9 +184,6 @@ SUBROUTINE READPRE (IU07)
 
 !*    3. READ MODULE YOWMAP (LONG. AND LAT. INDICES OF GRID POINTS).
 !        --------------------------------------------------------
-
-        IF (ALLOCATED(BLK2GLO%IXLG)) CALL BLK2GLO%DEALLOC
-        CALL BLK2GLO%ALLOC(NIBLO)
 
         IF (.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
 
@@ -295,6 +294,8 @@ SUBROUTINE READPRE (IU07)
 
       CALL GSTATS(1771,1)
 
+
+
 !     SEND INFORMATION FROM READPRE TO ALL PE's
       CALL GSTATS(694,0)
       CALL MPBCASTGRID(IU06,IREAD,KTAG)
@@ -303,34 +304,42 @@ SUBROUTINE READPRE (IU07)
       TOOSHALLOW=0.1_JWRB*DEPTHA
 
 
-!     DETERMINE BLK2GLO
-      IP = 0
+!     DETERMINE THE TOTAL NUMBER OF OCEAN POINTS AND THE CONNECTION TO THE GRID (BLK2GLO)
+      ALLOCATE(LLOCEANMASK(NGX,NGY))
+      NIBLO = 0
       DO K=1,NGY
         DO I=1,NLONRGG(K)
           IF (BATHY(I,K) > 0.0_JWRB) THEN
-            IP = IP+1
-!!!debile
-      if (IP .gt. NIBLO ) then
-           write(0,*) ' !!!!!!!!!!! problem in readpre !! ',IP,NIBLO
-           write(*,*) ' !!!!!!!!!!! problem in readpre !! ',IP,NIBLO
-          CALL ABORT1
-      endif
-
-!!!            BLK2GLO%IXLG(IP) = I
-!!!            BLK2GLO%KXLT(IP) = K
-
-!!!debile
-         if(I .ne. BLK2GLO%IXLG(IP) .or. K .ne.  BLK2GLO%KXLT(IP) ) then
-           write(0,*) ' !!!!!!!!!!! problem in readpre !!!!!!!!!!!!!!!'
-           write(0,*) ' !!!!!!!!!!! ',IP, I, BLK2GLO%IXLG(IP),K,BLK2GLO%KXLT(IP)
-           write(*,*) ' !!!!!!!!!!! problem in readpre !!!!!!!!!!!!!!!'
-           write(*,*) ' !!!!!!!!!!! ',IP, I, BLK2GLO%IXLG(IP),K,BLK2GLO%KXLT(IP)
-          CALL ABORT1
-         endif
-
+            NIBLO = NIBLO + 1
+            LLOCEANMASK(I,K) = .TRUE.
+          ELSE
+            LLOCEANMASK(I,K) = .FALSE.
           ENDIF
         ENDDO
       ENDDO
+
+      IF ( NIBLO <= 0 ) THEN
+         WRITE(IU06,*)'***ERROR IN READREC: NIBLO SHOULD > 0, NIBLO = ',NIBLO
+         CALL FLUSH(IU06)
+         CALL ABORT1
+      ENDIF
+
+      IF (ALLOCATED(BLK2GLO%IXLG)) CALL BLK2GLO%DEALLOC
+      CALL BLK2GLO%ALLOC(NIBLO)
+
+      IP = 0
+      DO K=1,NGY
+        DO I=1,NLONRGG(K)
+          IF (LLOCEANMASK(I,K)) THEN
+            IP = IP+1
+            BLK2GLO%IXLG(IP) = I
+            BLK2GLO%KXLT(IP) = K
+          ENDIF
+        ENDDO
+      ENDDO
+
+      DEALLOCATE(LLOCEANMASK)
+
 
 
 !     RECALCULATE THE UNSTRUCTURED BITS (if not read in)
@@ -416,7 +425,7 @@ SUBROUTINE READPRE (IU07)
  1002    FORMAT(2X,A,I0,A,I0,A,L1)
       CASE(2)
          READ(IU07,IOSTAT=ISTAT)                                        &
-     &        NANG, NFRE, NFRE_RED, NGX, NGY, NIBLO, NOVER,             &
+     &        NANG, NFRE, NFRE_RED, NGX, NGY, NOVER,             &
      &        KFRH, MFRSTLW, MLSTHG,                                    &
      &        NIBL1, IDUM, KIBLD, KIBLC, CLDOMAIN
          IF (ISTAT /= 0) GOTO 1000
@@ -469,7 +478,7 @@ SUBROUTINE READPRE (IU07)
          IF (LLR8TOR4) THEN
             ALLOCATE(R8_ZDELLO(NGY))
 
-            READ(IU07,IOSTAT=ISTAT) BLK2GLO%IXLG, BLK2GLO%KXLT, NX, NY, IPER, &
+            READ(IU07,IOSTAT=ISTAT) NX, NY, IPER, &
      &           R8_AMOWEP, R8_AMOSOP, R8_AMOEAP, R8_AMONOP,                  &
      &           R8_XDELLA, R8_XDELLO,                                        &
      &           R8_ZDELLO, IRGG
@@ -485,7 +494,7 @@ SUBROUTINE READPRE (IU07)
 
             DEALLOCATE(R8_ZDELLO)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) BLK2GLO%IXLG, BLK2GLO%KXLT, NX, NY, IPER, &
+            READ(IU07,IOSTAT=ISTAT) NX, NY, IPER, &
      &           AMOWEP, AMOSOP, AMOEAP, AMONOP,                              &
      &           XDELLA, XDELLO,                                              &
      &           ZDELLO, IRGG

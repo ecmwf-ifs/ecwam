@@ -84,7 +84,7 @@
      &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,    &
      &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,    &
      &            FRH      ,KFRH     ,MFRSTLW  ,MLSTHG
-      USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,    &
+      USE YOWMAP   , ONLY : NX       ,NY       ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG
       USE YOWCOUT  , ONLY : NGOUT    ,IJAR
@@ -143,12 +143,12 @@
       IDUM=0
 
       IF (IFORM /= 2) THEN
-        WRITE(IU07) NANG, NFRE, NFRE_RED, NGX, NGY, NIBLO, NOVER,       &
+        WRITE(IU07) NANG, NFRE, NFRE_RED, NGX, NGY, NOVER,       &
      &              KFRH, MFRSTLW, MLSTHG,                              &
      &              NIBL1, IDUM, NIBLD, NIBLC, CLDOMAIN
       ENDIF
       IF (IFORM /= 1) THEN
-        WRITE(IU17,997) NANG, NFRE, NFRE_RED, NGX, NGY, NIBLO, NOVER,   &
+        WRITE(IU17,997) NANG, NFRE, NFRE_RED, NGX, NGY, NOVER,   &
      &              KFRH, MFRSTLW, MLSTHG,                              &
      &              NIBL1, IDUM, NIBLD, NIBLC, CLDOMAIN
       ENDIF
@@ -192,12 +192,12 @@
 !        --------------------
 
       IF (IFORM /= 2) THEN
-        WRITE (IU07) BLK2GLO%IXLG, BLK2GLO%KXLT, NX, NY, IPER,          &
+        WRITE (IU07) NX, NY, IPER,          &
      &   AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO,                &
      &   ZDELLO, IRGG
       ENDIF
       IF (IFORM /= 1) THEN
-        WRITE (IU17,998) BLK2GLO%IXLG, BLK2GLO%KXLT, NX, NY, IPER
+        WRITE (IU17,998) NX, NY, IPER
         WRITE (IU17,999) AMOWEP, AMOSOP, AMOEAP, AMONOP,                &
      &   XDELLA, XDELLO,ZDELLO
       ENDIF
