@@ -97,7 +97,7 @@ PROGRAM preset
      &            NIBLO    ,SWAMPWIND,CLDOMAIN ,LL1D     ,LLUNSTR
       USE YOWPCONS , ONLY : G        ,RAD      ,DEG      ,ZMISS    ,    &
      &            ROAIR
-      USE YOWSHAL  , ONLY : DEPTH_INPUT, WVENVI, BATHYMAX
+      USE YOWSHAL  , ONLY : BATHY, WVENVI, BATHYMAX
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,    &
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,    &
      &            IDELPRO  ,IDELWI   ,IDELWO   ,                        &
@@ -419,7 +419,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         DO IPRM = 1, NPROMA_WAM 
           IJ = IJFROMCHNK(IPRM,ICHNK)
           IF (IJ > 0 ) THEN
-            WVENVI%DEPTH(IPRM,ICHNK) = DEPTH_INPUT(IJ)
+            WVENVI%DEPTH(IPRM,ICHNK) = BATHY( BLK2LOC%IFROMIJ(IPRM,ICHNK), BLK2LOC%KFROMIJ(IPRM,ICHNK) )
           ELSE
             WVENVI%DEPTH(IPRM,ICHNK) = BATHYMAX
           ENDIF
@@ -428,7 +428,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
-      DEALLOCATE(DEPTH_INPUT)
+      DEALLOCATE(BATHY)
 
 
 !!!   deallocate big arrays that were read in with READPRE
