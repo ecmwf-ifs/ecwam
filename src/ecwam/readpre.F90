@@ -101,10 +101,12 @@ SUBROUTINE READPRE (IU07)
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU07
       INTEGER(KIND=JWIM) :: IREAD
+      INTEGER(KIND=JWIM) :: IP, I, K
       INTEGER(KIND=JWIM) :: IDUM, KIBLD, KIBLC
       INTEGER(KIND=JWIM) :: KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
       INTEGER(KIND=JWIM) :: NKIND !Precision of file when reading
 
+      REAL(KIND=JWRB), ALLOCATABLE :: BATHY(:,:) 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -233,9 +235,8 @@ SUBROUTINE READPRE (IU07)
 !        ----------------------------------------------------
 
         CALL READREC(14)
-!!!   note that the size of DEPTH_INPUT will be readjusted in mpdecomp !!!
-        IF (ALLOCATED(DEPTH_INPUT)) DEALLOCATE(DEPTH_INPUT)
-        ALLOCATE(DEPTH_INPUT(NIBLO))
+        IF (ALLOCATED(BATHY)) DEALLOCATE(BATHY)
+        ALLOCATE(BATHY(NGX,NGY))
         IF (.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
         IF (.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
         IF (.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
@@ -302,6 +303,40 @@ SUBROUTINE READPRE (IU07)
 
       TOOSHALLOW=0.1_JWRB*DEPTHA
 
+
+!     DETERMINE DEPTH_INPUT AND BLK2GLO
+      IF (ALLOCATED(DEPTH_INPUT)) DEALLOCATE(DEPTH_INPUT)
+      ALLOCATE(DEPTH_INPUT(NIBLO))
+      IP = 0
+      DO K=1,NGX
+        DO I=1,NLONRGG(K)
+          IF (BATHY(I,K) > 0.0_JWRB) THEN
+            IP = IP+1
+!!!debile
+      if (IP .gt. NIBLO ) then
+           write(0,*) ' !!!!!!!!!!! problem in readpre !! ',IP,NIBLO
+           write(*,*) ' !!!!!!!!!!! problem in readpre !! ',IP,NIBLO
+          CALL ABORT1
+      endif
+
+            DEPTH_INPUT(IP) = BATHY(I,K)
+!!!            BLK2GLO%IXLG(IP) = I
+!!!            BLK2GLO%KXLT(IP) = K
+
+!!!debile
+         if(I .ne. BLK2GLO%IXLG(IP) .or. K .ne.  BLK2GLO%KXLT(IP) ) then
+           write(0,*) ' !!!!!!!!!!! problem in readpre !!!!!!!!!!!!!!!'
+           write(0,*) ' !!!!!!!!!!! ',IP, I, BLK2GLO%IXLG(IP),K,BLK2GLO%KXLT(IP)
+           write(*,*) ' !!!!!!!!!!! problem in readpre !!!!!!!!!!!!!!!'
+           write(*,*) ' !!!!!!!!!!! ',IP, I, BLK2GLO%IXLG(IP),K,BLK2GLO%KXLT(IP)
+          CALL ABORT1
+         endif
+
+          ENDIF
+        ENDDO
+      ENDDO
+
+
 !     RECALCULATE THE UNSTRUCTURED BITS (if not read in)
 
       IF (LLUNSTR) THEN
@@ -346,9 +381,9 @@ SUBROUTINE READPRE (IU07)
      &     R8_OMEGA,                                                    &
      &     R8_THH,                                                      &
      &     R8_DFDTH,                                                    &
-     &     R8_DEPTH_INPUT,                                              &
      &     R8_FAK                
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) ::                   &
+     &     R8_BATHY,                                              &
      &     R8_TCGOND,                                                   &
      &     R8_TFAK,                                                     &
      &     R8_TSIHKD,                                                   &
@@ -521,27 +556,27 @@ SUBROUTINE READPRE (IU07)
          ENDIF
       CASE(15)
          IF (LLR8TOR4) THEN
-            ALLOCATE(R8_DEPTH_INPUT(NIBLO))
+            ALLOCATE(R8_BATHY(NGX,NGY))
             ALLOCATE(R8_TCGOND(NDEPTH,NFRE))
             ALLOCATE(R8_TFAK(NDEPTH,NFRE))
             ALLOCATE(R8_TSIHKD(NDEPTH,NFRE))
             ALLOCATE(R8_TFAC_ST(NDEPTH,NFRE))
-            READ(IU07,IOSTAT=ISTAT) R8_DEPTH_INPUT, R8_TCGOND,          &
+            READ(IU07,IOSTAT=ISTAT) R8_BATHY, R8_TCGOND,          &
      &           R8_TFAK, R8_TSIHKD, R8_TFAC_ST
             IF (ISTAT /= 0) GOTO 1000
-            DEPTH_INPUT(:) = R8_DEPTH_INPUT(:)
+            BATHY(:,:) = R8_BATHY(:,:)
             TCGOND = R8_TCGOND
             TFAK = R8_TFAK
             TSIHKD = R8_TSIHKD
             TFAC_ST = R8_TFAC_ST
 
-            DEALLOCATE(R8_DEPTH_INPUT)
+            DEALLOCATE(R8_BATHY)
             DEALLOCATE(R8_TCGOND)
             DEALLOCATE(R8_TFAK)
             DEALLOCATE(R8_TSIHKD)
             DEALLOCATE(R8_TFAC_ST)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) DEPTH_INPUT, TCGOND,                &
+            READ(IU07,IOSTAT=ISTAT) BATHY, TCGOND,                &
      &           TFAK, TSIHKD, TFAC_ST
             IF (ISTAT /= 0) GOTO 1000
          ENDIF

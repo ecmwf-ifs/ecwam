@@ -473,7 +473,7 @@ PROGRAM preproc
 !*    9. OUTPUT OF MODULES.
 !        ------------------
 
-      CALL OUTCOM (IU07, IU17, IFORM)
+      CALL OUTCOM (IU07, IU17, IFORM, BATHY)
 
 ! ----------------------------------------------------------------------
 

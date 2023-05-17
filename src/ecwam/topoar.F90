@@ -463,8 +463,8 @@
 !*       POSITIVE SEA DEPTH IN METRES (-999  FOR LAND).
 !        ----------------------------------------------
 
-      DO J=1,NY
-        DO I=1,NX
+      DO J=1,NGY
+        DO I=1,NGX
           IF (BATHY(I,J) < 0.0_JWRB) THEN
             BATHY(I,J) = -BATHY(I,J)
           ELSE
@@ -475,8 +475,8 @@
 
 !     CHECK THAT MINIMUM DEPTH USED IN TABLES IS MET. 
       NMINADJT=0
-      DO J=1,NY
-        DO I=1,NX
+      DO J=1,NGY
+        DO I=1,NGX
           IF (BATHY(I,J) > 0.0_JWRB .AND. BATHY(I,J) < DEPTHA ) THEN
             BATHY(I,J) = DEPTHA 
             NMINADJT=NMINADJT+1
@@ -500,8 +500,8 @@
 
 !     CHECK THAT THE MAXIMUM DEPTH IN TABLES IS SUFFICIENTLY LARGE
       BATHYMAX_LOC=0.0_JWRB
-      DO J=1,NY
-        DO I=1,NX
+      DO J=1,NGY
+        DO I=1,NGX
           BATHYMAX_LOC=MIN(MAX(BATHY(I,J),BATHYMAX_LOC),BATHYMAX)
         ENDDO
       ENDDO
@@ -530,11 +530,11 @@
 
       IF (NOUT /= 0) THEN
         XLAT=AMOSOP-XDELLA
-        DO J=1,NY
+        DO J=1,NGY
           XLAT=XLAT+XDELLA
           XLON=AMOWEP-ZDELLO(J)
           IF (XLON < 0.0_JWRB) XLON=360.0_JWRB+XLON
-          DO I=1,NX
+          DO I=1,NGX
             XLON=XLON+ZDELLO(J)
             IF (XLON >= 360.0_JWRB) XLON=XLON-360.0_JWRB
             DO JH = 1,NOUT

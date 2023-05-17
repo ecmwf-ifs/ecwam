@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE OUTCOM (IU07, IU17, IFORM)
+      SUBROUTINE OUTCOM (IU07, IU17, IFORM, BATHY)
 
 ! ----------------------------------------------------------------------
 
@@ -88,7 +88,7 @@
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG
       USE YOWCOUT  , ONLY : NGOUT    ,IJAR
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH_INPUT,DEPTHA   ,DEPTHD   ,  &
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,              &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,    &
      &            FAC0     ,FAC1     ,FAC2     ,FAC3     ,              &
@@ -110,6 +110,8 @@
 #include "outnam.intfb.h"
  
       INTEGER(KIND=JWIM), INTENT(IN) :: IU07, IU17, IFORM
+      REAL(KIND=JWRB), INTENT(IN) :: BATHY(NGX, NGY)
+
       INTEGER(KIND=JWIM) :: IDUM, K, M, L
       INTEGER(KIND=JWIM) :: NBINP, NOUTT
       INTEGER(KIND=JWIM) :: NKIND !Precision used when writing
@@ -254,7 +256,7 @@
 
       IF (IFORM /= 2) THEN
         WRITE (IU07) NDEPTH, DEPTHA, DEPTHD
-        WRITE (IU07) DEPTH_INPUT,                                       &
+        WRITE (IU07) BATHY,                                       &
      &   ((TCGOND(L,M),L=1,NDEPTH),M=1,NFRE),                           &
      &   ((TFAK(L,M),L=1,NDEPTH),M=1,NFRE),                             &
      &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,NFRE),                           &
@@ -262,7 +264,7 @@
       ENDIF
       IF (IFORM /= 1) THEN
         WRITE (IU17,996) NDEPTH, DEPTHA, DEPTHD
-        WRITE (IU17,999) DEPTH_INPUT,                                   &
+        WRITE (IU17,999) BATHY,                                   &
      &   ((TCGOND(L,M),L=1,NDEPTH),M=1,NFRE),                           &
      &   ((TFAK(L,M),L=1,NDEPTH),M=1,NFRE),                             &
      &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,NFRE),                           &
