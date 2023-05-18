@@ -78,6 +78,7 @@ SUBROUTINE READPRE (IU07)
      &            NGX      ,NGY      ,LLR8TOR4 ,LLUNSTR  ,              &
      &            NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,IMDLGRDID
       USE YOWSHAL  , ONLY : NDEPTH   ,BATHY    ,DEPTHA   ,DEPTHD   ,    &
+     &            LLOCEANMASK,                                          &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST  ,TOOSHALLOW
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
      &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,              &
@@ -107,8 +108,6 @@ SUBROUTINE READPRE (IU07)
       INTEGER(KIND=JWIM) :: NKIND !Precision of file when reading
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-
-      LOGICAL, ALLOCATABLE :: LLOCEANMASK(:,:)
 
 ! ----------------------------------------------------------------------
 
@@ -305,6 +304,7 @@ SUBROUTINE READPRE (IU07)
 
 
 !     DETERMINE THE TOTAL NUMBER OF OCEAN POINTS AND THE CONNECTION TO THE GRID (BLK2GLO)
+      IF (ALLOCATED(LLOCEANMASK)) DEALLOCATE(LLOCEANMASK)
       ALLOCATE(LLOCEANMASK(NGX,NGY))
       NIBLO = 0
       DO K=1,NGY
@@ -337,8 +337,6 @@ SUBROUTINE READPRE (IU07)
           ENDIF
         ENDDO
       ENDDO
-
-      DEALLOCATE(LLOCEANMASK)
 
 
 

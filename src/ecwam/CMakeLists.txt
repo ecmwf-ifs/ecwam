@@ -191,6 +191,7 @@ list( APPEND ecwam_srcs
   propags.F90
   propags1.F90
   propags2.F90
+  propconnect.F90
   propdot.F90
   readbou.F90
   readfl.F90

@@ -39,7 +39,6 @@
       REAL(KIND=JWRB), ALLOCATABLE    :: ZDELLO(:) 
 
       LOGICAL              :: LLOBSTRCT
-      LOGICAL, ALLOCATABLE :: LLBOUND(:)
       LOGICAL              :: LAQUA
 
 !*     VARIABLE.   TYPE.     PURPOSE.
@@ -72,8 +71,6 @@
 !      *LLOBSTRCT* LOGICAL   CONTROLS WHETHER THE NEW TYPE OF BATHYMETRY
 !                            INPUT IS USED IN CONJUNCTION WITH THE
 !                            OBSTRUCTION COEFFICIENT IN THE ADVECTION.
-!      *LLBOUND*   LOGICAL   TRUE IS THE GRID POINT IS ON THE BOUNDARY OF
-!                            THE DOMAIN.
 !      *LAQUA*     LOGICAL   TRUE IF MODEL IN AQUA PLANET CONFIGURATION
 !                            (i.e. NO LAND AND DEEP WATER).
 
