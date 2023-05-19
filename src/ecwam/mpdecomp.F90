@@ -191,11 +191,10 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
       INTEGER(KIND=JWIM) :: KLATBOT, KLATTOP, KXLAT, NLONGMAX, KMIN, IXLONMIN
       INTEGER(KIND=JWIM) :: MAXPERMLEN, MXPRLEN 
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: NXS, NXE, NYS, NYE 
-      INTEGER(KIND=JWIM), ALLOCATABLE :: ICOMBUF(:)
       INTEGER(KIND=JWIM), ALLOCATABLE :: ICOMBUF_S(:)
       INTEGER(KIND=JWIM), ALLOCATABLE :: ICOMBUF_R(:)
       INTEGER(KIND=JWIM), ALLOCATABLE :: IDUM(:)
-      INTEGER(KIND=JWIM), ALLOCATABLE :: KDUM(:), KDUM2(:,:), KDUM3(:,:,:)
+      INTEGER(KIND=JWIM), ALLOCATABLE :: KDUM(:)
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: INDEX, IJNDEX, NTOTSUB
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: NEWIJ2IJ
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: NSTART1D, NEND1D
@@ -208,8 +207,6 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSLON, KOBSLAT
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSCOR
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSRLON, KOBSRLAT
-
-      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) :: R8_WLAT, R8_WRLAT, R8_WRLON, R8_WCOR
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: RS_sekf, RN_sekf
@@ -470,44 +467,6 @@ ELSE
 
 !     SECOND 1-D DECOMPOSITION IN EACH LATITUDINAL BAND
 
-!     COMPUTE THE CONNECTION POINTERS FOR THE PROPAGATION SCHEME
-!     ----------------------------------------------------------
-      IF (ALLOCATED(KLAT)) DEALLOCATE(KLAT)
-      ALLOCATE(KLAT(NIBLO,2,2))  ! THE SIZE OF KLAT IS READJUSTED SEE BELOW
-      IF (ALLOCATED(WLAT)) DEALLOCATE(WLAT)
-      ALLOCATE(WLAT(NIBLO,2))
-
-      IF (ALLOCATED(KLON)) DEALLOCATE(KLON)
-      ALLOCATE(KLON(NIBLO,2))  ! THE SIZE OF KLON IS READJUSTED SEE BELOW
-
-      IF (IPROPAGS == 2) THEN
-
-        IF (ALLOCATED(KCOR)) DEALLOCATE(KCOR)
-        ALLOCATE(KCOR(NIBLO,4,2)) ! THE SIZE OF KCOR IS READJUSTED SEE BELOW
-                                  ! WILL ONLY BE KEPT IF IPROPAGS=2
-        IF (ALLOCATED(WCOR)) DEALLOCATE(WCOR)
-        ALLOCATE(WCOR(NIBLO,4))
-
-      ELSEIF (IPROPAGS == 1) THEN
-
-        IF (ALLOCATED(KRLAT)) DEALLOCATE(KRLAT)
-        ALLOCATE(KRLAT(NIBLO,2,2))  ! THE SIZE IS READJUSTED SEE BELOW
-                                    ! WILL ONLY BE KEPT IF IPROPAGS=1
-        IF (ALLOCATED(KRLON)) DEALLOCATE(KRLON)
-        ALLOCATE(KRLON(NIBLO,2,2))  ! THE SIZE IS READJUSTED SEE BELOW
-        IF (ALLOCATED(WRLAT)) DEALLOCATE(WRLAT)
-        ALLOCATE(WRLAT(NIBLO,2))
-        IF (ALLOCATED(WRLON)) DEALLOCATE(WRLON)
-        ALLOCATE(WRLON(NIBLO,2))
-
-      ENDIF
-
-!!!debile !!!! I believe we could call instead PROPCONNECT(NSTART(IRANK),NEND(IRANK))
-!!! and add an openMP loop
-      CALL PROPCONNECT(1,NIBLO)
-
-
-
       IF (LL1D .OR. NPR == 1) THEN
 !       not needed
         DO IP=1,NYDECOMP
@@ -697,105 +656,7 @@ ELSE
 
         ENDDO
 
-
-
-
-!       RELABELLING OF THE ARRAYS KLAT KLON KCOR KRLAT
-!       KRLON DEPTH IXLG KXLT
-!       (also see below for WLAT, WCOR)
-
-        DO ICL=1,2
-          DO IC=1,2
-            DO IJ=NSTART(1),NEND(NPR)
-              IF (KLAT(IJ,IC,ICL) > 0 .AND. KLAT(IJ,IC,ICL) <= NIBLO)  &
-     &           KLAT(IJ,IC,ICL) = IJ2NEWIJ(KLAT(IJ,IC,ICL))
-            ENDDO
-          ENDDO
-        ENDDO
-
-        DO IC=1,2
-          DO IJ=NSTART(1),NEND(NPR)
-            IF (KLON(IJ,IC) > 0 .AND. KLON(IJ,IC) <= NIBLO)            &
-     &         KLON(IJ,IC) = IJ2NEWIJ(KLON(IJ,IC))
-          ENDDO
-        ENDDO
-
-        IF (IPROPAGS == 1) THEN
-          DO ICL=1,2
-            DO IC=1,2
-              DO IJ=NSTART(1),NEND(NPR)
-                IF (KRLON(IJ,IC,ICL) > 0 .AND. KRLON(IJ,IC,ICL) <= NIBLO) &
-     &             KRLON(IJ,IC,ICL) = IJ2NEWIJ(KRLON(IJ,IC,ICL))
-                IF (KRLAT(IJ,IC,ICL) > 0 .AND. KRLAT(IJ,IC,ICL) <= NIBLO) &
-     &             KRLAT(IJ,IC,ICL) = IJ2NEWIJ(KRLAT(IJ,IC,ICL))
-              ENDDO
-            ENDDO
-          ENDDO
-        ELSEIF (IPROPAGS == 2) THEN
-          DO ICL=1,2
-            DO ICR=1,4
-              DO IJ=NSTART(1),NEND(NPR)
-                IF (KCOR(IJ,ICR,ICL) > 0 .AND. KCOR(IJ,ICR,ICL) <= NIBLO) &
-     &             KCOR(IJ,ICR,ICL) = IJ2NEWIJ(KCOR(IJ,ICR,ICL))
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDIF
-
-        ALLOCATE(KDUM(NIBLO))
-        DO ICL=1,2
-          DO IC=1,2
-            DO NIJ=NSTART(1),NEND(NPR)
-              KDUM(NIJ)=KLAT(NEWIJ2IJ(NIJ),IC,ICL)
-            ENDDO
-            DO NIJ=NSTART(1),NEND(NPR)
-              KLAT(NIJ,IC,ICL)=KDUM(NIJ)
-            ENDDO
-          ENDDO
-        ENDDO
-        DO IC=1,2
-          DO NIJ=NSTART(1),NEND(NPR)
-            KDUM(NIJ)=KLON(NEWIJ2IJ(NIJ),IC)
-          ENDDO
-          DO NIJ=NSTART(1),NEND(NPR)
-            KLON(NIJ,IC)=KDUM(NIJ)
-          ENDDO
-        ENDDO
-        DEALLOCATE(KDUM)
-
-        IF (IPROPAGS == 1) THEN
-          ALLOCATE(KDUM(NIBLO))
-          DO ICL=1,2
-            DO IC=1,2
-              DO NIJ=NSTART(1),NEND(NPR)
-                KDUM(NIJ)=KRLON(NEWIJ2IJ(NIJ),IC,ICL)
-              ENDDO
-              DO NIJ=NSTART(1),NEND(NPR)
-                KRLON(NIJ,IC,ICL)=KDUM(NIJ)
-              ENDDO
-              DO NIJ=NSTART(1),NEND(NPR)
-                KDUM(NIJ)=KRLAT(NEWIJ2IJ(NIJ),IC,ICL)
-              ENDDO
-              DO NIJ=NSTART(1),NEND(NPR)
-                KRLAT(NIJ,IC,ICL)=KDUM(NIJ)
-              ENDDO
-            ENDDO
-          ENDDO
-          DEALLOCATE(KDUM)
-        ELSEIF (IPROPAGS == 2) THEN
-          ALLOCATE(KDUM(NIBLO))
-          DO ICL=1,2
-            DO ICR=1,4
-              DO NIJ=NSTART(1),NEND(NPR)
-                KDUM(NIJ)=KCOR(NEWIJ2IJ(NIJ),ICR,ICL)
-              ENDDO
-              DO NIJ=NSTART(1),NEND(NPR)
-                KCOR(NIJ,ICR,ICL)=KDUM(NIJ)
-              ENDDO
-            ENDDO
-          ENDDO
-          DEALLOCATE(KDUM)
-        ENDIF
+!       RELABELLING OF THE ARRAYS
 
         ALLOCATE(KDUM(NIBLO))
         DO NIJ=NSTART(1),NEND(NPR)
@@ -820,6 +681,39 @@ ELSE
 
       DEALLOCATE(NSTART1D)
       DEALLOCATE(NEND1D)
+
+
+!     COMPUTE THE CONNECTION POINTERS FOR THE PROPAGATION SCHEME
+!     ----------------------------------------------------------
+
+      IF (ALLOCATED(KLAT)) DEALLOCATE(KLAT)
+      ALLOCATE(KLAT(NSTART(IRANK):NEND(IRANK),2,2))
+      IF (ALLOCATED(WLAT)) DEALLOCATE(WLAT)
+      ALLOCATE(WLAT(NSTART(IRANK):NEND(IRANK),2))
+
+      IF (ALLOCATED(KLON)) DEALLOCATE(KLON)
+      ALLOCATE(KLON(NSTART(IRANK):NEND(IRANK),2))
+
+      IF (IPROPAGS == 2) THEN
+        IF (ALLOCATED(KCOR)) DEALLOCATE(KCOR)
+        ALLOCATE(KCOR(NSTART(IRANK):NEND(IRANK),4,2))
+        IF (ALLOCATED(WCOR)) DEALLOCATE(WCOR)
+        ALLOCATE(WCOR(NSTART(IRANK):NEND(IRANK),4))
+
+      ELSEIF (IPROPAGS == 1) THEN
+        IF (ALLOCATED(KRLAT)) DEALLOCATE(KRLAT)
+        ALLOCATE(KRLAT(NSTART(IRANK):NEND(IRANK),2,2))
+        IF (ALLOCATED(KRLON)) DEALLOCATE(KRLON)
+        ALLOCATE(KRLON(NSTART(IRANK):NEND(IRANK),2,2))
+        IF (ALLOCATED(WRLAT)) DEALLOCATE(WRLAT)
+        ALLOCATE(WRLAT(NSTART(IRANK):NEND(IRANK),2))
+        IF (ALLOCATED(WRLON)) DEALLOCATE(WRLON)
+        ALLOCATE(WRLON(NSTART(IRANK):NEND(IRANK),2))
+
+      ENDIF
+
+!!debile: add OpenMP 
+      CALL PROPCONNECT(NSTART(IRANK),NEND(IRANK))
 
 
 !     3. DETERMINE THE LENGTH OF THE MESSAGE THAT WILL BE EXCHANGED 
@@ -1267,8 +1161,7 @@ ELSE
             IF (IPROCFROM(IH,IRANK) < IRANK) THEN
               NIJSTART(IPROCFROM(IH,IRANK))=NINF+IH-1
             ELSEIF (IPROCFROM(IH,IRANK) > IRANK) THEN
-              NIJSTART(IPROCFROM(IH,IRANK))=                            &
-     &                NEND(IRANK)+IH-KLENBOT(IRANK)
+              NIJSTART(IPROCFROM(IH,IRANK))=NEND(IRANK)+IH-KLENBOT(IRANK) 
             ENDIF
           ENDIF
         ENDDO
@@ -1285,12 +1178,9 @@ ELSE
 !       PRQRT IS NOT DEFINED IN THE HALO !!!!
         IF (ALLOCATED(PRQRT)) DEALLOCATE(PRQRT)
         ALLOCATE(PRQRT(NSTART(IRANK):NEND(IRANK)))
-      ENDIF
 
-      SQRT2O2=SIN(0.25_JWRB*PI)
+        SQRT2O2=SIN(0.25_JWRB*PI)
 
-
-      IF (IPROPAGS == 1) THEN
         DO K=1,NANG
           CDR(NLAND,K) = 0.0_JWRB
           SDR(NLAND,K) = 0.0_JWRB
@@ -1361,122 +1251,8 @@ ELSE
       DEALLOCATE(IJHALO)
 
 
-!     4. KEEP THE PART OF KLAT,KLON,KCOR, DEPTH WHICH IS NECESSARY
-!        ----------------------------------------------------------
-
-      IF ( NPR > 1 ) THEN
-
-        ALLOCATE(KDUM3(NSTART(IRANK):NEND(IRANK),2,2))
-
-        DO ICL=1,2
-          DO IC=1,2
-            DO IJ=NSTART(IRANK),NEND(IRANK)
-              KDUM3(IJ,IC,ICL)=KLAT(IJ,IC,ICL)
-            ENDDO
-          ENDDO
-        ENDDO
-
-        DEALLOCATE(KLAT)
-        ALLOCATE(KLAT(NSTART(IRANK):NEND(IRANK),2,2))
-
-        DO ICL=1,2
-          DO IC=1,2
-            DO IJ=NSTART(IRANK),NEND(IRANK)
-              KLAT(IJ,IC,ICL)=KDUM3(IJ,IC,ICL)
-            ENDDO
-          ENDDO
-        ENDDO
-        DEALLOCATE(KDUM3)
-
-        ALLOCATE(KDUM2(NSTART(IRANK):NEND(IRANK),2))
-        DO IC=1,2
-          DO IJ=NSTART(IRANK),NEND(IRANK)
-            KDUM2(IJ,IC)=KLON(IJ,IC)
-          ENDDO
-        ENDDO
-
-        DEALLOCATE(KLON)
-        ALLOCATE(KLON(NSTART(IRANK):NEND(IRANK),2))
-
-        DO IC=1,2
-          DO IJ=NSTART(IRANK),NEND(IRANK)
-            KLON(IJ,IC)=KDUM2(IJ,IC)
-          ENDDO
-        ENDDO
-
-        DEALLOCATE(KDUM2)
-
-        IF (IPROPAGS == 1) THEN
-          ALLOCATE(KDUM3(NSTART(IRANK):NEND(IRANK),2,2))
-
-          DO ICL=1,2
-            DO IC=1,2
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                KDUM3(IJ,IC,ICL)=KRLAT(IJ,IC,ICL)
-              ENDDO
-            ENDDO
-          ENDDO
-
-          DEALLOCATE(KRLAT)
-          ALLOCATE(KRLAT(NSTART(IRANK):NEND(IRANK),2,2))
-
-          DO ICL=1,2
-            DO IC=1,2
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                KRLAT(IJ,IC,ICL)=KDUM3(IJ,IC,ICL)
-              ENDDO
-            ENDDO
-          ENDDO
-
-          DO ICL=1,2
-            DO IC=1,2
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                KDUM3(IJ,IC,ICL)=KRLON(IJ,IC,ICL)
-              ENDDO
-            ENDDO
-          ENDDO
-
-          DEALLOCATE(KRLON)
-          ALLOCATE(KRLON(NSTART(IRANK):NEND(IRANK),2,2))
-
-          DO ICL=1,2
-            DO IC=1,2
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                KRLON(IJ,IC,ICL)=KDUM3(IJ,IC,ICL)
-              ENDDO
-            ENDDO
-          ENDDO
-
-          DEALLOCATE(KDUM3)
-        ELSEIF (IPROPAGS == 2) THEN
-          ALLOCATE(KDUM3(NSTART(IRANK):NEND(IRANK),4,2))
-          DO ICL=1,2
-            DO ICR=1,4
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                KDUM3(IJ,ICR,ICL)=KCOR(IJ,ICR,ICL)
-              ENDDO
-            ENDDO
-          ENDDO
-
-          DEALLOCATE(KCOR)
-          ALLOCATE(KCOR(NSTART(IRANK):NEND(IRANK),4,2))
-
-          DO ICL=1,2
-            DO ICR=1,4
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                KCOR(IJ,ICR,ICL)=KDUM3(IJ,ICR,ICL)
-              ENDDO
-            ENDDO
-          ENDDO
-          DEALLOCATE(KDUM3)
-        ENDIF
-
-      ENDIF
-
-
-!     5. MODIFY KLAT AND KLON SUCH THAT POINT INDICES FOR LAND IS
-!        NLAND.
-!        ---------------------------------------------------------
+!     5. MODIFY KLAT AND KLON SUCH THAT POINT INDICES FOR LAND IS NLAND
+!        ---------------------------------------------------------------
 
         DO ICL=1,2
           DO IC=1,2
@@ -1507,214 +1283,6 @@ ELSE
               ENDDO
             ENDDO
           ENDDO
-        ENDIF
-
-
-
-!*    6. INPUT THE WEIGHT FOR THE ADVECTION SCHEME 
-!        --------------------------------------------
-
-        IF (IRANK == IREAD) THEN
-
-!         RELABELLING OF THE ARRAYS
-          IF (.NOT.LL1D .AND. NPR > 1) THEN
-
-            ALLOCATE(RDUM(NIBLO))
-            DO IC=1,2
-              DO NIJ=NSTART(1),NEND(NPR)
-                RDUM(NIJ)=WLAT(NEWIJ2IJ(NIJ),IC)
-              ENDDO
-              DO NIJ=NSTART(1),NEND(NPR)
-               WLAT(NIJ,IC)=RDUM(NIJ)
-              ENDDO
-            ENDDO
-            DEALLOCATE(RDUM)
-
-            IF (IPROPAGS == 2) THEN
-              ALLOCATE(RDUM(NIBLO))
-              DO ICR=1,4
-                DO NIJ=NSTART(1),NEND(NPR)
-                  RDUM(NIJ)=WCOR(NEWIJ2IJ(NIJ),ICR)
-                ENDDO
-                DO NIJ=NSTART(1),NEND(NPR)
-                 WCOR(NIJ,ICR)=RDUM(NIJ)
-                ENDDO
-              ENDDO
-              DEALLOCATE(RDUM)
-            ENDIF
-
-            IF (IPROPAGS == 1) THEN
-              ALLOCATE(RDUM(NIBLO))
-              DO IC=1,2
-                DO NIJ=NSTART(1),NEND(NPR)
-                  RDUM(NIJ)=WRLAT(NEWIJ2IJ(NIJ),IC)
-                ENDDO
-                DO NIJ=NSTART(1),NEND(NPR)
-                 WRLAT(NIJ,IC)=RDUM(NIJ)
-                ENDDO
-              ENDDO
-              DO IC=1,2
-                DO NIJ=NSTART(1),NEND(NPR)
-                  RDUM(NIJ)=WRLON(NEWIJ2IJ(NIJ),IC)
-                ENDDO
-                DO NIJ=NSTART(1),NEND(NPR)
-                 WRLON(NIJ,IC)=RDUM(NIJ)
-                ENDDO
-              ENDDO
-              DEALLOCATE(RDUM)
-            ENDIF
-
-          ENDIF
-
-        ENDIF
-
-!       SEND WLAT WRLAT WRLON TO OTHER PE'S
-
-        IF (NPR > 1) THEN
-          ITAG=KTAG+1
-          IF (IPROPAGS == 2) THEN
-            MPLENGTH=6*MAXLEN
-          ELSEIF (IPROPAGS == 1) THEN
-            MPLENGTH=6*MAXLEN
-          ELSE
-            MPLENGTH=2*MAXLEN
-          ENDIF
-
-          ALLOCATE(RCOMBUF_S(MPLENGTH*NPR))
-          ALLOCATE(RCOMBUF_R(MPLENGTH))
-
-          IF (IRANK == IREAD) THEN
-!           SEND TO OTHER PE'S
-
-!           FILL THE SEND BUFFER
-            DO IP=1,NPR
-              KCOUNT=(IP-1)*MPLENGTH
-              DO IC=1,2
-                DO IJ=NSTART(IP),NEND(IP)
-                  KCOUNT=KCOUNT+1
-                  RCOMBUF_S(KCOUNT)=WLAT(IJ,IC)
-                ENDDO
-              ENDDO
-
-              IF (IPROPAGS == 2) THEN
-                DO ICR=1,4
-                  DO IJ=NSTART(IP),NEND(IP)
-                    KCOUNT=KCOUNT+1
-                    RCOMBUF_S(KCOUNT)=WCOR(IJ,ICR)
-                  ENDDO
-                ENDDO
-              ELSEIF (IPROPAGS == 1) THEN
-                DO IC=1,2
-                  DO IJ=NSTART(IP),NEND(IP)
-                    KCOUNT=KCOUNT+1
-                    RCOMBUF_S(KCOUNT)=WRLAT(IJ,IC)
-                  ENDDO
-                ENDDO
-                DO IC=1,2
-                  DO IJ=NSTART(IP),NEND(IP)
-                    KCOUNT=KCOUNT+1
-                    RCOMBUF_S(KCOUNT)=WRLON(IJ,IC)
-                  ENDDO
-                ENDDO
-              ENDIF
-            ENDDO
-
-            DEALLOCATE(WLAT)
-            IF (IPROPAGS == 1) THEN
-              DEALLOCATE(WRLAT)
-              DEALLOCATE(WRLON)
-            ENDIF
-            IF (IPROPAGS == 2) THEN
-              DEALLOCATE(WCOR)
-            ENDIF
-
-          ENDIF
-
-          IF (NPR > 1) THEN
-            CALL GSTATS(694,0)
-            ICOUNTS(:)=MPLENGTH
-            CALL MPL_SCATTERV(RCOMBUF_R,KROOT=IREAD,PSENDBUF=RCOMBUF_S, &
-     &        KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP:')
-            CALL GSTATS(694,1)
-          ENDIF
-
-
-!         KEEP THE RELEVANT PART OF WLAT
-          IF (ALLOCATED(WLAT)) DEALLOCATE(WLAT)
-          ALLOCATE(WLAT(NSTART(IRANK):NEND(IRANK),2))
-          IF (IPROPAGS == 2) THEN
-            IF (ALLOCATED(WCOR)) DEALLOCATE(WCOR)
-            ALLOCATE(WCOR(NSTART(IRANK):NEND(IRANK),4))
-          ELSEIF (IPROPAGS == 1) THEN
-            ALLOCATE(WRLAT(NSTART(IRANK):NEND(IRANK),2))
-            ALLOCATE(WRLON(NSTART(IRANK):NEND(IRANK),2))
-          ENDIF
-
-          IF (IRANK == IREAD) THEN
-            KCOUNT=(IRANK-1)*MPLENGTH
-            DO IC=1,2
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                KCOUNT=KCOUNT+1
-                WLAT(IJ,IC)=RCOMBUF_S(KCOUNT)
-              ENDDO
-            ENDDO
-
-            IF (IPROPAGS == 2) THEN
-              DO ICR=1,4
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  KCOUNT=KCOUNT+1
-                  WCOR(IJ,ICR)=RCOMBUF_S(KCOUNT)
-                ENDDO
-              ENDDO
-            ELSEIF (IPROPAGS == 1) THEN
-              DO IC=1,2
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  KCOUNT=KCOUNT+1
-                  WRLAT(IJ,IC)=RCOMBUF_S(KCOUNT)
-                ENDDO
-              ENDDO
-              DO IC=1,2
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  KCOUNT=KCOUNT+1
-                  WRLON(IJ,IC)=RCOMBUF_S(KCOUNT)
-                ENDDO
-              ENDDO
-            ENDIF
-
-          ELSE
-            KCOUNT=0
-            DO IC=1,2
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                KCOUNT=KCOUNT+1
-                WLAT(IJ,IC)=RCOMBUF_R(KCOUNT)
-              ENDDO
-            ENDDO
-            IF (IPROPAGS == 2) THEN
-              DO ICR=1,4
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  KCOUNT=KCOUNT+1
-                  WCOR(IJ,ICR)=RCOMBUF_R(KCOUNT)
-                ENDDO
-              ENDDO
-            ELSEIF (IPROPAGS == 1) THEN
-              DO IC=1,2
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  KCOUNT=KCOUNT+1
-                  WRLAT(IJ,IC)=RCOMBUF_R(KCOUNT)
-                ENDDO
-              ENDDO
-              DO IC=1,2
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  KCOUNT=KCOUNT+1
-                  WRLON(IJ,IC)=RCOMBUF_R(KCOUNT)
-                ENDDO
-              ENDDO
-            ENDIF
-          ENDIF
-
-          IF (ALLOCATED(RCOMBUF_S)) DEALLOCATE(RCOMBUF_S)
-          IF (ALLOCATED(RCOMBUF_R)) DEALLOCATE(RCOMBUF_R)
-
         ENDIF
 
 
