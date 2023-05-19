@@ -463,7 +463,7 @@ PROGRAM preproc
 !*    8. GENERATE AND WRITE MODULE UBUF.
 !        -------------------------------
 
-          CALL MUBUF (IU01, BATHY, IU08, NPROPAGS)
+          CALL MUBUF (IU01, IU08, NPROPAGS)
  
       END IF ! .NOT. LLUNSTR
 
