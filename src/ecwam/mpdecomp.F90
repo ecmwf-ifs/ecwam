@@ -504,7 +504,7 @@ ELSE
 
 !!!debile !!!! I believe we could call instead PROPCONNECT(NSTART(IRANK),NEND(IRANK))
 !!! and add an openMP loop
-      CALL PROPCONNECT(NSTART(1),NEND(NPR))
+      CALL PROPCONNECT(1,NIBLO)
 
 
 
