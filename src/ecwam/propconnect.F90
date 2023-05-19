@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE PROPCONNECT(IJS, IJL)
+SUBROUTINE PROPCONNECT(IJS, IJL, NEWIJ2IJ)
 ! ----------------------------------------------------------------------
 
 !**** *PROPCONNECT* - ROUTINE TO DETERMINE THE NEIGHBOURING POINTS FOR THE STRUCTURED GRID ADVECTION
@@ -38,6 +38,7 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWSHAL  , ONLY : LLOCEANMASK 
       USE YOWSTAT  , ONLY : IPROPAGS 
+      USE YOWSPEC  , ONLY : IJ2NEWIJ
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR     ,              &
      &                      KRLAT    ,KRLON    ,                        &
@@ -48,8 +49,9 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), DIMENSION(0:NIBLO), INTENT(IN) :: NEWIJ2IJ
 
-      INTEGER(KIND=JWIM) :: IJ, IJP, I, K, IP, IH, IS, M
+      INTEGER(KIND=JWIM) :: IJ, IJP, I, K, IP, IP1D, IH, IH1D, IS, M
       INTEGER(KIND=JWIM) :: IMIN, IPLUS, IMIN2, IPLUS2
       INTEGER(KIND=JWIM) :: IC, ICP, ICL, ICR
 
@@ -79,16 +81,18 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
       DO IP = IJS, IJL
         I = BLK2GLO%IXLG(IP)
         K = BLK2GLO%KXLT(IP)
+        IP1D = NEWIJ2IJ(IP)
         IF (K > 1) THEN
           XMIN = REAL(I-1,JWRB)*ZDELLO(K)/ZDELLO(K-1)
           IMIN = NINT(XMIN) + 1
 
 !         CLOSEST GRID POINT
           IF (LLOCEANMASK(IMIN,K-1)) THEN
-            DO IH = IP,1,-1
+            DO IH1D = IP1D,1,-1
+              IH = IJ2NEWIJ(IH1D)
               IF (BLK2GLO%IXLG(IH) == IMIN .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
             ENDDO
-            KLAT(IP,1,1) = IH
+            KLAT(IP,1,1) = IJ2NEWIJ(IH1D) 
           ENDIF
 
 !         SECOND CLOSEST GRID POINT
@@ -108,10 +112,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
             ENDIF
 
             IF (LLOCEANMASK(IMIN2,K-1)) THEN
-              DO IH = IP,1,-1
+              DO IH1D = IP1D,1,-1
+                IH = IJ2NEWIJ(IH1D)
                 IF (BLK2GLO%IXLG(IH) == IMIN2 .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
               ENDDO
-              KLAT(IP,1,2) = IH
+              KLAT(IP,1,2) = IJ2NEWIJ(IH1D)
             ENDIF
           ELSE
             KLAT(IP,1,2) = KLAT(IP,1,1)
@@ -123,10 +128,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
           XPLUS = REAL(I-1,JWRB)*ZDELLO(K)/ZDELLO(K+1)
           IPLUS = NINT(XPLUS) + 1
           IF (LLOCEANMASK(IPLUS,K+1)) THEN
-            DO IH = IP,NIBLO
+            DO IH1D = IP1D,NIBLO
+              IH = IJ2NEWIJ(IH1D)
               IF (BLK2GLO%IXLG(IH) == IPLUS .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
             ENDDO
-            KLAT(IP,2,1) = IH
+            KLAT(IP,2,1) = IJ2NEWIJ(IH1D)
           ENDIF
 
           IF (IRGG == 1) THEN
@@ -145,10 +151,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
             ENDIF
 
             IF (LLOCEANMASK(IPLUS2,K+1)) THEN
-              DO IH = IP,NIBLO
+              DO IH1D = IP1D,NIBLO
+                IH = IJ2NEWIJ(IH1D)
                 IF (BLK2GLO%IXLG(IH) == IPLUS2 .AND.  BLK2GLO%KXLT(IH) == K+1) EXIT
               ENDDO
-              KLAT(IP,2,2) = MIN(IH,NIBLO)
+              KLAT(IP,2,2) = MIN(IJ2NEWIJ(IH1D),NIBLO)
             ENDIF
           ELSE
             KLAT(IP,2,2) = KLAT(IP,2,1)
@@ -170,24 +177,27 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
       DO IP = IJS, IJL
         I = BLK2GLO%IXLG(IP)
         K = BLK2GLO%KXLT(IP)
+        IP1D = NEWIJ2IJ(IP)
         IF (I > 1) THEN
           IF (LLOCEANMASK(I-1,K)) KLON(IP,1) = IP-1
         ELSE
           IF (IPER == 1 .AND. LLOCEANMASK(NLONRGG(K),K)) THEN
-            KLON(IP,1) = IP
+            KLON(IP,1) = IP1D
             DO IH=2,NLONRGG(K)
               IF (LLOCEANMASK(IH,K)) KLON(IP,1) = KLON(IP,1)+1
             ENDDO
+            KLON(IP,1) = IJ2NEWIJ(KLON(IP,1)) 
           ENDIF
         ENDIF
         IF (I < NLONRGG(K)) THEN
           IF (LLOCEANMASK(I+1,K)) KLON(IP,2) = IP+1
         ELSE
           IF (IPER == 1 .AND. LLOCEANMASK(1,K)) THEN
-            KLON(IP,2) = IP
+            KLON(IP,2) = IP1D
             DO IH=NLONRGG(K)-1,1,-1
               IF (LLOCEANMASK(IH,K)) KLON(IP,2) = KLON(IP,2)-1
             ENDDO
+            KLON(IP,2) = IJ2NEWIJ(KLON(IP,2)) 
           ENDIF
         ENDIF
       ENDDO
@@ -210,6 +220,7 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
         DO IP = IJS, IJL
           I = BLK2GLO%IXLG(IP)
           K = BLK2GLO%KXLT(IP)
+          IP1D = NEWIJ2IJ(IP)
           XLON = REAL(I-1)*ZDELLO(K)
 
           IF (K > 1) THEN
@@ -225,10 +236,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
             ENDIF
             IF (IMIN >= 1)  THEN
               IF (LLOCEANMASK(IMIN,K-1)) THEN
-                DO IH = IP,1,-1
+                DO IH1D = IP1D,1,-1
+                  IH = IJ2NEWIJ(IH1D)
                   IF (BLK2GLO%IXLG(IH) == IMIN .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
                 ENDDO
-               KCOR(IP,3,1) = IH
+               KCOR(IP,3,1) = IJ2NEWIJ(IH1D)
               ENDIF
             ENDIF
 
@@ -253,10 +265,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
               ENDIF
 
               IF (LLOCEANMASK(IMIN2,K-1)) THEN
-                DO IH = IP,1,-1
+                DO IH1D = IP1D,1,-1
+                  IH = IJ2NEWIJ(IH1D)
                   IF (BLK2GLO%IXLG(IH) == IMIN2 .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
                 ENDDO
-                KCOR(IP,3,2) = IH
+                KCOR(IP,3,2) = IJ2NEWIJ(IH1D)
               ENDIF
 
             ENDIF
@@ -272,10 +285,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
             ENDIF
             IF (IMIN <= NLONRGG(K-1))  THEN
               IF (LLOCEANMASK(IMIN,K-1)) THEN
-                DO IH = IP,1,-1
+                DO IH1D = IP1D,1,-1
+                  IH = IJ2NEWIJ(IH1D)
                   IF (BLK2GLO%IXLG(IH) == IMIN .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
                 ENDDO
-               KCOR(IP,2,1) = IH
+               KCOR(IP,2,1) = IJ2NEWIJ(IH1D)
               ENDIF
             ENDIF
 
@@ -300,10 +314,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
               ENDIF
 
               IF (LLOCEANMASK(IMIN2,K-1)) THEN
-                DO IH = IP,1,-1
+                DO IH1D = IP1D,1,-1
+                  IH = IJ2NEWIJ(IH1D)
                   IF (BLK2GLO%IXLG(IH) == IMIN2 .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
                 ENDDO
-                KCOR(IP,2,2) = IH
+                KCOR(IP,2,2) = IJ2NEWIJ(IH1D) 
               ENDIF
             ENDIF
 
@@ -323,10 +338,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
 
             IF (IPLUS >= 1)  THEN
               IF (LLOCEANMASK(IPLUS,K+1)) THEN
-                DO IH = IP,NIBLO
+                DO IH1D = IP1D,NIBLO
+                  IH = IJ2NEWIJ(IH1D)
                   IF (BLK2GLO%IXLG(IH) == IPLUS .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
                 ENDDO
-                KCOR(IP,4,1) = IH
+                KCOR(IP,4,1) = J2NEWIJ(IH1D)
               ENDIF
             ENDIF
 
@@ -351,10 +367,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
               ENDIF
  
               IF (LLOCEANMASK(IPLUS2,K+1)) THEN
-                DO IH = IP,NIBLO
+                DO IH1D = IP1D,NIBLO
+                  IH = IJ2NEWIJ(IH1D)
                   IF (BLK2GLO%IXLG(IH) == IPLUS2 .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
                 ENDDO
-                KCOR(IP,4,2) = MIN(IH,NIBLO)
+                KCOR(IP,4,2) = MIN(IJ2NEWIJ(IH1D),NIBLO)
               ENDIF
             ENDIF
 
@@ -370,10 +387,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
 
             IF (IPLUS <= NLONRGG(K+1))  THEN
               IF (LLOCEANMASK(IPLUS,K+1)) THEN
-                DO IH = IP,NIBLO
+                DO IH1D = IP1D,NIBLO
+                  IH = IJ2NEWIJ(IH1D)
                   IF (BLK2GLO%IXLG(IH) == IPLUS .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
                 ENDDO
-                KCOR(IP,1,1) = IH
+                KCOR(IP,1,1) = IJ2NEWIJ(IH1D)
               ENDIF
             ENDIF
 
@@ -398,10 +416,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
               ENDIF
 
               IF (LLOCEANMASK(IPLUS2,K+1)) THEN
-                DO IH = IP,NIBLO
+                DO IH1D = IP1D,NIBLO
+                  IH = IJ2NEWIJ(IH1D)
                   IF (BLK2GLO%IXLG(IH) == IPLUS2 .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
                 ENDDO
-                KCOR(IP,1,2) = MIN(IH,NIBLO)
+                KCOR(IP,1,2) = MIN(IJ2NEWIJ(IH1D),NIBLO)
               ENDIF
             ENDIF
 
@@ -429,6 +448,7 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
         DO IP = IJS, IJL
           I = BLK2GLO%IXLG(IP)
           K = BLK2GLO%KXLT(IP)
+          IP1D = NEWIJ2IJ(IP)
           XLON = REAL(I-1)*ZDELLO(K)
 
           IF (K > 1) THEN
@@ -442,10 +462,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
             ENDIF
             IF (IMIN >= 1)  THEN
               IF (LLOCEANMASK(IMIN,K-1)) THEN
-                DO IH = IP,1,-1
+                DO IH1D = IP1D,1,-1
+                  IH = IJ2NEWIJ(IH1D)
                   IF (BLK2GLO%IXLG(IH) == IMIN .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
                 ENDDO
-               KRLON(IP,1,1) = IH
+               KRLON(IP,1,1) = IJ2NEWIJ(IH1D)
               ENDIF
             ENDIF
 
@@ -467,10 +488,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
                 ENDIF
 
                 IF (LLOCEANMASK(IMIN2,K-1)) THEN
-                  DO IH = IP,1,-1
+                  DO IH1D = IP1D,1,-1
+                    IH = IJ2NEWIJ(IH1D)
                     IF (BLK2GLO%IXLG(IH) == IMIN2 .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
                   ENDDO
-                  KRLON(IP,1,2) = IH
+                  KRLON(IP,1,2) = IJ2NEWIJ(IH1D)
                 ENDIF
               ENDIF
             ELSE
@@ -487,10 +509,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
             ENDIF
             IF (IMIN <= NLONRGG(K-1))  THEN
               IF (LLOCEANMASK(IMIN,K-1)) THEN
-                DO IH = IP,1,-1
+                DO IH1D = IP1D,1,-1
+                  IH = IJ2NEWIJ(IH1D)
                   IF (BLK2GLO%IXLG(IH) == IMIN .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
                 ENDDO
-               KRLAT(IP,1,1) = IH
+               KRLAT(IP,1,1) = IJ2NEWIJ(IH1D)
               ENDIF
             ENDIF
 
@@ -512,10 +535,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
                 ENDIF
 
                 IF (LLOCEANMASK(IMIN2,K-1)) THEN
-                  DO IH = IP,1,-1
+                  DO IH1D = IP1D,1,-1
+                    IH = IJ2NEWIJ(IH1D)
                     IF (BLK2GLO%IXLG(IH) == IMIN2 .AND. BLK2GLO%KXLT(IH) == K-1) EXIT
                   ENDDO
-                  KRLAT(IP,1,2) = IH
+                  KRLAT(IP,1,2) = IJ2NEWIJ(IH1D)
                 ENDIF
               ENDIF
             ELSE
@@ -536,10 +560,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
 
             IF (IPLUS >= 1)  THEN
               IF (LLOCEANMASK(IPLUS,K+1)) THEN
-                DO IH = IP,NIBLO
+                DO IH1D = IP1D,NIBLO
+                  IH = IJ2NEWIJ(IH1D)
                   IF (BLK2GLO%IXLG(IH) == IPLUS .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
                 ENDDO
-                KRLAT(IP,2,1) = IH
+                KRLAT(IP,2,1) = IJ2NEWIJ(IH1D)
               ENDIF
             ENDIF
 
@@ -561,10 +586,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
                 ENDIF
  
                 IF (LLOCEANMASK(IPLUS2,K+1)) THEN
-                  DO IH = IP,NIBLO
+                  DO IH1D = IP1D,NIBLO
+                    IH = IJ2NEWIJ(IH1D)
                     IF (BLK2GLO%IXLG(IH) == IPLUS2 .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
                   ENDDO
-                  KRLAT(IP,2,2) = MIN(IH,NIBLO)
+                  KRLAT(IP,2,2) = MIN(IJ2NEWIJ(IH1D),NIBLO)
                 ENDIF
               ENDIF
             ELSE
@@ -582,10 +608,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
 
             IF (IPLUS <= NLONRGG(K+1))  THEN
               IF (LLOCEANMASK(IPLUS,K+1)) THEN
-                DO IH = IP,NIBLO
+                DO IH1D = IP1D,NIBLO
+                  IH = IJ2NEWIJ(IH1D)
                   IF (BLK2GLO%IXLG(IH) == IPLUS .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
                 ENDDO
-                KRLON(IP,2,1) = IH
+                KRLON(IP,2,1) = IJ2NEWIJ(IH1D)
               ENDIF
             ENDIF
 
@@ -607,10 +634,11 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
                 ENDIF
 
                 IF (LLOCEANMASK(IPLUS2,K+1)) THEN
-                  DO IH = IP,NIBLO
+                  DO IH1D = IP1D,NIBLO
+                    IH = IJ2NEWIJ(IH1D)
                     IF (BLK2GLO%IXLG(IH) == IPLUS2 .AND. BLK2GLO%KXLT(IH) == K+1) EXIT
                   ENDDO
-                  KRLON(IP,2,2) = MIN(IH,NIBLO)
+                  KRLON(IP,2,2) = MIN(IJ2NEWIJ(IH1D),NIBLO)
                 ENDIF
               ENDIF
             ELSE
@@ -655,6 +683,7 @@ SUBROUTINE PROPCONNECT(IJS, IJL)
         DO IP = IJS, IJL
           I = BLK2GLO%IXLG(IP)
           K = BLK2GLO%KXLT(IP)
+          IP1D = NEWIJ2IJ(IP)
           D0 = FLOAT(I-1)*ZDELLO(K)
           D3=D0-0.5_JWRB*ZDELLO(K)
           D5=D0+0.5_JWRB*ZDELLO(K)
