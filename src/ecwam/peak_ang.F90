@@ -77,7 +77,6 @@
 
       ZEPSILON = 10._JWRB*EPSILON(ZEPSILON)
       NSH = 1 + INT(LOG(1.5_JWRB)/LOG(FRATIO))
-      !$loki separator
 
       DO IJ=KIJS,KIJL
         SUM0(IJ)= ZEPSILON

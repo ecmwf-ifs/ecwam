@@ -141,7 +141,6 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
       EFD_FAC = 4.0_JWRB*EGRCRV/G**2 
       FFD_FAC = (EGRCRV/AFCRV)**(1.0_JWRB/BFCRV) * G
 
-      !$loki separator
       MAXIJ = -1
       !$loki vector-reduction(max: maxij)
       DO IJ=KIJS,KIJL

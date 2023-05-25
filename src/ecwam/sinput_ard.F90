@@ -282,7 +282,6 @@ CONTAINS
       ELSE
         LTAUWSHELTER = .TRUE.
       ENDIF
-      !$loki separator
 
       DO IJ=KIJS,KIJL
         IF (NGST > 1)THEN
@@ -788,7 +787,6 @@ CONTAINS
       CONST3 = IDAMPING*CONST3
 
       CONSTN = DELTH/(XKAPPA*ZPI)
-      !$loki separator
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
       DO IJ=KIJS,KIJL
