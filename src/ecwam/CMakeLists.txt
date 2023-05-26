@@ -443,6 +443,10 @@ if( CMAKE_Fortran_COMPILER_ID MATCHES Intel )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
 elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-ffp-contract=off" )
+elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
+  set_source_files_properties(
+      sbottom.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros -Mstack_arrays "
+  )
 endif()
 
 ### The file grib2wgrid.F90 is sensitive to optimizations in single precision builds.
