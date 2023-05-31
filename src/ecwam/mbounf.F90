@@ -279,7 +279,7 @@
       ListSTART(1)=0
       ListEND(1)=0
       CALL FINDB (NBMAX, NBOUNF, BLATF, BLNGF, IJARF,            &
-     &            1, ListSTART, ListEND, 1)
+     &            1, ListSTART, ListEND, 1, 1)
 
 ! ----------------------------------------------------------------------
 
