@@ -60,8 +60,7 @@
       USE YOWCPBO  , ONLY : IBOUNC   ,GBOUNC_MAX, GBOUNC ,              &
      &            AMOSOC   ,AMONOC   ,AMOEAC   ,AMOWEC
       USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,    &
-     &            XOUTN    ,NOUTD    ,OUTLONG  ,OUTLAT
-      USE YOWCOUT  , ONLY : NGOUT
+     &            XOUTN    ,NOUTD
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,FRATIO
 
@@ -87,14 +86,12 @@
       INTEGER(KIND=JWIM) :: K, M, I, II, KSN
       INTEGER(KIND=JWIM) :: IU05, IU
       INTEGER(KIND=JWIM) :: IFRE1, ISPECTRUNC
-      INTEGER(KIND=JWIM) :: MOUTP, MOUTPNEW 
       INTEGER(KIND=JWIM) :: IOS, IOUTA, IOUTANEW, IDUM
       INTEGER(KIND=JWIM), ALLOCATABLE :: NDUMP(:)
 
       REAL(KIND=JWRB) :: FR1 
       REAL(KIND=JWRB) :: DEPTHMAX
       REAL(KIND=JWRB) :: ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
-      REAL(KIND=JWRB) :: ZOUTLAT, ZOUTLONG 
       REAL(KIND=JWRB) :: WEST, EAST, DW, DE, DS, DN
       REAL(KIND=JWRB), ALLOCATABLE :: XDUMP(:)
 
@@ -119,7 +116,6 @@
      &                  LAQUA, LLUNSTR, LPREPROC
 
       NAMELIST /NACORR/ ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
-      NAMELIST /NAOUTP/ ZOUTLAT, ZOUTLONG 
 
 
 ! ----------------------------------------------------------------------
@@ -504,87 +500,6 @@
         ENDDO
       ENDIF
 
-! ----------------------------------------------------------------------
-
-!*    2.4 OUTPUT POINTS READ FROM NAMELIST NAOUTP.
-!         ----------------------------------------
-
-      REWIND (IU05)
-      MOUTP = 100 
-      ALLOCATE(OUTLAT(MOUTP))
-      ALLOCATE(OUTLONG(MOUTP))
-      OUTLAT =-100.0_JWRB
-      OUTLONG=   0.0_JWRB
-      NGOUT = 0
-      OUTPP: DO
-        READ(IU05, NAOUTP, ERR=3000, IOSTAT=IOS, END=2400)
-        NGOUT = NGOUT + 1
-        IF (NGOUT > MOUTP) THEN
-          ALLOCATE(XDUMP(MOUTP))
-          MOUTPNEW=MOUTP+100
-          WRITE (IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
-          WRITE (IU06,*) '+                                         +'
-          WRITE (IU06,*) '+     WARINING IN SUB. UIPREP       +'
-          WRITE (IU06,*) '+     =============================       +'
-          WRITE (IU06,*) '+                                         +'
-          WRITE (IU06,*) '+  NUMBER OF OUTPUT POINTS EXCEEDS        +'
-          WRITE (IU06,*) '+  EXCEEDS  DIMENSION      MOUTP = ', MOUTP
-          WRITE (IU06,*) '+  THE DIMEMSION WAS RESET TO ', MOUTPNEW
-          WRITE (IU06,*) '+                                         +'
-          WRITE (IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
-
-          XDUMP=OUTLAT
-          DEALLOCATE(OUTLAT)
-          ALLOCATE(OUTLAT(MOUTPNEW))
-          DO IDUM=1,MOUTP
-            OUTLAT(IDUM)=XDUMP(IDUM)
-          ENDDO
-
-          XDUMP=OUTLONG
-          DEALLOCATE(OUTLONG)
-          ALLOCATE(OUTLONG(MOUTPNEW))
-          DO IDUM=1,MOUTP
-            OUTLONG(IDUM)=XDUMP(IDUM)
-          ENDDO
-
-          DEALLOCATE(XDUMP)
-          MOUTP=MOUTPNEW
-          OUTLAT(NGOUT) = ZOUTLAT
-          OUTLONG(NGOUT) = ZOUTLONG
-        ELSE
-          OUTLAT(NGOUT) = ZOUTLAT
-          OUTLONG(NGOUT) = ZOUTLONG
-        ENDIF
-      ENDDO OUTPP
- 2400 IF (NGOUT > 0) THEN
-        WRITE (IU06,'(" OUTPUT POINTS FOR SPECTRA AS DEFINED",          &
-     &   " BY USER INPUT",/,                                            &
-     &   "     NO.    LAT.   LONG.")')
-        DO I=1,NGOUT
-          WRITE (IU06,'(3X,I5,2F8.2)') I,OUTLAT(I),OUTLONG(I)
-        ENDDO
-
-        ALLOCATE(XDUMP(NGOUT))
-        MOUTPNEW=NGOUT
-        DO IDUM=1,MOUTPNEW
-          XDUMP(IDUM)=OUTLAT(IDUM)
-        ENDDO
-        DEALLOCATE(OUTLAT)
-        ALLOCATE(OUTLAT(MOUTPNEW))
-        DO IDUM=1,MOUTPNEW
-          OUTLAT(IDUM)=XDUMP(IDUM)
-        ENDDO
-
-        DO IDUM=1,MOUTPNEW
-          XDUMP(IDUM)=OUTLONG(IDUM)
-        ENDDO
-        DEALLOCATE(OUTLONG)
-        ALLOCATE(OUTLONG(MOUTPNEW))
-        DO IDUM=1,MOUTPNEW
-          OUTLONG(IDUM)=XDUMP(IDUM)
-        ENDDO
-        DEALLOCATE(XDUMP)
-      ENDIF
 
 ! ----------------------------------------------------------------------
 

@@ -87,7 +87,6 @@
       USE YOWMAP   , ONLY : NX       ,NY       ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG
-      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,              &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,    &
@@ -115,6 +114,7 @@
       INTEGER(KIND=JWIM) :: IDUM, K, M, L
       INTEGER(KIND=JWIM) :: NBINP, NOUTT
       INTEGER(KIND=JWIM) :: NKIND !Precision used when writing
+      INTEGER(KIND=JWIM) :: NGOUT_dum
 
 ! ----------------------------------------------------------------------
 
@@ -237,20 +237,6 @@
 
 ! ----------------------------------------------------------------------
 
-!*    7. WRITE MODULE YOWCOUT.
-!        ---------------------
-
-      IF (IFORM /= 2) THEN
-        WRITE (IU07)  NGOUT
-        IF(NGOUT.GT.0) WRITE (IU07)  IJAR
-      ENDIF
-      IF (IFORM /= 1) THEN
-        WRITE (IU17,998)  NGOUT
-        IF(NGOUT.GT.0) WRITE (IU17,998)  IJAR
-      ENDIF
-
-! ----------------------------------------------------------------------
-
 !*    8. WRITE MODULE YOWSHAL.
 !        --------------------
 
@@ -311,10 +297,11 @@
       NBINP=-1
       NOUTT=-1
       
+      NGOUT_dum = 0
  
       CALL OUTNAM                                                       &
      & (NANG, NFRE,                                                     &
-     &  NGX, NGY, NIBLO, NOVER, NGOUT, NOUTT,                           &
+     &  NGX, NGY, NIBLO, NOVER, NGOUT_dum, NOUTT,                       &
      &  KFRH, MFRSTLW, MLSTHG,                                          &
      &  NBOUNC, NBOUNF, NBINP, NIBL1, NIBLD, NIBLC,                     &
      &  ITAUMAX, JUMAX, IUSTAR, IALPHA, NDEPTH, IDUM, IPER)

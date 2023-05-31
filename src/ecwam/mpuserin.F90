@@ -69,7 +69,8 @@
      &            NWRTOUTWAM,                                           &
      &            LSECONDORDER,                                         &
      &            LWAM_USE_IO_SERV,                                     &
-     &            LOUTMDLDCP
+     &            LOUTMDLDCP,                                           &
+     &            NGOUT    ,OUTLONG  ,OUTLAT
       USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
@@ -243,6 +244,9 @@
       INTEGER :: IDWI, IDWO
       CHARACTER(LEN=14) :: CLWOUT
       NAMELIST /NAWI/ IDWI, IDWO, CLWOUT
+
+      REAL(KIND=JWRB) :: ZOUTLAT, ZOUTLONG
+      NAMELIST /NAOUTP/ ZOUTLAT, ZOUTLONG
 
 !     NAMELIST NALINE : 
 !     ===============
@@ -784,8 +788,8 @@
       ENDDO SPT0
 1900  CONTINUE
       REWIND(IU05)
-      IF (.NOT.ALLOCATED(COUTT)) THEN
-        ALLOCATE(COUTT(NOUTT))
+      IF ( NOUTT > 0) THEN
+        IF (.NOT.ALLOCATED(COUTT)) ALLOCATE(COUTT(NOUTT))
       ENDIF
       SPT: DO IC=1,NOUTT
         CALL WPOSNAM (IU05, 'NAOT', LLEOF)
@@ -805,8 +809,8 @@
       ENDDO SPS0
 1901  CONTINUE
       REWIND(IU05)
-      IF (.NOT.ALLOCATED(COUTS)) THEN
-        ALLOCATE(COUTS(NOUTS))
+      IF ( NOUTS > 0) THEN
+        IF (.NOT.ALLOCATED(COUTS)) ALLOCATE(COUTS(NOUTS)) 
       ENDIF
       SPS: DO IC=1,NOUTS
         CALL WPOSNAM (IU05, 'NAOS', LLEOF)
@@ -826,8 +830,8 @@
       ENDDO SPA0
 1902  CONTINUE
       REWIND(IU05)
-      IF (.NOT.ALLOCATED(CASS)) THEN
-        ALLOCATE(CASS(NASS))
+      IF ( NASS > 0) THEN
+        IF (.NOT.ALLOCATED(CASS)) ALLOCATE(CASS(NASS))
       ENDIF
       SPA: DO IC=1,NASS
         CALL WPOSNAM (IU05, 'NAAT', LLEOF)
@@ -848,25 +852,46 @@
         ENDDO SPWI
 1903    CONTINUE
         REWIND(IU05)
-        IF (.NOT.ALLOCATED(IDELWI_LST)) THEN
-          ALLOCATE(IDELWI_LST(NDELW_LST))
-        ENDIF
-        IF (.NOT.ALLOCATED(IDELWO_LST)) THEN
-          ALLOCATE(IDELWO_LST(NDELW_LST))
-        ENDIF
-        IF (.NOT.ALLOCATED(CDTW_LST)) THEN
-          ALLOCATE(CDTW_LST(NDELW_LST))
+        IF ( NDELW_LST > 0) THEN
+          IF (.NOT.ALLOCATED(IDELWI_LST)) ALLOCATE(IDELWI_LST(NDELW_LST))
+          IF (.NOT.ALLOCATED(IDELWO_LST)) ALLOCATE(IDELWO_LST(NDELW_LST))
+          IF (.NOT.ALLOCATED(CDTW_LST)) ALLOCATE(CDTW_LST(NDELW_LST))
         ENDIF
         SPW: DO IC=1,NDELW_LST
           CALL WPOSNAM (IU05, 'NAWI', LLEOF)
           IF (LLEOF) EXIT SPW
-          READ (IU05, NAWI, END=1913)
-          IDELWI_LST(IC) = IDWI 
-          IDELWO_LST(IC) = IDWO 
-          CDTW_LST(IC) = CLWOUT
-        ENDDO SPW
-1913    CONTINUE
+                  READ (IU05, NAWI, END=1913)
+                  IDELWI_LST(IC) = IDWI 
+                  IDELWO_LST(IC) = IDWO 
+                  CDTW_LST(IC) = CLWOUT
+                ENDDO SPW
+        1913    CONTINUE
       ENDIF
+
+!           **** OUTPUT POINTS READ FROM NAMELIST NAOUTP ****
+      NGOUT = 0
+      REWIND(IU05)
+      SPOU: DO
+        CALL WPOSNAM (IU05, 'NAOUTP', LLEOF)
+        IF (LLEOF) EXIT SPOU
+        READ (IU05, NAOUTP, END=1904)
+        NGOUT = NGOUT+1
+      ENDDO SPOU
+1904  CONTINUE
+      REWIND(IU05)
+      IF (NGOUT > 0) THEN
+        IF (.NOT.ALLOCATED(OUTLAT)) ALLOCATE(OUTLAT(NGOUT))
+        IF (.NOT.ALLOCATED(OUTLONG)) ALLOCATE(OUTLONG(NGOUT))
+      ENDIF
+      SPOUS: DO IC=1,NGOUT
+        CALL WPOSNAM (IU05, 'NAOUTP', LLEOF)
+        IF (LLEOF) EXIT SPOUS
+        READ (IU05, NAOUT, END=1914)
+        OUTLAT(IC) = ZOUTLAT 
+        OUTLONG(IC) = ZOUTLONG 
+      ENDDO SPOUS
+1914  CONTINUE
+
 
       CLOSE(IU05)
 
@@ -886,7 +911,7 @@
 
 
       ICPLEN=LEN_TRIM(CPATH)
-      IF(ICPLEN.GT.0) THEN
+      IF (ICPLEN > 0) THEN
         IF (CPATH(ICPLEN:ICPLEN).EQ.'/') THEN
           CPATH=CPATH(1:ICPLEN-1)
           ICPLEN=ICPLEN-1
@@ -901,7 +926,7 @@
 
 !     RESET CERTAIN FLAGS:
 
-      IF(IFRELFMAX <= 0) DELPRO_LF = REAL(IDELPRO, JWRB)
+      IF (IFRELFMAX <= 0) DELPRO_LF = REAL(IDELPRO, JWRB)
 
 !     WE SHOULD RECEIVE DATA FROM NEMO
       IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT .OR. LWNEMOCOUCUR) LWNEMOCOURECV = .TRUE.
@@ -956,6 +981,12 @@
         WRITE(6,*) '*** YEXPVER = ',YEXPVER
         WRITE(6,*) '*** YCLASS = ',YCLASS
         WRITE(6,*) '*** ISTREAM = ',ISTREAM
+        IF (NGOUT > 0) THEN
+          WRITE (6,*) " OUTPUT POINTS FOR SPECTRA AS DEFINED BY USER INPUT    NO.    LAT.   LONG. "
+          DO IC=1,NGOUT
+            WRITE (6,'(3X,I5,2F8.2)') IC,OUTLAT(IC),OUTLONG(IC)
+          ENDDO
+        ENDIF
         WRITE(6,*) '==============================================='
       ENDIF
 

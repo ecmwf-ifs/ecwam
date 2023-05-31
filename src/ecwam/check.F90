@@ -49,7 +49,6 @@
       USE YOWPCONS , ONLY : DEG
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF   ,IJARF
-      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLO
@@ -97,32 +96,6 @@
       IF (BLK2GLO%IXLG(IJ) /= 0 .OR. BLK2GLO%KXLT(IJ) /= 0) LST(BLK2GLO%IXLG(IJ),BLK2GLO%KXLT(IJ)) = 'S'
       ENDDO
 
-!*    2.1 INCLUDE OUTPUT POINTS.
-!         ----------------------
-
-      IF (NGOUT > 0) THEN
-        DO IO=1,NGOUT
-          IJ = IJAR(IO)
-          IF (IJ < IJS .OR. IJ > IJL) THEN
-            IERR = IERR+1
-            WRITE (IU06,*) ' ***************************************'
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' *      FATAL ERROR IN SUB. CHECK      *'
-            WRITE (IU06,*) ' *      =========================      *'
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' * GRID POINT NUMBER OF OUTPUT POINT IS*'
-            WRITE (IU06,*) ' * OUT OF RANGE.                       *'
-            WRITE (IU06,*) ' * OUTPUT POINT NUMBER IS IO = ', IO
-            WRITE (IU06,*) ' * GRID POINT NUMBER IS   IJ = ', IJ
-            WRITE (IU06,*) ' * MIN. NUMBER IS        IJS = ', IJS
-            WRITE (IU06,*) ' * MAX. NUMBER IS        IJL = ', IJL
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' ***************************************'
-            IF (IERR > 20) CALL ABORT1
-          ENDIF
-     IF (BLK2GLO%IXLG(IJ) /= 0 .OR. BLK2GLO%KXLT(IJ) /= 0) LST(BLK2GLO%IXLG(IJ),BLK2GLO%KXLT(IJ)) = '+' 
-        ENDDO
-      ENDIF
 
 !*    2.2 INCLUDE COARSE GRID NEST OUTPUT POINTS.
 !         ---------------------------------------
@@ -209,8 +182,6 @@
      &           NGY, NY, NY
       WRITE (IU06,'('' MAXIMUM BLOCK LENGTH       NIBLO '', 3I10)')     &
      &           NIBLO
-      WRITE (IU06,'('' NUMBER OF OUTPUT POINTS    NGOUT '', 3I10)')     &
-     &           NGOUT, MAX(1,NGOUT), NGOUT 
 
       WRITE (IU06,'('' SHALLOW WATER TABLE LEN.  NDEPTH '', 3I10)')     &
      &           NDEPTH, NDEPTH, NDEPTH

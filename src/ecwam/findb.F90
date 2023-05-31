@@ -8,7 +8,7 @@
 !
 
       SUBROUTINE FINDB (NDIM, NBOUN, BLATB, BLNGB, IJARB,        &
-     &                  NPROC, NSTART, NEND, IRANK)
+     &                  NPROC, NSTART, NEND, IRS, IRE)
 
 ! ----------------------------------------------------------------------
 
@@ -37,7 +37,8 @@
 !          *NPROC*     DIMENSION OF NSTART AND NEND
 !          *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !          *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
-!          *IRANK*     PE INDEX
+!          *IRS*       START PE INDEX
+!          *IRE*       END PE INDEX
 
 
 !     METHOD.
@@ -59,7 +60,6 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMAP   , ONLY : BLK2GLO  ,KXLTMIN  ,KXLTMAX   ,IPER    ,   &
      &            AMOWEP   ,AMOSOP   ,AMONOP   ,XDELLA   ,XDELLO   ,   &
      &            ZDELLO   ,NLONRGG
@@ -69,7 +69,7 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: NDIM, NBOUN, NPROC, IRANK
+      INTEGER(KIND=JWIM), INTENT(IN) :: NDIM, NBOUN, NPROC, IRS, IRE
 
       INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NSTART,NEND
       INTEGER(KIND=JWIM), DIMENSION(NDIM), INTENT(INOUT) :: IJARB
@@ -77,7 +77,7 @@
       REAL(KIND=JWRB), DIMENSION(NDIM),INTENT(IN) :: BLATB, BLNGB
 
 
-      INTEGER(KIND=JWIM) :: IJ
+      INTEGER(KIND=JWIM) :: IJ, IR
       INTEGER(KIND=JWIM) :: ILATS, ILATN, IO, IOLT, IOLG
 
       REAL(KIND=JWRB) :: ZDEL, ALONG 
@@ -86,8 +86,12 @@
 !*    1. LOOP OVER INPUT LATITUDES, LONGITUDES.
 !        --------------------------------------
 
-      ILATS=KXLTMIN(IRANK)-1
-      ILATN=KXLTMAX(IRANK)+1
+      ILATS=NGY
+      ILATN=1
+      DO IR = IRS, IRE
+        ILATS=MIN(KXLTMIN(IR)-1, ILATS) 
+        ILATN=MAX(KXLTMAX(IR)+1, ILATN)
+      ENDDO
 
       DO IO = 1,NBOUN
 
@@ -111,11 +115,13 @@
 !*    1.2 SEARCH BLOCK NUMBER AND SEA POINT NUMBER.
 !         -----------------------------------------
           IJARB(IO) = 0
-          DO IJ = NSTART(IRANK),NEND(IRANK)
-            IF (BLK2GLO%IXLG(IJ) == IOLG .AND. BLK2GLO%KXLT(IJ) == IOLT) THEN
-              IJARB(IO) = IJ
-              EXIT
-            ENDIF
+          DO IR = IRS, IRE
+            DO IJ = NSTART(IR),NEND(IR)
+              IF (BLK2GLO%IXLG(IJ) == IOLG .AND. BLK2GLO%KXLT(IJ) == IOLT) THEN
+                IJARB(IO) = IJ
+                EXIT
+              ENDIF
+            ENDDO
           ENDDO
         ENDIF
       ENDDO

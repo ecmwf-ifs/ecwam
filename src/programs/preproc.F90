@@ -164,7 +164,6 @@ PROGRAM preproc
 #include "iniwcst.intfb.h"
 #include "mbounc.intfb.h"
 #include "mbounf.intfb.h"
-#include "mcout.intfb.h"
 #include "mfredir.intfb.h"
 #include "mgrid.intfb.h"
 #include "mtabs.intfb.h"
@@ -422,8 +421,6 @@ PROGRAM preproc
 
 !*    5.3 COMPUTE OUTPUT POINT INDICES (MODULE YOWCOUT).
 !         ----------------------------------------------
-
-      CALL MCOUT
 
 ! ----------------------------------------------------------------------
 

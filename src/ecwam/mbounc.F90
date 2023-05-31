@@ -131,7 +131,7 @@
         CALL FINDB (NBMAX, NBOUNC, BLATC(IPOGBN(II-1)+1),               &
      &    BLNGC(IPOGBN(II-1)+1),                                        &
      &    IJARC(IPOGBN(II-1)+1),                                        &
-     &     1, ListSTART,ListEND, 1)
+     &     1, ListSTART,ListEND, 1, 1)
 
 ! ----------------------------------------------------------------------
 

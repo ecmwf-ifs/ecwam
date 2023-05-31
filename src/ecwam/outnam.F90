@@ -42,6 +42,7 @@
 
       LOGICAL :: llper          !  the land sea mask is periodic (T)
 
+!!!1 this should be clean BUT !!! it is used by Altimeter software !!!
       NAMELIST /PARWAM/                                                 &
      &  iang, ifre,                                                     &
      &  igx, igy, iiblo, iover, ioutp, ioutt,                           &

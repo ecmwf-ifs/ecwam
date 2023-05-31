@@ -59,7 +59,6 @@ SUBROUTINE READPRE (IU07)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
@@ -218,15 +217,6 @@ SUBROUTINE READPRE (IU07)
 
         CALL READREC(6)
 
-
-!*    7. READ MODULE YOWCOUT (INDICES OF OUTPUT POINTS).
-!        --------------------------------------------
-
-        CALL READREC(12)
-        IF (NGOUT > 0) THEN
-          IF (.NOT.ALLOCATED(IJAR)) ALLOCATE(IJAR(NGOUT))
-          CALL READREC(13)
-        ENDIF
 
 !*    8. READ MODULE YOWSHAL (DEPTH AND SHALLOW WATER TABLES).
 !        ----------------------------------------------------
@@ -541,12 +531,6 @@ SUBROUTINE READPRE (IU07)
      &           DAL1, DAL2, FRH
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
-      CASE(12)
-         READ(IU07,IOSTAT=ISTAT) NGOUT
-         IF (ISTAT /= 0) GOTO 1000
-      CASE(13)
-         READ(IU07,IOSTAT=ISTAT) IJAR
-         IF (ISTAT /= 0) GOTO 1000
       CASE(14)
          IF (LLR8TOR4) THEN
             READ(IU07,IOSTAT=ISTAT) NDEPTH, R8_DEPTHA, R8_DEPTHD

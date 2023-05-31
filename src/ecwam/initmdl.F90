@@ -159,11 +159,11 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                         ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, OCEAN2WAVE
 
-      USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC,        &
+      USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,                        &
      &                      GBOUNC  , IPOGBO   ,CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,LWNEMOCOU
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,GFLAG20  ,    &
-     &                      NGOUT    ,IJAR     ,NOUTT    ,LOUTINT
+     &                      NGOUT    ,NOUTT    ,LOUTINT
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
@@ -237,6 +237,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 #include "initnemocpl.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "iniwcst.intfb.h"
+#include "mcout.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 #include "prewind.intfb.h"
 #include "readbou.intfb.h"
@@ -454,6 +455,13 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 !        ----------------------------------
 
 !     THE ACTUAL READING HAS BEEN MOVED TO MPDECOMP.
+
+
+!*    2.0 COMPUTE OUTPUT POINT INDICES (MODULE YOWCOUT).
+!         ----------------------------------------------
+
+      IF ( NGOUT > 0 .AND. .NOT. LLUNSTR ) CALL MCOUT
+
 
 !*    2.1 READ MODULE YOWCPBO AND YOWFPBO.
 !     ------------------------------------

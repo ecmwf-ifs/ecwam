@@ -44,9 +44,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCINP  , ONLY : OUTLONG  ,OUTLAT
-      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
-      USE YOWMAP   , ONLY : BLK2GLO   ,AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO
+      USE YOWCOUT  , ONLY : NGOUT    ,IJAR     ,OUTLONG  ,OUTLAT 
+      USE YOWMAP   , ONLY : BLK2GLO  ,AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO
       USE YOWPARAM , ONLY : NIBLO
       USE YOWSPEC,   ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06
@@ -59,14 +58,15 @@
       INTEGER(KIND=JWIM) :: IO, KX, IX, NG
       INTEGER(KIND=JWIM) :: NGOUTNEW
       INTEGER(KIND=JWIM), ALLOCATABLE :: IDUM(:)
-      INTEGER(KIND=JWIM) :: ListSTART(1), ListEND(1)
 
       REAL(KIND=JWRB) :: ALONG, ALAT
+
+
 
 !*    1. NO OUTPUT POINTS SPECIFIED.
 !        ---------------------------
 
-      IF (NGOUT.EQ.0) THEN
+      IF (NGOUT == 0) THEN
         WRITE(IU06,'(1H1,'' SPECIAL OUTPUT POINTS FOR SPECTRA:'')')
         WRITE(IU06,*) 'OUTPUT POINTS ARE NOT DEFINED IN USER INPUT'
         RETURN
@@ -79,10 +79,8 @@
 !*    2. SEARCH BLOCK NUMBER AND SEA POINT NUMBER.
 !        -----------------------------------------
 
-      ListSTART(1)=1
-      ListEND(1)=1
       CALL FINDB (NGOUT, NGOUT, OUTLAT, OUTLONG, IJAR,            &
-     &            1, ListSTART,ListEND,1)
+     &            NPROC, NSTART, NEND, 1, NPROC)
 
 ! ----------------------------------------------------------------------
 
@@ -90,14 +88,10 @@
 !        -----------------
 
       WRITE(IU06,'(1H1,'' SPECIAL OUTPUT POINTS FOR SPECTRA:'')')
-      WRITE(IU06,'(''    NUMBER OF OUTPUT POINTS IS NGOUT = '',I4)')    &
-     &      NGOUT
-      WRITE(IU06,'(4X,''     |-----INPUT-----|-NEAREST POINT-|'',       &
-     &              ''-POINT INDEX--|'')')
-      WRITE(IU06,'(4X,''  NO.    LAT.   LONG.    LAT.   LONG.  BLOCK.'', &
-     &             ''  POINT.'')')
+      WRITE(IU06,'(''    NUMBER OF OUTPUT POINTS IS NGOUT = '',I4)') NGOUT
+      WRITE(IU06,'(4X,''  NO.    LAT.   LONG.    LAT.   LONG.  BLOCK.  POINT.'')')
       DO IO=1,NGOUT
-        IF (IJAR(IO).GT.0) THEN
+        IF (IJAR(IO) > 0) THEN
           IX  = BLK2GLO%IXLG(IJAR(IO))
           KX  = BLK2GLO%KXLT(IJAR(IO))
           ALONG = AMOWEP + (IX-1)*ZDELLO(KX)
@@ -106,8 +100,7 @@
           ALONG = 9999999
           ALAT  = 9999999
         ENDIF
-        WRITE(IU06,'(4X,I5,4F8.2,I8)')                                 &
-     &   IO, OUTLAT(IO), OUTLONG(IO), ALAT, ALONG, IJAR(IO)
+        WRITE(IU06,'(4X,I5,4F8.2,I8)') IO, OUTLAT(IO), OUTLONG(IO), ALAT, ALONG, IJAR(IO)
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -117,13 +110,13 @@
 
       NG = 0
       DO IO=1,NGOUT
-        IF (NG.GT.0 .AND. IO-NG.GT.0) THEN
+        IF (NG > 0 .AND. IO-NG > 0) THEN
           IJAR(IO-NG) = IJAR(IO)
         ENDIF
-        IF (IJAR(IO).EQ.0) NG = NG+1
+        IF (IJAR(IO) == 0) NG = NG+1
       ENDDO
       NGOUTNEW = NGOUT-NG
-      IF (NG.GT.0) THEN
+      IF (NG > 0) THEN
         WRITE (IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
         WRITE (IU06,*) ' +                                       +'
         WRITE (IU06,*) ' +     WARNING ERROR FROM SUB. MCOUT     +'
