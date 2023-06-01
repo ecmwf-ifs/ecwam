@@ -90,7 +90,7 @@
 
       WRITE(IU06,'(1H1,'' SPECIAL OUTPUT POINTS FOR SPECTRA:'')')
       WRITE(IU06,'(''    NUMBER OF OUTPUT POINTS IS NGOUT = '',I4)') NGOUT
-      WRITE(IU06,'(4X,''  NO.    LAT.   LONG.    LAT.   LONG.  BLOCK.  POINT.'')')
+      WRITE(IU06,'(4X,''  NO.    LAT.   LONG.    LAT.   LONG.  INDEX.'')')
       DO IO=1,NGOUT
         IF (IJAR(IO) > 0) THEN
           IX  = BLK2GLO%IXLG(IJAR(IO))
