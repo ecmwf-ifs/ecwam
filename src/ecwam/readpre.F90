@@ -63,11 +63,6 @@ SUBROUTINE READPRE (IU07)
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
      &            IJS      ,IJL
-      USE YOWINDN  , ONLY : KFRH     ,IKP      ,IKP1     ,IKM      ,    &
-     &            IKM1     ,K1W      ,K2W      ,K11W     ,K21W     ,    &
-     &            AF11     ,FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,    &
-     &            ACL1     ,ACL2     ,CL11     ,CL21     ,DAL1     ,    &
-     &            DAL2     ,FRH      ,MFRSTLW  ,MLSTHG
       USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,              &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG  ,    &
@@ -196,26 +191,6 @@ SUBROUTINE READPRE (IU07)
         ELSE
           IQGAUSS=0
         ENDIF
-
-!*    4. READ MODULE YOWINDNL (NON-LINEAR INTERACTION).
-!       -----------------------------------------------
-
-        IF (.NOT.ALLOCATED(IKP)) ALLOCATE(IKP(MFRSTLW:MLSTHG))
-        IF (.NOT.ALLOCATED(IKP1)) ALLOCATE(IKP1(MFRSTLW:MLSTHG))
-        IF (.NOT.ALLOCATED(IKM)) ALLOCATE(IKM(MFRSTLW:MLSTHG))
-        IF (.NOT.ALLOCATED(IKM1)) ALLOCATE(IKM1(MFRSTLW:MLSTHG))
-        IF (.NOT.ALLOCATED(K1W)) ALLOCATE(K1W(NANG,2))
-        IF (.NOT.ALLOCATED(K2W)) ALLOCATE(K2W(NANG,2))
-        IF (.NOT.ALLOCATED(K11W)) ALLOCATE(K11W(NANG,2))
-        IF (.NOT.ALLOCATED(K21W)) ALLOCATE(K21W(NANG,2))
-        IF (.NOT.ALLOCATED(AF11)) ALLOCATE(AF11(MFRSTLW:MLSTHG))
-        IF (.NOT.ALLOCATED(FKLAP)) ALLOCATE(FKLAP(MFRSTLW:MLSTHG))
-        IF (.NOT.ALLOCATED(FKLAP1)) ALLOCATE(FKLAP1(MFRSTLW:MLSTHG))
-        IF (.NOT.ALLOCATED(FKLAM)) ALLOCATE(FKLAM(MFRSTLW:MLSTHG))
-        IF (.NOT.ALLOCATED(FKLAM1)) ALLOCATE(FKLAM1(MFRSTLW:MLSTHG))
-        IF (.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
-
-        CALL READREC(6)
 
 
 !*    8. READ MODULE YOWSHAL (DEPTH AND SHALLOW WATER TABLES).
@@ -353,7 +328,6 @@ SUBROUTINE READPRE (IU07)
       INTEGER(KIND=JWIM), INTENT(IN) :: KREC
       INTEGER(KIND=JWIM) :: ISTAT
       REAL(KIND=JWRU) ::                                                &
-     & R8_ACL1,R8_ACL2,                                                 &
      & R8_AMOEAP,R8_AMONOP,R8_AMOSOP,R8_AMOWEP,                         &
      & R8_CL11,R8_CL21,R8_DAL1,R8_DAL2,R8_DELPHI,R8_DELTH,R8_DELTHH,    &
      & R8_DELTR,R8_DEPTHA,R8_DEPTHD,                                    &
@@ -363,12 +337,6 @@ SUBROUTINE READPRE (IU07)
      &     R8_TH,R8_COSTH,R8_SINTH,                                     &
      &     R8_DELLAM,R8_SINPH,R8_COSPH,                                 &
      &     R8_ZDELLO,                                                   &
-     &     R8_AF11,                                                     &
-     &     R8_FKLAP,                                                    &
-     &     R8_FKLAP1,                                                   &
-     &     R8_FKLAM,                                                    &
-     &     R8_FKLAM1,                                                   &
-     &     R8_FRH,                                                      &
      &     R8_FRHF,                                                     &
      &     R8_DFIMHF,                                                   &
      &     R8_OMEGA,                                                    &
@@ -414,7 +382,6 @@ SUBROUTINE READPRE (IU07)
       CASE(2)
          READ(IU07,IOSTAT=ISTAT)                                        &
      &        NANG, NFRE, NFRE_RED, NGX, NGY, NOVER,             &
-     &        KFRH, MFRSTLW, MLSTHG,                                    &
      &        NIBL1, IDUM, KIBLD, KIBLC, CLDOMAIN
          IF (ISTAT /= 0) GOTO 1000
       CASE(3)
@@ -486,49 +453,6 @@ SUBROUTINE READPRE (IU07)
      &           AMOWEP, AMOSOP, AMOEAP, AMONOP,                              &
      &           XDELLA, XDELLO,                                              &
      &           ZDELLO, IRGG
-            IF (ISTAT /= 0) GOTO 1000
-         ENDIF
-      CASE(6)
-         IF (LLR8TOR4) THEN
-            ALLOCATE(R8_AF11(MFRSTLW:MLSTHG))
-            ALLOCATE(R8_FKLAP(MFRSTLW:MLSTHG))
-            ALLOCATE(R8_FKLAP1(MFRSTLW:MLSTHG))
-            ALLOCATE(R8_FKLAM(MFRSTLW:MLSTHG))
-            ALLOCATE(R8_FKLAM1(MFRSTLW:MLSTHG))
-            ALLOCATE(R8_FRH(KFRH))
-
-            READ(IU07,IOSTAT=ISTAT)                                     &
-     &           IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W,            &
-     &           R8_AF11, R8_FKLAP, R8_FKLAP1, R8_FKLAM, R8_FKLAM1,     &
-     &           R8_ACL1, R8_ACL2,  R8_CL11, R8_CL21,                   &
-     &           R8_DAL1, R8_DAL2, R8_FRH
-            IF (ISTAT /= 0) GOTO 1000
-
-            AF11 = R8_AF11
-            FKLAP = R8_FKLAP
-            FKLAP1 = R8_FKLAP1
-            FKLAM = R8_FKLAM
-            FKLAM1 = R8_FKLAM1
-            ACL1 = R8_ACL1
-            ACL2 = R8_ACL2
-            CL11 = R8_CL11
-            CL21 = R8_CL21
-            DAL1 = R8_DAL1
-            DAL2 = R8_DAL2
-            FRH = R8_FRH
-
-            DEALLOCATE(R8_AF11)
-            DEALLOCATE(R8_FKLAP)
-            DEALLOCATE(R8_FKLAP1)
-            DEALLOCATE(R8_FKLAM)
-            DEALLOCATE(R8_FKLAM1)
-            DEALLOCATE(R8_FRH)
-         ELSE
-            READ(IU07,IOSTAT=ISTAT)                                     &
-     &           IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W,            &
-     &           AF11, FKLAP, FKLAP1, FKLAM, FKLAM1,                    &
-     &           ACL1, ACL2,  CL11, CL21,                               &
-     &           DAL1, DAL2, FRH
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
       CASE(14)

@@ -53,11 +53,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
      &            IJS      ,IJL
-      USE YOWINDN  , ONLY : KFRH     ,IKP      ,IKP1     ,IKM      ,    &
-     &            IKM1     ,K1W      ,K2W      ,K11W     ,K21W     ,    &
-     &            AF11     ,FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,    &
-     &            ACL1     ,ACL2     ,CL11     ,CL21     ,DAL1     ,    &
-     &            DAL2     ,FRH      ,MFRSTLW  ,MLSTHG
       USE YOWMAP   , ONLY : NX       ,NY       ,              &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG  ,    &
@@ -85,7 +80,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ISEND
       INTEGER(KIND=JWIM), INTENT(INOUT) :: ITAG
-      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=17
+      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=14
       INTEGER(KIND=JWIM) :: I, J, IJ, K, K1, K2, M, M1, M2, IC, L, KDEPTH, NGOU 
       INTEGER(KIND=JWIM) :: IKCOUNT, KCOUNT
       INTEGER(KIND=JWIM) :: MIC, MZC 
@@ -122,12 +117,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           ICOMBUF(IKCOUNT)=NGY
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NOVER
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=KFRH
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=MFRSTLW
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=MLSTHG
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NIBL1
           IKCOUNT=IKCOUNT+1
@@ -173,12 +162,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           IKCOUNT=IKCOUNT+1
           NOVER=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
-          KFRH=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
-          MFRSTLW=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
-          MLSTHG=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
           NIBL1=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           CLDOMAIN=CHAR(ICOMBUF(IKCOUNT))
@@ -206,10 +189,8 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         ENDIF
         DEALLOCATE(ICOMBUF)
 
-        MIC=7+NGY+4*(MLSTHG-MFRSTLW+1)+             &
-     &      8*NANG+2*NFREH*NFREH
-        MZC=17+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+     &
-     &      KFRH+                                                       &
+        MIC=7+NGY+2*NFREH*NFREH
+        MZC=17+(4+4*NDEPTH)*NFRE+3*NANG+4*NGY+     &
      &      NGX*NGY+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF+              &
      &      2+2*NFREH+NANGH+NFREH*NDEPTH+5*NANGH*NDEPTH*NFREH*NFREH
 
@@ -233,20 +214,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           IF (.NOT.ALLOCATED(SINPH)) ALLOCATE(SINPH(NGY))
           IF (.NOT.ALLOCATED(COSPH)) ALLOCATE(COSPH(NGY))
           IF (.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
-          IF (.NOT.ALLOCATED(IKP)) ALLOCATE(IKP(MFRSTLW:MLSTHG))
-          IF (.NOT.ALLOCATED(IKP1)) ALLOCATE(IKP1(MFRSTLW:MLSTHG))
-          IF (.NOT.ALLOCATED(IKM)) ALLOCATE(IKM(MFRSTLW:MLSTHG))
-          IF (.NOT.ALLOCATED(IKM1)) ALLOCATE(IKM1(MFRSTLW:MLSTHG))
-          IF (.NOT.ALLOCATED(K1W)) ALLOCATE(K1W(NANG,2))
-          IF (.NOT.ALLOCATED(K2W)) ALLOCATE(K2W(NANG,2))
-          IF (.NOT.ALLOCATED(K11W)) ALLOCATE(K11W(NANG,2))
-          IF (.NOT.ALLOCATED(K21W)) ALLOCATE(K21W(NANG,2))
-          IF (.NOT.ALLOCATED(AF11)) ALLOCATE(AF11(MFRSTLW:MLSTHG))
-          IF (.NOT.ALLOCATED(FKLAP)) ALLOCATE(FKLAP(MFRSTLW:MLSTHG))
-          IF (.NOT.ALLOCATED(FKLAP1)) ALLOCATE(FKLAP1(MFRSTLW:MLSTHG))
-          IF (.NOT.ALLOCATED(FKLAM)) ALLOCATE(FKLAM(MFRSTLW:MLSTHG))
-          IF (.NOT.ALLOCATED(FKLAM1)) ALLOCATE(FKLAM1(MFRSTLW:MLSTHG))
-          IF (.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
 
           IF (ALLOCATED(BATHY)) DEALLOCATE(BATHY)
           ALLOCATE(BATHY(NGX,NGY))
@@ -370,83 +337,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           ICOMBUF(IKCOUNT)=IRGG
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=IQGAUSS
-
-          DO M=MFRSTLW,MLSTHG
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=IKP(M)
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=IKP1(M)
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=IKM(M)
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=IKM1(M)
-          ENDDO
-          DO IC=1,2
-            DO K=1,NANG
-              IKCOUNT=IKCOUNT+1
-              ICOMBUF(IKCOUNT)=K1W(K,IC)
-            ENDDO
-          ENDDO
-          DO IC=1,2
-            DO K=1,NANG
-              IKCOUNT=IKCOUNT+1
-              ICOMBUF(IKCOUNT)=K2W(K,IC)
-            ENDDO
-          ENDDO
-          DO IC=1,2
-            DO K=1,NANG
-              IKCOUNT=IKCOUNT+1
-              ICOMBUF(IKCOUNT)=K11W(K,IC)
-            ENDDO
-          ENDDO
-          DO IC=1,2
-            DO K=1,NANG
-              IKCOUNT=IKCOUNT+1
-              ICOMBUF(IKCOUNT)=K21W(K,IC)
-            ENDDO
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=AF11(M)
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=FKLAP(M)
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=FKLAP1(M)
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=FKLAM(M)
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=FKLAM1(M)
-          ENDDO
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=ACL1
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=ACL2
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=CL11
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=CL21
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DAL1
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DAL2
-          DO IC=1,KFRH
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=FRH(IC)
-          ENDDO
 
           DO K=1,NGY
             DO I=1,NGX
@@ -713,84 +603,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           IRGG=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           IQGAUSS=ICOMBUF(IKCOUNT)
-
-
-          DO M=MFRSTLW,MLSTHG
-            IKCOUNT=IKCOUNT+1
-            IKP(M)=ICOMBUF(IKCOUNT)
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            IKCOUNT=IKCOUNT+1
-            IKP1(M)=ICOMBUF(IKCOUNT)
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            IKCOUNT=IKCOUNT+1
-            IKM(M)=ICOMBUF(IKCOUNT)
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            IKCOUNT=IKCOUNT+1
-            IKM1(M)=ICOMBUF(IKCOUNT)
-          ENDDO
-          DO IC=1,2
-            DO K=1,NANG
-              IKCOUNT=IKCOUNT+1
-              K1W(K,IC)=ICOMBUF(IKCOUNT)
-            ENDDO
-          ENDDO
-          DO IC=1,2
-            DO K=1,NANG
-              IKCOUNT=IKCOUNT+1
-              K2W(K,IC)=ICOMBUF(IKCOUNT)
-            ENDDO
-          ENDDO
-          DO IC=1,2
-            DO K=1,NANG
-              IKCOUNT=IKCOUNT+1
-              K11W(K,IC)=ICOMBUF(IKCOUNT)
-            ENDDO
-          ENDDO
-          DO IC=1,2
-            DO K=1,NANG
-              IKCOUNT=IKCOUNT+1
-              K21W(K,IC)=ICOMBUF(IKCOUNT)
-            ENDDO
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            KCOUNT=KCOUNT+1
-            AF11(M)=ZCOMBUF(KCOUNT)
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            KCOUNT=KCOUNT+1
-            FKLAP(M)=ZCOMBUF(KCOUNT)
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            KCOUNT=KCOUNT+1
-            FKLAP1(M)=ZCOMBUF(KCOUNT)
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            KCOUNT=KCOUNT+1
-            FKLAM(M)=ZCOMBUF(KCOUNT)
-          ENDDO
-          DO M=MFRSTLW,MLSTHG
-            KCOUNT=KCOUNT+1
-            FKLAM1(M)=ZCOMBUF(KCOUNT)
-          ENDDO
-          KCOUNT=KCOUNT+1
-          ACL1=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          ACL2=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          CL11=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          CL21=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          DAL1=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          DAL2=ZCOMBUF(KCOUNT)
-          DO IC=1,KFRH
-            KCOUNT=KCOUNT+1
-            FRH(IC)=ZCOMBUF(KCOUNT)
-          ENDDO
 
           DO K=1,NGY
             DO I=1,NGX

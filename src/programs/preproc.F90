@@ -168,7 +168,6 @@ PROGRAM preproc
 #include "mgrid.intfb.h"
 #include "mtabs.intfb.h"
 #include "mubuf.intfb.h"
-#include "nlweigt.intfb.h"
 #include "outcom.intfb.h"
 #include "secondhh.intfb.h"
 #include "secondhh_gen.intfb.h"
@@ -356,10 +355,6 @@ PROGRAM preproc
 
       CALL MFREDIR
 
-!*    4.2 MODULE INDNL (WEIGHT OF NON-LINEAR INTERACTION).
-!         ------------------------------------------------
-
-      CALL NLWEIGT
 
 !*    4.3 MODULE SHALLOW (SHALLOW WATER TABLES).
 !         --------------------------------------

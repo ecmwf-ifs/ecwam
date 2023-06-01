@@ -79,11 +79,6 @@
       USE YOWFPBO  , ONLY : NBOUNF
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
      &            IJS      ,IJL
-      USE YOWINDN  , ONLY : IKP      ,IKP1     ,IKM      ,IKM1     ,    &
-     &            K1W      ,K2W      ,K11W     ,K21W     ,AF11     ,    &
-     &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,    &
-     &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,    &
-     &            FRH      ,KFRH     ,MFRSTLW  ,MLSTHG
       USE YOWMAP   , ONLY : NX       ,NY       ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG
@@ -114,7 +109,7 @@
       INTEGER(KIND=JWIM) :: IDUM, K, M, L
       INTEGER(KIND=JWIM) :: NBINP, NOUTT
       INTEGER(KIND=JWIM) :: NKIND !Precision used when writing
-      INTEGER(KIND=JWIM) :: NGOUT_dum
+      INTEGER(KIND=JWIM) :: NGOUT_dum, KFRH_dum, MFRSTLW_dum, MLSTHG_dum
 
 ! ----------------------------------------------------------------------
 
@@ -144,12 +139,10 @@
 
       IF (IFORM /= 2) THEN
         WRITE(IU07) NANG, NFRE, NFRE_RED, NGX, NGY, NOVER,       &
-     &              KFRH, MFRSTLW, MLSTHG,                              &
      &              NIBL1, IDUM, NIBLD, NIBLC, CLDOMAIN
       ENDIF
       IF (IFORM /= 1) THEN
         WRITE(IU17,997) NANG, NFRE, NFRE_RED, NGX, NGY, NOVER,   &
-     &              KFRH, MFRSTLW, MLSTHG,                              &
      &              NIBL1, IDUM, NIBLD, NIBLC, CLDOMAIN
       ENDIF
 
@@ -200,39 +193,6 @@
         WRITE (IU17,998) NX, NY, IPER
         WRITE (IU17,999) AMOWEP, AMOSOP, AMOEAP, AMONOP,                &
      &   XDELLA, XDELLO,ZDELLO
-      ENDIF
-
-! ----------------------------------------------------------------------
-
-!*    4. WRITE MODULE YOWINDNL.
-!        ---------------------
-
-      IF (IFORM /= 2) THEN
-        WRITE(IU07)(IKP(M),M=MFRSTLW,MLSTHG),                           &
-     &   (IKP1(M),M=MFRSTLW,MLSTHG),                                    &
-     &   (IKM(M),M=MFRSTLW,MLSTHG), (IKM1(M),M=MFRSTLW,MLSTHG),         &
-     &   ((K1W(K,L),K=1,NANG),L=1,2),                                   &
-     &   ((K2W(K,L),K=1,NANG),L=1,2),                                   &
-     &   ((K11W(K,L),K=1,NANG),L=1,2),                                  &
-     &   ((K21W(K,L),K=1,NANG),L=1,2),                                  &
-     &   (AF11(M),M=MFRSTLW,MLSTHG), (FKLAP(M),M=MFRSTLW,MLSTHG),       &
-     &   (FKLAP1(M),M=MFRSTLW,MLSTHG), (FKLAM(M),M=MFRSTLW,MLSTHG),     &
-     &   (FKLAM1(M),M=MFRSTLW,MLSTHG),                                  &
-     &   ACL1, ACL2,  CL11, CL21, DAL1, DAL2, FRH
-      ENDIF
-      IF (IFORM /= 1) THEN
-        WRITE(IU17,998)(IKP(M),M=MFRSTLW,MLSTHG),                       &
-     &   (IKP1(M),M=MFRSTLW,MLSTHG),                                    &
-     &   (IKM(M),M=MFRSTLW,MLSTHG), (IKM1(M),M=MFRSTLW,MLSTHG),         &
-     &   ((K1W(K,L),K=1,NANG),L=1,2),                                   &
-     &   ((K2W(K,L),K=1,NANG),L=1,2),                                   &
-     &   ((K11W(K,L),K=1,NANG),L=1,2),                                  &
-     &   ((K21W(K,L),K=1,NANG),L=1,2)
-        WRITE(IU17,999)(AF11(M),M=MFRSTLW,MLSTHG),                      &
-     &    (FKLAP(M),M=MFRSTLW,MLSTHG),                                  &
-     &   (FKLAP1(M),M=MFRSTLW,MLSTHG), (FKLAM(M),M=MFRSTLW,MLSTHG),     &
-     &   (FKLAM1(M),M=MFRSTLW,MLSTHG),                                  &
-     &   ACL1, ACL2,  CL11, CL21, DAL1, DAL2, FRH
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -298,11 +258,14 @@
       NOUTT=-1
       
       NGOUT_dum = 0
+      KFRH_dum = 0
+      MFRSTLW_dum = 0
+      MLSTHG_dum = 0
  
       CALL OUTNAM                                                       &
      & (NANG, NFRE,                                                     &
      &  NGX, NGY, NIBLO, NOVER, NGOUT_dum, NOUTT,                       &
-     &  KFRH, MFRSTLW, MLSTHG,                                          &
+     &  KFRH_dum, MFRSTLW_dum, MLSTHG_dum,                              &
      &  NBOUNC, NBOUNF, NBINP, NIBL1, NIBLD, NIBLC,                     &
      &  ITAUMAX, JUMAX, IUSTAR, IALPHA, NDEPTH, IDUM, IPER)
 
