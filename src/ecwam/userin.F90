@@ -1079,7 +1079,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ENDIF
 
 
-      WRITE(IU06,*) '###  NAME       OUTPUT OPTION :       FILE  GRIB  OUT PE  PARAMID'
+      WRITE(IU06,*) '###  NAME       OUTPUT OPTION :       FILE  GRIB               OUT PE  PARAMID'
       WRITE(IU06,*) '                            F = FALSE   T = TRUE '
       IF (LWAM_USE_IO_SERV) THEN
         WRITE(IU06,*) ''
@@ -1090,8 +1090,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       DO ITG = 1,JPPFLAG
         IF (FFLAG(ITG) .OR. GFLAG(ITG)) THEN
         WRITE(CITG,'(I3.3)') ITG
-        WRITE(IU06,*) & 
-     &   CITG,COUTDESCRIPTION(ITG),                        &
+        WRITE(IU06,*) CITG,' ',COUTDESCRIPTION(ITG), &
      &   '...', FFLAG(ITG),'...',GFLAG(ITG),'...',IPFGTBL(ITG),'...',   &
      &   IPRMINFO(ITG,1)*1000+IPRMINFO(ITG,2)
         ENDIF
