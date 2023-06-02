@@ -9,7 +9,7 @@
 
 SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                  WAVNUM, CGROUP, CIWA, CINV, XK2CG, STOKFAC, &
- &                  EMAXDPT, INDEP, DEPTH, IOBND, IODP,      &
+ &                  EMAXDPT, DEPTH, IOBND, IODP,      &
  &                  AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR, &
  &                  UFRIC, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, CITHICK, &
  &                  USTRA, VSTRA, &
@@ -121,7 +121,6 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EMAXDPT
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
-      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: INDEP
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IODP
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IOBND
 
@@ -271,7 +270,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !           ---------------------------
 
       CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,   &
-     &              INDEP, WAVNUM, XK2CG,       &
+     &              WAVNUM, CGROUP, XK2CG,      &
      &              EMEAN, F1MEAN, XKMEAN,      &
      &              UFRIC, COSWDIF, RAORW)
 

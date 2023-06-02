@@ -10,9 +10,9 @@
       SUBROUTINE WDFLUXES (KIJS, KIJL,                 &
      &                     MIJ,                        &
      &                     FL1, XLLWS,                 &
-     &                     WAVNUM, CINV,               &
+     &                     WAVNUM, CINV, CGROUP,       &
      &                     XK2CG, STOKFAC,             &
-     &                     DEPTH, INDEP,               &
+     &                     DEPTH,                      &
      &                     WSWAVE, WDWAVE,             &
      &                     AIRD, WSTAR,                &
      &                     USTRA, VSTRA,               &
@@ -87,10 +87,10 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: WAVNUM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: CINV
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: XK2CG
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: STOKFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
-      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: INDEP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSWAVE, WDWAVE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: AIRD, WSTAR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: USTRA, VSTRA
@@ -179,7 +179,7 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
       IF (LCFLX) THEN
 
         CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,     &
-     &                INDEP, WAVNUM, XK2CG,         &
+     &                WAVNUM, CGROUP, XK2CG,        &
      &                EMEAN, F1MEAN, XKMEAN,        &
      &                UFRIC, COSWDIF, RAORW) 
 

@@ -158,6 +158,5 @@
 
       INTEGER(KIND=JWIM), ALLOCATABLE :: INDICESSAT(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: SATWEIGHTS(:,:)
-      REAL(KIND=JWRB), ALLOCATABLE :: CUMULW(:,:,:,:)
 ! ----------------------------------------------------------------------
       END MODULE YOWPHYS
