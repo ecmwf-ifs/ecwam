@@ -91,7 +91,7 @@
 
       DO K=1,NANGH
          K0 = MA*K+1
-         IF (K0.GT.NANG) K0 = K0-NANG
+         IF (K0 > NANG) K0 = K0-NANG
          THH(K) = TH(K0)
       ENDDO
 
@@ -139,12 +139,11 @@
       DO M=1,NFREH
          OM0 = OMEGA(M)
          OM1 = OMEGA(2)
-         IF (OM1.LT.OM0/2.0_JWRB) THEN
+         IF (OM1 < OM0/2.0_JWRB) THEN
             XK1 = OM1**2/G
             XK2 = (OM0-OM1)**2/G
             A = (ABS(XK1+XK2)/2.0_JWRB)**2
-            WRITE(IU06,'(I5,2F16.9)')                                   &
-     &                 M,TA(NDEPTH,NANGH,2,M)/DFDTH(2),A 
+            WRITE(IU06,'(I5,2F16.9)') M,TA(NDEPTH,NANGH,2,M)/DFDTH(2),A
          ENDIF
       ENDDO 
 
@@ -156,8 +155,7 @@
          XK1 = OM1**2/G
          XK2 = (OM0+OM1)**2/G
          B = (ABS(XK1-XK2)/2.)**2
-         WRITE(IU06,'(I5,2F16.9)')                                      &
-     &              M,TB(NDEPTH,NANGH,M,M)/DFDTH(M),B 
+         WRITE(IU06,'(I5,2F16.9)') M,TB(NDEPTH,NANGH,M,M)/DFDTH(M),B  
       ENDDO 
 
       WRITE (IU06,'('' '')')
@@ -166,8 +164,7 @@
          OM0 = OMEGA(M)
          XK0 = OM0**2/G
          C_QL = -XK0**2
-         WRITE(IU06,'(I5,2F16.9)')                                      &
-     &              M,TC_QL(NDEPTH,NANGH,M,M)/DFDTH(M),C_QL  
+         WRITE(IU06,'(I5,2F16.9)') M,TC_QL(NDEPTH,NANGH,M,M)/DFDTH(M),C_QL 
       ENDDO
 !
 !----------------------------------------------------------------------
