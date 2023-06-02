@@ -163,7 +163,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      GBOUNC  , IPOGBO   ,CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,LWNEMOCOU
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,GFLAG20  ,    &
-     &                      NGOUT    ,NOUTT    ,LOUTINT
+     &                      NGOUT    ,NOUTT    ,LOUTINT  ,LSECONDORDER
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
@@ -238,6 +238,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 #include "iwam_get_unit.intfb.h"
 #include "iniwcst.intfb.h"
 #include "mcout.intfb.h"
+#include "secondhh_gen.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 #include "prewind.intfb.h"
 #include "readbou.intfb.h"
@@ -943,6 +944,12 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 !         ------------------------------------------------------------
 
       CALL INISNONLIN
+
+
+!*    9.3 HIGHER HARMONICS TABLES
+!         -----------------------
+
+      IF (LSECONDORDER) CALL SECONDHH_GEN
 
 ! ----------------------------------------------------------------------
 !NEST

@@ -169,8 +169,6 @@ PROGRAM preproc
 #include "mtabs.intfb.h"
 #include "mubuf.intfb.h"
 #include "outcom.intfb.h"
-#include "secondhh.intfb.h"
-#include "secondhh_gen.intfb.h"
 #include "topoar.intfb.h"
 #include "uiprep.intfb.h"
 
@@ -360,19 +358,6 @@ PROGRAM preproc
 !         --------------------------------------
 
       CALL MTABS
-
-!*    4.5 HIGHER HARMONICS TABLES
-!         -----------------------
-!
-!         FIRST ROUTINE IS FOR DEEP WATER ONLY AND IS APPLIED FOR 
-!         ALTIMETRIC CORRECTIONS
-!         SECOND ROUTINE IS MORE GENERAL, HENCE APPLIES TO DEEP AND 
-!         SHALLOW WATER
-!     
-
-      CALL SECONDHH
-
-      CALL SECONDHH_GEN
 
 ! ----------------------------------------------------------------------
 

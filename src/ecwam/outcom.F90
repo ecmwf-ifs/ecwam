@@ -84,13 +84,7 @@
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,              &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
-      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,    &
-     &            FAC0     ,FAC1     ,FAC2     ,FAC3     ,              &
-     &            FAK      ,FRHF     ,DFIMHF   ,                        &
-     &            MR       ,XMR      ,MA       ,XMA      ,NFREH    ,    &
-     &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,    &
-     &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,    &
-     &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
+      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA
       USE YOWABORT, ONLY : WAM_ABORT
 
 #ifdef WAM_HAVE_UNWAM
@@ -216,37 +210,6 @@
      &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,NFRE),                           &
      &   ((TFAC_ST(L,M),L=1,NDEPTH),M=1,NFRE)
       ENDIF
-
-! ----------------------------------------------------------------------
-
-!*    9. WRITE MODULE YOWTABL (2ND AND 3RD PART).
-!        ---------------------
-
-      IF (IFORM /= 2) THEN
-        WRITE (IU07) FAC0,FAC1,FAC2,FAC3,FAK,FRHF,DFIMHF 
-      ENDIF
-      IF (IFORM /= 1) THEN
-        WRITE (IU17,999) FAC0,FAC1,FAC2,FAC3,FAK,FRHF,DFIMHF 
-      ENDIF
-
-      IF (IFORM /= 2) THEN
-        WRITE (IU07) MR, XMR, MA, XMA, NFREH, NANGH, NMAX
- 
-        WRITE (IU07) OMEGA, DFDTH, THH, DELTHH, IM_P, IM_M,             &
-     &               TA, TB, TC_QL, TT_4M, TT_4P, TFAKH
-      ENDIF
-      IF (IFORM /= 1) THEN
-        WRITE (IU17,995) MR, MA, NFREH, NANGH, NMAX 
-        WRITE (IU17,998) IM_P, IM_M 
-        WRITE (IU17,999) XMR, XMA, OMEGA, DFDTH, THH, DELTHH,           &
-     &                   TA, TB, TC_QL, TT_4M, TT_4P, TFAKH 
-      ENDIF
-! ----------------------------------------------------------------------
-
-!*    10. WRITE MODULE YOWCURR.
-!         ---------------------
-
-!      THE CURRENTS ARE NO LONGER PART OF THE CONSTANT FILES.
 
 ! ----------------------------------------------------------------------
 

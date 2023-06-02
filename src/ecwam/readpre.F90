@@ -74,12 +74,6 @@ SUBROUTINE READPRE (IU07)
       USE YOWSHAL  , ONLY : NDEPTH   ,BATHY    ,DEPTHA   ,DEPTHD   ,    &
      &            LLOCEANMASK,                                          &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST  ,TOOSHALLOW
-      USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
-     &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,              &
-     &            MR       ,XMR      ,MA       ,XMA      ,NFREH    ,    &
-     &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,    &
-     &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,    &
-     &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
       USE YOWTEST  , ONLY : IU06
       USE YOWABORT, ONLY : WAM_ABORT
 #ifdef WAM_HAVE_UNWAM
@@ -206,40 +200,6 @@ SUBROUTINE READPRE (IU07)
 
         CALL READREC(15)
 
-!*    9. READ MODULE YOWTABL (2ND AND 3RD part).
-!        -------------------
-
-        IF (.NOT.ALLOCATED(FAC0)) ALLOCATE(FAC0(NANG,NANG,NFREHF,NFREHF))
-        IF (.NOT.ALLOCATED(FAC1)) ALLOCATE(FAC1(NANG,NANG,NFREHF,NFREHF))
-        IF (.NOT.ALLOCATED(FAC2)) ALLOCATE(FAC2(NANG,NANG,NFREHF,NFREHF))
-        IF (.NOT.ALLOCATED(FAC3)) ALLOCATE(FAC3(NANG,NANG,NFREHF,NFREHF))
-        IF (.NOT.ALLOCATED(FAK)) ALLOCATE(FAK(NFREHF))
-        IF (.NOT.ALLOCATED(FRHF)) ALLOCATE(FRHF(NFREHF))
-        IF (.NOT.ALLOCATED(DFIMHF)) ALLOCATE(DFIMHF(NFREHF))
-
-        CALL READREC(16)
-
-        CALL READREC(17)
-
-        IF (.NOT.ALLOCATED(OMEGA)) ALLOCATE(OMEGA(NFREH))
-        IF (.NOT.ALLOCATED(THH))   ALLOCATE(THH(NANGH))
-        IF (.NOT.ALLOCATED(DFDTH)) ALLOCATE(DFDTH(NFREH))
-        IF (.NOT.ALLOCATED(TA)) ALLOCATE(TA(NDEPTH,NANGH,NFREH,NFREH))
-        IF (.NOT.ALLOCATED(TB)) ALLOCATE(TB(NDEPTH,NANGH,NFREH,NFREH))
-        IF (.NOT.ALLOCATED(TC_QL))                                       &
-     &         ALLOCATE(TC_QL(NDEPTH,NANGH,NFREH,NFREH))
-        IF (.NOT.ALLOCATED(TT_4M))                                       &
-     &         ALLOCATE(TT_4M(NDEPTH,NANGH,NFREH,NFREH))
-        IF (.NOT.ALLOCATED(TT_4P))                                       &
-     &         ALLOCATE(TT_4P(NDEPTH,NANGH,NFREH,NFREH))
-        IF (.NOT.ALLOCATED(IM_P))                                        &
-     &         ALLOCATE(IM_P(NFREH,NFREH))
-        IF (.NOT.ALLOCATED(IM_M))                                        &
-     &         ALLOCATE(IM_M(NFREH,NFREH))
-        IF (.NOT.ALLOCATED(TFAKH)) ALLOCATE(TFAKH(NFREH,NDEPTH))
-
-        CALL READREC(18)
-
 !       THE UNSTRUCTURED BITS (if pre-computed by PREPROC)
         IF (LLUNSTR) THEN
 #ifdef WAM_HAVE_UNWAM
@@ -337,29 +297,15 @@ SUBROUTINE READPRE (IU07)
      &     R8_TH,R8_COSTH,R8_SINTH,                                     &
      &     R8_DELLAM,R8_SINPH,R8_COSPH,                                 &
      &     R8_ZDELLO,                                                   &
-     &     R8_FRHF,                                                     &
-     &     R8_DFIMHF,                                                   &
      &     R8_OMEGA,                                                    &
      &     R8_THH,                                                      &
      &     R8_DFDTH,                                                    &
-     &     R8_FAK                
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) ::                   &
-     &     R8_BATHY,                                              &
+     &     R8_BATHY,                                                    &
      &     R8_TCGOND,                                                   &
      &     R8_TFAK,                                                     &
      &     R8_TSIHKD,                                                   &
-     &     R8_TFAC_ST,                                                  &
-     &     R8_TFAKH
-      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:,:,:) ::               &
-     &     R8_FAC0,                                                     &
-     &     R8_FAC1,                                                     &
-     &     R8_FAC2,                                                     &
-     &     R8_FAC3,                                                     &
-     &     R8_TA,                                                       &
-     &     R8_TB,                                                       &
-     &     R8_TC_QL,                                                    &
-     &     R8_TT_4M,                                                    &
-     &     R8_TT_4P
+     &     R8_TFAC_ST
 
 !23456789-123456789-123456789-123456789-123456789-123456789-123456789-12
       SELECT CASE(KREC)
@@ -491,90 +437,7 @@ SUBROUTINE READPRE (IU07)
      &           TFAK, TSIHKD, TFAC_ST
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
-      CASE(16)
-         IF (LLR8TOR4) THEN
-            ALLOCATE(R8_FAC0(NANG,NANG,NFREHF,NFREHF))
-            ALLOCATE(R8_FAC1(NANG,NANG,NFREHF,NFREHF))
-            ALLOCATE(R8_FAC2(NANG,NANG,NFREHF,NFREHF))
-            ALLOCATE(R8_FAC3(NANG,NANG,NFREHF,NFREHF))
-            ALLOCATE(R8_FAK(NFREHF))
-            ALLOCATE(R8_FRHF(NFREHF))
-            ALLOCATE(R8_DFIMHF(NFREHF))
-            READ(IU07,IOSTAT=ISTAT) R8_FAC0,R8_FAC1,R8_FAC2,R8_FAC3,    &
-     &           R8_FAK,R8_FRHF,R8_DFIMHF
-            IF (ISTAT /= 0) GOTO 1000
-            FAC0 = R8_FAC0
-            FAC1 = R8_FAC1
-            FAC2 = R8_FAC2
-            FAC3 = R8_FAC3
-            FAK = R8_FAK
-            FRHF = R8_FRHF
-            DFIMHF = R8_DFIMHF
 
-            DEALLOCATE(R8_FAC0)
-            DEALLOCATE(R8_FAC1)
-            DEALLOCATE(R8_FAC2)
-            DEALLOCATE(R8_FAC3)
-            DEALLOCATE(R8_FAK)
-            DEALLOCATE(R8_FRHF)
-            DEALLOCATE(R8_DFIMHF)
-         ELSE
-            READ(IU07,IOSTAT=ISTAT) FAC0,FAC1,FAC2,FAC3,                &
-     &           FAK,FRHF,DFIMHF
-            IF (ISTAT /= 0) GOTO 1000
-         ENDIF
-      CASE(17)
-         IF (LLR8TOR4) THEN
-            READ(IU07,IOSTAT=ISTAT) MR, R8_XMR, MA, R8_XMA,             &
-     &           NFREH, NANGH, NMAX
-            IF (ISTAT /= 0) GOTO 1000
-            XMR = R8_XMR
-            XMA = R8_XMA
-         ELSE
-            READ(IU07,IOSTAT=ISTAT) MR, XMR, MA, XMA,                   &
-     &           NFREH, NANGH, NMAX
-            IF (ISTAT /= 0) GOTO 1000
-         ENDIF
-      CASE(18)
-         IF (LLR8TOR4) THEN
-            ALLOCATE(R8_OMEGA(NFREH))
-            ALLOCATE(R8_THH(NANGH))
-            ALLOCATE(R8_DFDTH(NFREH))
-            ALLOCATE(R8_TA(NDEPTH,NANGH,NFREH,NFREH))
-            ALLOCATE(R8_TB(NDEPTH,NANGH,NFREH,NFREH))
-            ALLOCATE(R8_TC_QL(NDEPTH,NANGH,NFREH,NFREH))
-            ALLOCATE(R8_TT_4M(NDEPTH,NANGH,NFREH,NFREH))
-            ALLOCATE(R8_TT_4P(NDEPTH,NANGH,NFREH,NFREH))
-            ALLOCATE(R8_TFAKH(NFREH,NDEPTH))
-            READ(IU07,IOSTAT=ISTAT) R8_OMEGA, R8_DFDTH, R8_THH,         &
-     &           R8_DELTHH, IM_P, IM_M,                                 &
-     &           R8_TA, R8_TB, R8_TC_QL, R8_TT_4M, R8_TT_4P, R8_TFAKH
-            IF (ISTAT /= 0) GOTO 1000
-            OMEGA = R8_OMEGA
-            THH = R8_THH
-            DFDTH = R8_DFDTH
-            TA = R8_TA
-            TB = R8_TB
-            TC_QL = R8_TC_QL
-            TT_4M = R8_TT_4M
-            TT_4P = R8_TT_4P
-            TFAKH = R8_TFAKH
-
-            DEALLOCATE(R8_OMEGA)
-            DEALLOCATE(R8_THH)
-            DEALLOCATE(R8_DFDTH)
-            DEALLOCATE(R8_TA)
-            DEALLOCATE(R8_TB)
-            DEALLOCATE(R8_TC_QL)
-            DEALLOCATE(R8_TT_4M)
-            DEALLOCATE(R8_TT_4P)
-            DEALLOCATE(R8_TFAKH)
-         ELSE
-            READ(IU07,IOSTAT=ISTAT) OMEGA, DFDTH, THH,                  &
-     &           DELTHH, IM_P, IM_M,                                    &
-     &           TA, TB, TC_QL, TT_4M, TT_4P, TFAKH
-            IF (ISTAT /= 0) GOTO 1000
-         ENDIF
       CASE DEFAULT
          WRITE(IU06,*)'***ERROR IN READREC: INVALID RECORD NUMBER=',KREC
          CALL FLUSH(IU06)
