@@ -111,7 +111,7 @@ IF (LHOOK) CALL DR_HOOK('OUTSTEP0',0,ZHOOK_HANDLE)
      &                   FL1(:,:,:,ICHNK), XLLWS(:,:,:,ICHNK),   &
      &                   WVPRPT%WAVNUM(:,:,ICHNK), WVPRPT%CINV(:,:,ICHNK),  WVPRPT%CGROUP(:,:,ICHNK), &
      &                   WVPRPT%XK2CG(:,:,ICHNK), WVPRPT%STOKFAC(:,:,ICHNK), &
-     &                   WVENVI%DEPTH(:,ICHNK), WVENVI%INDEP(:,ICHNK), &
+     &                   WVENVI%DEPTH(:,ICHNK), &
      &                   FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK), &
      &                   FF_NOW%AIRD(:,ICHNK), FF_NOW%WSTAR(:,ICHNK), &
      &                   FF_NOW%USTRA(:,ICHNK), FF_NOW%VSTRA(:,ICHNK), &
