@@ -296,10 +296,7 @@ SUBROUTINE READPRE (IU07)
      &     R8_FR,R8_DFIM,R8_GOM,R8_C,                                   &
      &     R8_TH,R8_COSTH,R8_SINTH,                                     &
      &     R8_DELLAM,R8_SINPH,R8_COSPH,                                 &
-     &     R8_ZDELLO,                                                   &
-     &     R8_OMEGA,                                                    &
-     &     R8_THH,                                                      &
-     &     R8_DFDTH,                                                    &
+     &     R8_ZDELLO
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) ::                   &
      &     R8_BATHY,                                                    &
      &     R8_TCGOND,                                                   &
