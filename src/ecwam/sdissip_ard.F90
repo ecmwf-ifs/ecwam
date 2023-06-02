@@ -191,6 +191,11 @@
         BRLAMBDA=BRKPBCOEF/(2.0_JWRB*ZPI**2)
         TMP02 = SSDSC3*BRLAMBDA
 
+!       NDIKCUMUL is the  integer difference in frequency bands
+!       between the "large breakers" and short "wiped-out waves"
+!!! wrong !!???        NDIKCUMUL = NINT(SSDSBRF1/(FRATIO-1.))
+        NDIKCUMUL = NINT(-LOG(SSDSBRF1)/LOG(FRATIO))
+
         DO KK=0,NANGD
           COSDTH(KK)=COS(KK*DELTH)
         ENDDO
