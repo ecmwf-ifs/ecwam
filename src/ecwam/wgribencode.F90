@@ -432,10 +432,14 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'endStep',ISTEP_HRS)
         ENDIF
 
+!!!debile
+        write(*,0) ' debile wgribencode IGRIB_VERSION =  ',IGRIB_VERSION
+
 !!!   for compatibility with previous coding, impose:
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'timeRangeIndicator',10)
 
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'unitOfTimeRange',1)
+!!!        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'unitOfTimeRange',1)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'indicatorOfUnitOfTimeRange',1)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepUnits','h')
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'endStep',ISTEP_HRS)
 
