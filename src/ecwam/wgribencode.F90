@@ -433,7 +433,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
         ENDIF
 
 !!!debile
-        write(*,0) ' debile wgribencode IGRIB_VERSION =  ',IGRIB_VERSION, ISTEP_HRS
+        write(0,*) ' debile wgribencode IGRIB_VERSION =  ',IGRIB_VERSION, ISTEP_HRS
 
 !!!   for compatibility with previous coding, impose:
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'timeRangeIndicator',10)
