@@ -131,13 +131,13 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
          IGRIB_VERSION=1
 
-          WRITE(IU06,*) ''
-          WRITE(IU06,*) '*******************************************************'
-          WRITE(IU06,*) ' WARNING IN PRESET_WGRIB_TEMPLATE !!!!! '
-          WRITE(IU06,*) ' IGRIB_VERSION = 2 FOR SPECTRA NOT YET IMPLEMENTED !!! '
-          WRITE(IU06,*) ' REVERT TO USING GRIB 1 FOR THE SPECTRA' 
-          WRITE(IU06,*) '*******************************************************'
-          WRITE(IU06,*) ''
+          WRITE(0,*) ''
+          WRITE(0,*) '*******************************************************'
+          WRITE(0,*) ' WARNING IN PRESET_WGRIB_TEMPLATE !!!!! '
+          WRITE(0,*) ' IGRIB_VERSION = 2 FOR SPECTRA NOT YET IMPLEMENTED !!! '
+          WRITE(0,*) ' REVERT TO USING GRIB 1 FOR THE SPECTRA' 
+          WRITE(0,*) '*******************************************************'
+          WRITE(0,*) ''
 
         ENDIF
       ENDIF
@@ -176,11 +176,19 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
       ELSE
         CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'editionNumber',IGRIB_VERSION_IFS, KRET=IRET)
 
-!!debile
-        write(IU06,*) 'debile preset_wgrib_template IGRIB_VERSION_IFS = ',IGRIB_VERSION_IFS," ",CT
-        write(IU06,*) 'debile preset_wgrib_template IGRIB_VERSION = ',IGRIB_VERSION, " ",CT
-        call flush (IU06)
-!!debile
+        IF ( IGRIB_VERSION_IFS /= IGRIB_VERSION ) THEN
+          WRITE(0,*) ''
+          WRITE(0,*) '*************************************************************'
+          WRITE(0,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!! '
+          WRITE(0,*) ' IGRIB_VERSION_IFS is different than  IGRIB_VERSION !!!!'
+          WRITE(0,*) ' IGRIB_VERSION_IFS = ',IGRIB_VERSION_IFS
+          WRITE(0,*) ' IGRIB_VERSION     = ',IGRIB_VERSION
+          WRITE(0,*) ' For integral parameters, it can be changed in input namelist'
+          WRITE(0,*) ' See NGRIB_VERSION = ',NGRIB_VERSION
+          WRITE(0,*) '*************************************************************'
+          WRITE(0,*) ''
+          CALL ABORT1
+        ENDIF
 
          IGRIB_HANDLE=-99
          CALL IGRIB_CLONE(NGRIB_HANDLE_IFS,IGRIB_HANDLE)
