@@ -107,6 +107,7 @@
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            LRELWIND ,                                            &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,   &
      &            PATH     ,CPATH    ,CWI
@@ -191,6 +192,7 @@
      &   LBIWBK  ,                                                      &
      &   LMASKICE,                                                      &
      &   LWAMRSETCI,                                                    &
+     &   NDEPTH   ,DEPTHA   ,DEPTHD,                                    &
      &   IBOUNC, IBOUNF,                                                &
      &   IDELBC, CBCPREF,                                               &
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
@@ -325,6 +327,9 @@
 !     ISNONLIN : 0 FOR OLD SNONLIN, 1 FOR NEW SNONLIN, 2 FOR LATEST BASED ON JANSSEN 2018 (ECMWF TM 813).
 !     IDAMPING : 0 NO WAVE DAMPING, 1 WAVE DAMPING ON.
 !                ONLY MEANINGFUl FOR IPHYS=0
+!     NDEPTH   NUMBER OF ENTRIED IN DEPTH TABLE (if used) 
+!     DEPTHA   MINIMUM DEPTH IN DEPTH TABLE (if used)
+!     DEPTHD   MAXIMUM DEPTH IN TABLES = DEPTHA*DEPTHD**(NDEPTH-1)
 !     IBOUNC: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (COARSE GRID).
 !     IBOUNF: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (FINE GRID).
 !     IDELBC: TIMESTEP FOR THE DISPOSAL OF OUTPUT BC FILE(S) INTO PERMANENT
@@ -560,6 +565,9 @@
       ITESTB    = 0 
       IREST     = 0 
       IASSI     = 0 
+      NDEPTH    = 74
+      DEPTHA    = 1.0_JWRB
+      DEPTHD    = 1.1_JWRB
       IBOUNC    = 0 
       IBOUNF    = 0 
       IDELBC    = 0

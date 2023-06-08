@@ -52,7 +52,6 @@
       USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLO
-      USE YOWSHAL  , ONLY : NDEPTH
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -182,9 +181,6 @@
      &           NGY, NY, NY
       WRITE (IU06,'('' MAXIMUM BLOCK LENGTH       NIBLO '', 3I10)')     &
      &           NIBLO
-
-      WRITE (IU06,'('' SHALLOW WATER TABLE LEN.  NDEPTH '', 3I10)')     &
-     &           NDEPTH, NDEPTH, NDEPTH
 
       WRITE (IU06,'(/,'' THE DIMENSIONS IN PRESET AND CHIEF HAVE TO '', &
      &             '' BE THE VALUES IN COLUMN - REQUIRED - '')')

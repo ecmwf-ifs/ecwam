@@ -43,7 +43,8 @@ SUBROUTINE INITDPTHFLDS(WVENVI, WVPRPT, WVPRPT_LAND)
 
       INTEGER(KIND=JWIM) :: IJ, ICHNK, KIJS, KIJL
 
-      REAL(KIND=JWRB) :: GAM, DEEP_DEPTH
+      REAL(KIND=JWRB) :: GAM
+      REAL(KIND=JWRB), DIMENSION(1) :: DEEP_DEPTH
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -69,7 +70,7 @@ IF (LHOOK) CALL DR_HOOK('INITDPTHFLDS',0,ZHOOK_HANDLE)
 
         CALL DEPTHPRPT (1, NPROMA_WAM, WVENVI%DEPTH(:,ICHNK),                                            &
  &                      WVPRPT%WAVNUM(:,:,ICHNK), WVPRPT%CINV(:,:,ICHNK), WVPRPT%CGROUP(:,:,ICHNK),      &
- &                      WVPRPT%XK2CG(:,:,ICHNK), WVPRPT%OMOSNH2KD(:,:ICHNK), WVPRPT%STOKFAC(:,:,ICHNK) )
+ &                      WVPRPT%XK2CG(:,:,ICHNK), WVPRPT%OMOSNH2KD(:,:,ICHNK), WVPRPT%STOKFAC(:,:,ICHNK) )
 
       ENDDO
 !$OMP END PARALLEL DO
@@ -78,9 +79,9 @@ IF (LHOOK) CALL DR_HOOK('INITDPTHFLDS',0,ZHOOK_HANDLE)
 
       ! Fictitious values for land point (NSUP+1)
 
-      DEEP_DEPTH = BATHYMAX
+      DEEP_DEPTH(1) = BATHYMAX
 
-      CALL DEPTHPRPT (1, 1, DEEP_DEPTH,                                                         &
+      CALL DEPTHPRPT (1, 1, DEEP_DEPTH(:),                                                      &
  &                    WVPRPT_LAND%WAVNUM(:), WVPRPT_LAND%CINV(:), WVPRPT_LAND%CGROUP(:),        &
  &                    WVPRPT_LAND%XK2CG(:), WVPRPT_LAND%OMOSNH2KD(:), WVPRPT_LAND%STOKFAC(:) )
 

@@ -90,7 +90,6 @@
       INTEGER(KIND=JWIM), ALLOCATABLE :: NDUMP(:)
 
       REAL(KIND=JWRB) :: FR1 
-      REAL(KIND=JWRB) :: DEPTHMAX
       REAL(KIND=JWRB) :: ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
       REAL(KIND=JWRB) :: WEST, EAST, DW, DE, DS, DN
       REAL(KIND=JWRB), ALLOCATABLE :: XDUMP(:)
@@ -380,14 +379,6 @@
           CLDOMAIN = 'm'
         ENDIF 
       ENDIF 
-
-      WRITE (IU06,*) ' '
-      WRITE (IU06,*) '   MINIMUM DEPTH IN TABLES IS ', DEPTHA
-      WRITE (IU06,*) '   WITH A STEP ', DEPTHD 
-      DEPTHMAX=DEPTHA*DEPTHD**(NDEPTH-1)
-      WRITE (IU06,*) '   MAXIMUM DEPTH IN TABLES IS ', DEPTHMAX
-      WRITE (IU06,*) ' '
- 
 
 ! ----------------------------------------------------------------------
 
