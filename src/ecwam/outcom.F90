@@ -82,8 +82,6 @@
       USE YOWMAP   , ONLY : NX       ,NY       ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,              &
-     &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA
       USE YOWABORT, ONLY : WAM_ABORT
 
@@ -103,7 +101,7 @@
       INTEGER(KIND=JWIM) :: IDUM, K, M, L
       INTEGER(KIND=JWIM) :: NBINP, NOUTT
       INTEGER(KIND=JWIM) :: NKIND !Precision used when writing
-      INTEGER(KIND=JWIM) :: NGOUT_dum, KFRH_dum, MFRSTLW_dum, MLSTHG_dum
+      INTEGER(KIND=JWIM) :: NGOUT_dum, KFRH_dum, MFRSTLW_dum, MLSTHG_dum, NDEPTH_dum
 
 ! ----------------------------------------------------------------------
 
@@ -191,28 +189,6 @@
 
 ! ----------------------------------------------------------------------
 
-!*    8. WRITE MODULE YOWSHAL.
-!        --------------------
-
-      IF (IFORM /= 2) THEN
-        WRITE (IU07) NDEPTH, DEPTHA, DEPTHD
-        WRITE (IU07) BATHY,                                       &
-     &   ((TCGOND(L,M),L=1,NDEPTH),M=1,NFRE),                           &
-     &   ((TFAK(L,M),L=1,NDEPTH),M=1,NFRE),                             &
-     &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,NFRE),                           &
-     &   ((TFAC_ST(L,M),L=1,NDEPTH),M=1,NFRE)
-      ENDIF
-      IF (IFORM /= 1) THEN
-        WRITE (IU17,996) NDEPTH, DEPTHA, DEPTHD
-        WRITE (IU17,999) BATHY,                                   &
-     &   ((TCGOND(L,M),L=1,NDEPTH),M=1,NFRE),                           &
-     &   ((TFAK(L,M),L=1,NDEPTH),M=1,NFRE),                             &
-     &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,NFRE),                           &
-     &   ((TFAC_ST(L,M),L=1,NDEPTH),M=1,NFRE)
-      ENDIF
-
-! ----------------------------------------------------------------------
-
 !*   11. WRITE NAMELIST PARWAM.
 !        ----------------------
 !     NBINP NOUTT have no meaning here since the size of the arrays
@@ -224,13 +200,14 @@
       KFRH_dum = 0
       MFRSTLW_dum = 0
       MLSTHG_dum = 0
+      NDEPTH_dum = 74
  
       CALL OUTNAM                                                       &
      & (NANG, NFRE,                                                     &
      &  NGX, NGY, NIBLO, NOVER, NGOUT_dum, NOUTT,                       &
      &  KFRH_dum, MFRSTLW_dum, MLSTHG_dum,                              &
      &  NBOUNC, NBOUNF, NBINP, NIBL1, NIBLD, NIBLC,                     &
-     &  ITAUMAX, JUMAX, IUSTAR, IALPHA, NDEPTH, IDUM, IPER)
+     &  ITAUMAX, JUMAX, IUSTAR, IALPHA, NDEPTH_dum, IDUM, IPER)
 
       IF (LLUNSTR) THEN
 #ifdef WAM_HAVE_UNWAM

@@ -107,7 +107,7 @@
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            LRELWIND ,                                            &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD    ,TOOSHALLOW
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,   &
      &            PATH     ,CPATH    ,CWI
@@ -328,7 +328,7 @@
 !     IDAMPING : 0 NO WAVE DAMPING, 1 WAVE DAMPING ON.
 !                ONLY MEANINGFUl FOR IPHYS=0
 !     NDEPTH   NUMBER OF ENTRIED IN DEPTH TABLE (if used) 
-!     DEPTHA   MINIMUM DEPTH IN DEPTH TABLE (if used)
+!     DEPTHA   MINIMUM DEPTH. IT IS ALSO USED IN DEPTH TABLE (if used)
 !     DEPTHD   MAXIMUM DEPTH IN TABLES = DEPTHA*DEPTHD**(NDEPTH-1)
 !     IBOUNC: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (COARSE GRID).
 !     IBOUNF: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (FINE GRID).
@@ -784,6 +784,8 @@
 
       ! when coupled to IFS, the control will come from it via calls to wavemdl
       IF (LWCOU) LSMSSIG_WAM=.FALSE.
+
+      TOOSHALLOW=0.1_JWRB*DEPTHA
 
 
 !           **** OUTPUT TIME AT SPECIFIED TIMES ****

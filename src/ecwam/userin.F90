@@ -119,7 +119,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,               &
      &            DELTA_THETA_RN, DTHRN_A, DTHRN_U,                     &
      &            SWELLF4,  SWELLF7
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,BATHYMAX
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IFRELFMAX, DELPRO_LF, IDELPRO, IDELT   ,IDELWI   ,    &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
@@ -733,6 +733,17 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '   SHALLOW WATER TABLE DEPTHA = ', DEPTHA
       WRITE(IU06,*) '   SHALLOW WATER TABLE DEPTHD = ', DEPTHD
       DEPTHMAX=DEPTHA*DEPTHD**(NDEPTH-1)
+      IF (BATHYMAX > DEPTHMAX ) THEN
+        WRITE (IU06,*) ' ******************************************'
+        WRITE (IU06,*) ' *  THE MAXIMUM DEPTH ',BATHYMAX
+        WRITE (IU06,*) ' *  IS LARGER THAN '
+        WRITE (IU06,*) ' *  THE MAXIMUM DEPTH IN TABLES ', DEPTHMAX
+        WRITE (IU06,*) ' *  ADJUST DEPTHA, DEPTHD, NDEPTH !       *'
+        WRITE (IU06,*) ' *  (SEE INPUT NAMELIST)                  *'
+        WRITE (IU06,*) ' *                                        *'
+        WRITE (IU06,*) ' ******************************************'
+       CALL ABORT1
+      ENDIF
       WRITE(IU06,*) '   MAXIMUM DEPTH IN TABLES IS ', DEPTHMAX
 
       IF (ISNONLIN == 0) THEN

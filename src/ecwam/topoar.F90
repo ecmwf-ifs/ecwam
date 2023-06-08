@@ -80,7 +80,6 @@
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            NLONRGG  ,LLOBSTRCT
       USE YOWPARAM , ONLY : NGX      ,NGY
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,BATHYMAX 
       USE YOWTEST  , ONLY : IU06, ITEST
 
 ! ----------------------------------------------------------------------
@@ -103,7 +102,6 @@
       INTEGER(KIND=JWIM), ALLOCATABLE :: IDUM(:)
       INTEGER(KIND=JWIM), ALLOCATABLE :: IA2H(:), IA1(:,:)
 
-      REAL(KIND=JWRB) :: BATHYMAX_LOC, TABLEMAX
       REAL(KIND=JWRB) :: XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
       REAL(KIND=JWRB) :: XLAT, XLON, XLAG, XLW, XLA, XLO, XLOH, XLOG
       REAL(KIND=JWRB), ALLOCATABLE :: XA2H(:), XA1(:,:)
@@ -472,55 +470,6 @@
           ENDIF
         ENDDO
       ENDDO
-
-!     CHECK THAT MINIMUM DEPTH USED IN TABLES IS MET. 
-      NMINADJT=0
-      DO J=1,NGY
-        DO I=1,NGX
-          IF (BATHY(I,J) > 0.0_JWRB .AND. BATHY(I,J) < DEPTHA ) THEN
-            BATHY(I,J) = DEPTHA 
-            NMINADJT=NMINADJT+1
-          ENDIF
-        ENDDO
-      ENDDO
-      IF (NMINADJT > 0) THEN
-        WRITE (IU06,*) ' ' 
-        WRITE (IU06,*) ' *******************************************'
-        WRITE (IU06,*) ' *                                         *'
-        WRITE (IU06,*) ' *      WARNING IN SUB. TOPOAR             *'
-        WRITE (IU06,*) ' *      ============================       *'
-        WRITE (IU06,*) ' *                                         *'
-        WRITE (IU06,*) ' * THE DEPTH AT SOME GRID POINTS WAS RESET *' 
-        WRITE (IU06,*) ' * TO THE MINIMUM DEPTH IN TABLES ',DEPTHA
-        WRITE (IU06,*) ' * NUMBER OF AFFECTED GRID POINTS: ',NMINADJT
-        WRITE (IU06,*) ' *                                         *'
-        WRITE (IU06,*) ' *******************************************'
-        WRITE (IU06,*) ' ' 
-      ENDIF
-
-!     CHECK THAT THE MAXIMUM DEPTH IN TABLES IS SUFFICIENTLY LARGE
-      BATHYMAX_LOC=0.0_JWRB
-      DO J=1,NGY
-        DO I=1,NGX
-          BATHYMAX_LOC=MIN(MAX(BATHY(I,J),BATHYMAX_LOC),BATHYMAX)
-        ENDDO
-      ENDDO
-      TABLEMAX=DEPTHA*DEPTHD**(NDEPTH-1)
-      IF (BATHYMAX_LOC > TABLEMAX) THEN
-        WRITE (IU06,*) ' ******************************************'
-        WRITE (IU06,*) ' *                                        *'
-        WRITE (IU06,*) ' *      WARNING ERROR IN SUB. TOPOAR      *'
-        WRITE (IU06,*) ' *      ============================      *'
-        WRITE (IU06,*) ' *                                        *'
-        WRITE (IU06,*) ' *  THE MAXIMUM DEPTH ',BATHYMAX_LOC
-        WRITE (IU06,*) ' *  IS LARGER THAN '
-        WRITE (IU06,*) ' *  THE MAXIMUM DEPTH IN TABLES ',TABLEMAX 
-        WRITE (IU06,*) ' *  ADJUST DEPTHA, DEPTHD, NDEPTH !       *'
-        WRITE (IU06,*) ' *  (SEE INPUT NAMELIST)                  *'
-        WRITE (IU06,*) ' *                                        *'
-        WRITE (IU06,*) ' ******************************************'
-        CALL ABORT1
-      ENDIF
 
 
 ! ----------------------------------------------------------------------

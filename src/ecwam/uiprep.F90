@@ -67,7 +67,6 @@
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,              &
      &            XDELLA   ,XDELLO   ,NLONRGG  ,LLOBSTRCT,LAQUA
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD 
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
 #ifdef WAM_HAVE_UNWAM
       USE YOWUNPOOL, ONLY : LPREPROC, LVECTOR, IVECTOR
@@ -111,7 +110,6 @@
      &                  IFORM, ITEST, ITESTB,                           &
      &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC, &
      &                  NIBLO, CLDOMAIN,LLOBSTRCT,                      &
-     &                  NDEPTH   ,DEPTHA   ,DEPTHD,                     &
      &                  LAQUA, LLUNSTR, LPREPROC
 
       NAMELIST /NACORR/ ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
@@ -150,9 +148,6 @@
       AMOWEC =   0.0_JWRB
       AMOEAC =   0.0_JWRB
       LLOBSTRCT = .TRUE.
-      NDEPTH = 74
-      DEPTHA = 1.0_JWRB
-      DEPTHD = 1.1_JWRB
       LAQUA =.FALSE. ! to force an aqua planet on irregular grid with xdella
 
 !     THE FOLLOWING DEFAULT VALUES INDICATES THAT THEY ARE DETERMINED

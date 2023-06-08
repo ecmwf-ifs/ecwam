@@ -61,8 +61,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
      &            NGX      ,NGY      ,                                  &
      &            NOVER    ,NIBL1    ,CLDOMAIN
-      USE YOWSHAL  , ONLY : NDEPTH   ,BATHY    ,DEPTHA   ,DEPTHD   ,    &
-     &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
+      USE YOWSHAL  , ONLY : BATHY
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE, ONLY : MPL_BROADCAST
@@ -74,7 +73,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ISEND
       INTEGER(KIND=JWIM), INTENT(INOUT) :: ITAG
-      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=9
+      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=8
       INTEGER(KIND=JWIM) :: I, J, IJ, K, K1, K2, M, M1, M2, IC, L, KDEPTH, NGOU 
       INTEGER(KIND=JWIM) :: IKCOUNT, KCOUNT
       INTEGER(KIND=JWIM) :: MIC, MZC 
@@ -115,8 +114,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           ICOMBUF(IKCOUNT)=NIBL1
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=ICHAR(CLDOMAIN)
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=NDEPTH
           IF (IKCOUNT /= MFIRST) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* IKCOUNT .NE. MFIRST !!!*' 
@@ -149,8 +146,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           NIBL1=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           CLDOMAIN=CHAR(ICOMBUF(IKCOUNT))
-          IKCOUNT=IKCOUNT+1
-          NDEPTH=ICOMBUF(IKCOUNT)
           IF (IKCOUNT /= MFIRST) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* IKCOUNT .NE. MFIRST !!!*' 
@@ -164,7 +159,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         DEALLOCATE(ICOMBUF)
 
         MIC=7+NGY
-        MZC=11+(4+4*NDEPTH)*NFRE+3*NANG+4*NGY+NGX*NGY
+        MZC=9+4*NFRE+3*NANG+4*NGY+NGX*NGY
 
 !       ENCODE MAIN MESSAGE BUFFERS (ON PE=ISEND) AND
 !       ALLOCATE ALL ARRAYS NEEDED TO KEEP THE BUFFERS ON THE OTHER PE'S
@@ -189,11 +184,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
           IF (ALLOCATED(BATHY)) DEALLOCATE(BATHY)
           ALLOCATE(BATHY(NGX,NGY))
-
-          IF (.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
-          IF (.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
-          IF (.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
-          IF (.NOT.ALLOCATED(TFAC_ST)) ALLOCATE(TFAC_ST(NDEPTH,NFRE))
 
         ELSE 
           KCOUNT=0
@@ -285,35 +275,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             DO I=1,NGX
               KCOUNT=KCOUNT+1
               ZCOMBUF(KCOUNT)=BATHY(I,K)
-            ENDDO
-          ENDDO
-
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DEPTHA
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DEPTHD
-          DO M=1,NFRE
-            DO KDEPTH=1,NDEPTH
-              KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=TCGOND(KDEPTH,M)
-            ENDDO
-          ENDDO
-          DO M=1,NFRE
-            DO KDEPTH=1,NDEPTH
-              KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=TFAK(KDEPTH,M)
-            ENDDO
-          ENDDO
-          DO M=1,NFRE
-            DO KDEPTH=1,NDEPTH
-              KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=TSIHKD(KDEPTH,M)
-            ENDDO
-          ENDDO
-          DO M=1,NFRE
-            DO KDEPTH=1,NDEPTH
-              KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=TFAC_ST(KDEPTH,M)
             ENDDO
           ENDDO
 
@@ -437,35 +398,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             DO I=1,NGX
               KCOUNT=KCOUNT+1
               BATHY(I,K)=ZCOMBUF(KCOUNT)
-            ENDDO
-          ENDDO
-
-          KCOUNT=KCOUNT+1
-          DEPTHA=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          DEPTHD=ZCOMBUF(KCOUNT)
-          DO M=1,NFRE
-            DO KDEPTH=1,NDEPTH
-              KCOUNT=KCOUNT+1
-              TCGOND(KDEPTH,M)=ZCOMBUF(KCOUNT)
-            ENDDO
-          ENDDO
-          DO M=1,NFRE
-            DO KDEPTH=1,NDEPTH
-              KCOUNT=KCOUNT+1
-              TFAK(KDEPTH,M)=ZCOMBUF(KCOUNT)
-            ENDDO
-          ENDDO
-          DO M=1,NFRE
-            DO KDEPTH=1,NDEPTH
-              KCOUNT=KCOUNT+1
-              TSIHKD(KDEPTH,M)=ZCOMBUF(KCOUNT)
-            ENDDO
-          ENDDO
-          DO M=1,NFRE
-            DO KDEPTH=1,NDEPTH
-              KCOUNT=KCOUNT+1
-              TFAC_ST(KDEPTH,M)=ZCOMBUF(KCOUNT)
             ENDDO
           ENDDO
 

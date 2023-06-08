@@ -71,9 +71,7 @@ SUBROUTINE READPRE (IU07)
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
      &            NGX      ,NGY      ,LLR8TOR4 ,LLUNSTR  ,              &
      &            NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,IMDLGRDID
-      USE YOWSHAL  , ONLY : NDEPTH   ,BATHY    ,DEPTHA   ,DEPTHD   ,    &
-     &            LLOCEANMASK,                                          &
-     &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST  ,TOOSHALLOW
+      USE YOWSHAL  , ONLY : BATHY    ,LLOCEANMASK
       USE YOWTEST  , ONLY : IU06
       USE YOWABORT, ONLY : WAM_ABORT
 #ifdef WAM_HAVE_UNWAM
@@ -190,13 +188,8 @@ SUBROUTINE READPRE (IU07)
 !*    8. READ MODULE YOWSHAL (DEPTH AND SHALLOW WATER TABLES).
 !        ----------------------------------------------------
 
-        CALL READREC(14)
         IF (ALLOCATED(BATHY)) DEALLOCATE(BATHY)
         ALLOCATE(BATHY(NGX,NGY))
-        IF (.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
-        IF (.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
-        IF (.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
-        IF (.NOT.ALLOCATED(TFAC_ST)) ALLOCATE(TFAC_ST(NDEPTH,NFRE))
 
         CALL READREC(15)
 
@@ -224,8 +217,6 @@ SUBROUTINE READPRE (IU07)
       CALL GSTATS(694,0)
       CALL MPBCASTGRID(IU06,IREAD,KTAG)
       CALL GSTATS(694,1)
-
-      TOOSHALLOW=0.1_JWRB*DEPTHA
 
 
 !     DETERMINE THE TOTAL NUMBER OF OCEAN POINTS AND THE CONNECTION TO THE GRID (BLK2GLO)
@@ -290,7 +281,7 @@ SUBROUTINE READPRE (IU07)
       REAL(KIND=JWRU) ::                                                &
      & R8_AMOEAP,R8_AMONOP,R8_AMOSOP,R8_AMOWEP,                         &
      & R8_CL11,R8_CL21,R8_DAL1,R8_DAL2,R8_DELPHI,R8_DELTH,R8_DELTHH,    &
-     & R8_DELTR,R8_DEPTHA,R8_DEPTHD,                                    &
+     & R8_DELTR,                                                        &
      & R8_XDELLA,R8_XDELLO,R8_XMA,R8_XMR
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:) ::                     &
      &     R8_FR,R8_DFIM,R8_GOM,R8_C,                                   &
@@ -298,11 +289,7 @@ SUBROUTINE READPRE (IU07)
      &     R8_DELLAM,R8_SINPH,R8_COSPH,                                 &
      &     R8_ZDELLO
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) ::                   &
-     &     R8_BATHY,                                                    &
-     &     R8_TCGOND,                                                   &
-     &     R8_TFAK,                                                     &
-     &     R8_TSIHKD,                                                   &
-     &     R8_TFAC_ST
+     &     R8_BATHY
 
 !23456789-123456789-123456789-123456789-123456789-123456789-123456789-12
       SELECT CASE(KREC)
@@ -398,40 +385,15 @@ SUBROUTINE READPRE (IU07)
      &           ZDELLO, IRGG
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
-      CASE(14)
-         IF (LLR8TOR4) THEN
-            READ(IU07,IOSTAT=ISTAT) NDEPTH, R8_DEPTHA, R8_DEPTHD
-            IF (ISTAT /= 0) GOTO 1000
-            DEPTHA = R8_DEPTHA
-            DEPTHD = R8_DEPTHD
-         ELSE
-            READ(IU07,IOSTAT=ISTAT) NDEPTH, DEPTHA, DEPTHD
-            IF (ISTAT /= 0) GOTO 1000
-         ENDIF
       CASE(15)
          IF (LLR8TOR4) THEN
             ALLOCATE(R8_BATHY(NGX,NGY))
-            ALLOCATE(R8_TCGOND(NDEPTH,NFRE))
-            ALLOCATE(R8_TFAK(NDEPTH,NFRE))
-            ALLOCATE(R8_TSIHKD(NDEPTH,NFRE))
-            ALLOCATE(R8_TFAC_ST(NDEPTH,NFRE))
-            READ(IU07,IOSTAT=ISTAT) R8_BATHY, R8_TCGOND,          &
-     &           R8_TFAK, R8_TSIHKD, R8_TFAC_ST
+            READ(IU07,IOSTAT=ISTAT) R8_BATHY
             IF (ISTAT /= 0) GOTO 1000
             BATHY(:,:) = R8_BATHY(:,:)
-            TCGOND = R8_TCGOND
-            TFAK = R8_TFAK
-            TSIHKD = R8_TSIHKD
-            TFAC_ST = R8_TFAC_ST
-
             DEALLOCATE(R8_BATHY)
-            DEALLOCATE(R8_TCGOND)
-            DEALLOCATE(R8_TFAK)
-            DEALLOCATE(R8_TSIHKD)
-            DEALLOCATE(R8_TFAC_ST)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) BATHY, TCGOND,                &
-     &           TFAK, TSIHKD, TFAC_ST
+            READ(IU07,IOSTAT=ISTAT) BATHY
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
 
