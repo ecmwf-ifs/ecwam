@@ -166,7 +166,6 @@ PROGRAM preproc
 #include "mbounf.intfb.h"
 #include "mfredir.intfb.h"
 #include "mgrid.intfb.h"
-#include "mtabs.intfb.h"
 #include "mubuf.intfb.h"
 #include "outcom.intfb.h"
 #include "topoar.intfb.h"
@@ -353,11 +352,6 @@ PROGRAM preproc
 
       CALL MFREDIR
 
-
-!*    4.3 MODULE SHALLOW (SHALLOW WATER TABLES).
-!         --------------------------------------
-
-      CALL MTABS
 
 ! ----------------------------------------------------------------------
 

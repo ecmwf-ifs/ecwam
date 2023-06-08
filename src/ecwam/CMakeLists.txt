@@ -67,6 +67,7 @@ list( APPEND ecwam_srcs
   ctuwini.F90
   ctuwupdt.F90
   current2wam.F90
+  depthprpt.F90
   difdate.F90
   dominant_period.F90
   expand_string.F90
@@ -148,7 +149,6 @@ list( APPEND ecwam_srcs
   mpuserin.F90
   mstart.F90
   mswell.F90
-  mtabs.F90
   mubuf.F90
   mwp1.F90
   mwp2.F90
