@@ -28,6 +28,8 @@ function help() {
   echo "    -c, --config CONFIG        YAML configuration file. If not provided,"
   echo "                               use ${RUN_DIR}/config.yml"
   echo "    -r, --run-dir RUN_DIR      Run directory. Overrides \${ECWAM_RUN_DIR}, see below."
+  echo "    -v, --variant VARIANT      Run a Loki-transformed variant of ecWam, rather than the one compiled"
+  echo "                               from the original source."
   echo "    -l, --launch LAUNCH        Used as prefix to launch execution, e.g. \"mpirun -np <NTASKS>\", or \"ddt\""
   echo "                               This overrides defaults set by 'LAUNCH' environment variable"
   echo "    --cache CACHE_PATH         Path where downloaded and computed data will be stored"
@@ -120,6 +122,14 @@ while test $# -gt 0; do
         run_dir=${val}
         [[ $without_equal_sign == true ]] && shift
         ;;
+      --variant|-v)
+        if [[ ${val::1} == "-" || ${val} == "" ]] ; then
+         echo "Argument for --variant|-v VARIANT is missing"
+         echo; usage; exit 1
+        fi
+        variant=${val}
+        [[ $without_equal_sign == true ]] && shift
+        ;;
       --launch)
         if [[ ${val::1} == "-" || ${val} == "" ]] ; then
          echo "Argument for --launch|-l LAUNCH_CMD is missing"
@@ -167,6 +177,10 @@ if [[ ${run_dir} != "" ]]; then
     fi
   fi
   RUN_DIR=${run_dir}
+fi
+
+if [[ ${variant} != "" ]]; then
+export MODEL=${CHIEF:-${ECWAM_PROJECT_NAME}-chief-${variant}}
 fi
 
 if [[ ${do_check_completed} == true ]]; then

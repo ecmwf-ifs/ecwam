@@ -23,6 +23,14 @@ foreach( program
 
 endforeach()
 
+if( HAVE_WAM_LOKI )
+    ecbuild_add_executable(
+        TARGET          ${PROJECT_NAME}-chief-loki-idem
+        SOURCES         chief.F90
+        LIBS            ${PROJECT_NAME}_idem ${OpenMP_Fortran_LIBRARIES}
+    )
+    ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-chief-loki-idem)
+endif()
 
 string( TOUPPER ${PROJECT_NAME} PNAME )
 foreach( lang Fortran C CXX )

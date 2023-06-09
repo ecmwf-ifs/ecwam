@@ -55,7 +55,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE TAU_PHI_HF_MOD, ONLY : MEANSQS_GC
+      USE MEANSQS_GC_MOD, ONLY : MEANSQS_GC
 
 ! ----------------------------------------------------------------------
 
