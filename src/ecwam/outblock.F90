@@ -77,6 +77,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
 
 #include "cal_second_order_spec.intfb.h"
 #include "cimsstrn.intfb.h"
+#include "ctcor.intfb.h"
 #include "femean.intfb.h"
 #include "intpol.intfb.h"
 #include "kurtosis.intfb.h"
@@ -634,9 +635,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-!!!for testing
-        XMODEL_CUTOFF = (ZPI*FR(NFRE))**2/G
-        CALL MEANSQS (XMODEL_CUTOFF, KIJS, KIJL, FL1, WAVNUM, UFRIC, COSWDIF, BOUT(KIJS,ITOBOUT(IR)))
+        CALL CTCOR (KIJS, KIJL, FL1, BOUT(KIJS,ITOBOUT(IR)))
       ENDIF
 
 

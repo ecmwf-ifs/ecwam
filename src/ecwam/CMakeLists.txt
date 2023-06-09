@@ -62,6 +62,7 @@ list( APPEND ecwam_srcs
   cireduce.F90
   ciwabr.F90
   ciwaf.F90
+  ctcor.F90
   ctuw.F90
   ctuwdrv.F90
   ctuwini.F90
@@ -259,8 +260,12 @@ list( APPEND ecwam_srcs
   vmin_d.F90
   vplus.F90
   vplus_d.F90
+  w_cdf.F90
+  w_cdfmax.F90
   w_maxh.F90
   w_mode_st.F90
+  w_pdf.F90
+  w_pmax.F90
   wam_multio_mod.F90
   wam_nproma.F90
   wam_sorti.F90
