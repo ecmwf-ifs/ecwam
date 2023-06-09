@@ -189,6 +189,18 @@
 
 ! ----------------------------------------------------------------------
 
+!*    8. WRITE MODULE YOWSHAL.
+!        --------------------
+
+      IF (IFORM /= 2) THEN
+        WRITE (IU07) BATHY
+      ENDIF
+      IF (IFORM /= 1) THEN
+        WRITE (IU17,999) BATHY
+      ENDIF
+
+! ----------------------------------------------------------------------
+
 !*   11. WRITE NAMELIST PARWAM.
 !        ----------------------
 !     NBINP NOUTT have no meaning here since the size of the arrays
