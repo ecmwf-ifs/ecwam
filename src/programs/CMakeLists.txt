@@ -30,6 +30,13 @@ if( HAVE_WAM_LOKI )
         LIBS            ${PROJECT_NAME}_idem ${OpenMP_Fortran_LIBRARIES}
     )
     ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-chief-loki-idem)
+
+    ecbuild_add_executable(
+        TARGET          ${PROJECT_NAME}-chief-loki-idem-stack
+        SOURCES         chief.F90
+        LIBS            ${PROJECT_NAME}_idem_stack ${OpenMP_Fortran_LIBRARIES}
+    )
+    ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-chief-loki-idem-stack)
 endif()
 
 string( TOUPPER ${PROJECT_NAME} PNAME )
