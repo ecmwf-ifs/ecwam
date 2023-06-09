@@ -257,28 +257,22 @@ list( APPEND ecwam_srcs
   wvwaminit.F90
   wvwaminit1.F90
   yowabort.F90
-  yowaltas.F90
   yowassi.F90
   yowcard.F90
   yowcinp.F90
   yowcoer.F90
   yowconst_2nd.F90
-  yowcoup.F90
-  yowcout.F90
   yowcpbo.F90
   yowcurg.F90
   yowcurr.F90
   yowdes.F90
   yowdrvtype.F90
   yowfpbo.F90
-  yowfred.F90
   yowgrib.F90
   yowgrib_handles.F90
   yowgribhd.F90
   yowgrid.F90
   yowgstats.F90
-  yowice.F90
-  yowindn.F90
   yowintp.F90
   yowjons.F90
   yowmap.F90
@@ -287,25 +281,34 @@ list( APPEND ecwam_srcs
   yowmpp.F90
   yownemoflds.F90
   yownemoio.F90
-  yowparam.F90
-  yowpcons.F90
-  yowphys.F90
   yowprproc.F90
   yowrefd.F90
   yowshal.F90
   yowspec.F90
   yowsphere.F90
-  yowstat.F90
-  yowtabl.F90
   yowtemp.F90
-  yowtest.F90
   yowtext.F90
   yowtrains.F90
   yowubuf.F90
   yowunit.F90
   yowwami.F90
-  yowwind.F90
-  yowwndg.F90
+)
+
+list(APPEND globalvar_mods
+     yowaltas.F90
+     yowcoup.F90
+     yowcout.F90
+     yowfred.F90
+     yowice.F90
+     yowindn.F90
+     yowparam.F90
+     yowpcons.F90
+     yowphys.F90
+     yowstat.F90
+     yowtabl.F90
+     yowtest.F90
+     yowwind.F90
+     yowwndg.F90
 )
 
 list(APPEND phys_srcs
@@ -423,7 +426,7 @@ ecbuild_add_library(
     TARGET           ${ecwam}
     TYPE             ${LIBRARY_TYPE}
     DEFINITIONS      ${ECWAM_DEFINITIONS}
-    SOURCES          ${ecwam_srcs} ${phys_srcs}
+    SOURCES          ${ecwam_srcs} ${phys_srcs} ${globalvar_mods}
     PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                      ${MPI_Fortran_LIBRARIES}
                      ${${PNAME}_OCEANMODEL_LIBRARIES}
@@ -482,7 +485,7 @@ if( HAVE_WAM_LOKI )
          TARGET           ${ecwam}_idem
          TYPE             ${LIBRARY_TYPE}
          DEFINITIONS      ${ECWAM_DEFINITIONS}
-         SOURCES          ${ecwam_srcs} ${loki_idem_srcs} ${phys_srcs}
+         SOURCES          ${ecwam_srcs} ${loki_idem_srcs} ${phys_srcs} ${globalvar_mods}
          PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                           ${MPI_Fortran_LIBRARIES}
                           ${${PNAME}_OCEANMODEL_LIBRARIES}
@@ -526,7 +529,7 @@ if( HAVE_WAM_LOKI )
          TARGET           ${ecwam}_idem_stack
          TYPE             ${LIBRARY_TYPE}
          DEFINITIONS      ${ECWAM_DEFINITIONS}
-         SOURCES          ${ecwam_srcs} ${loki_idem_stack_srcs} ${phys_srcs}
+         SOURCES          ${ecwam_srcs} ${loki_idem_stack_srcs} ${phys_srcs} ${globalvar_mods}
          PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                           ${MPI_Fortran_LIBRARIES}
                           ${${PNAME}_OCEANMODEL_LIBRARIES}
