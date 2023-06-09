@@ -39,6 +39,15 @@ if( HAVE_WAM_LOKI )
     ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-chief-loki-idem-stack)
 endif()
 
+if( HAVE_WAM_LOKI_GPU )
+    ecbuild_add_executable(
+        TARGET          ${PROJECT_NAME}-chief-loki-scc
+        SOURCES         chief.F90
+        LIBS            ${PROJECT_NAME}_scc ${OpenMP_Fortran_LIBRARIES}
+    )
+    ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-chief-loki-scc)
+endif()
+
 string( TOUPPER ${PROJECT_NAME} PNAME )
 foreach( lang Fortran C CXX )
     set( ${lang}_flags "${CMAKE_${lang}_FLAGS} ${CMAKE_${lang}_FLAGS_${CMAKE_BUILD_TYPE_CAPS}} ${${PNAME}_${lang}_FLAGS} ${${PNAME}_${lang}_FLAGS_${CMAKE_BUILD_TYPE_CAPS}}" )

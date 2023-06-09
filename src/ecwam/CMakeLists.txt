@@ -287,6 +287,7 @@ list( APPEND ecwam_srcs
   yowspec.F90
   yowsphere.F90
   yowtemp.F90
+  yowtest.F90
   yowtext.F90
   yowtrains.F90
   yowubuf.F90
@@ -294,7 +295,7 @@ list( APPEND ecwam_srcs
   yowwami.F90
 )
 
-list(APPEND globalvar_mods
+list(APPEND global_var_mods
      yowaltas.F90
      yowcoup.F90
      yowcout.F90
@@ -306,7 +307,6 @@ list(APPEND globalvar_mods
      yowphys.F90
      yowstat.F90
      yowtabl.F90
-     yowtest.F90
      yowwind.F90
      yowwndg.F90
 )
@@ -344,14 +344,9 @@ list(APPEND phys_srcs
      taut_z0.F90
      transf.F90
      transf_snl.F90
-     wamintgr.F90
      wnfluxes.F90
      z0wave.F90
 )
-
-if( HAVE_WAM_LOKI_GPU )
-  list(APPEND ECWAM_DEFINITIONS WAM_PHYS_GPU )
-endif()
 
 if( HAVE_GEN_DERIV_TYPES )
    list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
@@ -422,15 +417,17 @@ if( HAVE_ACC )
   set( LIBRARY_TYPE STATIC )
 endif()
 
+##############################################################
+##  Default ecWam variant compiled from original CPU source ##
+##############################################################
 ecbuild_add_library(
     TARGET           ${ecwam}
     TYPE             ${LIBRARY_TYPE}
     DEFINITIONS      ${ECWAM_DEFINITIONS}
-    SOURCES          ${ecwam_srcs} ${phys_srcs} ${globalvar_mods}
+    SOURCES          ${ecwam_srcs} wamintgr.F90 ${phys_srcs} ${global_var_mods}
     PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                      ${MPI_Fortran_LIBRARIES}
                      ${${PNAME}_OCEANMODEL_LIBRARIES}
-#                     $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
     PRIVATE_LIBS     eccodes_f90
                      ${MULTIO_LIBRARIES}
                      ${OpenMP_Fortran_LIBRARIES}
@@ -447,11 +444,11 @@ ecwam_target_fortran_module_directory(
 
 ecwam_target_compile_definitions_FILENAME( ${ecwam} )
 
+
 ### The file mubuf.F90, which is only used for "preproc" is sensitive to optimisations
 #   possibly leading to different wam_grid_<1,2,3> files.
 #   This in turn leads to non-neglibible differences
 #   of average 'swh' when running "chief".
-
 if( CMAKE_Fortran_COMPILER_ID MATCHES Intel )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
 elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
@@ -465,7 +462,7 @@ if( HAVE_WAM_LOKI )
 ##  Loki Idempotence mode:                                ##
 ##   * Internal "do-nothing" mode for Loki debug          ##
 ############################################################
-     foreach(src ${phys_srcs} )
+     foreach(src ${phys_srcs} wamintgr.F90)
         string(REPLACE ".F90" "" fnc ${src})
         string(CONCAT fnm "loki-idem/" ${fnc} ".idem.F90")
         list(APPEND loki_idem_srcs ${fnm})
@@ -485,7 +482,7 @@ if( HAVE_WAM_LOKI )
          TARGET           ${ecwam}_idem
          TYPE             ${LIBRARY_TYPE}
          DEFINITIONS      ${ECWAM_DEFINITIONS}
-         SOURCES          ${ecwam_srcs} ${loki_idem_srcs} ${phys_srcs} ${globalvar_mods}
+         SOURCES          ${ecwam_srcs} ${loki_idem_srcs} ${phys_srcs} ${global_var_mods}
          PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                           ${MPI_Fortran_LIBRARIES}
                           ${${PNAME}_OCEANMODEL_LIBRARIES}
@@ -509,7 +506,7 @@ if( HAVE_WAM_LOKI )
 ##  Idempotence mode with pool-allocator for temporaries: ##
 ##   * Internal "do-nothing" mode for Loki debug          ##
 ############################################################
-     foreach(src ${phys_srcs} )
+     foreach(src ${phys_srcs} wamintgr.F90)
         string(REPLACE ".F90" "" fnc ${src})
         string(CONCAT fnm "loki-idem-stack/" ${fnc} ".idem_stack.F90")
         list(APPEND loki_idem_stack_srcs ${fnm})
@@ -529,7 +526,7 @@ if( HAVE_WAM_LOKI )
          TARGET           ${ecwam}_idem_stack
          TYPE             ${LIBRARY_TYPE}
          DEFINITIONS      ${ECWAM_DEFINITIONS}
-         SOURCES          ${ecwam_srcs} ${loki_idem_stack_srcs} ${phys_srcs} ${globalvar_mods}
+         SOURCES          ${ecwam_srcs} ${loki_idem_stack_srcs} ${phys_srcs} ${global_var_mods}
          PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                           ${MPI_Fortran_LIBRARIES}
                           ${${PNAME}_OCEANMODEL_LIBRARIES}
@@ -551,5 +548,56 @@ if( HAVE_WAM_LOKI )
 
      if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
          target_compile_options( ${ecwam}_idem_stack PUBLIC "-Mcray=pointer" )
+     endif()
+endif()
+
+if( HAVE_WAM_LOKI_GPU )
+############################################################
+##  Loki SCC transformation:                              ##
+############################################################
+
+     foreach(src ${phys_srcs} wamintgr_loki_gpu.F90 ${global_var_mods})
+        string(REPLACE ".F90" "" fnc ${src})
+        string(CONCAT fnm "loki-scc/" ${fnc} ".scc.F90")
+        list(APPEND loki_scc_srcs ${fnm})
+     endforeach()
+
+     loki_transform_convert(
+         MODE scc FRONTEND "fp" CPP GLOBAL_VAR_OFFLOAD TRIM_VECTOR_SECTIONS
+         CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config
+         PATH ${CMAKE_CURRENT_SOURCE_DIR}
+         INCLUDES ${ecwam_intfb_includes}
+         OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-scc
+         OUTPUT ${loki_scc_srcs}
+         DEPENDS ${phys_srcs} wamintgr_loki_gpu.F90 ${global_var_mods}
+     )
+
+     ecbuild_add_library(
+     	TARGET           ${ecwam}_scc
+     	TYPE             ${LIBRARY_TYPE}
+     	DEFINITIONS      ${ECWAM_DEFINITIONS} WAM_PHYS_GPU
+     	SOURCES          ${ecwam_srcs} ${loki_scc_srcs} ${phys_srcs}
+     	PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
+     					 ${MPI_Fortran_LIBRARIES}
+     					 ${${PNAME}_OCEANMODEL_LIBRARIES}
+                         $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
+     	PRIVATE_LIBS     eccodes_f90
+     					 ${MULTIO_LIBRARIES}
+     					 ${OpenMP_Fortran_LIBRARIES}
+     					 $<${HAVE_FIELD_API}:field_api_${prec}>
+     	PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
+     	PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}
+     )
+     
+     ecwam_target_fortran_module_directory(
+     	TARGET ${ecwam}_scc
+     	MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/${ecwam}_scc
+     	INSTALL_DIRECTORY module/${ecwam}_scc
+     )
+     
+     ecwam_target_compile_definitions_FILENAME( ${ecwam}_scc )
+     
+     if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
+     	target_compile_options( ${ecwam}_scc PUBLIC "-gpu=gvmode" )
      endif()
 endif()
