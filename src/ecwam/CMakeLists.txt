@@ -459,3 +459,20 @@ elseif( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-Mnofma" )
 endif()
 
+if( HAVE_WAM_LOKI )
+############################################################
+##  Idempotence mode with pool-allocator for temporaries: ##
+##   * Internal "do-nothing" mode for Loki debug          ##
+############################################################
+
+     loki_transform_convert(
+         MODE idem-stack FRONTEND "FP" CPP
+         CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config
+         PATH ${CMAKE_CURRENT_SOURCE_DIR}
+         INCLUDES ${ecwam_intfb_includes}
+         OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-idem-stack
+         OUTPUT loki-idem-stack/cloudsc.idem_stack.F90 loki-idem-stack/cloudsc_driver_loki_mod.idem_stack.F90
+         DEPENDS cloudsc.F90 cloudsc_driver_loki_mod.F90
+     )
+
+endif()
