@@ -32,6 +32,5 @@
 !                            1= RECTANGULAR,EQUIDISTANT LON/LAT GRID.
 !                            2= .......NOT IMPLEMENTED.
 ! ----------------------------------------------------------------------
-!$acc declare create( icode_cpl )
-!$acc declare create( icode )
+
       END MODULE YOWWNDG

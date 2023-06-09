@@ -251,9 +251,4 @@
 !      *CMETER*   CHARACTER  SMS or ECFLOW meter command (ECMWF supervisor)
 !      *CEVENT*   CHARACTER  SMS or ECFLOW event command (ECMWF supervisor)
 ! ----------------------------------------------------------------------
-!$acc declare create( idamping )
-!$acc declare create( iphys )
-!$acc declare create( lbiwbk )
-!$acc declare create( isnonlin )
-!$acc declare create( idelt )
       END MODULE YOWSTAT

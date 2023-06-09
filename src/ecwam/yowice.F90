@@ -72,12 +72,4 @@
 !                            ARE RESET TO WHAT WOULD BE USED IF THERE WERE NO WAVE MODELS.
 !     LCIWABR      LOGICAL   SET TO TRUE IF SEA ICE BOTTOM FRICTION ATTENUATION IS USED.
 !--------------------------------------------------------------------
-!$acc declare create( cithrsh )
-!$acc declare create( lwamrsetci )
-!$acc declare create( licerun )
-!$acc declare create( cithrsh_tail )
-!$acc declare create( ciblock )
-!$acc declare create( cdicwa )
-!$acc declare create( lmaskice )
-!$acc declare create( lciwabr )
       END MODULE YOWICE
