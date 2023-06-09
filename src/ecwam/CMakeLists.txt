@@ -45,9 +45,7 @@ install( DIRECTORY ${ecwam_intfb_includes}/
 list( APPEND ecwam_srcs
   abort1.F90
   adjust.F90
-  airsea.F90
   aki.F90
-  aki_ice.F90
   alphap_tail.F90
   bouinpt.F90
   buildstress.F90
@@ -56,11 +54,8 @@ list( APPEND ecwam_srcs
   check.F90
   checkcfl.F90
   chkoops.F90
-  chnkmin.F90
   cigetdeac.F90
-  cimsstrn.F90
   cireduce.F90
-  ciwabr.F90
   ciwaf.F90
   ctuw.F90
   ctuwdrv.F90
@@ -71,13 +66,10 @@ list( APPEND ecwam_srcs
   dominant_period.F90
   expand_string.F90
   femean.F90
-  femeanws.F90
   file_transfer.F90
   findb.F90
-  fkmean.F90
   fldinter.F90
   fndprt.F90
-  frcutindex.F90
   gc_dispersion.h
   get_preset_wgrib_template.F90
   getcurr.F90
@@ -90,10 +82,7 @@ list( APPEND ecwam_srcs
   grstname.F90
   gsfile_new.F90
   h_max.F90
-  halphap.F90
   headbc.F90
-  imphftail.F90
-  implsch.F90
   incdate.F90
   inisnonlin.F90
   init_fieldg.F90
@@ -154,7 +143,6 @@ list( APPEND ecwam_srcs
   newwind.F90
   nlweigt.F90
   notim.F90
-  ns_gc.F90
   out_onegrdpt.F90
   out_onegrdpt_sp.F90
   outbc.F90
@@ -179,7 +167,6 @@ list( APPEND ecwam_srcs
   parkind_wave.F90
   parmean.F90
   peak.F90
-  peak_ang.F90
   peak_freq.F90
   peakfri.F90
   preset_wgrib_template.F90
@@ -202,13 +189,7 @@ list( APPEND ecwam_srcs
   runwam.F90
   savspec.F90
   savstress.F90
-  sbottom.F90
   scosfl.F90
-  sdepthlim.F90
-  sdissip.F90
-  sdissip_ard.F90
-  sdissip_jan.F90
-  sdiwbk.F90
   se10mean.F90
   sebtmean.F90
   second_order_lib.F90
@@ -219,33 +200,20 @@ list( APPEND ecwam_srcs
   sep3tr.F90
   sepwisw.F90
   set_wflags.F90
-  setice.F90
   setmarstype.F90
   setwavphys.F90
-  sinflx.F90
-  sinput.F90
-  sinput_ard.F90
   skewness.F90
-  snonlin.F90
   spectra.F90
   spr.F90
   stack_mod.F90
   stat_nl.F90
   sthq.F90
-  stokesdrift.F90
-  stokestrn.F90
-  stress_gc.F90
-  stresso.F90
   strspec.F90
   tables_2nd.F90
   tabu_swellft.F90
-  tau_phi_hf.F90
-  taut_z0.F90
   topoar.F90
-  transf.F90
   transf_bfi.F90
   transf_r.F90
-  transf_snl.F90
   uibou.F90
   uiprep.F90
   unsetice.F90
@@ -278,7 +246,6 @@ list( APPEND ecwam_srcs
   wgribencode_model.F90
   wgribenout.F90
   wgribout.F90
-  wnfluxes.F90
   wposnam.F90
   writefl.F90
   writestress.F90
@@ -341,10 +308,47 @@ list( APPEND ecwam_srcs
   yowwami.F90
   yowwind.F90
   yowwndg.F90
-  z0wave.F90
 )
 
-if( HAVE_WAM_PHYS_GPU )
+list(APPEND phys_srcs
+     airsea.F90
+     aki_ice.F90
+     chnkmin.F90
+     cimsstrn.F90
+     ciwabr.F90
+     femeanws.F90
+     fkmean.F90
+     frcutindex.F90
+     halphap.F90
+     imphftail.F90
+     implsch.F90
+     ns_gc.F90
+     peak_ang.F90
+     sbottom.F90
+     sdepthlim.F90
+     sdissip.F90
+     sdissip_ard.F90
+     sdissip_jan.F90
+     sdiwbk.F90
+     setice.F90
+     sinflx.F90
+     sinput.F90
+     sinput_ard.F90
+     snonlin.F90
+     stokesdrift.F90
+     stokestrn.F90
+     stress_gc.F90
+     stresso.F90
+     tau_phi_hf.F90
+     taut_z0.F90
+     transf.F90
+     transf_snl.F90
+     wnfluxes.F90
+     z0wave.F90
+)
+list(APPEND ecwam_srcs ${phys_srcs})
+
+if( HAVE_WAM_LOKI_GPU )
   list(APPEND ECWAM_DEFINITIONS WAM_PHYS_GPU )
 endif()
 

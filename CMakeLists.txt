@@ -59,6 +59,8 @@ ecbuild_add_option( FEATURE FIELD_API
                     DESCRIPTION "Build using field_api"
                     REQUIRED_PACKAGES "field_api" )
 
+ecbuild_find_package( NAME loki )
+
 if( HAVE_ECWAM_LAUNCH )
   # Overwrite meaning of mpiexec
   set( ECWAM_LAUNCH ${CMAKE_CURRENT_SOURCE_DIR}/share/ecwam/scripts/ecwam-launch )
@@ -97,15 +99,21 @@ if( OpenACC_Fortran_FOUND AND OpenACC_C_FOUND )
   set( OpenACC_FOUND ON )
 endif()
 ecbuild_add_option( FEATURE ACC
-                    DESCRIPTION "OpenACC" DEFAULT OFF
+                    DESCRIPTION "OpenACC" DEFAULT ON
                     REQUIRED_PACKAGES "OpenACC" 
                     CONDITION CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" )
 
-### Compute ecWam physics on the GPU
-ecbuild_add_option( FEATURE WAM_PHYS_GPU
+### Apply Loki source-to-source transformations to the ecWam physics
+ecbuild_add_option( FEATURE WAM_LOKI
                     DEFAULT OFF
-                    DESCRIPTION "Run ecWam with physics offloaded to the GPU"
-                    CONDITION HAVE_ACC AND HAVE_FIELD_API )
+                    DESCRIPTION "Apply Loki transformations to ecWam physics"
+                    CONDITION HAVE_LOKI )
+
+### Apply Loki source-to-source transformations to the ecWam physics with GPU offload
+ecbuild_add_option( FEATURE WAM_LOKI_GPU
+                    DEFAULT OFF
+                    DESCRIPTION "Apply Loki transformations to ecWam physics with GPU offload"
+                    CONDITION HAVE_ACC AND HAVE_FIELD_API AND HAVE_LOKI )
 
 ### Sources
 

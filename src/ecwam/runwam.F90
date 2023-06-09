@@ -384,10 +384,15 @@
       WRITE (IU06,'(A,F18.2,A)') ' + ', time, '         +'
       WRITE (IU06,'(A)') ' + WAVE PROPAGATION TIME      +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', time1(1), '         +'
+#ifdef WAM_PHYS_GPU
       WRITE (IU06,'(A)') ' + SOURCE TERM TOTAL TIME     +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', time1(3), '         +'
       WRITE (IU06,'(A)') ' + SOURCE TERM KERNEL TIME    +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', time1(2), '         +'
+#else
+      WRITE (IU06,'(A)') ' + SOURCE TERM TIME           +'
+      WRITE (IU06,'(A,F18.2,A)') ' + ', time1(2), '         +'
+#endif
       WRITE (IU06,'(A)') ' +                            +'
       WRITE (IU06,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
       WRITE (IU06,'(A)') ' ++++++++++++++++++++++++++++++'
@@ -397,10 +402,15 @@
         WRITE (6,'(A,F18.2,A)') ' + ', time, '         +'
         WRITE (6,'(A)') ' + WAVE PROPAGATION TIME      +'
         WRITE (6,'(A,F18.2,A)') ' + ', time1(1), '         +'
+#ifdef WAM_PHYS_GPU
         WRITE (6,'(A)') ' + SOURCE TERM TOTAL TIME     +'
         WRITE (6,'(A,F18.2,A)') ' + ', time1(3), '         +'
         WRITE (6,'(A)') ' + SOURCE TERM KERNEL TIME    +'
         WRITE (6,'(A,F18.2,A)') ' + ', time1(2), '         +'
+#else
+        WRITE (6,'(A)') ' + SOURCE TERM TIME           +'
+        WRITE (6,'(A,F18.2,A)') ' + ', time1(2), '         +'
+#endif
         WRITE (6,'(A)') ' +                            +'
         WRITE (6,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
         WRITE (6,'(A)') ' ++++++++++++++++++++++++++++++'
