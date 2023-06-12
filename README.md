@@ -47,6 +47,7 @@ Further optional dependencies:
 - ocean model (e.g. NEMO or FESOM)
 - fypp (see https://github.com/aradi/fypp)
 - field_api (see https://git.ecmwf.int/projects/RDX/repos/field_api/browse)
+- loki (see https://github.com/ecmwf-ifs/loki)
 
 Some driver scripts to run tests and validate results rely on availability of:
 - md5sum (part of GNU Coreutils; on MacOS, install with `brew install coreutils`)
@@ -197,34 +198,34 @@ Note that only `ecwam-run-model` currently supports MPI.
 
 Running with source-term computation offloaded to the GPU
 =========================================================
-
-ecWam can be run with the source-term computation offloaded to the GPU. Please note that this is under active development
-and will change frequently.
+ECMWF's source-to-source translation toolchain Loki can now be used to create variants of ecWam in which the source-term computation
+is offloaded to the GPU. Please note that this feature is under active development and will change frequently.
 
 Building
 --------
+The [ecwam-bundle](https://git.ecmwf.int/users/nawd/repos/ecwam-bundle/browse?at=refs%2Fheads%2Fnaan-phys-loki) is the recommended build option
+for performing Loki transformations on ecWam. The option `--with-loki-gpu` has to be specified at the build step. The Loki transformations
+currently supported are (in ascending order of performance):
 
-The [ecwam-bundle](https://git.ecmwf.int/users/nawd/repos/ecwam-bundle/browse?at=refs%2Fheads%2Fnaan-phys-gpu) is the recommended build option
-for the ecWam GPU enabled variant. The option `--with-phys-gpu` has to be specified at the build step. Arch files are provided for the nvhpc 
-suite on the ECMWF ATOS system.
+- Single-column-coalesced (scc): Fuse vector loops and promote to the outermost level to target the SIMT execution model
+- scc-stack: The scc transformation with a pool allocator used to allocate temporary arrays
+
+Arch files are provided for the nvhpc suite on the ECMWF ATOS system.
+
+Running
+-------
+Once built, the Loki transformed variants can be run by passing an additional argument to the runner script:
+```shell
+ecwam-run-model --run-dir=<run-dir> --config=<path-to-config.yml> --variant=loki-<scc/scc-stack>
+```
 
 Environment variables
 ---------------------
 
-In its current guise, the CUDA runtime is used to manage temporary arrays and needs a large `NV_ACC_CUDA_HEAPSIZE`, e.g.
+The loki-scc variant uses the CUDA runtime to manage temporary arrays and needs a large `NV_ACC_CUDA_HEAPSIZE`, e.g.
 `NV_ACC_CUDA_HEAPSIZE=8G`.
 
-Currently, the nvhpc compiler suite cannot be used with the hpcx-openmpi suite and must instead use the version of openmpi
-bundled within. It's location is specified via the `MPI_HOME` environment variable at build-time. At run-time, we must
-specify the location of the `mpirun` executable manually, even if running with one process. This can be done via either of
-the following two options:
-```
-export LAUNCH="$MPI_HOME/bin/mpirun -np 1"
-export LAUNCH="srun -n 1"
-```
-
-Please note that `env.sh` must be sourced to set `MPI_HOME`. For running with multiple OpenMP threads and grids finer than `O48`, 
-`OMP_STACKSIZE` should be set to at least `256M`.
+For running with multiple OpenMP threads and grids finer than `O48`, `OMP_STACKSIZE` should be set to at least `256M`.
 
 Known issues
 ============
