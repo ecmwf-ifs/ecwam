@@ -134,7 +134,7 @@ PROGRAM preproc
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NIBLO    ,NIBLD    ,NIBLC    ,              &
+      USE YOWPARAM , ONLY : NIBLO    ,                                  &
      &            NANG     ,NFRE     ,NFRE_RED ,LLUNSTR
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
@@ -389,9 +389,6 @@ PROGRAM preproc
         CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
 #endif
       END IF ! LLUNSTR
-
-      NIBLD=0
-      NIBLC=0
 
 !*    5.3 COMPUTE OUTPUT POINT INDICES (MODULE YOWCOUT).
 !         ----------------------------------------------

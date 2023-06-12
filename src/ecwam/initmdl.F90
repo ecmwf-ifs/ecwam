@@ -184,7 +184,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
      &                      NGX      ,NGY      ,                        &
-     &                      NIBLO    ,NIBLD    ,NIBLC    ,LLUNSTR
+     &                      NIBLO    ,LLUNSTR
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
      &                      RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
       USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
@@ -861,16 +861,6 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
 ! ----------------------------------------------------------------------
 
-
-!*    8.2  PRECOMPUTE BOTTOM REFRACTION TERMS.
-!          -----------------------------------
-      IF (IREFRA /= 0) THEN
-        NIBLD=NIBLO
-        NIBLC=NIBLO
-      ELSE
-        NIBLD=0
-        NIBLC=0
-      ENDIF
 
 !     INITIALISE CDTCUR
       CDTCUR=CDATECURA

@@ -53,14 +53,13 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
      &            IJS      ,IJL
-      USE YOWMAP   , ONLY : NX       ,NY       ,              &
+      USE YOWMAP   , ONLY : NX       ,NY       ,                        &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG  ,    &
      &            IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
-     &            NGX      ,NGY      ,                                  &
-     &            NOVER    ,NIBL1    ,CLDOMAIN
+     &            NGX      ,NGY      ,CLDOMAIN
       USE YOWSHAL  , ONLY : BATHY
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -73,7 +72,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ISEND
       INTEGER(KIND=JWIM), INTENT(INOUT) :: ITAG
-      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=8
+      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=6
       INTEGER(KIND=JWIM) :: I, J, IJ, K, K1, K2, M, M1, M2, IC, L, KDEPTH, NGOU 
       INTEGER(KIND=JWIM) :: IKCOUNT, KCOUNT
       INTEGER(KIND=JWIM) :: MIC, MZC 
@@ -109,10 +108,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NGY
           IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=NOVER
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=NIBL1
-          IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=ICHAR(CLDOMAIN)
           IF (IKCOUNT /= MFIRST) THEN
             WRITE (IU06,*) '**************************'
@@ -140,10 +135,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           NGX=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           NGY=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
-          NOVER=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
-          NIBL1=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           CLDOMAIN=CHAR(ICOMBUF(IKCOUNT))
           IF (IKCOUNT /= MFIRST) THEN

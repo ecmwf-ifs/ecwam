@@ -70,7 +70,7 @@ SUBROUTINE READPRE (IU07)
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
      &            NGX      ,NGY      ,LLR8TOR4 ,LLUNSTR  ,              &
-     &            NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,IMDLGRDID
+     &            NIBLO    ,CLDOMAIN ,IMDLGRDID
       USE YOWSHAL  , ONLY : BATHY    ,LLOCEANMASK
       USE YOWTEST  , ONLY : IU06
       USE YOWABORT, ONLY : WAM_ABORT
@@ -310,9 +310,7 @@ SUBROUTINE READPRE (IU07)
      &        ', KIND(DELPHI)=',KIND(DELPHI),', LLR8TOR4=',LLR8TOR4
  1002    FORMAT(2X,A,I0,A,I0,A,L1)
       CASE(2)
-         READ(IU07,IOSTAT=ISTAT)                                        &
-     &        NANG, NFRE, NFRE_RED, NGX, NGY, NOVER,             &
-     &        NIBL1, IDUM, KIBLD, KIBLC, CLDOMAIN
+         READ(IU07,IOSTAT=ISTAT) NANG, NFRE, NFRE_RED, NGX, NGY, CLDOMAIN
          IF (ISTAT /= 0) GOTO 1000
       CASE(3)
          IF (LLR8TOR4) THEN

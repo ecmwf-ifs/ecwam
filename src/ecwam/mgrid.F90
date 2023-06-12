@@ -47,8 +47,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,              &
-     &                      NOVER    ,NIBL1
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWMAP   , ONLY : NY       ,NLONRGG
 
 ! ----------------------------------------------------------------------
@@ -100,8 +99,5 @@
         ENDIF
       ENDDO
       CALL MBLOCK (BATHY, KA, NY, IPP)
-
-        NOVER=1
-        NIBL1=1
 
       END SUBROUTINE MGRID

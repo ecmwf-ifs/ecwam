@@ -71,8 +71,7 @@
       USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M 
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED  ,             &
      &            NGX      ,NGY      ,                                  &
-     &            NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,              &
-     &            NIBLC    ,CLDOMAIN ,IMDLGRDID,LLUNSTR
+     &            NIBLO    ,CLDOMAIN ,IMDLGRDID,LLUNSTR 
       USE YOWCPBO  , ONLY : NBOUNC
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
@@ -99,9 +98,7 @@
       REAL(KIND=JWRB), INTENT(IN) :: BATHY(NGX, NGY)
 
       INTEGER(KIND=JWIM) :: IDUM, K, M, L
-      INTEGER(KIND=JWIM) :: NBINP, NOUTT
       INTEGER(KIND=JWIM) :: NKIND !Precision used when writing
-      INTEGER(KIND=JWIM) :: NGOUT_dum, KFRH_dum, MFRSTLW_dum, MLSTHG_dum, NDEPTH_dum
 
 ! ----------------------------------------------------------------------
 
@@ -130,12 +127,10 @@
       IDUM=0
 
       IF (IFORM /= 2) THEN
-        WRITE(IU07) NANG, NFRE, NFRE_RED, NGX, NGY, NOVER,       &
-     &              NIBL1, IDUM, NIBLD, NIBLC, CLDOMAIN
+        WRITE(IU07) NANG, NFRE, NFRE_RED, NGX, NGY, CLDOMAIN
       ENDIF
       IF (IFORM /= 1) THEN
-        WRITE(IU17,997) NANG, NFRE, NFRE_RED, NGX, NGY, NOVER,   &
-     &              NIBL1, IDUM, NIBLD, NIBLC, CLDOMAIN
+        WRITE(IU17,997) NANG, NFRE, NFRE_RED, NGX, NGY, CLDOMAIN 
       ENDIF
 
 
@@ -203,23 +198,8 @@
 
 !*   11. WRITE NAMELIST PARWAM.
 !        ----------------------
-!     NBINP NOUTT have no meaning here since the size of the arrays
-!     will be determined at input.
-      NBINP=-1
-      NOUTT=-1
       
-      NGOUT_dum = 0
-      KFRH_dum = 0
-      MFRSTLW_dum = 0
-      MLSTHG_dum = 0
-      NDEPTH_dum = 74
- 
-      CALL OUTNAM                                                       &
-     & (NANG, NFRE,                                                     &
-     &  NGX, NGY, NIBLO, NOVER, NGOUT_dum, NOUTT,                       &
-     &  KFRH_dum, MFRSTLW_dum, MLSTHG_dum,                              &
-     &  NBOUNC, NBOUNF, NBINP, NIBL1, NIBLD, NIBLC,                     &
-     &  ITAUMAX, JUMAX, IUSTAR, IALPHA, NDEPTH_dum, IDUM, IPER)
+      CALL OUTNAM  (NANG, NFRE, NGX, NGY, NIBLO)
 
       IF (LLUNSTR) THEN
 #ifdef WAM_HAVE_UNWAM
