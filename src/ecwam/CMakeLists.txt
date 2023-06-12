@@ -458,6 +458,7 @@ elseif( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
 endif()
 
 if( HAVE_WAM_LOKI )
+  if( HAVE_WAM_LOKI_IDEM )
 ############################################################
 ##  Loki Idempotence mode:                                ##
 ##   * Internal "do-nothing" mode for Loki debug          ##
@@ -502,6 +503,8 @@ if( HAVE_WAM_LOKI )
 
      ecwam_target_compile_definitions_FILENAME( ${ecwam}_idem )
 
+  endif()
+  if( HAVE_WAM_LOKI_IDEM_STACK )
 ############################################################
 ##  Idempotence mode with pool-allocator for temporaries: ##
 ##   * Internal "do-nothing" mode for Loki debug          ##
@@ -549,13 +552,14 @@ if( HAVE_WAM_LOKI )
      if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
          target_compile_options( ${ecwam}_idem_stack PUBLIC "-Mcray=pointer" )
      endif()
+  endif()
 endif()
 
 if( HAVE_WAM_LOKI_GPU )
+  if( HAVE_WAM_LOKI_SCC )
 ############################################################
 ##  Loki SCC transformation:                              ##
 ############################################################
-
      foreach(src ${phys_srcs} wamintgr_loki_gpu.F90 ${global_var_mods})
         string(REPLACE ".F90" "" fnc ${src})
         string(CONCAT fnm "loki-scc/" ${fnc} ".scc.F90")
@@ -600,11 +604,12 @@ if( HAVE_WAM_LOKI_GPU )
      if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
      	target_compile_options( ${ecwam}_scc PUBLIC "-gpu=gvmode" )
      endif()
+  endif()
 
+  if( HAVE_WAM_LOKI_SCC_STACK )
 ############################################################
 ##  Loki SCC with pool allocator for temporaries:         ##
 ############################################################
-
      foreach(src ${phys_srcs} wamintgr_loki_gpu.F90 ${global_var_mods})
         string(REPLACE ".F90" "" fnc ${src})
         string(CONCAT fnm "loki-scc-stack/" ${fnc} ".scc_stack.F90")
@@ -649,4 +654,5 @@ if( HAVE_WAM_LOKI_GPU )
      if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
      	target_compile_options( ${ecwam}_scc_stack PUBLIC "-gpu=gvmode;-Mcray=pointer" )
      endif()
+  endif()
 endif()
