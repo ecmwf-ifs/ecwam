@@ -600,4 +600,53 @@ if( HAVE_WAM_LOKI_GPU )
      if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
      	target_compile_options( ${ecwam}_scc PUBLIC "-gpu=gvmode" )
      endif()
+
+############################################################
+##  Loki SCC with pool allocator for temporaries:         ##
+############################################################
+
+     foreach(src ${phys_srcs} wamintgr_loki_gpu.F90 ${global_var_mods})
+        string(REPLACE ".F90" "" fnc ${src})
+        string(CONCAT fnm "loki-scc-stack/" ${fnc} ".scc_stack.F90")
+        list(APPEND loki_scc_stack_srcs ${fnm})
+     endforeach()
+
+     loki_transform_convert(
+         MODE scc-stack FRONTEND "fp" CPP GLOBAL_VAR_OFFLOAD TRIM_VECTOR_SECTIONS
+         CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config
+         PATH ${CMAKE_CURRENT_SOURCE_DIR}
+         INCLUDES ${ecwam_intfb_includes}
+         OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-scc-stack
+         OUTPUT ${loki_scc_stack_srcs}
+         DEPENDS ${phys_srcs} wamintgr_loki_gpu.F90 ${global_var_mods}
+     )
+
+     ecbuild_add_library(
+     	TARGET           ${ecwam}_scc_stack
+     	TYPE             ${LIBRARY_TYPE}
+     	DEFINITIONS      ${ECWAM_DEFINITIONS} WAM_PHYS_GPU
+     	SOURCES          ${ecwam_srcs} ${loki_scc_stack_srcs} ${phys_srcs}
+     	PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
+     					 ${MPI_Fortran_LIBRARIES}
+     					 ${${PNAME}_OCEANMODEL_LIBRARIES}
+                         $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
+     	PRIVATE_LIBS     eccodes_f90
+     					 ${MULTIO_LIBRARIES}
+     					 ${OpenMP_Fortran_LIBRARIES}
+     					 $<${HAVE_FIELD_API}:field_api_${prec}>
+     	PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
+     	PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}
+     )
+     
+     ecwam_target_fortran_module_directory(
+     	TARGET ${ecwam}_scc_stack
+     	MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/${ecwam}_scc_stack
+     	INSTALL_DIRECTORY module/${ecwam}_scc_stack
+     )
+     
+     ecwam_target_compile_definitions_FILENAME( ${ecwam}_scc_stack )
+     
+     if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
+     	target_compile_options( ${ecwam}_scc_stack PUBLIC "-gpu=gvmode;-Mcray=pointer" )
+     endif()
 endif()
