@@ -71,7 +71,7 @@
       USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M 
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED  ,             &
      &            NGX      ,NGY      ,                                  &
-     &            NIBLO    ,CLDOMAIN ,IMDLGRDID,LLUNSTR 
+     &            CLDOMAIN ,IMDLGRDID,LLUNSTR 
       USE YOWCPBO  , ONLY : NBOUNC
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
@@ -199,7 +199,7 @@
 !*   11. WRITE NAMELIST PARWAM.
 !        ----------------------
       
-      CALL OUTNAM  (NANG, NFRE, NGX, NGY, NIBLO)
+      CALL OUTNAM  (NANG, NFRE, NGX, NGY)
 
       IF (LLUNSTR) THEN
 #ifdef WAM_HAVE_UNWAM

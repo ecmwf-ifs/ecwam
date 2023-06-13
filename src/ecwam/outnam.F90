@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE OUTNAM (KNANG, KNFRE, KNGX, KNGY, KNIBLO) 
+      SUBROUTINE OUTNAM (KNANG, KNFRE, KNGX, KNGY) 
 
 ! ----------------------------------------------------------------------
 
@@ -18,13 +18,13 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: KNANG, KNFRE, KNGX, KNGY, KNIBLO
+      INTEGER(KIND=JWIM), INTENT(IN) :: KNANG, KNFRE, KNGX, KNGY
 
-      INTEGER(KIND=JWIM) :: iang, ifre, igx, igy, iiblo
+      INTEGER(KIND=JWIM) :: iang, ifre, igx, igy
 
 
 !!! it is used by Altimeter software !!!
-      NAMELIST /PARWAM/ iang, ifre, igx, igy, iiblo
+      NAMELIST /PARWAM/ iang, ifre, igx, igy
 
 
 !***  2. DETERMINE PARAMETERS NAMELIST.
@@ -34,7 +34,6 @@
       ifre    = KNFRE
       igx     = KNGX
       igy     = KNGY
-      iiblo   = KNIBLO
 
 !***  3. WRITE TO FILE.
 !     -----------------
