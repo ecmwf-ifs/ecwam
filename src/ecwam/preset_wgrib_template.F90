@@ -74,6 +74,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
                           & IGRIB_SET_VALUE, &
                           & IGRIB_GET_VALUE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULOUT
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
@@ -131,13 +132,13 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
          IGRIB_VERSION=1
 
-          WRITE(0,*) ''
-          WRITE(0,*) '*******************************************************'
-          WRITE(0,*) ' WARNING IN PRESET_WGRIB_TEMPLATE !!!!! '
-          WRITE(0,*) ' IGRIB_VERSION = 2 FOR SPECTRA NOT YET IMPLEMENTED !!! '
-          WRITE(0,*) ' REVERT TO USING GRIB 1 FOR THE SPECTRA' 
-          WRITE(0,*) '*******************************************************'
-          WRITE(0,*) ''
+          WRITE(NULERR,*) ''
+          WRITE(NULERR,*) '*******************************************************'
+          WRITE(NULERR,*) ' WARNING IN PRESET_WGRIB_TEMPLATE !!!!! '
+          WRITE(NULERR,*) ' IGRIB_VERSION = 2 FOR SPECTRA NOT YET IMPLEMENTED !!! '
+          WRITE(NULERR,*) ' REVERT TO USING GRIB 1 FOR THE SPECTRA' 
+          WRITE(NULERR,*) '*******************************************************'
+          WRITE(NULERR,*) ''
 
         ENDIF
       ENDIF
@@ -177,16 +178,16 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'editionNumber',IGRIB_VERSION_IFS, KRET=IRET)
 
         IF ( IGRIB_VERSION_IFS /= IGRIB_VERSION ) THEN
-          WRITE(0,*) ''
-          WRITE(0,*) '*************************************************************'
-          WRITE(0,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!! '
-          WRITE(0,*) ' IGRIB_VERSION_IFS is different than  IGRIB_VERSION !!!!'
-          WRITE(0,*) ' IGRIB_VERSION_IFS = ',IGRIB_VERSION_IFS
-          WRITE(0,*) ' IGRIB_VERSION     = ',IGRIB_VERSION
-          WRITE(0,*) ' For integral parameters, it can be changed in input namelist'
-          WRITE(0,*) ' See NGRIB_VERSION = ',NGRIB_VERSION
-          WRITE(0,*) '*************************************************************'
-          WRITE(0,*) ''
+          WRITE(NULERR,*) ''
+          WRITE(NULERR,*) '*************************************************************'
+          WRITE(NULERR,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!! '
+          WRITE(NULERR,*) ' IGRIB_VERSION_IFS is different than  IGRIB_VERSION !!!!'
+          WRITE(NULERR,*) ' IGRIB_VERSION_IFS = ',IGRIB_VERSION_IFS
+          WRITE(NULERR,*) ' IGRIB_VERSION     = ',IGRIB_VERSION
+          WRITE(NULERR,*) ' For integral parameters, it can be changed in input namelist'
+          WRITE(NULERR,*) ' See NGRIB_VERSION = ',NGRIB_VERSION
+          WRITE(NULERR,*) '*************************************************************'
+          WRITE(NULERR,*) ''
           CALL ABORT1
         ENDIF
 
