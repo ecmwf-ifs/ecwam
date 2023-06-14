@@ -74,7 +74,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
                           & IGRIB_SET_VALUE, &
                           & IGRIB_GET_VALUE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE EC_LUN   , ONLY : NULOUT
+      USE EC_LUN   , ONLY : NULERR
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
