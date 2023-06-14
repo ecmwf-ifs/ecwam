@@ -50,6 +50,7 @@ SUBROUTINE OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
 
       USE WAM_MULTIO_MOD, ONLY : WAM_MULTIO_FLUSH
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
       
 ! ----------------------------------------------------------------------
 
@@ -133,9 +134,9 @@ IF (LHOOK) CALL DR_HOOK('OUTSTEP0',0,ZHOOK_HANDLE)
         IF (LLUNSTR) THEN
 !!!!! this will need to be adapted to use FL1 
 !!! is it still needed ?
-        WRITE(0,*) '!!! ********************************* !!'
-        WRITE(0,*) '!!! in outstep0. Not yet ready !!!' 
-        WRITE(0,*) '!!! ********************************* !!'
+        WRITE(NULERR,*) '!!! ********************************* !!'
+        WRITE(NULERR,*) '!!! in outstep0. Not yet ready !!!' 
+        WRITE(NULERR,*) '!!! ********************************* !!'
         CALL ABORT1
 !!!!           CALL EXCHANGE_FOR_FL1(FL1)
         ENDIF

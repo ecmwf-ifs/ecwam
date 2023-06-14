@@ -65,6 +65,8 @@ SUBROUTINE INITNEMOCPL(BLK2LOC)
       USE YOWTEST  , ONLY : IU06
 ! DR. HOOK
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+! NULERR
+      USE EC_LUN   , ONLY : NULERR
 
 ! -------------------------------------------------------------------   
 
@@ -123,14 +125,14 @@ IF (LHOOK) CALL DR_HOOK('INITNEMOCPL',0,ZHOOK_HANDLE)
 
 ! CHECK FOR GLOBAL INDICES LESS THAN ZERO
       IF (MINVAL(NGLOIND) < 1) THEN
-         WRITE(0,*)'INITNEMOCPL : GLOBAL INDEX LESS THAN 1 FOUND!!!'
+         WRITE(NULERR,*)'INITNEMOCPL : GLOBAL INDEX LESS THAN 1 FOUND!!!'
          IC = 0
          DO ICHNK = 1, NCHNK
            DO IJ = 1, KIJL4CHNK(ICHNK)
              IX   = BLK2LOC%IFROMIJ(IJ,ICHNK)
              JSN  = BLK2LOC%KFROMIJ(IJ,ICHNK)
              IC = IC + 1
-             WRITE(0,*) ICHNK, IJ, IX, JSN, NLONRGG(JSN), NGLOIND(IC)
+             WRITE(NULERR,*) ICHNK, IJ, IX, JSN, NLONRGG(JSN), NGLOIND(IC)
            ENDDO
          ENDDO
          CALL ABORT1

@@ -281,20 +281,6 @@ IF (LHOOK) CALL DR_HOOK('MPFLDTOIFS',0,ZHOOK_HANDLE)
      &                        CDSTRING='MPFLDTOIFS: WAIT SEND IJ')
               ENDIF
 
-!             DO IP1=1,NPROC
-!               IF (IRANK == IP1)THEN
-!                 DO IP=1,NPROC
-!                   IF ( LTOTASK(IP)>0 .OR. LFROMTASK(IP)>0 )THEN
-!                     WRITE(0,                                    &
-!    &                  '("MPFLDTOIFS: IP=",I6," LTOTASK=",I10,   &
-!    &                  " LFROMTASK=",I10)') IP,LTOTASK(IP),      &
-!    &                  LFROMTASK(IP)
-!                   ENDIF
-!                 ENDDO
-!               ENDIF
-!               CALL MPL_BARRIER(CDSTRING='MPFLDTOIFS')
-!             ENDDO
-
             ENDIF
 
 

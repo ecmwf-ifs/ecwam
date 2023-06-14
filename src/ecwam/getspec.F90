@@ -88,6 +88,7 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
                         & JPGRIB_SUCCESS, JPGRIB_BUFFER_TOO_SMALL, &
                         & JPGRIB_END_OF_FILE, JPKSIZE_T
       USE YOWABORT, ONLY : WAM_ABORT
+      USE EC_LUN   , ONLY : NULERR
 
 ! ----------------------------------------------------------------------
 
@@ -198,13 +199,13 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
             WRITE(IU06,*)'*PROGRAM WILL ABORT                  *'
             WRITE(IU06,*)'*                                    *'
             WRITE(IU06,*)'**************************************'
-            WRITE(*,*)'**************************************'
-            WRITE(*,*)'*                                    *'
-            WRITE(*,*)'*GETSPEC : GRIB SPECTRA NOT FOUND IN *'
-            WRITE(*,*)  FILENAME
-            WRITE(*,*)'*PROGRAM WILL ABORT                  *'
-            WRITE(*,*)'*                                    *'
-            WRITE(*,*)'**************************************'
+            WRITE(NULERR,*)'**************************************'
+            WRITE(NULERR,*)'*                                    *'
+            WRITE(NULERR,*)'*GETSPEC : GRIB SPECTRA NOT FOUND IN *'
+            WRITE(NULERR,*)  FILENAME
+            WRITE(NULERR,*)'*PROGRAM WILL ABORT                  *'
+            WRITE(NULERR,*)'*                                    *'
+            WRITE(NULERR,*)'**************************************'
             CALL ABORT1
           ENDIF
         ENDIF
@@ -531,17 +532,17 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
 
               IF (NBLKS(IRANK) /= IJFROMCHNK(1,1) .OR. NBLKE(IRANK) /= IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) ) THEN
                 WRITE(IU06,*)'* GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
-                WRITE(0,*)'*************************************************************************'
-                WRITE(0,*)'* IRANK = ',IRANK
-                WRITE(0,*)'* GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
-                WRITE(0,*)'* THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
-                WRITE(0,*)'* NBLKS(IRANK) = ', NBLKS(IRANK)
-                WRITE(0,*)'* IJFROMCHNK(1,1) = ',IJFROMCHNK(1,1)
-                WRITE(0,*)'* AND OR THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
-                WRITE(0,*)'* NBLKE(IRANK) = ', NBLKE(IRANK)
-                WRITE(0,*)'* IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) = ', IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK)
-                WRITE(0,*)'*                                                                       *'
-                WRITE(0,*)'*************************************************************************'
+                WRITE(NULERR,*)'*************************************************************************'
+                WRITE(NULERR,*)'* IRANK = ',IRANK
+                WRITE(NULERR,*)'* GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
+                WRITE(NULERR,*)'* THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
+                WRITE(NULERR,*)'* NBLKS(IRANK) = ', NBLKS(IRANK)
+                WRITE(NULERR,*)'* IJFROMCHNK(1,1) = ',IJFROMCHNK(1,1)
+                WRITE(NULERR,*)'* AND OR THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
+                WRITE(NULERR,*)'* NBLKE(IRANK) = ', NBLKE(IRANK)
+                WRITE(NULERR,*)'* IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) = ', IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK)
+                WRITE(NULERR,*)'*                                                                       *'
+                WRITE(NULERR,*)'*************************************************************************'
                 CALL ABORT1
               ENDIF
 
@@ -581,29 +582,29 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
 
               ITAG = 2*NFRE_RED*NANG+(MR-1)*NANG+KR
               IF (KRTAG /= ITAG) THEN
-                WRITE(0,*)'MPL_RECV ERROR in GETSPEC: MISMATCHED TAGS'
-                WRITE(0,*)'IRANK = ',IRANK
-                WRITE(0,*)'KFROM = ',KFROM
-                WRITE(0,*)'KRTAG = ',KRTAG
-                WRITE(0,*)'ITAG  = ',ITAG
-                WRITE(0,*)' ABORTING !!!!'
+                WRITE(NULERR,*)'MPL_RECV ERROR in GETSPEC: MISMATCHED TAGS'
+                WRITE(NULERR,*)'IRANK = ',IRANK
+                WRITE(NULERR,*)'KFROM = ',KFROM
+                WRITE(NULERR,*)'KRTAG = ',KRTAG
+                WRITE(NULERR,*)'ITAG  = ',ITAG
+                WRITE(NULERR,*)' ABORTING !!!!'
                 CALL ABORT1
               ENDIF
 
               IF (IST /= IJFROMCHNK(1,1) .OR. IEND /= IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) ) THEN
                 WRITE(IU06,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR NON LOCAL PTS *'
-                WRITE(0,*)'*************************************************************************'
-                WRITE(0,*)'* IRANK = ',IRANK
-                WRITE(0,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION *'
-                WRITE(0,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR NON LOCAL PTS *'
-                WRITE(0,*)'* THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
-                WRITE(0,*)'* IST = ', IST 
-                WRITE(0,*)'* IJFROMCHNK(1,1) = ',IJFROMCHNK(1,1)
-                WRITE(0,*)'* AND OR THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
-                WRITE(0,*)'* IEND = ', IEND 
-                WRITE(0,*)'* IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) = ', IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK)
-                WRITE(0,*)'*                                                                       *'
-                WRITE(0,*)'*************************************************************************'
+                WRITE(NULERR,*)'*************************************************************************'
+                WRITE(NULERR,*)'* IRANK = ',IRANK
+                WRITE(NULERR,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION *'
+                WRITE(NULERR,*)'*GETSPEC : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR NON LOCAL PTS *'
+                WRITE(NULERR,*)'* THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
+                WRITE(NULERR,*)'* IST = ', IST 
+                WRITE(NULERR,*)'* IJFROMCHNK(1,1) = ',IJFROMCHNK(1,1)
+                WRITE(NULERR,*)'* AND OR THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
+                WRITE(NULERR,*)'* IEND = ', IEND 
+                WRITE(NULERR,*)'* IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) = ', IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK)
+                WRITE(NULERR,*)'*                                                                       *'
+                WRITE(NULERR,*)'*************************************************************************'
                 CALL ABORT1
               ENDIF
 

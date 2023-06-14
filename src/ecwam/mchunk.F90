@@ -23,6 +23,7 @@ USE YOWMPP   , ONLY : IRANK
 USE YOWTEST  , ONLY : IU06
 
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+USE EC_LUN   , ONLY : NULERR
 
 !----------------------------------------------------------------------
 
@@ -72,17 +73,17 @@ ENDDO
 
   IF(IJS /= IJFROMCHNK(1,1) .OR. IJL /= IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) ) THEN
     WRITE(IU06,*)'* MCHUNK : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
-    WRITE(0,*)'*************************************************************************'
-    WRITE(0,*)'* IRANK = ',IRANK
-    WRITE(0,*)'* MCHUNK : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
-    WRITE(0,*)'* THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
-    WRITE(0,*)'* IJS = ', IJS
-    WRITE(0,*)'* IJFROMCHNK(1,1) = ',IJFROMCHNK(1,1)
-    WRITE(0,*)'* AND OR THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
-    WRITE(0,*)'* IJL = ', IJL
-    WRITE(0,*)'* IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) = ', IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK)
-    WRITE(0,*)'*                                                                       *'
-    WRITE(0,*)'*************************************************************************'
+    WRITE(NULERR,*)'*************************************************************************'
+    WRITE(NULERR,*)'* IRANK = ',IRANK
+    WRITE(NULERR,*)'* MCHUNK : SERIOUS ISSUE WITH THE MODEL DECOMPOSITION FOR THE LOCAL PTS *'
+    WRITE(NULERR,*)'* THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
+    WRITE(NULERR,*)'* IJS = ', IJS
+    WRITE(NULERR,*)'* IJFROMCHNK(1,1) = ',IJFROMCHNK(1,1)
+    WRITE(NULERR,*)'* AND OR THE FOLLOWING TWO NUMBERS SHOULD BE EQUAL !!!'
+    WRITE(NULERR,*)'* IJL = ', IJL
+    WRITE(NULERR,*)'* IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK) = ', IJFROMCHNK(KIJL4CHNK(NCHNK), NCHNK)
+    WRITE(NULERR,*)'*                                                                       *'
+    WRITE(NULERR,*)'*************************************************************************'
     CALL ABORT1
   ENDIF
 

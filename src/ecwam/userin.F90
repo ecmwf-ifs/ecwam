@@ -150,6 +150,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            IASSIM   ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC, WSPMIN
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
       USE YOWABORT, ONLY : WAM_ABORT
       USE YOWGRIB , ONLY : IGRIB_GET_VALUE
 
@@ -506,13 +507,13 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*)'+   F A T A L   E R R O R  IN SUB. USERIN   +'
             WRITE(IU06,*)'+   =====================================   +'
             WRITE(IU06,*)'+                                           +'
-            WRITE(0,*)'+   RESTART FAILED.                         +'
-            WRITE(0,*)'+                                           +'
-            WRITE(0,*)'+   PARALLEL READ OPTION WAS SELECTED, BUT  +'
-            WRITE(0,*)'+   THE NUMBER OF MPI TASKS THAT WERE USED  +'
-            WRITE(0,*)'+   NPROC_RST = ',NPROC_RST
-            WRITE(0,*)'+   IS NOT EQUAL THE CURRENT NUMBER !       +'
-            WRITE(0,*)'+   NPROC = ',NPROC
+            WRITE(NULERR,*)'+   RESTART FAILED.                         +'
+            WRITE(NULERR,*)'+                                           +'
+            WRITE(NULERR,*)'+   PARALLEL READ OPTION WAS SELECTED, BUT  +'
+            WRITE(NULERR,*)'+   THE NUMBER OF MPI TASKS THAT WERE USED  +'
+            WRITE(NULERR,*)'+   NPROC_RST = ',NPROC_RST
+            WRITE(NULERR,*)'+   IS NOT EQUAL THE CURRENT NUMBER !       +'
+            WRITE(NULERR,*)'+   NPROC = ',NPROC
             WRITE(IU06,*)'+   RESTART FAILED.                         +'
             WRITE(IU06,*)'+                                           +'
             WRITE(IU06,*)'+   PARALLEL READ OPTION WAS SELECTED, BUT  +'

@@ -52,6 +52,7 @@
 
       USE PARKIND_WAVE,  ONLY : JWIM
       USE YOWABORT, ONLY : WAM_ABORT
+      USE EC_LUN   , ONLY : NULERR
 
 !     --------------------------------------------------------------
 
@@ -97,9 +98,9 @@
 
  9001 CONTINUE
 
-      WRITE(*,*) '*********************'
-      WRITE(*,*) 'READ ERROR IN WPOSNAM ' 
-      WRITE(*,*) '*********************'
+      WRITE(NULERR,*) '*********************'
+      WRITE(NULERR,*) 'READ ERROR IN WPOSNAM ' 
+      WRITE(NULERR,*) '*********************'
       CALL WAM_ABORT("READ ERROR IN WPOSNAM",__FILENAME__,__LINE__)
 
       RETURN

@@ -52,6 +52,7 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
 #endif
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
 
 ! ----------------------------------------------------------------------
 
@@ -129,10 +130,10 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
         IF (LLUNSTR) THEN 
 
-        WRITE(0,*) '!!! ********************************* !!'
-        WRITE(0,*) '!!! in PROPAG_WAM Not yet ready !!!' 
-        WRITE(0,*) '!!! PROPAG_UNWAM will need to be adapted to new FL1 structure !!!' 
-        WRITE(0,*) '!!! ********************************* !!'
+        WRITE(NULERR,*) '!!! ********************************* !!'
+        WRITE(NULERR,*) '!!! in PROPAG_WAM Not yet ready !!!' 
+        WRITE(NULERR,*) '!!! PROPAG_UNWAM will need to be adapted to new FL1 structure !!!' 
+        WRITE(NULERR,*) '!!! ********************************* !!'
         CALL ABORT1
 
 !!!!!           CALL PROPAG_UNWAM(FL1_EXT, FL1)

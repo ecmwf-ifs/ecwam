@@ -41,6 +41,7 @@
 #endif
       USE YOWABORT  ,ONLY : WAM_ABORT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
       USE MPL_MODULE, ONLY : MPL_RECV, MPL_SEND, MPL_WAIT, &
                            & JP_NON_BLOCKING_STANDARD
 
@@ -135,11 +136,10 @@
 #ifdef WAM_HAVE_UNWAM
 
         IF (OUT_METHOD == 1) THEN
-      
 !!!!! this will need to be adapted to use BOUT
-          WRITE(0,*) '!!! ********************************* !!'
-          WRITE(0,*) '!!! in outgrid. Not yet ready !!!'
-          WRITE(0,*) '!!! ********************************* !!'
+          WRITE(NULERR,*) '!!! ********************************* !!'
+          WRITE(NULERR,*) '!!! in outgrid. Not yet ready !!!' 
+          WRITE(NULERR,*) '!!! ********************************* !!'
           CALL ABORT1
 
 !     LOADING THE COMMUNICATION BUFFER
@@ -158,9 +158,9 @@
         ELSE
 
 !!!!! this will need to be adapted to use BOUT
-          WRITE(0,*) '!!! ********************************* !!'
-          WRITE(0,*) '!!! in outgrid. Not yet ready !!!'
-          WRITE(0,*) '!!! ********************************* !!'
+          WRITE(NULERR,*) '!!! ********************************* !!'
+          WRITE(NULERR,*) '!!! in outgrid. Not yet ready !!!' 
+          WRITE(NULERR,*) '!!! ********************************* !!'
           CALL ABORT1
 
 !!!        CALL SET_UP_ARR_OUT_RECV(IJSLOC, IJLLOC, BOUT(IJSLOC:IJLLOC,:), NFLDPPE)

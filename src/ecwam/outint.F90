@@ -57,6 +57,7 @@
       USE YOWUNIT  , ONLY : IU20
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
       USE YOWGRIB  , ONLY : IGRIB_OPEN_FILE, IGRIB_CLOSE_FILE
 
 ! ----------------------------------------------------------------------
@@ -147,11 +148,11 @@
             IF (IRANK == IPFGTBL(IFLAG)) THEN
               ICOUNT=ICOUNT+1
               IF (ICOUNT > SIZE(GOUT,1)) THEN
-                WRITE(*,*) ' -------------------------------------'
-                WRITE(*,*) ' ERROR in OUTINT '
-                WRITE(*,*) ' ACCESSING MORE FIELDS THAN AVAILABLE'
-                WRITE(*,*) ' SIZE(GOUT,1) = ',SIZE(GOUT,1) 
-                WRITE(*,*) ' -------------------------------------'
+                WRITE(NULERR,*) ' -------------------------------------'
+                WRITE(NULERR,*) ' ERROR in OUTINT '
+                WRITE(NULERR,*) ' ACCESSING MORE FIELDS THAN AVAILABLE'
+                WRITE(NULERR,*) ' SIZE(GOUT,1) = ',SIZE(GOUT,1) 
+                WRITE(NULERR,*) ' -------------------------------------'
                 CALL ABORT1
               ENDIF
 

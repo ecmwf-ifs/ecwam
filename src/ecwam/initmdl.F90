@@ -219,6 +219,8 @@ SUBROUTINE INITMDL (NADV,                                 &
 #endif
       USE YOWABORT , ONLY : WAM_ABORT
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
+
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -513,8 +515,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
             WRITE(IU06,*) '*  WITH OPTION IBOUNF = 1          *'
             WRITE(IU06,*) '*  YOU MUST PROVIDE THE FILE:      *'
             WRITE(IU06,*) '* ',FILENAME(1:LFILE)
-            WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),   &
-     &        ' IS MISSING !!!!'
+            WRITE(NULERR,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),' IS MISSING !!!!'
             WRITE(IU06,*) '*                                  *'
             WRITE(IU06,*) '************************************'
             CALL ABORT1

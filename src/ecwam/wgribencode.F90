@@ -70,6 +70,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
       USE YOWGRIB  , ONLY : IGRIB_GET_VALUE, IGRIB_SET_VALUE
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -288,23 +289,23 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       ENDIF
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR,IERR)
       IF (IERR /= 0) THEN
-        WRITE(0,*) ' *********************************************'
+        WRITE(NULERR,*) ' *********************************************'
         WRITE(IU06,*) ' *********************************************'
         WRITE(IU06,*) ' ECCODES ERROR WHILE SETTING paramId ',ITABPAR
-        WRITE(0,*) ' ECCODES ERROR WHILE SETTING paramId ',ITABPAR
-        WRITE(0,*) ' ECCODES ERROR CODE ', IERR
+        WRITE(NULERR,*) ' ECCODES ERROR WHILE SETTING paramId ',ITABPAR
+        WRITE(NULERR,*) ' ECCODES ERROR CODE ', IERR
         WRITE(IU06,*) ' ECCODES ERROR CODE ', IERR
         CALl FLUSH(IU06)
         IF (IERR == -36) THEN
           ITABPAR = 212*1000+IPARAM
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR)
 
-          WRITE(0,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
-          WRITE(0,*) ' PARAMETERS KNOWN BY ECCODES !!!' 
-          WRITE(0,*) ' IN THE MEAN TIME, THE PROGRAM WILL CONTINUE.' 
-          WRITE(0,*) ' USING EXPERIMENTAL PARAMETER TABLE 212' 
-          WRITE(0,*) ' WITH paramId= ', ITABPAR
-          WRITE(0,*) ' *********************************************'
+          WRITE(NULERR,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
+          WRITE(NULERR,*) ' PARAMETERS KNOWN BY ECCODES !!!' 
+          WRITE(NULERR,*) ' IN THE MEAN TIME, THE PROGRAM WILL CONTINUE.' 
+          WRITE(NULERR,*) ' USING EXPERIMENTAL PARAMETER TABLE 212' 
+          WRITE(NULERR,*) ' WITH paramId= ', ITABPAR
+          WRITE(NULERR,*) ' *********************************************'
           WRITE(IU06,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
           WRITE(IU06,*) ' PARAMETERS KNOWN BY ECCODES !!!' 
           WRITE(IU06,*) ' USING EXPERIMENTAL PARAMETER TABLE 212' 
@@ -312,7 +313,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
           WRITE(IU06,*) ' *********************************************'
 
         ELSE
-          WRITE(0,*) ' *********************************************'
+          WRITE(NULERR,*) ' *********************************************'
           CALL ABORT1
         ENDIF
       ENDIF

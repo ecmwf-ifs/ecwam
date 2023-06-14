@@ -49,6 +49,7 @@
                           & IGRIB_GET_MESSAGE_SIZE, &
                           & IGRIB_WRITE_BYTES
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -111,10 +112,10 @@
           WRITE(IU06,*) ' ERROR ACCESSING FDB '
           WRITE(IU06,*) ' FDB ERROR CODE IS ',IERR
           WRITE(IU06,*) ' ------------------------'
-          WRITE(*,*) ' ------------------------'
-          WRITE(*,*) ' ERROR ACCESSING FDB '
-          WRITE(*,*) ' FDB ERROR CODE IS ',IERR
-          WRITE(*,*) ' ------------------------'
+          WRITE(NULERR,*) ' ------------------------'
+          WRITE(NULERR,*) ' ERROR ACCESSING FDB '
+          WRITE(NULERR,*) ' FDB ERROR CODE IS ',IERR
+          WRITE(NULERR,*) ' ------------------------'
           CALL ABORT1
         ENDIF
 

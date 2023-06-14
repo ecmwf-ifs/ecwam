@@ -15,6 +15,7 @@ INTEGER(KIND=JWIM) FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWABORT, ONLY : WAM_ABORT
+      USE EC_LUN   , ONLY : NULERR
 
 !--------------------------------------------------------------------
 
@@ -46,14 +47,14 @@ INTEGER(KIND=JWIM) FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL
 
       ILEN=LEN(CDNAME)
       IF ( ILEN == 0) then
-        WRITE(*,*) '!!!!!!!!! PROBLEM IN WAM IWAM_GET_UNIT !!!!!!'
-        WRITE(*,*) '!!!!!!!!! LENGTH OF FILENAME=0  !!!!!!'
+        WRITE(NULERR,*) '!!!!!!!!! PROBLEM IN WAM IWAM_GET_UNIT !!!!!!'
+        WRITE(NULERR,*) '!!!!!!!!! LENGTH OF FILENAME=0  !!!!!!'
         CALL WAM_ABORT("Filename must not be empty",__FILENAME__,__LINE__)
       ENDIF
       ILEN=LEN_TRIM(CDNAME)
       IF ( ILEN == 0) then
-        WRITE(*,*) '!!!!!!!!! PROBLEM IN WAM IWAM_GET_UNIT !!!!!!'
-        WRITE(*,*) '!!!!!!!!! FILENAME ALL BLANKS   !!!!!!'
+        WRITE(NULERR,*) '!!!!!!!!! PROBLEM IN WAM IWAM_GET_UNIT !!!!!!'
+        WRITE(NULERR,*) '!!!!!!!!! FILENAME ALL BLANKS   !!!!!!'
         CALL WAM_ABORT("Filename must not be empty",__FILENAME__,__LINE__)
       ENDIF
          
@@ -70,10 +71,10 @@ INTEGER(KIND=JWIM) FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL
         ENDDO
  
         IF (JUME > MAXUNIT) THEN
-          WRITE(*,*) '!!!!!!!!! PROBLEM IN WAM IWAM_GET_UNIT !!!!!!'
-          WRITE(*,*) '!!!!!!!!! NO FREE UNIT FOUND BETWEEN !'
-          WRITE(*,*) '!!!!!!!!! ',MINUNIT,' AND ',MAXUNIT
-          WRITE(*,*) '!!!!!!!!! CALL ABORT                 !'
+          WRITE(NULERR,*) '!!!!!!!!! PROBLEM IN WAM IWAM_GET_UNIT !!!!!!'
+          WRITE(NULERR,*) '!!!!!!!!! NO FREE UNIT FOUND BETWEEN !'
+          WRITE(NULERR,*) '!!!!!!!!! ',MINUNIT,' AND ',MAXUNIT
+          WRITE(NULERR,*) '!!!!!!!!! CALL ABORT                 !'
           WRITE(CERRMSG,'(A,I0,A,I0,A,A,A)') "No free unit found between ",MINUNIT," and ",&
      &                                       MAXUNIT," to open file '",TRIM(CDNAME),"'"
           CALL WAM_ABORT(CERRMSG,__FILENAME__,__LINE__)
