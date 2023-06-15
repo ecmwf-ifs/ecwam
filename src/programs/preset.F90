@@ -78,7 +78,7 @@ PROGRAM preset
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWFRED  , ONLY : FR       ,TH
+      USE YOWFRED  , ONLY : FR       ,TH       ,IFRE1    , FR1
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,    &
      &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP ,    &
@@ -93,7 +93,7 @@ PROGRAM preset
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG     ,NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
+      USE YOWPARAM , ONLY : NANG, NFRE, NFRE_RED, NGX    ,NGY      ,    &
      &            NIBLO    ,SWAMPWIND,CLDOMAIN ,LL1D     ,LLUNSTR
       USE YOWPCONS , ONLY : G        ,RAD      ,DEG      ,ZMISS    ,    &
      &            ROAIR
@@ -183,6 +183,7 @@ PROGRAM preset
 ! ----------------------------------------------------------------------
 
       NAMELIST /NALINE/ HEADER,                                         &
+     &          NANG, IFRE1, FR1, NFRE, NFRE_RED,                       &
      &          IOPTI, ITEST, ITESTB,                                   &
      &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH, SWAMPWIND ,      &
      &          USERID, RUNID, PATH, CPATH,                             &
@@ -226,6 +227,11 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !        ---------------------------------------------
 
       HEADER = ZERO
+      NANG      = 0
+      IFRE1     = 3
+      FR1       = 4.177248E-02_JWRB
+      NFRE      = 0
+      NFRE_RED  = 0
       IOPTI  =    1
       ITEST  =   -9
       ITESTB =   -9
@@ -300,6 +306,24 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       CDATEFL = ' '
 
       READ (IU05, NALINE)
+
+      IF( NANG <= 0 ) CALL WAM_ABORT( "Expected positive value for NANG", __FILENAME__, __LINE__ )
+      IF( NFRE <= 0 ) CALL WAM_ABORT( "Expected positive value for NFRE", __FILENAME__, __LINE__ )
+      IF( NFRE_RED <= 0 ) NFRE_RED = NFRE
+      IF( IFRE1 <= 0 ) CALL WAM_ABORT( "Expected positive value for IFRE1",  __FILENAME__, __LINE__ )
+
+      IF (NFRE_RED > NFRE ) THEN
+        WRITE (IU06,*) '**********************************************'
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '*       FATAL ERROR IN SUB. UIPREP           *'
+        WRITE (IU06,*) '*       ==========================           *'
+        WRITE (IU06,*) '* THE REDUCED NUMBER OF FREQUENCIES NFRE_RED *'
+        WRITE (IU06,*) '* IS LARGER THAN THE TOTAL NUMNBER NFRE  !!  *'
+        WRITE (IU06,*) '* NFRE_RED = ', NFRE_RED
+        WRITE (IU06,*) '* NFRE     = ', NFRE
+        WRITE (IU06,*) '**********************************************'
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
+      ENDIF
 
       IF (CLTUNIT == 'H') IDELWI = IDELWI*3600
       CDATEF = CDATEA
