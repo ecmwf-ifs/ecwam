@@ -49,8 +49,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
-     &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
      &            IJS      ,IJL
       USE YOWMAP   , ONLY : NX       ,NY       ,                        &
@@ -58,8 +56,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG  ,    &
      &            IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
-     &            NGX      ,NGY      ,CLDOMAIN
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN  
       USE YOWSHAL  , ONLY : BATHY
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -72,7 +69,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ISEND
       INTEGER(KIND=JWIM), INTENT(INOUT) :: ITAG
-      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=6
+      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=3
       INTEGER(KIND=JWIM) :: I, J, IJ, K, K1, K2, M, M1, M2, IC, L, KDEPTH, NGOU 
       INTEGER(KIND=JWIM) :: IKCOUNT, KCOUNT
       INTEGER(KIND=JWIM) :: MIC, MZC 
@@ -98,12 +95,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         IF (IRANK == ISEND) THEN
           IKCOUNT=0
           IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=NANG
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=NFRE
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=NFRE_RED
-          IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NGX
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NGY
@@ -126,12 +117,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         IF (IRANK /= ISEND) THEN
           IKCOUNT=0
           IKCOUNT=IKCOUNT+1
-          NANG=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
-          NFRE=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
-          NFRE_RED=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
           NGX=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           NGY=ICOMBUF(IKCOUNT)
@@ -150,7 +135,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         DEALLOCATE(ICOMBUF)
 
         MIC=7+NGY
-        MZC=9+4*NFRE+3*NANG+4*NGY+NGX*NGY
+        MZC=7+4*NGY+NGX*NGY
 
 !       ENCODE MAIN MESSAGE BUFFERS (ON PE=ISEND) AND
 !       ALLOCATE ALL ARRAYS NEEDED TO KEEP THE BUFFERS ON THE OTHER PE'S
@@ -160,13 +145,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
         IF (IRANK /= ISEND) THEN
 
-          IF (.NOT.ALLOCATED(FR)) ALLOCATE(FR(NFRE))
-          IF (.NOT.ALLOCATED(DFIM)) ALLOCATE(DFIM(NFRE))
-          IF (.NOT.ALLOCATED(GOM)) ALLOCATE(GOM(NFRE))
-          IF (.NOT.ALLOCATED(C)) ALLOCATE(C(NFRE))
-          IF (.NOT.ALLOCATED(TH)) ALLOCATE(TH(NANG))
-          IF (.NOT.ALLOCATED(COSTH)) ALLOCATE(COSTH(NANG))
-          IF (.NOT.ALLOCATED(SINTH)) ALLOCATE(SINTH(NANG))
           IF (.NOT.ALLOCATED(DELLAM)) ALLOCATE(DELLAM(NGY))
           IF (.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
           IF (.NOT.ALLOCATED(SINPH)) ALLOCATE(SINPH(NGY))
@@ -179,38 +157,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         ELSE 
           KCOUNT=0
           IKCOUNT=0
-          DO M=1,NFRE
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=FR(M)
-          ENDDO
-          DO M=1,NFRE
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=DFIM(M)
-          ENDDO
-          DO M=1,NFRE
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=GOM(M)
-          ENDDO
-          DO M=1,NFRE
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=C(M)
-          ENDDO
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DELTH
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DELTR
-          DO K=1,NANG
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=TH(K)
-          ENDDO
-          DO K=1,NANG
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=COSTH(K)
-          ENDDO
-          DO K=1,NANG
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=SINTH(K)
-          ENDDO
 
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=DELPHI
@@ -302,38 +248,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         IF (IRANK /= ISEND) THEN
           KCOUNT=0
           IKCOUNT=0
-          DO M=1,NFRE
-            KCOUNT=KCOUNT+1
-            FR(M)=ZCOMBUF(KCOUNT)
-          ENDDO
-          DO M=1,NFRE
-            KCOUNT=KCOUNT+1
-            DFIM(M)=ZCOMBUF(KCOUNT)
-          ENDDO
-          DO M=1,NFRE
-            KCOUNT=KCOUNT+1
-            GOM(M)=ZCOMBUF(KCOUNT)
-          ENDDO
-          DO M=1,NFRE
-            KCOUNT=KCOUNT+1
-            C(M)=ZCOMBUF(KCOUNT)
-          ENDDO
-          KCOUNT=KCOUNT+1
-          DELTH=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          DELTR=ZCOMBUF(KCOUNT)
-          DO K=1,NANG
-            KCOUNT=KCOUNT+1
-            TH(K)=ZCOMBUF(KCOUNT)
-          ENDDO
-          DO K=1,NANG
-            KCOUNT=KCOUNT+1
-            COSTH(K)=ZCOMBUF(KCOUNT)
-          ENDDO
-          DO K=1,NANG
-            KCOUNT=KCOUNT+1
-            SINTH(K)=ZCOMBUF(KCOUNT)
-          ENDDO
 
           KCOUNT=KCOUNT+1
           DELPHI=ZCOMBUF(KCOUNT)

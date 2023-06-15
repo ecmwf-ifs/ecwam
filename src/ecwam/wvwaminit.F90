@@ -53,6 +53,7 @@
       IMPLICIT NONE
 #include "expand_string.intfb.h"
 #include "iwam_get_unit.intfb.h"
+#include "mfredir.intfb.h"
 #include "mpuserin.intfb.h"
 #include "setwavphys.intfb.h"
 #include "readpre.intfb.h"
@@ -118,6 +119,8 @@
         CALL MPUSERIN
         LFRST=.FALSE.
       ENDIF
+
+      CALL MFREDIR
 
 !     SET WAVE PHYSICS PACKAGE
 !     ------------------------

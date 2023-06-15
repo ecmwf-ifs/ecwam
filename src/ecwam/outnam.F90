@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE OUTNAM (KNANG, KNFRE, KNGX, KNGY) 
+      SUBROUTINE OUTNAM (KNGX, KNGY) 
 
 ! ----------------------------------------------------------------------
 
@@ -18,20 +18,18 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: KNANG, KNFRE, KNGX, KNGY
+      INTEGER(KIND=JWIM), INTENT(IN) :: KNGX, KNGY
 
-      INTEGER(KIND=JWIM) :: iang, ifre, igx, igy
+      INTEGER(KIND=JWIM) :: igx, igy
 
 
 !!! it is used by Altimeter software !!!
-      NAMELIST /PARWAM/ iang, ifre, igx, igy
+      NAMELIST /PARWAM/ igx, igy
 
 
 !***  2. DETERMINE PARAMETERS NAMELIST.
 !     ---------------------------------
 
-      iang    = KNANG
-      ifre    = KNFRE
       igx     = KNGX
       igy     = KNGY
 

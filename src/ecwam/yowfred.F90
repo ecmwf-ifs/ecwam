@@ -14,6 +14,9 @@
 
       IMPLICIT NONE
 
+      INTEGER(KIND=JWIM) :: IFRE1
+      REAL(KIND=JWRB) :: FR1
+
 !*    ** *FREDIR* - FREQUENCY AND DIRECTION GRID.
 
       REAL(KIND=JWRB), ALLOCATABLE :: FR(:)
@@ -82,6 +85,8 @@
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
+!      *IFRE1*     INTEGER   INDEX OF THE REFERENCE FREQUENCY IN THE FREQUENCY ARRAYS
+!      *FR1*       REAL      VALUE OF THE REFERENCE FREQUENCY (Hz)
 !      *FR*        REAL      FREQUENCIES IN HERTZ.
 !      *DFIM*      REAL      FREQUENCY INTERVAL*DIRECTION INTERVAL.
 !                            FOR TRAPEZOIDAL RULE

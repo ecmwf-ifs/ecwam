@@ -134,13 +134,9 @@ PROGRAM preproc
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NIBLO    ,                                  &
-     &            NANG     ,NFRE     ,NFRE_RED ,LLUNSTR
+      USE YOWPARAM , ONLY : LLUNSTR
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
-     &            TH       ,COSTH    ,SINTH
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
      &            KXLTMIN  ,KXLTMAX  ,                                  &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
@@ -164,7 +160,6 @@ PROGRAM preproc
 #include "iniwcst.intfb.h"
 #include "mbounc.intfb.h"
 #include "mbounf.intfb.h"
-#include "mfredir.intfb.h"
 #include "mgrid.intfb.h"
 #include "mubuf.intfb.h"
 #include "outcom.intfb.h"
@@ -210,14 +205,6 @@ PROGRAM preproc
 !     -----------------------------
 
       ALLOCATE(BATHY(NX, NY))
-
-!     FR IS ALLOCATED IN UIPREP 
-      ALLOCATE(DFIM(NFRE)) 
-      ALLOCATE(GOM(NFRE)) 
-      ALLOCATE(C(NFRE)) 
-      ALLOCATE(TH(NANG)) 
-      ALLOCATE(COSTH(NANG)) 
-      ALLOCATE(SINTH(NANG)) 
 
       ALLOCATE(DELLAM(NY)) 
       ALLOCATE(SINPH(NY)) 
@@ -340,18 +327,6 @@ PROGRAM preproc
       IF (ALLOCATED(KXLTMAX)) DEALLOCATE(KXLTMAX)
       ALLOCATE(KXLTMAX(1))
       KXLTMAX(1) = NY
-
-! ----------------------------------------------------------------------
-
-!*    4. COMPUTE GRID INDEPENDENT MODULE.
-!        -------------------------------
-
-
-!*    4.1 MODULE FREDIR (FREQUENCY/DIRECTION CONST).
-!         ------------------------------------------
-
-      CALL MFREDIR
-
 
 ! ----------------------------------------------------------------------
 

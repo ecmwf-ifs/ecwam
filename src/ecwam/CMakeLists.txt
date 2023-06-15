@@ -128,6 +128,7 @@ list( APPEND ecwam_srcs
   meansqs.F90
   meansqs_gc.F90
   meansqs_lf.F90
+  mfr.F90
   mfredir.F90
   mgrid.F90
   micep.F90

@@ -74,7 +74,7 @@
       USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
-      USE YOWFRED  , ONLY : XKMSS_CUTOFF 
+      USE YOWFRED  , ONLY : IFRE1, FR1, XKMSS_CUTOFF 
       USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS ,IMDLGRBID_G, IMDLGRBID_M, &
      &                      LNEWLVTP, LL_GRID_SIMPLE_MATRIX
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
@@ -83,7 +83,8 @@
      &            LICETH
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
-      USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
+     &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,              &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN ,    &
      &            LLUNSTR
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
@@ -170,6 +171,7 @@
 ! ----------------------------------------------------------------------
 
       NAMELIST /NALINE/ CLHEADER,                                       &
+     &   NANG, IFRE1, FR1, NFRE, NFRE_RED,                              &
      &   CBPLTDT, CEPLTDT, CDATEF,                                      &
      &   IFRELFMAX, DELPRO_LF, IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU,  &
      &   IDELALT, IDELINT, IDELRES,                                     &
@@ -507,6 +509,12 @@
 !*    0. SET DEFAULT VALUES FOR THE NAMELIST ELEMENTS.
 !        ---------------------------------------------
 
+      NANG      = 0
+      IFRE1     = 3
+      FR1       = 4.177248E-02_JWRB
+      NFRE      = 0
+      NFRE_RED  = 0
+
       CLMTSU    = 'S'
       CLOTSU    = 'H'
       CLHEADER  =  ZERO
@@ -778,6 +786,25 @@
         CALL WAM_ABORT("Could not read namelist '"//NAMELIST_FILENAME//"'",__FILENAME__,__LINE__)
       ENDIF
 
+      IF( NANG <= 0 ) CALL WAM_ABORT( "Expected positive value for NANG", __FILENAME__, __LINE__ )
+      IF( NFRE <= 0 ) CALL WAM_ABORT( "Expected positive value for NFRE", __FILENAME__, __LINE__ )
+      IF( NFRE_RED <= 0 ) NFRE_RED = NFRE
+      IF( IFRE1 <= 0 ) CALL WAM_ABORT( "Expected positive value for IFRE1",  __FILENAME__, __LINE__ )
+
+      IF (NFRE_RED > NFRE ) THEN
+        WRITE (IU06,*) '**********************************************'
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '*       FATAL ERROR IN SUB. UIPREP           *'
+        WRITE (IU06,*) '*       ==========================           *'
+        WRITE (IU06,*) '* THE REDUCED NUMBER OF FREQUENCIES NFRE_RED *'
+        WRITE (IU06,*) '* IS LARGER THAN THE TOTAL NUMNBER NFRE  !!  *'
+        WRITE (IU06,*) '* NFRE_RED = ', NFRE_RED
+        WRITE (IU06,*) '* NFRE     = ', NFRE
+        WRITE (IU06,*) '**********************************************'
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
+      ENDIF
+
+
       IF (IRANK > 1) THEN
          CNORMWAMOUT_FILE = ''
       ENDIF
@@ -953,6 +980,9 @@
       IF (IRANK == 1) THEN
         WRITE(6,*) '==============================================='
         WRITE(6,*) '*** MPUSERIN has read the following settings'
+        WRITE(6,*) '*** NANG=',NANG
+        WRITE(6,*) '*** NFRE=',NFRE
+        WRITE(6,*) '*** NFRE_RED=',NFRE_RED
         WRITE(6,*) '*** CBPLTDT=',CBPLTDT
         WRITE(6,*) '*** CEPLTDT=',CEPLTDT
         WRITE(6,*) '*** LFDB = ',LFDB

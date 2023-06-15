@@ -47,13 +47,6 @@
 !     METHOD.
 !     -------
 
-!       MODULES YOWPARAM, YOWCOUPL, YOWCURR, YOWFRED, YOWINDNL, YOWGRID,
-!       YOWMAP, YOWCOUT, YOWTABL, AND YOWSHAL ARE WRITTEN TO UNIT.
-!       ALL FREQUENCY AND DIRECTION DEPENDENT ARRAYS
-!       ARE WRITTEN FROM 1 TO THE USED NUMBER OF FREQUENCIES (NFRE, NFRE_RED),
-!       AND THE USED NUMBER OF DIRECTIONS (NANG). OTHER ARRAYS ARE
-!       WRITTEN ACCORDING TO THEIR DIMENSIONS.
-
 !     EXTERNALS.
 !     ----------
 
@@ -69,19 +62,12 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED  ,             &
-     &            NGX      ,NGY      ,                                  &
-     &            CLDOMAIN ,IMDLGRDID,LLUNSTR 
-      USE YOWCPBO  , ONLY : NBOUNC
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
-     &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
-      USE YOWFPBO  , ONLY : NBOUNF
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN ,IMDLGRDID,LLUNSTR
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
      &            IJS      ,IJL
       USE YOWMAP   , ONLY : NX       ,NY       ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG
-      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA
       USE YOWABORT, ONLY : WAM_ABORT
 
 #ifdef WAM_HAVE_UNWAM
@@ -127,28 +113,12 @@
       IDUM=0
 
       IF (IFORM /= 2) THEN
-        WRITE(IU07) NANG, NFRE, NFRE_RED, NGX, NGY, CLDOMAIN
+        WRITE(IU07) NGX, NGY, CLDOMAIN
       ENDIF
       IF (IFORM /= 1) THEN
-        WRITE(IU17,997) NANG, NFRE, NFRE_RED, NGX, NGY, CLDOMAIN 
+        WRITE(IU17,997) NGX, NGY, CLDOMAIN 
       ENDIF
 
-
-!*    1. WRITE MODULE YOWFRED 
-!        --------------------
-
-      IF (IFORM /= 2) THEN
-        WRITE (IU07) (FR(M),M=1,NFRE), (DFIM(M),M=1,NFRE),              &
-     &   (GOM(M),M=1,NFRE), (C(M),M=1,NFRE),                            &
-     &   DELTH, DELTR, (TH(K),K=1,NANG),                                &
-     &   (COSTH(K),K=1,NANG), (SINTH(K),K=1,NANG)
-      ENDIF
-      IF (IFORM /= 1) THEN
-        WRITE (IU17,999) (FR(M),M=1,NFRE), (DFIM(M),M=1,NFRE),          &
-     &   (GOM(M),M=1,NFRE), (C(M),M=1,NFRE),                            &
-     &   DELTH, DELTR, (TH(K),K=1,NANG),                                &
-     &   (COSTH(K),K=1,NANG), (SINTH(K),K=1,NANG)
-      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -199,7 +169,7 @@
 !*   11. WRITE NAMELIST PARWAM.
 !        ----------------------
       
-      CALL OUTNAM  (NANG, NFRE, NGX, NGY)
+      CALL OUTNAM  (NGX, NGY)
 
       IF (LLUNSTR) THEN
 #ifdef WAM_HAVE_UNWAM

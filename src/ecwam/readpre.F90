@@ -59,8 +59,6 @@ SUBROUTINE READPRE (IU07)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
-     &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
      &            IJS      ,IJL
       USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,              &
@@ -68,8 +66,7 @@ SUBROUTINE READPRE (IU07)
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG  ,    &
      &            IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
-     &            NGX      ,NGY      ,LLR8TOR4 ,LLUNSTR  ,              &
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,LLR8TOR4 ,LLUNSTR  ,    &  
      &            NIBLO    ,CLDOMAIN ,IMDLGRDID
       USE YOWSHAL  , ONLY : BATHY    ,LLOCEANMASK
       USE YOWTEST  , ONLY : IU06
@@ -143,19 +140,6 @@ SUBROUTINE READPRE (IU07)
 !        ----------------------------
 
         CALL READREC(2)
-
-!*    1. READ MODULE YOWFRED (FREQUENCY DIRECTION GRID).
-!        ----------------------------------------------
-
-        IF (.NOT.ALLOCATED(FR)) ALLOCATE(FR(NFRE))
-        IF (.NOT.ALLOCATED(DFIM)) ALLOCATE(DFIM(NFRE))
-        IF (.NOT.ALLOCATED(GOM)) ALLOCATE(GOM(NFRE))
-        IF (.NOT.ALLOCATED(C)) ALLOCATE(C(NFRE))
-        IF (.NOT.ALLOCATED(TH)) ALLOCATE(TH(NANG))
-        IF (.NOT.ALLOCATED(COSTH)) ALLOCATE(COSTH(NANG))
-        IF (.NOT.ALLOCATED(SINTH)) ALLOCATE(SINTH(NANG))
-
-        CALL READREC(3)
 
 !*    2. READ MODULE YOWGRID (GENERAL GRID ORGANISATION).
 !        ------------------------------------------------
@@ -310,33 +294,8 @@ SUBROUTINE READPRE (IU07)
      &        ', KIND(DELPHI)=',KIND(DELPHI),', LLR8TOR4=',LLR8TOR4
  1002    FORMAT(2X,A,I0,A,I0,A,L1)
       CASE(2)
-         READ(IU07,IOSTAT=ISTAT) NANG, NFRE, NFRE_RED, NGX, NGY, CLDOMAIN
+         READ(IU07,IOSTAT=ISTAT) NGX, NGY, CLDOMAIN
          IF (ISTAT /= 0) GOTO 1000
-      CASE(3)
-         IF (LLR8TOR4) THEN
-            ALLOCATE(R8_FR(NFRE),R8_DFIM(NFRE),R8_GOM(NFRE),R8_C(NFRE))
-            ALLOCATE(R8_TH(NANG),R8_COSTH(NANG),R8_SINTH(NANG))
-
-            READ(IU07,IOSTAT=ISTAT) R8_FR, R8_DFIM, R8_GOM, R8_C,       &
-     &           R8_DELTH, R8_DELTR, R8_TH, R8_COSTH, R8_SINTH
-            IF (ISTAT /= 0) GOTO 1000
-
-            FR = R8_FR
-            DFIM = R8_DFIM
-            GOM = R8_GOM
-            C = R8_C
-            DELTH = R8_DELTH
-            DELTR = R8_DELTR
-            TH = R8_TH
-            COSTH = R8_COSTH
-            SINTH = R8_SINTH
-            DEALLOCATE(R8_FR,R8_DFIM,R8_GOM, R8_C)
-            DEALLOCATE(R8_TH,R8_COSTH,R8_SINTH)
-         ELSE
-            READ(IU07,IOSTAT=ISTAT) FR, DFIM, GOM, C,                   &
-     &           DELTH, DELTR, TH, COSTH, SINTH
-            IF (ISTAT /= 0) GOTO 1000
-         ENDIF
       CASE(4)
          IF (LLR8TOR4) THEN
             ALLOCATE(R8_DELLAM(NGY),R8_SINPH(NGY),R8_COSPH(NGY))

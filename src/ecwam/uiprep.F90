@@ -55,14 +55,14 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
+      USE YOWPARAM , ONLY : NFRE     ,NFRE_RED ,                        &
      &            NGX      ,NGY      ,NIBLO    ,CLDOMAIN ,LLUNSTR
       USE YOWCPBO  , ONLY : IBOUNC   ,GBOUNC_MAX, GBOUNC ,              &
      &            AMOSOC   ,AMONOC   ,AMOEAC   ,AMOWEC
       USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,    &
      &            XOUTN    ,NOUTD
       USE YOWFPBO  , ONLY : IBOUNF
-      USE YOWFRED  , ONLY : FR       ,FRATIO
+      USE YOWFRED  , ONLY : IFRE1    ,FR1      ,FR       ,FRATIO
 
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,              &
@@ -78,17 +78,17 @@
       IMPLICIT NONE
 #include "adjust.intfb.h"
 #include "iwam_get_unit.intfb.h"
+#include "mfr.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(OUT) :: IFORM
       LOGICAL, INTENT(OUT) :: LLGRID
 
       INTEGER(KIND=JWIM) :: K, M, I, II, KSN
       INTEGER(KIND=JWIM) :: IU05, IU
-      INTEGER(KIND=JWIM) :: IFRE1, ISPECTRUNC
+      INTEGER(KIND=JWIM) :: ISPECTRUNC
       INTEGER(KIND=JWIM) :: IOS, IOUTA, IOUTANEW, IDUM
       INTEGER(KIND=JWIM), ALLOCATABLE :: NDUMP(:)
 
-      REAL(KIND=JWRB) :: FR1 
       REAL(KIND=JWRB) :: ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
       REAL(KIND=JWRB) :: WEST, EAST, DW, DE, DS, DN
       REAL(KIND=JWRB), ALLOCATABLE :: XDUMP(:)
@@ -104,7 +104,7 @@
 
 ! ----------------------------------------------------------------------
 
-      NAMELIST /NALINE/ CLINE, NFRE, NFRE_RED, FR1, IFRE1, NANG,        &
+      NAMELIST /NALINE/ CLINE, NFRE, NFRE_RED, FR1, IFRE1,              &
      &                  IRGG, XDELLA, XDELLO,                           &
      &                  AMOSOP, AMONOP, AMOWEP, AMOEAP,                 &
      &                  IFORM, ITEST, ITESTB,                           &
@@ -130,7 +130,6 @@
       NFRE_RED =   0
       FR1    =   0.0_JWRB
       IFRE1 = 1
-      NANG   =   0
       IRGG   =  -1
       XDELLA =   0.0_JWRB
       XDELLO =   0.0_JWRB
@@ -207,15 +206,12 @@
       ENDIF
 
       IF( NFRE <= 0 ) CALL WAM_ABORT( "Expected positive value for NFRE", __FILENAME__, __LINE__ )
-      IF( FR1  <= 0 ) CALL WAM_ABORT( "Expected positive value for FR1",  __FILENAME__, __LINE__ )
-      IF( NANG <= 0 ) CALL WAM_ABORT( "Expected positive value for NANG", __FILENAME__, __LINE__ )
+      IF( IFRE1 <= 0 ) CALL WAM_ABORT( "Expected positive value for IFRE1",  __FILENAME__, __LINE__ )
 
-      ALLOCATE(FR(NFRE))
+      ALLOCATE(FR(NFRE_RED))
 
-      FR(IFRE1) = FR1
-      DO M=IFRE1-1,1,-1
-        FR(M) = (FR(M+1)/FRATIO)
-      ENDDO
+      CALL MFR(NFRE_RED, IFRE1, FR1, FRATIO, FR)
+
 
       WRITE (IU06,'(2X, A70,/)') CLINE(1:70)
 
@@ -255,7 +251,6 @@
       ELSE
         WRITE (IU06,'("  MINIMUM FREQUENCY IS  FR(1) = ",F10.6)') FR(1)
       ENDIF
-      WRITE (IU06,'("   NUMBER OF DIRECTIONS  IS NANG = ",I6)') NANG
 
 !     SET DIMENSIONS.
 

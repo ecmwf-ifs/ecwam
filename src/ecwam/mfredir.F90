@@ -49,20 +49,39 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
+      USE YOWFRED  , ONLY : IFRE1    ,FR1      ,                        & 
+     &            FR       ,DFIM     ,GOM      ,C        ,              &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH    ,    &
      &            FRATIO
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI      ,DEG      ,    &
      &            R
       USE YOWTEST  , ONLY : IU06
 
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
+#include "mfr.intfb.h"
+
       INTEGER(KIND=JWIM) :: M, K
 
       REAL(KIND=JWRB) :: CO1
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+
+! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('MFREDIR',0,ZHOOK_HANDLE)
+
+      IF (.NOT.ALLOCATED(FR)) ALLOCATE(FR(NFRE))
+      IF (.NOT.ALLOCATED(DFIM)) ALLOCATE(DFIM(NFRE))
+      IF (.NOT.ALLOCATED(GOM)) ALLOCATE(GOM(NFRE))
+      IF (.NOT.ALLOCATED(C)) ALLOCATE(C(NFRE))
+      IF (.NOT.ALLOCATED(TH)) ALLOCATE(TH(NANG))
+      IF (.NOT.ALLOCATED(COSTH)) ALLOCATE(COSTH(NANG))
+      IF (.NOT.ALLOCATED(SINTH)) ALLOCATE(SINTH(NANG))
+
 
 !*    1. FREQUENCY DEPENDENT CONSTANTS.
 !        ------------------------------
@@ -70,9 +89,8 @@
 !*    1.1 COMPUTE FREQUENCIES.
 !         --------------------
 
-      DO M=2,NFRE
-        FR(M) = FRATIO*FR(M-1)
-      ENDDO
+      CALL MFR(NFRE, IFRE1, FR1, FRATIO, FR)  
+
 
 !*    1.2 COMPUTE DEEP WATER GROUP VELOCITIES.
 !        ------------------------------------
@@ -96,9 +114,6 @@
       DELTH = ZPI/REAL(NANG,JWRB)
       DELTR = DELTH*R
       DO K=1,NANG
-!CCC        TH(K) = REAL(K-1,JWRB)*DELTH
-!CCC the previous line should be used if spectra should not be rotated.
-!CCC the next line should be used if rotated spectra are used
         TH(K) = REAL(K-1,JWRB)*DELTH + 0.5_JWRB*DELTH
         COSTH(K) = COS(TH(K))
         SINTH(K) = SIN(TH(K))
@@ -137,5 +152,7 @@
       WRITE (IU06,'(''0MODEL DIRECTIONS IN DEGREE'',                    &
      &              '' (CLOCKWISE FROM NORTH):'')')
       WRITE (IU06,'(1X,13F10.5)') (TH(K)*DEG,K=1,NANG)
+
+      IF (LHOOK) CALL DR_HOOK('MFREDIR',1,ZHOOK_HANDLE)
 
       END SUBROUTINE MFREDIR

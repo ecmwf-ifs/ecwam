@@ -74,6 +74,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWFRED  , ONLY : FRATIO
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP 
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWPCONS , ONLY : PI, RAD, G
@@ -89,6 +90,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 #include "aki.intfb.h"
 #include "iniwcst.intfb.h"
 #include "iwam_get_unit.intfb.h"
+#include "mfr.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 
 !!    Parameters that can be adapted to tune the obstruction scheme
@@ -153,7 +155,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
 
       REAL(KIND=JWRB) :: PRPLRADI
-      REAL(KIND=JWRB) :: X60, FRATIO, FR1
+      REAL(KIND=JWRB) :: X60, FR1
       REAL(KIND=JWRB) :: XDELLA, XDELLO
       REAL(KIND=JWRB) :: AMOSOP, AMONOP, AMOWEP, AMOEAP
       REAL(KIND=JWRB) :: ALONL, ALONR, ALATB, ALATT, XLON
@@ -198,8 +200,6 @@ PROGRAM CREATE_BATHY_ETOPO1
       INVRES=60
       X60=60.0_JWRB
       RESOL=1.0_JWRB/INVRES
-
-      FRATIO=1.1_JWRB
 
       IU01=1
       IU06=6
@@ -319,13 +319,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       ALLOCATE(FR(NFRE_RED))
 
-      FR(IFRE1) = FR1
-      DO M=IFRE1-1,1,-1
-        FR(M) = (FR(M+1)/FRATIO)
-      ENDDO
-      DO M=IFRE1+1,NFRE_RED
-        FR(M) = FRATIO*FR(M-1)
-      ENDDO
+      CALL MFR(NFRE_RED, IFRE1, FR1, FRATIO, FR)
 
 
       MARSTYPE = 'an'
