@@ -135,6 +135,7 @@ PROGRAM preset
 #include "iniwcst.intfb.h"
 #include "init_fieldg.intfb.h"
 #include "mchunk.intfb.h"
+#include "mfredir.intfb.h"
 #include "mstart.intfb.h"
 #include "mswell.intfb.h"
 #include "outspec.intfb.h"
@@ -189,7 +190,7 @@ PROGRAM preset
      &          USERID, RUNID, PATH, CPATH,                             &
      &          CDATEA, IDELWI, CLTUNIT,                                &
      &          LLUNSTR, LPREPROC,                                      &
-     &          LGRIBOUT,                                               &
+     &          LGRIBOUT, NGRIB_VERSION,                                &
      &          MARSTYPE, YCLASS, YEXPVER, NPROMA_WAM
 
 !     IOPTI : IT SELECTS COLD START SPECTRAL FORM
@@ -255,6 +256,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       LPREPROC =.FALSE.
 
       LGRIBOUT = .TRUE.
+      NGRIB_VERSION = 1
 
       MARSTYPE = 'an'
       YCLASS   = 'rd'
@@ -324,6 +326,8 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         WRITE (IU06,*) '**********************************************'
         CALL WAM_ABORT(__FILENAME__,__LINE__)
       ENDIF
+
+      CALL MFREDIR
 
       IF (CLTUNIT == 'H') IDELWI = IDELWI*3600
       CDATEF = CDATEA
@@ -481,9 +485,6 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !*    3.* SET GRIB HEADERS FOR INPUTS/OUTPUTS
 !         -----------------------------------
       IF (.NOT. LGRHDIFS) THEN
-!!!!! We might need to impose girb2 at later stage
-        NGRIB_VERSION = 1
-
 !       FOR INTEGRATED PARAMETERS
         CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
 !       FOR SPECTRA 
@@ -640,7 +641,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         DO ICHNK = 1, NCHNK
           CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,                      &
      &                 FM, ALFA, GAMMA, SA, SB,                          &
-     &                 1, NPROMA_WAM, FL1(:,:,:,ICHNK),                     &
+     &                 1, NPROMA_WAM, FL1(:,:,:,ICHNK),                  &
      &                 FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK))
         ENDDO
 !$OMP END PARALLEL DO
