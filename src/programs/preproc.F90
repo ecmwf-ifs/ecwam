@@ -137,6 +137,7 @@ PROGRAM preproc
       USE YOWPARAM , ONLY : LLUNSTR
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
+      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
      &            KXLTMIN  ,KXLTMAX  ,                                  &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
