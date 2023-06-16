@@ -34,8 +34,8 @@ SUBROUTINE PROPCONNECT(IJS, IJL, NEWIJ2IJ)
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMAP   , ONLY : BLK2GLO  ,IPER     ,IRGG      ,   &
-     &                      XDELLA   ,ZDELLO   ,NLONRGG
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
+     &                      XDELLA   ,ZDELLO   ,NLONRGG   ,   &
+     &                      NGX      ,NGY      ,NIBLO
       USE YOWSHAL  , ONLY : LLOCEANMASK 
       USE YOWSTAT  , ONLY : IPROPAGS 
       USE YOWSPEC  , ONLY : IJ2NEWIJ

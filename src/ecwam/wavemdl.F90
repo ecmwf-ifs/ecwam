@@ -122,9 +122,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWMAP   , ONLY : BLK2GLO  ,BLK2LOC  ,ZDELLO   ,IQGAUSS,   AMONOP
       USE YOWMEAN  , ONLY : INTFLDS
       USE YOWNEMOFLDS , ONLY : WAM2NEMO, NEMO2WAM
+      USE YOWMAP   , ONLY : NGX      ,NGY
       USE YOWMPP   , ONLY : IRANK    ,NPROC
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE    ,     &
-     &                      LL1D
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,LL1D
       USE YOWPCONS , ONLY : ZMISS    ,G        ,GM1
       USE YOWPHYS  , ONLY : RNU      ,RNUM     ,PRCHAR
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &

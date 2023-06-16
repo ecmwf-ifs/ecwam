@@ -54,7 +54,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NIBLO    ,LLUNSTR
+      USE YOWMAP   , ONLY : NIBLO
+      USE YOWPARAM , ONLY : LLUNSTR
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK, JPHOOK
       USE MPL_MODULE, ONLY : MPL_GATHERV
@@ -78,7 +79,7 @@
 
 !----------------------------------------------------------------------
 
-      IF (IRECV.EQ.0 .OR. NPROC.EQ.1) RETURN
+      IF (IRECV == 0 .OR. NPROC == 1) RETURN
 
       IF (LHOOK) CALL DR_HOOK('MPGATHERFL',0,ZHOOK_HANDLE)
 
@@ -109,7 +110,7 @@
      &                 KROOT=IRECV,                                     &
      &                 CDSTRING='MPGATHERFL:')
 
-      IF (IRANK.EQ.IRECV) THEN
+      IF (IRANK == IRECV) THEN
         KCOUNT=0
         DO IP=1,NPROC
           DO M=MINF,MSUP

@@ -47,8 +47,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
-      USE YOWMAP   , ONLY : NY       ,NLONRGG
+      USE YOWMAP   , ONLY : NGX      ,NGY      ,NIBLO       ,NLONRGG
 
 ! ----------------------------------------------------------------------
 
@@ -66,7 +65,7 @@
 !*    1. COUNT NUMBER OF SEA POINTS PER LATITUDE.
 !        ----------------------------------------
 
-      DO K=1,NY
+      DO K=1,NGY
         IPP(K) = 0
         DO I=1,NLONRGG(K)
           IF (BATHY(I,K) > -990.0_JWRB) THEN
@@ -77,7 +76,7 @@
 
       IF (NIBLO <= 0) THEN
         NIBLO=0
-        DO K=1,NY
+        DO K=1,NGY
           NIBLO=NIBLO+IPP(K)
         ENDDO
       ENDIF
@@ -89,7 +88,7 @@
 
       IL = 0
       KA = 1
-      DO K = 1,NY
+      DO K = 1,NGY
         IL = IL + IPP(K)
         IF (IL > NIBLO) THEN
           KE = K-1
@@ -98,6 +97,6 @@
           IL = IPP(KA)+IPP(KE)+IPP(KE+1)
         ENDIF
       ENDDO
-      CALL MBLOCK (BATHY, KA, NY, IPP)
+      CALL MBLOCK (BATHY, KA, NGY, IPP)
 
       END SUBROUTINE MGRID

@@ -115,19 +115,19 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,COSTH    ,SINTH
-      USE YOWGRID  , ONLY : IJS, IJL, NTOTIJ,                              &
-     &                      NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK,      &
-     &                      IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,           &
-     &                      DELLAM   ,COSPH    ,DELPHI   ,                 &
+      USE YOWGRID  , ONLY : IJS, IJL, NTOTIJ,                           &
+     &                      NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK,   &
+     &                      IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,        &
+     &                      DELLAM   ,COSPH    ,DELPHI   ,              &
      &                      CDR      ,SDR      ,PRQRT
       USE YOWMAP   , ONLY : BLK2GLO  ,BLK2LOC  ,KXLTMIN  ,KXLTMAX  ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,              &
-     &            KMNOP    ,KMSOP
+     &            KMNOP    ,KMSOP    ,NIBLO    ,NGX      ,NGY
       USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG     ,    &
      &                      NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NIBLO    ,LLUNSTR  ,    &
-     &            NGX      ,NGY      ,LL1D     ,KWAMVER  ,LLR8TOR4
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,LLUNSTR  ,              &
+     &            LL1D     ,KWAMVER  ,LLR8TOR4
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI
       USE YOWSHAL  , ONLY : BATHY    ,LLOCEANMASK, WVENVI
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID

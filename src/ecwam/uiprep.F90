@@ -55,17 +55,16 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NFRE     ,NFRE_RED ,                        &
-     &            NGX      ,NGY      ,NIBLO    ,CLDOMAIN ,LLUNSTR
+      USE YOWPARAM , ONLY : NFRE     ,NFRE_RED ,LLUNSTR
       USE YOWCPBO  , ONLY : IBOUNC   ,GBOUNC_MAX, GBOUNC ,              &
      &            AMOSOC   ,AMONOC   ,AMOEAC   ,AMOWEC
       USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,    &
      &            XOUTN    ,NOUTD
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : IFRE1    ,FR1      ,FR       ,FRATIO
-
-      USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
+      USE YOWMAP   , ONLY : NGX      ,NGY      ,IPER     ,IRGG     ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,              &
+     &            NIBLO    ,CLDOMAIN ,                                  &
      &            XDELLA   ,XDELLO   ,NLONRGG  ,LLOBSTRCT,LAQUA
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
 #ifdef WAM_HAVE_UNWAM
@@ -231,7 +230,7 @@
         READ (IU,*) AMOEAP
         READ (IU,*) IPER
         READ (IU,*) IRGG
-        READ (IU,*) NY
+        READ (IU,*) NGY
         WRITE(IU06,*) "grid_description read in "
       ENDIF
 
@@ -304,12 +303,12 @@
 !*    SET DIMENSIONS.
 
       IF (LLGRID) THEN
-        XDELLA = (AMONOP-AMOSOP)/(NY-1)
-        ALLOCATE(NLONRGG(NY))
+        XDELLA = (AMONOP-AMOSOP)/(NGY-1)
+        ALLOCATE(NLONRGG(NGY))
 
-        NX = 0
-        DO K=1,NY
-          KSN=NY-K+1
+        NGX = 0
+        DO K=1,NGY
+          KSN=NGY-K+1
           READ(IU,*,IOSTAT=IOS) NLONRGG(KSN)
           IF( IOS < 0 ) THEN
             CALL WAM_ABORT("End of file reached before finishing NLONRGG",__FILENAME__,__LINE__)
@@ -317,42 +316,36 @@
           IF( NLONRGG(KSN) <= 0 ) THEN
             CALL WAM_ABORT("Expected positive value of NLONRGG",__FILENAME__,__LINE__)
           ENDIF
-          NX = MAX(NX,NLONRGG(KSN))
+          NGX = MAX(NGX,NLONRGG(KSN))
         ENDDO
 
         IF (IPER == 1) THEN
-          XDELLO  = 360._JWRB/REAL(NX)
+          XDELLO  = 360._JWRB/REAL(NGX)
           AMOEAP = AMOWEP + 360._JWRB - XDELLO
         ELSE
-          XDELLO = (AMOEAP-AMOWEP)/(NX-1)
+          XDELLO = (AMOEAP-AMOWEP)/(NGX-1)
         ENDIF
 
-
-        NGX = NX
-        NGY = NY
 
         CLOSE(IU)
 
       ELSE
 !       RESET FOR AQUA PLANET IF SELECTED
         IF (LAQUA) THEN
-          NY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
+          NGY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
           WRITE (IU06,*) ' !! RESETING TO AQUA PLANET CONFIGURATION !!'
           AMONOP=90.0_JWRB
           AMOSOP=-90.0_JWRB
-          NY=INT((AMONOP-AMOSOP)/XDELLA)+1
+          NGY=INT((AMONOP-AMOSOP)/XDELLA)+1
           IRGG=1
         ENDIF
 
         IPER = 0
         IF (ABS(AMOEAP-AMOWEP+1.5_JWRB*XDELLO) >= 360.0_JWRB ) IPER = 1
-        NX = NINT((AMOEAP-AMOWEP)/XDELLO) + 1
-        NY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
+        NGX = NINT((AMOEAP-AMOWEP)/XDELLO) + 1
+        NGY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
 
-        NGX = NX
-        NGY = NY
-
-        ALLOCATE(NLONRGG(NY))
+        ALLOCATE(NLONRGG(NGY))
 
       ENDIF
 

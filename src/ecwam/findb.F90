@@ -62,8 +62,7 @@
 
       USE YOWMAP   , ONLY : BLK2GLO  ,KXLTMIN  ,KXLTMAX   ,IPER    ,   &
      &            AMOWEP   ,AMOSOP   ,AMONOP   ,XDELLA   ,XDELLO   ,   &
-     &            ZDELLO   ,NLONRGG
-      USE YOWPARAM , ONLY : NGY
+     &            ZDELLO   ,NLONRGG  ,NGY
 
 ! ----------------------------------------------------------------------
 

@@ -44,13 +44,12 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
-     &            NGX      ,NGY      ,NIBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
       USE YOWPCONS , ONLY : DEG
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF   ,IJARF
       USE YOWGRID  , ONLY : IJS      ,IJL
-      USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,    &
+      USE YOWMAP   , ONLY : BLK2GLO  ,NGX      ,NGY       ,NIBLO    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLO
       USE YOWTEST  , ONLY : IU06
 

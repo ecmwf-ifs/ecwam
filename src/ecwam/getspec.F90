@@ -65,10 +65,10 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
       USE YOWMAP   , ONLY : IRGG     ,NLONRGG
       USE YOWMESPAS, ONLY : LGRIBIN
+      USE YOWMAP   , ONLY : NGY      ,NIBLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,                        &
      &                      KTAG     ,NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
-     &                      NGY      ,NIBLO    ,CLDOMAIN ,LLUNSTR
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,LLUNSTR
       USE YOWPCONS , ONLY : G        ,DEG      ,R        ,ZMISS    ,    &
      &                      EPSMIN
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,IREFRA  ,LNSESTART

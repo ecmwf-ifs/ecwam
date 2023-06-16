@@ -51,12 +51,11 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
      &            IJS      ,IJL
-      USE YOWMAP   , ONLY : NX       ,NY       ,                        &
+      USE YOWMAP   , ONLY : NGX      ,NGY      ,CLDOMAIN ,              &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG  ,    &
      &            IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN  
       USE YOWSHAL  , ONLY : BATHY
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -134,7 +133,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         ENDIF
         DEALLOCATE(ICOMBUF)
 
-        MIC=7+NGY
+        MIC=5+NGY
         MZC=7+4*NGY+NGX*NGY
 
 !       ENCODE MAIN MESSAGE BUFFERS (ON PE=ISEND) AND
@@ -181,10 +180,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=IJL
 
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=NX
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=NY
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=IPER
           KCOUNT=KCOUNT+1
@@ -272,10 +267,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           IKCOUNT=IKCOUNT+1
           IJL=ICOMBUF(IKCOUNT)
 
-          IKCOUNT=IKCOUNT+1
-          NX=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
-          NY=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           IPER=ICOMBUF(IKCOUNT)
           KCOUNT=KCOUNT+1

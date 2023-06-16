@@ -62,10 +62,10 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M 
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN ,IMDLGRDID,LLUNSTR
+      USE YOWPARAM , ONLY : IMDLGRDID,LLUNSTR
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
      &            IJS      ,IJL
-      USE YOWMAP   , ONLY : NX       ,NY       ,    &
+      USE YOWMAP   , ONLY : NGX      ,NGY      ,CLDOMAIN ,              &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG
       USE YOWABORT, ONLY : WAM_ABORT
@@ -106,11 +106,6 @@
       IF (IFORM /= 1) THEN
         WRITE(IU17,998) NKIND, IMDLGRDID, IMDLGRBID_G, IMDLGRBID_M
       ENDIF
-!*    0. WRITE YOWPARAM (BLOCK SIZES).
-!        ----------------------------
-
-!     IDUM REPLACES IREFRA WHICH IS NO LONGER USED IN PREPROC.
-      IDUM=0
 
       IF (IFORM /= 2) THEN
         WRITE(IU07) NGX, NGY, CLDOMAIN
@@ -126,13 +121,13 @@
 !        ---------------------
 
       IF (IFORM /= 2) THEN
-        WRITE (IU07) DELPHI, (DELLAM(L),L=1,NY), (NLONRGG(L),L=1,NY),   &
-     &   (SINPH(L),L=1,NY), (COSPH(L),L=1,NY),                          &
+        WRITE (IU07) DELPHI, (DELLAM(L),L=1,NGY), (NLONRGG(L),L=1,NGY),   &
+     &   (SINPH(L),L=1,NGY), (COSPH(L),L=1,NGY),                          &
      &   IJS, IJL
       ENDIF
       IF (IFORM /= 1) THEN
-        WRITE (IU17,999) DELPHI,(DELLAM(L),L=1,NY),(REAL(NLONRGG(L),JWRB),L=1,NY), &
-     &   (SINPH(L),L=1,NY), (COSPH(L),L=1,NY)
+        WRITE (IU17,999) DELPHI,(DELLAM(L),L=1,NGY),(REAL(NLONRGG(L),JWRB),L=1,NGY), &
+     &   (SINPH(L),L=1,NGY), (COSPH(L),L=1,NGY)
         WRITE (IU17,998) IJS, IJL
       ENDIF
 
@@ -142,12 +137,12 @@
 !        --------------------
 
       IF (IFORM /= 2) THEN
-        WRITE (IU07) NX, NY, IPER,          &
+        WRITE (IU07) IPER,                                              &
      &   AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO,                &
      &   ZDELLO, IRGG
       ENDIF
       IF (IFORM /= 1) THEN
-        WRITE (IU17,998) NX, NY, IPER
+        WRITE (IU17,998) IPER
         WRITE (IU17,999) AMOWEP, AMOSOP, AMOEAP, AMONOP,                &
      &   XDELLA, XDELLO,ZDELLO
       ENDIF

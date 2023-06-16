@@ -138,10 +138,10 @@ PROGRAM preproc
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH
-      USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
-     &            KXLTMIN  ,KXLTMAX  ,                                  &
-     &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
-     &            XDELLO   ,ZDELLO   ,NLONRGG  ,LAQUA
+      USE YOWMAP   , ONLY : NGX      ,NGY      ,IPER     ,IRGG     ,              &
+     &                      KXLTMIN  ,KXLTMAX  ,                                  &
+     &                      AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
+     &                      XDELLO   ,ZDELLO   ,NLONRGG  ,LAQUA
       USE YOWSHAL  , ONLY : BATHYMAX
       USE YOWTEST  , ONLY : IU06
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
@@ -171,7 +171,6 @@ PROGRAM preproc
       INTEGER(KIND=JWIM) :: K, IX, ICL, IFORM, LNAME,IINPC,LFILE
 
       REAL(KIND=JWRB) :: PRPLRADI
-      REAL(KIND=JWRB) :: OLDRAD
       REAL(KIND=JWRB) :: XLAT, XLATD, XLATMAX,PLONS, COSPHMIN
       REAL(KIND=JWRB), ALLOCATABLE :: BATHY(:,:)
 
@@ -205,13 +204,13 @@ PROGRAM preproc
 !*    2.1 ALLOCATE NECESSARY ARRAYS
 !     -----------------------------
 
-      ALLOCATE(BATHY(NX, NY))
+      ALLOCATE(BATHY(NGX, NGY))
 
-      ALLOCATE(DELLAM(NY)) 
-      ALLOCATE(SINPH(NY)) 
-      ALLOCATE(COSPH(NY)) 
+      ALLOCATE(DELLAM(NGY)) 
+      ALLOCATE(SINPH(NGY)) 
+      ALLOCATE(COSPH(NGY)) 
 !     NLONRGG IS ALLOCATED IN UIPREP
-      ALLOCATE(ZDELLO(NY))
+      ALLOCATE(ZDELLO(NGY))
 
       IU01 = IWAM_GET_UNIT(IU06, 'wam_topo', 'r', 'f', 0, 'READWRITE')
 
@@ -278,8 +277,7 @@ PROGRAM preproc
 !        ------------------------------------------
 
       DELPHI = XDELLA*CIRC/360.0_JWRB
-      OLDRAD=OLDPI/180.0_JWRB
-      DO K=1,NY
+      DO K=1,NGY
         XLAT       = (AMOSOP + REAL(K-1)*XDELLA)*RAD
         XLATD      = (AMOSOP + REAL(K-1)*XDELLA)
         SINPH(K)   = SIN(XLAT)
@@ -287,19 +285,19 @@ PROGRAM preproc
         IF (.NOT.LLGRID) THEN
           IF (IRGG == 1) THEN
 #ifdef _CRAYFTN
-              NLONRGG(K) = MAX(NINT(NX*COSD(XLATD)),2)
+              NLONRGG(K) = MAX(NINT(NGX*COSD(XLATD)),2)
 #else
-              NLONRGG(K) = MAX(NINT(NX*COS(RAD*XLATD)),2)
+              NLONRGG(K) = MAX(NINT(NGX*COS(RAD*XLATD)),2)
 #endif
             IF (MOD(NLONRGG(K),2) == 1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
-            NLONRGG(K) = NX
+            NLONRGG(K) = NGX
           ENDIF      
         ENDIF      
 
         PLONS=(AMOEAP-AMOWEP) + IPER*XDELLO
-        IF (NX == 1 .AND. NY == 1) THEN
-          NLONRGG(K) = NX
+        IF (NGX == 1 .AND. NGY == 1) THEN
+          NLONRGG(K) = NGX
           ZDELLO(K)  = XDELLO
           DELLAM(K)  = ZDELLO(K)*CIRC/360.0_JWRB
           EXIT
@@ -315,7 +313,7 @@ PROGRAM preproc
 !     IF THE POLES ARE INCLUDED, ARTIFICIALLY REMOVE THE SINGULARITY
       XLATMAX=87.5_JWRB
       COSPHMIN=COS(XLATMAX*RAD)
-      DO K=1,NY
+      DO K=1,NGY
         IF (COSPH(K) <= COSPHMIN) THEN
           COSPH(K)=COS(XLATMAX*RAD)
           SINPH(K)=SIN(XLATMAX*RAD)
@@ -327,7 +325,7 @@ PROGRAM preproc
       KXLTMIN(1) = 1
       IF (ALLOCATED(KXLTMAX)) DEALLOCATE(KXLTMAX)
       ALLOCATE(KXLTMAX(1))
-      KXLTMAX(1) = NY
+      KXLTMAX(1) = NGY
 
 ! ----------------------------------------------------------------------
 
@@ -345,9 +343,9 @@ PROGRAM preproc
 !       AQUA PLANET SET TO DEEP EVERYWHERE
 !       EXCEPT AT THE POLES THAT ARE EXCLUDED AS LAND.
         BATHY(:,:)=BATHYMAX
-        DO IX=1,NX
+        DO IX=1,NGX
           BATHY(IX,1)=-999.0_JWRB
-          BATHY(IX,NY)=-999.0_JWRB
+          BATHY(IX,NGY)=-999.0_JWRB
         ENDDO
       ENDIF
 
@@ -375,9 +373,9 @@ PROGRAM preproc
 !        -------------------------
 
 
-!*    6.1 COMPUTE FINE GRID NEST INFORMATION (MODULE YOWFPBO).
-!         ---------------------------------------------------
       IF (.NOT. LLUNSTR) THEN
+!*      6.1 COMPUTE FINE GRID NEST INFORMATION (MODULE YOWFPBO).
+!           ---------------------------------------------------
 
         IF (IBOUNF == 1) THEN
           CALL MBOUNF (IU03, IU10, IU20, IFORM, IINPC)
@@ -386,8 +384,8 @@ PROGRAM preproc
           NBOUNF = 0
         ENDIF
 
-!*    6.2 COMPUTE COARSE GRID NEST INFORMATION (MODULE YOWCPBO).
-!         -----------------------------------------------------
+!*      6.2 COMPUTE COARSE GRID NEST INFORMATION (MODULE YOWCPBO).
+!           -----------------------------------------------------
 
         IF (IBOUNC == 1) THEN
           CALL MBOUNC (IU09, IU19, IFORM)
@@ -397,15 +395,8 @@ PROGRAM preproc
 
 ! ----------------------------------------------------------------------
 
-!*    7. GENERATE CURRENT FIELD.
-!        -----------------------
-
-!     THE READING OF THE INPUT CURRENTS IN NOW DONE IN INITMDL 
-
-! ----------------------------------------------------------------------
-
-!*    8. GENERATE AND WRITE MODULE UBUF.
-!        -------------------------------
+!*      8. GENERATE AND WRITE MODULE UBUF.
+!          -------------------------------
 
           CALL MUBUF (IU01, IU08, NPROPAGS)
  

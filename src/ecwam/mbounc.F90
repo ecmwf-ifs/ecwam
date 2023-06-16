@@ -53,11 +53,10 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,IGARC    ,DLAMAC   ,    &
      &            DPHIAC   ,AMOSOC   ,AMONOC   ,AMOEAC   ,AMOWEC   ,    &
      &            BLATC    ,BLNGC    ,GBOUNC   ,IPOGBO
-      USE YOWMAP   , ONLY : XDELLA   ,XDELLO
+      USE YOWMAP   , ONLY : NGX      ,NGY      ,XDELLA   ,XDELLO
       USE YOWPRPROC,ONLY : NBMAX
       USE YOWTEST  , ONLY : IU06
 

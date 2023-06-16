@@ -180,11 +180,11 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      NPROMA_WAM, NCHNK, IJFROMCHNK  
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,                        &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
+     &            NIBLO    ,NGX      ,NGY      ,                        &
      &            KMNOP    ,KMSOP    ,IPER     ,IRGG     ,IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
-     &                      NGX      ,NGY      ,                        &
-     &                      NIBLO    ,LLUNSTR
+     &                      LLUNSTR
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
      &                      RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
       USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC

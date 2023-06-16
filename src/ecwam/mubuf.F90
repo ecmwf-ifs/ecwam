@@ -57,9 +57,9 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,NFRE_RED
-      USE YOWMAP   , ONLY : BLK2GLO  ,NY       ,IPER     ,IRGG      ,   &
-     &                      NLONRGG  ,LLOBSTRCT
+      USE YOWPARAM , ONLY : NFRE_RED
+      USE YOWMAP   , ONLY : BLK2GLO  ,NGX      ,NGY      ,NIBLO     ,  &
+     &                      IPER     ,IRGG     ,NLONRGG  ,LLOBSTRCT
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------

@@ -88,13 +88,13 @@ PROGRAM preset
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
       USE YOWMAP   , ONLY : BLK2GLO   ,IRGG     ,AMOWEP   ,             &
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,    &
-     &            BLK2LOC 
+     &            BLK2LOC  ,NGX      ,NGY      ,NIBLO    ,CLDOMAIN 
       USE YOWNEMOFLDS , ONLY : NEMO2WAM
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG     ,NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG, NFRE, NFRE_RED, NGX    ,NGY      ,    &
-     &            NIBLO    ,SWAMPWIND,CLDOMAIN ,LL1D     ,LLUNSTR
+      USE YOWPARAM , ONLY : NANG, NFRE, NFRE_RED,                       &
+     &             SWAMPWIND,LL1D     ,LLUNSTR
       USE YOWPCONS , ONLY : G        ,RAD      ,DEG      ,ZMISS    ,    &
      &            ROAIR
       USE YOWSHAL  , ONLY : BATHY, WVENVI, BATHYMAX

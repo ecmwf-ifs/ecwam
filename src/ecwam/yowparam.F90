@@ -22,17 +22,12 @@
       INTEGER(KIND=JWIM) :: NFRE
       INTEGER(KIND=JWIM) :: NFRE_RED
       INTEGER(KIND=JWIM) :: NFRE_ODD
-      INTEGER(KIND=JWIM) :: NGX
-      INTEGER(KIND=JWIM) :: NGY
-      INTEGER(KIND=JWIM) :: NIBLO
 
       REAL(KIND=JWRB) :: SWAMPWIND 
       REAL(KIND=JWRB) :: SWAMPWIND2 
       REAL(KIND=JWRB) :: DTNEWWIND
       REAL(KIND=JWRB) :: SWAMPCIFR
       REAL(KIND=JWRB) :: SWAMPCITH
-
-      CHARACTER(LEN=1)   :: CLDOMAIN
 
       LOGICAL :: LTURN90
       LOGICAL :: LL1D
@@ -53,9 +48,6 @@
 !      *NFRE_RED*  INTEGER   REDUCED NUMBER OF FREQUENCIES FOR THE PROPAGATION AND IO
 !                            BY DEFAULT = NFRE
 !      *NFRE_ODD*  INTEGER   NFRE-1 IF NFRE EVEN, BUT NFRE IS NFRE ODD 
-!      *NGX*       INTEGER   NUMBER OF LONGITUDES IN GRID.
-!      *NGY*       INTEGER   NUMBER OF LATITUDES IN GRID.
-!      *NIBLO*     INTEGER   NUMBER OF SEA POINTS IN BLOCK.
 !      *SWAMPWIND* REAL      CONSTANT WIND SPEED USED TO RUN SWAMP CASE.
 !                            FIRST VALUE
 !      *SWAMPWIND2*REAL      CONSTANT WIND SPEED USED TO RUN SWAMP CASE.
@@ -72,8 +64,6 @@
 !                            OVER THE ALL DOMAIN.
 !                            THE PRESENCE OF THE FILE, windforcing_time_series
 !                            WILL DETERMINE WHETHER OR NOT LWDINTS IS TRUE OR NOT
-!      *CLDOMAIN*  CHARACTER DEFINES THE DOMAIN OF THE MODEL (for the
-!                            FDB and for selection of some variables)
 !      *LL1D*      LOGICAL   IF TRUE THEN THE DOMAIN DECOMPOSITION IS ONLY
 !                            DONE IN LATITUNAL BANDS
 !                            (like it used to be done).

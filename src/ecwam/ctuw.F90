@@ -34,7 +34,7 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
       USE YOWGRID  , ONLY : SINPH    ,COSPH
       USE YOWMAP   , ONLY : IRGG    ,IPER     ,                                   &
      &                      XDELLA   ,ZDELLO   ,AMOWEP   ,AMOSOP 
-      USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE_RED ,NGY
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED
       USE YOWPCONS , ONLY : ZPI      ,R        ,CIRC
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSTAT  , ONLY : ICASE    ,IREFRA

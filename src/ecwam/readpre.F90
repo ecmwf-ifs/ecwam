@@ -61,13 +61,12 @@ SUBROUTINE READPRE (IU07)
 
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
      &            IJS      ,IJL
-      USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,              &
+      USE YOWMAP   , ONLY : BLK2GLO  ,NGX      ,NGY      ,NIBLO    ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG  ,    &
-     &            IQGAUSS
+     &            IQGAUSS  ,CLDOMAIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,LLR8TOR4 ,LLUNSTR  ,    &  
-     &            NIBLO    ,CLDOMAIN ,IMDLGRDID
+      USE YOWPARAM , ONLY : LLR8TOR4 ,LLUNSTR  ,IMDLGRDID
       USE YOWSHAL  , ONLY : BATHY    ,LLOCEANMASK
       USE YOWTEST  , ONLY : IU06
       USE YOWABORT, ONLY : WAM_ABORT
@@ -162,7 +161,7 @@ SUBROUTINE READPRE (IU07)
 !     LAT-LONG GRID (REGULAR OR IRREGULAR).
 
         IF (IPER ==1 .AND. AMONOP == ABS(AMOSOP) .AND.                  &
-     &     MOD(NY,2) == 0 .AND. IRGG == 1 ) THEN
+     &     MOD(NGY,2) == 0 .AND. IRGG == 1 ) THEN
           IQGAUSS=1
         ELSE
           IQGAUSS=0
@@ -320,7 +319,7 @@ SUBROUTINE READPRE (IU07)
          IF (LLR8TOR4) THEN
             ALLOCATE(R8_ZDELLO(NGY))
 
-            READ(IU07,IOSTAT=ISTAT) NX, NY, IPER, &
+            READ(IU07,IOSTAT=ISTAT) IPER, &
      &           R8_AMOWEP, R8_AMOSOP, R8_AMOEAP, R8_AMONOP,                  &
      &           R8_XDELLA, R8_XDELLO,                                        &
      &           R8_ZDELLO, IRGG
@@ -336,7 +335,7 @@ SUBROUTINE READPRE (IU07)
 
             DEALLOCATE(R8_ZDELLO)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) NX, NY, IPER, &
+            READ(IU07,IOSTAT=ISTAT) IPER, &
      &           AMOWEP, AMOSOP, AMOEAP, AMONOP,                              &
      &           XDELLA, XDELLO,                                              &
      &           ZDELLO, IRGG

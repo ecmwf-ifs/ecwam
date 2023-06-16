@@ -76,10 +76,9 @@
 
       USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,    &
      &            XOUTN    ,NOUTD
-      USE YOWMAP   , ONLY : NX       ,NY       ,AMOWEP   ,AMOSOP   ,    &
+      USE YOWMAP   , ONLY : NGX      ,NGY      ,AMOWEP   ,AMOSOP   ,    &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            NLONRGG  ,LLOBSTRCT
-      USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWTEST  , ONLY : IU06, ITEST
 
 ! ----------------------------------------------------------------------
@@ -185,7 +184,7 @@
           CALL ABORT1
         ENDIF
 
-        DO K=1,NY
+        DO K=1,NGY
 
 !       READ THE NUMBER OF POINTS PER LATITUDE
           READ (IU01,*) KLONRGG  
@@ -212,7 +211,7 @@
         ALLOCATE(IDUM(NGX))
         CX='     '
         FORMT='          ' 
-        DO K=1,NY
+        DO K=1,NGY
           IF (LLREALIN) THEN
             WRITE(CX,'(I5.5)') NLONRGG(1)
             FORMT='('//CX//'F9.2)'
@@ -434,7 +433,7 @@
  3070   CONTINUE
       ENDDO
  3080 CONTINUE
-      IF (NJ /= NY .OR. NL > NX) THEN
+      IF (NJ /= NGY .OR. NL > NGX) THEN
         WRITE (IU06,*) ' *****************************************'
         WRITE (IU06,*) ' *                                       *'
         WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR      *'
@@ -442,10 +441,10 @@
         WRITE (IU06,*) ' *                                       *'
         WRITE (IU06,*) ' * NUMBER OF LONGITUDES OR LATITUDES IN  *'
         WRITE (IU06,*) ' * IS NOT EQUAL TO EXPECTED NUMBER       *'
-        WRITE (IU06,*) ' * LATITUDES  FOUND      NJ = ', NJ
-        WRITE (IU06,*) ' * LATITUDES  EXPECTED   NY = ', NY
-        WRITE (IU06,*) ' * LONGITUDES FOUND      NL = ', NL
-        WRITE (IU06,*) ' * LONGITUDES EXPECTED   NX = ', NX
+        WRITE (IU06,*) ' * LATITUDES  FOUND      NJ  = ', NJ
+        WRITE (IU06,*) ' * LATITUDES  EXPECTED   NGY = ', NGY
+        WRITE (IU06,*) ' * LONGITUDES FOUND      NL  = ', NL
+        WRITE (IU06,*) ' * LONGITUDES EXPECTED   NGX = ', NGX
         WRITE (IU06,*) ' *                                       *'
         WRITE (IU06,*) ' * PROGRAM WILL BE ABORTED               *'
         WRITE (IU06,*) ' *****************************************'
@@ -502,11 +501,11 @@
 !*    7. AID TO USERS - SIMPLE PLOT OF GRID.
 !        ------------------------------------
 
-      WRITE (IU06,'(''0NUMBER OF LATITUDES IS        NY = '',I5)') NY
+      WRITE (IU06,'(''0NUMBER OF LATITUDES IS       NGY = '',I5)') NGY
       WRITE (IU06,'('' MOST SOUTHERN LATITUDE IS AMOSOP = '',F7.3)') AMOSOP
       WRITE (IU06,'('' MOST NORTHERN LATITUDE IS AMONOP = '',F7.3)') AMONOP 
       WRITE (IU06,'('' LATITUDE INCREMENT IS     XDELLA = '',F7.3)') XDELLA
-      WRITE (IU06,'(''0MAX NUMBER OF LONGITUDES IS   NX = '',I5)') NX
+      WRITE (IU06,'(''0MAX NUMBER OF LONGITUDES IS  NGX = '',I5)') NGX
       WRITE (IU06,'('' MOST WESTERN LONGITUDE IS AMOWEP = '',F7.3)') AMOWEP
       WRITE (IU06,'('' MOST EASTERN LONGITUDE IS AMOEAP = '',F7.3)') AMOEAP
       WRITE (IU06,                                                      &

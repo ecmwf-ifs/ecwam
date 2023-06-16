@@ -65,14 +65,13 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,IGARC    ,DLAMAC   ,    &
      &            DPHIAC   ,BLATC    ,BLNGC    ,                        &
      &            GBOUNC   ,IPOGBO
       USE YOWFPBO  , ONLY : NBOUNF   ,IJARF    ,IGARF    ,IBFL     ,    &
      &            IBFR     ,BFW
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,    &
-     &            XDELLA   ,XDELLO   ,NX       ,NY
+     &            XDELLA   ,XDELLO   ,NGX      ,NGY
       USE YOWPRPROC,ONLY : NBMAX
       USE YOWTEST  ,ONLY : IU06
 

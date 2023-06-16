@@ -64,8 +64,8 @@ SUBROUTINE MPFLDTOIFS(IJS, IJL, BLK2GLO, NWVFIELDS, BLOCK,       &
      &            LMASK_TASK_STR,                                       &
      &            LFROMTASK,IJFROMTASK,NFROMTASKS,ISTFROMTASK,          &
      &            LTOTASK  ,IJTOTASK  ,NTOTASKS  ,ISTTOTASK
+      USE YOWMAP   , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06
 
