@@ -7,24 +7,27 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE WDFLUXES (KIJS, KIJL,                 &
-     &                     MIJ,                        &
-     &                     FL1, XLLWS,                 &
-     &                     WAVNUM, CINV, CGROUP,       &
-     &                     XK2CG, STOKFAC,             &
-     &                     DEPTH,                      &
-     &                     WSWAVE, WDWAVE,             &
-     &                     AIRD, WSTAR,                &
-     &                     USTRA, VSTRA,               &
-     &                     CICOVER,                    &
-     &                     UFRIC, Z0M,                 &
-     &                     Z0B, CHRNCK, CITHICK,       &
-     &                     WSEMEAN, WSFMEAN, USTOKES, VSTOKES, STRNMS, &
-     &                     TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, PHIOCD, &
-     &                     PHIEPS, PHIAW, &
+      SUBROUTINE WDFLUXES (KIJS, KIJL,                         &
+     &                     MIJ,                                &
+     &                     FL1, XLLWS,                         &
+     &                     WAVNUM, CINV, CGROUP,               &
+     &                     XK2CG, STOKFAC,                     &
+     &                     DEPTH,                              &
+     &                     WSWAVE, WDWAVE,                     &
+     &                     AIRD, WSTAR,                        &
+     &                     USTRA, VSTRA,                       &
+     &                     CICOVER,                            &
+     &                     UFRIC, Z0M,                         &
+     &                     Z0B, CHRNCK, CITHICK,               &
+     &                     WSEMEAN, WSFMEAN,                   &
+     &                     USTOKES, VSTOKES, STRNMS,           &
+     &                     TAUXD, TAUYD, TAUOCXD,              &
+     &                     TAUOCYD, TAUOC, PHIOCD,             &
+     &                     PHIEPS, PHIAW,                      &
      &                     NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN, &
-     &                     NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
-     &                     NEMOTAUY, NEMOWSWAVE, NEMOPHIF)
+     &                     NPHIEPS, NTAUOC, NSWH,              &
+     &                     NMWP, NEMOTAUX, NEMOTAUY,           &
+     &                     NEMOWSWAVE, NEMOPHIF)
 
 ! ----------------------------------------------------------------------
 
@@ -190,8 +193,8 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
      &                   SL, CICOVER,                       &
      &                   PHIWA,                             &
      &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
-     &                   UFRIC, AIRD,                       &
      &                   USTRA, VSTRA,                      &
+     &                   UFRIC, AIRD,                       &
      &                   NPHIEPS, NTAUOC, NSWH, NMWP,       &
      &                   NEMOTAUX, NEMOTAUY,                &
      &                   NEMOWSWAVE, NEMOPHIF,              &
@@ -209,8 +212,8 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
      &                   SL, CICOVER,                       &
      &                   PHIWA,                             &
      &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
-     &                   UFRIC, AIRD,                       &
      &                   USTRA, VSTRA,                      &
+     &                   UFRIC, AIRD,                       &
      &                   NPHIEPS, NTAUOC, NSWH, NMWP,       &
      &                   NEMOTAUX, NEMOTAUY,                &
      &                   NEMOWSWAVE, NEMOPHIF,              &

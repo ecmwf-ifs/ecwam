@@ -13,8 +13,8 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
  &                   SSURF, CICOVER,                   &
  &                   PHIWA,                            &
  &                   EM, F1, WSWAVE, WDWAVE,           &
- &                   UFRIC, AIRD,                      &
  &                   USTRA, VSTRA,                     &
+ &                   UFRIC, AIRD,                      &
  &                   NPHIEPS, NTAUOC, NSWH, NMWP,      &
  &                   NEMOTAUX, NEMOTAUY,               &
  &                   NEMOWSWAVE, NEMOPHIF,             &
@@ -91,8 +91,8 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: PHIWA
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EM, F1, WSWAVE, WDWAVE
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, AIRD
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USTRA, VSTRA
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, AIRD
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: PHIOCD, PHIEPS, PHIAW
       REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX

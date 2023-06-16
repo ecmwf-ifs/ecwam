@@ -237,8 +237,8 @@ SUBROUTINE INITMDL (NADV,                                 &
 #include "init_x0tauhf.intfb.h"
 #include "initdpthflds.intfb.h"
 #include "initnemocpl.intfb.h"
-#include "iwam_get_unit.intfb.h"
 #include "iniwcst.intfb.h"
+#include "iwam_get_unit.intfb.h"
 #include "mcout.intfb.h"
 #include "secondhh_gen.intfb.h"
 #include "preset_wgrib_template.intfb.h"
@@ -927,6 +927,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       CALL GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 
       WRITE(IU06,*) '    SUB. INITMDL: SPECTRA READ IN'
+      WRITE(IU06,*) ' '
       CALL FLUSH (IU06)
 
 

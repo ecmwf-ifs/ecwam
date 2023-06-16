@@ -52,6 +52,7 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "expand_string.intfb.h"
+#include "iniwcst.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "mfredir.intfb.h"
 #include "mpuserin.intfb.h"
@@ -64,6 +65,7 @@
       INTEGER(KIND=JWIM) :: I4(2)
 
       REAL(KIND=JWRB), INTENT(OUT) :: RSOUTW, RNORTW
+      REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JWRB) :: X4(2)
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -120,6 +122,10 @@
         LFRST=.FALSE.
       ENDIF
 
+!     INITIALISE THE FREQUENCY AND DIRECTION ARRAYS
+!     ---------------------------------------------
+      PRPLRADI = 1.0_JWRB
+      CALL INIWCST(PRPLRADI)  !! it will be call again in INITMDL once PRPLRADI is known
       CALL MFREDIR
 
 !     SET WAVE PHYSICS PACKAGE
@@ -196,7 +202,6 @@
       KTAG=1
 
       CALL MPL_BARRIER(CDSTRING='WVWAMINIT:')
-
       CALL READPRE (IU07)
       CALL MPL_BARRIER(CDSTRING='WVWAMINIT:')
 
