@@ -84,14 +84,14 @@
 !*       ALL OTHER BLOCKS MORE  THAN 3 LATITUDES.
 !        -------------------------------------------------
 
-      IF (KA == 1 .AND. KE == 1 .AND. NY == 1) THEN
+      IF (KA == 1 .AND. KE == 1 .AND. NGY == 1) THEN
         WRITE (IU06,*) '**********************************************'
         WRITE (IU06,*) '*                                            *'
         WRITE (IU06,*) '* ALLOWS FOR THE 1 GRID POINT MODEL          *'
         WRITE (IU06,*) '*                                            *'
         WRITE (IU06,*) '**********************************************'
-      ELSEIF ((KE == 1) .OR. (KA == NY) .OR.                            &
-     &    ((KA /= 1) .AND. (KE == NY) .AND. (KE-KA < 2))) THEN
+      ELSEIF ((KE == 1) .OR. (KA == NGY) .OR.                            &
+     &    ((KA /= 1) .AND. (KE == NGY) .AND. (KE-KA < 2))) THEN
         WRITE (IU06,*) '**********************************************'
         WRITE (IU06,*) '*                                            *'
         WRITE (IU06,*) '*        FATAL ERROR IN SUB. MBLOCK          *'
