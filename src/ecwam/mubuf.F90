@@ -117,7 +117,7 @@
             KDUM(IJ)=1000
           ENDDO
           IF (LLOBSTRCT) THEN
-            DO K=1,NY
+            DO K=1,NGY
               DO IXLP = 1,NLONRGG(K),NLONRGG(1)
                 READ(IU01,FORMAT) (IDUM(IX,K),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
               ENDDO
@@ -139,7 +139,7 @@
             KDUM(IJ)=1000
           ENDDO
           IF (LLOBSTRCT) THEN
-            DO K=1,NY
+            DO K=1,NGY
               DO IXLP = 1,NLONRGG(K),NLONRGG(1)
                 READ(IU01,FORMAT) (IDUM(IX,K),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
               ENDDO
@@ -161,7 +161,7 @@
             KDUM(IJ)=1000
           ENDDO
           IF (LLOBSTRCT) THEN
-            DO K=1,NY
+            DO K=1,NGY
               DO IXLP = 1,NLONRGG(K),NLONRGG(1)
                 READ(IU01,FORMAT)(IDUM(IX,K),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
               ENDDO
@@ -181,7 +181,7 @@
             KDUM(IJ)=1000
           ENDDO
           IF (LLOBSTRCT) THEN
-            DO K=1,NY
+            DO K=1,NGY
               DO IXLP = 1,NLONRGG(K),NLONRGG(1)
                 READ(IU01,FORMAT)(IDUM(IX,K),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
               ENDDO
@@ -201,7 +201,7 @@
             KDUM(IJ)=1000
           ENDDO
           IF (LLOBSTRCT) THEN
-            DO K=1,NY
+            DO K=1,NGY
               DO IXLP = 1,NLONRGG(K),NLONRGG(1)
                 READ(IU01,FORMAT) (IDUM(IX,K),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
               ENDDO

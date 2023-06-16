@@ -49,7 +49,7 @@
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF   ,IJARF
       USE YOWGRID  , ONLY : IJS      ,IJL
-      USE YOWMAP   , ONLY : BLK2GLO  ,NGX      ,NGY       ,NIBLO    &
+      USE YOWMAP   , ONLY : BLK2GLO  ,NGX      ,NGY      ,NIBLO,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLO
       USE YOWTEST  , ONLY : IU06
 
@@ -83,8 +83,8 @@
 !*    2. GENERATE LAND SEA TABLE FROM INDEX ARRAYS.
 !        ------------------------------------------
 
-      DO K=1,NY
-        DO I=1,NX
+      DO K=1,NGY
+        DO I=1,NGX
           LST(I,K) = 'L'
         ENDDO
       ENDDO
@@ -175,9 +175,9 @@
       WRITE (IU06,'('' NUMBER OF FREQUENCIES   NFRE_RED '', 3I10)')     &
      &           NFRE_RED, NFRE_RED, NFRE_RED 
       WRITE (IU06,'('' NUMBER LONGITUDE GRID POINTS NGX '', 3I10)')     &
-     &           NGX, NX, NX
+     &           NGX, NGX, NGX
       WRITE (IU06,'('' NUMBER LATITUDE GRID POINTS  NGY '', 3I10)')     &
-     &           NGY, NY, NY
+     &           NGY, NGY, NGY
       WRITE (IU06,'('' MAXIMUM BLOCK LENGTH       NIBLO '', 3I10)')     &
      &           NIBLO
 

@@ -48,10 +48,9 @@
       USE YOWGRID  , ONLY : DELPHI   ,NPROMA_WAM, NCHNK
       USE YOWINTP  , ONLY : GOUT
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
-     &                      NGX      ,NGY      ,                        &
+     &                      NGX      ,NGY      ,CLDOMAIN,               &
      &                      AMONOP   ,ZDELLO   ,NLONRGG
       USE YOWMPP   , ONLY : IRANK
-      USE YOWPARAM , ONLY : CLDOMAIN
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTINTT  ,MARSTYPE
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
