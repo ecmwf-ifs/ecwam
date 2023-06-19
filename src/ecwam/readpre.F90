@@ -140,6 +140,8 @@ SUBROUTINE READPRE (IU07)
 
         CALL READREC(2)
 
+write(*,*) 'debile readpre NGX, NGY ', NGX, NGY
+
 !*    2. READ MODULE YOWGRID (GENERAL GRID ORGANISATION).
 !        ------------------------------------------------
 
@@ -149,6 +151,8 @@ SUBROUTINE READPRE (IU07)
         IF (.NOT.ALLOCATED(COSPH)) ALLOCATE(COSPH(NGY))
 
         CALL READREC(3)
+
+write(*,*) 'debile readpre IJS, IJL ',IJS,IJL
 
 !*    3. READ MODULE YOWMAP (LONG. AND LAT. INDICES OF GRID POINTS).
 !        --------------------------------------------------------
@@ -216,6 +220,8 @@ SUBROUTINE READPRE (IU07)
           ENDIF
         ENDDO
       ENDDO
+
+write(*,*) 'debile readpre NIBLO ', NIBLO
 
       IF ( NIBLO <= 0 ) THEN
          WRITE(IU06,*)'***ERROR IN READREC: NIBLO SHOULD > 0, NIBLO = ',NIBLO
