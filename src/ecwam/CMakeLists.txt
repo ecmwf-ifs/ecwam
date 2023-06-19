@@ -458,105 +458,99 @@ elseif( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
 endif()
 
 if( HAVE_WAM_LOKI )
-  if( HAVE_WAM_LOKI_IDEM )
 ############################################################
 ##  Loki Idempotence mode:                                ##
 ##   * Internal "do-nothing" mode for Loki debug          ##
 ############################################################
-     foreach(src ${phys_srcs} wamintgr.F90)
-        string(REPLACE ".F90" "" fnc ${src})
-        string(CONCAT fnm "loki-idem/" ${fnc} ".idem.F90")
-        list(APPEND loki_idem_srcs ${fnm})
-     endforeach()
+  foreach(src ${phys_srcs} wamintgr.F90)
+     string(REPLACE ".F90" "" fnc ${src})
+     string(CONCAT fnm "loki-idem/" ${fnc} ".idem.F90")
+     list(APPEND loki_idem_srcs ${fnm})
+  endforeach()
 
-     loki_transform_convert(
-         MODE idem FRONTEND "fp" CPP
-         CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config
-         PATH ${CMAKE_CURRENT_SOURCE_DIR}
-         INCLUDES ${ecwam_intfb_includes}
-         OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-idem
-         OUTPUT ${loki_idem_srcs}
-         DEPENDS ${phys_srcs}
-     )
+  loki_transform_convert(
+      MODE idem FRONTEND "fp" CPP
+      CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config
+      PATH ${CMAKE_CURRENT_SOURCE_DIR}
+      INCLUDES ${ecwam_intfb_includes}
+      OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-idem
+      OUTPUT ${loki_idem_srcs}
+      DEPENDS ${phys_srcs}
+  )
 
-     ecbuild_add_library(
-         TARGET           ${ecwam}_idem
-         TYPE             ${LIBRARY_TYPE}
-         DEFINITIONS      ${ECWAM_DEFINITIONS}
-         SOURCES          ${ecwam_srcs} ${loki_idem_srcs} ${phys_srcs} ${global_var_mods}
-         PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
-                          ${MPI_Fortran_LIBRARIES}
-                          ${${PNAME}_OCEANMODEL_LIBRARIES}
-         PRIVATE_LIBS     eccodes_f90
-                          ${MULTIO_LIBRARIES}
-                          ${OpenMP_Fortran_LIBRARIES}
-                          $<${HAVE_FIELD_API}:field_api_${prec}>
-         PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
-         PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}
-     )
+  ecbuild_add_library(
+      TARGET           ${ecwam}_idem
+      TYPE             ${LIBRARY_TYPE}
+      DEFINITIONS      ${ECWAM_DEFINITIONS}
+      SOURCES          ${ecwam_srcs} ${loki_idem_srcs} ${phys_srcs} ${global_var_mods}
+      PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
+                       ${MPI_Fortran_LIBRARIES}
+                       ${${PNAME}_OCEANMODEL_LIBRARIES}
+      PRIVATE_LIBS     eccodes_f90
+                       ${MULTIO_LIBRARIES}
+                       ${OpenMP_Fortran_LIBRARIES}
+                       $<${HAVE_FIELD_API}:field_api_${prec}>
+      PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
+      PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}
+  )
 
-     ecwam_target_fortran_module_directory(
-         TARGET ${ecwam}_idem
-         MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/${ecwam}_idem
-         INSTALL_DIRECTORY module/${ecwam}_idem
-     )
+  ecwam_target_fortran_module_directory(
+      TARGET ${ecwam}_idem
+      MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/${ecwam}_idem
+      INSTALL_DIRECTORY module/${ecwam}_idem
+  )
 
-     ecwam_target_compile_definitions_FILENAME( ${ecwam}_idem )
+  ecwam_target_compile_definitions_FILENAME( ${ecwam}_idem )
 
-  endif()
-  if( HAVE_WAM_LOKI_IDEM_STACK )
 ############################################################
 ##  Idempotence mode with pool-allocator for temporaries: ##
 ##   * Internal "do-nothing" mode for Loki debug          ##
 ############################################################
-     foreach(src ${phys_srcs} wamintgr.F90)
-        string(REPLACE ".F90" "" fnc ${src})
-        string(CONCAT fnm "loki-idem-stack/" ${fnc} ".idem_stack.F90")
-        list(APPEND loki_idem_stack_srcs ${fnm})
-     endforeach()
+  foreach(src ${phys_srcs} wamintgr.F90)
+     string(REPLACE ".F90" "" fnc ${src})
+     string(CONCAT fnm "loki-idem-stack/" ${fnc} ".idem_stack.F90")
+     list(APPEND loki_idem_stack_srcs ${fnm})
+  endforeach()
 
-     loki_transform_convert(
-         MODE idem-stack FRONTEND "fp" CPP
-         CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config
-         PATH ${CMAKE_CURRENT_SOURCE_DIR}
-         INCLUDES ${ecwam_intfb_includes}
-         OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-idem-stack
-         OUTPUT ${loki_idem_stack_srcs}
-         DEPENDS ${phys_srcs}
-     )
+  loki_transform_convert(
+      MODE idem-stack FRONTEND "fp" CPP
+      CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config
+      PATH ${CMAKE_CURRENT_SOURCE_DIR}
+      INCLUDES ${ecwam_intfb_includes}
+      OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-idem-stack
+      OUTPUT ${loki_idem_stack_srcs}
+      DEPENDS ${phys_srcs}
+  )
 
-     ecbuild_add_library(
-         TARGET           ${ecwam}_idem_stack
-         TYPE             ${LIBRARY_TYPE}
-         DEFINITIONS      ${ECWAM_DEFINITIONS}
-         SOURCES          ${ecwam_srcs} ${loki_idem_stack_srcs} ${phys_srcs} ${global_var_mods}
-         PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
-                          ${MPI_Fortran_LIBRARIES}
-                          ${${PNAME}_OCEANMODEL_LIBRARIES}
-         PRIVATE_LIBS     eccodes_f90
-                          ${MULTIO_LIBRARIES}
-                          ${OpenMP_Fortran_LIBRARIES}
-                          $<${HAVE_FIELD_API}:field_api_${prec}>
-         PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
-         PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}
-     )
+  ecbuild_add_library(
+      TARGET           ${ecwam}_idem_stack
+      TYPE             ${LIBRARY_TYPE}
+      DEFINITIONS      ${ECWAM_DEFINITIONS}
+      SOURCES          ${ecwam_srcs} ${loki_idem_stack_srcs} ${phys_srcs} ${global_var_mods}
+      PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
+                       ${MPI_Fortran_LIBRARIES}
+                       ${${PNAME}_OCEANMODEL_LIBRARIES}
+      PRIVATE_LIBS     eccodes_f90
+                       ${MULTIO_LIBRARIES}
+                       ${OpenMP_Fortran_LIBRARIES}
+                       $<${HAVE_FIELD_API}:field_api_${prec}>
+      PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
+      PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}
+  )
 
-     ecwam_target_fortran_module_directory(
-         TARGET ${ecwam}_idem_stack
-         MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/${ecwam}_idem_stack
-         INSTALL_DIRECTORY module/${ecwam}_idem_stack
-     )
+  ecwam_target_fortran_module_directory(
+      TARGET ${ecwam}_idem_stack
+      MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/${ecwam}_idem_stack
+      INSTALL_DIRECTORY module/${ecwam}_idem_stack
+  )
 
-     ecwam_target_compile_definitions_FILENAME( ${ecwam}_idem_stack )
+  ecwam_target_compile_definitions_FILENAME( ${ecwam}_idem_stack )
 
-     if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
-         target_compile_options( ${ecwam}_idem_stack PUBLIC "-Mcray=pointer" )
-     endif()
+  if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
+      target_compile_options( ${ecwam}_idem_stack PUBLIC "-Mcray=pointer" )
   endif()
-endif()
 
-if( HAVE_WAM_LOKI_GPU )
-  if( HAVE_WAM_LOKI_SCC )
+  if( HAVE_WAM_GPU )
 ############################################################
 ##  Loki SCC transformation:                              ##
 ############################################################
@@ -604,9 +598,7 @@ if( HAVE_WAM_LOKI_GPU )
      if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
      	target_compile_options( ${ecwam}_scc PUBLIC "-gpu=gvmode" )
      endif()
-  endif()
 
-  if( HAVE_WAM_LOKI_SCC_STACK )
 ############################################################
 ##  Loki SCC with pool allocator for temporaries:         ##
 ############################################################
@@ -655,4 +647,44 @@ if( HAVE_WAM_LOKI_GPU )
      	target_compile_options( ${ecwam}_scc_stack PUBLIC "-gpu=gvmode;-Mcray=pointer" )
      endif()
   endif()
+endif()
+
+if( HAVE_CUDA )
+############################################################
+##  SCC-cuf variant with parametrised temporaries:        ##
+############################################################
+  foreach(src ${phys_srcs} wamintgr_cuda_gpu.F90 ${global_var_mods})
+     string(REPLACE ".F90" "" fnc ${src})
+     string(CONCAT fnm "scc-cuf/" ${fnc} ".cuf_parametrise.F90")
+     list(APPEND wam_scc_cuf_srcs ${fnm})
+  endforeach()
+
+  set_source_files_properties( ${wam_scc_cuf_srcs} PROPERTIES COMPILE_OPTIONS "-cuda" )
+
+  ecbuild_add_library(
+  	TARGET           ${ecwam}_scc_cuf
+  	TYPE             ${LIBRARY_TYPE}
+  	DEFINITIONS      ${ECWAM_DEFINITIONS} WAM_CUDA
+  	SOURCES          ${ecwam_srcs} ${wam_scc_cuf_srcs} ${phys_srcs}
+  	PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
+  					 ${MPI_Fortran_LIBRARIES}
+  					 ${${PNAME}_OCEANMODEL_LIBRARIES}
+                     $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
+  	PRIVATE_LIBS     eccodes_f90
+  					 ${MULTIO_LIBRARIES}
+  					 ${OpenMP_Fortran_LIBRARIES}
+  					 $<${HAVE_FIELD_API}:field_api_${prec}>
+  	PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
+  	PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+
+  ecwam_target_fortran_module_directory(
+  	TARGET ${ecwam}_scc_cuf
+  	MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/${ecwam}_scc_cuf
+  	INSTALL_DIRECTORY module/${ecwam}_scc_cuf
+  )
+  
+  ecwam_target_compile_definitions_FILENAME( ${ecwam}_scc_cuf )
+
+  target_link_options( ${ecwam}_scc_cuf PUBLIC "-cuda;-gpu=pinned" )
 endif()

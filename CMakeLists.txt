@@ -98,6 +98,7 @@ find_package( OpenACC )
 if( OpenACC_Fortran_FOUND AND OpenACC_C_FOUND )
   set( OpenACC_FOUND ON )
 endif()
+
 ecbuild_add_option( FEATURE ACC
                     DESCRIPTION "OpenACC" DEFAULT ON
                     REQUIRED_PACKAGES "OpenACC" 
@@ -109,11 +110,21 @@ ecbuild_add_option( FEATURE WAM_LOKI
                     DESCRIPTION "Apply Loki transformations to ecWam physics"
                     CONDITION loki_FOUND )
 
-### Apply Loki source-to-source transformations to the ecWam physics with GPU offload
-ecbuild_add_option( FEATURE WAM_LOKI_GPU
-                    DEFAULT OFF
-                    DESCRIPTION "Apply Loki transformations to ecWam physics with GPU offload"
-                    CONDITION HAVE_ACC AND HAVE_FIELD_API AND loki_FOUND )
+### Offload ecWam physics to the GPU
+ecbuild_add_option( FEATURE WAM_GPU
+                    DEFAULT ON
+                    DESCRIPTION "Offload ecWam physics to the GPU"
+                    CONDITION HAVE_ACC AND HAVE_FIELD_API )
+
+### check for CUDA
+include(CheckLanguage)
+check_language(CUDA)
+ecbuild_add_option( FEATURE CUDA
+    DESCRIPTION "CUDA" DEFAULT OFF
+    CONDITION CMAKE_CUDA_COMPILER AND HAVE_WAM_GPU )
+if( HAVE_CUDA )
+    enable_language( CUDA )
+endif()
 
 ### Sources
 

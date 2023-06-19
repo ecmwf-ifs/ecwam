@@ -37,22 +37,31 @@ if( HAVE_WAM_LOKI )
         LIBS            ${PROJECT_NAME}_idem_stack ${OpenMP_Fortran_LIBRARIES}
     )
     ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-chief-loki-idem-stack)
+
+    if( HAVE_WAM_GPU )
+        ecbuild_add_executable(
+            TARGET          ${PROJECT_NAME}-chief-loki-scc
+            SOURCES         chief.F90
+            LIBS            ${PROJECT_NAME}_scc ${OpenMP_Fortran_LIBRARIES}
+        )
+        ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-chief-loki-scc)
+
+        ecbuild_add_executable(
+            TARGET          ${PROJECT_NAME}-chief-loki-scc-stack
+            SOURCES         chief.F90
+            LIBS            ${PROJECT_NAME}_scc_stack ${OpenMP_Fortran_LIBRARIES}
+        )
+        ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-chief-loki-scc-stack)
+    endif()
 endif()
 
-if( HAVE_WAM_LOKI_GPU )
+if( HAVE_CUDA )
     ecbuild_add_executable(
-        TARGET          ${PROJECT_NAME}-chief-loki-scc
+        TARGET          ${PROJECT_NAME}-chief-scc-cuf
         SOURCES         chief.F90
-        LIBS            ${PROJECT_NAME}_scc ${OpenMP_Fortran_LIBRARIES}
+        LIBS            ${PROJECT_NAME}_scc_cuf ${OpenMP_Fortran_LIBRARIES}
     )
-    ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-chief-loki-scc)
-
-    ecbuild_add_executable(
-        TARGET          ${PROJECT_NAME}-chief-loki-scc-stack
-        SOURCES         chief.F90
-        LIBS            ${PROJECT_NAME}_scc_stack ${OpenMP_Fortran_LIBRARIES}
-    )
-    ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-chief-loki-scc-stack)
+    ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-chief-scc-cuf)
 endif()
 
 string( TOUPPER ${PROJECT_NAME} PNAME )
