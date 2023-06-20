@@ -16,7 +16,7 @@ forecast.end:   2023-01-01 06:00:00
 begin: ${analysis.begin}
 end:   ${forecast.end}
 
-nproma: 24
+nproma: 32
 
 forcings:
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O48.grib
