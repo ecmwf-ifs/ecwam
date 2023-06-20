@@ -655,7 +655,7 @@ if( HAVE_CUDA )
 ############################################################
   foreach(src ${phys_srcs} wamintgr_cuda_gpu.F90 ${global_var_mods})
      string(REPLACE ".F90" "" fnc ${src})
-     string(CONCAT fnm "scc-cuf/" ${fnc} ".cuf_parametrise.F90")
+     string(CONCAT fnm "../ecwam-scc-cuf/" ${fnc} ".cuf_parametrise.F90")
      list(APPEND wam_scc_cuf_srcs ${fnm})
   endforeach()
 
