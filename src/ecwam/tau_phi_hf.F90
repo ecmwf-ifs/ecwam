@@ -172,7 +172,6 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
 
       IF (LLGCBZ0) THEN
         DO IJ=KIJS,KIJL
-          !$loki inline
           CALL OMEGAGC(UFRIC(IJ), NS(IJ), XKS(IJ), OMS(IJ))
         ENDDO
       ENDIF

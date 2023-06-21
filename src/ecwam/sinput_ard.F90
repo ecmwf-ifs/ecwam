@@ -286,7 +286,6 @@ CONTAINS
 
       DO IJ=KIJS,KIJL
         IF (NGST > 1)THEN
-          !$loki inline
           CALL WSIGSTAR (WSWAVE(IJ), UFRIC(IJ), Z0M(IJ), WSTAR(IJ), SIG_N(IJ))
         ENDIF
       ENDDO
@@ -792,7 +791,6 @@ CONTAINS
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
       DO IJ=KIJS,KIJL
         IF (NGST > 1)THEN
-          !$loki inline
           CALL WSIGSTAR (WSWAVE(IJ), UFRIC(IJ), Z0M(IJ), WSTAR(IJ), SIG_N(IJ))
         ENDIF
       ENDDO
