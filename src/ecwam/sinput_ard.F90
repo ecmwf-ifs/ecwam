@@ -213,6 +213,7 @@ CONTAINS
      &                      ABMIN  ,ABMAX
       USE YOWTEST  , ONLY : IU06
       USE YOWTABL  , ONLY : IAB      ,SWELLFT
+      USE YOWSTAT  , ONLY : IDAMPING
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
