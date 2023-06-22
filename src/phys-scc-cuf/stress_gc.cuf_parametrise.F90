@@ -38,7 +38,7 @@ MODULE STRESS_GC_CUF_PARAMETRISE_MOD
     !----------------------------------------------------------------------
     
     IMPLICIT NONE
-    INTEGER, PARAMETER :: NANG_LOKI_PARAM = 12
+    INTEGER, PARAMETER :: NANG_LOKI_PARAM = 24
     INTEGER, PARAMETER :: NFRE_LOKI_PARAM = 36
     REAL(KIND=JWRB) :: STRESS_GC_CUF_PARAMETRISE
     REAL(KIND=JWRB), INTENT(IN) :: ANG_GC    ! factor to account for angular spreading of the input.
