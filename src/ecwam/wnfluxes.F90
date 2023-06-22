@@ -144,14 +144,6 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
       EFD_FAC = 4.0_JWRB*EGRCRV/G**2 
       FFD_FAC = (EGRCRV/AFCRV)**(1.0_JWRB/BFCRV) * G
 
-      !$loki separator
-      MAXIJ = -1
-      !$loki vector-reduction(max: maxij)
-      DO IJ=KIJS,KIJL
-        MAXIJ = MAX(MAXIJ, MIJ(IJ))
-      ENDDO
-      !$loki end vector-reduction(max: maxij)
-
 !*    DETERMINE NORMALIZED FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
 !     -------------------------------------------------------------------
 
@@ -164,7 +156,7 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
       ENDDO
 
 !     THE INTEGRATION ONLY UP TO FR=MIJ
-      DO M=1,MAXVAL(MIJ(:))
+      DO M=1,NFRE
         K=1
         DO IJ=KIJS,KIJL
           SUMT(IJ) = SSURF(IJ,K,M)

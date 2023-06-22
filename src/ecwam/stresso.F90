@@ -145,7 +145,7 @@
 
 !*    CALCULATE LOW-FREQUENCY CONTRIBUTION TO STRESS AND ENERGY FLUX (positive sinput).
 !     ---------------------------------------------------------------------------------
-      DO M=1,MAXVAL(MIJ(:))
+      DO M=1,NFRE
 !     THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
         K=1
         DO IJ=KIJS,KIJL
@@ -172,7 +172,7 @@
       ENDDO
 
       IF ( LLPHIWA ) THEN
-        DO M=1,MAXVAL(MIJ(:))
+        DO M=1,NFRE
 !       THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
           K=1
           DO IJ=KIJS,KIJL
