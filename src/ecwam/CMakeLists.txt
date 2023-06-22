@@ -653,9 +653,9 @@ if( HAVE_CUDA )
 ############################################################
 ##  SCC-cuf variant with parametrised temporaries:        ##
 ############################################################
-  foreach(src ${phys_srcs} wamintgr_cuda_gpu.F90 ${global_var_mods})
+  foreach(src ${phys_srcs} wamintgr_cuda_mod.F90 ${global_var_mods})
      string(REPLACE ".F90" "" fnc ${src})
-     string(CONCAT fnm "../ecwam-scc-cuf/" ${fnc} ".cuf_parametrise.F90")
+     string(CONCAT fnm "../phys-scc-cuf/" ${fnc} ".cuf_parametrise.F90")
      list(APPEND wam_scc_cuf_srcs ${fnm})
   endforeach()
 

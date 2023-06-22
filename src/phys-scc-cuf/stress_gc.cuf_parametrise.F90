@@ -67,22 +67,10 @@ MODULE STRESS_GC_CUF_PARAMETRISE_MOD
     REAL(KIND=JWRB) :: GAMNORMA    ! RENORMALISATION FACTOR OF THE GROWTH RATE
     REAL(KIND=JWRB) :: GAM_W
     
-    REAL(KIND=JWRB) :: XWNB
-    REAL(KIND=JWRB) :: FOMEG_GC, FVG_GC, FC_GC
-    
     !     INCLUDE FUNCTIONS FROM GRAVITY-CAPILLARY DISPERSION REALTIONS
     
     ! ----------------------------------------------------------------------
     
-    
-    ! DISPERSION RELATION:
-    FOMEG_GC(XWNB) = SQRT(G_D*XWNB + SURFT*XWNB**3)
-    
-    ! GROUP SPEED:
-    FVG_GC(XWNB) = 0.5_JWRB / FOMEG_GC(XWNB)*(G_D + 3.0_JWRB*SURFT*XWNB**2)
-    
-    ! PHASE SPEED:
-    FC_GC(XWNB) = FOMEG_GC(XWNB) / XWNB
     
     !*    1.0  DETERMINE GRAV_CAP SPECTRUM, TAUWHF.
     !          ------------------------------------
