@@ -659,7 +659,7 @@ if( HAVE_CUDA )
      list(APPEND wam_scc_cuf_srcs ${fnm})
   endforeach()
 
-  set_source_files_properties( ${wam_scc_cuf_srcs} PROPERTIES COMPILE_OPTIONS "-cuda" )
+  set_source_files_properties( ${wam_scc_cuf_srcs} PROPERTIES COMPILE_OPTIONS "-Mcuda=maxregcount:128" )
 
   ecbuild_add_library(
   	TARGET           ${ecwam}_scc_cuf
