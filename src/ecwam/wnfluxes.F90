@@ -203,10 +203,10 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
           ENDIF
         ENDDO
       ELSE
-        OOVAL(:) = 1.0_JWRB
-        USTAR(:) = UFRIC(:)
-        EM_OC(:) = EM(:)
-        F1_OC(:) = F1(:)
+        OOVAL(KIJS:KIJL) = 1.0_JWRB
+        USTAR(KIJS:KIJL) = UFRIC(KIJS:KIJL)
+        EM_OC(KIJS:KIJL) = EM(KIJS:KIJL)
+        F1_OC(KIJS:KIJL) = F1(KIJS:KIJL)
       ENDIF
 
       DO IJ=KIJS,KIJL

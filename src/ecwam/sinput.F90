@@ -103,7 +103,7 @@
       CASE(0)
         CALL SINPUT_JAN (NGST, LLSNEG, KIJS, KIJL, FL1,  &
      &                   WAVNUM, CINV, XK2CG,            &
-     &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
+     &                   WSWAVE, UFRIC, Z0M,     &
      &                   COSWDIF, SINWDIF2,              & 
      &                   RAORW, WSTAR, RNFAC,            &
      &                   FLD, SL, SPOS, XLLWS)

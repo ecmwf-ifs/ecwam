@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE AIRSEA (KIJS, KIJL, FL1, WAVNUM,                  &
+      SUBROUTINE AIRSEA (KIJS, KIJL, &
 &                        HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,  &
 &                        US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
 
@@ -73,8 +73,6 @@
 #include "z0wave.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (IN) :: HALP, U10DIR, TAUW, TAUWDIR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (INOUT) :: U10, US
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT (OUT) :: Z0, Z0B, CHRNCK
@@ -94,7 +92,7 @@
 
       IF (ICODE_WND == 3) THEN
 
-        CALL TAUT_Z0 (KIJS, KIJL, IUSFG, FL1, WAVNUM,          &
+        CALL TAUT_Z0 (KIJS, KIJL, IUSFG,          &
      &                HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
      &                US, Z0, Z0B, CHRNCK)
 

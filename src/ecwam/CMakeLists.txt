@@ -347,6 +347,21 @@ list( APPEND ecwam_srcs
   z0wave.F90
 )
 
+if( HAVE_GEN_DERIV_TYPES )
+   list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
+   add_custom_command(
+       OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90
+       COMMAND fypp -m io -m yaml -m os ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
+       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp
+       VERBATIM)
+else()
+   list( APPEND ecwam_srcs yowfield_mod.F90)
+endif()
+
+if( NOT HAVE_FIELD_API )
+   list( APPEND ecwam_srcs field_module.F90)
+endif()
+
 unset( MPI_Fortran_LIBRARIES )
 if( HAVE_UNWAM )
   list(APPEND ecwam_srcs ${unwam_srcs})
@@ -403,6 +418,7 @@ ecbuild_add_library(
     PRIVATE_LIBS     eccodes_f90
                      ${MULTIO_LIBRARIES}
                      ${OpenMP_Fortran_LIBRARIES}
+                     $<${HAVE_FIELD_API}:field_api_${prec}>
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
     PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS}
     PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}

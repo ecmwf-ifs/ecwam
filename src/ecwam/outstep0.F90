@@ -155,7 +155,7 @@ IF (LHOOK) CALL DR_HOOK('OUTSTEP0',0,ZHOOK_HANDLE)
           ENDDO
 
           CALL SETICE(1, NPROMA_WAM, FL1(:,:,:,ICHNK) ,                &
-     &                FF_NOW%CICOVER(:,ICHNK), FF_NOW%WSWAVE(:,ICHNK), COSWDIF)
+     &                FF_NOW%CICOVER(:,ICHNK), COSWDIF)
 
         ENDDO
 !$OMP   END PARALLEL DO

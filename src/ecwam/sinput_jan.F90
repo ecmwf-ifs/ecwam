@@ -9,7 +9,7 @@
 
       SUBROUTINE SINPUT_JAN (NGST, LLSNEG, KIJS, KIJL, FL1 , &
      &                       WAVNUM, CINV, XK2CG,            &
-     &                       WDWAVE, WSWAVE, UFRIC, Z0M,     &
+     &                       WSWAVE, UFRIC, Z0M,     &
      &                       COSWDIF, SINWDIF2,              &
      &                       RAORW, WSTAR, RNFAC,            &
                              FLD, SL, SPOS, XLLWS)
@@ -138,7 +138,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, XK2CG
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WSWAVE, UFRIC, Z0M
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG), INTENT(IN) :: COSWDIF, SINWDIF2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: RAORW, WSTAR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
@@ -209,7 +209,7 @@
         ENDDO
 
       ELSE
-        XNGAMCONST(:,:) = 0.0_JWRB
+        XNGAMCONST(KIJS:KIJL,:) = 0.0_JWRB
       ENDIF
 
 
@@ -271,11 +271,11 @@
 !        ----------------------
 
       IF ( .NOT. LLNORMAGAM) THEN
-        GAMNORMA(:,:) = 1.0_JWRB
+        GAMNORMA(KIJS:KIJL,:) = 1.0_JWRB
       ENDIF
 
       IF ( .NOT. LLSNEG) THEN
-        UFAC2(:,:) = 0.0_JWRB
+        UFAC2(KIJS:KIJL,:) = 0.0_JWRB
       ENDIF
 
       DO M=1,NFRE
@@ -339,8 +339,8 @@
 
           DO IGST=1,NGST
 
-            SUMF(:) = 0.0_JWRB
-            SUMFSIN2(:) = 0.0_JWRB
+            SUMF(KIJS:KIJL) = 0.0_JWRB
+            SUMFSIN2(KIJS:KIJL) = 0.0_JWRB
             DO K=1,NANG
               DO IJ=KIJS,KIJL
                 SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)

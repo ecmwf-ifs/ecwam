@@ -9,7 +9,7 @@
 
 !-----------------------------------------------------------------------
 
-      SUBROUTINE SETICE (KIJS, KIJL, FL1, CICOVER, WSWAVE, COSWDIF)
+      SUBROUTINE SETICE (KIJS, KIJL, FL1, CICOVER, COSWDIF)
 
 !-----------------------------------------------------------------------
 
@@ -49,7 +49,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(INOUT) :: FL1
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER, WSWAVE
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG), INTENT(IN) :: COSWDIF
 
 

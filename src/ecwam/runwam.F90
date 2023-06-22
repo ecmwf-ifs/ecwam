@@ -157,7 +157,7 @@
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: RMISS
       REAL(KIND=JWRB) :: ZRCHAR
-      REAL(KIND=JWRU) :: time0, time, timestep_start, timestep0_start
+      REAL(KIND=JWRU) :: time0, time, timestep_start, timestep0_start, time1(2)
 
       CHARACTER(LEN=3) :: DBNAME
       CHARACTER(LEN=14) :: ZERO,CBEGDAT
@@ -180,6 +180,7 @@
 
 
       time0=-wam_user_clock()
+      time1=0.
       IU06=6
 
 !     0.1 INITIALISE MESSAGE PASSING PROTOCOL 
@@ -338,7 +339,7 @@
      &             MASK_IN, MASK_OUT,                                   &
      &             FRSTIME, NADV, PRPLRADI, PRPLRG,                     &
      &             RNU_ATM, RNUM_ATM,                                   &
-     &             IDUM,IDUM, .FALSE.)
+     &             IDUM,IDUM, .FALSE., time1)
         time = (timestep_start+wam_user_clock())*1.e-6
         ISTEP = ISTEP+1
         IF (IRANK==1) THEN
@@ -381,6 +382,10 @@
       WRITE (IU06,'(A)') ' ++++++++++++++++++++++++++++++'
       WRITE (IU06,'(A)') ' + TOTAL USER TIME IN SECONDS +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', time, '         +'
+      WRITE (IU06,'(A)') ' + WAVE PROPAGATION TIME      +'
+      WRITE (IU06,'(A,F18.2,A)') ' + ', time1(1), '         +'
+      WRITE (IU06,'(A)') ' + SOURCE TERM TIME           +'
+      WRITE (IU06,'(A,F18.2,A)') ' + ', time1(2), '         +'
       WRITE (IU06,'(A)') ' +                            +'
       WRITE (IU06,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
       WRITE (IU06,'(A)') ' ++++++++++++++++++++++++++++++'
@@ -388,6 +393,10 @@
         WRITE (6,'(A)') ' ++++++++++++++++++++++++++++++'
         WRITE (6,'(A)') ' + TOTAL USER TIME IN SECONDS +'
         WRITE (6,'(A,F18.2,A)') ' + ', time, '         +'
+        WRITE (6,'(A)') ' + WAVE PROPAGATION TIME      +'
+        WRITE (6,'(A,F18.2,A)') ' + ', time1(1), '         +'
+        WRITE (6,'(A)') ' + SOURCE TERM TIME           +'
+        WRITE (6,'(A,F18.2,A)') ' + ', time1(2), '         +'
         WRITE (6,'(A)') ' +                            +'
         WRITE (6,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
         WRITE (6,'(A)') ' ++++++++++++++++++++++++++++++'

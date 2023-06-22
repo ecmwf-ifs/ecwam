@@ -93,7 +93,7 @@
 !        ------------------------------------------
       
       DO M=1,NFRE
-        TEMP2(:) = 0.0_JWRB
+        TEMP2(KIJS:KIJL) = 0.0_JWRB
         DO K=1,NANG
           DO IJ=KIJS,KIJL
             TEMP2(IJ) = TEMP2(IJ)+XLLWS(IJ,K,M)*FL1(IJ,K,M)
