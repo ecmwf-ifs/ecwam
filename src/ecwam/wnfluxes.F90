@@ -97,7 +97,7 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
       LOGICAL, INTENT(IN) :: LNUPD
 
 
-      INTEGER(KIND=JWIM) :: IJ, K, M, MAXIJ
+      INTEGER(KIND=JWIM) :: IJ, K, M
 
 !     FICTITIOUS VALUE OF THE NORMALISED WAVE ENERGY FLUX UNDER THE SEA ICE 
 !     (negative because it is defined as leaving the waves)
@@ -141,13 +141,6 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
       EFD_FAC = 4.0_JWRB*EGRCRV/G**2 
       FFD_FAC = (EGRCRV/AFCRV)**(1.0_JWRB/BFCRV) * G
 
-      MAXIJ = -1
-      !$loki vector-reduction(max: maxij)
-      DO IJ=KIJS,KIJL
-        MAXIJ = MAX(MAXIJ, MIJ(IJ))
-      ENDDO
-      !$loki end vector-reduction(max: maxij)
-
 !*    DETERMINE NORMALIZED FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
 !     -------------------------------------------------------------------
 
@@ -160,7 +153,7 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
       ENDDO
 
 !     THE INTEGRATION ONLY UP TO FR=MIJ
-      DO M=1,MAXIJ
+      DO M=1,NFRE
         K=1
         DO IJ=KIJS,KIJL
           SUMT(IJ) = SSURF(IJ,K,M)
