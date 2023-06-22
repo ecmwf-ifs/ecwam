@@ -198,26 +198,27 @@ Note that only `ecwam-run-model` currently supports MPI.
 
 Running with source-term computation offloaded to the GPU
 =========================================================
-ECMWF's source-to-source translation toolchain Loki can now be used to create variants of ecWam in which the source-term computation
-is offloaded to the GPU. Please note that this feature is under active development and will change frequently.
+The calculation of the source-terms in ecWam, i.e. the physics, can be offloaded to the GPU. There are three GPU adapted variants of the ecWam physics (in ascending order of performance):
+- Single-column-coalesced (scc): Fuse vector loops and promote to the outermost level to target the SIMT execution model
+- scc-stack: The scc transformation with a pool allocator used to allocate temporary arrays
+- scc-cuf: A CUDA Fortran variant of the scc transformation. Compile-time constants are used to define temporary arrays.
 
 Building
 --------
-The [ecwam-bundle](https://git.ecmwf.int/users/nawd/repos/ecwam-bundle/browse?at=refs%2Fheads%2Fnaan-phys-loki) is the recommended build option
-for performing Loki transformations on ecWam. The option `--with-loki-gpu` has to be specified at the build step. The Loki transformations
-currently supported are (in ascending order of performance):
+The first two GPU variants can be generated at build-time using ECMWF's source-to-source translation toolchain Loki. The 'scc-cuf' variant has also been generated via Loki, but this transformation is not yet fully automated and thus cannot be run at build-time.
 
-- Single-column-coalesced (scc): Fuse vector loops and promote to the outermost level to target the SIMT execution model
-- scc-stack: The scc transformation with a pool allocator used to allocate temporary arrays
+The [ecwam-bundle](https://git.ecmwf.int/users/nawd/repos/ecwam-bundle/browse?at=refs%2Fheads%2Fnaan-phys-gpu) is the recommended build option for building the GPU adapted variants of the ecWam physics. To build the 'scc' and 'scc-stack' variants, the option `--with-loki` can be passed at the bundle build step. To build the 'scc-cuf' variant, the option `--with-cuda` needs to be specified.
 
-Arch files are provided for the nvhpc suite on the ECMWF ATOS system.
+The ecwam-bundle also provides appropriate arch files for the nvhpc suite on the ECMWF ATOS system.
 
 Running
 -------
-Once built, the Loki transformed variants can be run by passing an additional argument to the runner script:
+Once built, the GPU-enabled variants can be run by passing an additional argument to the runner script:
 ```shell
-ecwam-run-model --run-dir=<run-dir> --config=<path-to-config.yml> --variant=loki-<scc/scc-stack>
+ecwam-run-model --run-dir=<run-dir> --config=<path-to-config.yml> --variant=<loki-scc/loki-scc-stack/scc-cuf>
 ```
+
+Please note that the 'scc-cuf' variant is currently only supported for the 'O320' grid.
 
 Environment variables
 ---------------------
