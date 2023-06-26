@@ -140,7 +140,7 @@ PROGRAM preproc
       USE YOWMAP   , ONLY : NGX      ,NGY      ,IPER     ,IRGG     ,              &
      &                      KXLTMIN  ,KXLTMAX  ,                                  &
      &                      AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
-     &                      XDELLO   ,NLONRGG  ,LAQUA
+     &                      XDELLO   ,ZDELLO   ,NLONRGG  ,LAQUA
       USE YOWSHAL  , ONLY : BATHYMAX
       USE YOWTEST  , ONLY : IU06
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
@@ -264,6 +264,7 @@ PROGRAM preproc
 !*    3. GRID DEFINITION
 !        ---------------
 
+      ALLOCATE(ZDELLO(NGY))
       DO K=1,NGY
         XLAT = (AMOSOP + REAL(K-1)*XDELLA)*RAD
         IF (.NOT.LLGRID) THEN
@@ -277,8 +278,16 @@ PROGRAM preproc
 
         IF (NGX == 1 .AND. NGY == 1) THEN
           NLONRGG(K) = NGX
+          ZDELLO(K) = XDELLO
           EXIT
         ENDIF
+
+        IF (IPER == 1) THEN
+          ZDELLO(K) = 360.0_JWRB/REAL(NLONRGG(K),JWRB)
+        ELSE
+          ZDELLO(K) = (AMOEAP-AMOWEP)/REAL(NLONRGG(K)-1,JWRB)
+        ENDIF
+
       ENDDO
 
 
