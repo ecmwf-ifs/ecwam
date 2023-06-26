@@ -667,7 +667,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           METER_NAME = "step"
           METER_VALUE = IFCSTEP_HOUR
 
-          WRITE(NULERR,FMT='("Setting task meter """,A,""" to value """,I,"""")') TRIM(METER_NAME),METER_VALUE
+          WRITE(NULERR,FMT='("Setting task meter """,A,""" to value """,I0,"""")') TRIM(METER_NAME),METER_VALUE
           ERROR = ECFLOW_LIGHT_UPDATE_METER(METER_NAME, METER_VALUE)
 
           WRITE(ERROR_STR, *) ERROR
