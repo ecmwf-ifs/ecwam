@@ -86,9 +86,9 @@ PROGRAM preset
       USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL     , NTOTIJ  ,    &
      &            NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK,             & 
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
-      USE YOWMAP   , ONLY : BLK2GLO   ,IRGG     ,AMOWEP   ,             &
+      USE YOWMAP   , ONLY : CLDOMAIN ,BLK2GLO   ,IRGG    ,AMOWEP   ,    &
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,    &
-     &            BLK2LOC  ,NGX      ,NGY      ,NIBLO    ,CLDOMAIN 
+     &            BLK2LOC  ,NGX      ,NGY      ,NIBLO
       USE YOWNEMOFLDS , ONLY : NEMO2WAM
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
@@ -141,7 +141,7 @@ PROGRAM preset
 #include "outspec.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 #include "prewind.intfb.h"
-#include "readpre.intfb.h"
+#include "readmdlconf.intfb.h"
 #include "savspec.intfb.h"
 #include "savstress.intfb.h"
 
@@ -184,6 +184,7 @@ PROGRAM preset
 ! ----------------------------------------------------------------------
 
       NAMELIST /NALINE/ HEADER,                                         &
+     &          CLDOMAIN,                                               &
      &          NANG, IFRE1, FR1, NFRE, NFRE_RED,                       &
      &          IOPTI, ITEST, ITESTB,                                   &
      &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH, SWAMPWIND ,      &
@@ -228,6 +229,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !        ---------------------------------------------
 
       HEADER = ZERO
+      CLDOMAIN  = 'g'
       NANG      = 0
       IFRE1     = 3
       FR1       = 4.177248E-02_JWRB
@@ -354,7 +356,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !*    3. READ PREPROC OUTPUT.
 !        --------------------
 
-      CALL READPRE (IU07)
+      CALL READMDLCONF (IU07)
 
       NINF=1
       NSUP=NIBLO

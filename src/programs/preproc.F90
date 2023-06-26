@@ -137,11 +137,10 @@ PROGRAM preproc
       USE YOWPARAM , ONLY : LLUNSTR
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH
       USE YOWMAP   , ONLY : NGX      ,NGY      ,IPER     ,IRGG     ,              &
      &                      KXLTMIN  ,KXLTMAX  ,                                  &
      &                      AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
-     &                      XDELLO   ,ZDELLO   ,NLONRGG  ,LAQUA
+     &                      XDELLO   ,NLONRGG  ,LAQUA
       USE YOWSHAL  , ONLY : BATHYMAX
       USE YOWTEST  , ONLY : IU06
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
@@ -171,7 +170,7 @@ PROGRAM preproc
       INTEGER(KIND=JWIM) :: K, IX, ICL, IFORM, LNAME,IINPC,LFILE
 
       REAL(KIND=JWRB) :: PRPLRADI
-      REAL(KIND=JWRB) :: XLAT, XLATD, XLATMAX,PLONS, COSPHMIN
+      REAL(KIND=JWRB) :: XLAT
       REAL(KIND=JWRB), ALLOCATABLE :: BATHY(:,:)
 
       CHARACTER(LEN=1) :: C1 
@@ -201,18 +200,8 @@ PROGRAM preproc
 
 ! ----------------------------------------------------------------------
 
-!*    2.1 ALLOCATE NECESSARY ARRAYS
-!     -----------------------------
-
       ALLOCATE(BATHY(NGX, NGY))
 
-      ALLOCATE(DELLAM(NGY)) 
-      ALLOCATE(SINPH(NGY)) 
-      ALLOCATE(COSPH(NGY)) 
-!     NLONRGG IS ALLOCATED IN UIPREP
-      ALLOCATE(ZDELLO(NGY))
-
-      IU01 = IWAM_GET_UNIT(IU06, 'wam_topo', 'r', 'f', 0, 'READWRITE')
 
       FILENAME='wam_topo'
       LLEXIST=.FALSE.
@@ -272,53 +261,26 @@ PROGRAM preproc
 
 ! ----------------------------------------------------------------------
 
-!*    3. INITIALISE TOTAL NUMBER OF BLOCKS,
-!*       AND GRID INCREMENTS IN RADIANS AND METRES.
-!        ------------------------------------------
+!*    3. GRID DEFINITION
+!        ---------------
 
-      DELPHI = XDELLA*CIRC/360.0_JWRB
       DO K=1,NGY
-        XLAT       = (AMOSOP + REAL(K-1)*XDELLA)*RAD
-        XLATD      = (AMOSOP + REAL(K-1)*XDELLA)
-        SINPH(K)   = SIN(XLAT)
-        COSPH(K)   = COS(XLAT)
+        XLAT = (AMOSOP + REAL(K-1)*XDELLA)*RAD
         IF (.NOT.LLGRID) THEN
           IF (IRGG == 1) THEN
-#ifdef _CRAYFTN
-              NLONRGG(K) = MAX(NINT(NGX*COSD(XLATD)),2)
-#else
-              NLONRGG(K) = MAX(NINT(NGX*COS(RAD*XLATD)),2)
-#endif
+            NLONRGG(K) = MAX(NINT(NGX*COS(XLAT)),2)
             IF (MOD(NLONRGG(K),2) == 1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
             NLONRGG(K) = NGX
           ENDIF      
         ENDIF      
 
-        PLONS=(AMOEAP-AMOWEP) + IPER*XDELLO
         IF (NGX == 1 .AND. NGY == 1) THEN
           NLONRGG(K) = NGX
-          ZDELLO(K)  = XDELLO
-          DELLAM(K)  = ZDELLO(K)*CIRC/360.0_JWRB
           EXIT
         ENDIF
-        IF (IPER == 1) THEN
-          ZDELLO(K)  = 360.0_JWRB/REAL(NLONRGG(K))
-        ELSE
-          ZDELLO(K)  = PLONS/REAL(NLONRGG(K)-1)
-        ENDIF
-        DELLAM(K)  = ZDELLO(K)*CIRC/360.0_JWRB
       ENDDO
 
-!     IF THE POLES ARE INCLUDED, ARTIFICIALLY REMOVE THE SINGULARITY
-      XLATMAX=87.5_JWRB
-      COSPHMIN=COS(XLATMAX*RAD)
-      DO K=1,NGY
-        IF (COSPH(K) <= COSPHMIN) THEN
-          COSPH(K)=COS(XLATMAX*RAD)
-          SINPH(K)=SIN(XLATMAX*RAD)
-        ENDIF
-      ENDDO 
 
       IF (ALLOCATED(KXLTMIN)) DEALLOCATE(KXLTMIN)
       ALLOCATE(KXLTMIN(1))
@@ -408,7 +370,7 @@ PROGRAM preproc
 !*    9. OUTPUT OF MODULES.
 !        ------------------
 
-      CALL OUTCOM (IU07, IU17, IFORM, BATHY)
+      CALL OUTCOM (IU07, BATHY)
 
 ! ----------------------------------------------------------------------
 

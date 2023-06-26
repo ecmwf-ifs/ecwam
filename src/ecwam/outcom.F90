@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE OUTCOM (IU07, IU17, IFORM, BATHY)
+      SUBROUTINE OUTCOM (IU07, BATHY)
 
 ! ----------------------------------------------------------------------
 
@@ -37,12 +37,8 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *OUTCOM (IU07, IU17, IFORM)*
+!       *CALL* *OUTCOM (IU07, BATHY)*
 !          *IU07*   - LOGICAL UNIT FOR  UNFORMATED WRITE.
-!          *IU17*   - LOGICAL UNIT FOR    FORMATED WRITE.
-!          *IFORM*   - FORMAT OPTION  = 1  UNFORMATED WRITE.
-!                                     = 2  FORMATED WRITE.
-!                                     OTHERWISE BOTH.
 
 !     METHOD.
 !     -------
@@ -61,13 +57,10 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M 
-      USE YOWPARAM , ONLY : IMDLGRDID,LLUNSTR
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
-     &            IJS      ,IJL
-      USE YOWMAP   , ONLY : NGX      ,NGY      ,CLDOMAIN ,              &
-     &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG
+      USE YOWPARAM , ONLY : IMDLGRDID, LLUNSTR
+      USE YOWMAP   , ONLY : NGX      ,NGY      , IPER     ,IRGG    ,    &
+     &                      AMOWEP   ,AMOSOP   ,AMOEAP    ,AMONOP  ,    &
+     &                      XDELLA   ,XDELLO   ,NLONRGG
       USE YOWABORT, ONLY : WAM_ABORT
 
 #ifdef WAM_HAVE_UNWAM
@@ -80,7 +73,7 @@
       IMPLICIT NONE
 #include "outnam.intfb.h"
  
-      INTEGER(KIND=JWIM), INTENT(IN) :: IU07, IU17, IFORM
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU07
       REAL(KIND=JWRB), INTENT(IN) :: BATHY(NGX, NGY)
 
       INTEGER(KIND=JWIM) :: IDUM, K, M, L
@@ -88,81 +81,31 @@
 
 ! ----------------------------------------------------------------------
 
-  995 FORMAT(5I8)
-  996 FORMAT(I8,1X,2E16.7)
-  997 FORMAT(14I8,1X,A1)
-  998 FORMAT(10I8)
-  999 FORMAT(5E16.7)
-
-! ----------------------------------------------------------------------
-!        WRITE IDENTIFIERS (MAKE SURE TO UPDATE THE VALUES IF YOU CHANGE
-!        ANYTHING TO THE MODEL). 
+!     WRITE IDENTIFIERS (MAKE SURE TO UPDATE THE VALUES IF YOU CHANGE
+!     ANYTHING TO THE MODEL). 
       
       NKIND = KIND(DELPHI)
 
-      IF (IFORM /= 2) THEN
-        WRITE(IU07) NKIND, IMDLGRDID, IMDLGRBID_G, IMDLGRBID_M
-      ENDIF
-      IF (IFORM /= 1) THEN
-        WRITE(IU17,998) NKIND, IMDLGRDID, IMDLGRBID_G, IMDLGRBID_M
-      ENDIF
-
-      IF (IFORM /= 2) THEN
-        WRITE(IU07) NGX, NGY, CLDOMAIN
-      ENDIF
-      IF (IFORM /= 1) THEN
-        WRITE(IU17,997) NGX, NGY, CLDOMAIN 
-      ENDIF
+      WRITE(IU07) NKIND, IMDLGRDID
 
 
 ! ----------------------------------------------------------------------
 
-!*    2. WRITE MODULE YOWGRID.
-!        ---------------------
+!*    GRID INFORMATION
+!     ----------------
 
-      IF (IFORM /= 2) THEN
-        WRITE (IU07) DELPHI, (DELLAM(L),L=1,NGY), (NLONRGG(L),L=1,NGY),   &
-     &   (SINPH(L),L=1,NGY), (COSPH(L),L=1,NGY),                          &
-     &   IJS, IJL
-      ENDIF
-      IF (IFORM /= 1) THEN
-        WRITE (IU17,999) DELPHI,(DELLAM(L),L=1,NGY),(REAL(NLONRGG(L),JWRB),L=1,NGY), &
-     &   (SINPH(L),L=1,NGY), (COSPH(L),L=1,NGY)
-        WRITE (IU17,998) IJS, IJL
-      ENDIF
+      WRITE(IU07) NGX, NGY
+
+      WRITE(IU07) NLONRGG
+
+      WRITE(IU07) IPER, IRGG, AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO
+
+      WRITE(IU07) BATHY
 
 ! ----------------------------------------------------------------------
 
-!*    3. WRITE MODULE YOWMAP.
-!        --------------------
-
-      IF (IFORM /= 2) THEN
-        WRITE (IU07) IPER,                                              &
-     &   AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO,                &
-     &   ZDELLO, IRGG
-      ENDIF
-      IF (IFORM /= 1) THEN
-        WRITE (IU17,998) IPER
-        WRITE (IU17,999) AMOWEP, AMOSOP, AMOEAP, AMONOP,                &
-     &   XDELLA, XDELLO,ZDELLO
-      ENDIF
-
-! ----------------------------------------------------------------------
-
-!*    8. WRITE MODULE YOWSHAL.
-!        --------------------
-
-      IF (IFORM /= 2) THEN
-        WRITE (IU07) BATHY
-      ENDIF
-      IF (IFORM /= 1) THEN
-        WRITE (IU17,999) BATHY
-      ENDIF
-
-! ----------------------------------------------------------------------
-
-!*   11. WRITE NAMELIST PARWAM.
-!        ----------------------
+!*    WRITE NAMELIST PARWAM.
+!     ----------------------
       
       CALL OUTNAM  (NGX, NGY)
 

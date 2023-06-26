@@ -171,6 +171,7 @@
 ! ----------------------------------------------------------------------
 
       NAMELIST /NALINE/ CLHEADER,                                       &
+     &   CLDOMAIN,                                                      &
      &   NANG, IFRE1, FR1, NFRE, NFRE_RED,                              &
      &   CBPLTDT, CEPLTDT, CDATEF,                                      &
      &   IFRELFMAX, DELPRO_LF, IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU,  &
@@ -254,6 +255,7 @@
 
 !     NAMELIST NALINE : 
 !     ===============
+!     CLDOMAIN:  CHARACTER DEFINES THE DOMAIN OF THE MODEL 
 !     CBPLTDT: USER INPUT START DATE OF RUN.
 !     CEPLTDT: USER INPUT END DATE OF RUN.
 !     CDATEF: BEGIN DATE OF FORECAST.
@@ -508,6 +510,8 @@
 
 !*    0. SET DEFAULT VALUES FOR THE NAMELIST ELEMENTS.
 !        ---------------------------------------------
+
+      CLDOMAIN  = 'g'
 
       NANG      = 0
       IFRE1     = 3

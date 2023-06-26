@@ -59,17 +59,15 @@ SUBROUTINE READPRE (IU07)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
-     &            IJS      ,IJL
-      USE YOWMAP   , ONLY : BLK2GLO  ,NGX      ,NGY      ,NIBLO    ,    &
+      USE YOWMAP   , ONLY : NGX      ,NGY      ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG  ,    &
-     &            IQGAUSS  ,CLDOMAIN
+     &            AMONOP   ,XDELLA   ,XDELLO   ,NLONRGG  ,    &
+     &            IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : LLR8TOR4 ,LLUNSTR  ,IMDLGRDID
-      USE YOWSHAL  , ONLY : BATHY    ,LLOCEANMASK
+      USE YOWSHAL  , ONLY : BATHY
       USE YOWTEST  , ONLY : IU06
-      USE YOWABORT, ONLY : WAM_ABORT
+      USE YOWABORT , ONLY : WAM_ABORT
 #ifdef WAM_HAVE_UNWAM
       USE YOWUNPOOL, ONLY : LPREPROC
       USE UNWAM     ,ONLY : INIT_UNWAM, UNWAM_IN, SET_UNWAM_HANDLES
@@ -85,8 +83,7 @@ SUBROUTINE READPRE (IU07)
       INTEGER(KIND=JWIM), INTENT(IN) :: IU07
       INTEGER(KIND=JWIM) :: IREAD
       INTEGER(KIND=JWIM) :: IP, I, K
-      INTEGER(KIND=JWIM) :: IDUM, KIBLD, KIBLC
-      INTEGER(KIND=JWIM) :: KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
+      INTEGER(KIND=JWIM) :: KMDLGRDID
       INTEGER(KIND=JWIM) :: NKIND !Precision of file when reading
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -119,7 +116,7 @@ SUBROUTINE READPRE (IU07)
           WRITE(IU06,*) '*****************************************'
           CALL ABORT1
         ENDIF
-        IF (NKIND /= KIND(DELPHI)) THEN
+        IF (NKIND /= KIND(AMOSOP)) THEN
           WRITE(IU06,*) '*****************************************'
           WRITE(IU06,*) '*                                       *'
           WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
@@ -127,7 +124,7 @@ SUBROUTINE READPRE (IU07)
           WRITE(IU06,*) '*                                       *'
           WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
           WRITE(IU06,*) '* PRECISION IN FILE AND MODEL.          *' 
-          WRITE(IU06,*)    NKIND, KIND(DELPHI)
+          WRITE(IU06,*)    NKIND, KIND(AMOSOP)
           WRITE(IU06,*) '*                                       *'
           WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
           WRITE(IU06,*) '* ---------------   --------------      *'
@@ -144,18 +141,13 @@ SUBROUTINE READPRE (IU07)
 !*    2. READ MODULE YOWGRID (GENERAL GRID ORGANISATION).
 !        ------------------------------------------------
 
-        IF (.NOT.ALLOCATED(DELLAM)) ALLOCATE(DELLAM(NGY))
         IF (.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
-        IF (.NOT.ALLOCATED(SINPH)) ALLOCATE(SINPH(NGY))
-        IF (.NOT.ALLOCATED(COSPH)) ALLOCATE(COSPH(NGY))
 
         CALL READREC(3)
 
 
 !*    3. READ MODULE YOWMAP (LONG. AND LAT. INDICES OF GRID POINTS).
 !        --------------------------------------------------------
-
-        IF (.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
 
         CALL READREC(4)
 
@@ -204,43 +196,6 @@ SUBROUTINE READPRE (IU07)
       CALL GSTATS(694,1)
 
 
-!     DETERMINE THE TOTAL NUMBER OF OCEAN POINTS AND THE CONNECTION TO THE GRID (BLK2GLO)
-      IF (ALLOCATED(LLOCEANMASK)) DEALLOCATE(LLOCEANMASK)
-      ALLOCATE(LLOCEANMASK(NGX,NGY))
-      NIBLO = 0
-      DO K=1,NGY
-        DO I=1,NLONRGG(K)
-          IF (BATHY(I,K) > 0.0_JWRB) THEN
-            NIBLO = NIBLO + 1
-            LLOCEANMASK(I,K) = .TRUE.
-          ELSE
-            LLOCEANMASK(I,K) = .FALSE.
-          ENDIF
-        ENDDO
-      ENDDO
-
-      IF ( NIBLO <= 0 ) THEN
-         WRITE(IU06,*)'***ERROR IN READREC: NIBLO SHOULD > 0, NIBLO = ',NIBLO
-         CALL FLUSH(IU06)
-         CALL ABORT1
-      ENDIF
-
-      IF (ALLOCATED(BLK2GLO%IXLG)) CALL BLK2GLO%DEALLOC
-      CALL BLK2GLO%ALLOC(NIBLO)
-
-      IP = 0
-      DO K=1,NGY
-        DO I=1,NLONRGG(K)
-          IF (LLOCEANMASK(I,K)) THEN
-            IP = IP+1
-            BLK2GLO%IXLG(IP) = I
-            BLK2GLO%KXLT(IP) = K
-          ENDIF
-        ENDDO
-      ENDDO
-
-
-
 !     RECALCULATE THE UNSTRUCTURED BITS (if not read in)
 
       IF (LLUNSTR) THEN
@@ -263,68 +218,36 @@ SUBROUTINE READPRE (IU07)
       IMPLICIT NONE
       INTEGER(KIND=JWIM), INTENT(IN) :: KREC
       INTEGER(KIND=JWIM) :: ISTAT
-      REAL(KIND=JWRU) ::                                                &
-     & R8_AMOEAP,R8_AMONOP,R8_AMOSOP,R8_AMOWEP,                         &
-     & R8_CL11,R8_CL21,R8_DAL1,R8_DAL2,R8_DELPHI,R8_DELTH,R8_DELTHH,    &
-     & R8_DELTR,                                                        &
-     & R8_XDELLA,R8_XDELLO,R8_XMA,R8_XMR
-      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:) ::                     &
-     &     R8_FR,R8_DFIM,R8_GOM,R8_C,                                   &
-     &     R8_TH,R8_COSTH,R8_SINTH,                                     &
-     &     R8_DELLAM,R8_SINPH,R8_COSPH,                                 &
-     &     R8_ZDELLO
-      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) ::                   &
-     &     R8_BATHY
+      REAL(KIND=JWRU) :: R8_AMOEAP,R8_AMONOP,R8_AMOSOP,R8_AMOWEP,R8_XDELLA,R8_XDELLO
+      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) :: R8_BATHY
 
 !23456789-123456789-123456789-123456789-123456789-123456789-123456789-12
       SELECT CASE(KREC)
       CASE(1)
          LLR8TOR4 = .FALSE.
-         READ(IU07,IOSTAT=ISTAT) NKIND,KMDLGRDID,KMDLGRBID_G,KMDLGRBID_M
-         IF (ISTAT /= 0) THEN
-            ! Is this legacy code i.e. NKIND missing from the 1st record ?
-            BACKSPACE(IU07)
-            READ(IU07,IOSTAT=ISTAT) KMDLGRDID,KMDLGRBID_G,KMDLGRBID_M
-            IF (ISTAT /= 0) GOTO 1000 ! Abort: Don't support this file format at all
-         ENDIF
-         IF (KIND(DELPHI) == 4 .AND. NKIND /= 4) THEN
-            LLR8TOR4 = .TRUE.   ! Input REALs are indeed legacy REAL*8, but KIND(DELPHI) == 4
-         ENDIF
-         NKIND = KIND(DELPHI)   ! Pretend NKIND is in "right precision"
-         WRITE(IU06,1002) 'READPRE(READREC): NKIND=',NKIND,             &
-     &        ', KIND(DELPHI)=',KIND(DELPHI),', LLR8TOR4=',LLR8TOR4
- 1002    FORMAT(2X,A,I0,A,I0,A,L1)
-      CASE(2)
-         READ(IU07,IOSTAT=ISTAT) NGX, NGY, CLDOMAIN
+         READ(IU07,IOSTAT=ISTAT) NKIND, KMDLGRDID
          IF (ISTAT /= 0) GOTO 1000
-      CASE(3)
-         IF (LLR8TOR4) THEN
-            ALLOCATE(R8_DELLAM(NGY),R8_SINPH(NGY),R8_COSPH(NGY))
 
-            READ(IU07,IOSTAT=ISTAT) R8_DELPHI, R8_DELLAM, NLONRGG,      &
-     &           R8_SINPH, R8_COSPH,                                    &
-     &           IJS, IJL
-            IF (ISTAT /= 0) GOTO 1000
-
-            DELPHI = R8_DELPHI
-            DELLAM = R8_DELLAM
-            SINPH = R8_SINPH
-            COSPH = R8_COSPH
-            DEALLOCATE(R8_DELLAM,R8_SINPH,R8_COSPH)
-         ELSE
-            READ(IU07,IOSTAT=ISTAT) DELPHI, DELLAM, NLONRGG,            &
-     &           SINPH, COSPH,                                          &
-     &           IJS, IJL
-            IF (ISTAT /= 0) GOTO 1000
+         IF (KIND(AMOSOP) == 4 .AND. NKIND /= 4) THEN
+            LLR8TOR4 = .TRUE.   ! Input REALs are indeed legacy REAL*8, but KIND(AMOSOP) == 4
          ENDIF
+         NKIND = KIND(AMOSOP)   ! Pretend NKIND is in "right precision"
+         WRITE(IU06,1002) 'READPRE(READREC): NKIND=',NKIND, ', KIND(AMOSOP)=',KIND(AMOSOP),', LLR8TOR4=',LLR8TOR4
+ 1002    FORMAT(2X,A,I0,A,I0,A,L1)
+
+      CASE(2)
+         READ(IU07,IOSTAT=ISTAT) NGX, NGY
+         IF (ISTAT /= 0) GOTO 1000
+
+      CASE(3)
+          READ(IU07,IOSTAT=ISTAT) NLONRGG
+          IF (ISTAT /= 0) GOTO 1000
+
       CASE(4)
          IF (LLR8TOR4) THEN
-            ALLOCATE(R8_ZDELLO(NGY))
-
-            READ(IU07,IOSTAT=ISTAT) IPER, &
-     &           R8_AMOWEP, R8_AMOSOP, R8_AMOEAP, R8_AMONOP,                  &
-     &           R8_XDELLA, R8_XDELLO,                                        &
-     &           R8_ZDELLO, IRGG
+            READ(IU07,IOSTAT=ISTAT) IPER, IRGG, &
+     &                              R8_AMOWEP, R8_AMOSOP, R8_AMOEAP, R8_AMONOP, &
+     &                              R8_XDELLA, R8_XDELLO
             IF (ISTAT /= 0) GOTO 1000
 
             AMOWEP = R8_AMOWEP
@@ -333,16 +256,14 @@ SUBROUTINE READPRE (IU07)
             AMONOP = R8_AMONOP
             XDELLA = R8_XDELLA
             XDELLO = R8_XDELLO
-            ZDELLO = R8_ZDELLO
 
-            DEALLOCATE(R8_ZDELLO)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) IPER, &
-     &           AMOWEP, AMOSOP, AMOEAP, AMONOP,                              &
-     &           XDELLA, XDELLO,                                              &
-     &           ZDELLO, IRGG
+            READ(IU07,IOSTAT=ISTAT) IPER, IRGG, &
+     &                              AMOWEP, AMOSOP, AMOEAP, AMONOP, &
+     &                              XDELLA, XDELLO
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
+
       CASE(5)
          IF (LLR8TOR4) THEN
             ALLOCATE(R8_BATHY(NGX,NGY))
@@ -363,8 +284,7 @@ SUBROUTINE READPRE (IU07)
       RETURN
 
  1000 CONTINUE
-      WRITE(IU06,1001)'***ERROR IN READREC(',KREC,') : IOSTAT=',        &
-     &     ISTAT,', NKIND=',NKIND
+      WRITE(IU06,1001)'***ERROR IN READREC(',KREC,') : IOSTAT=',ISTAT,', NKIND=',NKIND
  1001 FORMAT(1X,A,I0,A,I0,A,I0)
       WRITE(IU06,*) '*************************************'
       WRITE(IU06,*) '*                                   *'

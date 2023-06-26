@@ -197,6 +197,7 @@ list( APPEND ecwam_srcs
   propdot.F90
   readbou.F90
   readfl.F90
+  readmdlconf.F90
   readpre.F90
   readsta.F90
   readstress.F90

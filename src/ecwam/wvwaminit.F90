@@ -45,7 +45,7 @@
       USE YOWSTAT  , ONLY : IPROPAGS
       USE YOWABORT, ONLY : WAM_ABORT
 
-      USE MPL_MODULE, ONLY : MPL_MYRANK, MPL_NPROC, MPL_BARRIER
+      USE MPL_MODULE, ONLY : MPL_MYRANK, MPL_NPROC
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
@@ -56,7 +56,7 @@
 #include "mfredir.intfb.h"
 #include "mpuserin.intfb.h"
 #include "setwavphys.intfb.h"
-#include "readpre.intfb.h"
+#include "readmdlconf.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IULOG
       INTEGER(KIND=JWIM), INTENT(OUT) :: NGAUSSW, NLON, NLAT
@@ -200,9 +200,7 @@
 
       KTAG=1
 
-      CALL MPL_BARRIER(CDSTRING='WVWAMINIT:')
-      CALL READPRE (IU07)
-      CALL MPL_BARRIER(CDSTRING='WVWAMINIT:')
+      CALL READMDLCONF (IU07)
 
       WRITE(IU06,*) ' WVWAMINT: WAVE MODEL CONFIGURATION READ IN'
       CALL FLUSH (IU06)
