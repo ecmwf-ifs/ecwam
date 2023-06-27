@@ -66,7 +66,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ISEND
       INTEGER(KIND=JWIM), INTENT(INOUT) :: ITAG
-      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=3
+      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=2
       INTEGER(KIND=JWIM) :: I, J, IJ, K, K1, K2, M, M1, M2, IC, L, KDEPTH, NGOU 
       INTEGER(KIND=JWIM) :: IKCOUNT, KCOUNT
       INTEGER(KIND=JWIM) :: MIC, MZC 
@@ -97,7 +97,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           ICOMBUF(IKCOUNT)=NGY
           IF (IKCOUNT /= MFIRST) THEN
             WRITE (IU06,*) '**************************'
-            WRITE (IU06,*) '* IKCOUNT .NE. MFIRST !!!*' 
+            WRITE (IU06,*) '* IKCOUNT /= MFIRST !!!*' 
             WRITE (IU06,*) '* ON IRANK = ',IRANK
             WRITE (IU06,*) '* IKCOUNT = ',IKCOUNT
             WRITE (IU06,*) '* MFIRST  = ',MFIRST
@@ -117,6 +117,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           NGY=ICOMBUF(IKCOUNT)
           IF (IKCOUNT /= MFIRST) THEN
             WRITE (IU06,*) '**************************'
+            WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
             WRITE (IU06,*) '* IKCOUNT .NE. MFIRST !!!*' 
             WRITE (IU06,*) '* ON IRANK = ',IRANK
             WRITE (IU06,*) '* IKCOUNT = ',IKCOUNT
