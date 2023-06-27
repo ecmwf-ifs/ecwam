@@ -59,12 +59,13 @@ SUBROUTINE READPRE (IU07)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWGRIBHD, ONLY : IMDLGRBID_G
       USE YOWMAP   , ONLY : NGX      ,NGY      ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,NLONRGG  ,    &
      &            IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
-      USE YOWPARAM , ONLY : LLR8TOR4 ,LLUNSTR  ,IMDLGRDID
+      USE YOWPARAM , ONLY : LLR8TOR4 ,LLUNSTR
       USE YOWSHAL  , ONLY : BATHY
       USE YOWTEST  , ONLY : IU06
       USE YOWABORT , ONLY : WAM_ABORT
@@ -100,16 +101,16 @@ SUBROUTINE READPRE (IU07)
       IF (IRANK == IREAD) THEN
 !       READ MODEL IDENTIFIERS
         CALL READREC(1)
-        IF (KMDLGRDID /= IMDLGRDID) THEN
+        IF (KMDLGRDID /= IMDLGRBID_G) THEN
           WRITE(IU06,*) '*****************************************'
           WRITE(IU06,*) '*                                       *'
           WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
           WRITE(IU06,*) '*  ==============================       *'
           WRITE(IU06,*) '*                                       *'
           WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
-          WRITE(IU06,*) '* MODEL GRID IDENTIFIER.                *' 
+          WRITE(IU06,*) '* MODEL GRIB IDENTIFIER.                *' 
           WRITE(IU06,*) '* MAKE SURE YOU HAVE RUN PREPROC !!!!   *'
-          WRITE(IU06,*)    KMDLGRDID, IMDLGRDID
+          WRITE(IU06,*)    KMDLGRDID, IMDLGRBID_G 
           WRITE(IU06,*) '*                                       *'
           WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
           WRITE(IU06,*) '* ---------------   --------------      *'

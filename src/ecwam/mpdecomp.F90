@@ -126,8 +126,7 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
      &            KMNOP    ,KMSOP    ,NIBLO    ,NGX      ,NGY
       USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG     ,    &
      &                      NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,LLUNSTR  ,              &
-     &            LL1D     ,KWAMVER  ,LLR8TOR4
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,LLUNSTR  ,LL1D
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI
       USE YOWSHAL  , ONLY : BATHY    ,LLOCEANMASK, WVENVI
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID

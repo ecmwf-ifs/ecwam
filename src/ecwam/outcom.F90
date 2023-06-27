@@ -57,7 +57,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : IMDLGRDID, LLUNSTR
+      USE YOWGRIBHD, ONLY : IMDLGRBID_G
+      USE YOWPARAM , ONLY : LLUNSTR
       USE YOWMAP   , ONLY : NGX      ,NGY      , IPER     ,IRGG    ,    &
      &                      AMOWEP   ,AMOSOP   ,AMOEAP    ,AMONOP  ,    &
      &                      XDELLA   ,XDELLO   ,NLONRGG
@@ -86,7 +87,7 @@
       
       NKIND = KIND(AMOSOP)
 
-      WRITE(IU07) NKIND, IMDLGRDID
+      WRITE(IU07) NKIND, IMDLGRBID_G 
 
 
 ! ----------------------------------------------------------------------
