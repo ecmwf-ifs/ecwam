@@ -93,6 +93,9 @@ PROGRAM CREATE_BATHY_ETOPO1
 #include "mfr.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 
+      REAL(KIND=JWRB) ::  PERCENTSHALLOW_THRESHOLD = 1.0_JWRB
+
+
 !!    Parameters that can be adapted to tune the obstruction scheme
 !!    *************************************************************
 !!    XKDMAX controls the overall impact of subnerged subgrid points in blocking waves (fully or locally)
@@ -279,6 +282,12 @@ PROGRAM CREATE_BATHY_ETOPO1
         ALLOCATE(NLONRGG(NY))
       ENDIF
 
+    
+      IF ( XDELLA < 0.125_JWRB) THEN
+        PERCENTSHALLOW_THRESHOLD = 1.0_JWRB
+      ELSE
+        PERCENTSHALLOW_THRESHOLD = 0.3_JWRB
+      ENDIF
      
   
       NLANDCENTREPM=(NINT(0.2*XDELLA*INVRES)-1)/2
@@ -562,7 +571,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !            IF THERE IS A PERCENTAGE OF SHALLOWER POINTS THEN
 !            THE AVERAGE IS TAKEN OVER THOSE POINTS ALONE.
              PERCENTSHALLOW(IX,K)=REAL(NSEASH,JWRB)/REAL(NSEA,JWRB)
-             IF(PERCENTSHALLOW(IX,K).GE.0.3_JWRB) THEN
+             IF(PERCENTSHALLOW(IX,K).GE. PERCENTSHALLOW_THRESHOLD) THEN
                WAMDEPTH(IX,K)=SEASH/NSEASH
                IF(PERCENTLAND(IX,K).LT.0.10_JWRB) THEN
 !                IF MOSTLY SEA THEN IT SHOULD BE SEA AND NOT 0 
