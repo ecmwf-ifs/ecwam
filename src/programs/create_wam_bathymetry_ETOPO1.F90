@@ -752,6 +752,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !!! to compensate for a lack of resolution in the high resolution data with respect to the model resolution
 !!! we are going to try to boost the blocking for high resolution model
 !!! but only if the mean depth is deep enough
+      IF ( XDELLA < 0.125_JWRB) THEN
         DO K=1,NY
           DO IX=1,NLONRGG(K)
             IF(WAMDEPTH(IX,K).LT.-100.0_JWRB) THEN
@@ -761,6 +762,9 @@ PROGRAM CREATE_BATHY_ETOPO1
             ENDIF
           ENDDO
         ENDDO
+      ELSE
+        BOOST_OBSTR(:,:) = 1.0_JWRB
+      ENDIF
 
 !     LOOP OVER ALL FREQUENCIES
       DO M=1,NFRE_RED
@@ -936,7 +940,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 !                 WAVE COMPONENT WILL BE ATTENUATED BY THE RATIO OF ALL BLOCKING SUBGRID POINTS TO THE TOTAL NUMBER OF POINTS
                   IOBSLAT(IX,K,IS) = NINT((1._JWRB-BOOST_OBSTR(IX,K)*REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
-                  IOBSLAT(IX,K,IS) = MAX(IOBSLAT(IX,K,IS), 0) 
+                  IOBSLAT(IX,K,IS) = MAX(IOBSLAT(IX,K,IS), 0)
 
 
 !               AT THE DATELINE, DEALING WITH THE PERIODICITY (simplified version)
@@ -969,7 +973,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
                   IOBSLAT(IX,K,IS) = NINT((1._JWRB-BOOST_OBSTR(IX,K)*REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
-                  IOBSLAT(IX,K,IS) = MAX(IOBSLAT(IX,K,IS), 0) 
+                  IOBSLAT(IX,K,IS) = MAX(IOBSLAT(IX,K,IS), 0)
                 ENDIF
 
               ENDIF
@@ -1100,8 +1104,8 @@ PROGRAM CREATE_BATHY_ETOPO1
                   NTOTPTS = (ILATB-ILATT+1)*(ILONR-ILONL+1) + (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1) 
 
 !                 WAVE COMPONENT WILL BE ATTENUATED BY THE RATIO OF ALL BLOCKING SUBGRID POINTS TO THE TOTAL NUMBER OF POINTS
-                  IOBSLON(IX,K,IS) = NINT((1._JWRB-BOOST_OBSTR(IX,K)*REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000) 
-                  IOBSLON(IX,K,IS) = MAX(IOBSLON(IX,K,IS), 0) 
+                  IOBSLON(IX,K,IS) = NINT((1._JWRB-BOOST_OBSTR(IX,K)*REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  IOBSLON(IX,K,IS) = MAX(IOBSLON(IX,K,IS), 0)
 
 
 !               AT THE DATELINE, DEALING WITH THE PERIODICITY (simplified version)
@@ -1129,8 +1133,8 @@ PROGRAM CREATE_BATHY_ETOPO1
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
 
-                  IOBSLON(IX,K,IS) = NINT((1._JWRB-BOOST_OBSTR(IX,K)*REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000) 
-                  IOBSLON(IX,K,IS) = MAX(IOBSLON(IX,K,IS), 0) 
+                  IOBSLON(IX,K,IS) = NINT((1._JWRB-BOOST_OBSTR(IX,K)*REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  IOBSLON(IX,K,IS) = MAX(IOBSLON(IX,K,IS), 0)
 
                 ENDIF
 
@@ -1853,8 +1857,8 @@ PROGRAM CREATE_BATHY_ETOPO1
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
-                  IOBSCOR(IX,K,IS)=                                     &
-     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  IOBSCOR(IX,K,IS) = NINT((1._JWRB-BOOST_OBSTR(IX,K)*REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  IOBSCOR(IX,K,IS) = MAX(IOBSCOR(IX,K,IS), 0)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO I=1,ILONR
@@ -1883,8 +1887,8 @@ PROGRAM CREATE_BATHY_ETOPO1
                     ENDDO
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  IOBSCOR(IX,K,IS)=                                     &
-     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  IOBSCOR(IX,K,IS) = NINT((1._JWRB-BOOST_OBSTR(IX,K)*REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  IOBSCOR(IX,K,IS) = MAX(IOBSCOR(IX,K,IS), 0)
                 ENDIF
 
               ENDIF
@@ -2025,7 +2029,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 4444                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  ITEMPEW = NINT((1._JWRB-BOOST_OBSTR(IX,K)*REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  ITEMPEW = MAX(ITEMPEW, 0)
                 ENDIF
                 XX=REAL((IOBSCOR(IX,K,IS)*ITEMPEW),JWRB)
                 XX=PENHCOR*SQRT(XX)
