@@ -175,6 +175,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       REAL(KIND=JWRB) :: STEPT, STEPB, XLATT, XLATB, XLONL, XLONR  
       REAL(KIND=JWRB) :: STEPLAT, STEPLON
       REAL(KIND=JWRB) :: RESOL
+      REAL(KIND=JWRB) :: ZBOOST, ZBW 
       REAL(KIND=JWRB) :: RR, XKEXTHRS, ALPR
       REAL(KIND=JWRB), DIMENSION(ILON) :: ALON
       REAL(KIND=JWRB), DIMENSION(ILAT) :: ALAT
@@ -751,12 +752,15 @@ PROGRAM CREATE_BATHY_ETOPO1
 !!1debile need comments !!!!
 !!! to compensate for a lack of resolution in the high resolution data with respect to the model resolution
 !!! we are going to try to boost the blocking for high resolution model
-!!! but only if the mean depth is deep enough
+!!! but only if the mean depth is deep enough (around 50m)
       IF ( XDELLA < 0.125_JWRB) THEN
         DO K=1,NY
           DO IX=1,NLONRGG(K)
-            IF(WAMDEPTH(IX,K).LT.-100.0_JWRB) THEN
-              BOOST_OBSTR(IX,K) = SQRT(MAX(1.0_JWRB, 0.125_JWRB/XDELLA))
+            IF(WAMDEPTH(IX,K).LT.0.0_JWRB) THEN
+              ZBOOST = SQRT(MAX(1.0_JWRB, 0.125_JWRB/XDELLA))
+              ! use a smooth transition
+              ZBW = TANH(0.2_JWRB*(ABS(WAMDEPTH(IX,K))-50.0_JWRB))
+              BOOST_OBSTR(IX,K) = 1.0_JWRB + 0.5_JWRB*(1.0_JWRB+ZBW)*(ZBOOST-1.0_JWRB)
             ELSE
               BOOST_OBSTR(IX,K) = 1.0_JWRB
             ENDIF
