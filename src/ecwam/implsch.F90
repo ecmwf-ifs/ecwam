@@ -102,6 +102,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 #include "sdepthlim.intfb.h"
 #include "sdissip.intfb.h"
 #include "sdiwbk.intfb.h"
+#include "sdice.intfb.h"
 #include "setice.intfb.h"
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
@@ -147,6 +148,10 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       REAL(KIND=JWRB), DIMENSION(KIJL) :: F1MEAN, AKMEAN, XKMEAN 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: PHIWA
 
+      ! TODO: CITH not actually needed bc we have CITHICK, but is the easiest way to make it a constant value
+      ! TODO: where will CITHICK get its info from?
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: CITH ! TODO: ^^^
+
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: COSWDIF, SINWDIF2
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: TEMP
@@ -178,6 +183,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
 
       DO IJ=KIJS,KIJL
+        CITH(IJ) = 1.2_JWRB 
         RAORW(IJ) = MAX(AIRD(IJ), 1.0_JWRB) * ROWATERM1
       ENDDO
 
@@ -309,6 +315,9 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       !$loki inline
       CALL SBOTTOM (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH)
 
+!     Allow waves to propagate under the sea ice
+      IF(.NOT.LCIWABR) CALL SDICE (KIJS, KIJL, FL1, FLD, SL, INDEP, CICOVER, CITH)
+      
 ! ----------------------------------------------------------------------
 
 !*    2.4 COMPUTATION OF NEW SPECTRA.
