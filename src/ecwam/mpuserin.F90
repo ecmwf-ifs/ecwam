@@ -139,6 +139,7 @@
       INTEGER(KIND=JWIM) :: IU05
       INTEGER(KIND=JWIM) :: ISAT, IC, II, ILEN
 
+      REAL(KIND=JWRU) :: R8_DEPTHA, R8_DEPTHD 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=14), PARAMETER :: ZERO = ' '
@@ -195,7 +196,7 @@
      &   LBIWBK  ,                                                      &
      &   LMASKICE,                                                      &
      &   LWAMRSETCI,                                                    &
-     &   NDEPTH   ,DEPTHA   ,DEPTHD,                                    &
+     &   NDEPTH   ,R8_DEPTHA   ,R8_DEPTHD,                              &
      &   IBOUNC, IBOUNF,                                                &
      &   IDELBC, CBCPREF,                                               &
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
@@ -573,8 +574,8 @@
       IREST     = 0 
       IASSI     = 0 
       NDEPTH    = 74
-      DEPTHA    = 1.0_JWRB
-      DEPTHD    = 1.1_JWRB
+      R8_DEPTHA = 1.0_JWRU
+      R8_DEPTHD = 1.1_JWRU
       IBOUNC    = 0 
       IBOUNF    = 0 
       IDELBC    = 0
@@ -810,6 +811,9 @@
 
       ! when coupled to IFS, the control will come from it via calls to wavemdl
       IF (LWCOU) LSMSSIG_WAM=.FALSE.
+
+      DEPTHA = R8_DEPTHA
+      DEPTHD = R8_DEPTHD
 
       TOOSHALLOW=0.1_JWRB*DEPTHA
 
