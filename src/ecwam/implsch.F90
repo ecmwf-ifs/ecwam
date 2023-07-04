@@ -349,6 +349,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
               FLHAB = MIN(FLHAB,TEMP(IJ,M))
               FL1(IJ,K,M) = FL1(IJ,K,M) + IOBND(IJ)*SIGN(FLHAB,GTEMP2)
 !              FL1(IJ,K,M) = MAX(IODP(IJ)*CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
+              FL1(IJ,K,M) =  MAX(IODP(IJ)                *FL1(IJ,K,M),FLM(IJ,K)) ! don't use CIREDUC
               SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M) + DELTM * MIN(FLMAX(M)-FL1(IJ,K,M),0.0_JWRB)
               FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
             ENDDO
@@ -363,7 +364,8 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
               FLHAB = ABS(GTEMP2)
               FLHAB = MIN(FLHAB,TEMP(IJ,M))
               FL1(IJ,K,M) = FL1(IJ,K,M) + SIGN(FLHAB,GTEMP2)
- !             FL1(IJ,K,M) = MAX(CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
+!              FL1(IJ,K,M) = MAX(CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
+              FL1(IJ,K,M)  = MAX(                FL1(IJ,K,M),FLM(IJ,K)) ! don't use CIREDUC
               SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M) + DELTM * MIN(FLMAX(M)-FL1(IJ,K,M),0.0_JWRB)
               FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
             ENDDO
