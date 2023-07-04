@@ -60,6 +60,8 @@
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPCONS , ONLY : G       ,EPSMIN  ,ZPI
 
+      USE YOWTEST  , ONLY : IU06
+
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
