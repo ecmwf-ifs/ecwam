@@ -74,14 +74,17 @@
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CICV
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CITH
 
+      REAL(KIND=JWRB), DIMENSION(NFRE)    :: XK2
+
+      INTEGER(KIND=JWIM) :: IMODEL                       !! DAMPING MODEL: 1=FIT TO TEMPELFJORD DATA, 2=Jie Yu 2022
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       REAL(KIND=JWRB)    :: EWH, X, XK, ZPI4G2
-      REAL(KIND=JWRB)    :: ALP, ALP1, ALP2               !! ALP=SPATIAL ATTENUATION RATE OF ENERGY?
+      REAL(KIND=JWRB)    :: ALP, ALP1, ALP2              !! ALP=SPATIAL ATTENUATION RATE OF ENERGY?
       REAL(KIND=JWRB)    :: BETA, TEMP
       REAL(KIND=JWRB)    :: CDICE, DICE, D1, D2, RIND
       REAL(KIND=JWRB)    :: HICEMAX, HICEMIN, HICE
-      REAL(KIND=JWRB)    :: MUSHFRAC, HBDY                       !! FRACTION OF ICE THICKNESS WHICH IS MUSHY
+      REAL(KIND=JWRB)    :: MUSHFRAC, HBDY               !! FRACTION OF ICE THICKNESS WHICH IS MUSHY
       
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -100,8 +103,8 @@
          WRITE (IU06,*)'Ice damping with best fit from Tempelfjorde obs'
          CDICE=0.0656_JWRB
       ELSE IF (IMODEL.EQ.2) THEN
-         WRITE (IU06,*)'Ice damping based on '                          &
-     &                 'Jie Yu, W. Erik Rogers, David W. Wang 2022'
+         WRITE (IU06,*)'Ice damping based on: '
+         WRITE (IU06,*)'  Jie Yu, W. Erik Rogers, David W. Wang 2022'
          CDICE=0.1274_JWRB*( ZPI/SQRT(G) )**(4.5_JWRB)
       END IF
       
