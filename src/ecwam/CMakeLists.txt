@@ -219,6 +219,7 @@ list( APPEND ecwam_srcs
   sdissip_ard.F90
   sdissip_jan.F90
   sdiwbk.F90
+  sdice.F90
   se10mean.F90
   sebtmean.F90
   second_order_lib.F90
