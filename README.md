@@ -203,6 +203,8 @@ The calculation of the source-terms in ecWam, i.e. the physics, can be offloaded
 - scc-stack: The scc transformation with a pool allocator used to allocate temporary arrays
 - scc-cuf: A CUDA Fortran variant of the scc transformation. Compile-time constants are used to define temporary arrays.
 
+Single-node multi-GPU runs are also supported.
+
 Building
 --------
 The first two GPU variants can be generated at build-time using ECMWF's source-to-source translation toolchain Loki. The 'scc-cuf' variant has also been generated via Loki, but this transformation is not yet fully automated and thus cannot be run at build-time.
