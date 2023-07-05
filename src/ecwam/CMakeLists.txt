@@ -269,6 +269,7 @@ list( APPEND ecwam_srcs
   w_mode_st.F90
   w_pdf.F90
   w_pmax.F90
+  wam_init_gpu_mod.F90
   wam_multio_mod.F90
   wam_nproma.F90
   wam_sorti.F90

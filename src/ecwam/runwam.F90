@@ -112,7 +112,6 @@
       USE YOWTEST, ONLY : IU06
       USE YOWGSTATS, ONLY : WAM_GSTATS_SETUP, WAM_GSTATS_PRINT, &
      &                      WAM_GSTATS_FILE_OPEN, WAM_GSTATS_FILE_CLOSE
-
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE

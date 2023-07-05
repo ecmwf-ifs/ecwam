@@ -47,6 +47,7 @@
 
       USE MPL_MODULE, ONLY : MPL_MYRANK, MPL_NPROC
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE WAM_INIT_GPU_MOD, ONLY : WAM_INIT_GPU
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -87,6 +88,10 @@
 
       IRANK = MPL_MYRANK()
       NPROC = MPL_NPROC()
+
+#if defined(WAM_PHYS_GPU) || defined(WAM_CUDA)
+      CALL WAM_INIT_GPU(IRANK)
+#endif
 
 !     STANDARD OUTPUT UNIT
 !     --------------------
