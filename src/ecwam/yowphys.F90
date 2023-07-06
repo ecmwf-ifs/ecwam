@@ -146,7 +146,7 @@
       REAL(KIND=JWRB), PARAMETER :: BRKPBCOEF=28.16_JWRB  
 
 !     Wave-turbulence interaction coefficient 
-      REAL(KIND=JWRB), PARAMETER :: SSDSC5  = 0.0_JWRB 
+      REAL(KIND=JWRB) :: SSDSC5  !! See *SETWAVPHYS*
 
 !     NSDSNTH is the number of directions on both used to compute the spectral saturation  
       INTEGER(KIND=JWIM) :: NSDSNTH

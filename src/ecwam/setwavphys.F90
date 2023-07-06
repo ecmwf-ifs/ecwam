@@ -25,7 +25,8 @@ USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                CDIS     ,DELTA_SDIS, CDISVIS,                    &
      &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C,                     &
-     &                SWELLF4,  SWELLF7, SWELLF7M1, Z0TUBMAX, Z0RAT
+     &                SWELLF4,  SWELLF7, SWELLF7M1, Z0TUBMAX, Z0RAT,    &
+     &                SSDSC5
 USE YOWSTAT  , ONLY : IPHYS
 USE YOWTEST  , ONLY : IU06
 
@@ -145,6 +146,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           SWELLF7 = 4.32E05_JWRB
           SWELLF7M1 = 1.0_JWRB/SWELLF7 
 
+          SSDSC5  = 0.5_JWRB
+
           Z0TUBMAX = 0.05_JWRB
           Z0RAT = 0.02_JWRB
 
@@ -166,6 +169,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           SWELLF4 = 1.5E05_JWRB
           SWELLF7 = 3.6E05_JWRB
           SWELLF7M1 = 1.0_JWRB/SWELLF7 
+
+          SSDSC5  = 0.0_JWRB
 
           Z0TUBMAX = 0.0005_JWRB
           Z0RAT = 0.04_JWRB
