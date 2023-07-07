@@ -312,12 +312,12 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       !$loki inline
       CALL SDIWBK(KIJS, KIJL, FL1 ,FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)
 
-      !$loki inline
-      CALL SBOTTOM (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH)
-
 !     Allow waves to propagate under the sea ice
       IF(.NOT.LCIWABR) CALL SDICE (KIJS, KIJL, FL1, FLD, SL, INDEP, CICOVER, CITH)
       
+      !$loki inline
+      CALL SBOTTOM (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH)
+
 ! ----------------------------------------------------------------------
 
 !*    2.4 COMPUTATION OF NEW SPECTRA.
