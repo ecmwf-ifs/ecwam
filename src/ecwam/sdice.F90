@@ -7,7 +7,8 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE SDICE (KIJS, KIJL, FL1, FLD, SL, INDEP,      &
+      SUBROUTINE SDICE (KIJS, KIJL, FL1, FLD, SL,             &
+     &                  INDEP, WAVNUM, CGROUP,                &
      &                  CICV,CITH)
 ! ----------------------------------------------------------------------
 
@@ -31,6 +32,8 @@
 !          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY
 !          *INDEP*  - DEPTH INDEX
+!          *WAVNUM* - WAVE NUMBER
+!          *CGROUP* - GROUP SPEED
 !          *CICV*   - SEA ICE COVER
 !          *CITH*   - SEA ICE THICKNESS
 
@@ -73,6 +76,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
       INTEGER(KIND=JWIM), DIMENSION(KIJL), INTENT(IN) :: INDEP
+      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CICV
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CITH
 
@@ -110,49 +114,49 @@
          CDICE=0.1274_JWRB*( ZPI/SQRT(G) )**(4.5_JWRB)
       END IF
       
-      ! IF (ISHALLO.EQ.1) THEN
-      
-         ! DO M = 1,NFRE
-         !    DO K = 1,NANG
-         !       DO IJ = KIJS,KIJL
-         !          IF (IMODEL.EQ.1) THEN
-         !             XK = TFAK(INDEP(IJ),M)
-         !             ALP = CDICE*CITH(IJ)*XK**2
-         !          ELSE IF (IMODEL.EQ.2) THEN
-         !             ALP = 2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))
-         !          END IF
-         !          BETA=1._JWRB-CICV(IJ)
-         !          TEMP = -CICV(IJ)*ALP*TCGOND(INDEP(IJ),M) 
-         !          SL(IJ,K,M) = BETA*SL(IJ,K,M) + F(IJ,K,M)*TEMP
-         !          FL(IJ,K,M) = BETA*FL(IJ,K,M) + TEMP
-                  
-         !       END DO
-         !    END DO
-         ! END DO
-      
-      ! ELSE
-         
-      ZPI4G2=ZPI**4/G**2
       DO M = 1,NFRE
-         XK2(M)=ZPI4G2*FR(M)**4
          DO K = 1,NANG
             DO IJ = KIJS,KIJL
-               
                IF (IMODEL.EQ.1) THEN
-                  ALP = CDICE*CITH(IJ)*XK2(M)
+                  ! XK = TFAK(INDEP(IJ),M)                ! OLD
+                  ! ALP = CDICE*CITH(IJ)*XK**2            ! OLD 
+                  ALP = CDICE*CITH(IJ)*WAVUM(IJ,M)**2     ! NEW
                ELSE IF (IMODEL.EQ.2) THEN
-     !               write(*,*) 'test CIT', CITHICK(IJ)
                   ALP = 2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))
                END IF
-               
                BETA=1._JWRB-CICV(IJ)
-               TEMP = -CICV(IJ)*ALP*GOM(M) 
+               ! TEMP = -CICV(IJ)*ALP*TCGOND(INDEP(IJ),M) ! OLD
+               TEMP = -CICV(IJ)*ALP*CGROUP(IJ,M)         ! NEW
                SL(IJ,K,M)  = BETA*SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
                FLD(IJ,K,M) = BETA*FLD(IJ,K,M) + TEMP
-               
+
             END DO
          END DO
-      END DO 
+      END DO
+      
+      ! Deep water case only, this worked
+         
+   !    ZPI4G2=ZPI**4/G**2
+   !    DO M = 1,NFRE
+   !       XK2(M)=ZPI4G2*FR(M)**4
+   !       DO K = 1,NANG
+   !          DO IJ = KIJS,KIJL
+               
+   !             IF (IMODEL.EQ.1) THEN
+   !                ALP = CDICE*CITH(IJ)*XK2(M)
+   !             ELSE IF (IMODEL.EQ.2) THEN
+   !   !               write(*,*) 'test CIT', CITHICK(IJ)
+   !                ALP = 2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))
+   !             END IF
+               
+   !             BETA=1._JWRB-CICV(IJ)
+   !             TEMP = -CICV(IJ)*ALP*GOM(M) 
+   !             SL(IJ,K,M)  = BETA*SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
+   !             FLD(IJ,K,M) = BETA*FLD(IJ,K,M) + TEMP
+               
+   !          END DO
+   !       END DO
+   !    END DO 
       
       ! END IF
 
