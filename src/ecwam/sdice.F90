@@ -120,7 +120,7 @@
                IF (IMODEL.EQ.1) THEN
                   ! XK = TFAK(INDEP(IJ),M)                ! OLD
                   ! ALP = CDICE*CITH(IJ)*XK**2            ! OLD 
-                  ALP = CDICE*CITH(IJ)*WAVUM(IJ,M)**2     ! NEW
+                  ALP = CDICE*CITH(IJ)*WAVNUM(IJ,M)**2    ! NEW
                ELSE IF (IMODEL.EQ.2) THEN
                   ALP = 2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))
                END IF
