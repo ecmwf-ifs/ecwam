@@ -136,27 +136,27 @@
       
       ! Deep water case only, this worked
          
-   !    ZPI4G2=ZPI**4/G**2
-   !    DO M = 1,NFRE
-   !       XK2(M)=ZPI4G2*FR(M)**4
-   !       DO K = 1,NANG
-   !          DO IJ = KIJS,KIJL
+     !    ZPI4G2=ZPI**4/G**2
+     !    DO M = 1,NFRE
+     !       XK2(M)=ZPI4G2*FR(M)**4
+     !       DO K = 1,NANG
+     !          DO IJ = KIJS,KIJL
                
-   !             IF (IMODEL.EQ.1) THEN
-   !                ALP = CDICE*CITH(IJ)*XK2(M)
-   !             ELSE IF (IMODEL.EQ.2) THEN
-   !   !               write(*,*) 'test CIT', CITHICK(IJ)
-   !                ALP = 2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))
-   !             END IF
+     !             IF (IMODEL.EQ.1) THEN
+     !                ALP = CDICE*CITH(IJ)*XK2(M)
+     !             ELSE IF (IMODEL.EQ.2) THEN
+     !   !               write(*,*) 'test CIT', CITHICK(IJ)
+     !                ALP = 2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))
+     !             END IF
                
-   !             BETA=1._JWRB-CICV(IJ)
-   !             TEMP = -CICV(IJ)*ALP*GOM(M) 
-   !             SL(IJ,K,M)  = BETA*SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
-   !             FLD(IJ,K,M) = BETA*FLD(IJ,K,M) + TEMP
+     !             BETA=1._JWRB-CICV(IJ)
+     !             TEMP = -CICV(IJ)*ALP*GOM(M) 
+     !             SL(IJ,K,M)  = BETA*SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
+     !             FLD(IJ,K,M) = BETA*FLD(IJ,K,M) + TEMP
                
-   !          END DO
-   !       END DO
-   !    END DO 
+     !          END DO
+     !       END DO
+     !    END DO 
       
       ! END IF
 
