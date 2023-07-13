@@ -122,13 +122,13 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 
 !!    For a subgrid submerged feature to be blocking, the grid box mean depth need to be at least  XKEXTHRS_DEEP * blocking depth
-      REAL(KIND=JWRB), PARAMETER :: XKEXTHRS_DEEP=100.0_JWRB
+      REAL(KIND=JWRB), PARAMETER :: XKEXTHRS_DEEP
 
 !!    ISWTHRS is used to compute a depth dependent linear reduction factor for ALPR_DEEP
 !!    i.e. ALPR_DEEP is linearly reduced for depth less than ISWTHRS to limit the impact of subgrid points in shallow waters.
       INTEGER(KIND=JWIM), PARAMETER :: ISWTHRS=200
 
-!!    PENHCOR is used to enhanced the corner onstructructions for IPROPAGS=2 
+!!    PENHCOR is used to enhanced the corner obstructructions for IPROPAGS=2 
       REAL(KIND=JWRB), PARAMETER :: PENHCOR = 2.0_JWRB
 
 
@@ -290,9 +290,11 @@ PROGRAM CREATE_BATHY_ETOPO1
 
     
       IF ( XDELLA < 0.125_JWRB) THEN
+        XKEXTHRS_DEEP=50.0_JWRB
         RATIOLAND_THRESHOLD = 0.5_JWRB
         RATIOSHALLOW_THRESHOLD = 1.0_JWRB
       ELSE
+        XKEXTHRS_DEEP=100.0_JWRB
         RATIOLAND_THRESHOLD = 0.6_JWRB
         RATIOSHALLOW_THRESHOLD = 0.3_JWRB
       ENDIF
@@ -493,6 +495,11 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       NJM=INT(0.5_JWRB*XDELLA*INVRES)
       NJP=NINT(0.5_JWRB*XDELLA*INVRES)
+      IF ( XDELLA < 0.125_JWRB) THEN
+!       Allow a bit of extra smoothing
+        NJM=NJM+1
+        NJP=NJP+1
+      ENDIF
 
       DO K=1,NY
 !        WE ASSUME THAT WAMGRID IS ALWAYS WITHIN ETOPO1
@@ -519,6 +526,11 @@ PROGRAM CREATE_BATHY_ETOPO1
 
            NIM=INT(0.5_JWRB*ZDELLO(K)*INVRES)
            NIP=NINT(0.5_JWRB*ZDELLO(K)*INVRES)
+           IF ( XDELLA < 0.125_JWRB) THEN
+!            Allow a bit of extra smoothing
+             NIM=NIM+1
+             NIP=NIP+1
+           ENDIF
 
            NSEA=0
            SEA=0._JWRB
