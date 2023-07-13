@@ -31,7 +31,7 @@ MODULE YOWFIELD_MOD
       CONTAINS
          PROCEDURE :: INIT => ${obj.upper()}$_FIELD_INIT
          PROCEDURE :: UPDATE_VIEW => ${obj.upper()}$_UPDATE_VIEW
-         #!PROCEDURE :: FINAL => ${obj.upper()}$_FINAL
+         PROCEDURE :: FINAL => ${obj.upper()}$_FINAL
    END TYPE ${obj.upper()}$_FIELD
 
 #:endfor
@@ -39,7 +39,7 @@ MODULE YOWFIELD_MOD
 #:for type in ['real', 'int']
    #:for dim in range(2, 5)
       FUNCTION WRAP_${dim}$D_${type.upper()}$_FIELD(ARR) RESULT(FIELD)
-        #{if type == 'real'}#REAL(KIND=JWRB)#{else}#INTEGER(KIND=JWIM)#{endif}#, DIMENSION(${','.join(':' for _ in range(dim))}$), INTENT(IN) :: ARR
+         #{if type == 'real'}#REAL(KIND=JWRB)#{else}#INTEGER(KIND=JWIM)#{endif}#, DIMENSION(${','.join(':' for _ in range(dim))}$), INTENT(IN) :: ARR
          CLASS(FIELD_#{if type == 'int'}#INT#{endif}#${dim}$D_WRAPPER), POINTER :: FIELD
 
          ALLOCATE(FIELD)
@@ -59,7 +59,7 @@ MODULE YOWFIELD_MOD
           IF(PRESENT(${var.upper()}$)) SELF%F_${var.upper()}$ => WRAP_${dim}$D_${type.upper()}$_FIELD(${var.upper()}$)
       #:endfor
       END SUBROUTINE ${obj.upper()}$_FIELD_INIT
-  
+
       SUBROUTINE ${obj.upper()}$_UPDATE_VIEW(SELF, BLOCK_INDEX)
           CLASS(${obj.upper()}$_FIELD), INTENT(INOUT) :: SELF
           INTEGER(KIND=JWIM), INTENT(IN) :: BLOCK_INDEX
@@ -68,6 +68,17 @@ MODULE YOWFIELD_MOD
           IF(ASSOCIATED(SELF%F_${var.upper()}$)) SELF%${var.upper()}$ => SELF%F_${var.upper()}$%GET_VIEW(BLOCK_INDEX)
       #:endfor
       END SUBROUTINE ${obj.upper()}$_UPDATE_VIEW
+
+      SUBROUTINE ${obj.upper()}$_FINAL(SELF)
+          CLASS(${obj.upper()}$_FIELD), INTENT(INOUT) :: SELF
+
+      #:for var, type, dim in objdef[obj]
+          IF(ASSOCIATED(SELF%F_${var.upper()}$))THEN
+              CALL SELF%F_${var.upper()}$%FINAL()
+              DEALLOCATE(SELF%F_${var.upper()}$)
+          ENDIF
+      #:endfor
+      END SUBROUTINE ${obj.upper()}$_FINAL
 
 #:endfor
 END MODULE YOWFIELD_MOD
