@@ -1,5 +1,5 @@
 ! (C) Copyright 1989- ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -36,14 +36,14 @@
       CHARACTER(LEN=25) ::  CMETER
       CHARACTER(LEN=25) ::  CEVENT
 
-      INTEGER(KIND=JWIM) :: IFRELFMAX 
+      INTEGER(KIND=JWIM) :: IFRELFMAX
       REAL(KIND=JWRB) ::    DELPRO_LF
-      INTEGER(KIND=JWIM) :: IDELPRO 
-      INTEGER(KIND=JWIM) :: IDELT 
-      INTEGER(KIND=JWIM) :: IDELWI 
-      INTEGER(KIND=JWIM), ALLOCATABLE :: IDELWI_LST(:) 
-      INTEGER(KIND=JWIM) :: IDELWO 
-      INTEGER(KIND=JWIM), ALLOCATABLE :: IDELWO_LST(:) 
+      INTEGER(KIND=JWIM) :: IDELPRO
+      INTEGER(KIND=JWIM) :: IDELT
+      INTEGER(KIND=JWIM) :: IDELWI
+      INTEGER(KIND=JWIM), ALLOCATABLE :: IDELWI_LST(:)
+      INTEGER(KIND=JWIM) :: IDELWO
+      INTEGER(KIND=JWIM), ALLOCATABLE :: IDELWO_LST(:)
       INTEGER(KIND=JWIM) :: NDELW_LST
       INTEGER(KIND=JWIM) :: IDELALT
       INTEGER(KIND=JWIM) :: IREST
@@ -89,6 +89,8 @@
       LOGICAL :: LLSOURCE
       LOGICAL :: LNSESTART
       LOGICAL :: LSMSSIG_WAM
+
+      REAL(KIND=JWRB) :: TIME_PROPAG, TIME_PHYS
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------

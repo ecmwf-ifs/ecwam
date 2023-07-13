@@ -1,5 +1,5 @@
 ! (C) Copyright 1989- ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -9,7 +9,7 @@
 
 SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
  &                  WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,  &
- &                  WAM2NEMO, NEMO2WAM, FL1, TIME1)
+ &                  WAM2NEMO, NEMO2WAM, FL1)
 
 ! ----------------------------------------------------------------------
 
@@ -65,8 +65,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE
-      USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,LWAVEWIND 
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
+      USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,LWAVEWIND
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &                      CDATER   ,CDATES   ,CDTINTT  ,IDELPRO  ,IDELT    ,    &
@@ -86,7 +86,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       USE WAM_MULTIO_MOD, ONLY : WAM_MULTIO_FLUSH
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
-      
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -124,8 +124,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       TYPE(OCEAN2WAVE), INTENT(IN)                                             :: NEMO2WAM
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
 
-      REAL(KIND=JWRB), INTENT(INOUT) :: TIME1(2)
-
 
       INTEGER(KIND=JWIM) :: IJ, K, M, J, IRA, KADV, ICH
       INTEGER(KIND=JWIM) :: IFIL, IC, ICL, ICR, II, ILOOP
@@ -160,7 +158,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 
 !     TIME FOR THE NEXT SOURCE TERM INTEGRATION
       CDTIMPNEXT = CDTPRO
-      CALL INCDATE(CDTIMPNEXT, IDELT)   
+      CALL INCDATE(CDTIMPNEXT, IDELT)
 !     TIME FOR WIND INPUT UPDATE (SEE NEWWIND)
       CDTIMP = CDTPRO
 
@@ -253,7 +251,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
           CALL WAMINTGR (CDTPRA, CDATE, CDATEWH, CDTIMP, CDTIMPNEXT, &
  &                       BLK2GLO,                                    &
  &                       WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,   &
- &                       WAM2NEMO, MIJ, FL1, XLLWS, TIME1)
+ &                       WAM2NEMO, MIJ, FL1, XLLWS)
           ILOOP = ILOOP +1
         ENDDO
 
@@ -281,11 +279,11 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
         IF (IBOUNF == 1) CALL BOUINPT (IU02, FL1, NBLKS, NBLKE)
 !*      1.4.2 OUTPUT OF BOUNDARY POINTS.
 !           --------------------------
-        IF (IBOUNC == 1) CALL OUTBC (FL1, BLK2GLO, IU19) 
+        IF (IBOUNC == 1) CALL OUTBC (FL1, BLK2GLO, IU19)
 !NEST
 
 
-!*      1.5 POINT OUTPUT (not usually used at ECMWF) 
+!*      1.5 POINT OUTPUT (not usually used at ECMWF)
 !           ----------------------------------------
         IF ( NGOUT > 0 .AND. (CDTINTT == CDTPRO .OR. LRST) ) THEN
 !           OUTPUT POINT SPECTRA (not usually used at ECMWF)
@@ -357,7 +355,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
               WRITE(IU06,*) ' '
               WRITE(IU06,*) '  GRIB WAVE SPECTRA DISPOSED AT........ CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
-            ENDIF  
+            ENDIF
 
 !           1.8.2 SAVE RESTART FILES IN PURE BINARY FORM (in needed)
 !                 --------------------------------------
@@ -378,7 +376,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !*          1.8.3 UPDATE, WRITE AND SAVE WAMINFO FILE.
 !                 -----------------------------------
             IF (LRST .AND. IRANK == 1) THEN
-              ICH = 7 
+              ICH = 7
               CALL DIFDATE (CDATEF, CDATEE, IFOREPD)
               IF (CDTPRO <= CDATEF) THEN
                 CALL DIFDATE (CDTPRO, CDATEF, IANALPD)
@@ -402,7 +400,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
      &                      IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,  &
      &                      IASSI, NFCST, ISTAT, CDTCUR,                &
      &                      LRSTPARALW, NPROC)
- 
+
               CLOSE (IU04)
               WRITE(IU06,*) ' WAMINFO FILE WRITTEN FOR RESTART... CDTPRO  = ', CDTPRO
               WRITE(IU06,*) '                                     CDATEF  = ', CDATEF
@@ -459,7 +457,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
           CALL GSTATS(1976,0)
           CALL WAM_MULTIO_FLUSH()
           CALL GSTATS(1976,1)
-          WRITE(IU06,*) ' ' 
+          WRITE(IU06,*) ' '
           WRITE(IU06,*) '  FDB FLUSHED AT ',  CDTPRO, ' FROM WAMODEL. '
           CALL FLUSH (IU06)
           LLFLUSH=.FALSE.
@@ -486,12 +484,12 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
      &        CBCPREF(II), 'S')
             IF (CDTBC < CDATEE)                                         &
      &        CALL HEADBC (IPOGBO(II)-IPOGBO(II-1), IDELPRO,            &
-     &                     TH(1), FR(1), IU19(II), IU06) 
+     &                     TH(1), FR(1), IU19(II), IU06)
             ENDDO
           ENDIF
         ENDIF
 !NEST
- 
+
 
 !*      1.12 WAM-NEMO COUPLING (!!!!! WHEN NO atmospheric model !!!!!!) (currently not used at ECMWF)
 !       (when coupled see cnt4 in ifs)
