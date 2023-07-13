@@ -34,9 +34,9 @@ jobs:
         name:
           - linux gnu-10
           - linux clang-12
-          - linux nvhpc-21.9
           - linux intel
           - macos
+          # - linux nvhpc-21.9
 
         include:
 
@@ -65,14 +65,15 @@ jobs:
             compiler_fc: gfortran-10
             caching: true
 
-          - name: linux nvhpc-21.9
-            os: ubuntu-20.04
-            compiler: nvhpc-21.9
-            compiler_cc: nvc
-            compiler_cxx: nvc++
-            compiler_fc: nvfortran
-            cmake_options: -DCMAKE_CXX_FLAGS=--diag_suppress177
-            caching: true
+# Disable due to problematic environment
+#          - name: linux nvhpc-21.9
+#            os: ubuntu-20.04
+#            compiler: nvhpc-21.9
+#            compiler_cc: nvc
+#            compiler_cxx: nvc++
+#            compiler_fc: nvfortran
+#            cmake_options: -DCMAKE_CXX_FLAGS=--diag_suppress177
+#            caching: true
 
           - name : linux intel
             os: ubuntu-20.04
