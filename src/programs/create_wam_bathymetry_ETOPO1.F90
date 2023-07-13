@@ -839,8 +839,8 @@ PROGRAM CREATE_BATHY_ETOPO1
                 ENDIF
 
 !               LONGITUDINAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
-                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
-                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
+                ILONL = INT((XLONL + 180._JWRB)*INVRES) + 1
+                ILONR = INT((XLONR + 180._JWRB)*INVRES) + 2
 
 !               COMPUTE THE OBSTRUCTIONS:
 !               TALLY THE NUMBER OF SUB GRID POINTS THAT ARE POTENTIALLY BLOCKING WAVE PROPAGATION (NOBSTRCT)
@@ -980,9 +980,9 @@ PROGRAM CREATE_BATHY_ETOPO1
 !           LATIDUNAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
             XLATT=XLAT(K)+0.5_JWRB*XDELLA
             XLATB=XLAT(K)-0.5_JWRB*XDELLA
-            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
+            ILATT = INT((90.0_JWRB- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
+            ILATB = INT((90.0_JWRB- XLATB)*INVRES) + 2
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
@@ -1172,8 +1172,8 @@ PROGRAM CREATE_BATHY_ETOPO1
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
-                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
-                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
+                ILONL = INT((XLONL + 180._JWRB)*INVRES) + 1
+                ILONR = INT((XLONR + 180._JWRB)*INVRES) + 2
 
                 NOBSTRCT=0
 
@@ -1290,9 +1290,9 @@ PROGRAM CREATE_BATHY_ETOPO1
           DO K=1,NY
             XLATT=XLAT(K)+(IS-1)*XDELLA
             XLATB=XLAT(K)-(2-IS)*XDELLA
-            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
+            ILATT = INT((90.0_JWRB- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
+            ILATB = INT((90.0_JWRB- XLATB)*INVRES) + 2
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
@@ -1465,8 +1465,8 @@ PROGRAM CREATE_BATHY_ETOPO1
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
-                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
-                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
+                ILONL = INT((XLONL + 180._JWRB)*INVRES) + 1
+                ILONR = INT((XLONR + 180._JWRB)*INVRES) + 2
 
                 NOBSTRCT=0
 
@@ -1583,9 +1583,9 @@ PROGRAM CREATE_BATHY_ETOPO1
           DO K=1,NY
             XLATT=XLAT(K)+(IS-1)*XDELLA
             XLATB=XLAT(K)-(2-IS)*XDELLA
-            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
+            ILATT = INT((90.0_JWRB- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
+            ILATB = INT((90.0_JWRB- XLATB)*INVRES) + 2
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
@@ -1771,8 +1771,8 @@ PROGRAM CREATE_BATHY_ETOPO1
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
-                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
-                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
+                ILONL = INT((XLONL + 180._JWRB)*INVRES) + 1
+                ILONR = INT((XLONR + 180._JWRB)*INVRES) + 2
 
                 NOBSTRCT=0
 
@@ -1894,9 +1894,9 @@ PROGRAM CREATE_BATHY_ETOPO1
               XLATT=XLAT(K)
               XLATB=XLAT(K)-XDELLA
             ENDIF
-            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
+            ILATT = INT((90.0_JWRB- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
+            ILATB = INT((90.0_JWRB- XLATB)*INVRES) + 2
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
