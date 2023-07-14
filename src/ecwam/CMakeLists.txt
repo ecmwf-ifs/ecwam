@@ -458,6 +458,9 @@ elseif( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
 endif()
 
 if( HAVE_WAM_LOKI )
+
+  set( LOKI_FRONTEND "fp" CACHE STRING "Frontend parser for Loki transforms" )
+
 ############################################################
 ##  Loki Idempotence mode:                                ##
 ##   * Internal "do-nothing" mode for Loki debug          ##
@@ -469,7 +472,7 @@ if( HAVE_WAM_LOKI )
   endforeach()
 
   loki_transform_convert(
-      MODE idem FRONTEND "fp" CPP
+      MODE idem FRONTEND ${LOKI_FRONTEND} CPP
       CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config
       PATH ${CMAKE_CURRENT_SOURCE_DIR}
       INCLUDES ${ecwam_intfb_includes}
@@ -513,7 +516,7 @@ if( HAVE_WAM_LOKI )
   endforeach()
 
   loki_transform_convert(
-      MODE idem-stack FRONTEND "fp" CPP
+      MODE idem-stack FRONTEND ${LOKI_FRONTEND} CPP
       CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config
       PATH ${CMAKE_CURRENT_SOURCE_DIR}
       INCLUDES ${ecwam_intfb_includes}
@@ -561,7 +564,7 @@ if( HAVE_WAM_LOKI )
      endforeach()
 
      loki_transform_convert(
-         MODE scc FRONTEND "fp" CPP GLOBAL_VAR_OFFLOAD TRIM_VECTOR_SECTIONS
+         MODE scc FRONTEND ${LOKI_FRONTEND} CPP GLOBAL_VAR_OFFLOAD TRIM_VECTOR_SECTIONS
          CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config
          PATH ${CMAKE_CURRENT_SOURCE_DIR}
          INCLUDES ${ecwam_intfb_includes}
@@ -609,7 +612,7 @@ if( HAVE_WAM_LOKI )
      endforeach()
 
      loki_transform_convert(
-         MODE scc-stack FRONTEND "fp" CPP GLOBAL_VAR_OFFLOAD TRIM_VECTOR_SECTIONS
+         MODE scc-stack FRONTEND ${LOKI_FRONTEND} CPP GLOBAL_VAR_OFFLOAD TRIM_VECTOR_SECTIONS
          CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config
          PATH ${CMAKE_CURRENT_SOURCE_DIR}
          INCLUDES ${ecwam_intfb_includes}
