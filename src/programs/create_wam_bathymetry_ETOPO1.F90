@@ -122,7 +122,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 
 !!    For a subgrid submerged feature to be blocking, the grid box mean depth need to be at least  XKEXTHRS_DEEP * blocking depth
-      REAL(KIND=JWRB), PARAMETER :: XKEXTHRS_DEEP
+      REAL(KIND=JWRB) :: XKEXTHRS_DEEP
 
 !!    ISWTHRS is used to compute a depth dependent linear reduction factor for ALPR_DEEP
 !!    i.e. ALPR_DEEP is linearly reduced for depth less than ISWTHRS to limit the impact of subgrid points in shallow waters.
