@@ -290,7 +290,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
     
       IF ( XDELLA < 0.125_JWRB) THEN
-        XKEXTHRS_DEEP=50.0_JWRB
+        XKEXTHRS_DEEP=200.0_JWRB
         RATIOLAND_THRESHOLD = 0.5_JWRB
         RATIOSHALLOW_THRESHOLD = 1.0_JWRB
       ELSE
@@ -878,11 +878,11 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
-                        NIOBSLON=NIOBSLON+1 
+                        NIOBSLON=NIOBSLON+1
 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.  LLEXCLTHRSHOLD(IX,K)) THEN
 !                       IF SEA ABOVE THE THRESHOLD THEN ONLY THAT SUBGRID POINT BLOCKS
-                        NIOBSLON=NIOBSLON+1 
+                        NIOBSLON=NIOBSLON+1
                       ENDIF
                     ENDDO
 
