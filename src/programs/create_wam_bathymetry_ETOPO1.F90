@@ -122,7 +122,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 
 !!    For a subgrid submerged feature to be blocking, the grid box mean depth need to be at least  XKEXTHRS_DEEP * blocking depth
-      REAL(KIND=JWRB) :: XKEXTHRS_DEEP
+      REAL(KIND=JWRB), PARAMETER :: XKEXTHRS_DEEP=100.0_JWRB
 
 !!    ISWTHRS is used to compute a depth dependent linear reduction factor for ALPR_DEEP
 !!    i.e. ALPR_DEEP is linearly reduced for depth less than ISWTHRS to limit the impact of subgrid points in shallow waters.
@@ -290,11 +290,9 @@ PROGRAM CREATE_BATHY_ETOPO1
 
     
       IF ( XDELLA < 0.125_JWRB) THEN
-        XKEXTHRS_DEEP=200.0_JWRB
         RATIOLAND_THRESHOLD = 0.5_JWRB
         RATIOSHALLOW_THRESHOLD = 1.0_JWRB
       ELSE
-        XKEXTHRS_DEEP=100.0_JWRB
         RATIOLAND_THRESHOLD = 0.6_JWRB
         RATIOSHALLOW_THRESHOLD = 0.3_JWRB
       ENDIF
@@ -742,7 +740,9 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       WRITE(1,'(I4)') NFRE_RED
 
-      IF(XDELLA.LE.0.5_JWRB) THEN
+      IF(XDELLA.LE.0.125_JWRB) THEN
+        IREINF=4
+      ELSEIF(XDELLA.LE.0.5_JWRB) THEN
         IREINF=2
       ELSE
         IREINF=1
