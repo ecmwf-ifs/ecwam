@@ -164,6 +164,7 @@
       CHARACTER(LEN=14) :: ZERO,CBEGDAT
 
       LOGICAL :: LLSTOP, LLWRRE, LLRESTARTED, LLIRANK, LLNORMWAMOUT_GLOBAL
+      LOGICAL :: LLINIT_WVFLDG
       LOGICAL :: LDWCOUNORMS
       LOGICAL :: FRSTIME
       LOGICAL :: LWCUR
@@ -220,6 +221,7 @@
       LWFLUX=.FALSE. ! will be reset to true if ocean fluxes are output.
       LWCUR=.FALSE. ! only used in coupled runs with atmospheric model
       LFDBIFS=.FALSE.
+      LLINIT_WVFLDG=.FALSE.
 
 
       PRPLRADI=1.0_JWRB
@@ -335,7 +337,7 @@
      &             IGRIB_HANDLE_DUM, RMISS, ZRCHAR, FIELDS,             &
      &             NATMFLX,                                             &
      &             LWCUR, LWSTOKES,                                     &
-     &             NWVFIELDS, WVFLDG,                                   &
+     &             LLINIT_WVFLDG, NWVFIELDS, WVFLDG,                    &
      &             NLONW, NLATW, LLSTOP, LLWRRE,                        &
      &             LLRESTARTED, ZDELATM,                                &
      &             LDWCOUNORMS, LLNORMWAMOUT_GLOBAL,                    &
