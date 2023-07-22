@@ -108,6 +108,7 @@ list( APPEND ecwam_srcs
   initnemocpl.F90
   iniwcst.F90
   intpol.F90
+  intrpolchk.F90
   intspec.F90
   inwgrib.F90
   iwam_get_unit.F90
