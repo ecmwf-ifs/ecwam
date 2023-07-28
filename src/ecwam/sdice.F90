@@ -124,11 +124,13 @@
                ELSE IF (IMODEL.EQ.2) THEN
                   ALP = 2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))
                END IF
-               BETA=1._JWRB-CICV(IJ)
+               ! BETA=1._JWRB-CICV(IJ)
                ! TEMP = -CICV(IJ)*ALP*TCGOND(INDEP(IJ),M) ! OLD
                TEMP = -CICV(IJ)*ALP*CGROUP(IJ,M)         ! NEW
-               SL(IJ,K,M)  = BETA*SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
-               FLD(IJ,K,M) = BETA*FLD(IJ,K,M) + TEMP
+!               SL(IJ,K,M)  = BETA*SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
+!               FLD(IJ,K,M) = BETA*FLD(IJ,K,M) + TEMP
+               SL(IJ,K,M)  = SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
+               FLD(IJ,K,M) = FLD(IJ,K,M) + TEMP
 
             END DO
          END DO

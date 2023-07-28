@@ -34,6 +34,7 @@
       LOGICAL :: LMASKICE
       LOGICAL :: LWAMRSETCI
       LOGICAL :: LCIWABR
+      LOGICAL :: LCISCAL      
 
 !--------------------------------------------------------------------
 
@@ -71,5 +72,6 @@
 !     LWAMRSETCI   LOGICAL   SET TO TRUE IF FIELDS THAT ARE EXCHANGED WITH THE ATMOSPHERE AND THE OCEAN
 !                            ARE RESET TO WHAT WOULD BE USED IF THERE WERE NO WAVE MODELS.
 !     LCIWABR      LOGICAL   SET TO TRUE IF SEA ICE BOTTOM FRICTION ATTENUATION IS USED.
+!     LCISCAL      LOGICAL   SET TO TRUE TO SCALE ALL SOURCE TERMS BASED ON SEA ICE CONCENTRATION
 !--------------------------------------------------------------------
       END MODULE YOWICE

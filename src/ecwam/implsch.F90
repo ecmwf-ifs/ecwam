@@ -83,7 +83,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU, LWNEMOCOUSTRN 
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
-      USE YOWICE   , ONLY : FLMIN    ,LCIWABR  ,LICERUN   ,LMASKICE
+      USE YOWICE   , ONLY : FLMIN    ,LCIWABR  ,LICERUN   ,LMASKICE, LCISCAL
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LLUNSTR
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1 
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK
@@ -315,6 +315,20 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !     Allow waves to propagate under the sea ice
       IF(.NOT.LCIWABR) CALL SDICE (KIJS, KIJL, FL1, FLD, SL, INDEP, CICOVER, CITH)
       
+
+      IF (LCISCAL) THEN
+!     Use linear scaling of ALL proceeding source terms under sea ice (this is a complete unknown)
+        DO M = 1,NFRE
+          DO K = 1,NANG
+            DO IJ = KIJS,KIJL
+               BETA=1._JWRB-CICOVER(IJ)
+               SL(IJ,K,M)  = BETA*SL(IJ,K,M)  
+               FLD(IJ,K,M) = BETA*FLD(IJ,K,M) 
+            END DO
+          END DO
+        END DO
+      ENDIF
+
       !$loki inline
       CALL SBOTTOM (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH)
 
