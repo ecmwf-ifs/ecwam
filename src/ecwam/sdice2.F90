@@ -82,7 +82,7 @@
       INTEGER(KIND=JWIM) :: IJ, K, M
       REAL(KIND=JWRB)    :: EWH
       REAL(KIND=JWRB)    :: ALP              !! ALP=SPATIAL ATTENUATION RATE OF ENERGY
-      REAL(KIND=JWRB)    :: TEMP, EWH
+      REAL(KIND=JWRB)    :: TEMP
       
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
