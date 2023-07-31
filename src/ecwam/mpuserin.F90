@@ -741,7 +741,7 @@
 
       LCIWA2 = .FALSE.
 
-      LCIWA3 = .FALSE.    
+      LCIWA3 = .TRUE.    
 
       LCISCAL = .TRUE.      
 
