@@ -293,30 +293,30 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       !$loki inline
       CALL SDIWBK(KIJS, KIJL, FL1 ,FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)
 
-!     Attenuation of waves in ice (type 1): scattering
-      IF(LCIWA1) CALL SDICE1 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITH)
+      IF ( LICERUN ) THEN
 
-!     Attenuation of waves in ice (type 2): bottom friction
-      IF(LCIWA2) CALL SDICE2 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER      )
+!        Attenuation of waves in ice (type 1): scattering
+         IF(LCIWA1) CALL SDICE1 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITH)
 
-!     Attenuation of waves in ice (type 3): viscous friction
-      IF(LCIWA3) CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITH)
+!        Attenuation of waves in ice (type 2): bottom friction
+         IF(LCIWA2) CALL SDICE2 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER      )
 
-      !     Mask if >CITHRESH ?
-      !     Concern about IF ( .NOT. LICERUN .OR. LMASKICE ) ?
-      
+!        Attenuation of waves in ice (type 3): viscous friction
+         IF(LCIWA3) CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITH)
 
-      IF (LCISCAL) THEN
-!     Use linear scaling of ALL proceeding source terms under sea ice (this is a complete unknown)
-        DO M = 1,NFRE
-          DO K = 1,NANG
-            DO IJ = KIJS,KIJL
-               BETA=1._JWRB-CICOVER(IJ)
-               SL(IJ,K,M)  = BETA*SL(IJ,K,M)  
-               FLD(IJ,K,M) = BETA*FLD(IJ,K,M) 
-            END DO
-          END DO
-        END DO
+         IF (LCISCAL) THEN
+!        Use linear scaling of ALL proceeding source terms under sea ice (this is a complete unknown)
+           DO M = 1,NFRE
+             DO K = 1,NANG
+               DO IJ = KIJS,KIJL
+                  BETA=1._JWRB-CICOVER(IJ)
+                  SL(IJ,K,M)  = BETA*SL(IJ,K,M)  
+                  FLD(IJ,K,M) = BETA*FLD(IJ,K,M) 
+               END DO
+             END DO
+           END DO
+         ENDIF
+
       ENDIF
 
       !$loki inline
