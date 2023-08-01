@@ -91,8 +91,8 @@
 
       IF (LHOOK) CALL DR_HOOK('SDICE2',0,ZHOOK_HANDLE)
 
-      WRITE (IU06,*)'Ice attenuation due to bottom friction based on: '
-      WRITE (IU06,*)'  KOHOUT A., M. MEYLAN, D PLEW, 2011'
+!      WRITE (IU06,*)'Ice attenuation due to bottom friction based on: '
+!      WRITE (IU06,*)'  KOHOUT A., M. MEYLAN, D PLEW, 2011'
 
       DO M = 1,NFRE
          DO K = 1,NANG

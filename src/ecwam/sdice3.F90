@@ -95,12 +95,12 @@
 !      IF (ITEST.GE.2) WRITE (IU06,*)'IMODEL =',IMODEL
       HICEMAX=4.0_JWRB
       HICEMIN=0.1_JWRB
-      WRITE (IU06,*)'Ice attenuation due to viscous friction based on: '
+!      WRITE (IU06,*)'Ice attenuation due to viscous friction based on: '
       IF (IMODEL.EQ.1) THEN
-         WRITE (IU06,*)'  Best fit w Tempelfjorde obs from Lotfi Aouf'
+!         WRITE (IU06,*)'  Best fit w Tempelfjorde obs from Lotfi Aouf'
          CDICE=0.0656_JWRB
       ELSE IF (IMODEL.EQ.2) THEN
-         WRITE (IU06,*)'  Jie Yu, W. Erik Rogers, David W. Wang 2022'
+!         WRITE (IU06,*)'  Jie Yu, W. Erik Rogers, David W. Wang 2022'
          CDICE=0.1274_JWRB*( ZPI/SQRT(G) )**(4.5_JWRB)
       END IF
       

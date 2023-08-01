@@ -100,8 +100,8 @@
 
       IF (LHOOK) CALL DR_HOOK('SDICE1',0,ZHOOK_HANDLE)
 
-      WRITE (IU06,*)'Ice attenuation due to scattering based on: '
-      WRITE (IU06,*)'  KOHOUT AND MEYLAN, 2008'
+!      WRITE (IU06,*)'Ice attenuation due to scattering based on: '
+!      WRITE (IU06,*)'  KOHOUT AND MEYLAN, 2008'
       
 !     following  Dumont et al. (2011), eqn (13):
       ! sea ice fragility
