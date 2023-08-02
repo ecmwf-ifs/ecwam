@@ -737,13 +737,13 @@
 
       LICERUN = .TRUE.
 
-      LCIWA1 = .FALSE.
+      LCIWA1 = .TRUE.
 
       LCIWA2 = .FALSE.
 
-      LCIWA3 = .TRUE.    
+      LCIWA3 = .FALSE.    
 
-      LCISCAL = .TRUE.      
+      LCISCAL = .FALSE.      
 
       LMASKICE = .FALSE.
 
