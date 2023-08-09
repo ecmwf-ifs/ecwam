@@ -64,9 +64,6 @@ Environment variables
 
     $ export ecbuild_ROOT=<path-to-ecbuild>
     $ export MPI_HOME=<path-to-MPI>
-    $ export fiat_ROOT=<path-to-fiat>
-    $ export eccodes_ROOT=<path-to-eccodes>
-    $ export field_api_ROOT=<path-to-field_api> (optional)
     $ export CC=<path-to-C-compiler>
     $ export FC=<path-to-Fortran-compiler>
     $ export CXX=<path-to-C++-compiler> 
@@ -75,30 +72,42 @@ If you want to pre-download or install extra data files, run in the source-direc
 
     $ share/ecwam/data/populate.sh
 
-You must compile ecWAM out-of-source, so create a build-directory
+The preferred method for building ecWAM is to use the bundle definition shipped in the main repository. For this please build the bundle via:
 
-    $ mkdir build && cd build
+    $ ./ecwam-bundle create  # Checks out dependency packages
+    $ ./ecwam-bundle build [--build-type=<build-type>] [--arch=<path-to-arch>] [--option]
+
+The `CMAKE_BUILD_TYPE` can be specified as an option at the build step:
+
+ `--build-type=<Debug|RelWithDebInfo|Release|Bit>` default=RelWithDebInfo (typically `-O2 -g`)
  
-Configuration of the build happens through standard CMake
+Environment variables and compiler flags relevant to specific architectures can be set by specifying the corresponding arch file at the build step. For example, to build on the ECMWF Atos system using Intel compilers and the hpcx-openmpi `MPI` library:
 
-    $ cmake <path-to-source> 
+ `--arch=arch/ecmwf/hpc2020/intel/2021.4.0/hpcx-openmpi/2.9.0`
 
-Extra options can be added to the `cmake` command to control the build:
+The following bundle options can also be set at the build step: 
 
- - `-DCMAKE_BUILD_TYPE=<Debug|RelWithDebInfo|Release|Bit>` default=RelWithDebInfo (typically `-O2 -g`)
- - `-DENABLE_TESTS=<ON|OFF>` 
- - `-DENABLE_MPI=<ON|OFF>` 
- - `-DENABLE_OMP=<ON|OFF>`
- - `-DENABLE_FIELD_API=<ON|OFF>`
- - `-DCMAKE_INSTALL_PREFIX=<install-prefix>`
+ - `--without-mpi` - Disable MPI
+ - `--without-omp` - Disable OpenMP
+ - `--with-field_api` - Build using FIELD_API repo in `source/field_api`
 
-More options to control compilation flags, only when defaults are not sufficient
+ Additional `CMake` options can also be configured at the build-step using the following format:
+ `--cmake="SOME_OPTION=<arg>"`
 
- - `-DOpenMP_Fortran_FLAGS=<flags>`
- - `-DCMAKE_Fortran_FLAGS=<fortran-flags>`
- - `-DCMAKE_C_FLAGS=<c-flags>`
+ For example:
+ - `--cmake="DENABLE_TESTS=<ON|OFF>"`
+ - `--cmake="DCMAKE_INSTALL_PREFIX=<install-prefix>"`
 
-Once this has finished successfully, run `make` and `make install`.
+The above command can also be used to control compilation flags (only when defaults are insufficient) by modifying the following `CMake` variables:
+
+ - `DOpenMP_Fortran_FLAGS=<flags>`
+ - `DCMAKE_Fortran_FLAGS=<fortran-flags>`
+ - `DCMAKE_C_FLAGS=<c-flags>`
+
+Once this has finished successfully, ecWAM can be installed as follows:
+
+    $ cd build
+    $ make install
 
 An informational tool `ecwam [--help] [--info] [--version] [--git]` is available upon compilation
 and can be used the to verify compilation options and version information of ecWAM.
@@ -209,7 +218,7 @@ Building
 --------
 The first two GPU variants can be generated at build-time using ECMWF's source-to-source translation toolchain Loki. The 'scc-cuf' variant has also been generated via Loki, but this transformation is not yet fully automated and thus cannot be run at build-time.
 
-The [ecwam-bundle](https://git.ecmwf.int/users/nawd/repos/ecwam-bundle/browse?at=refs%2Fheads%2Fnaan-phys-gpu) is the recommended build option for building the GPU adapted variants of the ecWam physics. To build the 'scc' and 'scc-stack' variants, the option `--with-loki` can be passed at the bundle build step. To build the 'scc-cuf' variant, the option `--with-cuda` needs to be specified.
+To build the 'scc' and 'scc-stack' variants, the option `--with-loki` must be passed at the bundle build step. To build the 'scc-cuf' variant, the option `--with-cuda` needs to be specified.
 
 The ecwam-bundle also provides appropriate arch files for the nvhpc suite on the ECMWF ATOS system.
 
