@@ -9,7 +9,7 @@ doc/latex
 build/*
 install/*
 source/*
-env.sh
+/env.sh
 *.DS_Store
 .vscode
 *.mod
