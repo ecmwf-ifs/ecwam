@@ -124,7 +124,7 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
 !     See INIT_X0TAUHF
       X0G=X0TAUHF*G
 
-      IF (LLPHIHF) USTPH(:) = UST(:)
+      IF (LLPHIHF) USTPH(KIJS:KIJL) = UST(KIJS:KIJL)
 
 !*    COMPUTE THE INTEGRALS 
 !     ---------------------
@@ -175,8 +175,8 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
           CONST2(IJ) = CONFG*F1D(IJ)
         ENDDO
       ELSE
-        CONST1(:) = 0.0_JWRB
-        CONST2(:) = 0.0_JWRB
+        CONST1(KIJS:KIJL) = 0.0_JWRB
+        CONST2(KIJS:KIJL) = 0.0_JWRB
       ENDIF
 
 
@@ -189,7 +189,7 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
           ZSUP(IJ) = MIN(LOG(OMS(IJ)*SQRTZ0OG(IJ)),ZSUPMAX)
         ENDDO
       ELSE
-        ZSUP(:) = ZSUPMAX
+        ZSUP(KIJS:KIJL) = ZSUPMAX
       ENDIF
 
       DO IJ=KIJS,KIJL
@@ -240,7 +240,7 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
       ENDIF
 
 
-      PHIHF(:) = 0.0_JWRB
+      PHIHF(KIJS:KIJL) = 0.0_JWRB
       IF (LLPHIHF) THEN
 !       PHIHF:
 !       We are neglecting the gravity-capillary contribution 

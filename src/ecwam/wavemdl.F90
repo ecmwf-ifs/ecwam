@@ -1,5 +1,5 @@
 ! (C) Copyright 1989- ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -114,7 +114,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &         IFSTSTEP, IFSNSTEP,                                      &
      &         LIFS_IO_SERV_ENABLED
       USE YOWGRIBHD, ONLY : NDATE_TIME_WINDOW_END
-      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK 
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
       USE YOWCURR  , ONLY : IDELCUR  ,LLCHKCFL
       USE YOWFRED  , ONLY : FR
       USE YOWGRID  , ONLY : IJS      ,IJL
@@ -135,7 +135,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWTEST  , ONLY : IU06
       USE YOWWNDG  , ONLY : ICODE_CPL
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1 
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW   ,CDATEWO  ,CDATEFL ,     &
      &                      FF_NEXT  ,                                  &
      &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE,        &
@@ -228,8 +228,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !     KINEMATIC AIR DENSITY
       REAL(KIND=JWRB), INTENT(IN) :: RNU_ATM
 !     REDUCED KINEMATIC AIR DENSITY FOR MOMENTUM TRANSFER
-      REAL(KIND=JWRB), INTENT(IN) :: RNUM_ATM 
-!     USED TO SPECIFY THE END OF THE 4DVAR ANALYSIS WINDOW WHEN COUPLED 
+      REAL(KIND=JWRB), INTENT(IN) :: RNUM_ATM
+!     USED TO SPECIFY THE END OF THE 4DVAR ANALYSIS WINDOW WHEN COUPLED
       INTEGER(KIND=JWIM), INTENT(IN) :: IDATE_TIME_WINDOW_END
 !     ATMOSPHERIC NSTEP (CT3)
       INTEGER(KIND=JWIM), INTENT(IN) :: NSTEP
@@ -448,12 +448,12 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                FL1,                                     &
      &                NFIELDS, NGPTOTG, NC, NR,                &
      &                FIELDS, LWCUR, MASK_IN, PRPLRADI,        &
-     &                NEMO2WAM) 
+     &                NEMO2WAM)
 
 
         LLCHKCFL=.FALSE.
 
-        FRSTIME = .FALSE.                                              
+        FRSTIME = .FALSE.
 
         IF (LWCOU) THEN
           IF (NLONW /= NGX .OR. NLATW /= NGY) THEN
@@ -562,7 +562,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           IF (LFRSTCHK) THEN
 !           CHECK THAT THE STRUCTURE OF FIELDS IS IN AGREEMENT WITH IFROMIJ AND JFROMIJ
             DO ICHNK = 1, NCHNK
-              DO IJ = 1, KIJL4CHNK(ICHNK) 
+              DO IJ = 1, KIJL4CHNK(ICHNK)
                 I = BLK2LOC%IFROMIJ(IJ,ICHNK)
                 J = BLK2LOC%JFROMIJ(IJ,ICHNK)
                 IF (I < NXS .OR. I > NXE .OR. J < NYS .OR. J > NYE) THEN
@@ -596,7 +596,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                LLINIT, IREAD,                       &
      &                NFIELDS, NGPTOTG, NC, NR,            &
      &                FIELDS, LWCUR, MASK_IN,              &
-     &                NEMO2WAM) 
+     &                NEMO2WAM)
 
       ENDIF
 
@@ -762,7 +762,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           KIJS = 1
           IJSB = IJFROMCHNK(KIJS,ICHNK)
           KIJL = KIJL4CHNK(ICHNK)
-          IJLB = IJFROMCHNK(KIJL,ICHNK) 
+          IJLB = IJFROMCHNK(KIJL,ICHNK)
 
           IFLDOFFSET=1
           WVBLOCK(IJSB:IJLB,IFLDOFFSET)=BETAM(KIJS:KIJL,ICHNK)

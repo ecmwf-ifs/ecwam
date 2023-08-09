@@ -1,5 +1,5 @@
 ! (C) Copyright 1989- ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -101,7 +101,8 @@
      &                      NEMONSTEP,   NEMOCSTEP, NEMOWSTEP
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO                       ,    &
-     &            IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO
+     &            IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO, TIME_PHYS,     &
+     &            TIME_PROPAG
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT
       USE YOWALTAS , ONLY : LODBRALT
       USE MPL_MODULE, ONLY : MPL_INIT, MPL_END, MPL_COMM
@@ -180,13 +181,15 @@
 
 
       time0=-wam_user_clock()
+      TIME_PROPAG=0_JWRB
+      TIME_PHYS=0_JWRB
       IU06=6
 
-!     0.1 INITIALISE MESSAGE PASSING PROTOCOL 
+!     0.1 INITIALISE MESSAGE PASSING PROTOCOL
 !         -----------------------------------
 
       CALL MPL_INIT(KERROR=KERROR)
-      IF (KERROR < 0) THEN 
+      IF (KERROR < 0) THEN
         IU06=6
         WRITE (IU06,*) ' ******************************************'
         WRITE (IU06,*) ' *                                        *'
@@ -234,7 +237,7 @@
 
       CALL GSTATS(0,0)
 
-!     0.3 DETERMINE GRID DOMAIN DECOMPOSITION 
+!     0.3 DETERMINE GRID DOMAIN DECOMPOSITION
 !         -----------------------------------
 
       NADV=0
@@ -381,6 +384,10 @@
       WRITE (IU06,'(A)') ' ++++++++++++++++++++++++++++++'
       WRITE (IU06,'(A)') ' + TOTAL USER TIME IN SECONDS +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', time, '         +'
+      WRITE (IU06,'(A)') ' + WAVE PROPAGATION TIME      +'
+      WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PROPAG, '         +'
+      WRITE (IU06,'(A)') ' + SOURCE TERM TIME           +'
+      WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
       WRITE (IU06,'(A)') ' +                            +'
       WRITE (IU06,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
       WRITE (IU06,'(A)') ' ++++++++++++++++++++++++++++++'
@@ -388,6 +395,10 @@
         WRITE (6,'(A)') ' ++++++++++++++++++++++++++++++'
         WRITE (6,'(A)') ' + TOTAL USER TIME IN SECONDS +'
         WRITE (6,'(A,F18.2,A)') ' + ', time, '         +'
+        WRITE (6,'(A)') ' + WAVE PROPAGATION TIME      +'
+        WRITE (6,'(A,F18.2,A)') ' + ', TIME_PROPAG, '         +'
+        WRITE (6,'(A)') ' + SOURCE TERM TIME           +'
+        WRITE (6,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
         WRITE (6,'(A)') ' +                            +'
         WRITE (6,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
         WRITE (6,'(A)') ' ++++++++++++++++++++++++++++++'

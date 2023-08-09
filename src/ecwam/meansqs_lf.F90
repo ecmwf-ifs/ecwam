@@ -79,7 +79,7 @@
 
       KFRE=MIN(NFRE_EFF, NFRE)
 
-      XMSS(:) = 0.0_JWRB
+      XMSS(KIJS:KIJL) = 0.0_JWRB
 
 !*    2.2 SHALLOW WATER INTEGRATION.
 !         --------------------------

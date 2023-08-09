@@ -10,7 +10,7 @@ The ECMWF Ocean Wave Model (ecWAM) describes the development and evolution of wi
 ecWAM is solely concerned with ocean wave forecasting and does not model the ocean itself: dynamical modelling of the ocean can be done by an ocean model such as NEMO.
 
 - ecWAM may be used as a standalone tool that can produce a wave forecast driven by external forcings provided via GRIB files.
-- Alternatively it can be used in a coupled mode where it provides feedback and receives forcings from 
+- Alternatively it can be used in a coupled mode where it provides feedback and receives forcings from
   * the atmospheric forecast model IFS.
   * the dynamic ocean model NEMO.
 
@@ -22,7 +22,7 @@ License
 ecWAM is distributed under the Apache License Version 2.0.
 See `LICENSE` file for details.
 
-Installing ecWAM 
+Installing ecWAM
 ================
 
 Supported Platforms
@@ -45,23 +45,30 @@ Further optional dependencies:
 - MPI Fortran libraries
 - multio (see https://github.com/ecmwf/multio)
 - ocean model (e.g. NEMO or FESOM)
+- fypp (see https://github.com/aradi/fypp)
+- field_api (see https://git.ecmwf.int/projects/RDX/repos/field_api/browse)
 
 Some driver scripts to run tests and validate results rely on availability of:
 - md5sum (part of GNU Coreutils; on MacOS, install with `brew install coreutils`)
 - Python with pyyaml package
 
+Generating the derived-type data structures (read end of next section) requires:
+- Python with pyyaml package
+- fypp
+
 Building ecWAM
 --------------
 
-Environment variables 
+Environment variables
 
     $ export ecbuild_ROOT=<path-to-ecbuild>
     $ export MPI_HOME=<path-to-MPI>
     $ export fiat_ROOT=<path-to-fiat>
     $ export eccodes_ROOT=<path-to-eccodes>
+    $ export field_api_ROOT=<path-to-field_api> (optional)
     $ export CC=<path-to-C-compiler>
     $ export FC=<path-to-Fortran-compiler>
-    $ export CXX=<path-to-C++-compiler> 
+    $ export CXX=<path-to-C++-compiler>
 
 If you want to pre-download or install extra data files, run in the source-directory before CMake (re)configuration:
 
@@ -70,17 +77,18 @@ If you want to pre-download or install extra data files, run in the source-direc
 You must compile ecWAM out-of-source, so create a build-directory
 
     $ mkdir build && cd build
- 
+
 Configuration of the build happens through standard CMake
 
-    $ cmake <path-to-source> 
+    $ cmake <path-to-source>
 
 Extra options can be added to the `cmake` command to control the build:
 
  - `-DCMAKE_BUILD_TYPE=<Debug|RelWithDebInfo|Release|Bit>` default=RelWithDebInfo (typically `-O2 -g`)
- - `-DENABLE_TESTS=<ON|OFF>` 
- - `-DENABLE_MPI=<ON|OFF>` 
+ - `-DENABLE_TESTS=<ON|OFF>`
+ - `-DENABLE_MPI=<ON|OFF>`
  - `-DENABLE_OMP=<ON|OFF>`
+ - `-DENABLE_FIELD_API=<ON|OFF>`
  - `-DCMAKE_INSTALL_PREFIX=<install-prefix>`
 
 More options to control compilation flags, only when defaults are not sufficient
@@ -98,6 +106,8 @@ Optionally, tests can be run to check succesful compilation, when the feature TE
 
     $ ctest
 
+### Generate derived-types data structures
+The derived-types storing grid-point data in ecWam can be configured in `src/ecwam/yowfield_mod_config.yaml`. If the fypp preprocessor and Python + pyyaml are found, then the configuration file is used to expand the accompanying `src/ecwam/yowfield_mod.fypp` into Fortran derived-type objects. The glue-code required to turn the derived-types members into FIELD API objects is also generated. If fypp and pyyaml are not found, then the existing `src/ecwam/yowfield_mod.F90` is used. Generation of the derived-type data structures can be disabled by passing the following build time option: `-DENABLE_GEN_DERIV_TYPES=OFF`.
 
 Running ecWAM
 =============
@@ -130,7 +140,7 @@ Bathymetry data files can also be searched for in a hierarchy of cache-like dire
 specified with the `ECWAM_DATA_PATH` variable containing a ':'-separated list of paths
 (like `$PATH`). If not found, they are attempted to be downloaded from URL
 https://get.ecmwf.int/repository/ecwam. If still not available, they will be computed.
-The cache path will then be populated with computed, or downloaded data, 
+The cache path will then be populated with computed, or downloaded data,
 or with symbolic links to found data in the `ECWAM_DATA_PATH`s.
 
 Grid tables are always computed and never cached. THey are placed in the `<run-dir>`
@@ -191,7 +201,7 @@ Known issues
 ============
 
 1) On macOS arm64 with gfortran 12.2, and Open MPI 4.1.4, and with compilation
-   with flag `-ffpe-trap=overflow`, the execution of `ecwam-preproc` and `ecwam-chief` 
+   with flag `-ffpe-trap=overflow`, the execution of `ecwam-preproc` and `ecwam-chief`
    needs to be launched with `mpirun -np 1`, even for serial runs in order to avoid
    a floating point exception during during call to `MPI_INIT`.
    The flag `-ffpe-trap=overflow` is set e.g. for `Debug` build type.
