@@ -8,7 +8,8 @@ doc/latex
 .nfs*
 build/*
 install/*
-env.sh
+source/*
+/env.sh
 *.DS_Store
 .vscode
 *.mod
