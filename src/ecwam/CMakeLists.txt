@@ -601,7 +601,7 @@ if( HAVE_WAM_LOKI )
      ecwam_target_compile_definitions_FILENAME( ${ecwam}_scc )
      
      if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC AND HAVE_ACC )
-     	target_compile_options( ${ecwam}_scc PUBLIC "-gpu=gvmode" )
+     	target_compile_options( ${ecwam}_scc PUBLIC "-gpu=gvmode,maxregcount:128" )
      endif()
 
 ############################################################
@@ -651,7 +651,7 @@ if( HAVE_WAM_LOKI )
      if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
         target_compile_options( ${ecwam}_scc_stack PUBLIC "-Mcray=pointer" )
         if( HAVE_ACC )
-           target_compile_options( ${ecwam}_scc_stack PUBLIC "-gpu=gvmode" )
+           target_compile_options( ${ecwam}_scc_stack PUBLIC "-gpu=gvmode,maxregcount:128" )
         endif()
      elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
         target_compile_options( ${ecwam}_scc_stack PUBLIC "-fcray-pointer" )
