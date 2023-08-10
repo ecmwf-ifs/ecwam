@@ -109,6 +109,26 @@ Optionally, tests can be run to check succesful compilation, when the feature TE
 ### Generate derived-types data structures
 The derived-types storing grid-point data in ecWam can be configured in `src/ecwam/yowfield_mod_config.yaml`. If the fypp preprocessor and Python + pyyaml are found, then the configuration file is used to expand the accompanying `src/ecwam/yowfield_mod.fypp` into Fortran derived-type objects. The glue-code required to turn the derived-types members into FIELD API objects is also generated. If fypp and pyyaml are not found, then the existing `src/ecwam/yowfield_mod.F90` is used. Generation of the derived-type data structures can be disabled by passing the following build time option: `-DENABLE_GEN_DERIV_TYPES=OFF`.
 
+## Build using ecWAM bundle
+
+Another way of building ecWAM is to use the bundle definition shipped in the main repository:
+
+    $ ./ecwam-bundle create  # Checks out dependency packages
+    $ ./ecwam-bundle build [--build-type=<build-type>] [--arch=<path-to-arch>] [--option]
+
+The bundle also facilitates setting environment variables and compiler flags relevant to certain architectures by specifying the corresponding arch file at the build step. For example, to build on the ECMWF Atos system using Intel compilers and the hpcx-openmpi `MPI` library:
+
+`--arch=arch/ecmwf/hpc2020/intel/2021.4.0/hpcx-openmpi/2.9.0`
+
+The following options can also be configured during the bundle build step:
+ - `--without-mpi` - Disable MPI
+ - `--without-omp` - Disable OpenMP
+ - `--with-field_api` - Build using FIELD_API repo in `source/field_api`
+
+ Finally, additional `CMake` options can also be set during the bundle build step:
+
+`--cmake-"OPTION=<arg>"`
+
 Running ecWAM
 =============
 
