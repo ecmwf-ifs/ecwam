@@ -111,14 +111,14 @@ The derived-types storing grid-point data in ecWam can be configured in `src/ecw
 
 ## Build using ecWAM bundle
 
-Another way of building ecWAM is to use the bundle definition shipped in the main repository:
+Another way of building ecWAM is to use the bundle definition included in `package/bundle`:
 
-    $ ./ecwam-bundle create  # Checks out dependency packages
-    $ ./ecwam-bundle build [--build-type=<build-type>] [--arch=<path-to-arch>] [--option]
+    $ ./package/bundle/ecwam-bundle create  --bundle package/bundle/bundle.yml # Checks out dependency packages
+    $ ./package/bundle/ecwam-bundle build [--build-type=<build-type>] [--arch=<path-to-arch>] [--option]
 
 The bundle also facilitates setting environment variables and compiler flags relevant to certain architectures by specifying the corresponding arch file at the build step. For example, to build on the ECMWF Atos system using Intel compilers and the hpcx-openmpi `MPI` library:
 
-`--arch=arch/ecmwf/hpc2020/intel/2021.4.0/hpcx-openmpi/2.9.0`
+`--arch=package/bundle/arch/ecmwf/hpc2020/intel/2021.4.0/hpcx-openmpi/2.9.0`
 
 The following options can also be configured during the bundle build step:
  - `--without-mpi` - Disable MPI
