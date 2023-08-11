@@ -116,7 +116,7 @@
                   ALP = 2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))
                END IF
 
-               ALP         = ALP * ALPFAC ! APPLY ANY REQUIRED ATTENUATION REDUCTION FACTOR
+               ALP         = ALP * ALPFAC(IJ) ! APPLY ANY REQUIRED ATTENUATION REDUCTION FACTOR
 
                TEMP        = -CICV(IJ)*ALP*CGROUP(IJ,M)         
                SL(IJ,K,M)  = SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
