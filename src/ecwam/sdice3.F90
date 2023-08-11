@@ -9,7 +9,7 @@
 
       SUBROUTINE SDICE3 (KIJS, KIJL, FL1, FLD, SL,            &
      &                   WAVNUM, CGROUP,                      &
-     &                   CICV,CITH)
+     &                   CICV,CITH, ALPFAC)
 ! ----------------------------------------------------------------------
 
 !**** *SDICE3* - COMPUTATION OF SEA ICE ATTENUATION DUE TO VISCOUS FRICTION
@@ -26,7 +26,7 @@
 
 !       *CALL* *SDICE3 (KIJS, KIJL, FL1, FLD,SL,
 !                       WAVNUM, CGROUP,                      
-!                       CICV,CITH)*
+!                       CICV,CITH, ALPFAC)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FL1*    - SPECTRUM.
@@ -36,6 +36,7 @@
 !          *CGROUP* - GROUP SPEED
 !          *CICV*   - SEA ICE COVER
 !          *CITH*   - SEA ICE THICKNESS
+!          *ALPFAC* - FACTOR TO REDUCE ATTENUATION IN ICE. EQUAL TO 1 IN SOLID ICE
 
 !     METHOD.
 !     -------
@@ -76,6 +77,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICV
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CITH
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: ALPFAC
 
       INTEGER(KIND=JWIM) :: IMODEL                       !! DAMPING MODEL: 1=FIT TO TEMPELFJORD DATA, 2=Jie Yu 2022
       INTEGER(KIND=JWIM) :: IJ, K, M
@@ -113,6 +115,8 @@
                ELSE IF (IMODEL.EQ.2) THEN
                   ALP = 2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))
                END IF
+
+               ALP         = ALP * ALPFAC ! APPLY ANY REQUIRED ATTENUATION REDUCTION FACTOR
 
                TEMP        = -CICV(IJ)*ALP*CGROUP(IJ,M)         
                SL(IJ,K,M)  = SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP

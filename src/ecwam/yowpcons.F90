@@ -68,6 +68,8 @@
       REAL(KIND=JWRB), PARAMETER :: FM2FP=0.9_JWRB
       INTEGER(KIND=JWIM), PARAMETER :: NPMAX=20
 
+      REAL(KIND=JWRB), PARAMETER :: IBR_CONST5=0.01_JWRB
+
 !*    VARIABLE.   TYPE.     PURPOSE.
 !     ---------   -------   --------
 !     *G*         REAL      ACCELLERATION OF GRAVITY.
@@ -121,6 +123,9 @@
 
 !     *FM2FP*    REAL      EMPIRICAL FACTOR FOR THE CONVERSION OF WINDSEA MEAN FREQUENCY
 !                          TO WINDSEA PEAK FREQUENCY.
+
+!     *IBR_CONST5* REAL    FACTOR TO DECREASE ATTENUATION BY WHEN ICE IS BROKEN
+
 !----------------------------------------------------------------------
 
       END MODULE YOWPCONS

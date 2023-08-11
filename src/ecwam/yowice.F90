@@ -37,6 +37,7 @@
       LOGICAL :: LCIWA2
       LOGICAL :: LCIWA3
       LOGICAL :: LCISCAL
+      LOGICAL :: LCIWACPL1
 
 !--------------------------------------------------------------------
 
@@ -77,5 +78,6 @@
 !     LCIWA2       LOGICAL   SET TO TRUE IF SEA ICE BOTTOM FRICTION ATTENUATION IS USED.
 !     LCIWA3       LOGICAL   SET TO TRUE IF SEA ICE VISCOUS FRICTION ATTENUATION IS USED.
 !     LCISCAL      LOGICAL   SET TO TRUE TO SCALE ALL SOURCE TERMS BASED ON SEA ICE CONCENTRATION
+!     LCIWACPL1    LOGICAL   SET TO TRUE TO COUPLE THRU ICE BREAK UP AND ATTENUATION      
 !--------------------------------------------------------------------
       END MODULE YOWICE

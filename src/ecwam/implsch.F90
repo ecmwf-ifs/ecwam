@@ -84,7 +84,8 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LICERUN   ,LMASKICE ,              &
-                            LCIWA1   ,LCIWA2    ,LCIWA3   ,LCISCAL
+                            LCIWA1   ,LCIWA2    ,LCIWA3   ,LCISCAL   ,   &
+ &                          LCIWACPL1
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LLUNSTR
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1 
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK
@@ -106,6 +107,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 #include "sdice1.intfb.h"
 #include "sdice2.intfb.h"
 #include "sdice3.intfb.h"
+#include "icebreak.intfb.h"
 #include "setice.intfb.h"
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
@@ -151,10 +153,6 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       REAL(KIND=JWRB), DIMENSION(KIJL) :: F1MEAN, AKMEAN, XKMEAN 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: PHIWA
 
-      ! TODO: CITH not actually needed bc we have CITHICK, but is the easiest way to make it a constant value
-      ! TODO: where will CITHICK get its info from?
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: CITH ! TODO: ^^^
-
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: COSWDIF, SINWDIF2
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: TEMP
@@ -164,6 +162,9 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 !     *SPOS* : POSITIVE SINPUT ONLY
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: FLD, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SSOURCE 
+
+      INTEGER(KIND=JWIM), DIMENSION(KIJL,NANG,NFRE) :: IBR_MEM
+      REAL(KIND=JWRB),    DIMENSION(KIJL,NANG,NFRE) :: ALPFAC
 
       LOGICAL :: LCFLX
       LOGICAL :: LUPDTUS
@@ -185,8 +186,12 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
 
       DO IJ=KIJS,KIJL
-        CITH(IJ) = 1.2_JWRB 
         RAORW(IJ) = MAX(AIRD(IJ), 1.0_JWRB) * ROWATERM1
+      ENDDO
+
+      DO IJ=KIJS,KIJL ! TODO:init elsewhere - in initmdl ?
+        IBR_MEM(IJ) = 0       ! 0=solid ice,       1=ice broken
+        ALPFAC(IJ)  = 1._JWRB ! <1=some reduction, 1=no reduction to attenuation
       ENDDO
 
       DO K=1,NANG
@@ -294,6 +299,9 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
       IF ( LICERUN ) THEN
 
+!        Coupling of waves and sea ice (type 1): wave-induced sea ice break up + reduced attenuation
+         IF(LCIWACPL1) CALL ICEBREAK (KIJS,KIJL,EMEAN,AKMEAN,CITHICK,IBR_MEM,ALPFAC)            
+
 !        Attenuation of waves in ice (type 1): scattering
          IF(LCIWA1) CALL SDICE1 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK)
 
@@ -301,7 +309,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
          IF(LCIWA2) CALL SDICE2 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER      )
 
 !        Attenuation of waves in ice (type 3): viscous friction
-         IF(LCIWA3) CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK)
+         IF(LCIWA3) CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
 
          IF (LCISCAL) THEN
 !        Use linear scaling of ALL proceeding source terms under sea ice (this is a complete unknown)
