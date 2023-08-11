@@ -8,7 +8,7 @@
 !
 
       SUBROUTINE ICEBREAK (KIJS, KIJL, EMEAN, AKMEAN,                   &
-     &                     CITH, IBR_MEM, ALPFAC)
+     &                     CITH, IBRMEM, ALPFAC)
 ! ----------------------------------------------------------------------
 
 !**** *ICEBREAK* - COMPUTATION OF BREAK UP OF SEA ICE BY WAVES
@@ -24,13 +24,13 @@
 !     ----------
 
 !       *CALL* *ICEBREAK (KIJS, KIJL, EMEAN, AKMEAN, 
-!                         CITH, IBR_MEM)*
+!                         CITH, IBRMEM)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *EMEAN*  - MEAN ENERGY DENSITY 
 !          *AKMEAN* - MEAN WAVE NUMBER  BASED ON sqrt(1/k)*F INTGRATION  (TODO: XKMEAN? OR ?)
 !          *CITH*   - SEA ICE THICKNESS
-!          *IBR_MEM*- ICEBREAK MEMORY                      
+!          *IBRMEM* - ICEBREAK MEMORY                      
 !          *ALPFAC* - FACTOR TO REDUCE ATTENUATION IN ICE. EQUAL TO 1 IN SOLID ICE
 
 !     METHOD.
@@ -74,7 +74,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CITH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EMEAN, AKMEAN
 
-      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: IBR_MEM
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: IBRMEM
       REAL(KIND=JWRB)   , DIMENSION(KIJS:KIJL), INTENT(INOUT) :: ALPFAC
 
       INTEGER(KIND=JWIM) :: IJ, K, M
@@ -110,7 +110,7 @@
 
         ! BREAK ICE IF IBR EXCEEDS THRESHOLD
         IF (IBR >= IBR_CONST4) THEN
-          IBR_MEM(IJ) = 1
+          IBRMEM(IJ) = 1
           ALPFAC(IJ)  = IBR_CONST5 
         ENDIF
 

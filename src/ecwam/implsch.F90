@@ -163,7 +163,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: FLD, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SSOURCE 
 
-      INTEGER(KIND=JWIM), DIMENSION(KIJL,NANG,NFRE) :: IBR_MEM
+      INTEGER(KIND=JWIM), DIMENSION(KIJL,NANG,NFRE) :: IBRMEM
       REAL(KIND=JWRB),    DIMENSION(KIJL,NANG,NFRE) :: ALPFAC
 
       LOGICAL :: LCFLX
@@ -190,7 +190,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       ENDDO
 
       DO IJ=KIJS,KIJL ! TODO:init elsewhere - in initmdl ?
-        IBR_MEM(IJ) = 0       ! 0=solid ice,       1=ice broken
+        IBRMEM(IJ) = 0       ! 0=solid ice,       1=ice broken
         ALPFAC(IJ)  = 1._JWRB ! <1=some reduction, 1=no reduction to attenuation
       ENDDO
 
@@ -300,7 +300,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       IF ( LICERUN ) THEN
 
 !        Coupling of waves and sea ice (type 1): wave-induced sea ice break up + reduced attenuation
-         IF(LCIWACPL1) CALL ICEBREAK (KIJS,KIJL,EMEAN,AKMEAN,CITHICK,IBR_MEM,ALPFAC)            
+         IF(LCIWACPL1) CALL ICEBREAK (KIJS,KIJL,EMEAN,AKMEAN,CITHICK,IBRMEM,ALPFAC)            
 
 !        Attenuation of waves in ice (type 1): scattering
          IF(LCIWA1) CALL SDICE1 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK)
