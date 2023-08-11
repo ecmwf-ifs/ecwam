@@ -746,7 +746,7 @@
 
       LCISCAL = .FALSE.      
 
-      LCIWACPL1 = .TRUE.
+      LCIWACPL1 = .FALSE.
 
       LMASKICE = .FALSE.
 
