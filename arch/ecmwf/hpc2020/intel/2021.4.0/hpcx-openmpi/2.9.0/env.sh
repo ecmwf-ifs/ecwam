@@ -17,25 +17,21 @@ module_purge() {
 }
 
 # Unload all modules to be certain
-[[ ${IFS_RUNTIME_ENV:-unset} == "unset" ]] && module_purge
+module_purge
 
 # Load modules
 module_load prgenv/intel
 module_load intel/2021.4.0
 module_load hpcx-openmpi/2.9.0
 module_load intel-mkl/19.0.5
-
-# Don't load these modules if env.sh is used as part of the IFS runtime environment - only the modules above are required
-if [[ ${IFS_RUNTIME_ENV:-unset} == "unset" ]]; then
-  module_load fftw/3.3.9
-  module_load netcdf4/4.7.4
-  module_load hdf5/1.10.6
-  module_load eigen/3.3.7 
-  module_load cmake/3.20.2
-  module_load ninja/1.10.0
-  module_load fcm/2019.05.0
-  module_load aec/1.0.4
-fi
+module_load fftw/3.3.9
+module_load netcdf4/4.7.4
+module_load hdf5/1.10.6
+module_load eigen/3.3.7 
+module_load cmake/3.20.2
+module_load ninja/1.10.0
+module_load fcm/2019.05.0
+module_load aec/1.0.4
 
 # Setting required for bit reproducibility with Intel MKL:
 export MKL_CBWR=AUTO,STRICT
