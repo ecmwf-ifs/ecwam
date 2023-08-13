@@ -110,7 +110,7 @@
 
         ! BREAK ICE IF IBR EXCEEDS THRESHOLD
         IF (IBR >= IBR_CONST4) THEN
-          IBRMEM(IJ) = 1
+          IBRMEM(IJ)  = 0
           ALPFAC(IJ)  = IBR_CONST5 
         ENDIF
 
