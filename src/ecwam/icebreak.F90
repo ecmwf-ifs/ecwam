@@ -98,7 +98,7 @@
 
       IBR_CONST4 = 0.014_JWRB   ! non-dimensional threshold as 
                                 ! in Voermans et al. 2020  (I_br=0.014)
-      IBR_CONST5 = 0.01_JWRB    ! FACTOR TO DECREASE ATTENUATION BY WHEN ICE IS BROKEN
+      IBR_CONST5 = 1.0_JWRB    ! FACTOR TO DECREASE ATTENUATION BY WHEN ICE IS BROKEN
 
       DO IJ = KIJS,KIJL
 
