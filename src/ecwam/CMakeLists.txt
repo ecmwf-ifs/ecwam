@@ -223,6 +223,7 @@ list( APPEND ecwam_srcs
   sdice2.F90
   sdice3.F90  
   icebreak.F90  
+  ibrmemout.F90
   se10mean.F90
   sebtmean.F90
   second_order_lib.F90

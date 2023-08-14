@@ -93,6 +93,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
 #include "wdirspread.intfb.h"
 #include "weflux.intfb.h"
 #include "w_maxh.intfb.h"
+#include "ibrmemout.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJL), INTENT(IN) :: MIJ
@@ -560,7 +561,8 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
       ENDIF 
 
       IF (IPFGTBL(64 + 3*NTRAIN + NTEWH) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(64 + 3*NTRAIN + NTEWH))=IBRMEM(KIJS:KIJL)
+!        BOUT(KIJS:KIJL,ITOBOUT(64 + 3*NTRAIN + NTEWH))=IBRMEM(KIJS:KIJL)
+        CALL IBRMEMOUT (KIJS, KIJL, IBRMEM, CICOVER, BOUT(:,ITOBOUT(64 + 3*NTRAIN + NTEWH)))
       ENDIF
 
       IF (IPFGTBL(65 + 3*NTRAIN + NTEWH) /= 0) THEN
