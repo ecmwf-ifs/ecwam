@@ -13,12 +13,12 @@
 
 !**** *IBRMEMOUT* - MASK NON ICE POINTS IBRMEM.
 
-!     J. BIDLOT  ECMWF  JANUARY 2013.
+!     J. KOUSAL  ECMWF  AUGUST 2023
 
 !*    PURPOSE.
 !     --------
 
-!
+!     ENSURE ONLY ICE POINTS ARE GIVEN AS IBRMEM OUTPUT
 
 !**   INTERFACE.
 !     ----------
