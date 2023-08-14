@@ -88,12 +88,12 @@
 
       IF (LHOOK) CALL DR_HOOK('ICEBREAK',0,ZHOOK_HANDLE)
 
-      IBR_CONST2 = 6E+9_JWRB     ! Young's modulus          (Y=6GPa)
-      !IBR_CONST2 = 0.2E+9_JWRB     ! custom value (strong ice bound)
+      !IBR_CONST2 = 6E+9_JWRB     ! Young's modulus          (Y=6GPa)
+      IBR_CONST2 = 0.2E+9_JWRB     ! custom value (strong ice bound)
       !IBR_CONST2 = 9E+9_JWRB     ! custom value (weak ice bound)
 
-      IBR_CONST3 = 0.55E+6_JWRB ! flexural strength of ice (sig=0.55MPa)
-      !IBR_CONST3 = 0.7E+6_JWRB ! custom value (strong ice bound)
+      !IBR_CONST3 = 0.55E+6_JWRB ! flexural strength of ice (sig=0.55MPa)
+      IBR_CONST3 = 0.7E+6_JWRB ! custom value (strong ice bound)
       !IBR_CONST3 = 0.1E+6_JWRB ! custom value (weak ice bound)           
 
       IBR_CONST4 = 0.014_JWRB   ! non-dimensional threshold as 
