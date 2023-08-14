@@ -76,7 +76,9 @@
       ENDDO
 
       DO IJ = KIJS,KIJL
-        IF .NOT. (CICV(IJ) > 0.0_JWRB) IBRMEMMSK(IJ) = ZMISS ! 2=SOLID,1=BROKEN
+        IF (.NOT. (CICV(IJ) > 0.0_JWRB)) THEN
+          IBRMEMMSK(IJ) = ZMISS ! 2=SOLID,1=BROKEN
+        ENDIF
       ENDDO        
 
       IF (LHOOK) CALL DR_HOOK('IBRMEMOUT',1,ZHOOK_HANDLE)
