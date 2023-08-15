@@ -298,6 +298,19 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
       IF ( LICERUN ) THEN
 
+!        Use linear scaling of ALL proceeding source terms under sea ice (this is a complete unknown)
+         IF (LCISCAL) THEN
+           DO M = 1,NFRE
+             DO K = 1,NANG
+               DO IJ = KIJS,KIJL
+                  BETA=1._JWRB-CICOVER(IJ)
+                  SL(IJ,K,M)  = BETA*SL(IJ,K,M)  
+                  FLD(IJ,K,M) = BETA*FLD(IJ,K,M) 
+               END DO
+             END DO
+           END DO
+         ENDIF
+
 !        Coupling of waves and sea ice (type 1): wave-induced sea ice break up + reduced attenuation
          IF(LCIWACPL1) CALL ICEBREAK (KIJS,KIJL,EMEAN,AKMEAN,CITHICK,IBRMEM,ALPFAC)            
 
@@ -309,19 +322,6 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
 !        Attenuation of waves in ice (type 3): viscous friction
          IF(LCIWA3) CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
-
-         IF (LCISCAL) THEN
-!        Use linear scaling of ALL proceeding source terms under sea ice (this is a complete unknown)
-           DO M = 1,NFRE
-             DO K = 1,NANG
-               DO IJ = KIJS,KIJL
-                  BETA=1._JWRB-CICOVER(IJ)
-                  SL(IJ,K,M)  = BETA*SL(IJ,K,M)  
-                  FLD(IJ,K,M) = BETA*FLD(IJ,K,M) 
-               END DO
-             END DO
-           END DO
-         ENDIF
 
       ENDIF
 
