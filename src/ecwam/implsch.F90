@@ -85,7 +85,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LICERUN   ,LMASKICE ,              &
                             LCIWA1   ,LCIWA2    ,LCIWA3   ,LCISCAL   ,   &
- &                          LCIWACPL1
+ &                          LCIWACPL1,ALPFACX
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LLUNSTR
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1 
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK
@@ -190,7 +190,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       ENDDO
 
       DO IJ=KIJS,KIJL 
-        ALPFAC(IJ)  = 1._JWRB ! <1=some reduction, 1=no reduction to attenuation
+        ALPFAC(IJ)  = ALPFACX ! <1=some reduction, 1=no reduction to attenuation
       ENDDO
 
       DO K=1,NANG

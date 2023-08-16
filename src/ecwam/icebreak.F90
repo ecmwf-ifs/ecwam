@@ -61,6 +61,8 @@
 
       USE YOWPCONS , ONLY : ZPI
 
+      USE YOWICE   , ONLY : ALPFACX
+
       USE YOWTEST  , ONLY : IU06
 
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
@@ -98,7 +100,7 @@
 
       IBR_CONST4 = 0.014_JWRB   ! non-dimensional threshold as 
                                 ! in Voermans et al. 2020  (I_br=0.014)
-      IBR_CONST5 = 1.0_JWRB    ! FACTOR TO DECREASE ATTENUATION BY WHEN ICE IS BROKEN
+      IBR_CONST5 = 1.0_JWRB/ALPFACX    ! FACTOR TO DECREASE ATTENUATION BY WHEN ICE IS BROKEN
 
       DO IJ = KIJS,KIJL
 
