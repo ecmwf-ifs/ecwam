@@ -103,7 +103,7 @@
       DO IJ = KIJS,KIJL
 
         HS       =  4._JWRB*SQRT(EMEAN(IJ)) !TODO:check
-        LAMBDASQ =  ZPI / (AKMEAN(IJ)**2)   !TODO:check
+        LAMBDASQ =  (ZPI/AKMEAN(IJ))**2 !TODO:check:this should be kpeak not kmean
 
         ! ICE BREAK UP PARAMETER
         IBR      =  HS*CITH(IJ)*IBR_CONST2 / (2._JWRB*IBR_CONST3*LAMBDASQ)
