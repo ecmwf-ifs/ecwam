@@ -102,7 +102,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO                       ,    &
      &            IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO, TIME_PHYS,     &
-     &            TIME_PROPAG
+     &            TIME_PROPAG, TIME_PHYS_KERNEL
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT
       USE YOWALTAS , ONLY : LODBRALT
       USE MPL_MODULE, ONLY : MPL_INIT, MPL_END, MPL_COMM
@@ -181,8 +181,6 @@
 
 
       time0=-wam_user_clock()
-      TIME_PROPAG=0_JWRB
-      TIME_PHYS=0_JWRB
       IU06=6
 
 !     0.1 INITIALISE MESSAGE PASSING PROTOCOL
@@ -388,8 +386,15 @@
       WRITE (IU06,'(A,F18.2,A)') ' + ', time, '         +'
       WRITE (IU06,'(A)') ' + WAVE PROPAGATION TIME      +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PROPAG, '         +'
+#if defined(WAM_PHYS_GPU)
+      WRITE (IU06,'(A)') ' + SOURCE TERM TOTAL TIME     +'
+      WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
+      WRITE (IU06,'(A)') ' + SOURCE TERM KERNEL TIME    +'
+      WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PHYS_KERNEL, '         +'
+#else
       WRITE (IU06,'(A)') ' + SOURCE TERM TIME           +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
+#endif
       WRITE (IU06,'(A)') ' +                            +'
       WRITE (IU06,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
       WRITE (IU06,'(A)') ' ++++++++++++++++++++++++++++++'
@@ -399,8 +404,15 @@
         WRITE (6,'(A,F18.2,A)') ' + ', time, '         +'
         WRITE (6,'(A)') ' + WAVE PROPAGATION TIME      +'
         WRITE (6,'(A,F18.2,A)') ' + ', TIME_PROPAG, '         +'
+#if defined(WAM_PHYS_GPU)
+        WRITE (6,'(A)') ' + SOURCE TERM TOTAL TIME     +'
+        WRITE (6,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
+        WRITE (6,'(A)') ' + SOURCE TERM KERNEL TIME    +'
+        WRITE (6,'(A,F18.2,A)') ' + ', TIME_PHYS_KERNEL, '         +'
+#else
         WRITE (6,'(A)') ' + SOURCE TERM TIME           +'
         WRITE (6,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
+#endif
         WRITE (6,'(A)') ' +                            +'
         WRITE (6,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
         WRITE (6,'(A)') ' ++++++++++++++++++++++++++++++'
