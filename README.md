@@ -122,6 +122,7 @@ The bundle also facilitates setting environment variables and compiler flags rel
 The following options can also be configured during the bundle build step:
  - `--without-mpi` - Disable MPI
  - `--without-omp` - Disable OpenMP
+ - `--single-precision` - Build single-precision variant of ecWAM
 
  Finally, additional `CMake` options can also be set during the bundle build step:
 
