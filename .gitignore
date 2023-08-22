@@ -8,7 +8,9 @@ doc/latex
 .nfs*
 build/*
 install/*
-env.sh
+source/*
+ecbundle
+/env.sh
 *.DS_Store
 .vscode
 *.mod
