@@ -357,7 +357,7 @@ if( HAVE_GEN_DERIV_TYPES )
    list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
    add_custom_command(
        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90
-       COMMAND fypp -m io -m yaml -m os ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
+       COMMAND fypp -m io -m yaml -m os -DMIXED_PRECISION=${MIXED_PRECISION} ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp
        VERBATIM)
 else()
