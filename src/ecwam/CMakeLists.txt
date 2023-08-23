@@ -445,3 +445,11 @@ elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-ffp-contract=off" )
 endif()
 
+### The file grib2wgrid.F90 is sensitive to optimizations in single precision builds.
+#   This leads to non-neglibible differences
+#   of average 'swh' when running "chief".
+
+if( CMAKE_Fortran_COMPILER_ID MATCHES Intel AND HAVE_SINGLE_PRECISION )
+  set_source_files_properties( grib2wgrid.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
+endif()
+
