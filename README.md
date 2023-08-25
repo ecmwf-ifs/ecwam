@@ -40,13 +40,13 @@ Requirements
 - ecbuild (see https://github.com/ecmwf/ecbuild)
 - fiat (see https://github.com/ecmwf-ifs/fiat)
 - eccodes (see https://github.com/ecmwf/eccodes)
+- field_api (see https://github.com/ecmwf-ifs/field_api)
 
 Further optional dependencies:
 - MPI Fortran libraries
 - multio (see https://github.com/ecmwf/multio)
 - ocean model (e.g. NEMO or FESOM)
 - fypp (see https://github.com/aradi/fypp)
-- field_api (see https://git.ecmwf.int/projects/RDX/repos/field_api/browse)
 
 Some driver scripts to run tests and validate results rely on availability of:
 - md5sum (part of GNU Coreutils; on MacOS, install with `brew install coreutils`)
@@ -65,7 +65,7 @@ Environment variables
     $ export MPI_HOME=<path-to-MPI>
     $ export fiat_ROOT=<path-to-fiat>
     $ export eccodes_ROOT=<path-to-eccodes>
-    $ export field_api_ROOT=<path-to-field_api> (optional)
+    $ export field_api_ROOT=<path-to-field_api>
     $ export CC=<path-to-C-compiler>
     $ export FC=<path-to-Fortran-compiler>
     $ export CXX=<path-to-C++-compiler>
@@ -88,7 +88,6 @@ Extra options can be added to the `cmake` command to control the build:
  - `-DENABLE_TESTS=<ON|OFF>`
  - `-DENABLE_MPI=<ON|OFF>`
  - `-DENABLE_OMP=<ON|OFF>`
- - `-DENABLE_FIELD_API=<ON|OFF>`
  - `-DCMAKE_INSTALL_PREFIX=<install-prefix>`
 
 More options to control compilation flags, only when defaults are not sufficient
@@ -123,7 +122,6 @@ The bundle also facilitates setting environment variables and compiler flags rel
 The following options can also be configured during the bundle build step:
  - `--without-mpi` - Disable MPI
  - `--without-omp` - Disable OpenMP
- - `--with-field_api` - Build using FIELD_API repo in `source/field_api`
 
  Finally, additional `CMake` options can also be set during the bundle build step:
 

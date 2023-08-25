@@ -23,15 +23,6 @@ projects :
         git     : https://github.com/ecmwf-ifs/fiat 
         version : main 
 
-    - field_api :
-        git     : ${BITBUCKET}/RDX/field_api
-        version : master
-        optional: true
-        cmake   : >
-           BUILD_field_api=OFF
-           ENABLE_CUDA=OFF
-           ENABLE_FIELD_API_TESTS=OFF
-
     - ecwam :
         dir     : $PWD
         version : main
@@ -46,8 +37,4 @@ options :
     - without-omp :
         help  : Disable OpenMP
         cmake : ENABLE_OMP=OFF
-
-    - with-field_api :
-        help  : Enable FIELD_API
-        cmake : BUILD_field_api=ON
 

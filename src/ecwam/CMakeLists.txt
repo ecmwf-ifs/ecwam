@@ -347,6 +347,12 @@ list( APPEND ecwam_srcs
   z0wave.F90
 )
 
+# check for mixed precision build
+set(MIXED_PRECISION 0)
+if(${HAVE_SINGLE_PRECISION} AND NOT ${PNAME}_OCEANMODEL_HAVE_SINGLE_PRECISION)
+   set(MIXED_PRECISION 1)
+endif()
+
 if( HAVE_GEN_DERIV_TYPES )
    list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
    add_custom_command(
@@ -356,10 +362,6 @@ if( HAVE_GEN_DERIV_TYPES )
        VERBATIM)
 else()
    list( APPEND ecwam_srcs yowfield_mod.F90)
-endif()
-
-if( NOT HAVE_FIELD_API )
-   list( APPEND ecwam_srcs field_module.F90)
 endif()
 
 unset( MPI_Fortran_LIBRARIES )
@@ -418,7 +420,7 @@ ecbuild_add_library(
     PRIVATE_LIBS     eccodes_f90
                      ${MULTIO_LIBRARIES}
                      ${OpenMP_Fortran_LIBRARIES}
-                     $<${HAVE_FIELD_API}:field_api_${prec}>
+                     field_api_${prec}
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
     PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS}
     PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}

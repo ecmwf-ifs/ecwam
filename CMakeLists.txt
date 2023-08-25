@@ -54,11 +54,6 @@ ecbuild_add_option( FEATURE ECWAM_LAUNCH
                     DEFAULT ON
                     DESCRIPTION "Use share/ecwam/scripts/ecwam-launch script to run ecwam tests" )
 
-ecbuild_add_option( FEATURE FIELD_API
-                    DEFAULT ON
-                    DESCRIPTION "Build using field_api"
-                    REQUIRED_PACKAGES "field_api" )
-
 if( HAVE_ECWAM_LAUNCH )
   # Overwrite meaning of mpiexec
   set( ECWAM_LAUNCH ${CMAKE_CURRENT_SOURCE_DIR}/share/ecwam/scripts/ecwam-launch )
@@ -68,6 +63,10 @@ if( HAVE_ECWAM_LAUNCH )
   set( CMAKE_CROSSCOMPILING_EMULATOR ${ECWAM_LAUNCH} ) # For serial runs
 endif()
 
+### field_api
+
+include(cmake/ecwam_fetchcontent_field_api.cmake)
+ecbuild_find_package( NAME field_api REQUIRED )
 
 ### Optional dependencies
 
