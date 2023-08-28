@@ -28,7 +28,7 @@ module_load fftw/3.3.9
 module_load netcdf4/4.7.4
 module_load hdf5/1.10.6
 module_load eigen/3.3.7 
-module_load cmake/3.20.2
+module_load cmake/3.25.2
 module_load ninja/1.10.0
 module_load fcm/2019.05.0
 module_load aec/1.0.4
