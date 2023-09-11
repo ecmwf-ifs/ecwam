@@ -65,7 +65,7 @@ Environment variables
     $ export MPI_HOME=<path-to-MPI>
     $ export fiat_ROOT=<path-to-fiat>
     $ export eccodes_ROOT=<path-to-eccodes>
-    $ export field_api_ROOT=<path-to-field_api>
+    $ export field_api_ROOT=<path-to-field_api> (if not set, field_api will be cloned)
     $ export CC=<path-to-C-compiler>
     $ export FC=<path-to-Fortran-compiler>
     $ export CXX=<path-to-C++-compiler>

@@ -6,7 +6,7 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
-cmake_minimum_required( VERSION 3.12 FATAL_ERROR )
+cmake_minimum_required( VERSION 3.24 FATAL_ERROR )
 find_package( ecbuild 3.4 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild )
 
 if( NOT ECWAM_PROJECT_NAME )

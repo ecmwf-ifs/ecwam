@@ -20,7 +20,7 @@ if(field_api_FOUND)
    string(COMPARE EQUAL ${result_var} "-1" clone_field_api)
 endif()
 
-if( ${clone_field_api} )
+if( clone_field_api )
    include(FetchContent)
    FetchContent_Declare(
       field_api
@@ -30,5 +30,6 @@ if( ${clone_field_api} )
    )
    
    set(FIELD_API_ENABLE_TESTS OFF)
+   set(FIELD_API_ENABLE_ACC OFF)
    FetchContent_MakeAvailable(field_api)
 endif()

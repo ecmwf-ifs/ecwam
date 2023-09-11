@@ -30,7 +30,7 @@ projects :
 
 options :
 
-    - single-precision :
+    - with-single-precision :
         help  : Enable single precision build of the dwarf
         cmake : ENABLE_SINGLE_PRECISION=ON
 
