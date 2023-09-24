@@ -136,7 +136,7 @@
 #include "mpcrtbl.intfb.h"
 #include "wposnam.intfb.h"
 
-      INTEGER(KIND=JWIM) :: IU05
+      INTEGER(KIND=JWIM) :: IU05, LFILE
       INTEGER(KIND=JWIM) :: ISAT, IC, II, ILEN
 
       REAL(KIND=JWRU) :: R8_DEPTHA, R8_DEPTHD 
@@ -149,6 +149,7 @@
       CHARACTER(LEN=:), ALLOCATABLE :: NAMELIST_FILENAME
 
       LOGICAL :: LLEOF 
+      LOGICAL :: LLEXIST
 
 #ifndef WAM_HAVE_UNWAM
       ! dummy read namelist read variables otherwise present in UNWAM module
@@ -766,9 +767,20 @@
 !*    1. READ NAMELIST NALINE.
 !        ---------------------
 
-      NAMELIST_FILENAME='wam_namelist' 
+      NAMELIST_FILENAME='wam_namelist'
+
+      LFILE=0
+      LLEXIST=.FALSE.
+      IF (NAMELIST_FILENAME /= ' ') LFILE=LEN_TRIM(NAMELIST_FILENAME)
+        INQUIRE(FILE=NAMELIST_FILENAME(1:LFILE),EXIST=LLEXIST)
+        IF (.NOT. LLEXIST) THEN
+          CALL WAM_ABORT("INPUT FILE '"//NAMELIST_FILENAME(1:LFILE)//"' IS MISSING !!!",__FILENAME__,__LINE__)
+        ENDIF
+      ENDIF
+
       WRITE(IU06,*) ' '
-      WRITE(IU06,'(3A)') '  THE WAVE MODEL NAMELIST "', NAMELIST_FILENAME,'" IS BEING READ'
+      WRITE(IU06,'(3A)') '  WAVE MODEL NAMELIST "', NAMELIST_FILENAME,'" IS BEING READ'
+
       IU05 =  IWAM_GET_UNIT (IU06, NAMELIST_FILENAME, 's', 'f', 0, 'READ')
 
       CALL WPOSNAM (IU05, 'NALINE', LLEOF)
@@ -786,7 +798,10 @@
         CALL WAM_ABORT("Could not read namelist '"//NAMELIST_FILENAME//"'",__FILENAME__,__LINE__)
       ENDIF
 
-      IF( NANG <= 0 ) CALL WAM_ABORT( "Expected positive value for NANG", __FILENAME__, __LINE__ )
+      IF( NANG <= 0 ) THEN
+         CALL WAM_ABORT( "Expected positive value for NANG in '"//NAMELIST_FILENAME//"' ", __FILENAME__, __LINE__ )
+         CALL WAM_ABORT( "Did you provide a meaningful namelist in '"//NAMELIST_FILENAME//"' ?", __FILENAME__, __LINE__ )
+      ENDIF
       IF( NFRE <= 0 ) CALL WAM_ABORT( "Expected positive value for NFRE", __FILENAME__, __LINE__ )
       IF( NFRE_RED <= 0 ) NFRE_RED = NFRE
       IF( IFRE1 <= 0 ) CALL WAM_ABORT( "Expected positive value for IFRE1",  __FILENAME__, __LINE__ )
