@@ -53,7 +53,8 @@
      &            NTRAIN   ,LLPARTITION,NIPRMINFO,IPRMINFO          ,   &
      &            IRWDIR, IRCD ,IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
      &            IRHS     ,IRTP     ,IRT1       ,IRPHIAW  ,IRPHIOC ,   &
-     &            IRTAUOC   , IRHSWS   ,IRT1WS   ,IRBATHY  ,NTEWH   ,   &
+     &            IRTAUOC   , IRHSWS   ,IRT1WS   ,IRBATHY  ,IRMSS   ,   &
+     &            NTEWH     ,                                           &
      &            IFRSTPARTI, NINFOBOUT,INFOBOUT ,COUTDESCRIPTION
 !      *IPRMINFO* INTEGER    AUXILIARY INFORMATION FOR OUTPUT OF INTEGRATED PARAMETERS
 !                            IPRMINFO(:,1)  : GRIB TABLE NUMBER.
@@ -136,8 +137,8 @@
       ENDIF
 
 !     PARAMETER 009
-      IR = DEFINE_PARAMETER( 9, 'msqs', 140244, 0, 0, 0, .True., .True., &
-                           & 'MEAN SQUARE SLOPE' )
+      IRMSS = DEFINE_PARAMETER( 9, 'msqs', 140244, 0, 0, 0, .True., .True., &
+                               & 'MEAN SQUARE SLOPE' )
 
 !     PARAMETER 010
       IRU10 = DEFINE_PARAMETER( 10, 'wind', 140245, IZLEV, 0, 0, .False., .False., &
@@ -434,19 +435,19 @@
                            & 'TURB ENERGY FLUX INTO OCEANS' )
 
 !     PARAMETER 079
-      IR = DEFINE_PARAMETER( 79, 'tdcmax', 140131, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 79, 'tdcmax', 140131, 0, 0, 0, .True., .True., &
                            & 'TIME DOMAIN MAXIMUM CREST HEIGHT' )
 
 !     PARAMETER 080
-      IR = DEFINE_PARAMETER( 80, 'tdhmax', 140132, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 80, 'tdhmax', 140132, 0, 0, 0, .True., .True., &
                            & 'TIME DOMAIN MAXIMUM WAVE HEIGHT' )
 
 !     PARAMETER 081
-      IR = DEFINE_PARAMETER( 81, 'stcmax', 140133, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 81, 'stcmax', 140133, 0, 0, 0, .True., .True., &
                            & 'SPACE TIME MAXIMUM CREST HEIGHT' )
 
 !     PARAMETER 082
-      IR = DEFINE_PARAMETER( 82, 'sthmax', 140134, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 82, 'sthmax', 140134, 0, 0, 0, .True., .True., &
                            & 'SPACE TIME MAXIMUM WAVE HEIGHT' )
 
 
