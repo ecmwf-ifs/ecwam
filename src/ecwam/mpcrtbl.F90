@@ -53,7 +53,7 @@
      &            NTRAIN   ,LLPARTITION,NIPRMINFO,IPRMINFO          ,   &
      &            IRWDIR, IRCD ,IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
      &            IRHS     ,IRTP     ,IRT1       ,IRPHIAW  ,IRPHIOC ,   &
-     &            IRTAUOC   , IRHSWS   ,IRT1WS   ,IRBATHY  ,            &
+     &            IRTAUOC   , IRHSWS   ,IRT1WS   ,IRBATHY  ,IRMSS   ,   &
      &            IFRSTPARTI, NINFOBOUT,INFOBOUT ,COUTDESCRIPTION
 !      *IPRMINFO* INTEGER    AUXILIARY INFORMATION FOR OUTPUT OF INTEGRATED PARAMETERS
 !                            IPRMINFO(:,1)  : GRIB TABLE NUMBER.
@@ -131,8 +131,8 @@
       ENDIF
 
 !     PARAMETER 009
-      IR = DEFINE_PARAMETER( 9, 'msqs', 140244, 0, .True., .True., &
-                           & 'MEAN SQUARE SLOPE' )
+      IRMSS = DEFINE_PARAMETER( 9, 'msqs', 140244, 0, .True., .True., &
+                               & 'MEAN SQUARE SLOPE' )
 
 !     PARAMETER 010
       IRU10 = DEFINE_PARAMETER( 10, 'wind', 140245, IZLEV, .False., .False., &
