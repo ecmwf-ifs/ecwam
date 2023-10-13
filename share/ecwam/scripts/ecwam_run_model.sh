@@ -78,8 +78,8 @@ done
 
 nproma=$(read_config nproma --default=24)
 
-idelpro=$(read_config physics.timestep --format=seconds --default=900)
-idelt=$(read_config advection.timestep --format=seconds --default=900)
+phys_tstp=$(read_config physics.timestep --format=seconds --default=900)
+adv_tstp=$(read_config advection.timestep --format=seconds --default=900)
 
 if [[ $(read_config forcings.sea_ice --default=True) == "True" ]] ; then
   licerun=T
@@ -187,10 +187,10 @@ cat > wam_namelist << EOF
   CBPLTDT               = "${begofrn}",
   CEPLTDT               = "${endofrn}",
   CDATEF                = "${begoffo}",
-  DELPRO_LF             = ${idelpro},
+  DELPRO_LF             = ${adv_tstp},
   IFRELFMAX             = 0,
-  IDELPRO               = ${idelpro},
-  IDELT                 = ${idelt},
+  IDELPRO               = ${phys_tstp},
+  IDELT                 = ${phys_tstp},
   IDELINT               = ${ppfreq},
   IREST                 = 1,
   LFDBIOOUT             = F,
