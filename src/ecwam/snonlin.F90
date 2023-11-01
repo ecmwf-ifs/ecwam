@@ -221,8 +221,8 @@
         IF (MC > MFR1STFR .AND. MC < MFRLSTFR ) THEN
 !       the interactions for MC are all within the fully resolved spectral domain
 
-          DO KH=1,2
-            DO K=1,NANG
+          DO K=1,NANG
+            DO KH=1,2
               K1  = K1W (K,KH)
               K2  = K2W (K,KH)
               K11 = K11W(K,KH)
@@ -306,8 +306,8 @@
           ENDDO
 
         ELSEIF (MC >= MFRLSTFR ) THEN
-          DO KH=1,2
-            DO K=1,NANG
+          DO K=1,NANG
+            DO KH=1,2
               K1  = K1W (K,KH)
               K2  = K2W (K,KH)
               K11 = K11W(K,KH)
@@ -406,8 +406,8 @@
 
         ELSE
 
-          DO KH=1,2
-            DO K=1,NANG
+          DO K=1,NANG
+            DO KH=1,2
               K1  = K1W (K,KH)
               K2  = K2W (K,KH)
               K11 = K11W(K,KH)
