@@ -24,7 +24,7 @@ if( clone_field_api )
    include(FetchContent)
    FetchContent_Declare(
       field_api
-      GIT_REPOSITORY git@github.com:ecmwf-ifs/field_api.git
+      GIT_REPOSITORY https://github.com/ecmwf-ifs/field_api.git
       GIT_TAG v0.2.1
       OVERRIDE_FIND_PACKAGE
    )
