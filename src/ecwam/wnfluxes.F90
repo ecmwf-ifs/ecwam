@@ -10,16 +10,18 @@
 SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
  &                   MIJ, RHOWGDFTH,                   &
  &                   CINV,                             &
- &                   SSURF, CICOVER,                   &
+ &                   SSURF, SLICE, CICOVER,            &
  &                   PHIWA,                            &
  &                   EM, F1, WSWAVE, WDWAVE,           &
  &                   USTRA, VSTRA,                     &
  &                   UFRIC, AIRD,                      &
  &                   NPHIEPS, NTAUOC, NSWH, NMWP,      &
  &                   NEMOTAUX, NEMOTAUY,               &
+ &                   NEMOTAUICX, NEMOTAUICY,           &
  &                   NEMOWSWAVE, NEMOPHIF,             &
  &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD,   &
- &                   TAUOC, PHIOCD, PHIEPS, PHIAW,     &
+ &                   TAUOC, TAUICX, TAUICY,            & 
+ &                   PHIOCD, PHIEPS, PHIAW,            &
  &                   LNUPD)
 
 ! ----------------------------------------------------------------------
@@ -87,16 +89,18 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
 
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: CINV 
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: SSURF
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: SSURF, SLICE
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CICOVER 
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: PHIWA
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: EM, F1, WSWAVE, WDWAVE
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: USTRA, VSTRA
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: UFRIC, AIRD
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUICX, TAUICY 
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: PHIOCD, PHIEPS, PHIAW
       REAL(KIND=JWRO), DIMENSION(KIJL), INTENT(INOUT) :: NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX
       REAL(KIND=JWRO), DIMENSION(KIJL), INTENT(INOUT) :: NEMOTAUY, NEMOWSWAVE, NEMOPHIF
+      REAL(KIND=JWRO), DIMENSION(KIJL), INTENT(INOUT) :: NEMOTAUICX, NEMOTAUICY
       LOGICAL, INTENT(IN) :: LNUPD
 
 
@@ -126,12 +130,14 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: XSTRESS, YSTRESS
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: XSTRESSICE, YSTRESSICE
       REAL(KIND=JWRB), DIMENSION(KIJL) :: USTAR
       REAL(KIND=JWRB), DIMENSION(KIJL) :: PHILF
       REAL(KIND=JWRB), DIMENSION(KIJL) :: OOVAL
       REAL(KIND=JWRB), DIMENSION(KIJL) :: EM_OC, F1_OC
       REAL(KIND=JWRB), DIMENSION(KIJL) :: CMRHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(KIJL) :: SUMT, SUMX, SUMY
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: SUMXICE, SUMYICE
 
 ! ----------------------------------------------------------------------
 
@@ -153,6 +159,8 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
         PHILF(IJ) = 0.0_JWRB
         XSTRESS(IJ) = 0.0_JWRB
         YSTRESS(IJ) = 0.0_JWRB
+        XSTRESSICE(IJ) = 0.0_JWRB
+        YSTRESSICE(IJ) = 0.0_JWRB
       ENDDO
 
 !     THE INTEGRATION ONLY UP TO FR=MIJ
@@ -162,12 +170,16 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
           SUMT(IJ) = SSURF(IJ,K,M)
           SUMX(IJ) = SINTH(K)*SSURF(IJ,K,M)
           SUMY(IJ) = COSTH(K)*SSURF(IJ,K,M)
+          SUMXICE(IJ) = SINTH(K)*SLICE(IJ,K,M)
+          SUMYICE(IJ) = COSTH(K)*SLICE(IJ,K,M)
         ENDDO
         DO K=2,NANG
           DO IJ=KIJS,KIJL
             SUMT(IJ) = SUMT(IJ) + SSURF(IJ,K,M)
             SUMX(IJ) = SUMX(IJ) + SINTH(K)*SSURF(IJ,K,M)
             SUMY(IJ) = SUMY(IJ) + COSTH(K)*SSURF(IJ,K,M)
+            SUMXICE(IJ) = SUMXICE(IJ) + SINTH(K)*SLICE(IJ,K,M)
+            SUMYICE(IJ) = SUMYICE(IJ) + COSTH(K)*SLICE(IJ,K,M)
           ENDDO
         ENDDO
         DO IJ=KIJS,KIJL
@@ -175,6 +187,8 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
           CMRHOWGDFTH(IJ) = CINV(IJ,M)*RHOWGDFTH(IJ,M)
           XSTRESS(IJ) = XSTRESS(IJ) + SUMX(IJ)*CMRHOWGDFTH(IJ)
           YSTRESS(IJ) = YSTRESS(IJ) + SUMY(IJ)*CMRHOWGDFTH(IJ)
+          XSTRESSICE(IJ) = XSTRESSICE(IJ) + SUMXICE(IJ)*CMRHOWGDFTH(IJ)
+          YSTRESSICE(IJ) = YSTRESSICE(IJ) + SUMYICE(IJ)*CMRHOWGDFTH(IJ)
         ENDDO
       ENDDO
 
@@ -218,6 +232,8 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
 
         TAUOCXD(IJ)= TAUXD(IJ)-OOVAL(IJ)*XSTRESS(IJ)
         TAUOCYD(IJ)= TAUYD(IJ)-OOVAL(IJ)*YSTRESS(IJ)
+        TAUICX(IJ) = XSTRESSICE(IJ)
+        TAUICY(IJ) = YSTRESSICE(IJ)
         TAUO       = SQRT(TAUOCXD(IJ)**2+TAUOCYD(IJ)**2)
         TAUOC(IJ)  = MIN(MAX(TAUO/TAU,TAUOCMIN),TAUOCMAX)
       ENDDO
@@ -269,6 +285,8 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
           ENDIF 
           NEMOWSWAVE(IJ) = NEMOWSWAVE(IJ) + WSWAVE(IJ)
           NEMOPHIF(IJ)   = NEMOPHIF(IJ) + PHIOCD(IJ)
+          NEMOTAUICX(IJ) = NEMOTAUICX(IJ) + TAUICX(IJ)
+          NEMOTAUICY(IJ) = NEMOTAUICY(IJ) + TAUICY(IJ)
         ENDIF
       ENDDO
 

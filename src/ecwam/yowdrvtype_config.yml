@@ -27,12 +27,12 @@ objtypes:
      rank: 2
      types: [ocean]
      vars: [[nswh, nmwp, nphieps, nemophif, ntauoc, nemotaux, nemotauy, nemoustokes, nemovstokes,
-            nemostrn, nemowswave]]
+            nemostrn, nemowswave, nemotauicx, nemotauicy]]
   intgt_param_fields:
      rank: 2
      types: [real]
      vars: [[wsemean, wsfmean, ustokes, vstokes, phieps, phiocd, phiaw, tauoc, tauxd, tauyd,
-            tauocxd, tauocyd, strnms, altwh, caltwh, raltcor]]
+            tauocxd, tauocyd, tauicx, tauicy, strnms, altwh, caltwh, raltcor]]
   wvgridglo:
      rank: 1
      types: [int]
