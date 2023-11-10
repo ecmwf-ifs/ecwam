@@ -12,7 +12,7 @@
      &                     FL1, XLLWS,                         &
      &                     WAVNUM, CINV, CGROUP,               &
      &                     XK2CG, STOKFAC,                     &
-     &                     DEPTH, IBRMEM                       &
+     &                     DEPTH, IBRMEM,                      &
      &                     WSWAVE, WDWAVE,                     &
      &                     AIRD, WSTAR,                        &
      &                     USTRA, VSTRA,                       &
@@ -87,7 +87,7 @@
 #include "sdice1.intfb.h"
 #include "sdice2.intfb.h"
 #include "sdice3.intfb.h"
-!#include "icebreak.intfb.h"
+#include "icebreak.intfb.h"
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
 #include "stokestrn.intfb.h"
@@ -103,7 +103,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: XK2CG
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: STOKFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: IBRMEM
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: IBRMEM      
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSWAVE, WDWAVE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: AIRD, WSTAR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: USTRA, VSTRA
