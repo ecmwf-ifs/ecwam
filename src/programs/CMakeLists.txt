@@ -18,6 +18,7 @@ foreach( program
         TARGET          ${PROJECT_NAME}-${program}
         SOURCES         ${program}.F90
         LIBS            ${PROJECT_NAME} ${OpenMP_Fortran_LIBRARIES}
+        LINKER_LANGUAGE Fortran
     )
     ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-${program})
 
