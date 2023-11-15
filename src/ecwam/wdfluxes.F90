@@ -66,12 +66,12 @@
       USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN
 
-      USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN
+      USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN, LWNEMOCOUWRS
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWICE   , ONLY : LICERUN  ,              &
                             LCIWA1   ,LCIWA2    ,LCIWA3   ,LCISCAL   ,   &
- &                          LCIWACPL1,LCIWACPL2 ,ALPFACX
+ &                          LCIWACPL1,ALPFACX
       
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
@@ -233,7 +233,7 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
           IF(LCIWACPL1) CALL ICEBREAK (KIJS,KIJL,EMEAN,AKMEAN,CITHICK,IBRMEM,ALPFAC)           
 
 !         Save source term contributions relevant for the calculation of ice fluxes
-          IF (LCIWACPL2) THEN
+          IF (LWNEMOCOUWRS) THEN
             DO M=1,NFRE
               DO K=1,NANG
                 DO IJ=KIJS,KIJL
@@ -253,7 +253,7 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
           IF(LCIWA3) CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
 
 !         Save source term contributions relevant for the calculation of ice fluxes
-          IF (LCIWACPL2) THEN
+          IF (LWNEMOCOUWRS) THEN
             DO M=1,NFRE
               DO K=1,NANG
                 DO IJ=KIJS,KIJL

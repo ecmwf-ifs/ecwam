@@ -54,7 +54,8 @@
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
      &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT,           &
      &            LWNEMOCOUCUR,                                         &
-     &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOTAUOC, NEMOFRCO,  &
+     &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOCOUWRS,           &
+     &            LWNEMOTAUOC, NEMOFRCO,                                &
      &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,GFLAG    ,                                  &
@@ -81,7 +82,7 @@
       USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI ,            &
      &            LCIWA1, LCIWA2, LCIWA3, LCISCAL,  LCIWACPL1,          &
-     &            LCIWACPL2, LICETH, ALPFACX              
+     &            LICETH, ALPFACX              
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMAP   , ONLY : CLDOMAIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
@@ -229,12 +230,12 @@
      &   LLRSTGRIBPARAM,                                                &
      &   LWCOUNORMS, LLNORMIFS2WAM, LLNORMWAM2IFS, LLNORMWAMOUT,        &
      &   LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE,                         &
-     &   LICERUN, LCIWA1, LCIWA2, LCIWA3, LCISCAL, LCIWACPL1, LCIWACPL2,&
+     &   LICERUN, LCIWA1, LCIWA2, LCIWA3, LCISCAL, LCIWACPL1,           &
      &   LICETH, ALPFACX,                                               &
      &   LWVFLX_SNL,                                                    &
      &   LWNEMOCOU, NEMOFRCO,                                           &
-     &   LWNEMOCOUSEND, LWNEMOCOUSTK, LWNEMOCOUSTRN, LWNEMOTAUOC,       &
-     &   LWNEMOCOURECV,                                                 &
+     &   LWNEMOCOUSEND, LWNEMOCOUSTK, LWNEMOCOUSTRN, LWNEMOCOUWRS,      &
+     &   LWNEMOTAUOC, LWNEMOCOURECV,                                    &
      &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,                      &
      &   LWNEMOCOUDEBUG,                                                &
      &   LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                                &
@@ -370,6 +371,7 @@
 !     LWNEMOCOUSEND: IF FALSE THEN NO DATA WILL BE SENT TO NEMO
 !     LWNEMOCOUSTK:  IF TRUE SEND SURFACE STOKES DRIFT TO NEMO
 !     LWNEMOCOUSTRN: IF TRUE SEND SEA ICE WAVE STRAIN TO NEMO
+!     LWNEMOCOUWRS:  IF TRUE SEND WAVE RADIATIVE STRESS TO NEMO
 !     LWNEMOTAUOC IF TRUE THEN THE ATMOSPHERIC STRESS THAT IS PASSED TO
 !                 NEMO VIA THE WAVE MODEL WILL ALSO BE MODULATED BY IT.
 !
@@ -479,7 +481,6 @@
 !     LCIWA3  : FLAG CONTROLLING SEA ICE VISCOUS FRICTION ATTENUATION
 !     LCISCAL : FLAG CONTROLLING LINEAR SCALING OF ALL SOURCE TERMS BASED ON SEA ICE CONCENTRATION
 !     LCIWACPL1: FLAG CONTROLLING COUPLING THRU ICE BREAK UP AND ATTENUATION            
-!     LCIWACPL2: FLAG CONTROLLING COUPLING THRU STRESS TO ICE
 !     ALPFACX: FACTOR TO SCALE ATTENUATION UP/DOWN FOR SOLID/BROKEN ICE
 !     LMASKICE  SET TO TRUE IF ICE MASK IS APPLIED
 !     LWAMRSETCI SET TO TRUE IF FIELDS THAT ARE EXCHANGED WITH THE ATMOSPHERE AND THE OCEAN
@@ -701,6 +702,8 @@
 
       LWNEMOCOUSTRN=.FALSE.
 
+      LWNEMOCOUWRS=.FALSE.
+
       LWNEMOTAUOC = .TRUE.
 
       LWNEMOCOURECV = .FALSE.
@@ -751,8 +754,6 @@
       LCISCAL = .FALSE.      
 
       LCIWACPL1 = .FALSE.
-
-      LCIWACPL2 = .FALSE.
 
       ALPFACX = 1.0_JWRB
 
@@ -1053,6 +1054,7 @@
         WRITE(6,*) '*** LWNEMOCOUCUR   = ',LWNEMOCOUCUR
         WRITE(6,*) '*** LWNEMOCOUSTK   = ',LWNEMOCOUSTK
         WRITE(6,*) '*** LWNEMOCOUSTRN  = ',LWNEMOCOUSTRN
+        WRITE(6,*) '*** LWNEMOCOUWRS   = ',LWNEMOCOUWRS
         WRITE(6,*) '*** LWNEMOTAUOC    = ',LWNEMOTAUOC
         WRITE(6,*) '*** LSUBGRID= ',LSUBGRID
         WRITE(6,*) '*** IPROPAGS= ',IPROPAGS

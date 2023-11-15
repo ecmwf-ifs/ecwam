@@ -82,12 +82,13 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,   &
  &                             INTGT_PARAM_FIELDS, WAVE2OCEAN
 
-      USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU, LWNEMOCOUSTRN 
+      USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU,           &
+                            LWNEMOCOUSTRN, LWNEMOCOUWRS
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LICERUN   ,LMASKICE ,              &
                             LCIWA1   ,LCIWA2    ,LCIWA3   ,LCISCAL   ,   &
- &                          LCIWACPL1,LCIWACPL2 ,ALPFACX
+ &                          LCIWACPL1,ALPFACX
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LLUNSTR
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1 
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK
@@ -329,7 +330,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
          IF(LCIWACPL1) CALL ICEBREAK (KIJS,KIJL,EMEAN,AKMEAN,CITHICK,IBRMEM,ALPFAC)
 
 !        Save source term contributions relevant for the calculation of ice fluxes
-         IF (LCIWACPL2) THEN
+         IF (LWNEMOCOUWRS) THEN
            DO M=1,NFRE
              DO K=1,NANG
                DO IJ=KIJS,KIJL
@@ -349,7 +350,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
          IF(LCIWA3) CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
 
 !        Save source term contributions relevant for the calculation of ice fluxes
-         IF (LCIWACPL2) THEN
+         IF (LWNEMOCOUWRS) THEN
            DO M=1,NFRE
              DO K=1,NANG
                DO IJ=KIJS,KIJL
