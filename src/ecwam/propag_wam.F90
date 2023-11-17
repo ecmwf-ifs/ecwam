@@ -37,6 +37,7 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
 
 ! -------------------------------------------------------------------
 
+      use openacc
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : WVGRIDGLO, ENVIRONMENT, FREQUENCY
 
@@ -46,12 +47,18 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NIBLO , LLUNSTR
       USE YOWREFD  , ONLY : LLUPDTTD ,THDD     ,THDC     ,SDOT
       USE YOWSTAT  , ONLY : IPROPAGS ,IFRELFMAX, DELPRO_LF, IDELPRO
-      USE YOWUBUF  , ONLY : LUPDTWGHT
+      USE YOWUBUF  , ONLY : LUPDTWGHT, KLAT     ,KLON     ,KCOR      ,  &
+     &            WLATN    ,WLONN    ,WCORN    ,WKPMN    ,WMPMN     ,   &
+     &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN   ,   &
+     &            SUMWN    ,                                            &
+     &            JXO      ,JYO      ,KCR      ,KPM      ,MPM
 #ifdef WAM_HAVE_UNWAM
       USE UNWAM    , ONLY : PROPAG_UNWAM
 #endif
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+
+      USE NVTX
 
 ! ----------------------------------------------------------------------
 
@@ -72,7 +79,7 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
 
 
-      INTEGER(KIND=JWIM) :: IJ, K, M, J
+      INTEGER(KIND=JWIM) :: IJ, K, M, J, II
       INTEGER(KIND=JWIM) :: JKGLO, NPROMA, MTHREADS
       INTEGER(KIND=JWIM) :: NSTEP_LF, ISUBST
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
@@ -97,6 +104,8 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
 IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 
+!$acc data present(FL1)
+!$acc data CREATE(FL1_EXT,FL3_EXT)
       IF (NIBLO > 1) THEN
 
         IJSG = IJFROMCHNK(1,1)
@@ -107,24 +116,38 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
         NPROMA=(IJLG-IJSG+1)/MTHREADS + 1
 
 
+!        !$acc data COPYIN(FL1_EXT)
 !!! the advection schemes are still written in block structure
 !!! mapping chuncks to block ONLY for actual grid points !!!!
+!        call nvtxStartRange("PROPAG: Loop 1")
+#ifndef _OPENACC
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K)
+#endif /*_OPENACC*/
+        !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
         DO ICHNK = 1, NCHNK
           KIJS = 1
           IJSB = IJFROMCHNK(KIJS, ICHNK)
           KIJL = KIJL4CHNK(ICHNK)
           IJLB = IJFROMCHNK(KIJL, ICHNK)
+!          !$acc loop private(FL1_EXT)
+          !$acc loop independent collapse(2)
           DO M = 1, NFRE_RED
             DO K = 1, NANG
-              FL1_EXT(IJSB:IJLB, K, M) = FL1(KIJS:KIJL, K, M, ICHNK)
+!              FL1_EXT(IJFROMCHNK(1, ICHNK):IJFROMCHNK(KIJL4CHNK(ICHNK), ICHNK), K, M) = FL1(1:KIJL4CHNK(ICHNK), K, M, ICHNK)
+              FL1_EXT(IJSB:IJLB, K, M) = FL1(1:KIJL, K, M, ICHNK)
             ENDDO
           ENDDO
         ENDDO
+        !$acc end kernels
+#ifndef _OPENACC
 !$OMP   END PARALLEL DO
+#endif /*_OPENACC*/
+!        call nvtxEndRange
 
 !       SET THE DUMMY LAND POINT TO 0.
+        !$acc kernels
         FL1_EXT(NSUP+1,:,:) = 0.0_JWRB 
+        !$acc end kernels
 
 
         IF (LLUNSTR) THEN 
@@ -206,26 +229,37 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                LUPDTWGHT=.FALSE.
              ENDIF
 
+!             call nvtxStartRange("PROPAG: First preloop")
+#ifndef _OPENACC
 !$OMP        PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
+#endif /*_OPENACC*/
              DO JKGLO = IJSG, IJLG, NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1, IJLG)
                CALL PROPAGS2(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL, NANG, 1, NFRE_RED)
              ENDDO
+#ifndef _OPENACC             
 !$OMP        END PARALLEL DO
-
+#endif /*_OPENACC*/
+!             call nvtxEndRange
 
 !            SUB TIME STEPPING FOR FAST WAVES (only if IFRELFMAX > 0)
              IF (IFRELFMAX > 0 ) THEN
                NSTEP_LF = NINT(REAL(IDELPRO, JWRB)/DELPRO_LF)
                ISUBST = 2  ! The first step was done as part of the previous call to PROPAGS2
 
+!               call nvtxStartRange("PROPAG: While loop")
                DO WHILE (ISUBST <= NSTEP_LF)
 
+!        call nvtxStartRange("PROPAG: Loop 2")
+#ifndef _OPENACC
 !$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, M, K, IJ)
+#endif /*_OPENACC*/
+!$acc kernels loop private(KIJS, KIJL, FL1_EXT) 
                  DO JKGLO = IJSG, IJLG, NPROMA
                    KIJS=JKGLO
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
+                   !$acc loop independent collapse(3)
                    DO M = 1, IFRELFMAX 
                      DO K = 1, NANG
                        DO IJ = KIJS, KIJL
@@ -234,22 +268,38 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                      ENDDO
                    ENDDO
                  ENDDO
+!$acc end kernels
+#ifndef _OPENACC
 !$OMP            END PARALLEL DO
+#endif /*_OPENACC*/
+!        call nvtxEndRange
 
                  CALL MPEXCHNG(FL1_EXT(:,:,1:IFRELFMAX), NANG, 1, IFRELFMAX)
 
+!call nvtxStartRange("PROPAG: Inner propags2 loop")
+#ifndef _OPENACC
 !$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
+#endif /*_OPENACC*/
+!             !$ACC DATA COPYIN(KLON, KLAT, KCOR, WKPMN, LLWKPMN, SUMWN, WLONN, WLATN, WCORN, JXO, JYO, KCR) 
                  DO JKGLO = IJSG, IJLG, NPROMA
                    KIJS=JKGLO
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
+
+
                    CALL PROPAGS2(FL1_EXT(:,:,1:IFRELFMAX), FL3_EXT(:,:,1:IFRELFMAX), NINF, NSUP, KIJS, KIJL, NANG, 1, IFRELFMAX)
                  ENDDO
+!            !$ACC END DATA
+#ifndef _OPENACC
 !$OMP            END PARALLEL DO
+#endif /*_OPENACC*/
+!                 call nvtxEndRange
 
                  ISUBST = ISUBST + 1
 
                ENDDO
-             ENDIF  ! end sub time steps (if needed)
+!  call nvtxEndRange
+             
+ENDIF  ! end sub time steps (if needed)
 
            CASE(1)
              IF (L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
@@ -305,36 +355,84 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 !!! the advection schemes are still written in block structure
 !!!  So need to convert back to the nproma_wam chuncks
+!        call nvtxStartRange("PROPAG: Loop 3")
+#ifndef _OPENACC
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K)
+#endif /*_OPENACC*/
+        !!$acc kernels loop private(KIJS, IJSB, KIJL, IJLB, M, K)
+        !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
           DO ICHNK = 1, NCHNK
             KIJS = 1
             IJSB = IJFROMCHNK(KIJS, ICHNK)
             KIJL = KIJL4CHNK(ICHNK)
             IJLB = IJFROMCHNK(KIJL, ICHNK)
+!            !$acc loop vector independent collapse(3)
+            !$acc loop independent collapse(3)
             DO M = 1, NFRE_RED
               DO K = 1, NANG
-                FL1(KIJS:KIJL, K, M, ICHNK) = FL3_EXT(IJSB:IJLB, K, M)
+                 DO J = KIJS, KIJL
+                   II = IJSB + J - KIJS
+                   FL1(J, K, M, ICHNK) = FL3_EXT(II, K, M)
+!                FL1(KIJS:KIJL, K, M, ICHNK) = FL3_EXT(IJSB:IJLB, K, M)
+                 ENDDO
               ENDDO
             ENDDO
 
             IF (KIJL < NPROMA_WAM) THEN
               !!! make sure fictious points keep values of the first point in the chunk
+              !$acc loop independent collapse(3)
               DO M = 1, NFRE_RED
                 DO K = 1, NANG
-                  FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)
+                  DO J = KIJL+1,NPROMA_WAM
+                    FL1(J, K, M, ICHNK) = FL1(1, K, M, ICHNK)
+                    !FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)
+                  ENDDO
                 ENDDO
               ENDDO
             ENDIF
 
           ENDDO
+        !$acc end kernels
+
+!F        !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
+!F          DO ICHNK = 1, NCHNK
+!F            KIJS = 1
+!F            IJSB = IJFROMCHNK(KIJS, ICHNK)
+!F            KIJL = KIJL4CHNK(ICHNK)
+!F            IJLB = IJFROMCHNK(KIJL, ICHNK)
+!F            !$acc loop seq collapse(2)
+!F            DO M = 1, NFRE_RED
+!F              DO K = 1, NANG
+!F                FL1(KIJS:KIJL, K, M, ICHNK) = FL3_EXT(IJSB:IJLB, K, M)
+!F              ENDDO
+!F            ENDDO
+!F
+!F            IF (KIJL < NPROMA_WAM) THEN
+!F              !!! make sure fictious points keep values of the first point in the chunk
+!F              !$acc loop independent collapse(2)
+!F              DO M = 1, NFRE_RED
+!F                DO K = 1, NANG
+!F                  FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)
+!F                ENDDO
+!F              ENDDO
+!F            ENDIF
+!F
+!F          ENDDO
+!F        !$acc end kernels
+#ifndef _OPENACC
 !$OMP     END PARALLEL DO
+#endif /*_OPENACC*/
+!        call nvtxEndRange
 
 
            CALL GSTATS(1430,1)
 
         ENDIF  ! end propagation
+!        !$acc end data
 
       ENDIF ! more than one grid point
+!$ACC END DATA
+!$ACC END DATA
 
       L1STCALL=.FALSE.
       LLCHKCFL=.FALSE.

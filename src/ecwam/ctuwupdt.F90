@@ -24,23 +24,29 @@ SUBROUTINE CTUWUPDT (IJS, IJL, NINF, NSUP,                  &
 
 ! -------------------------------------------------------------------
 
+
 USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
 USE YOWCURR  , ONLY : LLCFLCUROFF
 USE YOWFRED  , ONLY : COSTH    ,SINTH
-USE YOWGRID  , ONLY : NPROMA_WAM
+USE YOWGRID  , ONLY : NPROMA_WAM, COSPH
 USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
 USE YOWMPP   , ONLY : IRANK    ,NPROC
-USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE_RED
-USE YOWSTAT  , ONLY : IFRELFMAX, DELPRO_LF, IDELPRO, IREFRA
+USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE_RED, ngy
+USE YOWSTAT  , ONLY : IFRELFMAX, DELPRO_LF, IDELPRO, IREFRA, ICASE
 USE YOWTEST  , ONLY : IU06
 USE YOWUBUF  , ONLY : SUMWN    ,                                            &
 &                     JXO      ,JYO      ,KCR      ,KPM      ,MPM,          &
 &                     WLATN    ,WLONN    ,WCORN    ,WKPMN    ,WMPMN    ,    &
-&                     LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN
+&                     LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN  ,    &
+&                     KLON, KLAT, WLAT, KCOR, WCOR
+USE YOWFRED  , ONLY : FR       ,DELTH, COSTH    ,SINTH
+USE YOWPCONS , ONLY : ZPI
+
 
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+!USE CTUWINI_MOD , ONLY : CTUWINI
       
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -49,6 +55,7 @@ USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 #include "ctuw.intfb.h"
 #include "ctuwdrv.intfb.h"
 #include "ctuwini.intfb.h"
+!!$acc routine(ctuwini) vector
 
 INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL   ! GRID POINTS WITHIN A BLOCK
 INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP ! GRID POINT WITH HALO EXTEND NINF:NSUP+1 
@@ -78,26 +85,31 @@ LOGICAL, DIMENSION(IJS:IJL) :: LCFLFAIL
 
 LOGICAL, SAVE :: LFRSTCTU
 DATA LFRSTCTU /.TRUE./
-
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('CTUWUPDT',0,ZHOOK_HANDLE)
 
+!$acc update device(sinth,costh)
+!$acc update device(icase, COSPH, nang, nfre_red, ngy, niblo) !F
 ! DEFINE JXO, JYO, KCR
 IF (LFRSTCTU) THEN
 
   IF (.NOT. ALLOCATED(MPM)) ALLOCATE(MPM(NFRE_RED,-1:1))
+  !$acc kernels
   DO M=1,NFRE_RED
     MPM(M,-1)= MAX(1,M-1)
     MPM(M,0) = M
     MPM(M,1) = MIN(NFRE_RED,M+1)
   ENDDO
+  !$acc end kernels
 
   IF (.NOT. ALLOCATED(KPM)) ALLOCATE(KPM(NANG,-1:1))
   IF (.NOT. ALLOCATED(JXO)) ALLOCATE(JXO(NANG,2))
   IF (.NOT. ALLOCATED(JYO)) ALLOCATE(JYO(NANG,2))
   IF (.NOT. ALLOCATED(KCR)) ALLOCATE(KCR(NANG,4))
 
+!$ACC ENTER DATA COPYIN(KLON, KLAT, KCOR, JXO, JYO, KCR) 
+ !$acc kernels
   DO K=1,NANG
 
     KM1 = K-1
@@ -149,11 +161,11 @@ IF (LFRSTCTU) THEN
       ENDIF
     ENDIF
   ENDDO
+  !$acc end kernels
 
   LFRSTCTU = .FALSE.
 
 ENDIF
-
 
 ! THE CTU IS USED, COMPUTE THE WEIGHTS
 
@@ -175,7 +187,7 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
   IF (.NOT. ALLOCATED(LLWMPMN)) ALLOCATE(LLWMPMN(NANG,NFRE_RED,-1:1))
 ENDIF
 
-
+!$acc enter data copyin(sumwn,LLWKPMN, WLATN,WLONN,WCORN,WKPMN)
 
 ! SOME INITIALISATION FOR *CTUW*
 !! NPROMA=NPROMA_WAM
@@ -183,14 +195,29 @@ ENDIF
 !$ MTHREADS=OMP_GET_MAX_THREADS()
    NPROMA=(IJL-IJS+1)/MTHREADS + 1
 
+
+!F!$acc update device(KLAT,WLAT,KCOR,WCOR,WLATN,WLONN,WCORN)
+
+!$acc enter data copyin(BLK2GLO)
+!$acc enter data copyin(BLK2GLO%KXLT)
+
+!$acc update device(KLAT,WLAT,KCOR,WCOR) !F
+!$acc update device(NFRE_RED,ZPI,FR,DELTH,NANG)
+#ifndef _OPENACC
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
+#endif /*_OPENACC*/
+!$acc data present(KLAT,WLAT,KCOR,WCOR,WLATN,WLONN,WCORN)
 DO JKGLO = IJS, IJL, NPROMA
   KIJS=JKGLO
   KIJL=MIN(KIJS+NPROMA-1,IJL)
-  CALL CTUWINI(KIJS, KIJL, NINF, NSUP, BLK2GLO, COSPHM1_EXT,     &
-&              WLATM1, WCORM1, DP )
+!  CALL CTUWINI(KIJS, KIJL,WLATM1, NINF, NSUP,WCORM1)
+  CALL CTUWINI (KIJS, KIJL, NINF, NSUP, BLK2GLO, COSPHM1_EXT,   &
+ &                  WLATM1, WCORM1, DP)
 ENDDO
+!$acc end data
+#ifndef _OPENACC
 !$OMP  END PARALLEL DO
+#endif /*_OPENACC*/
 
 
 ! COMPUTES THE WEIGHTS
@@ -207,6 +234,7 @@ ELSE
   MSTART = 1 
   MEND   = IFRELFMAX 
 ENDIF
+
 
 CALL CTUWDRV (DELPRO, MSTART, MEND,                 &
  &           IJS, IJL, NINF, NSUP,                  &
@@ -234,14 +262,17 @@ IF (IFRELFMAX > 0 .AND. IFRELFMAX < NFRE_RED) THEN
 ENDIF
 
 
+!!$acc update host(WLATN,WCORN,WLONN)
 
 ! FIND THE LOGICAL FLAGS THAT WILL LIMIT THE EXTEND OF THE CALCULATION IN PROPAGS2
 
+!$acc parallel loop independent collapse(4)
 DO IC=1,2
   DO ICL=1,2
     DO K=1,NANG
       DO M=1,NFRE_RED
         LLWLATN(K,M,IC,ICL)=.FALSE.
+        !$acc loop
         DO IJ=IJS,IJL
           IF (WLATN(IJ,K,M,IC,ICL) > 0.0_JWRB) THEN
             LLWLATN(K,M,IC,ICL)=.TRUE.
@@ -252,11 +283,14 @@ DO IC=1,2
     ENDDO
   ENDDO
 ENDDO
+!$acc end parallel
 
+!$acc parallel loop independent collapse(3)
 DO IC=1,2
   DO M=1,NFRE_RED
     DO K=1,NANG
       LLWLONN(K,M,IC)=.FALSE.
+      !$acc loop
       DO IJ=IJS,IJL
         IF (WLONN(IJ,K,M,IC) > 0.0_JWRB) THEN
           LLWLONN(K,M,IC)=.TRUE.
@@ -266,12 +300,15 @@ DO IC=1,2
     ENDDO
   ENDDO
 ENDDO
+!$acc end parallel
 
+!$acc parallel loop independent collapse(4)
 DO ICL=1,2
   DO ICR=1,4
     DO M=1,NFRE_RED
       DO K=1,NANG
         LLWCORN(K,M,ICR,ICL)=.FALSE.
+        !$acc loop
         DO IJ=IJS,IJL
           IF (WCORN(IJ,K,M,ICR,ICL) > 0.0_JWRB) THEN
             LLWCORN(K,M,ICR,ICL)=.TRUE.
@@ -282,11 +319,14 @@ DO ICL=1,2
     ENDDO
   ENDDO
 ENDDO
+!$acc end parallel
 
+!$acc parallel loop independent collapse(3)
 DO IC=-1,1
   DO M=1,NFRE_RED
     DO K=1,NANG
       LLWKPMN(K,M,IC)=.FALSE.
+      !$acc loop
       DO IJ=IJS,IJL
         IF (WKPMN(IJ,K,M,IC) > 0.0_JWRB) THEN
           LLWKPMN(K,M,IC)=.TRUE.
@@ -296,12 +336,15 @@ DO IC=-1,1
     ENDDO
   ENDDO
 ENDDO
+!$acc end parallel
 
 IF (IREFRA == 2 .OR. IREFRA == 3) THEN
+!$acc parallel loop independent collapse(3)
   DO IC=-1,1
     DO M=1,NFRE_RED
       DO K=1,NANG
         LLWMPMN(K,M,IC)=.FALSE.
+        !$acc loop
         DO IJ=IJS,IJL
           IF (WMPMN(IJ,K,M,IC) > 0.0_JWRB) THEN
             LLWMPMN(K,M,IC)=.TRUE.
@@ -311,6 +354,7 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
       ENDDO
     ENDDO
   ENDDO
+!$acc end parallel
 ENDIF
 
 
