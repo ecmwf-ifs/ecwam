@@ -64,5 +64,8 @@
 !                            DONE IN LATITUNAL BANDS
 !                            (like it used to be done).
 ! ----------------------------------------------------------------------
-
+!$acc declare create( nang )
+!$acc declare create( nfre_red )
+!$acc declare create( ngy )
+!$acc declare create( niblo )
       END MODULE YOWPARAM

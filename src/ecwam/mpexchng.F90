@@ -102,59 +102,96 @@
       ALLOCATE(ZCOMBUFS(NBUFMAX,NGBTOPE))
       ALLOCATE(ZCOMBUFR(NBUFMAX,NGBFROMPE))
 
-
 !     PACK SEND BUFFERS FOR NGBTOPE NEIGHBOURING PE's
 !     -------------------------------------------------
       CALL GSTATS(1892,0)
-!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(INGB,IPROC,KCOUNT,M,K,IH,IJ)
-      DO INGB=1,NGBTOPE
-        IPROC=NTOPELST(INGB)
-        KCOUNT=0
-        DO M = ND3S, ND3E
-          DO K = 1, NDIM2
-            DO IH = 1, NTOPE(IPROC)
-              IJ=IJTOPE(IH,IPROC)
-              KCOUNT=KCOUNT+1
-              ZCOMBUFS(KCOUNT,INGB)=FLD(IJ,K,M)
+      #ifdef _OPENACC
+      !$acc kernels loop independent private(KCOUNT,IJ) copyout(ZCOMBUFS) copyin(fld)
+      DO INGB=1,NGBTOPE !Total number of PE's to which information will be sent
+        IPROC=NTOPELST(INGB)  !To which PE to send informations
+          !$acc loop independent collapse(3)
+          DO M = ND3S, ND3E
+            DO K = 1, NDIM2
+              DO IH = 1, NTOPE(IPROC) !How many halo points to be sent
+                IJ=IJTOPE(IH,IPROC) !The index of which points to send
+                KCOUNT = (M - 1) * (NDIM2 * NTOPE(IPROC)) + (K - 1) * NTOPE(IPROC) + IH
+                ZCOMBUFS(KCOUNT,INGB)=FLD(IJ,K,M)
             ENDDO
           ENDDO
         ENDDO
       ENDDO
+      !$acc end kernels
+#else
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(INGB,IPROC,KCOUNT,M,K,IH,IJ)
+       DO INGB=1,NGBTOPE
+         IPROC=NTOPELST(INGB)
+         KCOUNT=0
+         DO M = ND3S, ND3E
+           DO K = 1, NDIM2
+             DO IH = 1, NTOPE(IPROC)
+               IJ=IJTOPE(IH,IPROC)
+               KCOUNT=KCOUNT+1
+               ZCOMBUFS(KCOUNT,INGB)=FLD(IJ,K,M)
+             ENDDO
+           ENDDO
+         ENDDO
+       ENDDO
 !$OMP END PARALLEL DO
+      #endif /*_OPENACC*/
+
       CALL GSTATS(1892,1)
 
 !     DO NON BLOCKING SENDS AND RECVS
 
       IR=0
       CALL GSTATS(676,0)
-
       DO INGB=1,NGBFROMPE
         IR=IR+1
         IPROC=NFROMPELST(INGB)
         KCOUNT=NDIM3*NDIM2*NFROMPE(IPROC)
+!!$acc host_data use_device(ZCOMBUFR)
         CALL MPL_RECV(ZCOMBUFR(1:KCOUNT,INGB),KSOURCE=IPROC,KTAG=KTAG,  &
      &     KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),         &
      &     CDSTRING='MPEXCHNG:')
+!!$acc end host_data
       ENDDO
 
       DO INGB=1,NGBTOPE
         IR=IR+1
         IPROC=NTOPELST(INGB)
         KCOUNT=NDIM3*NDIM2*NTOPE(IPROC)
+!!$acc host_data use_device(ZCOMBUFR)
         CALL MPL_SEND(ZCOMBUFS(1:KCOUNT,INGB),KDEST=IPROC,KTAG=KTAG,    &
      &     KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),         &
      &     CDSTRING='MPEXCHNG:')
+!!$acc end host_data
       ENDDO
 
 !     NOW WAIT FOR ALL TO COMPLETE
 
       CALL MPL_WAIT(KREQUEST=IREQ(1:IR),CDSTRING='MPEXCHNG:')
-
       CALL GSTATS(676,1)
 
 !     DECODE THE RECEIVED BUFFERS
 
       CALL GSTATS(1893,0)
+      #ifdef _OPENACC
+      !$acc kernels loop independent private(KCOUNT,IJ) copyin(ZCOMBUFR)
+      DO INGB=1,NGBFROMPE
+        IPROC=NFROMPELST(INGB)
+        !$acc loop vector independent collapse(3)
+        DO M = ND3S, ND3E
+          DO K = 1, NDIM2
+            DO IH = 1, NFROMPE(IPROC)
+              IJ=NIJSTART(IPROC)+IH-1
+              KCOUNT = (M - 1) * (NDIM2 * NFROMPE(IPROC)) + (K - 1) * NFROMPE(IPROC) + IH
+              FLD(IJ,K,M)=ZCOMBUFR(KCOUNT,INGB)
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDDO
+      !$acc end kernels
+      #else
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(INGB,IPROC,KCOUNT,M,K,IH,IJ)
       DO INGB=1,NGBFROMPE
         IPROC=NFROMPELST(INGB)
@@ -170,6 +207,8 @@
         ENDDO
       ENDDO
 !$OMP END PARALLEL DO
+      #endif /*_OPENACC*/
+
       CALL GSTATS(1893,1)
 
       KTAG=KTAG+1
