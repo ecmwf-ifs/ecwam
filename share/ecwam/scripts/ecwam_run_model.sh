@@ -78,8 +78,21 @@ done
 
 nproma=$(read_config nproma --default=24)
 
-idelpro=$(read_config physics.timestep --format=seconds --default=900)
-idelt=$(read_config advection.timestep --format=seconds --default=900)
+# read timesteps
+phys_tstp=$(read_config physics.timestep --format=seconds --default=900)
+adv_base_tstp=$(read_config advection.timestep --format=seconds --default=900)
+adv_fast_tstp=$(read_config advection.fast_waves.timestep --format=seconds --default=$adv_base_tstp)
+ifrelfmax=$(read_config advection.fast_waves.max_frequency --default=0)
+
+# verify timesteps
+if [ $(( $adv_base_tstp%$adv_fast_tstp )) -ne 0 ] ; then
+   echo "ERROR: Base advection timestep should be a multiple of fast-wave advection timestep"
+   exit 4
+fi
+if [ $(( $phys_tstp%$adv_base_tstp )) -ne 0 ] ; then
+   echo "ERROR: Physics timestep should be a multiple of base advection timestep"
+   exit 4
+fi
 
 if [[ $(read_config forcings.sea_ice --default=True) == "True" ]] ; then
   licerun=T
@@ -187,10 +200,10 @@ cat > wam_namelist << EOF
   CBPLTDT               = "${begofrn}",
   CEPLTDT               = "${endofrn}",
   CDATEF                = "${begoffo}",
-  DELPRO_LF             = ${idelpro},
-  IFRELFMAX             = 0,
-  IDELPRO               = ${idelpro},
-  IDELT                 = ${idelt},
+  DELPRO_LF             = ${adv_fast_tstp},
+  IFRELFMAX             = ${ifrelfmax},
+  IDELPRO               = ${adv_base_tstp},
+  IDELT                 = ${phys_tstp},
   IDELINT               = ${ppfreq},
   IREST                 = 1,
   LFDBIOOUT             = F,
