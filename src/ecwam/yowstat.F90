@@ -255,4 +255,5 @@
 !      *CMETER*   CHARACTER  SMS or ECFLOW meter command (ECMWF supervisor)
 !      *CEVENT*   CHARACTER  SMS or ECFLOW event command (ECMWF supervisor)
 ! ----------------------------------------------------------------------
+      !$acc declare create( icase )
       END MODULE YOWSTAT
