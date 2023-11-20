@@ -26,7 +26,7 @@
      &                     PHIOCD, PHIEPS, PHIAW,              &
      &                     NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN, &
      &                     NPHIEPS, NTAUOC, NSWH,              &
-     &                     NMWP, NEMOTAUX, NEMOTAUY,           &
+     &                     NMWP,NWNUM, NEMOTAUX, NEMOTAUY,     &
      &                     NEMOTAUICX, NEMOTAUICY,             &
      &                     NEMOWSWAVE, NEMOPHIF)
 
@@ -114,7 +114,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: PHIOCD, PHIEPS, PHIAW, USTOKES, VSTOKES
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSEMEAN, WSFMEAN, STRNMS
       REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN
-      REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX
+      REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: NPHIEPS, NTAUOC, NSWH, NMWP,NWNUM, NEMOTAUX
       REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: NEMOTAUY, NEMOWSWAVE, NEMOPHIF
       REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: NEMOTAUICX, NEMOTAUICY
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
@@ -270,11 +270,11 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
      &                   MIJ, RHOWGDFTH,                    &
      &                   CINV,                              &
      &                   SL, SLICE, CICOVER,                &
-     &                   PHIWA,                             &
+     &                   PHIWA, XKMEAN,                     &
      &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
      &                   USTRA, VSTRA,                      &
      &                   UFRIC, AIRD,                       &
-     &                   NPHIEPS, NTAUOC, NSWH, NMWP,       &
+     &                   NPHIEPS, NTAUOC, NSWH, NMWP,NWNUM, &
      &                   NEMOTAUX, NEMOTAUY,                &
      &                   NEMOTAUICX, NEMOTAUICY,            &
      &                   NEMOWSWAVE, NEMOPHIF,              &
@@ -291,11 +291,11 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
      &                   MIJ, RHOWGDFTH,                    &
      &                   CINV,                              &
      &                   SL, SLICE, CICOVER,                &
-     &                   PHIWA,                             &
+     &                   PHIWA, XKMEAN,                     &
      &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
      &                   USTRA, VSTRA,                      &
      &                   UFRIC, AIRD,                       &
-     &                   NPHIEPS, NTAUOC, NSWH, NMWP,       &
+     &                   NPHIEPS, NTAUOC, NSWH, NMWP,NWNUM, &
      &                   NEMOTAUX, NEMOTAUY,                &
      &                   NEMOTAUICX, NEMOTAUICY,            &
      &                   NEMOWSWAVE, NEMOPHIF,              &

@@ -13,7 +13,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                  AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR, USTRA, VSTRA, &
  &                  UFRIC, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, CITHICK, &
  &                  NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN, &
- &                  NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
+ &                  NPHIEPS, NTAUOC, NSWH, NMWP, NWNUM, NEMOTAUX, &
  &                  NEMOTAUY, NEMOTAUICX, NEMOTAUICY, &
  &                  NEMOWSWAVE, NEMOPHIF, &
  &                  WSEMEAN, WSFMEAN, USTOKES, VSTOKES, STRNMS, &
@@ -139,7 +139,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUICX, TAUICY
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: PHIEPS, PHIAW
       REAL(KIND=JWRO), DIMENSION(KIJL), INTENT(INOUT) :: NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN
-      REAL(KIND=JWRO), DIMENSION(KIJL), INTENT(INOUT) :: NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX
+      REAL(KIND=JWRO), DIMENSION(KIJL), INTENT(INOUT) :: NPHIEPS, NTAUOC, NSWH, NMWP, NWNUM, NEMOTAUX
       REAL(KIND=JWRO), DIMENSION(KIJL), INTENT(INOUT) :: NEMOTAUY, NEMOWSWAVE, NEMOPHIF
       REAL(KIND=JWRO), DIMENSION(KIJL), INTENT(INOUT) :: NEMOTAUICX, NEMOTAUICY
       INTEGER(KIND=JWIM), DIMENSION(KIJL), INTENT(OUT) :: MIJ
@@ -424,11 +424,11 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
      &                 MIJ, RHOWGDFTH,                   &
      &                 CINV,                             &
      &                 SSOURCE, SLICE, CICOVER,          &
-     &                 PHIWA,                            &
+     &                 PHIWA, XKMEAN,                    &
      &                 EMEAN, F1MEAN, WSWAVE, WDWAVE,    &
      &                 USTRA, VSTRA,                     &
      &                 UFRIC, AIRD,                      &
-     &                 NPHIEPS, NTAUOC, NSWH, NMWP,      &
+     &                 NPHIEPS, NTAUOC, NSWH, NMWP,NWNUM,&
      &                 NEMOTAUX, NEMOTAUY,               &
      &                 NEMOTAUICX, NEMOTAUICY,           &
      &                 NEMOWSWAVE, NEMOPHIF,             &
