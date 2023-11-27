@@ -347,19 +347,21 @@ list( APPEND ecwam_srcs
   z0wave.F90
 )
 
+# check for mixed precision build
+set(MIXED_PRECISION 0)
+if(${HAVE_SINGLE_PRECISION} AND NOT ${PNAME}_OCEANMODEL_HAVE_SINGLE_PRECISION)
+   set(MIXED_PRECISION 1)
+endif()
+
 if( HAVE_GEN_DERIV_TYPES )
    list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
    add_custom_command(
        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90
-       COMMAND fypp -m io -m yaml -m os ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
+       COMMAND ${FYPP} -m io -m yaml -m os -DMIXED_PRECISION=${MIXED_PRECISION} ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp
        VERBATIM)
 else()
    list( APPEND ecwam_srcs yowfield_mod.F90)
-endif()
-
-if( NOT HAVE_FIELD_API )
-   list( APPEND ecwam_srcs field_module.F90)
 endif()
 
 unset( MPI_Fortran_LIBRARIES )
@@ -418,7 +420,7 @@ ecbuild_add_library(
     PRIVATE_LIBS     eccodes_f90
                      ${MULTIO_LIBRARIES}
                      ${OpenMP_Fortran_LIBRARIES}
-                     $<${HAVE_FIELD_API}:field_api_${prec}>
+                     field_api_${prec}
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
     PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS}
     PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
@@ -443,3 +445,27 @@ elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-ffp-contract=off" )
 endif()
 
+### The file grib2wgrid.F90 is sensitive to optimizations in single precision builds.
+#   This leads to non-neglibible differences
+#   of average 'swh' when running "chief".
+
+if( CMAKE_Fortran_COMPILER_ID MATCHES Intel AND HAVE_SINGLE_PRECISION )
+  set_source_files_properties( grib2wgrid.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
+endif()
+
+### NVHPC debug flags applied selectively to sourcefiles to avoid single-precision overflow
+if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC AND CMAKE_BUILD_TYPE MATCHES "Debug" )
+  foreach( debug_flag    initsnan checkbounds )
+    if( ${debug_flag}_flags )
+      ecbuild_add_fortran_flags( "${${debug_flag}_flags}" NAME ${debug_flag} )
+    endif()
+  endforeach()
+  
+  list(REMOVE_ITEM ecwam_srcs outbeta.F90 secondhh.F90)
+  if( fpe_flags )
+     set_source_files_properties( ${ecwam_srcs} PROPERTIES COMPILE_OPTIONS ${fpe_flags} )
+     set_source_files_properties( outbeta.F90 PROPERTIES COMPILE_OPTIONS "-Ktrap=divz" )
+     set_source_files_properties( secondhh.F90 PROPERTIES COMPILE_OPTIONS "-Ktrap=inv,ovf" )
+  endif()
+  list(APPEND ecwam_srcs outbeta.F90 secondhh.F90)
+endif()

@@ -6,7 +6,7 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
-cmake_minimum_required( VERSION 3.12 FATAL_ERROR )
+cmake_minimum_required( VERSION 3.24 FATAL_ERROR )
 find_package( ecbuild 3.4 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild )
 
 if( NOT ECWAM_PROJECT_NAME )
@@ -54,11 +54,6 @@ ecbuild_add_option( FEATURE ECWAM_LAUNCH
                     DEFAULT ON
                     DESCRIPTION "Use share/ecwam/scripts/ecwam-launch script to run ecwam tests" )
 
-ecbuild_add_option( FEATURE FIELD_API
-                    DEFAULT ON
-                    DESCRIPTION "Build using field_api"
-                    REQUIRED_PACKAGES "field_api" )
-
 if( HAVE_ECWAM_LAUNCH )
   # Overwrite meaning of mpiexec
   set( ECWAM_LAUNCH ${CMAKE_CURRENT_SOURCE_DIR}/share/ecwam/scripts/ecwam-launch )
@@ -68,6 +63,10 @@ if( HAVE_ECWAM_LAUNCH )
   set( CMAKE_CROSSCOMPILING_EMULATOR ${ECWAM_LAUNCH} ) # For serial runs
 endif()
 
+### field_api
+
+include(cmake/ecwam_fetchcontent_field_api.cmake)
+ecbuild_find_package( NAME field_api REQUIRED )
 
 ### Optional dependencies
 

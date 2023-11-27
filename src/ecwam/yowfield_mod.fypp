@@ -15,19 +15,25 @@
 #!
 MODULE YOWFIELD_MOD
 
-   USE PARKIND_WAVE, ONLY : JWRB, JWIM
-   USE FIELD_MODULE, ONLY : FIELD_3D_WRAPPER, FIELD_3D, FIELD_INT2D, FIELD_INT2D_WRAPPER, FIELD_2D, FIELD_2D_WRAPPER, &
- &                          FIELD_INT3D, FIELD_INT3D_WRAPPER, FIELD_4D, FIELD_4D_WRAPPER, FIELD_INT4D, FIELD_INT4D_WRAPPER
+   USE PARKIND_WAVE, ONLY : JWRB, JWIM, JWRO
+   USE FIELD_MODULE, ONLY : FIELD_3RB, FIELD_2IM, FIELD_2RB, FIELD_3IM, FIELD_4RB, FIELD_4IM, FIELD_2RD
+   USE FIELD_FACTORY_MODULE, ONLY : FIELD_NEW, FIELD_DELETE
    IMPLICIT NONE
 
 #:for obj in objtypes
    TYPE ${obj.upper()}$_FIELD
    #:for var, type, dim in objdef[obj]
-          #{if type == 'real'}#REAL(KIND=JWRB)#{else}#INTEGER(KIND=JWIM)#{endif}#, DIMENSION(${','.join(':' for _ in range(dim-1))}$), POINTER :: ${var.upper()}$=>NULL()
+          #{if type == 'real'}#REAL(KIND=JWRB)#{elif type == 'ocean'}#REAL(KIND=JWRO)#{else}#INTEGER(KIND=JWIM)#{endif}#, DIMENSION(${','.join(':' for _ in range(dim-1))}$), POINTER :: ${var.upper()}$=>NULL()
    #:endfor
+#:if MIXED_PRECISION == 1
    #:for var, type, dim in objdef[obj]
-          CLASS(FIELD_#{if type == 'int'}#INT#{endif}#${dim}$D), POINTER :: F_${var.upper()}$=>NULL()
+          CLASS(FIELD_${dim}$#{if type == 'int'}#IM#{elif type == 'ocean'}#RD#{else}#RB#{endif}#), POINTER :: F_${var.upper()}$=>NULL()
    #:endfor
+#:else
+   #:for var, type, dim in objdef[obj]
+          CLASS(FIELD_${dim}$#{if type == 'int'}#IM#{else}#RB#{endif}#), POINTER :: F_${var.upper()}$=>NULL()
+   #:endfor
+#:endif
       CONTAINS
          PROCEDURE :: INIT => ${obj.upper()}$_FIELD_INIT
          PROCEDURE :: UPDATE_VIEW => ${obj.upper()}$_UPDATE_VIEW
@@ -36,27 +42,15 @@ MODULE YOWFIELD_MOD
 
 #:endfor
    CONTAINS
-#:for type in ['real', 'int']
-   #:for dim in range(2, 5)
-      FUNCTION WRAP_${dim}$D_${type.upper()}$_FIELD(ARR) RESULT(FIELD)
-         #{if type == 'real'}#REAL(KIND=JWRB)#{else}#INTEGER(KIND=JWIM)#{endif}#, DIMENSION(${','.join(':' for _ in range(dim))}$), INTENT(IN) :: ARR
-         CLASS(FIELD_#{if type == 'int'}#INT#{endif}#${dim}$D_WRAPPER), POINTER :: FIELD
-
-         ALLOCATE(FIELD)
-         CALL FIELD%INIT(ARR)
-      END FUNCTION WRAP_${dim}$D_${type.upper()}$_FIELD
-
-   #:endfor
-#:endfor
 #:for obj in objtypes
       SUBROUTINE ${obj.upper()}$_FIELD_INIT(SELF, ${', '.join(var[0].upper() for var in objdef[obj])}$)
           CLASS(${obj.upper()}$_FIELD), INTENT(INOUT) :: SELF
       #:for var, type, dim in objdef[obj]
-          #{if type == 'real'}#REAL(KIND=JWRB)#{else}#INTEGER(KIND=JWIM)#{endif}#, DIMENSION(${','.join(':' for _ in range(dim))}$), INTENT(IN), OPTIONAL :: ${var.upper()}$
+          #{if type == 'real'}#REAL(KIND=JWRB)#{elif type == 'ocean'}#REAL(KIND=JWRO)#{else}#INTEGER(KIND=JWIM)#{endif}#, DIMENSION(${','.join(':' for _ in range(dim))}$), INTENT(IN), OPTIONAL :: ${var.upper()}$
       #:endfor
 
       #:for var, type, dim in objdef[obj]
-          IF(PRESENT(${var.upper()}$)) SELF%F_${var.upper()}$ => WRAP_${dim}$D_${type.upper()}$_FIELD(${var.upper()}$)
+          IF(PRESENT(${var.upper()}$)) CALL FIELD_NEW(SELF%F_${var.upper()}$, DATA=${var.upper()}$)
       #:endfor
       END SUBROUTINE ${obj.upper()}$_FIELD_INIT
 
@@ -74,8 +68,7 @@ MODULE YOWFIELD_MOD
 
       #:for var, type, dim in objdef[obj]
           IF(ASSOCIATED(SELF%F_${var.upper()}$))THEN
-              CALL SELF%F_${var.upper()}$%FINAL()
-              DEALLOCATE(SELF%F_${var.upper()}$)
+              CALL FIELD_DELETE(SELF%F_${var.upper()}$)
           ENDIF
       #:endfor
       END SUBROUTINE ${obj.upper()}$_FINAL

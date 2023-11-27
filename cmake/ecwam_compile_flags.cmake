@@ -26,8 +26,8 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
 
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
   set(autopromote_flags   "-r8")
-  set(checkbounds_flags   "-Mbounds")
   set(fpe_flags           "-Ktrap=fp")
+#  set(checkbounds_flags   "-Mbounds") # Added by default by CMake in NVHPC debug builds
 
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
   set(autopromote_flags   "-fdefault-real-8")
@@ -39,7 +39,8 @@ if( NOT HAVE_SINGLE_PRECISION )
   ecbuild_add_fortran_flags( "${autopromote_flags}"   NAME autopromote )
 endif()
 
-if( CMAKE_BUILD_TYPE MATCHES "Debug" )
+## Debug flags for NVHPC are applied selectively to sourcefiles in src/ecwam/CMakeLists.txt
+if( CMAKE_BUILD_TYPE MATCHES "Debug" AND NOT CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
   foreach( debug_flag    fpe initsnan checkbounds )
     if( ${debug_flag}_flags )
       ecbuild_add_fortran_flags( "${${debug_flag}_flags}" NAME ${debug_flag} )

@@ -11,15 +11,15 @@ macro( ecwam_find_python_mods )
    set(PYYAML_FOUND OFF)
 
    # Look for fypp pre-processor
-   find_program( FYPP_PATH fypp QUIET)
-   if( FYPP_PATH )
+   find_program( FYPP fypp HINTS ${fypp_ROOT} )
+   if( FYPP )
      ecbuild_info( "${ECWAM_PROJECT_NAME} FOUND fypp" )
      set(FYPP_FOUND ON)
    else()
      ecbuild_info( "${ECWAM_PROJECT_NAME} FAILED to find optional package fypp" )
    endif()
    # We do a QUIET ecbuild_find_package to update the ecbuild project summary
-   ecbuild_find_package( fypp QUIET)
+   ecbuild_find_package( fypp QUIET )
 
    # Look for python interpreter and pyyaml package
    ecbuild_find_python()
