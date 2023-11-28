@@ -607,6 +607,13 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           NXE = NXFFE
           NYS = NYFFS
           NYE = NYFFE
+
+!!!1debile, test if it makes any differences as it might keep memory usage low
+          NXS = NXFFS_LOC
+          NXE = NXFFE_LOC
+          NYS = NYFFS_LOC
+          NYE = NYFFE_LOC
+
         ENDIF
 
         LLINIT = .FALSE.
