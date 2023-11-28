@@ -53,7 +53,7 @@
      &            LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE,                &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
      &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT,           &
-     &            LWNEMOCOUCUR,                                         &
+     &            LWNEMOCOUCUR,  LWNEMOCOUIBR,                          &
      &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOCOUWRS,           &
      &            LWNEMOTAUOC, NEMOFRCO,                                &
      &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM
@@ -236,7 +236,7 @@
      &   LWNEMOCOU, NEMOFRCO,                                           &
      &   LWNEMOCOUSEND, LWNEMOCOUSTK, LWNEMOCOUSTRN, LWNEMOCOUWRS,      &
      &   LWNEMOTAUOC, LWNEMOCOURECV,                                    &
-     &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,                      &
+     &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR, LWNEMOCOUIBR,        &
      &   LWNEMOCOUDEBUG,                                                &
      &   LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                                &
      &   LWAM_USE_IO_SERV,                                              &
@@ -379,6 +379,7 @@
 !     LWNEMOCOUCIC: IF TRUE THEN SEA ICE CONCENTRATION WILL BE OBTAINED FROM FROM NEMO 
 !     LWNEMOCOUCIT: IF TRUE THEN SEA ICE THICKNESS WILL BE OBTAINED FROM FROM NEMO 
 !     LWNEMOCOUCUR: IF TRUE THEN SURFACE CURRENTS WILL BE OBTAINED FROM FROM NEMO 
+!     LWNEMOCOUIBR: IF TRUE THEN ICE BREAKUP FIELD WILL BE OBTAINED FROM FROM NEMO 
 !
 !     LWNEMOCOUDEBUG: FALSE IF NO DEBUGGING OUTPUT IN WAM<->NEMO COUPLING
 !
@@ -713,6 +714,8 @@
       LWNEMOCOUCIT=.FALSE.
 
       LWNEMOCOUCUR=.FALSE.
+      
+      LWNEMOCOUIBR=.FALSE.
 
       LWNEMOCOUDEBUG = .FALSE.
 
@@ -1020,7 +1023,7 @@
       IF (IFRELFMAX <= 0) DELPRO_LF = REAL(IDELPRO, JWRB)
 
 !     WE SHOULD RECEIVE DATA FROM NEMO
-      IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT .OR. LWNEMOCOUCUR) LWNEMOCOURECV = .TRUE.
+      IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT .OR. LWNEMOCOUCUR .OR. LWNEMOCOUIBR) LWNEMOCOURECV = .TRUE.
 
 
 ! Here we set LL1D = .TRUE. for the case of LLUNSTR in order to omit the mapping for the parallel strucutured grid
@@ -1052,6 +1055,7 @@
         WRITE(6,*) '*** LWNEMOCOUCIC   = ',LWNEMOCOUCIC
         WRITE(6,*) '*** LWNEMOCOUCIT   = ',LWNEMOCOUCIT
         WRITE(6,*) '*** LWNEMOCOUCUR   = ',LWNEMOCOUCUR
+        WRITE(6,*) '*** LWNEMOCOUIBR   = ',LWNEMOCOUIBR
         WRITE(6,*) '*** LWNEMOCOUSTK   = ',LWNEMOCOUSTK
         WRITE(6,*) '*** LWNEMOCOUSTRN  = ',LWNEMOCOUSTRN
         WRITE(6,*) '*** LWNEMOCOUWRS   = ',LWNEMOCOUWRS

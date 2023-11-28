@@ -66,7 +66,7 @@
       USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN
 
-      USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN, LWNEMOCOUWRS
+      USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN, LWNEMOCOUWRS, LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWICE   , ONLY : LICERUN  ,              &
@@ -88,6 +88,7 @@
 #include "sdice2.intfb.h"
 #include "sdice3.intfb.h"
 #include "icebreak.intfb.h"
+#include "icebreak_modify_attenuation.intfb.h"
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
 #include "stokestrn.intfb.h"
@@ -103,7 +104,8 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: XK2CG
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: STOKFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
-      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: IBRMEM      
+!       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: IBRMEM      
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: IBRMEM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSWAVE, WDWAVE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: AIRD, WSTAR
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: USTRA, VSTRA
@@ -228,9 +230,12 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
               END DO
             END DO
           ENDIF
-          
-!         Coupling of waves and sea ice (type 1): wave-induced sea ice break up + reduced attenuation
-          IF(LCIWACPL1) CALL ICEBREAK (KIJS,KIJL,EMEAN,AKMEAN,CITHICK,IBRMEM,ALPFAC)           
+
+!        Coupling of waves and sea ice (type 1): wave-induced sea ice break up + reduced attenuation
+          IF(LWNEMOCOUIBR) THEN 
+!             CALL ICEBREAK (KIJS,KIJL,EMEAN,AKMEAN,CITHICK,IBRMEM,ALPFAC)           
+            CALL ICEBREAK_MODIFY_ATTENUATION (KIJS,KIJL,IBRMEM,ALPFAC)           
+          ENDIF
 
 !         Save source term contributions relevant for the calculation of ice fluxes
           IF (LWNEMOCOUWRS) THEN

@@ -7,11 +7,10 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE ICEBREAK (KIJS, KIJL, EMEAN, AKMEAN,                   &
-     &                     CITH, IBRMEM, ALPFAC)
+      SUBROUTINE ICEBREAK_MODIFY_ATTENUATION (KIJS, KIJL, IBRMEM, ALPFAC)
 ! ----------------------------------------------------------------------
 
-!**** *ICEBREAK* - COMPUTATION OF BREAK UP OF SEA ICE BY WAVES
+!**** *ICEBREAK_MODIFY_ATTENUATION* - MODIFY ATTENUATION DUE TO ICE BREAKUP 
 
 
 !     JOSH KOUSAL       ECMWF 2023
@@ -23,13 +22,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *ICEBREAK (KIJS, KIJL, EMEAN, AKMEAN, 
-!                         CITH, IBRMEM)*
+!       *CALL* *ICEBREAK_MODIFY_ATTENUATION (KIJS, KIJL, IBRMEM, ALPFAC)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
-!          *EMEAN*  - MEAN ENERGY DENSITY 
-!          *AKMEAN* - MEAN WAVE NUMBER  BASED ON sqrt(1/k)*F INTGRATION  (TODO: XKMEAN? OR ?)
-!          *CITH*   - SEA ICE THICKNESS
 !          *IBRMEM* - ICEBREAK MEMORY                      
 !          *ALPFAC* - FACTOR TO REDUCE ATTENUATION IN ICE. EQUAL TO 1 IN SOLID ICE
 
@@ -73,50 +68,30 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CITH
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EMEAN, AKMEAN
-
-      REAL(KIND=JWRB)   , DIMENSION(KIJS:KIJL), INTENT(INOUT) :: IBRMEM
+      REAL(KIND=JWRB)   , DIMENSION(KIJS:KIJL), INTENT(IN) :: IBRMEM
       REAL(KIND=JWRB)   , DIMENSION(KIJS:KIJL), INTENT(INOUT) :: ALPFAC
 
       INTEGER(KIND=JWIM) :: IJ
-      REAL(KIND=JWRB)    :: IBR_CONST2, IBR_CONST3, IBR_CONST4
-      REAL(KIND=JWRB)    :: IBR
-      REAL(KIND=JWRB)    :: HS, LAMBDASQ
+      REAL(KIND=JWRB)    :: IBR_CONST5
       
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('ICEBREAK',0,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('ICEBREAK_MODIFY_ATTENUATION',0,ZHOOK_HANDLE)
 
-      !IBR_CONST2 = 6E+9_JWRB     ! Young's modulus          (Y=6GPa)
-      IBR_CONST2 = 0.2E+9_JWRB     ! custom value (strong ice bound)
-      !IBR_CONST2 = 9E+9_JWRB     ! custom value (weak ice bound)
-
-      !IBR_CONST3 = 0.55E+6_JWRB ! flexural strength of ice (sig=0.55MPa)
-      IBR_CONST3 = 0.7E+6_JWRB ! custom value (strong ice bound)
-      !IBR_CONST3 = 0.1E+6_JWRB ! custom value (weak ice bound)           
-
-      IBR_CONST4 = 0.014_JWRB   ! non-dimensional threshold as 
-                                ! in Voermans et al. 2020  (I_br=0.014)
+      IBR_CONST5 = 1.0_JWRB/ALPFACX    ! FACTOR TO DECREASE ATTENUATION BY WHEN ICE IS BROKEN
 
       DO IJ = KIJS,KIJL
 
-        HS       =  4._JWRB*SQRT(EMEAN(IJ)) !TODO:check
-        LAMBDASQ =  (ZPI/AKMEAN(IJ))**2 !TODO:check:this should be kpeak not kmean
-
-        ! ICE BREAK UP PARAMETER
-        IBR      =  HS*CITH(IJ)*IBR_CONST2 / (2._JWRB*IBR_CONST3*LAMBDASQ)
-
-        ! BREAK ICE IF IBR EXCEEDS THRESHOLD
-        IF (IBR >= IBR_CONST4) THEN
-          IBRMEM(IJ)  = 1.0_JWRB ! 2=SOLID,1=BROKEN
+        ! USE IBRMEM TO CHANGE ATTENUATION FACTOR ALPFAC
+        ! OTHERWISE ALPFAC KEEPS VALUE SET IN IMPLSCH
+        IF ((IBRMEM(IJ) >= 0.99_JWRB) .AND. (IBRMEM(IJ) <= 1.01_JWRB)) THEN
+          ALPFAC(IJ)  = IBR_CONST5
         ENDIF
 
       ENDDO
 
-      
-      IF (LHOOK) CALL DR_HOOK('ICEBREAK',1,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('ICEBREAK_MODIFY_ATTENUATION',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE ICEBREAK
+      END SUBROUTINE ICEBREAK_MODIFY_ATTENUATION

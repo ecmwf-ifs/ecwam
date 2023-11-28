@@ -83,7 +83,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                             INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU,           &
-                            LWNEMOCOUSTRN, LWNEMOCOUWRS
+                            LWNEMOCOUSTRN, LWNEMOCOUWRS, LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LICERUN   ,LMASKICE ,              &
@@ -111,6 +111,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 #include "sdice2.intfb.h"
 #include "sdice3.intfb.h"
 #include "icebreak.intfb.h"
+#include "icebreak_modify_attenuation.intfb.h"
 #include "setice.intfb.h"
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
@@ -129,7 +130,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: EMAXDPT
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: DEPTH
       INTEGER(KIND=JWIM), DIMENSION(KIJL), INTENT(IN) :: IODP
-      INTEGER(KIND=JWIM), DIMENSION(KIJL), INTENT(INOUT) :: IBRMEM      
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: IBRMEM      
       INTEGER(KIND=JWIM), DIMENSION(KIJL), INTENT(IN) :: IOBND
 
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR, USTRA, VSTRA
@@ -327,7 +328,10 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
          ENDIF
 
 !        Coupling of waves and sea ice (type 1): wave-induced sea ice break up + reduced attenuation
-         IF(LCIWACPL1) CALL ICEBREAK (KIJS,KIJL,EMEAN,AKMEAN,CITHICK,IBRMEM,ALPFAC)
+         IF(LWNEMOCOUIBR) THEN 
+!           CALL ICEBREAK (KIJS,KIJL,EMEAN,AKMEAN,CITHICK,IBRMEM,ALPFAC)           
+          CALL ICEBREAK_MODIFY_ATTENUATION (KIJS,KIJL,IBRMEM,ALPFAC)           
+        ENDIF
 
 !        Save source term contributions relevant for the calculation of ice fluxes
          IF (LWNEMOCOUWRS) THEN
