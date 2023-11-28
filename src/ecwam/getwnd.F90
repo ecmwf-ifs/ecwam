@@ -141,8 +141,15 @@ IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
 !     -----------------------------------
 
       IF (LWNDFILE) THEN
+      WRITE (IU06,*) ' debile before READWIND'
+      CALL FLUSH (IU06)
+
         CALL READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,  &
      &                 NXS, NXE, NYS, NYE, FIELDG)
+
+      WRITE (IU06,*) ' debile after READWIND'
+      CALL FLUSH (IU06)
+
 
         ICODE_WND = ICODE
 
@@ -205,6 +212,9 @@ IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
 !*    3. INTERPOLATE AND BLOCK WINDFIELD
 !        -------------------------------
 
+      WRITE (IU06,*) ' debile before WAMWND'
+      CALL FLUSH (IU06)
+
         CALL GSTATS(1444,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, KIJS, KIJL)
         DO ICHNK = 1, NCHNK
@@ -228,6 +238,10 @@ IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)
+
+      WRITE (IU06,*) ' debile after WAMWND'
+      CALL FLUSH (IU06)
+
 
 IF (LHOOK) CALL DR_HOOK('GETWND',1,ZHOOK_HANDLE)
 
