@@ -175,7 +175,13 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
 !*    2.0 GLOBAL FIELD FOR THE INPUTS
 !         ---------------------------
 
+      WRITE (IU06,*) ' debile before FIELDG%ALLOC'
+      CALL FLUSH (IU06)
+
       CALL FIELDG%ALLOC(NXS, NYS, NXE, NYE)
+
+      WRITE (IU06,*) ' debile after FIELDG%ALLOC'
+      CALL FLUSH (IU06)
 
       IF (LLINIT_FIELDG) THEN
         LLINIALL=.TRUE.
