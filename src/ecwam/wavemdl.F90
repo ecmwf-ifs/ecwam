@@ -612,12 +612,19 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         LLINIT = .FALSE.
         LLINIT_FIELDG = .NOT. LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
+
+        write(IU06,*) 'debile before PREWIND'
+        call flush(IU06)
+
         CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,    &
                       NXS, NXE, NYS, NYE, LLINIT_FIELDG,   &
      &                LLINIT, IREAD,                       &
      &                NFIELDS, NGPTOTG, NC, NR,            &
      &                FIELDS, LWCUR, MASK_IN,              &
      &                NEMO2WAM)
+
+        write(IU06,*) 'debile after PREWIND'
+        call flush(IU06)
 
       ENDIF
 
