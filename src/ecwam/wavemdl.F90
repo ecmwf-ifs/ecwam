@@ -286,6 +286,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       LOGICAL, SAVE :: LFRST
       LOGICAL, SAVE :: LFRSTCHK
       LOGICAL, SAVE :: LLGRAPI
+      LOGICAL, SAVE :: LLINTERPOL
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
       LOGICAL :: LLINIT_FIELDG
@@ -300,6 +301,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       DATA LFRST /.TRUE./
       DATA LFRSTCHK /.TRUE./
       DATA LLGRAPI /.TRUE./
+      DATA LLINTERPOL /.TRUE./
 
 ! ---------------------------------------------------------------------
 
@@ -603,25 +605,27 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           ENDIF
 
         ELSE
-          NXS = NXFFS
-          NXE = NXFFE
-          NYS = NYFFS
-          NYE = NYFFE
 
-!!!1debile, test if it makes any differences as it might keep memory usage low
-          NXS = NXFFS_LOC
-          NXE = NXFFE_LOC
-          NYS = NYFFS_LOC
-          NYE = NYFFE_LOC
+          IF ( LLINTERPOL ) THEN
+!!          This will end up forcing going through the interpolation part in grib2wgrid
+!!          even when the inpute data are on the same grid as the model run
+!!          but it wil also reduce the memory usage by avoiding large global arrays
+            NXS = NXFFS_LOC
+            NXE = NXFFE_LOC
+            NYS = NYFFS_LOC
+            NYE = NYFFE_LOC
+          ELSE
+            NXS = NXFFS
+            NXE = NXFFE
+            NYS = NYFFS
+            NYE = NYFFE
+          ENDIF
 
         ENDIF
 
         LLINIT = .FALSE.
         LLINIT_FIELDG = .NOT. LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-
-        write(IU06,*) 'debile before PREWIND'
-        call flush(IU06)
 
         CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,    &
                       NXS, NXE, NYS, NYE, LLINIT_FIELDG,   &
@@ -630,8 +634,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                FIELDS, LWCUR, MASK_IN,              &
      &                NEMO2WAM)
 
-        write(IU06,*) 'debile after PREWIND'
-        call flush(IU06)
 
       ENDIF
 
