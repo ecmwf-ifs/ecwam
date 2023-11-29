@@ -868,11 +868,11 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
         ENDIF
 
 !       loop over all wave model latitudes.
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(K,JSN,I,LLSKIP,XI,RMOWEP_KK) &
-!$OMP&                               PRIVATE(XK,KK,KSN,KK1,KSN1,DK1,DK2) &
-!$OMP&                               PRIVATE(KSNLIM, XII, II, II1, DII1, DII2) &
-!$OMP&                               PRIVATE(KSN1LIM,XIIP,IIP,IIP1,DIIP1,DIIP2) &
-!$OMP&                               PRIVATE(LLNEAREST_LOC,KCL,ICL,NCOUNT,ID,WK)
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC) PRIVATE(K,JSN,I,LLSKIP,XI,RMOWEP_KK) &
+!$OMP&                                PRIVATE(XK,KK,KSN,KK1,KSN1,DK1,DK2) &
+!$OMP&                                PRIVATE(KSNLIM, XII, II, II1, DII1, DII2) &
+!$OMP&                                PRIVATE(KSN1LIM,XIIP,IIP,IIP1,DIIP1,DIIP2) &
+!$OMP&                                PRIVATE(LLNEAREST_LOC,KCL,ICL,NCOUNT,ID,WK)
 
         DO K = NYS, NYE                                                
           JSN = NGY-K+1
