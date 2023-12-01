@@ -1038,7 +1038,6 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
-! debile stop here
 
         DEALLOCATE(WORK)
       ENDIF

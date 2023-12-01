@@ -125,7 +125,7 @@
 !           ----------------------------------------------
 
         CALL IGRIB_GET_MESSAGE_SIZE(IGRIB_HANDLE,KBYTES)
-!!!! debile test        CALL IGRIB_WRITE_BYTES(IU,KGRIB_BUFR,KBYTES)
+        CALL IGRIB_WRITE_BYTES(IU,KGRIB_BUFR,KBYTES)
 
         IF (ITEST.GT.2) THEN
             WRITE(IU06,*) '   SUB. WGRIBOUT : DATA WRITTEN TO FILE'
