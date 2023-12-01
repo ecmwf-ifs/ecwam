@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE READMDLCONF (IU07)
+SUBROUTINE READMDLCONF (IU07, LLREADPRE)
 
 ! ----------------------------------------------------------------------
 
@@ -43,6 +43,8 @@ SUBROUTINE READMDLCONF (IU07)
 #include "readpre.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU07
+      LOGICAL, INTENT(IN), OPTIONAL :: LLREADPRE 
+
       INTEGER(KIND=JWIM) :: IREAD
       INTEGER(KIND=JWIM) :: IP, I, K
 
@@ -50,14 +52,23 @@ SUBROUTINE READMDLCONF (IU07)
       REAL(KIND=JWRB) :: XLAT, ZLONS, COSPHMIN
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
+      LOGICAL :: LLREAD
+
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('READMDLCONF',0,ZHOOK_HANDLE)
 
+      IF( PRESENT(LLREADPRE) ) THEN
+        LLREAD = LLREADPRE
+      ELSE
+        LLREAD = .TRUE. 
+      ENDIF
 
-      CALL MPL_BARRIER(CDSTRING='READMDLCONF:')
-      CALL READPRE (IU07)
-      CALL MPL_BARRIER(CDSTRING='READMDLCONF:')
+      IF ( LLREAD ) THEN
+        CALL MPL_BARRIER(CDSTRING='READMDLCONF:')
+        CALL READPRE (IU07)
+        CALL MPL_BARRIER(CDSTRING='READMDLCONF:')
+      ENDIF
 
 
 !     DETERMINE THE TOTAL NUMBER OF OCEAN POINTS AND THE CONNECTION TO THE GRID (BLK2GLO)
