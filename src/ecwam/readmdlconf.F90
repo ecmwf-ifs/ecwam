@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE READMDLCONF (IU07, LLREADPRE)
+SUBROUTINE READMDLCONF (IU07, LLREADPRE, LLREADBATHY)
 
 ! ----------------------------------------------------------------------
 
@@ -43,7 +43,8 @@ SUBROUTINE READMDLCONF (IU07, LLREADPRE)
 #include "readpre.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU07
-      LOGICAL, INTENT(IN), OPTIONAL :: LLREADPRE 
+      LOGICAL, INTENT(IN), OPTIONAL :: LLREADPRE ! if true *READPRE* will be called 
+      LOGICAL, INTENT(IN), OPTIONAL :: LLREADBATHY  ! if true *READPRE* will read and use array BATHY 
 
       INTEGER(KIND=JWIM) :: IREAD
       INTEGER(KIND=JWIM) :: IP, I, K
@@ -52,60 +53,70 @@ SUBROUTINE READMDLCONF (IU07, LLREADPRE)
       REAL(KIND=JWRB) :: XLAT, ZLONS, COSPHMIN
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
-      LOGICAL :: LLREAD
+      LOGICAL :: LLREAD, LLBATHY
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('READMDLCONF',0,ZHOOK_HANDLE)
-
       IF( PRESENT(LLREADPRE) ) THEN
         LLREAD = LLREADPRE
       ELSE
-        LLREAD = .TRUE. 
+        LLREAD = .TRUE.
+      ENDIF
+
+      IF( PRESENT(LLREADBATHY) ) THEN
+        LLBATHY = LLREADBATHY
+      ELSE
+        LLBATHY = .TRUE.
       ENDIF
 
       IF ( LLREAD ) THEN
         CALL MPL_BARRIER(CDSTRING='READMDLCONF:')
-        CALL READPRE (IU07)
+        CALL READPRE (IU07, LLBATHY)
         CALL MPL_BARRIER(CDSTRING='READMDLCONF:')
       ENDIF
 
 
-!     DETERMINE THE TOTAL NUMBER OF OCEAN POINTS AND THE CONNECTION TO THE GRID (BLK2GLO)
-      IF (ALLOCATED(LLOCEANMASK)) DEALLOCATE(LLOCEANMASK)
-      ALLOCATE(LLOCEANMASK(NGX,NGY))
-      NIBLO = 0
-      DO K=1,NGY
-        DO I=1,NLONRGG(K)
-          IF (BATHY(I,K) > 0.0_JWRB) THEN
-            NIBLO = NIBLO + 1
-            LLOCEANMASK(I,K) = .TRUE.
-          ELSE
-            LLOCEANMASK(I,K) = .FALSE.
-          ENDIF
-        ENDDO
-      ENDDO
+      IF ( LLREAD .AND. LLBATHY ) THEN
+!       DETERMINE THE TOTAL NUMBER OF OCEAN POINTS AND THE CONNECTION TO THE GRID (BLK2GLO)
 
-      IF ( NIBLO <= 0 ) THEN
-         WRITE(IU06,*)'***ERROR IN READREC: NIBLO SHOULD > 0, NIBLO = ',NIBLO
-         CALL FLUSH(IU06)
-         CALL ABORT1
+        IF (ALLOCATED(LLOCEANMASK)) DEALLOCATE(LLOCEANMASK)
+        ALLOCATE(LLOCEANMASK(NGX,NGY))
+        NIBLO = 0
+        DO K=1,NGY
+          DO I=1,NLONRGG(K)
+            IF (BATHY(I,K) > 0.0_JWRB) THEN
+              NIBLO = NIBLO + 1
+              LLOCEANMASK(I,K) = .TRUE.
+            ELSE
+              LLOCEANMASK(I,K) = .FALSE.
+            ENDIF
+          ENDDO
+        ENDDO
+
+        IF ( NIBLO <= 0 ) THEN
+           WRITE(IU06,*)'***ERROR IN READREC: NIBLO SHOULD > 0, NIBLO = ',NIBLO
+           CALL FLUSH(IU06)
+           CALL ABORT1
+        ENDIF
+
+        IF (ALLOCATED(BLK2GLO%IXLG)) CALL BLK2GLO%DEALLOC
+        CALL BLK2GLO%ALLOC(NIBLO)
+
+        IP = 0
+        DO K=1,NGY
+          DO I=1,NLONRGG(K)
+            IF (LLOCEANMASK(I,K)) THEN
+              IP = IP+1
+              BLK2GLO%IXLG(IP) = I
+              BLK2GLO%KXLT(IP) = K
+            ENDIF
+          ENDDO
+        ENDDO
+
+      ELSE
+         NIBLO=NGX*NGY
       ENDIF
-
-      IF (ALLOCATED(BLK2GLO%IXLG)) CALL BLK2GLO%DEALLOC
-      CALL BLK2GLO%ALLOC(NIBLO)
-
-      IP = 0
-      DO K=1,NGY
-        DO I=1,NLONRGG(K)
-          IF (LLOCEANMASK(I,K)) THEN
-            IP = IP+1
-            BLK2GLO%IXLG(IP) = I
-            BLK2GLO%KXLT(IP) = K
-          ENDIF
-        ENDDO
-      ENDDO
-
 
 
 !*    GRID INCREMENTS IN RADIANS AND METRES.

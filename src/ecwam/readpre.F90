@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE READPRE (IU07)
+SUBROUTINE READPRE (IU07, LLBATHY)
 
 ! ----------------------------------------------------------------------
 
@@ -82,6 +82,8 @@ SUBROUTINE READPRE (IU07)
 #include "mpbcastgrid.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU07
+      LOGICAL, INTENT(IN) :: LLBATHY
+
       INTEGER(KIND=JWIM) :: IREAD
       INTEGER(KIND=JWIM) :: IP, I, K
       INTEGER(KIND=JWIM) :: KMDLGRDID
@@ -166,10 +168,12 @@ SUBROUTINE READPRE (IU07)
 !*    8. READ MODULE YOWSHAL (DEPTH AND SHALLOW WATER TABLES).
 !        ----------------------------------------------------
 
-        IF (ALLOCATED(BATHY)) DEALLOCATE(BATHY)
-        ALLOCATE(BATHY(NGX,NGY))
+        IF ( LLBATHY ) THEN 
+          IF (ALLOCATED(BATHY)) DEALLOCATE(BATHY)
+          ALLOCATE(BATHY(NGX,NGY))
 
-        CALL READREC(5)
+          CALL READREC(5)
+        ENDIF
 
 !       THE UNSTRUCTURED BITS (if pre-computed by PREPROC)
         IF (LLUNSTR) THEN
