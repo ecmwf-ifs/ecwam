@@ -468,17 +468,6 @@ ELSE
         ENDDO
       ENDIF 
 
-!!debile
-      WRITE(IU06,*) 'debile mpdecomp NIBLO ',NIBLO
-      WRITE(IU06,*) 'debile mpdecomp NYDECOMP ', NYDECOMP
-      WRITE(IU06,*) 'debile mpdecomp NXDECOMP ', NXDECOMP
-      WRITE(IU06,*) 'debile mpdecomp NYCUT ', NYCUT
-      DO IPR=1,NYDECOMP
-         WRITE(IU06,*) IPR, NSTART1D(IPR), NEND1D(IPR)
-      ENDDO
-      call flush(iu06)
-!!debile
-
 !     SECOND 1-D DECOMPOSITION IN EACH LATITUDINAL BAND
 
       IF (LL1D .OR. NPR == 1) THEN
@@ -547,10 +536,6 @@ ELSE
 !         by determining the array IJNDEX which contain the IJ's with
 !         increasing longitude and latitude.
 
-!!debile
-      WRITE(IU06,*) 'debile mpdecomp IPR ',IPR,NSTART1D(IPR),NEND1D(IPR)
-      call flush(iu06)
-!!debile
           KLATBOT=BLK2GLO%KXLT(NSTART1D(IPR))
           KLATTOP=BLK2GLO%KXLT(NEND1D(IPR))
           ALLOCATE(KSTART1(KLATBOT:KLATTOP))
