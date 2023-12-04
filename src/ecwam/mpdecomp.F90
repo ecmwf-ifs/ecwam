@@ -470,6 +470,9 @@ ELSE
 
 !!debile
       WRITE(IU06,*) 'debile mpdecomp NIBLO ',NIBLO
+      WRITE(IU06,*) 'debile mpdecomp NYDECOMP ', NYDECOMP
+      WRITE(IU06,*) 'debile mpdecomp NXDECOMP ', NXDECOMP
+      WRITE(IU06,*) 'debile mpdecomp NYCUT ', NYCUT
       DO IPR=1,NYDECOMP
          WRITE(IU06,*) IPR, NSTART1D(IPR), NEND1D(IPR)
       ENDDO
