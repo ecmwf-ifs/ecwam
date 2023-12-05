@@ -435,7 +435,13 @@ ELSE
 !       roughly scale like (nxdecomp-1)/nxdecomp the number of points
 !       in the remaining bottom nycut bands
 
-        NMEAN=NXDECOMP*IJL/((NXDECOMP-1)*NYDECOMP+NYCUT)
+        IF (XDELLA < 0.05_JWRB) THEN
+          NMEAN=INT( REAL(IJL,JWRU) * (REAL(NXDECOMP,JWRU)/REAL(((NXDECOMP-1)*NYDECOMP+NYCUT),JWRU)) )
+        ELSE
+          ! this is to insure that low resolution cases behaves exactly as before.
+          ! But this should be removed as soon as possible !!!!
+          NMEAN=NXDECOMP*IJL/((NXDECOMP-1)*NYDECOMP+NYCUT)
+        ENDIF
       
         NSTART1D(1)=1
         NPTS=NMEAN
