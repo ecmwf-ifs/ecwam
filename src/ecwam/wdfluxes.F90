@@ -10,10 +10,15 @@
       SUBROUTINE WDFLUXES (KIJS, KIJL,                 &
      &                     MIJ,                        &
      &                     FL1, XLLWS,                 &
-     &                     WAVNUM,CINV,XK2CG,STOKFAC,  &
-     &                     DEPTH, INDEP,        &
-     &                     AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR, &
-     &                     UFRIC, Z0M, Z0B, CHRNCK, CITHICK, &
+     &                     WAVNUM, CINV,               &
+     &                     XK2CG, STOKFAC,             &
+     &                     DEPTH, INDEP,               &
+     &                     WSWAVE, WDWAVE,             &
+     &                     AIRD, WSTAR,                &
+     &                     USTRA, VSTRA,               &
+     &                     CICOVER,                    &
+     &                     UFRIC, Z0M,                 &
+     &                     Z0B, CHRNCK, CITHICK,       &
      &                     WSEMEAN, WSFMEAN, USTOKES, VSTOKES, STRNMS, &
      &                     TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, PHIOCD, &
      &                     PHIEPS, PHIAW, &
@@ -86,7 +91,10 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: STOKFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: INDEP
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSWAVE, WDWAVE
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: AIRD, WSTAR
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: USTRA, VSTRA
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: CICOVER
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: UFRIC, Z0M, Z0B, CHRNCK, CITHICK
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: PHIOCD, PHIEPS, PHIAW, USTOKES, VSTOKES
@@ -154,37 +162,41 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 
       NCALL = 1
       ICALL = 1
-      CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                              &
-     &             LUPDTUS,                                               &
-     &             FL1,                                                   &
-     &             WAVNUM, CINV, XK2CG,              &
-     &             WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER,           &
-     &             COSWDIF, SINWDIF2,                                     &
-     &             FMEAN, HALP, FMEANWS,                                  &
-     &             FLM,                                                   &
-     &             UFRIC, TAUW_LOC, TAUWDIR_LOC, Z0M, Z0B, CHRNCK, PHIWA, &
-     &             FLD, SL, SPOS,                                         &
+      CALL SINFLX (ICALL, NCALL, KIJS, KIJL,        &
+     &             LUPDTUS,                         &
+     &             FL1,                             &
+     &             WAVNUM, CINV, XK2CG,             &
+     &             WSWAVE, WDWAVE, AIRD,            &
+     &             RAORW, WSTAR, CICOVER,           &
+     &             COSWDIF, SINWDIF2,               &
+     &             FMEAN, HALP, FMEANWS,            &
+     &             FLM,                             &
+     &             UFRIC, TAUW_LOC, TAUWDIR_LOC,    &
+     &             Z0M, Z0B, CHRNCK, PHIWA,         &
+     &             FLD, SL, SPOS,                   &
      &             MIJ, RHOWGDFTH, XLLWS)
 
       IF (LCFLX) THEN
 
-        CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,                 &
-     &                INDEP, WAVNUM, XK2CG,&
-     &                EMEAN, F1MEAN, XKMEAN,                    &
+        CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,     &
+     &                INDEP, WAVNUM, XK2CG,         &
+     &                EMEAN, F1MEAN, XKMEAN,        &
      &                UFRIC, COSWDIF, RAORW) 
 
         IF (.NOT. LWVFLX_SNL) THEN
           CALL WNFLUXES (KIJS, KIJL,                        &
      &                   MIJ, RHOWGDFTH,                    &
-     &                   CINV,                       &
+     &                   CINV,                              &
      &                   SL, CICOVER,                       &
      &                   PHIWA,                             &
      &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
-     &                   UFRIC, AIRD, &
-     &                   NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
-     &                   NEMOTAUY, NEMOWSWAVE, NEMOPHIF, &
-     &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, &
-     &                   PHIOCD, PHIEPS, PHIAW, &
+     &                   UFRIC, AIRD,                       &
+     &                   USTRA, VSTRA,                      &
+     &                   NPHIEPS, NTAUOC, NSWH, NMWP,       &
+     &                   NEMOTAUX, NEMOTAUY,                &
+     &                   NEMOWSWAVE, NEMOPHIF,              &
+     &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD,    &
+     &                   TAUOC, PHIOCD, PHIEPS, PHIAW,      &
      &                  .FALSE.)
         ENDIF
 
@@ -193,11 +205,12 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
         IF (LWVFLX_SNL) THEN
           CALL WNFLUXES (KIJS, KIJL,                        &
      &                   MIJ, RHOWGDFTH,                    &
-     &                   CINV,                       &
+     &                   CINV,                              &
      &                   SL, CICOVER,                       &
      &                   PHIWA,                             &
      &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
-     &                   UFRIC, AIRD,   &
+     &                   UFRIC, AIRD,                       &
+     &                   USTRA, VSTRA,                      &
      &                   NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
      &                   NEMOTAUY, NEMOWSWAVE, NEMOPHIF, &
      &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, &

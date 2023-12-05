@@ -7,16 +7,22 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
- &                   FL1, XLLWS,                     & 
- &                   WAVNUM, CINV, CGROUP,           &
- &                   DEPTH, UCUR, VCUR, IODP,        &
- &                   ALTWH, CALTWH, RALTCOR, USTOKES, VSTOKES, STRNMS, &
- &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, PHIOCD, &
- &                   PHIEPS, PHIAW, &
- &                   AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR, &
- &                   UFRIC, TAUW, Z0M, Z0B, CHRNCK, CITHICK, &
- &                   NEMOSST, NEMOCICOVER, NEMOCITHICK, NEMOUCUR, NEMOVCUR, &
+SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
+ &                   FL1, XLLWS,                      & 
+ &                   WAVNUM, CINV, CGROUP,            &
+ &                   DEPTH, UCUR, VCUR, IODP,         &
+ &                   ALTWH, CALTWH, RALTCOR,          &
+ &                   USTOKES, VSTOKES, STRNMS,        &
+ &                   TAUXD, TAUYD, TAUOCXD,           &
+ &                   TAUOCYD, TAUOC, PHIOCD,          &
+ &                   PHIEPS, PHIAW,                   &
+ &                   AIRD, WDWAVE, CICOVER,           &
+ &                   WSWAVE, WSTAR,                   &
+ &                   UFRIC, TAUW,                     &
+ &                   Z0M, Z0B, CHRNCK,                &
+ &                   CITHICK,                         &
+ &                   NEMOSST, NEMOCICOVER,            &
+ &                   NEMOCITHICK, NEMOUCUR, NEMOVCUR, &
  &                   BOUT)
 
 ! ----------------------------------------------------------------------
@@ -86,8 +92,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
 #include "sthq.intfb.h"
 #include "wdirspread.intfb.h"
 #include "weflux.intfb.h"
-!! not active:
-!!#include "w_maxh.intfb.h"
+#include "w_maxh.intfb.h"
 #include "halphap.intfb.h"
 #include "alphap_tail.intfb.h"
 
@@ -123,9 +128,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                &
       REAL(KIND=JWRB), DIMENSION(0:NTEWH) :: TEWH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EM, FM, DP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: C3, C4, BF, QP, HMAX, TMAX
-!! not active: alternative ways to determine wave height extremes 
-!!      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST
-
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ETA_M, R, XNSLC, SIG_TH, EPS, XNU
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FLD1, FLD2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ESWELL ,FSWELL ,THSWELL, P1SWELL, P2SWELL, SPRDSWELL
@@ -180,14 +183,10 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 
       CALL DOMINANT_PERIOD (KIJS, KIJL, FL1, DP)
 
-      CALL KURTOSIS(KIJS, KIJL, FL1,                          &
-     &              DEPTH,                             &
-     &              C3, C4, BF, QP, HMAX, TMAX,               &
+      CALL KURTOSIS(KIJS, KIJL, FL1,                     &
+     &              DEPTH,                               &
+     &              C3, C4, BF, QP, HMAX, TMAX,          &
      &              ETA_M, R, XNSLC, SIG_TH, EPS, XNU)
-
-!! not active: alternative ways to determine wave height extremes 
-!!      CALL W_MAXH (KIJS, KIJL, FL1, DEPTH, WAVNUM,            &
-!!     &             CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST)
 
 !     WIND/SWELL PARAMETERS
       CALL SEPWISW (KIJS, KIJL, MIJ, FL1, XLLWS, CINV,             &
@@ -537,8 +536,8 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
       IR=IR+1
       IF (IPFGTBL(IR) /= 0 .OR. IPFGTBL(IR+1) /= 0) THEN
            CALL WEFLUX (KIJS, KIJL, FL1, CGROUP,    &
-     &                  NFRE, NANG, DFIM, DELTH,           &
-     &                  COSTH, SINTH,                      &
+     &                  NFRE, NANG, DFIM, DELTH,    &
+     &                  COSTH, SINTH,               &
      &                  FLD1, FLD2)
       ENDIF
       IF (IPFGTBL(IR) /= 0) THEN
@@ -605,17 +604,32 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 !     COMPUTE OUTPUT EXTRA FIELDS
 !     add necessary code to compute the extra output fields
       IR=IR+1
-      IF (IPFGTBL(IR) /= 0) THEN
 
 !!!for testing
-        CALL HALPHAP(KIJS, KIJL, WAVNUM, COSWDIF, FL1, HALP)
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=2.0_JWRB*HALP(KIJS:KIJL)
+!!    alternative ways to determine wave height extremes 
+      IF (IPFGTBL(IR  ) /= 0 .OR. IPFGTBL(IR+1) /= 0  .OR. &
+&         IPFGTBL(IR+2) /= 0 .OR. IPFGTBL(IR+3) /= 0 ) THEN
+        CALL W_MAXH (KIJS, KIJL, FL1, DEPTH, WAVNUM,            &
+     &               CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST)
+      ENDIF 
 
+      IF (IPFGTBL(IR) /= 0) THEN
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=CMAX_F(KIJS:KIJL)
       ENDIF
 
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=HMAX_N(KIJS:KIJL)
+      ENDIF
+
+      IR=IR+1
+      IF (IPFGTBL(IR) /= 0) THEN
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=CMAX_ST(KIJS:KIJL)
+      ENDIF
+
+      IR=IR+1
+      IF (IPFGTBL(IR) /= 0) THEN
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=HMAX_ST(KIJS:KIJL)
       ENDIF
 
       IR=IR+1
@@ -623,21 +637,6 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 !!!for testing
         XMODEL_CUTOFF = (ZPI*FR(NFRE))**2/G
         CALL MEANSQS (XMODEL_CUTOFF, KIJS, KIJL, FL1, WAVNUM, UFRIC, COSWDIF, BOUT(KIJS,ITOBOUT(IR)))
-      ENDIF
-
-      IR=IR+1
-      IF (IPFGTBL(IR) /= 0) THEN
-        CALL ALPHAP_TAIL(KIJS, KIJL, FL1, BOUT(KIJS,ITOBOUT(IR)))
-      ENDIF
-
-      IR=IR+1
-      IF (IPFGTBL(IR) /= 0) THEN
-!!! debugging output of Charnock
-        CALL OUTBETA (KIJS, KIJL,                      &
-     &                WSWAVE, UFRIC, Z0M, Z0B, CHRNCK, &
-     &                CHARNOCK, BETAHQ)
-
-        BOUT(KIJS:KIJL,ITOBOUT(IR))=CHARNOCK(KIJS:KIJL)
       ENDIF
 
 

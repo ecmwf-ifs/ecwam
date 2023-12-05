@@ -48,6 +48,7 @@
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX ,LWVFLX_SNL,    &
+     &            LWCOUAST,                                             &
      &            LWCOUNORMS, LLNORMIFS2WAM,LLNORMWAM2IFS,LLNORMWAMOUT, &
      &            LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE,                &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
@@ -195,7 +196,7 @@
      &   NGRIB_VERSION,                                                 &
      &   IMDLGRBID_G, IMDLGRBID_M,                                      &
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
-     &   LWCOU, LNOCDIN, LODBRALT,                                      &
+     &   LWCOU, LWCOUAST, LNOCDIN, LODBRALT,                            &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
      &   IBUFRSAT, CSATNAME,                                            &
      &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,                   &
@@ -346,6 +347,8 @@
 !     NMETNB : METHOD NUMBER TO BE USED FOR GRIBBING OF SEASONAL DATA.
 !              or MONTHLY FORECAST RUNS
 !     LWCOU: FALSE FOR UNCOUPLED RUN (see WVWAMINIT1 if coupled to IFS).
+!     LWCOUAST: IF TRUE AND LWCOU THEN THE ATMOSPHERIC SURFACE STRESS OVER THE OCEAN WILL BE USED
+!               TO COMPUTE THE OCEAN SIDE STRESS
 !     NEMO COUPLING FLAGS:
 !     LWNEMOCOU: FALSE FOR NO COUPLING TO NEMO RUN.
 !     NEMOFRCO: NEMO COUPLING FREQ IN WAM TIME STEPS
@@ -374,7 +377,9 @@
 !     LODBRALT: IF TRUE THEN THE ALTIMETER DATA WILL BE READ AND PASSED 
 !               THROUGH OBSERVATION DATABASE (ODB)
 !     LALTCOR: IF TRUE THEN THE ALTIMETER DATA WILL BE CORRECTED
-!              SEE GRFIELD. 
+!              SEE GRFIELD(but this is different than the bias correction scheme)
+!              It was implemented when the ERS altimeters were used in operation.
+!              We has since then gone for an overall bias correction scheme and so by default this will not be used.. 
 !     L4VTYPE: IF TRUE THEN MARS TYPE 4V IS USED INSTEAD OF FG.
 !     LFRSTFLD: IF TRUE THEN INITIAL INTEGRATED PARAMETER FIELDS WILL
 !               OUTPUT PROVIDED THEY WERE NOT INPUT.
@@ -396,6 +401,7 @@
 !     LALTLRGR: IF TRUE THEN THE ALTIMETER DATA WILL BE CORRECTED
 !               PRIOR TO THEIR ASSIMILATION USING A LINEAR REGRESSION AS
 !               PROVIDED BY HSCOEFCOR AND HSCONSCOR (see below)
+!               This has been replaced by the bias correction scheme
 !     HSCOEFCOR: COEFFICIENT OF THE CORRECTIVE LINEAR REGRESSION FOR
 !                ALTIMETER WAVE HEIGHTS.
 !     HSCONSCOR: CONSTANT OF THE CORRECTIVE LINEAR REGRESSION FOR
@@ -582,7 +588,7 @@
         HSCOEFCOR(ISAT) = 1.0_JWRB
         HSCONSCOR(ISAT) = 0.0_JWRB
 
-        ALTBGTHRSH(ISAT) = 1.0_JWRB
+        ALTBGTHRSH(ISAT) = 1.5_JWRB
 !       if no value is provided in the namelist ALTSDTHRSH will
 !       be set in grfield.
         ALTSDTHRSH(ISAT) = -1.0_JWRB
@@ -590,7 +596,7 @@
 !       HSALTCUT is used in combination with the error estimate of
 !       the altimeter data to determine the minimum Hs allowed for
 !       altimeter data.
-        HSALTCUT(ISAT) = 999999.
+        HSALTCUT(ISAT) = 999999._JWRB
         LALTGRDOUT(ISAT)  = .FALSE.
       ENDDO
 
@@ -641,6 +647,8 @@
       LL1D = .TRUE.
 
       LWCOU = .FALSE.
+
+      LWCOUAST = .TRUE.
 
       LWVFLX_SNL = .TRUE.
 

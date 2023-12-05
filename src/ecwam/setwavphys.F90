@@ -19,12 +19,13 @@ USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,BFCRV,    &
      &                ESH      ,ASH      ,BSH      ,ASWKM    ,BSWKM
 USE YOWCOUP  , ONLY : LLGCBZ0  ,LLNORMAGAM
+USE YOWPARAM , ONLY : NANG
 USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                CHNKMIN_U, TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,&
      &                CDIS     ,DELTA_SDIS, CDISVIS,                    &
      &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C,                     &
-     &                SWELLF5, Z0TUBMAX, Z0RAT
+     &                SWELLF4,  SWELLF7, SWELLF7M1, Z0TUBMAX, Z0RAT
 USE YOWSTAT  , ONLY : IPHYS
 USE YOWTEST  , ONLY : IU06
 
@@ -50,19 +51,26 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         TAUWSHELTER = 0.0_JWRB
 
 !       ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-        ANG_GC_A = 0.35_JWRB
-        ANG_GC_B = 0.65_JWRB
-        ANG_GC_C = 3.0_JWRB
+        IF (NANG <= 24) THEN
+          ANG_GC_A = 0.40_JWRB
+          ANG_GC_B = 0.60_JWRB
+          ANG_GC_C = 3.0_JWRB
+        ELSE
+          ANG_GC_A = 0.35_JWRB
+          ANG_GC_B = 0.65_JWRB
+          ANG_GC_C = 3.0_JWRB
+        ENDIF
 
 !       DIRECTIONALITY CORRECTION FACTORS IN THE GOWTH RATE RENORMALISATION 
         DELTA_THETA_RN = 0.75_JWRB
-        DTHRN_A = 0.60_JWRB
+        DTHRN_A = 0.80_JWRB
         DTHRN_U = 33.0_JWRB
 
 !       DIRECTIONALITY CORRECTION FACTOR FOR THE GRAVITY-CAPILLARY MODEL
         RN1_RN = 0.25_JWRB
 
         TAILFACTOR_PM = 0.0_JWRB   ! i.e. not used
+
 
         IF(LLGCBZ0) THEN
           !!! not yet fully tested !!!
@@ -109,12 +117,17 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         TAILFACTOR = 2.5_JWRB
         TAILFACTOR_PM = 3.0_JWRB
         ALPHAMIN = 0.0001_JWRB
-        ALPHAPMAX = 0.031_JWRB
 
 !       ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-        ANG_GC_A = 0.35_JWRB
-        ANG_GC_B = 0.65_JWRB
-        ANG_GC_C = 3.0_JWRB
+        IF (NANG <= 24) THEN
+          ANG_GC_A = 0.40_JWRB
+          ANG_GC_B = 0.60_JWRB
+          ANG_GC_C = 3.0_JWRB
+        ELSE
+          ANG_GC_A = 0.35_JWRB
+          ANG_GC_B = 0.65_JWRB
+          ANG_GC_C = 3.0_JWRB
+        ENDIF
 
 !       directionality correction factors in the gowth rate renormalisation 
         DELTA_THETA_RN = 0.75_JWRB
@@ -128,9 +141,14 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHA   = 0.0055_JWRB
           CHNKMIN_U = 28._JWRB
 
-          SWELLF5 = 1.2_JWRB
+          SWELLF4 = 1.15E05_JWRB
+          SWELLF7 = 4.32E05_JWRB
+          SWELLF7M1 = 1.0_JWRB/SWELLF7 
+
           Z0TUBMAX = 0.05_JWRB
           Z0RAT = 0.02_JWRB
+
+          ALPHAPMAX = 0.03_JWRB
 
           IF(LLNORMAGAM) THEN
             BETAMAX = 1.39_JWRB
@@ -145,9 +163,14 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHA   = 0.0065_JWRB
           CHNKMIN_U = 33._JWRB
 
-          SWELLF5 = 1.2_JWRB
+          SWELLF4 = 1.5E05_JWRB
+          SWELLF7 = 3.6E05_JWRB
+          SWELLF7M1 = 1.0_JWRB/SWELLF7 
+
           Z0TUBMAX = 0.0005_JWRB
           Z0RAT = 0.04_JWRB
+
+          ALPHAPMAX = 0.031_JWRB
 
           IF(LLNORMAGAM) THEN
             !!! not yet tested !!!

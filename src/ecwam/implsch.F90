@@ -12,6 +12,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                  EMAXDPT, INDEP, DEPTH, IOBND, IODP,      &
  &                  AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR, &
  &                  UFRIC, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, CITHICK, &
+ &                  USTRA, VSTRA, &
  &                  NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN, &
  &                  NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
  &                  NEMOTAUY, NEMOWSWAVE, NEMOPHIF, &
@@ -124,8 +125,9 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IODP
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IOBND
 
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: WDWAVE, CICOVER, AIRD, WSTAR, CITHICK
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: UFRIC, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, WSWAVE
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: UFRIC, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, CITHICK
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: USTRA, VSTRA
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSEMEAN, WSFMEAN, USTOKES, VSTOKES, STRNMS
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, PHIOCD
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: PHIEPS, PHIAW
@@ -249,18 +251,18 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       LUPDTUS = .TRUE.
       NCALL = 2
       DO ICALL = 1, NCALL 
-        CALL SINFLX (ICALL, NCALL, KIJS, KIJL,                      &
-     &               LUPDTUS,                                       &
-     &               FL1,                                           &
-     &               WAVNUM, CINV, XK2CG,      &
-     &               WSWAVE, WDWAVE, AIRD,     &
-     &               RAORW, WSTAR, CICOVER,           &
-     &               COSWDIF, SINWDIF2,                             &
-     &               FMEAN, HALP, FMEANWS,                          &
-     &               FLM,                                           &
-     &               UFRIC, TAUW, TAUWDIR,     &
-     &               Z0M, Z0B, CHRNCK, PHIWA,  &
-     &               FLD, SL, SPOS,                                 &
+        CALL SINFLX (ICALL, NCALL, KIJS, KIJL,  &
+     &               LUPDTUS,                   &
+     &               FL1,                       &
+     &               WAVNUM, CINV, XK2CG,       &
+     &               WSWAVE, WDWAVE, AIRD,      &
+     &               RAORW, WSTAR, CICOVER,     &
+     &               COSWDIF, SINWDIF2,         &
+     &               FMEAN, HALP, FMEANWS,      &
+     &               FLM,                       &
+     &               UFRIC, TAUW, TAUWDIR,      &
+     &               Z0M, Z0B, CHRNCK, PHIWA,   &
+     &               FLD, SL, SPOS,             &
      &               MIJ, RHOWGDFTH, XLLWS)
 
       ENDDO
@@ -268,9 +270,9 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
 
-      CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,                 &
-     &              INDEP, WAVNUM, XK2CG,&
-     &              EMEAN, F1MEAN, XKMEAN,                    &
+      CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,   &
+     &              INDEP, WAVNUM, XK2CG,       &
+     &              EMEAN, F1MEAN, XKMEAN,      &
      &              UFRIC, COSWDIF, RAORW)
 
 !     Save source term contributions relevant for the calculation of ocean fluxes
@@ -359,17 +361,19 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       ENDIF
 
       IF (LCFLX) THEN
-        CALL WNFLUXES (KIJS, KIJL,                              &
-     &                 MIJ, RHOWGDFTH,                          &
+        CALL WNFLUXES (KIJS, KIJL,                       &
+     &                 MIJ, RHOWGDFTH,                   &
      &                 CINV,                             &
      &                 SSOURCE, CICOVER,                 &
-     &                 PHIWA,                                   &
-     &                 EMEAN, F1MEAN, WSWAVE,            &
-     &                 WDWAVE, UFRIC, AIRD,&
-     &                 NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
-     &                 NEMOTAUY, NEMOWSWAVE, NEMOPHIF, &
-     &                 TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, &
-     &                 PHIOCD, PHIEPS, PHIAW, &
+     &                 PHIWA,                            &
+     &                 EMEAN, F1MEAN, WSWAVE, WDWAVE,    &
+     &                 UFRIC, AIRD,                      &
+     &                 USTRA, VSTRA,                     &
+     &                 NPHIEPS, NTAUOC, NSWH, NMWP,      &
+     &                 NEMOTAUX, NEMOTAUY,               &
+     &                 NEMOWSWAVE, NEMOPHIF,             &
+     &                 TAUXD, TAUYD, TAUOCXD, TAUOCYD,   &
+     &                 TAUOC, PHIOCD, PHIEPS, PHIAW,     &
      &                 .TRUE.)
       ENDIF
 ! ----------------------------------------------------------------------

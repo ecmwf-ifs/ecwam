@@ -13,11 +13,13 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
  &                   SSURF, CICOVER,                   &
  &                   PHIWA,                            &
  &                   EM, F1, WSWAVE, WDWAVE,           &
- &                   UFRIC, AIRD,   &
- &                   NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
- &                   NEMOTAUY, NEMOWSWAVE, NEMOPHIF, &
- &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, &
- &                   PHIOCD, PHIEPS, PHIAW, &
+ &                   UFRIC, AIRD,                      &
+ &                   USTRA, VSTRA,                     &
+ &                   NPHIEPS, NTAUOC, NSWH, NMWP,      &
+ &                   NEMOTAUX, NEMOTAUY,               &
+ &                   NEMOWSWAVE, NEMOPHIF,             &
+ &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD,   &
+ &                   TAUOC, PHIOCD, PHIEPS, PHIAW,     &
  &                   LNUPD)
 
 ! ----------------------------------------------------------------------
@@ -66,7 +68,7 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWALTAS , ONLY : EGRCRV   ,AFCRV       ,BFCRV
-      USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOTAUOC
+      USE YOWCOUP  , ONLY : LWCOUAST, LWNEMOCOU, LWNEMOTAUOC
       USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH
       USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH, CIBLOCK
 
@@ -90,6 +92,7 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: PHIWA
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EM, F1, WSWAVE, WDWAVE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, AIRD
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: USTRA, VSTRA
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: PHIOCD, PHIEPS, PHIAW
       REAL(KIND=JWRO), DIMENSION(KIJS:KIJL), INTENT(INOUT) ::  NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX
@@ -210,7 +213,6 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
       ENDIF
 
       DO IJ=KIJS,KIJL
-
         TAU        = AIRD(IJ)*MAX(USTAR(IJ)**2,EPSUS)
         TAUXD(IJ)  = TAU*SIN(WDWAVE(IJ))
         TAUYD(IJ)  = TAU*COS(WDWAVE(IJ))
@@ -219,6 +221,20 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
         TAUOCYD(IJ)= TAUYD(IJ)-OOVAL(IJ)*YSTRESS(IJ)
         TAUO               = SQRT(TAUOCXD(IJ)**2+TAUOCYD(IJ)**2)
         TAUOC(IJ)  = MIN(MAX(TAUO/TAU,TAUOCMIN),TAUOCMAX)
+      ENDDO
+
+      IF (LWCOUAST) THEN
+!       USE THE SURFACE STRESSES AS PROVIDED BY THE ATMOSPHERE AND 
+!       ONLY RESCALE THEM WITH TAUOC
+        WHERE ( USTRA(KIJS:KIJL) /= 0.0_JWRB .OR. VSTRA(KIJS:KIJL) /= 0.0_JWRB )
+          TAUXD(KIJS:KIJL)  = USTRA(KIJS:KIJL)
+          TAUOCXD(KIJS:KIJL)= USTRA(KIJS:KIJL) * TAUOC(KIJS:KIJL)
+          TAUYD(KIJS:KIJL)  = VSTRA(KIJS:KIJL)
+          TAUOCYD(KIJS:KIJL)= VSTRA(KIJS:KIJL) * TAUOC(KIJS:KIJL)
+        ENDWHERE
+      ENDIF
+
+      DO IJ=KIJS,KIJL
 
         XN                = AIRD(IJ)*MAX(USTAR(IJ)**3,EPSUS3)
         PHIOCD(IJ)= OOVAL(IJ)*(PHILF(IJ)-PHIWA(IJ))+(1.0_JWRB-OOVAL(IJ))*PHIOC_ICE*XN
@@ -253,7 +269,7 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
             NEMOTAUY(IJ) = NEMOTAUY(IJ) + TAUYD(IJ)
           ENDIF 
           NEMOWSWAVE(IJ) = NEMOWSWAVE(IJ) + WSWAVE(IJ)
-          NEMOPHIF(IJ)   = NEMOPHIF(IJ) + PHIOCD(IJ) 
+          NEMOPHIF(IJ)   = NEMOPHIF(IJ) + PHIOCD(IJ)
         ENDIF
       ENDDO
 

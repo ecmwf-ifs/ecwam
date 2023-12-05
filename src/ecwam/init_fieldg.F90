@@ -102,6 +102,8 @@ ENDIF
             FIELDG%LKFR(IX,JY)    = 0.0_JWRB
             FIELDG%AIRD(IX,JY)    = ROAIR
             FIELDG%WSTAR(IX,JY)   = WSTAR0
+            FIELDG%USTRA(IX,JY)   = 0.0_JWRB
+            FIELDG%VSTRA(IX,JY)   = 0.0_JWRB
             FIELDG%UCUR(IX,JY)    = 0.0_JWRB
             FIELDG%VCUR(IX,JY)    = 0.0_JWRB
             FIELDG%TAUW(IX,JY)    = 0.0_JWRB

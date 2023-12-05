@@ -180,6 +180,16 @@ PROGRAM CREATE_BATHY
       READ(5,*) CLINE
       READ(5,*) LORIGINAL 
 
+!!!!debile
+      IF ( IRGG == 1 ) THEN
+        WRITE(*,*) ' Sorry !!!'
+        WRITE(*,*) ' this is not working for irregular grid !!!'
+        WRITE(*,*) ' because the output need to be reformatted'
+        WRITE(*,*) ' as in create_wam_bathymetry_ETOPO1'
+        WRITE(*,*) ' Consider using create_wam_bathymetry_ETOPO1 instead'
+        STOP
+      ENDIF
+
 !     CHECK IF FILE grid_description IS PRESENT
 !     IF IT IS THERE IT WILL SUPERSEDE THE OTHER INPUT
 

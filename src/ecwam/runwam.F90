@@ -93,8 +93,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LWCOU, LWCOU2W, LWCOURNW , LWCOUHMF, LWFLUX,&
-     &                      LWNEMOCOU,                                  &
+      USE YOWCOUP  , ONLY : LWCOU, LWCOU2W, LWCOURNW , LWCOUAST    ,    &
+     &                      LWCOUHMF, LWFLUX, LWNEMOCOU            ,    &
      &                      NEMOINIDATE, NEMOINITIME               ,    &
      &                      NEMOITINI,   NEMOITEND                 ,    &
      &                      NEMOTSTEP,   NEMOFRCO                  ,    &
@@ -215,6 +215,7 @@
       LWCOU=.FALSE.
       LWCOU2W=.FALSE.
       LWCOURNW=.FALSE.
+      LWCOUAST=.FALSE.
       LWCOUHMF=.FALSE.
       LWFLUX=.FALSE. ! will be reset to true if ocean fluxes are output.
       LWCUR=.FALSE. ! only used in coupled runs with atmospheric model

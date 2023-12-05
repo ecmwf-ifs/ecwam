@@ -61,9 +61,13 @@
 !                   FIELDS(:,1) = U COMPONENT OF NEUTRAL WIND SPEED (U10)
 !                   FIELDS(:,2) = V COMPONENT OF NEUTRAL WIND SPEED (V10)
 !                   FIELDS(:,3) = AIR DENSITY
-!                   FIELDS(:,4) = ZI/L USED FOR GUSTINESS
+!                   FIELDS(:,4) = CONVECTIVE VELOCITY SCALE (w*)
 !                   FIELDS(:,5) = SEA ICE FRACTION 
 !                   FIELDS(:,6) = LAKE FRACTION 
+!                   FIELDS(:,7) = U COMPONENT OF ATMOSPHERIC SURFACE STRESS
+!                   FIELDS(:,8) = V COMPONENT OF ATMOSPHERIC SURFACE STRESS
+!                   FIELDS(:,9) = U COMPONENT OF OCEAN SURFACE CURREMT 
+!                   FIELDS(:,10)= V COMPONENT OF OCEAN SURFACE CURREMT 
 
 !        WAVE MODEL GRID SPECIFICATION (INPUT):
 !        *NGX*    - NUMBER OF COLUMNS IN ARRAY FIELD USED.              
@@ -190,7 +194,8 @@
             FIELDG%WSTAR(I,J) = ZLGUST*FIELDS(IJBLOCK(I,J),4) + (1.0_JWRB-ZLGUST)*WSTAR0
             FIELDG%CICOVER(I,J) = FIELDS(IJBLOCK(I,J),5)
             FIELDG%LKFR(I,J) = ZLLKC*FIELDS(IJBLOCK(I,J),6)
-
+            FIELDG%USTRA(I,J) = FIELDS(IJBLOCK(I,J),7)
+            FIELDG%VSTRA(I,J) = FIELDS(IJBLOCK(I,J),8)
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
             FIELDG%CITHICK(I,J) = 0.0_JWRB
           ENDDO
@@ -200,8 +205,8 @@
               DO IJ = KIJS, KIJLMAX
                 I = IFROMIJ(IJ)
                 J = JFROMIJ(IJ)
-                FIELDG%UCUR(I,J) = FIELDS(IJBLOCK(I,J),7)
-                FIELDG%VCUR(I,J) = FIELDS(IJBLOCK(I,J),8)
+                FIELDG%UCUR(I,J) = FIELDS(IJBLOCK(I,J),9)
+                FIELDG%VCUR(I,J) = FIELDS(IJBLOCK(I,J),10)
               ENDDO
             ELSE
               DO IJ = KIJS, KIJLMAX
@@ -341,17 +346,27 @@
               FIELDG%LKFR(I,J) = 0.0_JWRB
             ENDIF
 
+            FIELDG%USTRA(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),7) +  &
+     &                        DII1*FIELDS(IJBLOCK(II1,JJ),7) ) +     &
+     &                  DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),7) +     &
+     &                        DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),7) )
+
+            FIELDG%VSTRA(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),8) +  &
+     &                        DII1*FIELDS(IJBLOCK(II1,JJ),8) ) +     &
+     &                  DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),8) +     &
+     &                        DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),8) )
+
             IF (LLNEWCURR) THEN
               IF (LWCUR) THEN
-                FIELDG%UCUR(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),7) +  &
-     &                           DII1*FIELDS(IJBLOCK(II1,JJ),7) ) +     &
-     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),7) +     &
-     &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),7) )
+                FIELDG%UCUR(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),9) +  &
+     &                           DII1*FIELDS(IJBLOCK(II1,JJ),9) ) +     &
+     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),9) +     &
+     &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),9) )
 
-                FIELDG%VCUR(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),8) +  &
-     &                           DII1*FIELDS(IJBLOCK(II1,JJ),8) ) +     &
-     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),8) +     &
-     &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),8) )
+                FIELDG%VCUR(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),10) +  &
+     &                           DII1*FIELDS(IJBLOCK(II1,JJ),10) ) +     &
+     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),10) +     &
+     &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),10) )
               ELSE
                 FIELDG%UCUR(I,J) = 0.0_JWRB
                 FIELDG%VCUR(I,J) = 0.0_JWRB
