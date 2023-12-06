@@ -143,6 +143,11 @@ begofrn=$(read_config begin                --format="%Y%m%d%H%M%S")
 endofrn=$(read_config end                  --format="%Y%m%d%H%M%S")
 begoffo=$(read_config forcings.at[1].begin --format="%Y%m%d%H%M%S" --default=${endofrn} )
 
+# MODEL SETUP:
+##############
+wamnang=$(read_config directions)
+wamnfre=$(read_config frequencies)
+
 forcings_file=$(read_config forcings.file)
 
 opti=1
@@ -206,6 +211,9 @@ cat > PREINFO <<EOF
  MARSTYPE  = "an"
  YCLASS    = "rd"
  YEXPVER   = "wave"
+ NANG      = ${wamnang}
+ NFRE      = 36
+ NFRE_RED  = ${wamnfre}
 /
 EOF
 

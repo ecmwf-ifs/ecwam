@@ -76,6 +76,11 @@ for restart_time in $(read_config output.restart.at[:].time --format=%Y%m%d%H%M%
   NAOS+="&NAOS CLSOUT=\"${restart_time}\" /"
 done
 
+# MODEL SETUP:
+##############
+wamnang=$(read_config directions)
+wamnfre=$(read_config frequencies)
+
 nproma=$(read_config nproma --default=24)
 
 # read timesteps
@@ -196,6 +201,9 @@ ln -s ${DATA_DIR}/${forcings_file} sfcwindin
 
 cat > wam_namelist << EOF
 &NALINE
+  NANG                  = ${wamnang},
+  NFRE                  = 36,
+  NFRE_RED              = ${wamnfre},
   CLHEADER              = " WAVE MODEL ",
   CBPLTDT               = "${begofrn}",
   CEPLTDT               = "${endofrn}",
