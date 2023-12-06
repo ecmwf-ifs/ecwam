@@ -140,12 +140,14 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                      FF_NEXT  ,                                  &
      &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE,        &
      &                      NXFFS_LOC,NXFFE_LOC,NYFFS_LOC,NYFFE_LOC
+      USE YOMLUN   , ONLY : NULERR
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWASSI  , ONLY : WAMASSI
       USE YOWGRIB  , ONLY : IGRIB_GET_VALUE
       USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_GATHERV
+      USE ECFLOW_LIGHT, ONLY : ECFLOW_LIGHT_UPDATE_METER
 ! ---------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -281,6 +283,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
       LOGICAL :: LLINIT_FIELDG
+
+      CHARACTER(LEN = 64) :: METER_NAME
+      INTEGER(KIND=JWIM)  :: METER_VALUE
+      INTEGER(KIND=JWIM)  :: ERROR
+      CHARACTER(LEN = 16) :: ERROR_STR
 
       DATA LFRST /.TRUE./
       DATA LFRSTCHK /.TRUE./
@@ -657,24 +664,14 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL DIFDATE (CDATEF, CDTPRO, IFCST)
         IFCSTEP_HOUR=IFCST/3600
         IF (IRANK == 1) THEN
-          WRITE(CLSETEV,' (A25,'' step '',I8,''&'') ') CMETER,IFCSTEP_HOUR
-          CLSMSNAME="                                             "
-          CLECFNAME="                                             "
-          CALL GET_ENVIRONMENT_VARIABLE(NAME=CL_CPENV,     VALUE=CLSMSNAME, LENGTH=ICPLEN)
-          CALL GET_ENVIRONMENT_VARIABLE(NAME=CL_CPENV_ECF, VALUE=CLECFNAME, LENGTH=ICPLEN_ECF)
-          IF( ICPLEN     == 0 ) CLSMSNAME = 'NOSMS'
-          IF( ICPLEN_ECF == 0 ) CLECFNAME = 'NOECF'
-          IF ((ICPLEN > 0.AND.CLSMSNAME(1:5) /= 'NOSMS') .OR.           &
-     &        (ICPLEN_ECF > 0.AND.CLECFNAME(1:5) /= 'NOECF') ) THEN
-            CALL SYSTEM(CLSETEV)
-            WRITE(IU06,'(2X,A25,I8,'' posted '')') CMETER,IFCSTEP_HOUR
-          ELSE
-            WRITE(IU06,'(A25,I8)') CMETER,IFCSTEP_HOUR
-            WRITE(IU06,*) 'not posted  because neither SMSNAME'
-            WRITE(IU06,*) ICPLEN, CLSMSNAME
-            WRITE(IU06,*) 'nor ECF_NAME  is defined. '
-            WRITE(IU06,*) ICPLEN_ECF, CLECFNAME
-          ENDIF
+          METER_NAME = "step"
+          METER_VALUE = IFCSTEP_HOUR
+
+          WRITE(NULERR,FMT='("Setting task meter """,A,""" to value """,I,"""")') TRIM(METER_NAME),METER_VALUE
+          ERROR = ECFLOW_LIGHT_UPDATE_METER(METER_NAME, METER_VALUE)
+
+          WRITE(ERROR_STR, *) ERROR
+          WRITE(NULERR,FMT='("Update task meter finished, with result """,A,"""")') TRIM(ERROR_STR)
         ENDIF
       ENDIF
 

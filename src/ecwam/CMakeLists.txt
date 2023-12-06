@@ -421,7 +421,7 @@ endif()
 ecbuild_add_library(
     TARGET           ${ecwam}
     SOURCES          ${ecwam_srcs}
-    PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
+    PUBLIC_LIBS      fiat parkind_${prec} ecflow_lightf ${ecwam}_intfb
                      ${MPI_Fortran_LIBRARIES}
                      ${${PNAME}_OCEANMODEL_LIBRARIES}
     PRIVATE_LIBS     eccodes_f90
