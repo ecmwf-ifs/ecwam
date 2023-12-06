@@ -423,7 +423,7 @@ endif()
 ecbuild_add_library(
     TARGET           ${ecwam}
     SOURCES          ${ecwam_srcs}
-    PUBLIC_LIBS      fiat parkind_${prec} ecflow_lightf ${ecwam}_intfb
+    PUBLIC_LIBS      fiat parkind_${prec} $<$<NOT:${ECWAM_STANDALONE}>:ecflow_lightf> ${ecwam}_intfb
                      ${MPI_Fortran_LIBRARIES}
                      ${${PNAME}_OCEANMODEL_LIBRARIES}
     PRIVATE_LIBS     eccodes_f90
@@ -432,7 +432,7 @@ ecbuild_add_library(
                      field_api_${prec}
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
     PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS}
-    PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
+    PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS} $<${ECWAM_STANDALONE}:_ECWAM_STANDALONE>
 )
 
 ecwam_target_fortran_module_directory(
