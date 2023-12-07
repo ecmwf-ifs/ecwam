@@ -9,7 +9,6 @@
 
 SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)
 
-use nvtx
 ! ----------------------------------------------------------------------
 
 !**** *PROPAGS2* -  ADVECTION USING THE CORNER TRANSPORT SCHEME IN SPACE
@@ -96,12 +95,6 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
         IF (IREFRA /= 2 .AND. IREFRA /= 3 ) THEN
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
-   
-!call nvtxStartRange("PROPAGS2: Begin loop NANG")
-
-!!$acc enter data create(FJ1, FJ2, FJ3, FJ4, FJ5) copyin(KLON, KLAT, KCOR, WKPMN, LLWKPMN, SUMWN, WLONN, WLATN, WCORN) 
-!!$acc enter data present(F1, F3)
-!! create(FJ1, FJ2, FJ3, FJ4, FJ5) copyin(KLON, KLAT, KCOR, WKPMN, LLWKPMN, SUMWN, WLONN, WLATN, WCORN)
 
 !$acc kernels loop present(F1,F3) create(FJ1, FJ2, FJ3, FJ4, FJ5) PRESENT(KLON,KLAT,KCOR,WKPMN,LLWKPMN, SUMWN, WLONN, WLATN, WCORN) PRESENT(JXO,JYO,KCR)
         DO K = 1, NANG
@@ -123,7 +116,6 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
-             !!$acc loop vector
               IF (LLWKPMN(K,M,-1).AND.(.NOT.LLWKPMN(K,M,1))) THEN
               DO IJ = KIJS, KIJL
                 F3(IJ,K,M) =                                            &
@@ -184,7 +176,6 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
               ENDDO
               END IF
 
-            !!$acc loop vector
 !              DO IC=-1,1,2
 !                IF (LLWKPMN(K,M,IC)) THEN
 !                !!$acc loop vector
@@ -197,11 +188,6 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
             ENDDO
           ENDDO
           !$acc end kernels 
-
-!!$acc exit data copyout(F3)
-!!$acc exit data delete(FJ1, FJ2, FJ3, FJ4, FJ5)
-
-!  call nvtxEndRange
 
         ELSE
 !*      DEPTH AND CURRENT REFRACTION.

@@ -13,7 +13,6 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
  &               WLATM1, WCORM1, DP,                      &
  &               CGROUP_EXT, OMOSNH2KD_EXT,               &
  &               COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT )
-use nvtx 
 ! ----------------------------------------------------------------------
 
 !**** *CTUW* - COMPUTATION OF THE CONER TRANSPORT SCHEME WEIGHTS.
@@ -143,7 +142,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
 !*        LOOP OVER FREQUENCIES.
 !         ----------------------
-!          call nvtxStartRange("ctuw: Loop 1")
 !$acc kernels !loop private(CGYP,KIJS,KIJL,CGX,IX,KY,UU,UREL,ISSU,VV,VREL,ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
           DO M = MSTART, MEND
 
@@ -367,7 +365,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
           ENDDO  ! END LOOP OVER FREQUENCIES
 
 !$acc end kernels
-!          call nvtxEndRange
          
 
  
@@ -416,7 +413,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*    LOOP OVER DIRECTIONS.
 !     ---------------------
 
-!      call nvtxStartRange("ctuw: Loop 2")
 !$acc parallel loop private(km1,kp1,sp,sm,DELFR0,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM)
       DO K=1,NANG
         KP1 = K+1
@@ -529,14 +525,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
       ENDDO  ! END LOOP ON DIRECTIONS
 !$acc end parallel
-!      call nvtxEndRange
 
 !     CHECK THAT WEIGHTS ARE LESS THAN 1
 !     AND COMPUTE THEIR SUM AND CHECK IT IS LESS THAN 1 AS WELL
 !!!   THE SUM IS NEEDED LATER ON !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!      call nvtxStartRange("ctuw: Loop 3")
-!!$acc kernels loop seq
 #IFNDEF _OPENACC
       DO K=1,NANG
         DO M = MSTART, MEND
@@ -693,12 +686,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
         ENDDO  ! END LOOP OVER FREQUENCIES
       ENDDO  ! END LOOP OVER DIRECTIONS
 #ENDIF
-!!$acc end kernels
-!      call nvtxEndRange
-
-!!WORKAROUNDDDDDDD
-!LCFLFAIL=.FALSE.
-!!WORKAROUNDDDDDDD
 
       DO IJ=KIJS,KIJL
         IF (LCFLFAIL(IJ)) THEN
@@ -711,7 +698,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !!!!!!INCLUDE THE BLOCKING COEFFICIENTS INTO THE WEIGHTS OF THE
 !     SURROUNDING POINTS.
 
-!      call nvtxStartRange("ctuw: Loop 4")
 !$acc parallel loop collapse(3)
       DO K=1,NANG
         DO M = MSTART, MEND
@@ -743,7 +729,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
         ENDDO  ! END LOOP ON FREQUENCIES
       ENDDO  ! END LOOP OVER DIRECTIONS
 !$acc end parallel
- !      call nvtxEndRange
 
 IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
 
