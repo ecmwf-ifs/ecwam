@@ -381,13 +381,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           WRITE(IU06,*)'+   ABORT SERVICE ROUTINE CALLED BY USERIN  +'
           WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
           CALL ABORT1
-        ELSEIF (IPROPAGS == 2 .AND. (IREFRA == 2 .OR. IREFRA == 3) ) THEN
-          WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
-          WRITE(IU06,*)'+   SPLITTING BETWEEN SLOW AND FAST WAVES (IFRELFMAX > 0) +'
-          WRITE(IU06,*)'+   IS AN APPROXIMATION !!!!!!!!!'
-          WRITE(IU06,*)'+   IPROPAGS = ', IPROPAGS
-          WRITE(IU06,*)'+   IREFRA = ', IREFRA
-          WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
         ENDIF
 
         ! MAKE SURE DELPRO_LF IS A PROPER SUB-MULTIPLE OF IDELPRO,
@@ -677,6 +670,17 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' PROPAGATION TIME STEP FOR FAST WAVES : ', DELPRO_LF,' SECS'
         WRITE(IU06,*) ' PROPAGATION TIME STEP FOR SLOW WAVES : ', IDELPRO,' SECS'
         WRITE(IU06,*) ' FAST WAVES ARE THOSE WITH FREQUENCY BELOW : ', FR(IFRELFMAX),' HZ'
+
+        IF (IPROPAGS == 2 .AND. (IREFRA == 2 .OR. IREFRA == 3) ) THEN
+          WRITE(IU06,*)''
+          WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
+          WRITE(IU06,*)'+   SPLITTING BETWEEN SLOW AND FAST WAVES (IFRELFMAX > 0) +'
+          WRITE(IU06,*)'+   IS AN APPROXIMATION FOR !!!!!!!!!'
+          WRITE(IU06,*)'+   IPROPAGS = ', IPROPAGS
+          WRITE(IU06,*)'+   IREFRA = ', IREFRA
+          WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
+        ENDIF
+
       ELSE
         WRITE(IU06,*) ' PROPAGATION TIME STEP ............: ', IDELPRO,' SECS'
       ENDIF
