@@ -60,8 +60,6 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE EC_LUN   , ONLY : NULERR
 
-      USE NVTX
-
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -118,10 +116,8 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
         NPROMA=(IJLG-IJSG+1)/MTHREADS + 1
 
 
-!        !$acc data COPYIN(FL1_EXT)
 !!! the advection schemes are still written in block structure
 !!! mapping chuncks to block ONLY for actual grid points !!!!
-!        call nvtxStartRange("PROPAG: Loop 1")
 #ifndef _OPENACC
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K)
 #endif /*_OPENACC*/
@@ -144,7 +140,6 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 #ifndef _OPENACC
 !$OMP   END PARALLEL DO
 #endif /*_OPENACC*/
-!        call nvtxEndRange
 
 !       SET THE DUMMY LAND POINT TO 0.
         !$acc kernels
@@ -231,7 +226,6 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                LUPDTWGHT=.FALSE.
              ENDIF
 
-!             call nvtxStartRange("PROPAG: First preloop")
 #ifndef _OPENACC
 !$OMP        PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
 #endif /*_OPENACC*/
@@ -243,17 +237,14 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 #ifndef _OPENACC             
 !$OMP        END PARALLEL DO
 #endif /*_OPENACC*/
-!             call nvtxEndRange
 
 !            SUB TIME STEPPING FOR FAST WAVES (only if IFRELFMAX > 0)
              IF (IFRELFMAX > 0 ) THEN
                NSTEP_LF = NINT(REAL(IDELPRO, JWRB)/DELPRO_LF)
                ISUBST = 2  ! The first step was done as part of the previous call to PROPAGS2
 
-!               call nvtxStartRange("PROPAG: While loop")
                DO WHILE (ISUBST <= NSTEP_LF)
 
-!        call nvtxStartRange("PROPAG: Loop 2")
 #ifndef _OPENACC
 !$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, M, K, IJ)
 #endif /*_OPENACC*/
@@ -274,11 +265,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 #ifndef _OPENACC
 !$OMP            END PARALLEL DO
 #endif /*_OPENACC*/
-!        call nvtxEndRange
 
                  CALL MPEXCHNG(FL1_EXT(:,:,1:IFRELFMAX), NANG, 1, IFRELFMAX)
 
-!call nvtxStartRange("PROPAG: Inner propags2 loop")
 #ifndef _OPENACC
 !$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
 #endif /*_OPENACC*/
@@ -294,12 +283,10 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 #ifndef _OPENACC
 !$OMP            END PARALLEL DO
 #endif /*_OPENACC*/
-!                 call nvtxEndRange
 
                  ISUBST = ISUBST + 1
 
                ENDDO
-!  call nvtxEndRange
              
 ENDIF  ! end sub time steps (if needed)
 
@@ -357,7 +344,6 @@ ENDIF  ! end sub time steps (if needed)
 
 !!! the advection schemes are still written in block structure
 !!!  So need to convert back to the nproma_wam chuncks
-!        call nvtxStartRange("PROPAG: Loop 3")
 #ifndef _OPENACC
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K)
 #endif /*_OPENACC*/
@@ -396,36 +382,9 @@ ENDIF  ! end sub time steps (if needed)
           ENDDO
         !$acc end kernels
 
-!F        !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
-!F          DO ICHNK = 1, NCHNK
-!F            KIJS = 1
-!F            IJSB = IJFROMCHNK(KIJS, ICHNK)
-!F            KIJL = KIJL4CHNK(ICHNK)
-!F            IJLB = IJFROMCHNK(KIJL, ICHNK)
-!F            !$acc loop seq collapse(2)
-!F            DO M = 1, NFRE_RED
-!F              DO K = 1, NANG
-!F                FL1(KIJS:KIJL, K, M, ICHNK) = FL3_EXT(IJSB:IJLB, K, M)
-!F              ENDDO
-!F            ENDDO
-!F
-!F            IF (KIJL < NPROMA_WAM) THEN
-!F              !!! make sure fictious points keep values of the first point in the chunk
-!F              !$acc loop independent collapse(2)
-!F              DO M = 1, NFRE_RED
-!F                DO K = 1, NANG
-!F                  FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)
-!F                ENDDO
-!F              ENDDO
-!F            ENDIF
-!F
-!F          ENDDO
-!F        !$acc end kernels
 #ifndef _OPENACC
 !$OMP     END PARALLEL DO
 #endif /*_OPENACC*/
-!        call nvtxEndRange
-
 
            CALL GSTATS(1430,1)
 
