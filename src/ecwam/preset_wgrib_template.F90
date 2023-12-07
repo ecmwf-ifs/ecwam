@@ -125,12 +125,19 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         IGRIB_VERSION = NGRIB_VERSION
       ENDIF
 
+      IF( PRESENT(LLCREATE) ) THEN
+        LLCRT = LLCREATE
+      ELSE
+        LLCRT = .FALSE. 
+      ENDIF
+
 !!!! it seems that grib2 is not yet ready for spectra 
 !!!! for the time being revert to using grib 1
       IF (CT == "S") THEN
         IF ( IGRIB_VERSION == 2 ) THEN
 
          IGRIB_VERSION=1
+         LLCRT = .TRUE.
 
           WRITE(NULERR,*) ''
           WRITE(NULERR,*) '*******************************************************'
@@ -141,13 +148,6 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           WRITE(NULERR,*) ''
 
         ENDIF
-      ENDIF
-
-
-      IF( PRESENT(LLCREATE) ) THEN
-        LLCRT = LLCREATE
-      ELSE
-        LLCRT = .FALSE. 
       ENDIF
 
       IF( PRESENT(NBITSPERVALUE) ) THEN
