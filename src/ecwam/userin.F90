@@ -372,7 +372,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !!    SETTING THE LOW FREQUENCY TIME STEP, IF THAT OPTION IS USED
 
       IF (IFRELFMAX > 0 ) THEN
-        IF (IPROPAGS /= 2 .OR. IREFRA == 2 .OR. IREFRA == 3) THEN
+        IF (IPROPAGS /= 2 .AND. (IREFRA == 2 .OR. IREFRA == 3) ) THEN
           WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
           WRITE(IU06,*)'+   SPLITTING BETWEEN SLOW AND FAST WAVES (IFRELFMAX > 0) +'
           WRITE(IU06,*)'+   IS NOT AN OPTION FOR ' 
@@ -381,6 +381,13 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           WRITE(IU06,*)'+   ABORT SERVICE ROUTINE CALLED BY USERIN  +'
           WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
           CALL ABORT1
+        ELSEIF (IPROPAGS == 2 .AND. (IREFRA == 2 .OR. IREFRA == 3) ) THEN
+          WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
+          WRITE(IU06,*)'+   SPLITTING BETWEEN SLOW AND FAST WAVES (IFRELFMAX > 0) +'
+          WRITE(IU06,*)'+   IS AN APPROXIMATION !!!!!!!!!'
+          WRITE(IU06,*)'+   IPROPAGS = ', IPROPAGS
+          WRITE(IU06,*)'+   IREFRA = ', IREFRA
+          WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
         ENDIF
 
         ! MAKE SURE DELPRO_LF IS A PROPER SUB-MULTIPLE OF IDELPRO,

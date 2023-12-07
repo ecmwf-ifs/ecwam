@@ -231,14 +231,14 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
              DO JKGLO = IJSG, IJLG, NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1, IJLG)
-               CALL PROPAGS2(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL, NANG, 1, NFRE_RED)
+               CALL PROPAGS2(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL, NANG, 1, NFRE_RED, 1, NFRE_RED)
              ENDDO
 #ifndef _OPENACC             
 !$OMP        END PARALLEL DO
 #endif /*_OPENACC*/
 
 !            SUB TIME STEPPING FOR FAST WAVES (only if IFRELFMAX > 0)
-             IF (IFRELFMAX > 0 ) THEN
+             IF (IFRELFMAX > 0 .AND. IFRELFMAX < NFRE_RED) THEN
                NSTEP_LF = NINT(REAL(IDELPRO, JWRB)/DELPRO_LF)
                ISUBST = 2  ! The first step was done as part of the previous call to PROPAGS2
 
@@ -277,7 +277,8 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
 
 
-                   CALL PROPAGS2(FL1_EXT(:,:,1:IFRELFMAX), FL3_EXT(:,:,1:IFRELFMAX), NINF, NSUP, KIJS, KIJL, NANG, 1, IFRELFMAX)
+                   CALL PROPAGS2(FL1_EXT(:,:,1:IFRELFMAX), FL3_EXT(:,:,1:IFRELFMAX), NINF, NSUP, KIJS, KIJL, NANG, &
+                   &             1, IFRELFMAX + 1, 1, IFRELFMAX)
                  ENDDO
 #ifndef _OPENACC
 !$OMP            END PARALLEL DO

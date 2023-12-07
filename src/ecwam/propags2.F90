@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)
+SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)
 
 ! ----------------------------------------------------------------------
 
@@ -21,15 +21,17 @@ SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PROPAGS2(F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)*
+!       *CALL* *PROPAGS2(F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)*
 !          *F1*          - SPECTRUM AT TIME T (with exchange halo).
 !          *F3*          - SPECTRUM AT TIME T+DELT
 !          *NINF:NSUP+1* - 1st DIMENSION OF F1 and F3
 !          *KIJS*        - ACTIVE INDEX OF FIRST POINT
 !          *KIJL*        - ACTIVE INDEX OF LAST POINT
 !          *NANG*        - NUMBER OF DIRECTIONS
+!          *ND3SF1*      - LOWER 3rd DIMENSION OF F1 
+!          *ND3EF1*      - UPPER 3d DIMENSION OF F1 
 !          *ND3S*        - FREQUENCY INDEX SOLVED BY THIS CALL ND3S:ND3E
-!          *ND3E*
+!          *ND3E*        - FREQUENCY INDEX SOLVED BY THIS CALL ND3S:ND3E
 
 !     METHOD.
 !     -------
@@ -67,7 +69,7 @@ SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)
 
 #include "abort1.intfb.h"
 
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3S:ND3E), INTENT(IN) :: F1
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3SF1:ND3EF1), INTENT(IN) :: F1
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3S:ND3E), INTENT(OUT) :: F3
       INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
