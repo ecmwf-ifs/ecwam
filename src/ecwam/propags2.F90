@@ -110,24 +110,11 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
      &         + WLATN(IJ,K,M,JYO(K,1),1) * F1(KLAT(IJ,JYO(K,1),1),K  ,M) &
      &         + WLATN(IJ,K,M,JYO(K,1),2) * F1(KLAT(IJ,JYO(K,1),2),K  ,M) &
      &         + WCORN(IJ,K,M,1,1)        * F1(KCOR(IJ,KCR(K,1),1),K  ,M) &
-     &         + WCORN(IJ,K,M,1,2)        * F1(KCOR(IJ,KCR(K,1),2),K  ,M)
+     &         + WCORN(IJ,K,M,1,2)        * F1(KCOR(IJ,KCR(K,1),2),K  ,M) &
+     &         + WKPMN(IJ,K,M,-1)         * F1(IJ,KPM(K,-1),M)            &
+     &         + WKPMN(IJ,K,M, 1)         * F1(IJ,KPM(K, 1),M)
               ENDDO
 
-              IF (LLWKPMN(K,M,-1)) THEN
-!DIR$ IVDEP
-!DIR$ PREFERVECTOR
-                DO IJ = KIJS, KIJL
-                  F3(IJ,K,M) = F3(IJ,K,M) + WKPMN(IJ,K,M,-1)* F1(IJ,KPM(K,-1),M)
-                ENDDO
-              ENDIF
-
-              IF (LLWKPMN(K,M, 1)) THEN
-!DIR$ IVDEP
-!DIR$ PREFERVECTOR
-                DO IJ = KIJS, KIJL
-                  F3(IJ,K,M) = F3(IJ,K,M) + WKPMN(IJ,K,M, 1)* F1(IJ,KPM(K, 1),M)
-                ENDDO
-              ENDIF
             ENDDO
           ENDDO
           !$acc end kernels 
@@ -147,37 +134,47 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
               ENDDO
 
               DO IC=1,2
-                DO IJ = KIJS, KIJL
-                  F3(IJ,K,M) = F3(IJ,K,M) + WLONN(IJ,K,M,IC)*F1(KLON(IJ,IC),K,M)
-                ENDDO
+                IF (LLWLONN(K,M,IC)) THEN
+                  DO IJ = KIJS, KIJL
+                    F3(IJ,K,M) = F3(IJ,K,M) + WLONN(IJ,K,M,IC)*F1(KLON(IJ,IC),K,M)
+                  ENDDO
+                ENDIF
               ENDDO
 
               DO ICL=1,2
                 DO IC=1,2
-                  DO IJ = KIJS, KIJL
-                    F3(IJ,K,M) = F3(IJ,K,M) + WLATN(IJ,K,M,IC,ICL)*F1(KLAT(IJ,IC,ICL),K,M)
-                  ENDDO
+                  IF (LLWLATN(K,M,IC,ICL)) THEN
+                    DO IJ = KIJS, KIJL
+                      F3(IJ,K,M) = F3(IJ,K,M) + WLATN(IJ,K,M,IC,ICL)*F1(KLAT(IJ,IC,ICL),K,M)
+                    ENDDO
+                  ENDIF
                 ENDDO
               ENDDO
 
               DO ICL=1,2
                 DO ICR=1,4
+                  IF (LLWCORN(K,M,ICR,ICL)) THEN
+                    DO IJ = KIJS, KIJL
+                      F3(IJ,K,M) = F3(IJ,K,M) + WCORN(IJ,K,M,ICR,ICL)*F1(KCOR(IJ,KCR(K,ICR),ICL),K,M)
+                    ENDDO
+                  ENDIF
+                ENDDO
+              ENDDO
+
+              DO IC=-1,1,2
+                IF (LLWKPMN(K,M,IC)) THEN
                   DO IJ = KIJS, KIJL
-                    F3(IJ,K,M) = F3(IJ,K,M) + WCORN(IJ,K,M,ICR,ICL)*F1(KCOR(IJ,KCR(K,ICR),ICL),K,M)
+                    F3(IJ,K,M) = F3(IJ,K,M) + WKPMN(IJ,K,M,IC)* F1(IJ,KPM(K,IC),M)
                   ENDDO
-                ENDDO
+                ENDIF
               ENDDO
 
               DO IC=-1,1,2
-                DO IJ = KIJS, KIJL
-                  F3(IJ,K,M) = F3(IJ,K,M) + WKPMN(IJ,K,M,IC)* F1(IJ,KPM(K,IC),M)
-                ENDDO
-              ENDDO
-
-              DO IC=-1,1,2
-                DO IJ = KIJS, KIJL
-                  F3(IJ,K,M) = F3(IJ,K,M) + WMPMN(IJ,K,M,IC)* F1(IJ,K,MPM(M,IC))
-                ENDDO
+                IF (LLWMPMN(K,M,IC)) THEN
+                  DO IJ = KIJS, KIJL
+                    F3(IJ,K,M) = F3(IJ,K,M) + WMPMN(IJ,K,M,IC)* F1(IJ,K,MPM(M,IC))
+                  ENDDO
+                ENDIF
               ENDDO
 
             ENDDO
