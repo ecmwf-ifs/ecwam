@@ -256,6 +256,11 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                NSTEP_LF = NINT(REAL(IDELPRO, JWRB)/DELPRO_LF)
                ISUBST = 2  ! The first step was done as part of the previous call to PROPAGS2
 
+               ND3SF1=1
+               ND3EF1=NFRE_RED
+               ND3S=1
+               ND3E=NFRE_RED
+
                DO WHILE (ISUBST <= NSTEP_LF)
 
 #ifdef _OPENACC
@@ -267,7 +272,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                    KIJS=JKGLO
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
                    !$acc loop independent collapse(3)
-                   DO M = 1, IFRELFMAX 
+                   DO M = ND3S, ND3E
                      DO K = 1, NANG
                        DO IJ = KIJS, KIJL
                          FL1_EXT(IJ, K, M) = FL3_EXT(IJ, K, M)
@@ -281,19 +286,16 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 !$OMP            END PARALLEL DO
 #endif /*_OPENACC*/
 
-                 CALL MPEXCHNG(FL1_EXT(:,:,1:IFRELFMAX), NANG, 1, IFRELFMAX)
+!                OBTAIN INFORMATION AT NEIGHBORING GRID POINTS (HALO)
+                 CALL MPEXCHNG(FL1_EXT(:,:,ND3S:ND3E), NANG, ND3S, ND3E)
 
 #ifndef _OPENACC
-!$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, ND3SF1, ND3EF1, ND3S, ND3E, M, K, IJ, FL1_LOC)
+!$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, M, K, IJ, FL1_LOC)
 #endif /*_OPENACC*/
                  DO JKGLO = IJSG, IJLG, NPROMA
                    KIJS=JKGLO
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
 
-                   ND3SF1=1
-                   ND3EF1=IFRELFMAX+1
-                   ND3S=1
-                   ND3E=IFRELFMAX
                    DO M = ND3SF1, ND3EF1     
                      DO K = 1, NANG
                        DO IJ = NINF, NSUP
@@ -302,7 +304,8 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                     ENDDO
                   ENDDO
 
-                  CALL PROPAGS2(FL1_LOC(:,:,ND3SF1:ND3EF1), FL3_EXT(:,:,ND3S:ND3E), NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)
+                  CALL PROPAGS2(FL1_LOC(:,:,ND3SF1:ND3EF1), FL3_EXT(:,:,ND3S:ND3E), &
+                  &             NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)
                  ENDDO
 #ifndef _OPENACC
 !$OMP            END PARALLEL DO
