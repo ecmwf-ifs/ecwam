@@ -88,7 +88,7 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WAVNUM, CGROUP, OMOSNH2KD, FL1, &
 !     Spectra extended with the halo exchange for the propagation
 !     But limited to NFRE_RED frequencies
 !!! the advection schemes are still written in block structure
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NANG, NFRE_RED) :: FL1_EXT, FL1_LOC, FL3_EXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NANG, NFRE_RED) :: FL1_EXT, FL3_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, 3*NFRE_RED + 5) :: BUFFER_EXT
 
       LOGICAL :: L1STCALL
@@ -233,19 +233,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1, IJLG)
 
-               ND3SF1=1
-               ND3EF1=NFRE_RED
-               ND3S=1
-               ND3E=NFRE_RED
-               DO M = ND3SF1, ND3EF1     
-                 DO K = 1, NANG
-                   DO IJ = NINF, NSUP+1
-                     FL1_LOC(IJ, K, M) = FL1_EXT(IJ, K, M)
-                   ENDDO
-                 ENDDO
-               ENDDO
-
-               CALL PROPAGS2(FL1_LOC, FL3_EXT, NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)
+               CALL PROPAGS2(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)
              ENDDO
 #ifndef _OPENACC             
 !$OMP        END PARALLEL DO
@@ -290,21 +278,13 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                  CALL MPEXCHNG(FL1_EXT(:,:,ND3S:ND3E), NANG, ND3S, ND3E)
 
 #ifndef _OPENACC
-!$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, M, K, IJ, FL1_LOC)
+!$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
 #endif /*_OPENACC*/
                  DO JKGLO = IJSG, IJLG, NPROMA
                    KIJS=JKGLO
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
 
-                   DO M = ND3SF1, ND3EF1     
-                     DO K = 1, NANG
-                       DO IJ = NINF, NSUP+1
-                         FL1_LOC(IJ, K, M) = FL1_EXT(IJ, K, M)
-                       ENDDO
-                    ENDDO
-                  ENDDO
-
-                  CALL PROPAGS2(FL1_LOC(:,:,ND3SF1:ND3EF1), FL3_EXT(:,:,ND3S:ND3E), &
+                  CALL PROPAGS2(FL1_EXT(:,:,ND3SF1:ND3EF1), FL3_EXT(:,:,ND3S:ND3E), &
                   &             NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)
                  ENDDO
 #ifndef _OPENACC
