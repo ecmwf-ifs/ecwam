@@ -81,13 +81,14 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WAVNUM, CGROUP, OMOSNH2KD, FL1, &
       INTEGER(KIND=JWIM) :: JKGLO, NPROMA, MTHREADS
       INTEGER(KIND=JWIM) :: NSTEP_LF, ISUBST
       INTEGER(KIND=JWIM) :: IJSG, IJLG, ICHNK, KIJS, KIJL, IJSB, IJLB
+      INTEGER(KIND=JWIM) :: ND3SF1, ND3EF1, ND3S, ND3E
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 !     Spectra extended with the halo exchange for the propagation
 !     But limited to NFRE_RED frequencies
 !!! the advection schemes are still written in block structure
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NANG, NFRE_RED) :: FL1_EXT, FL3_EXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NANG, NFRE_RED) :: FL1_EXT, FL1_LOC, FL3_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, 3*NFRE_RED + 5) :: BUFFER_EXT
 
       LOGICAL :: L1STCALL
@@ -231,7 +232,20 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
              DO JKGLO = IJSG, IJLG, NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1, IJLG)
-               CALL PROPAGS2(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL, NANG, 1, NFRE_RED, 1, NFRE_RED)
+
+               ND3SF1=1
+               ND3EF1=NFRE_RED
+               ND3S=1
+               ND3E=NFRE_RED
+               DO M = ND3SF1, ND3EF1     
+                 DO K = 1, NANG
+                   DO IJ = NINF, NSUP
+                     FL1_LOC(IJ, K, M) = FL1_EXT(IJ, K, M)
+                   ENDDO
+                 ENDDO
+               ENDDO
+
+               CALL PROPAGS2(FL1_LOC, FL3_EXT, NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)
              ENDDO
 #ifndef _OPENACC             
 !$OMP        END PARALLEL DO
@@ -270,15 +284,25 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                  CALL MPEXCHNG(FL1_EXT(:,:,1:IFRELFMAX), NANG, 1, IFRELFMAX)
 
 #ifndef _OPENACC
-!$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
+!$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, ND3SF1, ND3EF1, ND3S, ND3E, M, K, IJ, FL1_LOC)
 #endif /*_OPENACC*/
                  DO JKGLO = IJSG, IJLG, NPROMA
                    KIJS=JKGLO
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
 
+                   ND3SF1=1
+                   ND3EF1=IFRELFMAX+1
+                   ND3S=1
+                   ND3E=IFRELFMAX
+                   DO M = ND3SF1, ND3EF1     
+                     DO K = 1, NANG
+                       DO IJ = NINF, NSUP
+                         FL1_LOC(IJ, K, M) = FL1_EXT(IJ, K, M)
+                      ENDDO
+                    ENDDO
+                  ENDDO
 
-                   CALL PROPAGS2(FL1_EXT(:,:,1:IFRELFMAX), FL3_EXT(:,:,1:IFRELFMAX), NINF, NSUP, KIJS, KIJL, NANG, &
-                   &             1, IFRELFMAX + 1, 1, IFRELFMAX)
+                  CALL PROPAGS2(FL1_LOC(:,:,ND3SF1:ND3EF1), FL3_EXT(:,:,ND3S:ND3E), NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)
                  ENDDO
 #ifndef _OPENACC
 !$OMP            END PARALLEL DO
