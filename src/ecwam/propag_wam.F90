@@ -239,7 +239,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                ND3E=NFRE_RED
                DO M = ND3SF1, ND3EF1     
                  DO K = 1, NANG
-                   DO IJ = NINF, NSUP
+                   DO IJ = NINF, NSUP+1
                      FL1_LOC(IJ, K, M) = FL1_EXT(IJ, K, M)
                    ENDDO
                  ENDDO
@@ -298,9 +298,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
                    DO M = ND3SF1, ND3EF1     
                      DO K = 1, NANG
-                       DO IJ = NINF, NSUP
+                       DO IJ = NINF, NSUP+1
                          FL1_LOC(IJ, K, M) = FL1_EXT(IJ, K, M)
-                      ENDDO
+                       ENDDO
                     ENDDO
                   ENDDO
 
