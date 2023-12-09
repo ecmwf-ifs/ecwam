@@ -128,28 +128,21 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
           DO M = ND3S, ND3E
             DO K = 1, NANG
+
               DO IJ = KIJS, KIJL
                 F3(IJ,K,M) = (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ,K,M)
               ENDDO
-            ENDDO
-          ENDDO
 
-          DO IC=1,2
-            DO M = ND3S, ND3E
-              DO K = 1, NANG
+              DO IC=1,2
                 IF (LLWLONN(K,M,IC)) THEN
                   DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M) + WLONN(IJ,K,M,IC)*F1(KLON(IJ,IC),K,M)
                   ENDDO
                 ENDIF
               ENDDO
-            ENDDO
-          ENDDO
 
-          DO ICL=1,2
-            DO IC=1,2
-              DO M = ND3S, ND3E
-                DO K = 1, NANG
+              DO ICL=1,2
+                DO IC=1,2
                   IF (LLWLATN(K,M,IC,ICL)) THEN
                     DO IJ = KIJS, KIJL
                       F3(IJ,K,M) = F3(IJ,K,M) + WLATN(IJ,K,M,IC,ICL)*F1(KLAT(IJ,IC,ICL),K,M)
@@ -157,13 +150,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
                   ENDIF
                 ENDDO
               ENDDO
-            ENDDO
-          ENDDO
 
-          DO ICL=1,2
-            DO ICR=1,4
-              DO M = ND3S, ND3E
-                DO K = 1, NANG
+              DO ICL=1,2
+                DO ICR=1,4
                   IF (LLWCORN(K,M,ICR,ICL)) THEN
                     DO IJ = KIJS, KIJL
                       F3(IJ,K,M) = F3(IJ,K,M) + WCORN(IJ,K,M,ICR,ICL)*F1(KCOR(IJ,KCR(K,ICR),ICL),K,M)
@@ -171,12 +160,8 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
                   ENDIF
                 ENDDO
               ENDDO
-            ENDDO
-          ENDDO
 
-          DO IC=-1,1,2
-            DO M = ND3S, ND3E
-              DO K = 1, NANG
+              DO IC=-1,1,2
 
                 IF (LLWKPMN(K,M,IC)) THEN
                   DO IJ = KIJS, KIJL
@@ -191,6 +176,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
                 ENDIF
 
               ENDDO
+
             ENDDO
           ENDDO
 
