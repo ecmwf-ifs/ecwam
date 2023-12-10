@@ -147,7 +147,6 @@ LOGICAL, SAVE :: LLNEWFILE
 
 DATA LLNEWFILE / .FALSE. /
 
-
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('WAMINTGR',0,ZHOOK_HANDLE)
