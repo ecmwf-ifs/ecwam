@@ -6,8 +6,6 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 !
-!MODULE CTUWINI_MOD
-!        CONTAINS
 
 SUBROUTINE CTUWINI (KIJS, KIJL, NINF, NSUP, BLK2GLO, COSPHM1_EXT,   &
  &                  WLATM1, WCORM1, DP)
@@ -51,8 +49,6 @@ INTEGER(KIND=JWIM) :: IJ, K, M, IC, ICR, ICL, KY, KK, KKM
 INTEGER(KIND=JWIM) :: NLAND
 
 !REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-
-!!$acc routine vector
 
 ! ----------------------------------------------------------------------
 
@@ -170,7 +166,6 @@ INTEGER(KIND=JWIM) :: NLAND
        ENDIF
 
 
-!IF (LHOOK) CALL DR_HOOK('CTUWINI',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('CTUWINI',1,ZHOOK_HANDLE)
 
 END SUBROUTINE CTUWINI
-!END MODULE CTUWINI_MOD
