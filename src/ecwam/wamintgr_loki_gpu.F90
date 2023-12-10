@@ -155,26 +155,17 @@ IF (LHOOK) CALL DR_HOOK('WAMINTGR',0,ZHOOK_HANDLE)
 !*     PROPAGATION TIME
 !      ----------------
 
-!!$acc enter data copyin(BLK2GLO, WVENVI, WVPRPT, FL1) copyout(FL1)
-
 CALL SRC_CONTRIBS%INIT(FL1=FL1)
 CALL SRC_CONTRIBS%UPDATE_DEVICE(FL1=FL1_DPTR)
 !$acc data present(FL1_DPTR)
 
-!!$acc data copyin(BLK2GLO, WVENVI, WVPRPT, FL1) copyout(FL1)
 IF (CDATE == CDTPRA) THEN
   TIME0=-WAM_USER_CLOCK()
-
-!!$acc data present(BLK2GLO, WVENVI, WVPRPT, FL1)
-!!$acc data present(FL1)
   CALL PROPAG_WAM(BLK2GLO, WVENVI, WVPRPT, FL1_DPTR)
-!!$acc end data 
   TIME1(1) = TIME1(1) + (TIME0+WAM_USER_CLOCK())*1.E-06
   CDATE = CDTPRO
 ENDIF
 !$acc end data
-
-!!$acc exit data delete(BLK2GLO, WVENVI, WVPRPT)
 
 !* RETRIEVING NEW FORCING FIELDS IF NEEDED.
 !  ----------------------------------------
