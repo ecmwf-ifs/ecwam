@@ -103,7 +103,6 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 !            JJY=JYO(K,1)
 !            JJK=KCR(K,1)
       
-          !!$acc loop independent
             DO M = ND3S, ND3E
 !              DO IJ = KIJS, KIJL
 !                FJ1(IJ)= F1(KLON(IJ,JJX)  ,K  ,M)
@@ -178,7 +177,6 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
 !              DO IC=-1,1,2
 !                IF (LLWKPMN(K,M,IC)) THEN
-!                !!$acc loop vector
 !                DO IJ = KIJS, KIJL
 !                    F3(IJ,K,M) = F3(IJ,K,M)                             &
 !     &         +      WKPMN(IJ,K,M,IC)* F1(IJ,KPM(K,IC),M)
