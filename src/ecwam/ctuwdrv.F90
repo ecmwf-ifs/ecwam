@@ -117,7 +117,6 @@ DO JKGLO = IJS, IJL, NPROMA
 &                COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT )
     ENDIF
   ENDIF
-  
 
 ENDDO
 #ifndef _OPENACC
