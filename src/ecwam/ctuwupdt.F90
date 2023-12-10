@@ -89,7 +89,7 @@ DATA LFRSTCTU /.TRUE./
 IF (LHOOK) CALL DR_HOOK('CTUWUPDT',0,ZHOOK_HANDLE)
 
 !$acc update device(sinth,costh)
-!$acc update device(icase, COSPH, nang, nfre_red, ngy, niblo) !F
+!$acc update device(icase, COSPH, nang, nfre_red, ngy, niblo)
 ! DEFINE JXO, JYO, KCR
 IF (LFRSTCTU) THEN
 
@@ -194,13 +194,10 @@ ENDIF
 !$ MTHREADS=OMP_GET_MAX_THREADS()
    NPROMA=(IJL-IJS+1)/MTHREADS + 1
 
-
-!F!$acc update device(KLAT,WLAT,KCOR,WCOR,WLATN,WLONN,WCORN)
-
 !$acc enter data copyin(BLK2GLO)
 !$acc enter data copyin(BLK2GLO%KXLT)
 
-!$acc update device(KLAT,WLAT,KCOR,WCOR) !F
+!$acc update device(KLAT,WLAT,KCOR,WCOR)
 !$acc update device(NFRE_RED,ZPI,FR,DELTH,NANG)
 #ifndef _OPENACC
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
