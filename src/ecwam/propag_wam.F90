@@ -37,7 +37,9 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
 
 ! -------------------------------------------------------------------
 
+#ifndef _OPENACC
       use openacc
+#endif /*_OPENACC*/
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : WVGRIDGLO, ENVIRONMENT, FREQUENCY
 
@@ -48,11 +50,7 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,LLUNSTR
       USE YOWREFD  , ONLY : LLUPDTTD ,THDD     ,THDC     ,SDOT
       USE YOWSTAT  , ONLY : IPROPAGS ,IFRELFMAX, DELPRO_LF, IDELPRO
-      USE YOWUBUF  , ONLY : LUPDTWGHT, KLAT     ,KLON     ,KCOR      ,  &
-     &            WLATN    ,WLONN    ,WCORN    ,WKPMN    ,WMPMN     ,   &
-     &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN   ,   &
-     &            SUMWN    ,                                            &
-     &            JXO      ,JYO      ,KCR      ,KPM      ,MPM
+      USE YOWUBUF  , ONLY : LUPDTWGHT
 #ifdef WAM_HAVE_UNWAM
       USE UNWAM    , ONLY : PROPAG_UNWAM
 #endif
@@ -104,8 +102,7 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
 IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 
-!$acc data present(FL1)
-!$acc data CREATE(FL1_EXT,FL3_EXT)
+!$acc data PRESENT(FL1) data CREATE(FL1_EXT,FL3_EXT)
       IF (NIBLO > 1) THEN
 
         IJSG = IJFROMCHNK(1,1)
@@ -127,7 +124,6 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
           IJSB = IJFROMCHNK(KIJS, ICHNK)
           KIJL = KIJL4CHNK(ICHNK)
           IJLB = IJFROMCHNK(KIJL, ICHNK)
-!          !$acc loop private(FL1_EXT)
           !$acc loop independent collapse(2)
           DO M = 1, NFRE_RED
             DO K = 1, NANG
@@ -271,7 +267,6 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 #ifndef _OPENACC
 !$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
 #endif /*_OPENACC*/
-!             !$ACC DATA COPYIN(KLON, KLAT, KCOR, WKPMN, LLWKPMN, SUMWN, WLONN, WLATN, WCORN, JXO, JYO, KCR) 
                  DO JKGLO = IJSG, IJLG, NPROMA
                    KIJS=JKGLO
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
@@ -347,14 +342,12 @@ ENDIF  ! end sub time steps (if needed)
 #ifndef _OPENACC
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K)
 #endif /*_OPENACC*/
-        !!$acc kernels loop private(KIJS, IJSB, KIJL, IJLB, M, K)
         !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
           DO ICHNK = 1, NCHNK
             KIJS = 1
             IJSB = IJFROMCHNK(KIJS, ICHNK)
             KIJL = KIJL4CHNK(ICHNK)
             IJLB = IJFROMCHNK(KIJL, ICHNK)
-!            !$acc loop vector independent collapse(3)
             !$acc loop independent collapse(3)
             DO M = 1, NFRE_RED
               DO K = 1, NANG
@@ -389,7 +382,6 @@ ENDIF  ! end sub time steps (if needed)
            CALL GSTATS(1430,1)
 
         ENDIF  ! end propagation
-!        !$acc end data
 
       ENDIF ! more than one grid point
 !$ACC END DATA

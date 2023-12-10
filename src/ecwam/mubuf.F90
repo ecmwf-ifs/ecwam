@@ -218,4 +218,5 @@
       ENDDO  ! end loop over frequencies
 
       DEALLOCATE(KDUM)
+
       END SUBROUTINE MUBUF
