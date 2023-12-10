@@ -113,6 +113,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 #endif
         NPROMA=(IJLG-IJSG+1)/MTHREADS + 1
 
+!!!!debile
+        NPROMA=NPROMA_WAM
+
 
 !!! the advection schemes are still written in block structure
 !!! mapping chuncks to block ONLY for actual grid points !!!!
