@@ -99,7 +99,6 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DRCP,DRCM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CURMASK
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: CGX, CGY
-      
 
 ! ----------------------------------------------------------------------
 
@@ -364,9 +363,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
           ENDDO  ! END LOOP OVER FREQUENCIES
 
 !$acc end kernels
-         
-
- 
 
       ELSE
 !*    CARTESIAN GRID.
@@ -407,7 +403,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !     ================= 
 
       DELTH0 = 0.25*DELPRO/DELTH
-
 
 !*    LOOP OVER DIRECTIONS.
 !     ---------------------
@@ -512,6 +507,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               MM1 = MAX(1,M-1)
               DFP = DELFR0/FR(M)
               DFM = DELFR0/FR(MM1)
+
               DO IJ=KIJS,KIJL
                 DTHP = CURMASK(IJ) * (SDOT(IJ,K,M) + SDOT(IJ,K,MP1))*DFP
                 DTHM = CURMASK(IJ) * (SDOT(IJ,K,M) + SDOT(IJ,K,MM1))*DFM
@@ -523,6 +519,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
         ENDIF
 
       ENDDO  ! END LOOP ON DIRECTIONS
+
 !$acc end parallel
 
 !     CHECK THAT WEIGHTS ARE LESS THAN 1
@@ -730,9 +727,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !$acc end parallel
 
 IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
-
-
-
 
       RETURN
 
