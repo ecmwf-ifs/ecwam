@@ -100,6 +100,7 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CURMASK
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: CGX, CGY
 
+
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
