@@ -47,7 +47,7 @@ REAL(KIND=JWRB), DIMENSION(NINF:NSUP,2), INTENT(OUT) :: DP     ! COS PHI FACTOR
 INTEGER(KIND=JWIM) :: IJ, K, M, IC, ICR, ICL, KY, KK, KKM
 INTEGER(KIND=JWIM) :: NLAND
 
-!REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
