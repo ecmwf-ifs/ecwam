@@ -24,7 +24,6 @@ SUBROUTINE CTUWUPDT (IJS, IJL, NINF, NSUP,                  &
 
 ! -------------------------------------------------------------------
 
-
 USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
@@ -46,7 +45,6 @@ USE YOWPCONS , ONLY : ZPI
 
 
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-!USE CTUWINI_MOD , ONLY : CTUWINI
       
 ! ----------------------------------------------------------------------
       IMPLICIT NONE

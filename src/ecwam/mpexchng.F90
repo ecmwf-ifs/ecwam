@@ -145,6 +145,7 @@
 
       IR=0
       CALL GSTATS(676,0)
+
       DO INGB=1,NGBFROMPE
         IR=IR+1
         IPROC=NFROMPELST(INGB)
