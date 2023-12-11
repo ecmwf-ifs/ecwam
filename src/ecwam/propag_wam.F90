@@ -100,7 +100,7 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
 IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 
-!$acc data PRESENT(FL1) data CREATE(FL1_EXT,FL3_EXT)
+!$acc data PRESENT(FL1) CREATE(FL1_EXT,FL3_EXT)
       IF (NIBLO > 1) THEN
 
         IJSG = IJFROMCHNK(1,1)
@@ -382,7 +382,6 @@ ENDIF  ! end sub time steps (if needed)
         ENDIF  ! end propagation
 
       ENDIF ! more than one grid point
-!$ACC END DATA
 !$ACC END DATA
 
       L1STCALL=.FALSE.
