@@ -45,6 +45,7 @@ REAL(KIND=JWRB), DIMENSION(NINF:NSUP,2), INTENT(OUT) :: WLATM1 ! 1 - WLAT
 REAL(KIND=JWRB), DIMENSION(NINF:NSUP,4), INTENT(OUT) :: WCORM1 ! 1 - WCOR
 REAL(KIND=JWRB), DIMENSION(NINF:NSUP,2), INTENT(OUT) :: DP     ! COS PHI FACTOR
 
+
 INTEGER(KIND=JWIM) :: IJ, K, M, IC, ICR, ICL, KY, KK, KKM
 INTEGER(KIND=JWIM) :: NLAND
 
@@ -52,7 +53,7 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
-!IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
 
       NLAND = NSUP+1
       
@@ -154,7 +155,6 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 !         (for all grid points)
       !$acc parallel loop independent collapse(2) private(KY,KK,KKM)
           DO IC=1,2
-!      !!!$acc loop private(KY,KK,KKM)
             DO IJ = KIJS,KIJL
               KY=BLK2GLO%KXLT(IJ)
               KK=KY+2*IC-3
