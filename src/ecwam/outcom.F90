@@ -80,7 +80,7 @@
 #include "mpcrtbl.intfb.h"
  
       INTEGER(KIND=JWIM), INTENT(IN) :: IU07
-      REAL(KIND=JWRB), INTENT(IN) :: BATHY(NGX, NGY)
+      REAL(KIND=JWRB), INTENT(INOUT) :: BATHY(NGX, NGY)
       LOGICAL, INTENT(IN) :: LLGRIB_BATHY_OUT
 
       INTEGER(KIND=JWIM) :: IDUM, K, M, L

@@ -35,7 +35,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWGRIB  , ONLY : IGRIB_OPEN_FILE
+      USE YOWGRIB  , ONLY : IGRIB_OPEN_FILE, IGRIB_NEW_FROM_FILE, IGRIB_GET_VALUE, &
+ &                          JPGRIB_END_OF_FILE
       USE YOWMAP   , ONLY : AMOSOP   ,AMONOP   ,IQGAUSS  ,NGX      ,NGY
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI   ,KTAG 
       USE YOWPARAM , ONLY : KWAMVER  ,LLUNSTR
@@ -62,7 +63,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IULOG
       INTEGER(KIND=JWIM), INTENT(OUT) :: NGAUSSW, NLON, NLAT
-      INTEGER(KIND=JWIM) :: IREAD, LFILE
+      INTEGER(KIND=JWIM) :: IREAD, LFILE, IRET, JGRIB_IU07, IEDITION, IERR
       INTEGER(KIND=JWIM) :: I4(2)
 
       REAL(KIND=JWRB), INTENT(OUT) :: RSOUTW, RNORTW
@@ -77,6 +78,7 @@
       LOGICAL, INTENT(IN) :: LLRNL
       LOGICAL, INTENT(IN) :: LLCOUPLED
       LOGICAL :: LLEXIST
+      LOGICAL ::  LLIU07_GRIB
       LOGICAL, SAVE :: LFRST
 
       DATA LFRST /.TRUE./
@@ -171,11 +173,38 @@
                         &__FILENAME__,__LINE__)
         ENDIF
 
+        ! Assume first that the input is in grib
         IU07=-99
+        LLIU07_GRIB=.FALSE.
+
         CALL IGRIB_OPEN_FILE(IU07,FILENAME(1:LFILE),'r')
 
+        CALL IGRIB_NEW_FROM_FILE(IU07,JGRIB_IU07,IRET)
+!!! debile
+             WRITE(IU06,*) 'debile ',IRET
 
-        IU07 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u',0,'READWRITE')
+        IF (IRET /= JPGRIB_END_OF_FILE) THEN
+           CALL IGRIB_GET_VALUE(JGRIB_IU07,'editionNumber',IEDITION,IERR)
+           IF ( IERR == 0 ) THEN
+             LLIU07_GRIB=.TRUE.
+             WRITE(IU06,*) ''
+             WRITE(IU06,*) '   GRIB INPUT OF MODEL BATHYMETRY  '
+             WRITE(IU06,*) '   GRIB EDITION : ' ,IEDITION
+             WRITE(IU06,*) ''
+!!! debile
+             WRITE(IU06,*) 'debile ',IRET
+          CALL WAM_ABORT("WAVE MODEL INPUT FILE '"//FILENAME(1:LFILE)//"' IS iN GRIB !!!",&
+                        &__FILENAME__,__LINE__)
+           ENDIF
+        ENDIF
+
+
+        IF ( .NOT. LLIU07_GRIB ) THEN
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) '   BINARY INPUT OF MODEL BATHYMETRY  '
+          WRITE(IU06,*) ''
+          IU07 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u',0,'READWRITE')
+        ENDIF
 
         IF (IPROPAGS < 0 .OR. IPROPAGS > NPROPAGS) THEN
           WRITE(IU06,*) '************************************'
