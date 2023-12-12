@@ -48,6 +48,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMAP   , ONLY : NGX      ,NGY      ,NIBLO       ,NLONRGG
+      USE YOWPCONS , ONLY : ZMISS
 
 ! ----------------------------------------------------------------------
 
@@ -68,7 +69,7 @@
       DO K=1,NGY
         IPP(K) = 0
         DO I=1,NLONRGG(K)
-          IF (BATHY(I,K) > -990.0_JWRB) THEN
+          IF (BATHY(I,K) > ZMISS) THEN
             IPP(K) = IPP(K) + 1
           ENDIF
         ENDDO

@@ -15,8 +15,11 @@
 
 !*    ** *GRIB HEADERS:  COMMON (DEFAULT) GRIB HEADERS.
 
+      CHARACTER(LEN=14), PARAMETER :: CDATECLIM='20240102030000' !! reference date used to identify the wave climate fields (see *OUTCOM*)
+      CHARACTER(LEN=4), PARAMETER :: CEXPVERCLIM='0001'  !! reference expver for wave climate fields (see *preproc*) 
       INTEGER(KIND=JWIM), PARAMETER :: IMDLGRBID_G=106 !! see below the rule on how to select IMDLGRBID_G
       INTEGER(KIND=JWIM), PARAMETER :: IMDLGRBID_M=206
+
       INTEGER(KIND=JWIM) :: NDATE_TIME_WINDOW_END
       INTEGER(KIND=JWIM) :: NWINOFF
       INTEGER(KIND=JWIM) :: NGRIB_VERSION   ! grib version for output

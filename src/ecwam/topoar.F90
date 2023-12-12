@@ -43,7 +43,7 @@
 !       GRID ARRANGED FROM SOUTH TO NORTH, AND FROM WEST TO EAST.
 !       IT IS ASSUMED THAT NEGATIVE VALUES ARE SEA DEPTHS (WHICH
 !       ARE CONVERTED TO POSITIVE) AND THAT POSITIVE VALUES ARE
-!       LAND ELEVATIONS (WHICH ARE CONVERTED TO -999 IDENTIFIERS).
+!       LAND ELEVATIONS (WHICH ARE CONVERTED TO ZMISS=-999 IDENTIFIERS).
 
 !       THE TOPOGRAPHIC DATA IS READ IN ON THE INPUT GRID AND IT
 !       IS STORED ONLY FOR THOSE LATITUDES WITHIN THE REQUESTED
@@ -79,6 +79,7 @@
       USE YOWMAP   , ONLY : NGX      ,NGY      ,AMOWEP   ,AMOSOP   ,    &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            NLONRGG  ,LLOBSTRCT
+      USE YOWPCONS , ONLY : ZMISS
       USE YOWTEST  , ONLY : IU06, ITEST
 
 ! ----------------------------------------------------------------------
@@ -152,7 +153,7 @@
      &                 '' WESTERN LONG '','' EASTERN LONG'',            &
      &                 /,2X,4F13.8)') XLAS, XLAN, XLOW, XLOE
 
-      BATHY(:,:) = 999.0_JWRB
+      BATHY(:,:) = -ZMISS 
 
       IF (LLOBSTRCT) THEN
 !     NEW TREATMENT OF BATHYMETRY INPUT
@@ -457,7 +458,7 @@
 ! ----------------------------------------------------------------------
 
 !*    4. CONVERT INPUT DEPTH TO MODEL DEPTH
-!*       POSITIVE SEA DEPTH IN METRES (-999  FOR LAND).
+!*       POSITIVE SEA DEPTH IN METRES (ZMISS=-999  FOR LAND).
 !        ----------------------------------------------
 
       DO J=1,NGY
@@ -465,7 +466,7 @@
           IF (BATHY(I,J) < 0.0_JWRB) THEN
             BATHY(I,J) = -BATHY(I,J)
           ELSE
-            BATHY(I,J) = -999.0_JWRB
+            BATHY(I,J) = ZMISS
           ENDIF
         ENDDO
       ENDDO

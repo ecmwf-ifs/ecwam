@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE OUTCOM (IU07, BATHY)
+      SUBROUTINE OUTCOM (IU07, BATHY, LLGRIB_BATHY_OUT)
 
 ! ----------------------------------------------------------------------
 
@@ -37,7 +37,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *OUTCOM (IU07, BATHY)*
+!       *CALL* *OUTCOM (IU07, BATHY, LLGRIB_BATHY_OUT)*
 !          *IU07*   - LOGICAL UNIT FOR  UNFORMATED WRITE.
 
 !     METHOD.
@@ -57,11 +57,14 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWGRIBHD, ONLY : IMDLGRBID_G
+      USE YOWCOUT  , ONLY : LFDB     ,IRBATHY
+      USE YOWGRIBHD, ONLY : CDATECLIM,IMDLGRBID_G
       USE YOWPARAM , ONLY : LLUNSTR
       USE YOWMAP   , ONLY : NGX      ,NGY      , IPER     ,IRGG    ,    &
      &                      AMOWEP   ,AMOSOP   ,AMOEAP    ,AMONOP  ,    &
      &                      XDELLA   ,XDELLO   ,NLONRGG
+      USE YOWSTAT  , ONLY : MARSTYPE
+      USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWABORT, ONLY : WAM_ABORT
 
 #ifdef WAM_HAVE_UNWAM
@@ -72,36 +75,61 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "wgribenout.intfb.h"
 #include "outnam.intfb.h"
+#include "mpcrtbl.intfb.h"
  
       INTEGER(KIND=JWIM), INTENT(IN) :: IU07
       REAL(KIND=JWRB), INTENT(IN) :: BATHY(NGX, NGY)
+      LOGICAL, INTENT(IN) :: LLGRIB_BATHY_OUT
 
       INTEGER(KIND=JWIM) :: IDUM, K, M, L
+      INTEGER(KIND=JWIM) :: ITABLE, IPARAM, IZLEV, IFCST
       INTEGER(KIND=JWIM) :: NKIND !Precision used when writing
 
-! ----------------------------------------------------------------------
-
-!     WRITE IDENTIFIERS (MAKE SURE TO UPDATE THE VALUES IF YOU CHANGE
-!     ANYTHING TO THE MODEL). 
-      
-      NKIND = KIND(AMOSOP)
-
-      WRITE(IU07) NKIND, IMDLGRBID_G 
-
+      CHARACTER(LEN=14) :: CDATE`
 
 ! ----------------------------------------------------------------------
 
 !*    GRID INFORMATION
 !     ----------------
 
-      WRITE(IU07) NGX, NGY
+      IF ( LLGRIB_BATHY_OUT ) THEN
+        ! Grib output
 
-      WRITE(IU07) NLONRGG
+        CALL MPCRTBL
 
-      WRITE(IU07) IPER, IRGG, AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO
+        ITABLE=INFOBOUT(IRBATHY,1)
+        IPARAM=INFOBOUT(IRBATHY,2)
+        IZLEV=INFOBOUT(IRBATHY,3)
 
-      WRITE(IU07) BATHY
+        CDATE=CDATECLIM
+        IFCST=0
+        
+        CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, BATHY(:,:),   &
+     &                  ITABLE, IPARAM, IZLEV, 0 , 0,        &
+     &                  CDATE, IFCST, MARSTYPE, LFDB, IU07)
+
+        CALL IGRIB_CLOSE_FILE(IU07)
+
+      ELSE
+        ! Binary output
+
+!       WRITE IDENTIFIERS (MAKE SURE TO UPDATE THE VALUES IF YOU CHANGE
+!       ANYTHING TO THE MODEL). 
+        NKIND = KIND(AMOSOP)
+        WRITE(IU07) NKIND, IMDLGRBID_G
+
+        WRITE(IU07) NGX, NGY
+
+        WRITE(IU07) NLONRGG
+
+        WRITE(IU07) IPER, IRGG, AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO
+
+        WRITE(IU07) BATHY
+
+        CLOSE(IU07)
+      ENDIF
 
 ! ----------------------------------------------------------------------
 

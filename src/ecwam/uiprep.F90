@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-    SUBROUTINE UIPREP (IFORM, LLGRID)
+    SUBROUTINE UIPREP (IFORM, LLGRID, LLGRIB_BATHY_OUT, LLGRIB_OBSTRCT_OUT)
 
 ! ----------------------------------------------------------------------
 
@@ -23,12 +23,15 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *UIPREP (IFORM, LLGRID)*
+!       *CALL* *UIPREP (IFORM, LLGRID, LLGRIB_BATHY_OUT, LLGRIB_OBSTRCT_OUT)*
 !          *IFORM*   - OUTPUT FORMAT OPTION = 1 UNFORMATED
 !                                           = 2 FORMATED
 !                                           OTHERWISE BOTH
 !          *LLGRID*  - TRUE IF THE GRID DEFINITION HAS BEEN SPECIFIED
 !                      IN INPUT FILE grid_description
+!          NAMELIST SELECTION:
+!          *LLGRIB_BATHY_OUT* - IF TRUE THE BATHYMETRY WILL BE OUTPUT in GRIB 
+!          *LLGRIB_OBSTRCT_OUT* - IF TRUE THE OBSTRUCTION COEFFICIENTS WILL BE OUTPUT in GRIB 
 
 !     METHOD.
 !     -------
@@ -81,6 +84,8 @@
 
       INTEGER(KIND=JWIM), INTENT(OUT) :: IFORM
       LOGICAL, INTENT(OUT) :: LLGRID
+      LOGICAL, INTENT(OUT) :: LLGRIB_BATHY_OUT
+      LOGICAL, INTENT(OUT) :: LLGRIB_OBSTRCT_OUT
 
       INTEGER(KIND=JWIM) :: K, M, I, II, KSN
       INTEGER(KIND=JWIM) :: IU05, IU
@@ -109,7 +114,8 @@
      &                  IFORM, ITEST, ITESTB,                           &
      &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC, &
      &                  NIBLO, CLDOMAIN,LLOBSTRCT,                      &
-     &                  LAQUA, LLUNSTR, LPREPROC
+     &                  LAQUA, LLUNSTR, LPREPROC,                       &
+     &                  LLGRIB_BATHY_OUT, LLGRIB_OBSTRCT_OUT
 
       NAMELIST /NACORR/ ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
 
@@ -152,6 +158,9 @@
 !     INTERNALLY BY PREPROC EXCEPT IF PROVIDED IN THE NAMELIST
       NIBLO  = -1 ! 
       CLDOMAIN= '-'
+
+      LLGRIB_BATHY_OUT = .FALSE.
+      LLGRIB_OBSTRCT_OUT = .FALSE.
 
 ! ----------------------------------------------------------------------
 
