@@ -87,7 +87,7 @@
       INTEGER(KIND=JWIM) :: ITABLE, IPARAM, IZLEV, IFCST
       INTEGER(KIND=JWIM) :: NKIND !Precision used when writing
 
-      CHARACTER(LEN=14) :: CDATE`
+      CHARACTER(LEN=14) :: CDATE
 
 ! ----------------------------------------------------------------------
 
