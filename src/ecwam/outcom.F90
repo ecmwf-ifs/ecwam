@@ -57,7 +57,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUT  , ONLY : LFDB     ,IRBATHY
+      USE YOWCOUT  , ONLY : LFDB     ,IRBATHY  ,INFOBOUT
       USE YOWGRIBHD, ONLY : CDATECLIM,IMDLGRBID_G
       USE YOWPARAM , ONLY : LLUNSTR
       USE YOWMAP   , ONLY : NGX      ,NGY      , IPER     ,IRGG    ,    &
@@ -106,7 +106,7 @@
         CDATE=CDATECLIM
         IFCST=0
         
-        CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, BATHY(:,:),   &
+        CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, BATHY,        &
      &                  ITABLE, IPARAM, IZLEV, 0 , 0,        &
      &                  CDATE, IFCST, MARSTYPE, LFDB, IU07)
 
