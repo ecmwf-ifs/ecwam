@@ -102,8 +102,7 @@
         !!! check MPCRTBL
         FFLAG(:)=.FALSE.
         NFLAG(:)=.FALSE.
-        GFLAG(:)=.FALSE.
-        GFLAG(IRBATHY)=.TRUE.
+        GFLAG(:)=.TRUE.
 
         CALL MPCRTBL
 
