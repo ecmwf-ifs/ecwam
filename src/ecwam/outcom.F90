@@ -72,6 +72,8 @@
       USE YOWUNPOOL ,ONLY : LPREPROC
 #endif
 
+      USE YOWGRIB  , ONLY : IGRIB_CLOSE_FILE
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
