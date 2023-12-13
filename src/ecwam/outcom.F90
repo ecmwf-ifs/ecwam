@@ -57,7 +57,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUT  , ONLY : LFDB     ,IRBATHY  ,INFOBOUT
+      USE YOWCOUT  , ONLY : LFDB, FFLAG, GFLAG, NFLAG, IRBATHY, INFOBOUT
       USE YOWGRIBHD, ONLY : CDATECLIM,IMDLGRBID_G
       USE YOWPARAM , ONLY : LLUNSTR
       USE YOWMAP   , ONLY : NGX      ,NGY      , IPER     ,IRGG    ,    &
@@ -98,6 +98,12 @@
 
       IF ( LLGRIB_BATHY_OUT ) THEN
         ! Grib output
+
+        !!! check MPCRTBL
+        FFLAG(:)=.FALSE.
+        NFLAG(:)=.FALSE.
+        GFLAG(:)=.FALSE.
+        GFLAG(IRBATHY)=.TRUE.
 
         CALL MPCRTBL
 
