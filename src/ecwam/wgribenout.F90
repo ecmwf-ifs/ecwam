@@ -116,7 +116,9 @@ SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
 
 !*    2. SAVE ENCODED RESULT
 !        -------------------
-
+!!! debile
+       write(*,*) 'debiile wgribenout IGRIB_HANDLE ',IGRIB_HANDLE
+ 
       CALL IGRIB_GET_MESSAGE_SIZE(IGRIB_HANDLE,KBYTES)
       ISIZE=(KBYTES+NPRECI-1)/NPRECI
       ALLOCATE(KGRIB_BUFR(ISIZE))
