@@ -38,7 +38,7 @@
       USE YOWGRIB  , ONLY : IGRIB_OPEN_FILE, IGRIB_NEW_FROM_FILE, IGRIB_GET_VALUE, &
  &                          JPGRIB_END_OF_FILE
       USE YOWMAP   , ONLY : AMOSOP   ,AMONOP   ,IQGAUSS  ,NGX      ,NGY
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI   ,KTAG 
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
       USE YOWPARAM , ONLY : KWAMVER  ,LLUNSTR
       
       USE YOWTEST  , ONLY : IU06
@@ -64,11 +64,9 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IULOG
       INTEGER(KIND=JWIM), INTENT(OUT) :: NGAUSSW, NLON, NLAT
       INTEGER(KIND=JWIM) :: IREAD, LFILE, IRET, JGRIB_IU07, IEDITION, IERR
-      INTEGER(KIND=JWIM) :: I4(2)
 
       REAL(KIND=JWRB), INTENT(OUT) :: RSOUTW, RNORTW
       REAL(KIND=JWRB) :: PRPLRADI
-      REAL(KIND=JWRB) :: X4(2)
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=1) :: C1 
@@ -139,14 +137,6 @@
 !     ------------------------
 
       CALL SETWAVPHYS
-
-!     DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS
-!     -----------------------------------------------------
-
-      X4=1.0_JWRB
-      NPRECR = KIND(X4)
-      I4=1
-      NPRECI = KIND(I4)
 
 !     READ GRID INPUT FROM PREPROC 
 !     ----------------------------
