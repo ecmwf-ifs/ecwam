@@ -88,7 +88,7 @@
       LOGICAL, INTENT(OUT) :: LLGRIB_OBSTRCT_OUT
 
       INTEGER(KIND=JWIM) :: K, M, I, II, KSN
-      INTEGER(KIND=JWIM) :: IU05, IU
+      INTEGER(KIND=JWIM) :: IU05, IUGRD
       INTEGER(KIND=JWIM) :: ISPECTRUNC
       INTEGER(KIND=JWIM) :: IOS, IOUTA, IOUTANEW, IDUM
       INTEGER(KIND=JWIM) :: IAMONOP, IAMOSOP, IAMOWEP, IAMOEAP, ISCALING
@@ -232,18 +232,21 @@
       FILENAME='grid_description'
       INQUIRE(FILE=FILENAME,EXIST=LLGRID)
       IF (LLGRID) THEN
-        IU=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0,'READWRITE')
+        !!! grid_description is also read in create_wam_bathymetry_ETOPO1
+
+        IUGRD=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0,'READWRITE')
         OPEN(IU,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
-        READ (IU,*) ISPECTRUNC
-        READ (IU,*) IAMONOP
-        READ (IU,*) IAMOSOP
-        READ (IU,*) IAMOWEP
-        READ (IU,*) IAMOEAP
-        READ (IU,*) ISCALING
-        READ (IU,*) IPER
-        READ (IU,*) IRGG
-        READ (IU,*) NGY
-        WRITE(IU06,*) "grid_description read in "
+        READ (IUGRD,*) ISPECTRUNC
+        READ (IUGRD,*) IAMONOP
+        READ (IUGRD,*) IAMOSOP
+        READ (IUGRD,*) IAMOWEP
+        READ (IUGRD,*) IAMOEAP
+        READ (IUGRD,*) ISCALING
+        READ (IUGRD,*) IPER
+        READ (IUGRD,*) IRGG
+        READ (IUGRD,*) NGY
+
+        WRITE(IU06,*) "First part of grid_description read in "
 
         AMONOP = REAL(IAMONOP,JWRB)/REAL(ISCALING,JWRB)
         AMOSOP = REAL(IAMOSOP,JWRB)/REAL(ISCALING,JWRB)
@@ -253,6 +256,7 @@
         WRITE(IU06,*) "AMOSOP = ",AMOSOP
         WRITE(IU06,*) "AMOWEP = ",AMOWEP
         WRITE(IU06,*) "AMOEAP = ",AMOEAP
+        WRITE(IU06,*) '' 
 
         ! A spectral truncation > 0 implies a Gaussian grid
         IF (ISPECTRUNC > 0) IQGAUSS=1 
@@ -328,13 +332,13 @@
 !*    SET DIMENSIONS.
 
       IF (LLGRID) THEN
-        XDELLA = (AMONOP-AMOSOP)/(NGY-1)
+        XDELLA = (AMONOP-AMOSOP)/REAL((NGY-1,JWRB))
         ALLOCATE(NLONRGG(NGY))
 
         NGX = 0
         DO K=1,NGY
           KSN=NGY-K+1
-          READ(IU,*,IOSTAT=IOS) NLONRGG(KSN)
+          READ(IUGRD,*,IOSTAT=IOS) NLONRGG(KSN)
           IF( IOS < 0 ) THEN
             CALL WAM_ABORT("End of file reached before finishing NLONRGG",__FILENAME__,__LINE__)
           ENDIF
@@ -345,14 +349,13 @@
         ENDDO
 
         IF (IPER == 1) THEN
-          XDELLO  = 360._JWRB/REAL(NGX)
+          XDELLO  = 360._JWRB/REAL(NGX,JWRB)
           AMOEAP = AMOWEP + 360._JWRB - XDELLO
         ELSE
-          XDELLO = (AMOEAP-AMOWEP)/(NGX-1)
+          XDELLO = (AMOEAP-AMOWEP)/REAL(NGX-1,JWRB)
         ENDIF
 
-
-        CLOSE(IU)
+        CLOSE(IUGRD)
 
       ELSE
 !       RESET FOR AQUA PLANET IF SELECTED

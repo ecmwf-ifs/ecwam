@@ -137,10 +137,10 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM), PARAMETER :: NREF=500
       INTEGER(KIND=JWIM), PARAMETER :: NDPT=1000
 
-      INTEGER(KIND=JWIM) :: IU01, IU06, IU, IUNIT
+      INTEGER(KIND=JWIM) :: IU01, IU06, IUGRD, IUNIT
       INTEGER(KIND=JWIM) :: I, J, IJ, K, KSN, M
       INTEGER(KIND=JWIM) :: NX, NY
-      INTEGER(KIND=JWIM) :: IPER, IRGG, NFRE_RED, IFRE1, ISPECTRUNC
+      INTEGER(KIND=JWIM) :: IPER, IRGG, NFRE_RED, IFRE1, ISPECTRUNC, IQGAUSS
       INTEGER(KIND=JWIM) :: NLANDCENTREPM, NLANDCENTREMAX, NLANDCENTRE, NIOBSLAT
       INTEGER(KIND=JWIM) :: NSEA, NLAND, NSEASH
       INTEGER(KIND=JWIM) :: ILONL, ILONR, ILATB, ILATT
@@ -152,6 +152,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM) :: IS, KT, KB
       INTEGER(KIND=JWIM) :: NOBSTRCT, NIOBSLON, NBLOCKLAND, NTOTPTS
       INTEGER(KIND=JWIM) :: INVRES
+      INTEGER(KIND=JWIM) :: IAMONOP, IAMOSOP, IAMOWEP, IAMOEAP, ISCALING
 
       INTEGER(KIND=JWIM) :: IDUM(15)
       INTEGER(KIND=JWIM), DIMENSION(NREF) :: LEVEL, NDEPTH
@@ -247,38 +248,47 @@ PROGRAM CREATE_BATHY_ETOPO1
 !!!!!!!!!! grid_description is also read in uiprep  !!!!!!!!!!
       INQUIRE(FILE=FILENAME,EXIST=LLGRID)
       IF (LLGRID) THEN
-        IU=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0,'READWRITE')
-        OPEN(IU,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
-        READ (IU,*) ISPECTRUNC
-        READ (IU,*) AMONOP
-        READ (IU,*) AMOSOP
-        READ (IU,*) AMOWEP
-        READ (IU,*) AMOEAP
-        READ (IU,*) IPER
-        READ (IU,*) IRGG
-        READ (IU,*) NY
-      ENDIF
+        IUGRD=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0,'READWRITE')
+        OPEN(IUGRD,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
+        READ (IUGRD,*) ISPECTRUNC
+        READ (IUGRD,*) IAMONOP
+        READ (IUGRD,*) IAMOSOP
+        READ (IUGRD,*) IAMOWEP
+        READ (IUGRD,*) IAMOEAP
+        READ (IUGRD,*) ISCALING
+        READ (IUGRD,*) IPER
+        READ (IUGRD,*) IRGG
+        READ (IUGRD,*) NY
 
+        AMONOP = REAL(IAMONOP,JWRB)/REAL(ISCALING,JWRB)
+        AMOSOP = REAL(IAMOSOP,JWRB)/REAL(ISCALING,JWRB)
+        AMOWEP = REAL(IAMOWEP,JWRB)/REAL(ISCALING,JWRB)
+        AMOEAP = REAL(IAMOEAP,JWRB)/REAL(ISCALING,JWRB)
+        WRITE(IU06,*) "AMONOP = ",AMONOP
+        WRITE(IU06,*) "AMOSOP = ",AMOSOP
+        WRITE(IU06,*) "AMOWEP = ",AMOWEP
+        WRITE(IU06,*) "AMOEAP = ",AMOEAP
 
-      IF (LLGRID) THEN
-        XDELLA = (AMONOP-AMOSOP)/(NY-1)
+        IF (ISPECTRUNC > 0) IQGAUSS=1
+
+        XDELLA = (AMONOP-AMOSOP)/REAL(NY-1,JWRB)
         ALLOCATE(NLONRGG(NY))
 
         NX = 0
         DO K=1,NY
           KSN=NY-K+1
-          READ(IU,*) NLONRGG(KSN)
+          READ(IUGRD,*) NLONRGG(KSN)
           NX = MAX(NX,NLONRGG(KSN))
         ENDDO
 
         IF (IPER == 1) THEN
-          XDELLO  = 360._JWRB/REAL(NX)
+          XDELLO  = 360._JWRB/REAL(NX,JWRB)
           AMOEAP = AMOWEP + 360._JWRB - XDELLO
         ELSE
           XDELLO = (AMOEAP-AMOWEP)/(NX-1)
         ENDIF
 
-        CLOSE(IU)
+        CLOSE(IUGRD)
 
       ELSE
         XDELLO=XDELLA     
@@ -315,7 +325,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !       !!! from south to north !!!!
         COSPH(K)   = COS(XLAT(K)*RAD)
         IF (.NOT.LLGRID) THEN
-          IF (IRGG.EQ.1) THEN
+          IF (IRGG == 1) THEN
 !            The silly division by cos(x60*RAD) is an attempt at making sure
 !            that exactly 0.5 is used for cosine of 60 degrees.
              NLONRGG(K)=                                                &
@@ -449,11 +459,11 @@ PROGRAM CREATE_BATHY_ETOPO1
      &        LOCATION(IR)
         DO J=1,ILAT
           YJ=ALAT(J)
-          IF(YJ.GE.YINF(IR).AND.YJ.LE.YSUP(IR)) THEN
+          IF(YJ >= YINF(IR).AND.YJ <= YSUP(IR)) THEN
             DO I=1,ILON
               XI=ALON(I)
               IF (XI >= XINF(IR) .AND. XI <= XSUP(IR)) THEN
-                 IF(IDEPTH(I,J).LE.LEVEL(IR)) THEN
+                 IF(IDEPTH(I,J) <= LEVEL(IR)) THEN
                    IF(NDEPTH(IR).NE.0) THEN
                      IDEPTH(I,J)=NDEPTH(IR)
                    ELSE
@@ -473,9 +483,9 @@ PROGRAM CREATE_BATHY_ETOPO1
 !     THE PROBLEM WITH PERMANENT ICE SHEET
         DO J=1,ILAT
           YJ=ALAT(J)
-          IF(YJ.LE.-64.0_JWRB) THEN
+          IF(YJ <= -64.0_JWRB) THEN
             DO I=1,ILON
-              IF(IDEPTH(I,J).GE.-250) THEN
+              IF(IDEPTH(I,J) >= -250) THEN
                 IDEPTH(I,J)=1
               ENDIF
             ENDDO
@@ -503,8 +513,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 !        WE ASSUME THAT WAMGRID IS ALWAYS WITHIN ETOPO1
 !        DETERMINE CLOSEST ETOPO1 J INDEX TO WAM POINT
          DO J=ILAT-1,1,-1
-           IF(ALAT(J+1).LT.XLAT(K).AND.                                 &
-     &        XLAT(K).LE.ALAT(J) ) EXIT
+           IF(ALAT(J+1) < XLAT(K).AND.                                 &
+     &        XLAT(K) <= ALAT(J) ) EXIT
          ENDDO
          J=MIN(MAX(J,1),ILAT)
 
@@ -512,14 +522,14 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 !          ETOPO1 STARTS AT -180
            XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
-           IF(XLON.GT.180._JWRB) THEN
+           IF(XLON > 180._JWRB) THEN
              XLON=XLON-360._JWRB
            ENDIF
 
 !          DETERMINE CLOSEST ETOPO1 I INDEX TO WAM POINT
            DO I=1,ILON-1
-             IF(ALON(I).LE.XLON.AND.                                    &
-     &          XLON.LT.ALON(I+1) ) EXIT
+             IF(ALON(I) <= XLON.AND.                                    &
+     &          XLON < ALON(I+1) ) EXIT
            ENDDO
 
            NIM=INT(0.5_JWRB*ZDELLO(K)*INVRES)
@@ -540,18 +550,18 @@ PROGRAM CREATE_BATHY_ETOPO1
 !          AVERAGE OVER LAND AND SEA SEPARATELY
 !          AROUND POINT I,J
            DO JJ=J-NJM,J+NJP
-             IF(JJ.GE.1 .AND. JJ.LE.ILAT) THEN
+             IF(JJ >= 1 .AND. JJ <= ILAT) THEN
                DO II=I-NIM,I+NIP
                  IK=II
-                 IF(II.LT.1) IK=ILON+II
-                 IF(II.GT.ILON) IK=II-ILON
-                 IF(IDEPTH(IK,JJ).LE.0) THEN
+                 IF(II < 1) IK=ILON+II
+                 IF(II > ILON) IK=II-ILON
+                 IF(IDEPTH(IK,JJ) <= 0) THEN
                    NSEA=NSEA+1
 !                  IN WAM 999m IS THE MAXIMUM DEPTH
                    SEA=SEA+MAX(-999,IDEPTH(IK,JJ))
 
 !                  FIND SHALLOWER AREAS
-                   IF(IDEPTH(IK,JJ).GT.-500) THEN
+                   IF(IDEPTH(IK,JJ) > -500) THEN
                       NSEASH=NSEASH+1
                       SEASH=SEASH+IDEPTH(IK,JJ)
                    ENDIF
@@ -567,12 +577,12 @@ PROGRAM CREATE_BATHY_ETOPO1
 !          SEARCH FOR LAND AT THE CENTER OF THE GRID BOX
            NLANDCENTRE=0
            DO JJ=J-NLANDCENTREPM,J+NLANDCENTREPM
-             IF(JJ.GE.1 .AND. JJ.LE.ILAT) THEN
+             IF(JJ >= 1 .AND. JJ <= ILAT) THEN
                DO II=I-NLANDCENTREPM,I+NLANDCENTREPM
                  IK=II
-                 IF(II.LT.1) IK=ILON+II
-                 IF(II.GT.ILON) IK=II-ILON
-                 IF(IDEPTH(IK,JJ).GT.0) THEN
+                 IF(II < 1) IK=ILON+II
+                 IF(II > ILON) IK=II-ILON
+                 IF(IDEPTH(IK,JJ) > 0) THEN
                    NLANDCENTRE=NLANDCENTRE+1
                  ENDIF
                ENDDO
@@ -582,16 +592,16 @@ PROGRAM CREATE_BATHY_ETOPO1
 !          IF RATIOLAND_THRESHOLD OR MORE LAND OR THE CENTER OF THE GRID BOX IS LAND, THEN AVERAGE OVER LAND POINTS
 !          ELSE AVERAGE OVER SEA POINTS
            PERCENTLAND(IX,K)=REAL(NLAND,JWRB)/REAL((NLAND+NSEA),JWRB)
-           IF(PERCENTLAND(IX,K).GT. RATIOLAND_THRESHOLD .OR.         &
-     &        NLANDCENTRE.GE.NLANDCENTREMAX ) THEN
+           IF(PERCENTLAND(IX,K) >  RATIOLAND_THRESHOLD .OR.         &
+     &        NLANDCENTRE >= NLANDCENTREMAX ) THEN
              WAMDEPTH(IX,K)=XLAND/NLAND
            ELSE
 !            IF THERE IS A PERCENTAGE OF SHALLOWER POINTS THEN
 !            THE AVERAGE IS TAKEN OVER THOSE POINTS ALONE.
              PERCENTSHALLOW(IX,K)=REAL(NSEASH,JWRB)/REAL(NSEA,JWRB)
-             IF(PERCENTSHALLOW(IX,K) .GE. RATIOSHALLOW_THRESHOLD) THEN
+             IF(PERCENTSHALLOW(IX,K) >= RATIOSHALLOW_THRESHOLD) THEN
                WAMDEPTH(IX,K)=SEASH/NSEASH
-               IF(PERCENTLAND(IX,K).LT.0.10_JWRB) THEN
+               IF(PERCENTLAND(IX,K) < 0.10_JWRB) THEN
 !                IF MOSTLY SEA THEN IT SHOULD BE SEA AND NOT 0 
                  WAMDEPTH(IX,K)=MIN(WAMDEPTH(IX,K),-1.0_JWRB)
                ENDIF
@@ -606,7 +616,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       NPTS=0
       DO K=1,NY
          DO IX=1,NLONRGG(K)
-          IF(WAMDEPTH(IX,K).LT.0.0_JWRB) NPTS=NPTS+1
+          IF(WAMDEPTH(IX,K) < 0.0_JWRB) NPTS=NPTS+1
         ENDDO
       ENDDO
 
@@ -633,17 +643,17 @@ PROGRAM CREATE_BATHY_ETOPO1
          READ(35,*,END=111,ERR=111) XLO,XLA,IX,K,IDPT
          IDPT=-IDPT
          XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
-         IF(ABS(XLON-XLO).GT.ZDELLO(K) .OR.                             &
-     &      ABS(XLAT(K)-XLA).GT.XDELLA ) THEN
+         IF(ABS(XLON-XLO) > ZDELLO(K) .OR.                             &
+     &      ABS(XLAT(K)-XLA) > XDELLA ) THEN
            WRITE(*,*) 'PROBLEM !!!!'
            WRITE(*,*) 'THE CORRECTION TO WAM GRID IS NOT A WAM POINT'
            WRITE(*,*) XLO,XLA,IDPT 
            WRITE(*,*) XLON,XLAT(K),WAMDEPTH(IX,K)
            WRITE(*,*) ''
          ELSE
-           IF(WAMDEPTH(IX,K).GE.0.0_JWRB .AND. IDPT.LT.0) THEN
+           IF(WAMDEPTH(IX,K) >= 0.0_JWRB .AND. IDPT < 0) THEN
              NPTS=NPTS+1
-           ELSEIF(WAMDEPTH(IX,K).LT.0.0_JWRB .AND. IDPT.GE.0) THEN
+           ELSEIF(WAMDEPTH(IX,K) < 0.0_JWRB .AND. IDPT >= 0) THEN
              NPTS=NPTS-1
            ENDIF  
            WAMDEPTH(IX,K)=REAL(IDPT,JWRB)
@@ -672,13 +682,13 @@ PROGRAM CREATE_BATHY_ETOPO1
         DO K=1,NY
            DO IX=1,NLONRGG(K)
              XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
-             IF(XLON.GT.180._JWRB) then
+             IF(XLON > 180._JWRB) then
                XLON=XLON-360._JWRB
              ENDIF
-            IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.            &
-     &         ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
-               IF(WAMDEPTH(IX,K).LT.0.0_JWRB .AND.                      &
-     &            WAMDEPTH(IX,K).GT.-999._JWRB ) THEN
+            IF(ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.            &
+     &         ALONL <= XLON .AND. XLON <= ALONR ) THEN
+               IF(WAMDEPTH(IX,K) < 0.0_JWRB .AND.                      &
+     &            WAMDEPTH(IX,K) > -999._JWRB ) THEN
                   WRITE(12,'(3(1X,F8.3))') XLON,XLAT(K),WAMDEPTH(IX,K)
                ENDIF
             ENDIF
@@ -740,9 +750,9 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       WRITE(1,'(I4)') NFRE_RED
 
-      IF(XDELLA.LE.0.125_JWRB) THEN
+      IF(XDELLA <= 0.125_JWRB) THEN
         IREINF=4
-      ELSEIF(XDELLA.LE.0.5_JWRB) THEN
+      ELSEIF(XDELLA <= 0.5_JWRB) THEN
         IREINF=2
       ELSE
         IREINF=1
@@ -763,8 +773,8 @@ PROGRAM CREATE_BATHY_ETOPO1
       DO M=1,NFRE_RED
 
 !!!!    COMPUTE THE OBSTRUCTIONS ONLY WHEN IT IS MEANINGFUL
-        IF(XDELLA .LE. 2.*RESOL ) THEN
-          IF(M.EQ.1) THEN
+        IF(XDELLA <= 2.*RESOL ) THEN
+          IF(M == 1) THEN
             WRITE(*,*) ''
             WRITE(*,*) '*********************************************'
             WRITE(*,*) 'THE REQUESTED RESOLUTION IS SMALL ENOUGH WITH'
@@ -789,14 +799,14 @@ PROGRAM CREATE_BATHY_ETOPO1
 !       ALSO COMPUTE THE DEPTH THAT IS CONSIDERED TO BE FULLY BLOCKING AS IF IT WAS LAND (IBLOCKDPT).
         DO K=1,NY
           DO IX=1,NLONRGG(K)
-            IF(WAMDEPTH(IX,K).LT.0.0_JWRB) THEN
+            IF(WAMDEPTH(IX,K) < 0.0_JWRB) THEN
               XX=XKDMAX/XK(MAX(MIN(-NINT(WAMDEPTH(IX,K)),NDPT),1))
               ITHRSHOLD(IX,K)=NINT(-XX)
               RR=MAX(REAL((ISWTHRS-ABS(NINT(WAMDEPTH(IX,K)))),JWRB)/ISWTHRS,0.0_JWRB)
               XKEXTHRS=XKEXTHRS_DEEP*(1.0_JWRB+RR)
               ALPR=MAX(ALPR_DEEP*(1.0_JWRB-RR),0.0_JWRB)
               REXCLTHRSHOLD=MAX(XKEXTHRS*ITHRSHOLD(IX,K),-998._JWRB)
-              LLEXCLTHRSHOLD(IX,K)=(WAMDEPTH(IX,K).LT.REXCLTHRSHOLD)
+              LLEXCLTHRSHOLD(IX,K)=(WAMDEPTH(IX,K) < REXCLTHRSHOLD)
               IBLOCKDPT(IX,K)=INT(-ALPR*XX)
             ENDIF
           ENDDO
@@ -817,7 +827,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !$OMP& PRIVATE(NTOTPTS)
 !         LOOP OVER MODEL LATITUDES
           DO K=1,NY
-            IF(IS.EQ.1) THEN
+            IF(IS == 1) THEN
               KT=K
               KB=K-1
               STEPT=-RESOL
@@ -835,18 +845,18 @@ PROGRAM CREATE_BATHY_ETOPO1
             ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
+            IF(ILATB == ILAT+1)ILATB=ILAT
 
 !           LOOP OVER ALL MODEL POINTS FOR A GIVEN LATITUDE
             DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0.0_JWRB) THEN
+              IF(WAMDEPTH(IX,K) < 0.0_JWRB) THEN
 !               SEA POINT GRID BOX LATITUNAL EXTEND :
                 XLONL=AMOWEP + (REAL(IX-1,JWRB)-0.5_JWRB)*ZDELLO(K)
-                IF(XLONL.GT.180._JWRB) then
+                IF(XLONL > 180._JWRB) then
                   XLONL=XLONL-360._JWRB
                 ENDIF
                 XLONR=AMOWEP + (REAL(IX-1,JWRB)+0.5_JWRB)*ZDELLO(K)
-                IF(XLONR.GT.180._JWRB) then
+                IF(XLONR > 180._JWRB) then
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
@@ -865,7 +875,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                 NOBSTRCT=0
 
 !               AWAY FROM THE DATELINE
-                IF(ILONL.LE.ILONR) THEN
+                IF(ILONL <= ILONR) THEN
                   NBLOCKLAND=0
 !                 LOOP OVER SUBGRID LONGITUDE LINE:
                   DO I=ILONL,ILONR
@@ -874,7 +884,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                     LREALLAND=.FALSE.
 !                   SCAN EACH SUBGRID LATTUDE:
                     DO J=ILATT,ILATB
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K) ) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K) ) THEN
 !                       IF THE LONGITUDE LINE CONTAINS ACTUAL LAND (> 0) THEN THE FULL LONGITUDE WILL BLOCK ONLY IF
 !                       THERE IS A SWITCH BACK TO DEPTH < IBLOCKDPT OR VICE VERSA (see below).
 !                       THIS IS TO AVOID CREATING FULL OBSTRUCTION WHEN APPROACHING THE COASTLINE.
@@ -882,11 +892,11 @@ PROGRAM CREATE_BATHY_ETOPO1
 !                       THEN THE FULL LINE WILL BLOCK IF THERE IS NOT TOO MUCH LAND (see below).
 !                       AGAIN THIS IS TO AVOID CREATING FULL OBSTRUCTION WHEN APPROACHING THE COASTLINE.
 
-                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J) > 0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1
 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.  LLEXCLTHRSHOLD(IX,K)) THEN
+                      ELSEIF (IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.  LLEXCLTHRSHOLD(IX,K)) THEN
 !                       IF SEA ABOVE THE THRESHOLD THEN ONLY THAT SUBGRID POINT BLOCKS
                         NIOBSLON=NIOBSLON+1
                       ENDIF
@@ -898,16 +908,16 @@ PROGRAM CREATE_BATHY_ETOPO1
 !                       LINE CONTAINS ACTUAL LAND SUBGRID POINT(S)
 !                       SEARCH FOR A CHANGE SEA-LAND-SEA OR VICE VERSA.
                         LNSW=.TRUE.  
-                        IF(IDEPTH(I,ILATT).GE.IBLOCKDPT(IX,K)) THEN
+                        IF(IDEPTH(I,ILATT) >= IBLOCKDPT(IX,K)) THEN
                           L1ST=.TRUE.
                         ELSE
                           L1ST=.FALSE.
                         ENDIF
                         DO J=ILATT+1,ILATB
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLON=IREINF*(ILATB-ILATT+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -918,10 +928,10 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                       ELSE 
 !                       SPEUDO LAND
-                        IF(PERCENTSHALLOW(IX,K).GT.PSHALLOWTRHS) THEN
+                        IF(PERCENTSHALLOW(IX,K) > PSHALLOWTRHS) THEN
 !                         mostly shallow, do not enhance obstruction
                           NIOBSLON=ILATB-ILATT+1
-                        ELSEIF(PERCENTLAND(IX,K).LT.PLANDTRHS) THEN
+                        ELSEIF(PERCENTLAND(IX,K) < PLANDTRHS) THEN
 !                         does not contain too much land
                           NIOBSLON=IREINF*(ILATB-ILATT+1)
                           NBLOCKLAND=NBLOCKLAND+1
@@ -949,10 +959,10 @@ PROGRAM CREATE_BATHY_ETOPO1
                   DO I=1,ILONR
                     NIOBSLON=0
                     DO J=ILATT,ILATB
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) )THEN
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) )THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
@@ -962,10 +972,10 @@ PROGRAM CREATE_BATHY_ETOPO1
                   DO I=ILONL,ILON
                     NIOBSLON=0
                     DO J=ILATT,ILATB
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) )THEN
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) )THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
@@ -1008,23 +1018,23 @@ PROGRAM CREATE_BATHY_ETOPO1
             ENDIF
             ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
+            IF(ILATB == ILAT+1)ILATB=ILAT
 
 !           LOOP OVER ALL MODEL POINTS FOR A GIVEN LATITUDE
             DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0.0_JWRB) THEN
+              IF(WAMDEPTH(IX,K) < 0.0_JWRB) THEN
 !               SEA POINT GRID BOX LONGITUDINAL EXTEND :
-                IF(IS.EQ.1) THEN
+                IF(IS == 1) THEN
                   XLONL=AMOWEP + (REAL(IX-2,JWRB))*ZDELLO(K)
                   XLONR=AMOWEP + (REAL(IX-1,JWRB))*ZDELLO(K) -RESOL
                 ELSE
                   XLONL=AMOWEP + (REAL(IX-1,JWRB))*ZDELLO(K) +RESOL
                   XLONR=AMOWEP + (REAL(IX,JWRB))*ZDELLO(K)
                 ENDIF
-                IF(XLONL.GT.180._JWRB) THEN
+                IF(XLONL > 180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
                 ENDIF
-                IF(XLONR.GT.180._JWRB) THEN
+                IF(XLONR > 180._JWRB) THEN
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
@@ -1037,7 +1047,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                 NOBSTRCT=0
 
 !               AWAY FROM THE DATELINE
-                IF(ILONL.LE.ILONR) THEN
+                IF(ILONL <= ILONR) THEN
                   NBLOCKLAND=0
 !                 LOOP OVER SUBGRID LATITUDE LINE:
                   DO J=ILATT,ILATB
@@ -1047,7 +1057,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 !                   SCAN EACH SUBGRID LONGITUDE:
                     DO I=ILONL,ILONR
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K) ) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K) ) THEN
 !                       IF THE LATITUDE LINE CONTAINS ACTUAL LAND (> 0) THEN THE FULL LONGITUDE WILL BLOCK ONLY IF
 !                       THERE IS A SWITCH BACK TO DEPTH < IBLOCKDPT OR VICE VERSA (see below).
 !                       THIS IS TO AVOID CREATING FULL OBSTRUCTION WHEN APPROACHING THE COASTLINE.
@@ -1056,10 +1066,10 @@ PROGRAM CREATE_BATHY_ETOPO1
 !                       AGAIN THIS IS TO AVOID CREATING FULL OBSTRUCTION WHEN APPROACHING THE COASTLINE.
 
                         LLAND=.TRUE.
-                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J) > 0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) ) THEN
+                      ELSEIF (IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) ) THEN
 !                       IF SEA ABOVE THE THRESHOLD THEN ONLY THAT SUBGRID POINT BLOCKS
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
@@ -1071,16 +1081,16 @@ PROGRAM CREATE_BATHY_ETOPO1
 !                       LINE CONTAINS ACTUAL LAND SUBGRID POINT(S)
 !                       SEARCH FOR A CHANGE SEA-LAND-SEA OR VICE VERSA.
                         LNSW=.TRUE.  
-                        IF(IDEPTH(ILONL,J).GE.IBLOCKDPT(IX,K) ) THEN
+                        IF(IDEPTH(ILONL,J) >= IBLOCKDPT(IX,K) ) THEN
                           L1ST=.TRUE.
                         ELSE
                           L1ST=.FALSE.
                         ENDIF
                         DO I=ILONL+1,ILONR
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) .NEQV.L1ST) .AND. LNSW ) THEN
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)) .NEQV.L1ST) .AND. LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLAT=IREINF*(ILONR-ILONL+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -1091,9 +1101,9 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                       ELSE
 !                       SPEUDO LAND
-                        IF(PERCENTSHALLOW(IX,K).GT.PSHALLOWTRHS) THEN
+                        IF(PERCENTSHALLOW(IX,K) > PSHALLOWTRHS) THEN
                           NIOBSLAT=ILONR-ILONL+1
-                        ELSEIF(PERCENTLAND(IX,K).LT.PLANDTRHS) THEN
+                        ELSEIF(PERCENTLAND(IX,K) < PLANDTRHS) THEN
                           NIOBSLAT=IREINF*(ILONR-ILONL+1)
                           NBLOCKLAND=NBLOCKLAND+1
                         ELSE
@@ -1119,18 +1129,18 @@ PROGRAM CREATE_BATHY_ETOPO1
                   DO J=ILATT,ILATB
                     NIOBSLAT=0
                     DO I=1,ILONR
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         GOTO 1111 
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) ) THEN
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) ) THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
                     DO I=ILONL,ILON
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) )THEN
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) )THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
@@ -1165,7 +1175,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !$OMP& PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST) &
 !$OMP& PRIVATE(NTOTPTS)
           DO K=1,NY
-            IF(IS.EQ.1) THEN
+            IF(IS == 1) THEN
               KT=K
               KB=K-1
               STEPT=-RESOL
@@ -1182,17 +1192,17 @@ PROGRAM CREATE_BATHY_ETOPO1
             ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
+            IF(ILATB == ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0.0_JWRB) THEN
+              IF(WAMDEPTH(IX,K) < 0.0_JWRB) THEN
                 XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 XLONL=XLON -(IS-1)*XDELLA
-                IF(XLONL.GT.180._JWRB) THEN
+                IF(XLONL > 180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
                 ENDIF
                 XLONR=XLON +(2-IS)*XDELLA
-                IF(XLONR.GT.180._JWRB) THEN
+                IF(XLONR > 180._JWRB) THEN
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
@@ -1207,23 +1217,23 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                 NOBSTRCT=0
 
-                IF(ILONL.LE.ILONR) THEN
+                IF(ILONL <= ILONR) THEN
                   NBLOCKLAND=0
                   DO I=ILONL,ILONR
                     NIOBSLON=0
                     LLAND=.FALSE.
                     LREALLAND=.FALSE.
                     DO J=ILATT,ILATB
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K) ) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K) ) THEN
 !                     IF LAND THEN THE FULL LONGITUDE IS BLOCKED
 !                     IF THERE IS A SWITCH BACK TO SEA OR VICE VERSA
 !                     (SEE BELOW)
 !                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
 !                     ------------------------------------------
-                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J) > 0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
+                      ELSEIF (IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.      &
      &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
@@ -1235,16 +1245,16 @@ PROGRAM CREATE_BATHY_ETOPO1
                     IF(LLAND) THEN
                       IF(LREALLAND) THEN
                         LNSW=.TRUE.  
-                        IF(IDEPTH(I,ILATT).GE.IBLOCKDPT(IX,K)) THEN
+                        IF(IDEPTH(I,ILATT) >= IBLOCKDPT(IX,K)) THEN
                           L1ST=.TRUE.
                         ELSE
                           L1ST=.FALSE.
                         ENDIF
                         DO J=ILATT+1,ILATB
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLON=IREINF*(ILATB-ILATT+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -1253,9 +1263,9 @@ PROGRAM CREATE_BATHY_ETOPO1
                         ENDDO
                         IF(LNSW) NIOBSLON=ILATB-ILATT+1
                       ELSE
-                        IF(PERCENTSHALLOW(IX,K).GT.PSHALLOWTRHS) THEN
+                        IF(PERCENTSHALLOW(IX,K) > PSHALLOWTRHS) THEN
                           NIOBSLON=ILATB-ILATT+1
-                        ELSEIF(PERCENTLAND(IX,K).LT.PLANDTRHS) THEN
+                        ELSEIF(PERCENTLAND(IX,K) < PLANDTRHS) THEN
                           NIOBSLON=IREINF*(ILATB-ILATT+1)
                           NBLOCKLAND=NBLOCKLAND+1
                         ELSE
@@ -1276,10 +1286,10 @@ PROGRAM CREATE_BATHY_ETOPO1
                   DO I=1,ILONR
                     NIOBSLON=0
                     DO J=ILATT,ILATB
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.       &
      &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
@@ -1289,10 +1299,10 @@ PROGRAM CREATE_BATHY_ETOPO1
                   DO I=ILONL,ILON
                     NIOBSLON=0
                     DO J=ILATT,ILATB
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.       &
      &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
@@ -1330,22 +1340,22 @@ PROGRAM CREATE_BATHY_ETOPO1
             ENDIF
             ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
+            IF(ILATB == ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0.0_JWRB) THEN
+              IF(WAMDEPTH(IX,K) < 0.0_JWRB) THEN
                 XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
-                IF(IS.EQ.1) THEN
+                IF(IS == 1) THEN
                   XLONL=XLON + RESOL
                   XLONR=XLON + XDELLA
                 ELSE
                   XLONL=XLON -  XDELLA
                   XLONR=XLON - RESOL
                 ENDIF
-                IF(XLONL.GT.180._JWRB) THEN
+                IF(XLONL > 180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
                 ENDIF
-                IF(XLONR.GT.180._JWRB) THEN
+                IF(XLONR > 180._JWRB) THEN
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
@@ -1354,23 +1364,23 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                 NOBSTRCT=0
 
-                IF(ILONL.LE.ILONR) THEN
+                IF(ILONL <= ILONR) THEN
                   NBLOCKLAND=0
                   DO J=ILATT,ILATB
                     NIOBSLAT=0
                     LLAND=.FALSE.
                     LREALLAND=.FALSE.
                     DO I=ILONL,ILONR
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K) ) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K) ) THEN
 !                     IF LAND THEN THE FULL LONGITUDE IS BLOCKED
 !                     IF THERE IS A SWITCH BACK TO SEA OR VICE VERSA
 !                     (SEE BELOW)
 !                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
 !                     ------------------------------------------
                         LLAND=.TRUE.
-                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J) > 0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
+                      ELSEIF (IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.      &
      &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
@@ -1382,16 +1392,16 @@ PROGRAM CREATE_BATHY_ETOPO1
                     IF(LLAND) THEN
                       IF(LREALLAND) THEN
                         LNSW=.TRUE.  
-                        IF(IDEPTH(ILONL,J).GE.IBLOCKDPT(IX,K) ) THEN
+                        IF(IDEPTH(ILONL,J) >= IBLOCKDPT(IX,K) ) THEN
                           L1ST=.TRUE.
                         ELSE
                           L1ST=.FALSE.
                         ENDIF
                         DO I=ILONL+1,ILONR
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN 
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN 
                             LNSW=.FALSE.
                           ENDIF
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLAT=IREINF*(ILONR-ILONL+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -1400,9 +1410,9 @@ PROGRAM CREATE_BATHY_ETOPO1
                         ENDDO
                         IF(LNSW) NIOBSLAT=ILONR-ILONL+1
                       ELSE
-                        IF(PERCENTSHALLOW(IX,K).GT.PSHALLOWTRHS) THEN
+                        IF(PERCENTSHALLOW(IX,K) > PSHALLOWTRHS) THEN
                           NIOBSLAT=ILONR-ILONL+1
-                        ELSEIF(PERCENTLAND(IX,K).LT.PLANDTRHS) THEN
+                        ELSEIF(PERCENTLAND(IX,K) < PLANDTRHS) THEN
                           NIOBSLAT=IREINF*(ILONR-ILONL+1)
                           NBLOCKLAND=NBLOCKLAND+1
                         ELSE
@@ -1422,19 +1432,19 @@ PROGRAM CREATE_BATHY_ETOPO1
                   DO J=ILATT,ILATB
                     NIOBSLAT=0
                     DO I=1,ILONR
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         GOTO 2222 
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.       &
      &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
                     DO I=ILONL,ILON
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.       &
      &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
@@ -1470,7 +1480,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !$OMP& PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST) &
 !$OMP& PRIVATE(NTOTPTS)
           DO K=1,NY
-            IF(IS.EQ.1) THEN
+            IF(IS == 1) THEN
               KT=K
               KB=K-1
               STEPT=-RESOL
@@ -1487,17 +1497,17 @@ PROGRAM CREATE_BATHY_ETOPO1
             ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
+            IF(ILATB == ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0.0_JWRB) THEN
+              IF(WAMDEPTH(IX,K) < 0.0_JWRB) THEN
                 XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 XLONL=XLON -(2-IS)*XDELLA
-                IF(XLONL.GT.180._JWRB) THEN
+                IF(XLONL > 180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
                 ENDIF
                 XLONR=XLON +(IS-1)*XDELLA
-                IF(XLONR.GT.180._JWRB) THEN
+                IF(XLONR > 180._JWRB) THEN
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
@@ -1512,23 +1522,23 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                 NOBSTRCT=0
 
-                IF(ILONL.LE.ILONR) THEN
+                IF(ILONL <= ILONR) THEN
                   NBLOCKLAND=0
                   DO I=ILONL,ILONR
                     NIOBSLON=0
                     LLAND=.FALSE.
                     LREALLAND=.FALSE.
                     DO J=ILATT,ILATB
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K) ) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K) ) THEN
 !                     IF LAND THEN THE FULL LONGITUDE IS BLOCKED
 !                     IF THERE IS A SWITCH BACK TO SEA OR VICE VERSA
 !                     (SEE BELOW)
 !                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
 !                     ------------------------------------------
-                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J) > 0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
+                      ELSEIF (IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.      &
      &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
@@ -1540,16 +1550,16 @@ PROGRAM CREATE_BATHY_ETOPO1
                     IF(LLAND) THEN
                       IF(LREALLAND) THEN
                         LNSW=.TRUE.  
-                        IF(IDEPTH(I,ILATT).GE.IBLOCKDPT(IX,K)) THEN
+                        IF(IDEPTH(I,ILATT) >= IBLOCKDPT(IX,K)) THEN
                           L1ST=.TRUE.
                         ELSE
                           L1ST=.FALSE.
                         ENDIF
                         DO J=ILATT+1,ILATB
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLON=IREINF*(ILATB-ILATT+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -1558,9 +1568,9 @@ PROGRAM CREATE_BATHY_ETOPO1
                         ENDDO
                         IF(LNSW) NIOBSLON=ILATB-ILATT+1
                       ELSE
-                        IF(PERCENTSHALLOW(IX,K).GT.PSHALLOWTRHS) THEN
+                        IF(PERCENTSHALLOW(IX,K) > PSHALLOWTRHS) THEN
                           NIOBSLON=ILATB-ILATT+1
-                        ELSEIF(PERCENTLAND(IX,K).LT.PLANDTRHS) THEN
+                        ELSEIF(PERCENTLAND(IX,K) < PLANDTRHS) THEN
                           NIOBSLON=IREINF*(ILATB-ILATT+1)
                           NBLOCKLAND=NBLOCKLAND+1
                         ELSE
@@ -1581,10 +1591,10 @@ PROGRAM CREATE_BATHY_ETOPO1
                   DO I=1,ILONR
                     NIOBSLON=0
                     DO J=ILATT,ILATB
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.       &
      &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
@@ -1594,10 +1604,10 @@ PROGRAM CREATE_BATHY_ETOPO1
                   DO I=ILONL,ILON
                     NIOBSLON=0
                     DO J=ILATT,ILATB
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.       &
      &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
@@ -1635,22 +1645,22 @@ PROGRAM CREATE_BATHY_ETOPO1
             ENDIF
             ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
+            IF(ILATB == ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0.0_JWRB) THEN
+              IF(WAMDEPTH(IX,K) < 0.0_JWRB) THEN
                 XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
-                IF(IS.EQ.1) THEN
+                IF(IS == 1) THEN
                   XLONL=XLON + RESOL
                   XLONR=XLON + XDELLA
                 ELSE
                   XLONL=XLON - XDELLA
                   XLONR=XLON - RESOL
                 ENDIF
-                IF(XLONL.GT.180._JWRB) THEN
+                IF(XLONL > 180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
                 ENDIF
-                IF(XLONR.GT.180._JWRB) THEN
+                IF(XLONR > 180._JWRB) THEN
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
@@ -1659,23 +1669,23 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                 NOBSTRCT=0
 
-                IF(ILONL.LE.ILONR) THEN
+                IF(ILONL <= ILONR) THEN
                   NBLOCKLAND=0
                   DO J=ILATT,ILATB
                     NIOBSLAT=0
                     LLAND=.FALSE.
                     LREALLAND=.FALSE.
                     DO I=ILONL,ILONR
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K) ) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K) ) THEN
 !                     IF LAND THEN THE FULL LONGITUDE IS BLOCKED
 !                     IF THERE IS A SWITCH BACK TO SEA OR VICE VERSA
 !                     (SEE BELOW)
 !                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
 !                     ------------------------------------------
                         LLAND=.TRUE.
-                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J) > 0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
+                      ELSEIF (IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.      &
      &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
@@ -1687,16 +1697,16 @@ PROGRAM CREATE_BATHY_ETOPO1
                     IF(LLAND) THEN
                       IF(LREALLAND) THEN
                         LNSW=.TRUE.  
-                        IF(IDEPTH(ILONL,J).GE.IBLOCKDPT(IX,K) ) THEN
+                        IF(IDEPTH(ILONL,J) >= IBLOCKDPT(IX,K) ) THEN
                           L1ST=.TRUE.
                         ELSE
                           L1ST=.FALSE.
                         ENDIF
                         DO I=ILONL+1,ILONR
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLAT=IREINF*(ILONR-ILONL+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -1705,9 +1715,9 @@ PROGRAM CREATE_BATHY_ETOPO1
                         ENDDO
                         IF(LNSW) NIOBSLAT=ILONR-ILONL+1
                       ELSE
-                        IF(PERCENTSHALLOW(IX,K).GT.PSHALLOWTRHS) THEN
+                        IF(PERCENTSHALLOW(IX,K) > PSHALLOWTRHS) THEN
                           NIOBSLAT=ILONR-ILONL+1
-                        ELSEIF(PERCENTLAND(IX,K).LT.PLANDTRHS) THEN
+                        ELSEIF(PERCENTLAND(IX,K) < PLANDTRHS) THEN
                           NIOBSLAT=IREINF*(ILONR-ILONL+1)
                           NBLOCKLAND=NBLOCKLAND+1
                         ELSE
@@ -1727,19 +1737,19 @@ PROGRAM CREATE_BATHY_ETOPO1
                   DO J=ILATT,ILATB
                     NIOBSLAT=0
                     DO I=1,ILONR
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         GOTO 3333 
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.       &
      &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
                     DO I=ILONL,ILON
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.      &
      &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
@@ -1777,22 +1787,22 @@ PROGRAM CREATE_BATHY_ETOPO1
 !$OMP& PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST) &
 !$OMP& PRIVATE(NTOTPTS)
           DO K=1,NY
-            IF(IS.EQ.1) THEN 
+            IF(IS == 1) THEN 
               KT=K+1
               KB=K
               STEPT=0._JWRB
               STEPB=RESOL
-            ELSE IF(IS.EQ.2) THEN
+            ELSE IF(IS == 2) THEN
               KT=K
               KB=K-1
               STEPT=-RESOL
               STEPB=0._JWRB
-            ELSE IF(IS.EQ.3) THEN
+            ELSE IF(IS == 3) THEN
               KT=K
               KB=K-1
               STEPT=-RESOL
               STEPB=0._JWRB
-            ELSE IF (IS.EQ.4) THEN
+            ELSE IF (IS == 4) THEN
               KT=K+1
               KB=K
               STEPT=0._JWRB
@@ -1805,17 +1815,17 @@ PROGRAM CREATE_BATHY_ETOPO1
             ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
+            IF(ILATB == ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0.0_JWRB) THEN
+              IF(WAMDEPTH(IX,K) < 0.0_JWRB) THEN
                 XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 XLONL=XLON -((IS-1)/2)*ZDELLO(K)
-                IF(XLONL.GT.180._JWRB) THEN
+                IF(XLONL > 180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
                 ENDIF
                 XLONR=XLON +((4-IS)/2)*ZDELLO(K)
-                IF(XLONR.GT.180._JWRB) THEN
+                IF(XLONR > 180._JWRB) THEN
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
@@ -1830,23 +1840,23 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                 NOBSTRCT=0
 
-                IF(ILONL.LE.ILONR) THEN
+                IF(ILONL <= ILONR) THEN
                   NBLOCKLAND=0
                   DO I=ILONL,ILONR
                     NIOBSLON=0
                     LLAND=.FALSE.
                     LREALLAND=.FALSE.
                     DO J=ILATT,ILATB
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K) ) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K) ) THEN
 !                     IF LAND THEN THE FULL LONGITUDE IS BLOCKED
 !                     IF THERE IS A SWITCH BACK TO SEA OR VICE VERSA
 !                     (SEE BELOW)
 !                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
 !                     ------------------------------------------
-                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J) > 0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
+                      ELSEIF (IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.      &
      &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
@@ -1858,16 +1868,16 @@ PROGRAM CREATE_BATHY_ETOPO1
                     IF(LLAND) THEN
                       IF(LREALLAND) THEN
                         LNSW=.TRUE.  
-                        IF(IDEPTH(I,ILATT).GE.IBLOCKDPT(IX,K)) THEN
+                        IF(IDEPTH(I,ILATT) >= IBLOCKDPT(IX,K)) THEN
                           L1ST=.TRUE.
                         ELSE
                           L1ST=.FALSE.
                         ENDIF
                         DO J=ILATT+1,ILATB
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) .NEQV.L1ST) .AND. LNSW ) THEN
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)) .NEQV.L1ST) .AND. LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLON=IREINF*(ILATB-ILATT+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -1876,9 +1886,9 @@ PROGRAM CREATE_BATHY_ETOPO1
                         ENDDO
                         IF(LNSW) NIOBSLON=ILATB-ILATT+1
                       ELSE
-                        IF(PERCENTSHALLOW(IX,K).GT.PSHALLOWTRHS) THEN
+                        IF(PERCENTSHALLOW(IX,K) > PSHALLOWTRHS) THEN
                           NIOBSLON=ILATB-ILATT+1
-                        ELSEIF(PERCENTLAND(IX,K).LT.PLANDTRHS) THEN
+                        ELSEIF(PERCENTLAND(IX,K) < PLANDTRHS) THEN
                           NIOBSLON=IREINF*(ILATB-ILATT+1)
                           NBLOCKLAND=NBLOCKLAND+1
                         ELSE
@@ -1899,10 +1909,10 @@ PROGRAM CREATE_BATHY_ETOPO1
                   DO I=1,ILONR
                     NIOBSLON=0
                     DO J=ILATT,ILATB
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.       &
      &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
@@ -1912,10 +1922,10 @@ PROGRAM CREATE_BATHY_ETOPO1
                   DO I=ILONL,ILON
                     NIOBSLON=0
                     DO J=ILATT,ILATB
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.       &
      &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
@@ -1941,7 +1951,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !$OMP& PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST) &
 !$OMP& PRIVATE(NTOTPTS,ITEMPEW,XX)
           DO K=1,NY
-            IF(IS.EQ.1 .OR. IS.EQ.4) THEN
+            IF(IS == 1 .OR. IS == 4) THEN
               XLATT=XLAT(K)+XDELLA
               XLATB=XLAT(K)
             ELSE
@@ -1958,22 +1968,22 @@ PROGRAM CREATE_BATHY_ETOPO1
             ENDIF
             ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
+            IF(ILATB == ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0.0_JWRB) THEN
+              IF(WAMDEPTH(IX,K) < 0.0_JWRB) THEN
                 XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
-                IF(IS.EQ.1 .OR. IS.EQ.2) THEN
+                IF(IS == 1 .OR. IS == 2) THEN
                   XLONL=XLON + RESOL
                   XLONR=XLON + ZDELLO(K) 
                 ELSE
                   XLONL=XLON - ZDELLO(K) 
                   XLONR=XLON - RESOL
                 ENDIF
-                IF(XLONL.GT.180._JWRB) THEN
+                IF(XLONL > 180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
                 ENDIF
-                IF(XLONR.GT.180._JWRB) THEN
+                IF(XLONR > 180._JWRB) THEN
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
@@ -1982,23 +1992,23 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                 NOBSTRCT=0
 
-                IF(ILONL.LE.ILONR) THEN
+                IF(ILONL <= ILONR) THEN
                   NBLOCKLAND=0
                   DO J=ILATT,ILATB
                     NIOBSLAT=0
                     LLAND=.FALSE.
                     LREALLAND=.FALSE.
                     DO I=ILONL,ILONR
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K) ) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K) ) THEN
 !                     IF LAND THEN THE FULL LONGITUDE IS BLOCKED
 !                     IF THERE IS A SWITCH BACK TO SEA OR VICE VERSA
 !                     (SEE BELOW)
 !                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
 !                     ------------------------------------------
                         LLAND=.TRUE.
-                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J) > 0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
+                      ELSEIF (IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.      &
      &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
@@ -2010,16 +2020,16 @@ PROGRAM CREATE_BATHY_ETOPO1
                     IF(LLAND) THEN
                       IF(LREALLAND) THEN
                         LNSW=.TRUE.  
-                        IF(IDEPTH(ILONL,J).GE.IBLOCKDPT(IX,K) ) THEN
+                        IF(IDEPTH(ILONL,J) >= IBLOCKDPT(IX,K) ) THEN
                           L1ST=.TRUE.
                         ELSE
                           L1ST=.FALSE.
                         ENDIF
                         DO I=ILONL+1,ILONR
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN 
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN 
                             LNSW=.FALSE.
                           ENDIF
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN 
+                          IF( ((IDEPTH(I,J) >= IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN 
 !                           LAND IS BLOCKING
                             NIOBSLAT=IREINF*(ILONR-ILONL+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -2028,9 +2038,9 @@ PROGRAM CREATE_BATHY_ETOPO1
                         ENDDO
                         IF(LNSW) NIOBSLAT=ILONR-ILONL+1
                       ELSE
-                        IF(PERCENTSHALLOW(IX,K).GT.PSHALLOWTRHS) THEN
+                        IF(PERCENTSHALLOW(IX,K) > PSHALLOWTRHS) THEN
                           NIOBSLAT=ILONR-ILONL+1
-                        ELSEIF(PERCENTLAND(IX,K).LT.PLANDTRHS) THEN
+                        ELSEIF(PERCENTLAND(IX,K) < PLANDTRHS) THEN
                           NIOBSLAT=IREINF*(ILONR-ILONL+1)
                           NBLOCKLAND=NBLOCKLAND+1
                         ELSE
@@ -2050,19 +2060,19 @@ PROGRAM CREATE_BATHY_ETOPO1
                   DO J=ILATT,ILATB
                     NIOBSLAT=0
                     DO I=1,ILONR
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         GOTO 4444 
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.       &
      &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
                     DO I=ILONL,ILON
-                      IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
+                      IF(IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
+                      ELSEIF(IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.       &
      &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
@@ -2169,7 +2179,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
           DO IS =1,2
             IUNIT=IUNIT+1
-            IF(IS.EQ.1) THEN
+            IF(IS == 1) THEN
               STEPLAT=-0.25_JWRB*XDELLA
             ELSE
               STEPLAT=0.25_JWRB*XDELLA
@@ -2177,13 +2187,13 @@ PROGRAM CREATE_BATHY_ETOPO1
             DO K=1,NY
                DO IX=1,NLONRGG(K)
                  XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
-                 IF(XLON.GT.180._JWRB) then
+                 IF(XLON > 180._JWRB) then
                    XLON=XLON-360._JWRB
                  ENDIF
-                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
-     &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
-                   IF(WAMDEPTH(IX,K).LT.0.0_JWRB .AND.                         &
-     &                IOBSLAT(IX,K,IS).LT.1000 ) THEN
+                IF(ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.        &
+     &             ALONL <= XLON .AND. XLON <= ALONR ) THEN
+                   IF(WAMDEPTH(IX,K) < 0.0_JWRB .AND.                   &
+     &                IOBSLAT(IX,K,IS) < 1000 ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON,XLAT(K)+STEPLAT,IOBSLAT(IX,K,IS)
                    ENDIF
@@ -2194,7 +2204,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
           DO IS =1,2
             IUNIT=IUNIT+1
-            IF(IS.EQ.1) THEN
+            IF(IS == 1) THEN
               STEPLON=-0.25_JWRB*XDELLO
             ELSE
               STEPLON=0.25_JWRB*XDELLO
@@ -2202,13 +2212,13 @@ PROGRAM CREATE_BATHY_ETOPO1
             DO K=1,NY
                DO IX=1,NLONRGG(K)
                  XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
-                 IF(XLON.GT.180._JWRB) then
+                 IF(XLON > 180._JWRB) then
                    XLON=XLON-360._JWRB
                  ENDIF
-                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
-     &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
-                   IF(WAMDEPTH(IX,K).LT.0.0_JWRB .AND.                         &
-     &                IOBSLON(IX,K,IS).LT.1000 ) THEN
+                IF(ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.        &
+     &             ALONL <= XLON .AND. XLON <= ALONR ) THEN
+                   IF(WAMDEPTH(IX,K) < 0.0_JWRB .AND.                   &
+     &                IOBSLON(IX,K,IS) < 1000 ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON+STEPLON,XLAT(K),IOBSLON(IX,K,IS)
                    ENDIF
@@ -2219,7 +2229,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
           DO IS =1,2
             IUNIT=IUNIT+1
-            IF(IS.EQ.1) THEN
+            IF(IS == 1) THEN
               STEPLAT=-0.25_JWRB*XDELLA
             ELSE
               STEPLAT=0.25_JWRB*XDELLA
@@ -2227,13 +2237,13 @@ PROGRAM CREATE_BATHY_ETOPO1
             DO K=1,NY
                DO IX=1,NLONRGG(K)
                  XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
-                 IF(XLON.GT.180._JWRB) then
+                 IF(XLON > 180._JWRB) then
                    XLON=XLON-360._JWRB
                  ENDIF
-                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
-     &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
-                   IF(WAMDEPTH(IX,K).LT.0.0_JWRB .AND.                         &
-     &                IOBSRLAT(IX,K,IS).LT.1000 ) THEN
+                IF(ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.        &
+     &             ALONL <= XLON .AND. XLON <= ALONR ) THEN
+                   IF(WAMDEPTH(IX,K) < 0.0_JWRB .AND.                   &
+     &                IOBSRLAT(IX,K,IS) < 1000 ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON,XLAT(K)+STEPLAT,IOBSRLAT(IX,K,IS)
                    ENDIF
@@ -2244,7 +2254,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
           DO IS =1,2
             IUNIT=IUNIT+1
-            IF(IS.EQ.1) THEN
+            IF(IS == 1) THEN
               STEPLON=-0.25_JWRB*XDELLO
             ELSE
               STEPLON=0.25_JWRB*XDELLO
@@ -2252,13 +2262,13 @@ PROGRAM CREATE_BATHY_ETOPO1
             DO K=1,NY
                DO IX=1,NLONRGG(K)
                  XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
-                 IF(XLON.GT.180._JWRB) then
+                 IF(XLON > 180._JWRB) then
                    XLON=XLON-360._JWRB
                  ENDIF
-                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
-     &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
-                   IF(WAMDEPTH(IX,K).LT.0.0_JWRB .AND.                         &
-     &                IOBSRLON(IX,K,IS).LT.1000 ) THEN
+                IF(ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.        &
+     &             ALONL <= XLON .AND. XLON <= ALONR ) THEN
+                   IF(WAMDEPTH(IX,K) < 0.0_JWRB .AND.                   &
+     &                IOBSRLON(IX,K,IS) < 1000 ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON+STEPLON,XLAT(K),IOBSRLON(IX,K,IS)
                    ENDIF
@@ -2269,7 +2279,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
           DO IS =1,4
             IUNIT=IUNIT+1
-            IF(IS.EQ.1) THEN
+            IF(IS == 1) THEN
               STEPLON=-0.25_JWRB*XDELLO
             ELSE
               STEPLON=0.25_JWRB*XDELLO
@@ -2277,13 +2287,13 @@ PROGRAM CREATE_BATHY_ETOPO1
             DO K=1,NY
                DO IX=1,NLONRGG(K)
                  XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
-                 IF(XLON.GT.180._JWRB) then
+                 IF(XLON > 180._JWRB) then
                    XLON=XLON-360._JWRB
                  ENDIF
-                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
-     &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
-                   IF(WAMDEPTH(IX,K).LT.0.0_JWRB .AND.                         &
-     &                IOBSRLON(IX,K,IS).LT.1000 ) THEN
+                IF(ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.        &
+     &             ALONL <= XLON .AND. XLON <= ALONR ) THEN
+                   IF(WAMDEPTH(IX,K) < 0.0_JWRB .AND.                   &
+     &                IOBSRLON(IX,K,IS) < 1000 ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON+STEPLON,XLAT(K),IOBSCOR(IX,K,IS)
                    ENDIF
