@@ -13,12 +13,13 @@ SUBROUTINE WVOPENBATHY (IU06, IU07, LLIU07_GRIB)
 
 ! ----------------------------------------------------------------------
 
+USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
 USE YOWABORT , ONLY : WAM_ABORT
 USE YOWGRIB  , ONLY : IGRIB_OPEN_FILE, IGRIB_NEW_FROM_FILE, IGRIB_GET_VALUE, JPGRIB_END_OF_FILE
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
-
 IMPLICIT NONE
 #include "iwam_get_unit.intfb.h"
 
@@ -27,11 +28,13 @@ INTEGER(KIND=JWIM), INTENT(OUT) :: IU07  ! grib handle to the input file if it i
                                          ! otherwise it is the opened fortran unit to the file
 LOGICAL, INTENT(OUT) :: LLIU07_GRIB      ! true if input file is a grib file  
 
+
+INTEGER :: LFILE, IRET, IERR, JGRIB_IU07, IEDITION
+
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 CHARACTER(LEN=80) :: FILENAME
 
-INTEGER :: LFILE, IRET, IERR
 LOGICAL :: LLEXIST
 
 ! ----------------------------------------------------------------------
