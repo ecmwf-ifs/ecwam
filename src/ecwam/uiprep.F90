@@ -235,7 +235,7 @@
         !!! grid_description is also read in create_wam_bathymetry_ETOPO1
 
         IUGRD=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0,'READWRITE')
-        OPEN(IU,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
+        OPEN(IUGRD,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
         READ (IUGRD,*) ISPECTRUNC
         READ (IUGRD,*) IAMONOP
         READ (IUGRD,*) IAMOSOP
@@ -332,7 +332,7 @@
 !*    SET DIMENSIONS.
 
       IF (LLGRID) THEN
-        XDELLA = (AMONOP-AMOSOP)/REAL((NGY-1,JWRB))
+        XDELLA = (AMONOP-AMOSOP)/REAL(NGY-1,JWRB)
         ALLOCATE(NLONRGG(NGY))
 
         NGX = 0
