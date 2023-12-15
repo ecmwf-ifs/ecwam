@@ -246,16 +246,16 @@
         READ (IUGRD,*) IRGG
         READ (IUGRD,*) NGY
 
-        WRITE(IU06,*) "First part of grid_description read in "
+        WRITE(IU06,*) " First part of grid_description read in "
 
         AMONOP = REAL(IAMONOP,JWRB)/REAL(ISCALING,JWRB)
         AMOSOP = REAL(IAMOSOP,JWRB)/REAL(ISCALING,JWRB)
         AMOWEP = REAL(IAMOWEP,JWRB)/REAL(ISCALING,JWRB)
         AMOEAP = REAL(IAMOEAP,JWRB)/REAL(ISCALING,JWRB)
-        WRITE(IU06,*) "AMONOP = ",AMONOP
-        WRITE(IU06,*) "AMOSOP = ",AMOSOP
-        WRITE(IU06,*) "AMOWEP = ",AMOWEP
-        WRITE(IU06,*) "AMOEAP = ",AMOEAP
+        WRITE(IU06,*) " AMONOP = ",AMONOP
+        WRITE(IU06,*) " AMOSOP = ",AMOSOP
+        WRITE(IU06,*) " AMOWEP = ",AMOWEP
+        WRITE(IU06,*) " AMOEAP = ",AMOEAP
         WRITE(IU06,*) '' 
 
         ! A spectral truncation > 0 implies a Gaussian grid

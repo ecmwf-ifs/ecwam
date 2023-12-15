@@ -117,8 +117,6 @@
      &                  ITABLE, IPARAM, IZLEV, 0 , 0,        &
      &                  CDATE, IFCST, MARSTYPE, LFDB, IU07)
 
-        CALL IGRIB_CLOSE_FILE(IU07)
-
       ELSE
         ! Binary output
 
@@ -135,7 +133,6 @@
 
         WRITE(IU07) BATHY
 
-        CLOSE(IU07)
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -153,6 +150,12 @@
 #else
         CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
 #endif
-      END IF
+      ENDIF
+
+      IF ( LLGRIB_BATHY_OUT ) THEN
+        CALL IGRIB_CLOSE_FILE(IU07)
+      ELSE
+        CLOSE(IU07)
+      ENDIF
 
       END SUBROUTINE OUTCOM

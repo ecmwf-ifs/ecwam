@@ -35,20 +35,17 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWGRIB  , ONLY : IGRIB_OPEN_FILE, IGRIB_NEW_FROM_FILE, IGRIB_GET_VALUE, &
- &                          JPGRIB_END_OF_FILE
+      USE YOWABORT , ONLY : WAM_ABORT
       USE YOWMAP   , ONLY : AMOSOP   ,AMONOP   ,IQGAUSS  ,NGX      ,NGY
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
       USE YOWPARAM , ONLY : KWAMVER  ,LLUNSTR
       
       USE YOWTEST  , ONLY : IU06
-      USE YOWUNIT  , ONLY : IREADG   ,NPROPAGS ,IU07     ,IU08     ,    &
-     &            LWVWAMINIT
+      USE YOWUNIT  , ONLY : IREADG   ,NPROPAGS ,IU07     ,IU08     , LWVWAMINIT
       USE YOWSTAT  , ONLY : IPROPAGS
-      USE YOWABORT, ONLY : WAM_ABORT
 
       USE MPL_MODULE, ONLY : MPL_MYRANK, MPL_NPROC
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOMHOOK   , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE WAM_INIT_GPU_MOD, ONLY : WAM_INIT_GPU
 
 ! ----------------------------------------------------------------------
@@ -60,12 +57,17 @@
 #include "mpuserin.intfb.h"
 #include "setwavphys.intfb.h"
 #include "readmdlconf.intfb.h"
+#include "wvopenbathy.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IULOG
       INTEGER(KIND=JWIM), INTENT(OUT) :: NGAUSSW, NLON, NLAT
+      REAL(KIND=JWRB), INTENT(OUT) :: RSOUTW, RNORTW
+      LOGICAL, INTENT(IN) :: LLRNL
+      LOGICAL, INTENT(IN) :: LLCOUPLED
+
+
       INTEGER(KIND=JWIM) :: IREAD, LFILE, IRET, JGRIB_IU07, IEDITION, IERR
 
-      REAL(KIND=JWRB), INTENT(OUT) :: RSOUTW, RNORTW
       REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -73,10 +75,9 @@
       CHARACTER(LEN=80) :: FILENAME
       CHARACTER(LEN=80) :: LOGFILENAME
 
-      LOGICAL, INTENT(IN) :: LLRNL
-      LOGICAL, INTENT(IN) :: LLCOUPLED
+
+      LOGICAL :: LLIU07_GRIB
       LOGICAL :: LLEXIST
-      LOGICAL ::  LLIU07_GRIB
       LOGICAL, SAVE :: LFRST
 
       DATA LFRST /.TRUE./
@@ -146,55 +147,8 @@
 !     CONSTANT FILES INPUT UNIT
 !     -------------------------
       IF (IRANK == IREAD) THEN
-        FILENAME='wam_grid_tables'
-        LFILE=0
-        LLEXIST=.FALSE.
-        IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
-        INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
-        IF (.NOT. LLEXIST) THEN
-          WRITE(IU06,*) '************************************'
-          WRITE(IU06,*) '*                                  *'
-          WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVWAMINIT   *'
-          WRITE(IU06,*) '*  =============================   *'
-          WRITE(IU06,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE), ' IS MISSING !!!!'
-          WRITE(IU06,*) '*                                  *'
-          WRITE(IU06,*) '************************************'
-          CALL WAM_ABORT("WAVE MODEL INPUT FILE '"//FILENAME(1:LFILE)//"' IS MISSING !!!",&
-                        &__FILENAME__,__LINE__)
-        ENDIF
 
-        ! Assume first that the input is in grib
-        IU07=-99
-        LLIU07_GRIB=.FALSE.
-
-        CALL IGRIB_OPEN_FILE(IU07,FILENAME(1:LFILE),'r')
-
-        CALL IGRIB_NEW_FROM_FILE(IU07,JGRIB_IU07,IRET)
-!!! debile
-             WRITE(IU06,*) 'debile ',IRET
-
-        IF (IRET /= JPGRIB_END_OF_FILE) THEN
-           CALL IGRIB_GET_VALUE(JGRIB_IU07,'editionNumber',IEDITION,IERR)
-           IF ( IERR == 0 ) THEN
-             LLIU07_GRIB=.TRUE.
-             WRITE(IU06,*) ''
-             WRITE(IU06,*) '   GRIB INPUT OF MODEL BATHYMETRY  '
-             WRITE(IU06,*) '   GRIB EDITION : ' ,IEDITION
-             WRITE(IU06,*) ''
-!!! debile
-             WRITE(IU06,*) 'debile ',IRET
-          CALL WAM_ABORT("WAVE MODEL INPUT FILE '"//FILENAME(1:LFILE)//"' IS iN GRIB !!!",&
-                        &__FILENAME__,__LINE__)
-           ENDIF
-        ENDIF
-
-
-        IF ( .NOT. LLIU07_GRIB ) THEN
-          WRITE(IU06,*) ''
-          WRITE(IU06,*) '   BINARY INPUT OF MODEL BATHYMETRY  '
-          WRITE(IU06,*) ''
-          IU07 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u',0,'READWRITE')
-        ENDIF
+        CALL WVOPENBATHY (IU06, IU07, LLIU07_GRIB)
 
         IF (IPROPAGS < 0 .OR. IPROPAGS > NPROPAGS) THEN
           WRITE(IU06,*) '************************************'
