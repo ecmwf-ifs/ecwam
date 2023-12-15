@@ -368,7 +368,7 @@ PROGRAM preproc
 !         ------------------
 
       MARSTYPE = 'an'
-      YCLASS   = 'rd'
+      YCLASS   = 'od'
       YEXPVER = CEXPVERCLIM 
       NENSFNB = 0  
       NTOTENS = 0

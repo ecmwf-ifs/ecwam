@@ -67,7 +67,7 @@
       USE YOWFRED  , ONLY : IFRE1    ,FR1      ,FR       ,FRATIO
       USE YOWMAP   , ONLY : NGX      ,NGY      ,IPER     ,IRGG     ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,              &
-     &            NIBLO    ,CLDOMAIN ,                                  &
+     &            NIBLO    ,CLDOMAIN ,IQGAUSS  ,                        &
      &            XDELLA   ,XDELLO   ,NLONRGG  ,LLOBSTRCT,LAQUA
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
 #ifdef WAM_HAVE_UNWAM
@@ -162,6 +162,7 @@
       LLGRIB_BATHY_OUT = .FALSE.
       LLGRIB_OBSTRCT_OUT = .FALSE.
 
+      IQGAUSS = 0
 ! ----------------------------------------------------------------------
 
 !*    1. READ NAMELIST NALINE.
@@ -241,6 +242,10 @@
         READ (IU,*) IRGG
         READ (IU,*) NGY
         WRITE(IU06,*) "grid_description read in "
+
+        ! A spectral truncation > 0 implies a Gaussian grid
+        IF (ISPECTRUNC > 0) IQGAUSS=1 
+
       ENDIF
 
 ! ----------------------------------------------------------------------

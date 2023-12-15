@@ -356,8 +356,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
              CLWORD=CLWORD//'EGRR'
             ENDIF
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'consensusCount',ICENTRE)
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'ccccIdentifiers',        &
-     &                           CLWORD(1:4*ICENTRE))
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'ccccIdentifiers',CLWORD(1:4*ICENTRE))
           ENDIF
         ELSEIF (NLOCGRB == 15 ) THEN
 !         SEASONAL FORECASTS
@@ -455,8 +454,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
       IF (CT == "S") THEN
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'numberOfDirections',NANG)
         IDIRSCALING = 1000
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'directionScalingFactor',      &
-     &                       IDIRSCALING)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'directionScalingFactor',IDIRSCALING)
         ALLOCATE(SCTH(NANG))
         DO KK=1,NANG
            SCTH(KK)=NINT(TH(KK)*IDIRSCALING*DEG)
@@ -467,8 +465,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'numberOfFrequencies',NFRE_RED)
         IFRESCALING = 1000000
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'frequencyScalingFactor',      &
-     &                       IFRESCALING)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'frequencyScalingFactor',IFRESCALING) 
         ALLOCATE(SCFR(NFRE_RED))
         DO MM=1,NFRE_RED
           SCFR(MM)=NINT(FR(MM)*IFRESCALING)
@@ -559,29 +556,23 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ELSE
           IRESFLAGS=128
         ENDIF
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
-     &                       'resolutionAndComponentFlags',IRESFLAGS)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'resolutionAndComponentFlags',IRESFLAGS)
 
         ! LATITUDE OF THE FIRST GRID POINT
         IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                         'latitudeOfFirstGridPointInDegrees',90.)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'latitudeOfFirstGridPointInDegrees',90.)
         ELSE
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                         'latitudeOfFirstGridPointInDegrees',AMONOP)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'latitudeOfFirstGridPointInDegrees',AMONOP)
         ENDIF
 
         ! LONGITUDE OF ORIGIN (WEST -)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                       'longitudeOfFirstGridPointInDegrees',AMOWEP)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'longitudeOfFirstGridPointInDegrees',AMOWEP)
 
         ! LATITUDE OF THE LAST GRID POINT
         IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                         'latitudeOfLastGridPointInDegrees',-90.)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'latitudeOfLastGridPointInDegrees',-90.)
         ELSE
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                         'latitudeOfLastGridPointInDegrees',AMOSOP)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'latitudeOfLastGridPointInDegrees',AMOSOP)
         ENDIF
 
         ! LONGITUDE OF EXTREME POINT (WEST)
@@ -595,19 +586,16 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
             RMOEAP = AMOEAP
           ENDIF
         ENDIF
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
-     &                      'longitudeOfLastGridPointInDegrees',RMOEAP)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'longitudeOfLastGridPointInDegrees',RMOEAP)
 
         ! LONGITUDE INCREMENT
         IF (IRGG == 0) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                       'iDirectionIncrementInDegrees',XDELLO)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'iDirectionIncrementInDegrees',XDELLO)
         ENDIF
 
         ! LATITUDE INCREMENT
         IF ( IQGAUSS /= 1 ) THEN 
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                       'jDirectionIncrementInDegrees',XDELLA)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'jDirectionIncrementInDegrees',XDELLA)
         ENDIF
 
       ENDIF
