@@ -6,7 +6,7 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 !
-SUBROUTINE WVOPENBATHY (IU06, IU07, LLIU07_GRIB)  
+SUBROUTINE WVOPENBATHY (IU06, IU07, KGRIB_HANDLE)  
 
 !****  *WVOPENBATHY* - OPENS THE FILE CONTAINING THE MODEL BATHYMETRY (see FILENAME) AND
 !                      DETERMINES WHETHER IT IS A GRIB FILE OR THE OLD BINARY FORMAT
@@ -24,17 +24,12 @@ IMPLICIT NONE
 #include "iwam_get_unit.intfb.h"
 
 INTEGER(KIND=JWIM), INTENT(IN)  :: IU06  ! standard out unit
-INTEGER(KIND=JWIM), INTENT(OUT) :: IU07  ! grib handle to the input file if it is a grib file
-                                         ! otherwise it is the opened fortran unit to the file
-LOGICAL, INTENT(OUT) :: LLIU07_GRIB      ! true if input file is a grib file  
+INTEGER(KIND=JWIM), INTENT(OUT) :: IU07  ! open unit for input file
+INTEGER(KIND=JWIM), INTENT(OUT) :: KGRIB_HANDLE  ! grib handle if input file is in grib
 
-
-INTEGER :: LFILE, IRET, IERR, JGRIB_IU07, IEDITION
-
+INTEGER :: LFILE, KHANDLE, IRET, IERR, IEDITION
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-
 CHARACTER(LEN=80) :: FILENAME
-
 LOGICAL :: LLEXIST
 
 ! ----------------------------------------------------------------------
@@ -61,39 +56,29 @@ ENDIF
 
 ! Assume first that the input is in grib
 IU07=-99
-LLIU07_GRIB=.FALSE.
+KGRIB_HANDLE=-99
 
 CALL IGRIB_OPEN_FILE(IU07,FILENAME(1:LFILE),'r')
 
-CALL IGRIB_NEW_FROM_FILE(IU07,JGRIB_IU07,IRET)
-
-!!! debile
-WRITE(IU06,*) 'debile ',IRET, JPGRIB_END_OF_FILE
-!!!
+CALL IGRIB_NEW_FROM_FILE(IU07, KHANDLE, IRET)
 
 IF (IRET /= JPGRIB_END_OF_FILE) THEN
-   CALL IGRIB_GET_VALUE(JGRIB_IU07,'editionNumber',IEDITION,IERR)
-   IF ( IERR == 0 ) THEN
-      LLIU07_GRIB=.TRUE.
-      WRITE(IU06,*) ''
-      WRITE(IU06,*) '   GRIB INPUT OF MODEL BATHYMETRY  '
-      WRITE(IU06,*) '   IN GRIB EDITION = ' ,IEDITION
-      WRITE(IU06,*) ''
-!!! debile
-      WRITE(IU06,*) 'debile ',IRET
-      CALL WAM_ABORT("WAVE MODEL INPUT FILE '"//FILENAME(1:LFILE)//"' IS iN GRIB !!!",&
-                        &__FILENAME__,__LINE__)
-!!!!
-
-   ENDIF
+  CALL IGRIB_GET_VALUE(KHANDLE,'editionNumber', IEDITION, IERR)
+  IF ( IERR == 0 ) THEN
+    KGRIB_HANDLE=KHANDLE
+    WRITE(IU06,*) ''
+    WRITE(IU06,*) '   GRIB INPUT OF MODEL BATHYMETRY  '
+    WRITE(IU06,*) '   IN GRIB EDITION = ' ,IEDITION
+    WRITE(IU06,*) ''
+  ENDIF
 ENDIF
 
 
-IF ( .NOT. LLIU07_GRIB ) THEN
+IF ( KGRIB_HANDLE < 0 ) THEN
   WRITE(IU06,*) ''
   WRITE(IU06,*) '   BINARY INPUT OF MODEL BATHYMETRY  '
   WRITE(IU06,*) ''
-  IU07 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u',0,'READWRITE')
+  IU07 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE), 'r', 'u',0,'READWRITE')
 ENDIF
 
 IF (LHOOK) CALL DR_HOOK('WVOPENBATHY',1,ZHOOK_HANDLE)

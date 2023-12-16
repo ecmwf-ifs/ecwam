@@ -269,6 +269,7 @@
       WRITE(IU06,*)'      CON = ', CON
       WRITE(IU06,*)'  DELPHI1 = ',DELPHI1
       WRITE(IU06,*)'  DELPHI2 = ',DELPHI2
+      WRITE(IU06,*)' '
       WRITE(IU06,'(1X,''    ACL1       ACL2   '',                       &
      &             ''    CL11       CL21   '',                          &
      &             ''    DAL1       DAL2'')')

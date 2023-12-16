@@ -94,8 +94,6 @@ SUBROUTINE INITMDL (NADV,                                 &
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'FBI'
 !                      (OUTPUT OF BOUINT).
 !           *IU06*   - PRINTER OUTPUT.
-!           *IU07*   - INPUT  UNIT OF PRECOMPUTED GRID PARAMETERS.
-!                      (OUTPUT OF PREPROC).
 !           *IU08*   - INPUT  UNIT OF MODULE YOWUBUF.
 !                      (OUTPUT OF PREPROC).
 !NEST
@@ -572,8 +570,9 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       WRITE(IU06,3002) ' NORTHERNMOST LATITUDE IN GRID IS .......: ', AMONOP, ' DEGREE'
       WRITE(IU06,3002) ' WESTERNMOST LONGITUDE IN GRID IS .......: ', AMOWEP, ' DEGREE'
       WRITE(IU06,3002) ' EASTERNMOST LONGITUDE IN GRID IS .......: ', AMOEAP, ' DEGREE'
+      WRITE(IU06,*) '  '
       IF ( IQGAUSS == 1 ) THEN
-        WRITE(IU06,*) ' GAUSSIAN GRID ..........................: '
+        WRITE(IU06,*) ' GAUSSIAN GRID ............................: '
         WRITE(IU06,3002) ' APPROXIMATE LATITUDE INCREMENT IS ......: ', XDELLA, ' DEGREE'
       ELSE
         IF ( IRGG == 1 ) THEN
@@ -586,7 +585,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
         ENDIF
       ENDIF
       WRITE(IU06,*) '  '
-      WRITE(IU06,3003) ' TOTAL LENGTH OF EACH BLOCK .............: ', NIBLO
+      WRITE(IU06,3003) ' TOTAL NUMBER OF WATER POINTS ...........: ', NIBLO
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' SPECTRAL RESOLUTION:'
       WRITE(IU06,3003) ' TOTAL NUMBER OF DIRECTIONS .............: ', NANG 
@@ -604,7 +603,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       WRITE(IU06,*) '  '
       CALL FLUSH (IU06)
 
- 3002 FORMAT(3x,a,f9.3,a)
+ 3002 FORMAT(3x,a,f10.4,a)
  3003 FORMAT(3x,a,i8,  a)
 
 !NEST
@@ -676,7 +675,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       IF (IPHYS == 1) CALL INIT_SDISS_ARDH
 
       WRITE(IU06,*) '  '
-      WRITE(IU06,*) '  SUB. INITMDL: end arrays initialisation'
+      WRITE(IU06,*) ' SUB. INITMDL: end arrays initialisation'
       WRITE(IU06,*) '  '
       CALL FLUSH (IU06)
 
@@ -926,7 +925,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
       CALL GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 
-      WRITE(IU06,*) '    SUB. INITMDL: SPECTRA READ IN'
+      WRITE(IU06,*) ' SUB. INITMDL: SPECTRA READ IN'
       WRITE(IU06,*) ' '
       CALL FLUSH (IU06)
 

@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE READPRE (IU07, LLBATHY)
+SUBROUTINE READPRE (LLBATHY)
 
 ! ----------------------------------------------------------------------
 
@@ -37,8 +37,7 @@ SUBROUTINE READPRE (IU07, LLBATHY)
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *READPRE (IU07)*
-!          *IU07 *  - INPUT UNIT OF PREPROC GRID FILE.
+!       *CALL* *READPRE (LLBATHY)*
 
 !     METHOD.
 !     -------
@@ -59,6 +58,7 @@ SUBROUTINE READPRE (IU07, LLBATHY)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWABORT , ONLY : WAM_ABORT
       USE YOWGRIBHD, ONLY : IMDLGRBID_G
       USE YOWMAP   , ONLY : NGX      ,NGY      ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
@@ -68,11 +68,12 @@ SUBROUTINE READPRE (IU07, LLBATHY)
       USE YOWPARAM , ONLY : LLR8TOR4 ,LLUNSTR
       USE YOWSHAL  , ONLY : BATHY
       USE YOWTEST  , ONLY : IU06
-      USE YOWABORT , ONLY : WAM_ABORT
+      USE YOWUNIT  , ONLY : IREADG
 #ifdef WAM_HAVE_UNWAM
       USE YOWUNPOOL, ONLY : LPREPROC
       USE UNWAM     ,ONLY : INIT_UNWAM, UNWAM_IN, SET_UNWAM_HANDLES
 #endif
+      USE YOWGRIB  , ONLY : IGRIB_GET_VALUE, IGRIB_RELEASE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
@@ -80,14 +81,14 @@ SUBROUTINE READPRE (IU07, LLBATHY)
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "mpbcastgrid.intfb.h"
+#include "wvopenbathy.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IU07
       LOGICAL, INTENT(IN) :: LLBATHY
 
-      INTEGER(KIND=JWIM) :: IREAD
+      INTEGER(KIND=JWIM) :: IREAD, IU07, KGRIB_HANDLE
       INTEGER(KIND=JWIM) :: IP, I, K
       INTEGER(KIND=JWIM) :: KMDLGRDID
-      INTEGER(KIND=JWIM) :: NKIND !Precision of file when reading
+      INTEGER(KIND=JWIM) :: NKIND ! Numerical precision of input binary file
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -96,103 +97,101 @@ SUBROUTINE READPRE (IU07, LLBATHY)
       IF (LHOOK) CALL DR_HOOK('READPRE',0,ZHOOK_HANDLE)
 
       NKIND=0
-      IREAD=1
       KTAG=1
+
+      IU07 = -1
+      KGRIB_HANDLE = -99
+
+      IREAD = IREADG
+
+!     READ INPUT BATHYMETRY:
+!     ----------------------
 
       CALL GSTATS(1771,0)
       IF (IRANK == IREAD) THEN
-!       READ MODEL IDENTIFIERS
-        CALL READREC(1)
-        IF (KMDLGRDID /= IMDLGRBID_G) THEN
-          WRITE(IU06,*) '*****************************************'
-          WRITE(IU06,*) '*                                       *'
-          WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
-          WRITE(IU06,*) '*  ==============================       *'
-          WRITE(IU06,*) '*                                       *'
-          WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
-          WRITE(IU06,*) '* MODEL GRIB IDENTIFIER.                *' 
-          WRITE(IU06,*) '* MAKE SURE YOU HAVE RUN PREPROC !!!!   *'
-          WRITE(IU06,*)    KMDLGRDID, IMDLGRBID_G 
-          WRITE(IU06,*) '*                                       *'
-          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
-          WRITE(IU06,*) '* ---------------   --------------      *'
-          WRITE(IU06,*) '*****************************************'
-          CALL ABORT1
-        ENDIF
-        IF (NKIND /= KIND(AMOSOP)) THEN
-          WRITE(IU06,*) '*****************************************'
-          WRITE(IU06,*) '*                                       *'
-          WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
-          WRITE(IU06,*) '*  ==============================       *'
-          WRITE(IU06,*) '*                                       *'
-          WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
-          WRITE(IU06,*) '* PRECISION IN FILE AND MODEL.          *' 
-          WRITE(IU06,*)    NKIND, KIND(AMOSOP)
-          WRITE(IU06,*) '*                                       *'
-          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
-          WRITE(IU06,*) '* ---------------   --------------      *'
-          WRITE(IU06,*) '*****************************************'
-          CALL ABORT1
-        ENDIF
 
-!*    0. READ YOWPARAM (BLOCK SIZES). 
-!        ----------------------------
+        CALL WVOPENBATHY (IU06, IU07, KGRIB_HANDLE)
 
-        CALL READREC(2)
+        IF ( KGRIB_HANDLE > 0 ) THEN
+        !! GRIB INPUT:
 
 
-!*    2. READ MODULE YOWGRID (GENERAL GRID ORGANISATION).
-!        ------------------------------------------------
+!!!!debile
+           WRITE(IU06,*) ' debile readpre ',IU07,KGRIB_HANDLE
+           CALL ABORT1
 
-        IF (.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
+           CALL IGRIB_CLOSE_FILE(IU07)
+           CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
-        CALL READREC(3)
-
-
-!*    3. READ MODULE YOWMAP (LONG. AND LAT. INDICES OF GRID POINTS).
-!        --------------------------------------------------------
-
-        CALL READREC(4)
-
-!     DETERMINE IF WE ARE USING A QUASI GAUSSIAN GRID OR 
-!     LAT-LONG GRID (REGULAR OR IRREGULAR).
-
-        IF (IPER ==1 .AND. AMONOP == ABS(AMOSOP) .AND.                  &
-     &     MOD(NGY,2) == 0 .AND. IRGG == 1 ) THEN
-          IQGAUSS=1
         ELSE
-          IQGAUSS=0
-        ENDIF
+        !! OLD BINARY INPUT:
 
-
-!*    8. READ MODULE YOWSHAL (DEPTH AND SHALLOW WATER TABLES).
-!        ----------------------------------------------------
-
-        IF ( LLBATHY ) THEN 
-          IF (ALLOCATED(BATHY)) DEALLOCATE(BATHY)
-          ALLOCATE(BATHY(NGX,NGY))
-
-          CALL READREC(5)
-        ENDIF
-
-!       THE UNSTRUCTURED BITS (if pre-computed by PREPROC)
-        IF (LLUNSTR) THEN
-#ifdef WAM_HAVE_UNWAM
-          IF (LPREPROC) THEN
-            CALL SET_UNWAM_HANDLES
-            CALL UNWAM_IN(IU07)
+!         READ MODEL IDENTIFIERS
+          CALL READREC(1)
+          IF (KMDLGRDID /= IMDLGRBID_G) THEN
+            WRITE(IU06,*) '*****************************************'
+            WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
+            WRITE(IU06,*) '*  ==============================       *'
+            WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
+            WRITE(IU06,*) '* MODEL GRIB IDENTIFIER.                *' 
+            WRITE(IU06,*) '* MAKE SURE YOU HAVE RUN PREPROC !!!!   *'
+            WRITE(IU06,*)    KMDLGRDID, IMDLGRBID_G 
+            WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
+            WRITE(IU06,*) '* ---------------   --------------      *'
+            WRITE(IU06,*) '*****************************************'
+           CALL ABORT1
           ENDIF
+          IF (NKIND /= KIND(AMOSOP)) THEN
+            WRITE(IU06,*) '*****************************************'
+            WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
+            WRITE(IU06,*) '*  ==============================       *'
+            WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
+            WRITE(IU06,*) '* PRECISION IN FILE AND MODEL.          *' 
+            WRITE(IU06,*)    NKIND, KIND(AMOSOP)
+            WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
+            WRITE(IU06,*) '* ---------------   --------------      *'
+            WRITE(IU06,*) '*****************************************'
+            CALL ABORT1
+          ENDIF
+
+          CALL READREC(2)
+
+          IF (.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
+          CALL READREC(3)
+
+          CALL READREC(4)
+
+!         DETERMINE IF WE ARE USING A QUASI GAUSSIAN GRID OR LAT-LONG GRID (REGULAR OR IRREGULAR). 
+          IF (IPER ==1 .AND. AMONOP == ABS(AMOSOP) .AND. MOD(NGY,2) == 0 .AND. IRGG == 1 ) THEN 
+            IQGAUSS=1
+          ELSE
+            IQGAUSS=0
+          ENDIF
+
+          IF ( LLBATHY ) THEN 
+            IF (ALLOCATED(BATHY)) DEALLOCATE(BATHY)
+            ALLOCATE(BATHY(NGX,NGY))
+            CALL READREC(5)
+          ENDIF
+
+!         THE UNSTRUCTURED BITS (if pre-computed by PREPROC)
+          IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
+            IF (LPREPROC) THEN
+              CALL SET_UNWAM_HANDLES
+              CALL UNWAM_IN(IU07)
+            ENDIF
 #else
-          CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+            CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
 #endif
-        END IF
+          ENDIF
 
-      ENDIF
+          CLOSE (UNIT=IU07)
+        ENDIF ! GRIB OR BINARY INPUT
 
-      CLOSE (UNIT=IU07)
+      ENDIF  ! READ ON IRANK == IREAD
 
       CALL GSTATS(1771,1)
-
 
 
 !     SEND INFORMATION FROM READPRE TO ALL PE's
@@ -296,7 +295,7 @@ SUBROUTINE READPRE (IU07, LLBATHY)
       WRITE(IU06,*) '*  READ ERROR IN SUB. READREC       *'
       WRITE(IU06,*) '*  ==========================       *'
       WRITE(IU06,*) '*                                   *'
-      WRITE(IU06,'(1X,A,I0)') '*  READ ERROR TO UNIT fort.',IU07
+      WRITE(IU06,'(1X,A,I0)') '*  READ ERROR TO UNIT ',IU07
       WRITE(IU06,*) '*  IS THE FILE PRESENT ????         *' 
       WRITE(IU06,*) '*                                   *'
       WRITE(IU06,*) '*************************************'

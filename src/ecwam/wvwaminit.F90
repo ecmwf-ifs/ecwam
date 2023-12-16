@@ -41,7 +41,7 @@
       USE YOWPARAM , ONLY : KWAMVER  ,LLUNSTR
       
       USE YOWTEST  , ONLY : IU06
-      USE YOWUNIT  , ONLY : IREADG   ,NPROPAGS ,IU07     ,IU08     , LWVWAMINIT
+      USE YOWUNIT  , ONLY : IREADG   ,NPROPAGS ,IU08     , LWVWAMINIT
       USE YOWSTAT  , ONLY : IPROPAGS
 
       USE MPL_MODULE, ONLY : MPL_MYRANK, MPL_NPROC
@@ -57,7 +57,6 @@
 #include "mpuserin.intfb.h"
 #include "setwavphys.intfb.h"
 #include "readmdlconf.intfb.h"
-#include "wvopenbathy.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IULOG
       INTEGER(KIND=JWIM), INTENT(OUT) :: NGAUSSW, NLON, NLAT
@@ -75,7 +74,6 @@
       CHARACTER(LEN=80) :: FILENAME
       CHARACTER(LEN=80) :: LOGFILENAME
 
-      LOGICAL :: LLIU07_GRIB
       LOGICAL :: LLEXIST
       LOGICAL, SAVE :: LFRST
 
@@ -93,6 +91,8 @@
 #if defined(WAM_GPU)
       CALL WAM_INIT_GPU(IRANK)
 #endif
+
+      KTAG = 1
 
 !     STANDARD OUTPUT UNIT
 !     --------------------
@@ -143,11 +143,20 @@
 
       IREAD=IREADG
 
+
 !     CONSTANT FILES INPUT UNIT
 !     -------------------------
-      IF (IRANK == IREAD) THEN
 
-        CALL WVOPENBATHY (IU06, IU07, LLIU07_GRIB)
+!     READ MODEL GRID CONFIGURATION
+!     -----------------------------
+
+      CALL READMDLCONF
+
+      WRITE(IU06,*) ' WVWAMINT: WAVE MODEL GRID CONFIGURATION READ IN'
+      CALL FLUSH (IU06)
+
+
+      IF (IRANK == IREAD) THEN
 
         IF (IPROPAGS < 0 .OR. IPROPAGS > NPROPAGS) THEN
           WRITE(IU06,*) '************************************'
@@ -181,11 +190,7 @@
         IU08(IPROPAGS) = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE),'r','u',0,'READWRITE')
       ENDIF
 
-      KTAG=1
-
-      CALL READMDLCONF (IU07)
-
-      WRITE(IU06,*) ' WVWAMINT: WAVE MODEL CONFIGURATION READ IN'
+      WRITE(IU06,*) ' WVWAMINT: WAVE MODEL SUBGRID CONFIGURATION READ IN'
       CALL FLUSH (IU06)
 
 !     RETURN NECESSARY PARAMETERS
