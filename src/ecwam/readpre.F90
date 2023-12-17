@@ -130,6 +130,7 @@ SUBROUTINE READPRE (LLBATHY)
 
         IF ( KGRIB_HANDLE > 0 ) THEN
         !! GRIB INPUT:
+!          ----------
 
 !         CHECK MODEL IDENTIFIER
           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'dataDate', IDATE)
@@ -274,7 +275,7 @@ SUBROUTINE READPRE (LLBATHY)
             AMOEAP = AMOWEP+360.0_JWRB - XDELLO
             IPER = 1
           ELSE
-            CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'longitudeOfLastGridPointInDegrees',RMOEAP)
+            CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'longitudeOfLastGridPointInDegrees',AMOEAP)
 
             CALL ADJUST (AMOWEP, AMOEAP)
             IPER = 0
@@ -316,6 +317,7 @@ SUBROUTINE READPRE (LLBATHY)
 
         ELSE
         !! OLD BINARY INPUT:
+!          -----------------
 
 !         READ MODEL IDENTIFIERS
           CALL READREC(1)
@@ -385,7 +387,9 @@ SUBROUTINE READPRE (LLBATHY)
       CALL GSTATS(1771,1)
 
 
+
 !     SEND INFORMATION FROM READPRE TO ALL PE's
+!     -----------------------------------------
       CALL GSTATS(694,0)
       CALL MPBCASTGRID(IU06,IREAD,KTAG)
       CALL GSTATS(694,1)
