@@ -564,7 +564,6 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 !*    3. PRINT INITIAL CONDITIONS AS READ FROM PERPROCESSING.
 !        ----------------------------------------------------
 
-      WRITE(IU06,*) '  '
       WRITE(IU06,*) ' WAVE MODEL GRID ORGANISATION:'
       WRITE(IU06,3002) ' SOUTHERNMOST LATITUDE IN GRID IS .......: ', AMOSOP, ' DEGREE'
       WRITE(IU06,3002) ' NORTHERNMOST LATITUDE IN GRID IS .......: ', AMONOP, ' DEGREE'
@@ -572,7 +571,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       WRITE(IU06,3002) ' EASTERNMOST LONGITUDE IN GRID IS .......: ', AMOEAP, ' DEGREE'
       WRITE(IU06,*) '  '
       IF ( IQGAUSS == 1 ) THEN
-        WRITE(IU06,*) ' GAUSSIAN GRID ............................: '
+        WRITE(IU06,*) '   GAUSSIAN GRID ..........................: '
         WRITE(IU06,3002) ' APPROXIMATE LATITUDE INCREMENT IS ......: ', XDELLA, ' DEGREE'
       ELSE
         IF ( IRGG == 1 ) THEN

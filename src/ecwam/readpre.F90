@@ -59,7 +59,7 @@ SUBROUTINE READPRE (LLBATHY)
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWABORT , ONLY : WAM_ABORT
-      USE YOWGRIBHD, ONLY : IMDLGRBID_G
+      USE YOWGRIBHD, ONLY : CDATECLIM, IMDLGRBID_G
       USE YOWMAP   , ONLY : NGX      ,NGY      ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,NLONRGG  ,    &
@@ -87,6 +87,7 @@ SUBROUTINE READPRE (LLBATHY)
 
       INTEGER(KIND=JWIM) :: IREAD, IU07, KGRIB_HANDLE
       INTEGER(KIND=JWIM) :: IP, I, K
+      INTEGER(KIND=JWIM) :: IDATECLIM, ITIMECLIM, IDATE, ITIME 
       INTEGER(KIND=JWIM) :: KMDLGRDID
       INTEGER(KIND=JWIM) :: NKIND ! Numerical precision of input binary file
 
@@ -115,10 +116,29 @@ SUBROUTINE READPRE (LLBATHY)
         IF ( KGRIB_HANDLE > 0 ) THEN
         !! GRIB INPUT:
 
+!         READ MODEL IDENTIFIER
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'date', IDATE, IERR)
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'time', ITIME, IERR)
+          READ(CDATECLIM(1:8),'(I8)') IDATECLIM
+          READ(CDATECLIM(9:12),'(I4)') ITIMECLIM
+          IF ( IDATE /= IDATECLIM .OR. ITIME /= ITIMECLIM ) THEN
+            WRITE(IU06,*) '*****************************************'
+            WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
+            WRITE(IU06,*) '*  ==============================       *'
+            WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
+            WRITE(IU06,*) '* MODEL GRIB DATECLIM.                  *' 
+            WRITE(IU06,*) '* MAKE SURE YOU HAVE RUN PREPROC !!!!   *'
+            WRITE(IU06,*) '* IDATE /= IDATECLIM ',IDATE, IDATECLIM
+            WRITE(IU06,*) '* ITIME /= ITIMECLIM ',ITIME, ITIMECLIM 
+            WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
+            WRITE(IU06,*) '* ---------------   --------------      *'
+            WRITE(IU06,*) '*****************************************'
+            CALL ABORT1
+          ENDIF
 
-!!!!debile
-           WRITE(IU06,*) ' debile readpre ',IU07,KGRIB_HANDLE
-           CALL ABORT1
+!!!         NGX, NGY
+            write(*,*) 'debile im readpre',IDATE,ITIME
+            CALL ABORT1
 
            CALL IGRIB_CLOSE_FILE(IU07)
            CALL IGRIB_RELEASE(KGRIB_HANDLE)
@@ -139,7 +159,7 @@ SUBROUTINE READPRE (LLBATHY)
             WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
             WRITE(IU06,*) '* ---------------   --------------      *'
             WRITE(IU06,*) '*****************************************'
-           CALL ABORT1
+            CALL ABORT1
           ENDIF
           IF (NKIND /= KIND(AMOSOP)) THEN
             WRITE(IU06,*) '*****************************************'
