@@ -511,11 +511,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
           RMONOP = RLAT(NR) 
           RMOSOP = RLAT(1) 
         ENDIF
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                              &
-     &                      'coordinate3OfFirstGridPoint',IVAL)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'coordinate3OfFirstGridPoint',IVAL)
         RMOWEP = IVAL*1.E-6_JWRB
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                              &
-     &                      'coordinate3OfLastGridPoint',IVAL)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'coordinate3OfLastGridPoint',IVAL)
         RMOEAP = IVAL*1.E-6_JWRB
       ENDIF
 
@@ -541,14 +539,11 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
         ENDDO
 
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                              &
-     &                      'latitudeOfFirstGridPointInDegrees',YFRST)
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                              &
-     &                      'latitudeOfLastGridPointInDegrees',YLAST)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'latitudeOfFirstGridPointInDegrees',YFRST)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'latitudeOfLastGridPointInDegrees',YLAST)
 
         IF (ISTART /= 0 .OR. ISTOP /= 0) THEN
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                            &
-     &                       'jDirectionIncrementInDegrees',DELLA)
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'jDirectionIncrementInDegrees',DELLA)
 
           YFRST = YFRST-ISTART*DELLA 
           YLAST = YLAST+ISTOP*DELLA 
@@ -731,11 +726,11 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 !       REARRANGE DATA FIELD.
 !       --------------------
 
-        L = 0                                                          
-        DO K = NYS, NYE                                                
+        L = 0
+        DO K = NYS, NYE
           JSN = NGY-K+1
           DO I = NXS, MIN(KLONRGG_LOC(JSN), NXE)
-            L = L+1                                                     
+            L = L+1
             FIELD(I,K) = VALUES(L)
           ENDDO
         ENDDO
