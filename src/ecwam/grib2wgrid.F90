@@ -687,12 +687,15 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
 !     GET THE DATA
       CALL IGRIB_SET_VALUE(KGRIB_HANDLE,'missingValue',PMISS)
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                                &
-     &                    'numberOfEffectiveValues',NUMBEROFVALUES)
-!! for reason I do not understand, I had a user who could not read grib2 wind data with
-!! numberOfEffectiveValues
-!! Instead, it worked with the following:
-!!     &                    'getNumberOfValues',NUMBEROFVALUES)
+
+      IF (IEN == 1) THEN
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberOfEffectiveValues',NUMBEROFVALUES)
+      ELSE
+!!      for reason I do not understand, I had a user who could not read grib2 wind data with
+!!      numberOfEffectiveValues
+!!      Instead, it worked with the following:
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'getNumberOfValues',NUMBEROFVALUES)
+      ENDIF
 
       ALLOCATE(VALUES(NUMBEROFVALUES))
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'values',VALUES)
