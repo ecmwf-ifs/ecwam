@@ -311,7 +311,7 @@ SUBROUTINE READPRE (LLBATHY)
                 JSN = NGY-K+1
                 DO I = 1, NLONRGG(JSN)
                   L = L+1
-        /          BATHY(I,JSN) = VALUES(L)
+                  BATHY(I,JSN) = VALUES(L)
                 ENDDO
               ENDDO
             ELSE
