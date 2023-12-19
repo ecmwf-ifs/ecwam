@@ -301,14 +301,26 @@ SUBROUTINE READPRE (LLBATHY)
             IF (ALLOCATED(BATHY)) DEALLOCATE(BATHY)
             ALLOCATE(BATHY(NGX,NGY))
 
-            L = 0 
-            DO K = 1, NGY
-              JSN = NGY-K+1
-              DO I = 1, NLONRGG(JSN)
-                L = L+1
-                BATHY(I,K) = VALUES(L)
+           write(*,*) 'debile in readpre ',LLSCANNS
+
+            IF (LLSCANNS) THEN
+              L = 0 
+              DO K = 1, NGY
+                DO I = 1, NLONRGG(K)
+                  L = L+1
+                  BATHY(I,K) = VALUES(L)
+                ENDDO
               ENDDO
-            ENDDO
+            ELSE
+              L = 0 
+              DO K = 1, NGY
+                JSN = NGY-K+1
+                DO I = 1, NLONRGG(JSN)
+                  L = L+1
+                  BATHY(I,K) = VALUES(L)
+                ENDDO
+              ENDDO
+            ENDIF
 
             DEALLOCATE(VALUES)
           ENDIF
