@@ -33,9 +33,6 @@
 
 ! ----------------------------------------------------------------------
 
-#if defined(WAM_PHYS_GPU) || defined(WAM_CUDA)
-      USE OPENACC
-#endif
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMAP   , ONLY : AMOSOP   ,AMONOP   ,IQGAUSS
@@ -51,6 +48,7 @@
 
       USE MPL_MODULE, ONLY : MPL_MYRANK, MPL_NPROC, MPL_BARRIER
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE WAM_INIT_GPU_MOD, ONLY : WAM_INIT_GPU
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -77,7 +75,6 @@
       LOGICAL, INTENT(IN) :: LLCOUPLED
       LOGICAL :: LLEXIST
       LOGICAL, SAVE :: LFRST
-      INTEGER :: DEVTYPE, DEVNUM, DEV
 
       DATA LFRST /.TRUE./
 
@@ -91,10 +88,7 @@
       NPROC = MPL_NPROC()
 
 #if defined(WAM_PHYS_GPU) || defined(WAM_CUDA)
-      DEVTYPE = ACC_GET_DEVICE_TYPE()
-      DEVNUM = ACC_GET_NUM_DEVICES(DEVTYPE)
-      DEV = MOD(IRANK-1, DEVNUM)
-      CALL ACC_SET_DEVICE_NUM(DEV, DEVTYPE)
+      CALL WAM_INIT_GPU(IRANK)
 #endif
 
 !     STANDARD OUTPUT UNIT
