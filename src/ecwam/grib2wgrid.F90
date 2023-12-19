@@ -729,6 +729,10 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 !       REARRANGE DATA FIELD.
 !       --------------------
 
+!!      See above IF (.NOT.LLSCANNS) LLINTERPOL=.TRUE.
+!!      This means that we have assumed that FIELD will be organised such that
+!!      it goes from NORTH to SOUTH (It is accounted for later by using pointer JFROMIJ
+!!      when transferring to the block structure.
         L = 0
         DO K = NYS, NYE
           JSN = NGY-K+1

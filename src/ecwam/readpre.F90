@@ -301,21 +301,23 @@ SUBROUTINE READPRE (LLBATHY)
             IF (ALLOCATED(BATHY)) DEALLOCATE(BATHY)
             ALLOCATE(BATHY(NGX,NGY))
 
-           write(*,*) 'debile in readpre ',LLSCANNS
-
             IF (LLSCANNS) THEN
+!!            THE GRIB DATA WILL UNROLL FROM NORTH TO SOUTH 
+!!            BUT ARRAY BATHY NEEDS TO UNROL FROM SOUTH TO NORTH (as it was defined that way when the binary option was used)
+!!            !! note that it is not the case for the FIELDG data structure that stays in NORTH to SOUTH until it is transferred
+!!               to the block structure (IJ) when it is unroll accordingly using the JFROMIJ pointer
               L = 0 
               DO K = 1, NGY
-                DO I = 1, NLONRGG(K)
+                JSN = NGY-K+1
+                DO I = 1, NLONRGG(JSN)
                   L = L+1
-                  BATHY(I,K) = VALUES(L)
+        /          BATHY(I,JSN) = VALUES(L)
                 ENDDO
               ENDDO
             ELSE
               L = 0 
               DO K = 1, NGY
-                JSN = NGY-K+1
-                DO I = 1, NLONRGG(JSN)
+                DO I = 1, NLONRGG(K)
                   L = L+1
                   BATHY(I,K) = VALUES(L)
                 ENDDO
