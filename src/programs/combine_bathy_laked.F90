@@ -36,41 +36,85 @@ USE YOWGRIB  , ONLY : IGRIB_GET_VALUE, IGRIB_CLOSE_FILE, IGRIB_RELEASE, &
       IMPLICIT NONE
 #include "wvopenbathy.intfb.h"
 
-INTEGER(KIND=JWIM) :: IU06, IU07, KGRIB_HANDLE
+INTEGER(KIND=JWIM), PARAMETER :: NPARAM=3 
+INTEGER(KIND=JWIM) :: IP, LFILE
+INTEGER(KIND=JWIM) :: IU06, IU07, KGRIB_HANDLE_BATHY
+INTEGER(KIND=JWIM), DIMENSION(NPARAM) :: IULAKE, KGRIB_HANDLE_LAKE, IPARAMID
 INTEGER(KIND=JWIM) :: NUMBEROFVALUES 
 
 REAL(KIND=JWRB), ALLOCATABLE :: VALUES(:)
+
+CHARACTER(LEN=80) :: FILENAME
+CHARACTER(LEN=80), DIMENSION(NPARAM) :: INFILENAME
+
+LOGICAL :: LLEXIST
 
 LOGICAL :: LLSCANNS
 
 ! ----------------------------------------------------------------------
 
-
-
 IU06 = 6 
+
 IU07 = -1
-KGRIB_HANDLE = -99
+KGRIB_HANDLE_BATHY = -99
+
+IULAKE(:) = -1
+KGRIB_HANDLE_LAKE(:) = -99
+
+!  INPUT FILE:
+!  -----------
+
+! LAND SEA MASK
+INFILENAME(1)='lsm'
+IPARAMID(1)=172
+! LAKE COVER
+INFILENAME(2)='clake'
+IPARAMID(2)=128026
+! LAKE DEPTH
+INFILENAME(3)='lakedl'
+IPARAMID(3)=228007
+
+! BATHY:
+CALL WVOPENBATHY (IU06, IU07, KGRIB_HANDLE_BATHY)
+
+DO IP = 1, NPARAM
+  FILENAME = INFILENAME(IP)
+  LFILE=0
+  LLEXIST=.FALSE.
+  IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
+  INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
+
+  IF (.NOT. LLEXIST) THEN
+    WRITE(IU06,*) '*****************************************************************'
+    WRITE(IU06,*) '*                                                               *'
+    WRITE(IU06,*) '*  FATAL ERROR IN                               *'
+    WRITE(IU06,*) '*  =============================                                *'
+    WRITE(IU06,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE), ' IS MISSING !!!!'
+    WRITE(IU06,*) '*                                                               *'
+    WRITE(IU06,*) '*****************************************************************'
+    CALL WAM_ABORT("INPUT FILE '"//FILENAME(1:LFILE)//"' IS MISSING !!!",__FILENAME__,__LINE__)
+  ENDIF
+
+ENDDO
 
 
-!     READ INPUT BATHYMETRY:
-!     ----------------------
-
-CALL WVOPENBATHY (IU06, IU07, KGRIB_HANDLE)
-
-IF ( KGRIB_HANDLE > 0 ) THEN
+IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
   !! GRIB INPUT:
 !    ----------
 
 !    GRID INFO:
 !    ---------
 
-  CALL WVGETGRIDINFO(IU06, KGRIB_HANDLE, &
+  CALL WVGETGRIDINFO(IU06, KGRIB_HANDLE_BATHY, &
  &                   NGX, NGY, IPER, IRGG, IQGAUSS, KLONRGG, LLSCANNS, &
  &                   AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO )
 
 
+
+
+
   CALL IGRIB_CLOSE_FILE(IU07)
-  CALL IGRIB_RELEASE(KGRIB_HANDLE)
+  CALL IGRIB_RELEASE(KGRIB_HANDLE_BATHY)
 
 ELSE
 
