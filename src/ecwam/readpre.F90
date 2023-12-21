@@ -60,6 +60,7 @@ SUBROUTINE READPRE (LLBATHY)
 
       USE YOWABORT , ONLY : WAM_ABORT
       USE YOWGRIBHD, ONLY : CDATECLIM, IMDLGRBID_G
+      USE YOWGRIBINFO, ONLY : WVGETGRIDINFO
       USE YOWMAP   , ONLY : NGX      ,NGY      ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,NLONRGG  ,    &
@@ -90,20 +91,16 @@ SUBROUTINE READPRE (LLBATHY)
       LOGICAL, INTENT(IN) :: LLBATHY
 
       INTEGER(KIND=JWIM) :: IREAD, IU07, KGRIB_HANDLE
-      INTEGER(KIND=JWIM) :: IP, I, K, J, L, IR, JSN, ISTART, ISTOP
+      INTEGER(KIND=JWIM) :: IP, I, K, J, L, JSN
       INTEGER(KIND=JWIM) :: IDATECLIM, ITIMECLIM, IDATE, ITIME 
-      INTEGER(KIND=JWIM) :: IPLPRESENT, NB_PL, ISCAN
       INTEGER(KIND=JWIM) :: NUMBEROFVALUES 
       INTEGER(KIND=JWIM) :: KMDLGRDID
       INTEGER(KIND=JWIM) :: NKIND ! Numerical precision of input binary file
+      INTEGER(KIND=JWIM), DIMENSION(:), ALLOCATABLE :: KLONRGG
 
-      INTEGER(KIND=JWIM), DIMENSION(:), ALLOCATABLE :: PL
-
-      REAL(KIND=JWRB) :: YFRST, YLAST
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE :: VALUES(:)
 
-      CHARACTER(LEN=12) :: CGRIDTYPE
       CHARACTER(LEN=14) :: CDATE
 
       LOGICAL :: LLSCANNS
@@ -155,136 +152,18 @@ SUBROUTINE READPRE (LLBATHY)
 
 !         GRID INFO:
 !         ---------
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'jScansPositively',ISCAN)
-          IF (ISCAN == 0) THEN
-            LLSCANNS=.TRUE.
-          ELSEIF (ISCAN == 1) THEN
-            LLSCANNS=.FALSE.
-          ELSE
-            WRITE(IU06,*) '***********************************'
-            WRITE(IU06,*) '*   ERROR IN SUB. READPRE*'
-            WRITE(IU06,*) '*  SCANNING MODE NOT RECOGNIZED !!!'
-            WRITE(IU06,*) '*  ISCAN = ', ISCAN
-            WRITE(IU06,*) '***********************************'
-            CALL ABORT1
-          ENDIF
-
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'gridType', CGRIDTYPE)
-          IF (CGRIDTYPE(1:10) == 'regular_gg') THEN
-            IRGG=0
-            IQGAUSS=1
-          ELSEIF (CGRIDTYPE(1:10) == 'reduced_gg') THEN
-            IRGG=1
-            IQGAUSS=1
-          ELSEIF (CGRIDTYPE(1:7) == 'regular') THEN
-            IRGG=0
-            IQGAUSS=0
-          ELSEIF (CGRIDTYPE(1:7) == 'reduced') THEN
-            IRGG=1
-            IQGAUSS=0
-          ELSE
-            WRITE(IU06,*) '*********************************'
-            WRITE(IU06,*) '*  ERROR IN SUB. READPRE*'
-            WRITE(IU06,*) '*  GRID TYPE NOT RECOGNIZED !!! *'
-            WRITE(IU06,*) '   gridType = ', CGRIDTYPE 
-            WRITE(IU06,*) '*********************************'
-            CALL ABORT1
-          ENDIF
-
-          IF (IRGG == 1) THEN
-            CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'PLPresent',IPLPRESENT)
-            IF (IPLPRESENT == 1) THEN
-              CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberOfPointsAlongAMeridian',NB_PL)
-              ALLOCATE(PL(NB_PL))
-              CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'pl',PL)
-             ELSE
-               WRITE(IU06,*) '*  ERROR IN SUB. READPRE*'
-               WRITE(IU06,*) 'NUMBER OF POINTS PER LATITUDE MISSING !!!'
-               CALL ABORT1
-             ENDIF
-             NGX=0
-             DO J=1,NB_PL
-               NGX = MAX(NGX,PL(J))
-             ENDDO
-             IR=0
-             DO J=1,NB_PL
-               IF (PL(J) /= 0) IR=IR+1
-             ENDDO
-             NGY=IR
-
-          ELSEIF (IRGG == 0) THEN
-            CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Ni',NGX)
-            CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Nj',NGY)
-          ELSE
-             WRITE(IU06,*) '  READPRE: STRUCTURE OF BATHYMETRY FIELD NOT KNOWN'
-             CALL ABORT1
-          ENDIF
+          CALL WVGETGRIDINFO(IU06, KGRIB_HANDLE, &
+ &                           NGX, NGY, IPER, IRGG, IQGAUSS, KLONRGG, LLSCANNS, &
+ &                           AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO )
 
           IF (ALLOCATED(NLONRGG)) DEALLOCATE(NLONRGG)
           ALLOCATE(NLONRGG(NGY))
-
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'latitudeOfFirstGridPointInDegrees',YFRST)
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'latitudeOfLastGridPointInDegrees',YLAST)
-
-          IF (IRGG == 1) THEN
-            ISTART=1
-            DO WHILE(PL(ISTART) == 0 .AND. ISTART < NB_PL)
-              ISTART=ISTART+1
-            ENDDO
-            ISTART=ISTART-1
-
-            ISTOP=0
-            DO WHILE(PL(NB_PL-ISTOP) == 0 .AND. ISTOP < NB_PL)
-              ISTOP=ISTOP+1
-            ENDDO
-
-            DO J=1,NGY
-              IF (LLSCANNS) THEN
-                JSN=NGY-J+1
-              ELSE
-                JSN=J
-              ENDIF
-              NLONRGG(JSN) = PL(J+ISTART) 
-            ENDDO
-
-            IF (ISTART /= 0 .OR. ISTOP /= 0) THEN
-              CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'jDirectionIncrementInDegrees',XDELLA)
-              YFRST = YFRST-ISTART*XDELLA 
-              YLAST = YLAST+ISTOP*XDELLA 
-            ENDIF
-
-          ELSEIF (IRGG == 0) THEN
-            NLONRGG(:)=NGX
+          IF (ALLOCATED(KLONRGG)) THEN
+            NLONRGG(1:NGY) = KLONRGG(1:NGY)
+            DEALLOCATE(KLONRGG)
           ELSE
-            WRITE(IU06,*) ' SUB READPRE: REPRESENTATION OF THE FIELD NOT KNOWN'
-            CALL ABORT1
+            NLONRGG(1:NGY) = NGX
           ENDIF
-
-          IF (LLSCANNS) THEN
-            AMONOP = YFRST 
-            AMOSOP = YLAST 
-          ELSE
-            AMONOP = YLAST 
-            AMOSOP = YFRST 
-          ENDIF
-
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'longitudeOfFirstGridPointInDegrees',AMOWEP)
-
-          IF ( IQGAUSS == 1) THEN
-            XDELLO = 360.0_JWRB/REAL(MAX(1,NGX),JWRB)
-            AMOEAP = AMOWEP+360.0_JWRB - XDELLO
-            IPER = 1
-          ELSE
-            CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'longitudeOfLastGridPointInDegrees',AMOEAP)
-
-            CALL ADJUST (AMOWEP, AMOEAP)
-            IPER = 0
-            XDELLO=(AMOEAP-AMOWEP)/REAL(MAX(1,NGX-1),JWRB)
-            IF (AMOEAP-AMOWEP+1.5_JWRB*XDELLO >= 360.0_JWRB) IPER = 1
-          ENDIF
-
-          XDELLA=(AMONOP-AMOSOP)/REAL(MAX(1,NGY-1),JWRB)
-
 
 !!!       BATHYMETRY
           IF ( LLBATHY ) THEN 
