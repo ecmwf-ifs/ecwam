@@ -14,10 +14,10 @@ set(clone_field_api TRUE)
 if(field_api_FOUND)
    cmake_path(RELATIVE_PATH field_api_DIR BASE_DIRECTORY ${CMAKE_BINARY_DIR} OUTPUT_VARIABLE path_var)
    cmake_path(GET path_var PARENT_PATH parent_path)
-   string(FIND ${parent_path} "../" result_var)
+   string(FIND ${parent_path} "_deps" result_var)
 
 #  If field_api is found but was not cloned by ecWAM, clone_field_api is set to FALSE
-   string(COMPARE EQUAL ${result_var} "-1" clone_field_api)
+   string(COMPARE NOTEQUAL ${result_var} "-1" clone_field_api)
 endif()
 
 if( clone_field_api )
