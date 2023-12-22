@@ -38,17 +38,19 @@ USE YOWGRIB  , ONLY : IGRIB_GET_VALUE, IGRIB_CLOSE_FILE, IGRIB_RELEASE, &
 #include "wvopenbathy.intfb.h"
 
 INTEGER(KIND=JWIM), PARAMETER :: NPARAM=3 
-INTEGER(KIND=JWIM) :: IP, LFILE, IRET, K
+INTEGER(KIND=JWIM) :: IC, K, IP, LFILE, IRET, IVAL
 INTEGER(KIND=JWIM) :: IU06, IU07, KGRIB_HANDLE_BATHY
+INTEGER(KIND=JWIM) :: NUMBEROFVALUES
 INTEGER(KIND=JWIM) :: NGX_LAKE, NGY_LAKE, IPER_LAKE, IRGG_LAKE, IQGAUSS_LAKE
 INTEGER(KIND=JWIM), DIMENSION(NPARAM) :: IULAKE, KGRIB_HANDLE_LAKE, IPARAMID
-INTEGER(KIND=JWIM), ALLOCTABLE, DIMENSION(:) :: NLONRGG_LAKE
-INTEGER(KIND=JWIM) :: NUMBEROFVALUES 
+INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: NLONRGG_LAKE
 
+REAL(KIND=JWRB), PARAMETER ::  BATHYMAX = 999.0_JWRB !! ecWAM maximum depth
 REAL(KIND=JWRB) ::  AMOWEP_LAKE, AMOSOP_LAKE, AMOEAP_LAKE, AMONOP_LAKE, XDELLA_LAKE, XDELLO_LAKE
-REAL(KIND=JWRB), ALLOCATABLE :: VALUES(:)
+REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: VALUES_BATHY
+REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) ::  VALUES_LAKE
 
-CHARACTER(LEN=80) :: FILENAME
+CHARACTER(LEN=80) :: FILENAME, OUTFILENAME
 CHARACTER(LEN=80), DIMENSION(NPARAM) :: INFILENAME
 
 LOGICAL :: LLEXIST
@@ -56,6 +58,10 @@ LOGICAL :: LLEXIST
 LOGICAL :: LLSCANNS, LLSCANNS_LAKE, LLSAMEGRID
 
 ! ----------------------------------------------------------------------
+
+! The new bathymetry will be writen out to
+OUTFILENAME='new_bathy'
+
 
 IU06 = 6 
 
@@ -66,6 +72,7 @@ IULAKE(:) = -1
 KGRIB_HANDLE_LAKE(:) = -99
 
 LLSAMEGRID = .TRUE.
+
 
 !  INPUT FILE:
 !  -----------
@@ -107,19 +114,15 @@ ENDDO
 
 
 IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
-  !! GRIB INPUT:
-!    ----------
 
-!  GRID INFO:
-!  ---------
-
+! GRID INFO:
+! ---------
   CALL WVGETGRIDINFO(IU06, KGRIB_HANDLE_BATHY, &
  &                   NGX, NGY, IPER, IRGG, IQGAUSS, NLONRGG, LLSCANNS, &
  &                   AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO )
 
-
-!  LAKE GRID INFO:
-!  ---------------
+! LAKE GRID INFO:
+! ---------------
   DO IP = 1, NPARAM
 
     CALL IGRIB_NEW_FROM_FILE(IULAKE(IP), KGRIB_HANDLE_LAKE(IP), IRET)
@@ -160,6 +163,17 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
          CALL WAM_ABORT("Not same grid !",__FILENAME__,__LINE__)
        ENDIF
 
+
+       ! Check that it is the input as expected
+       CALL IGRIB_GET_VALUE(KHANDLE,'paramId', IVAL)
+       IF ( IPARAMID(IP) /= IVAL ) THEN
+         WRITE(IU06,*) "Checking that file ", INFILENAME(IP)
+         WRITE(IU06,*) "contains the correct paramId"  
+         WRITE(IU06,*) "But it is not the case !!!" 
+         WRITE(IU06,*) 'IPARAMID = ',IPARAMID(IP), 'paramId = ',IVAL
+         CALL WAM_ABORT("paramId not matching !",__FILENAME__,__LINE__)
+       ENDIF
+
     ELSE
       WRITE(IU06,*) "Trying to read from file ", INFILENAME(IP)
       WRITE(IU06,*) "but end of file reached !" 
@@ -168,16 +182,60 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
 
   ENDDO
 
-!  COMBINING DATA
+! READING DATA
+! ------------
+
+  ! BATHY
+  CALL IGRIB_SET_VALUE(KGRIB_HANDLE_BATHY,'missingValue',ZMISS)
+  CALL IGRIB_GET_VALUE(KGRIB_HANDLE_BATHY,'getNumberOfValues',NUMBEROFVALUES)
+  ALLOCATE(VALUES_BATHY(NUMBEROFVALUES))
+  CALL IGRIB_GET_VALUE(KGRIB_HANDLE_BATHY,'values',VALUES_BATHY)
+
+  ! LAKE VARIABLES
+  ALLOCATE(VALUES_LAKE(NUMBEROFVALUES,NPARAM))
+  DO IP = 1, NPARAM
+    CALL IGRIB_SET_VALUE(KGRIB_HANDLE_LAKE(IP),'missingValue',ZMISS)
+    CALL IGRIB_GET_VALUE(KGRIB_HANDLE_LAKE(IP),'getNumberOfValues',IVAL)
+    IF ( NUMBEROFVALUES /= IVAL ) THEN
+      WRITE(IU06,*) "Checking that file ", INFILENAME(IP)
+      WRITE(IU06,*) "contains the correct number of values"  
+      WRITE(IU06,*) "But it is not the case !!!" 
+      WRITE(IU06,*) 'NUMBEROFVALUES = ',NUMBEROFVALUES, 'paramId = ',IVAL
+      CALL WAM_ABORT("number of values not matching !",__FILENAME__,__LINE__)
+    ENDIF
+    CALL IGRIB_GET_VALUE(KGRIB_HANDLE_LAKE(IP),'values',VALUES_LAKE(:,IP))
+  ENDDO
 
 
+! COMBINING DATA
+! ---------------
 
+  DO IC = 1, NUMBEROFVALUES
+    !! If land sea mask < 0.5 or lake cover > 0.5 then add that point to BATHY
+    !  -----------------------------------------------------------------------
+    IF ( VALUES_LAKE(IC,1) < 0.5_JWRB .OR. VALUES_LAKE(IC,2) > 0.5_JWRB  ) THEN
+       IF (VALUES_BATHY(IC) == ZMISS) THEN
+       !! Take the lake depth value if BATHY did not have that point
+         VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3),BATHYMAX)
+       ELSE
+       !! Average the lake depth and BATHY values
+         VALUES_BATHY(IC) = 0.5_JWRB * (VALUES_LAKE(IC,3) + MIN(VALUES_LAKE(IC,3),BATHYMAX))
+       ENDIF
+    ENDIF
+  ENDDO
+
+! CLEANING UP
+! -----------
   CALL IGRIB_CLOSE_FILE(IU07)
   CALL IGRIB_RELEASE(KGRIB_HANDLE_BATHY)
   DO IP = 1, NPARAM
     CALL IGRIB_CLOSE_FILE(IULAKE(IP))
     CALL IGRIB_RELEASE(KGRIB_HANDLE_LAKE(IP))
   ENDDO
+
+! SAVING NEW BATHY
+
+
 
 ELSE
 
