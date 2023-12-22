@@ -29,7 +29,8 @@ USE YOWMAP   , ONLY : NGX, NGY, IPER, IRGG, IQGAUSS,                   &
                    &  NLONRGG
 USE YOWPCONS , ONLY : ZMISS
 USE YOWGRIB  , ONLY : IGRIB_GET_VALUE, IGRIB_CLOSE_FILE, IGRIB_RELEASE, &
-                    & IGRIB_SET_VALUE
+                    & IGRIB_SET_VALUE, IGRIB_OPEN_FILE, IGRIB_NEW_FROM_FILE, &
+                    & JPGRIB_END_OF_FILE
 
 ! ----------------------------------------------------------------------
 
@@ -37,11 +38,14 @@ USE YOWGRIB  , ONLY : IGRIB_GET_VALUE, IGRIB_CLOSE_FILE, IGRIB_RELEASE, &
 #include "wvopenbathy.intfb.h"
 
 INTEGER(KIND=JWIM), PARAMETER :: NPARAM=3 
-INTEGER(KIND=JWIM) :: IP, LFILE
+INTEGER(KIND=JWIM) :: IP, LFILE, IRET, K
 INTEGER(KIND=JWIM) :: IU06, IU07, KGRIB_HANDLE_BATHY
+INTEGER(KIND=JWIM) :: NGX_LAKE, NGY_LAKE, IPER_LAKE, IRGG_LAKE, IQGAUSS_LAKE
 INTEGER(KIND=JWIM), DIMENSION(NPARAM) :: IULAKE, KGRIB_HANDLE_LAKE, IPARAMID
+INTEGER(KIND=JWIM), ALLOCTABLE, DIMENSION(:) :: NLONRGG_LAKE
 INTEGER(KIND=JWIM) :: NUMBEROFVALUES 
 
+REAL(KIND=JWRB) ::  AMOWEP_LAKE, AMOSOP_LAKE, AMOEAP_LAKE, AMONOP_LAKE, XDELLA_LAKE, XDELLO_LAKE
 REAL(KIND=JWRB), ALLOCATABLE :: VALUES(:)
 
 CHARACTER(LEN=80) :: FILENAME
@@ -49,7 +53,7 @@ CHARACTER(LEN=80), DIMENSION(NPARAM) :: INFILENAME
 
 LOGICAL :: LLEXIST
 
-LOGICAL :: LLSCANNS
+LOGICAL :: LLSCANNS, LLSCANNS_LAKE, LLSAMEGRID
 
 ! ----------------------------------------------------------------------
 
@@ -60,6 +64,8 @@ KGRIB_HANDLE_BATHY = -99
 
 IULAKE(:) = -1
 KGRIB_HANDLE_LAKE(:) = -99
+
+LLSAMEGRID = .TRUE.
 
 !  INPUT FILE:
 !  -----------
@@ -84,7 +90,9 @@ DO IP = 1, NPARAM
   IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
   INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
 
-  IF (.NOT. LLEXIST) THEN
+  IF (LLEXIST) THEN
+    CALL IGRIB_OPEN_FILE(IULAKE(IP),FILENAME(1:LFILE),'r')
+  ELSE
     WRITE(IU06,*) '*****************************************************************'
     WRITE(IU06,*) '*                                                               *'
     WRITE(IU06,*) '*  FATAL ERROR IN                               *'
@@ -102,19 +110,74 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
   !! GRIB INPUT:
 !    ----------
 
-!    GRID INFO:
-!    ---------
+!  GRID INFO:
+!  ---------
 
   CALL WVGETGRIDINFO(IU06, KGRIB_HANDLE_BATHY, &
  &                   NGX, NGY, IPER, IRGG, IQGAUSS, NLONRGG, LLSCANNS, &
  &                   AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO )
 
 
+!  LAKE GRID INFO:
+!  ---------------
+  DO IP = 1, NPARAM
+
+    CALL IGRIB_NEW_FROM_FILE(IULAKE(IP), KGRIB_HANDLE_LAKE(IP), IRET)
+
+    IF (IRET /= JPGRIB_END_OF_FILE) THEN
+
+      CALL WVGETGRIDINFO(IU06, KGRIB_HANDLE_LAKE(IP), &
+ &                       NGX_LAKE, NGY_LAKE, IPER_LAKE, IRGG_LAKE, IQGAUSS_LAKE, NLONRGG_LAKE, LLSCANNS_LAKE, &
+ &                       AMOWEP_LAKE, AMOSOP_LAKE, AMOEAP_LAKE, AMONOP_LAKE, XDELLA_LAKE, XDELLO_LAKE )
+
+      !! Check that it is the same as input BATHY
+      IF ( NGX_LAKE /= NGX .OR. NGY_LAKE /= NGY .OR. IPER_LAKE .NE. IPER .OR. IQGAUSS_LAKE .NE. IQGAUSS .OR. &
+ &         AMOWEP_LAKE /= AMOWEP .OR. AMOSOP_LAKE /= AMOSOP .OR. AMOEAP_LAKE /= AMOEAP .OR. &
+ &         XDELLA_LAKE /= XDELLA .OR. XDELLO_LAKE /= XDELLO .OR. LLSCANNS_LAKE .NEQV. LLSCANNS ) THEN
+           
+         LLSAMEGRID = .FALSE.
+      ELSE
+         DO K = 1, NGY
+           IF (NLONRGG_LAKE(K) /= NLONRGG(K) ) THEN
+              LLSAMEGRID = .FALSE.
+             EXIT
+           ENDIF
+         ENDDO
+      ENDIF
+
+      IF( .NOT.  LLSAMEGRID ) THEN
+         WRITE(IU06,*) "Checking that file ", INFILENAME(IP)
+         WRITE(IU06,*) "has the same grid as input bathymetry" 
+         WRITE(IU06,*) "But it is not the case !!!" 
+         WRITE(IU06,*)  NGX, NGY, IPER, IRGG, IQGAUSS, LLSCANNS
+         WRITE(IU06,*)  NGX_LAKE, NGY_LAKE, IPER_LAKE, IRGG_LAKE, IQGAUSS_LAKE, LLSCANNS_LAKE
+         DO K = 1, NGY
+           WRITE(IU06,*)  NLONRGG(K), NLONRGG_LAKE(K)
+         ENDDO
+         WRITE(IU06,*) AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO
+         WRITE(IU06,*) AMOWEP_LAKE, AMOSOP_LAKE, AMOEAP_LAKE, AMONOP_LAKE, XDELLA_LAKE, XDELLO_LAKE
+         CALL FLUSH(IU06)
+         CALL WAM_ABORT("Not same grid !",__FILENAME__,__LINE__)
+       ENDIF
+
+    ELSE
+      WRITE(IU06,*) "Trying to read from file ", INFILENAME(IP)
+      WRITE(IU06,*) "but end of file reached !" 
+      CALL WAM_ABORT("end of file reached !",__FILENAME__,__LINE__)
+    ENDIF
+
+  ENDDO
+
+!  COMBINING DATA
 
 
 
   CALL IGRIB_CLOSE_FILE(IU07)
   CALL IGRIB_RELEASE(KGRIB_HANDLE_BATHY)
+  DO IP = 1, NPARAM
+    CALL IGRIB_CLOSE_FILE(IULAKE(IP))
+    CALL IGRIB_RELEASE(KGRIB_HANDLE_LAKE(IP))
+  ENDDO
 
 ELSE
 
