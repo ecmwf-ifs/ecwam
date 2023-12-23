@@ -89,7 +89,7 @@ INFILENAME(1)='lsm'
 IPARAMID(1)=172
 ! LAKE COVER
 INFILENAME(2)='clake'
-IPARAMID(2)=128026
+IPARAMID(2)=26
 ! LAKE DEPTH
 INFILENAME(3)='lakedl'
 IPARAMID(3)=228007
@@ -156,7 +156,9 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
       ENDIF
 
       IF( .NOT.  LLSAMEGRID ) THEN
-         WRITE(IU06,*) "Checking that file ", INFILENAME(IP)
+         LFILE=0
+         IF (INFILENAME(IP) /= ' ') LFILE=LEN_TRIM(INFILENAME(IP))
+         WRITE(IU06,*) "Checking that file ", INFILENAME(IP)(1:LFILE)
          WRITE(IU06,*) "has the same grid as input bathymetry" 
          WRITE(IU06,*) "But it is not the case !!!" 
          WRITE(IU06,*)  NGX, NGY, IPER, IRGG, IQGAUSS, LLSCANNS
@@ -174,7 +176,9 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
        ! Check that it is the input as expected
        CALL IGRIB_GET_VALUE(KGRIB_HANDLE_LAKE(IP),'paramId', IVAL)
        IF ( IPARAMID(IP) /= IVAL ) THEN
-         WRITE(IU06,*) "Checking that file ", INFILENAME(IP)
+         LFILE=0
+         IF (INFILENAME(IP) /= ' ') LFILE=LEN_TRIM(INFILENAME(IP))
+         WRITE(IU06,*) "Checking that file ", INFILENAME(IP)(1:LFILE)
          WRITE(IU06,*) "contains the correct paramId"  
          WRITE(IU06,*) "But it is not the case !!!" 
          WRITE(IU06,*) 'IPARAMID = ',IPARAMID(IP), 'paramId = ',IVAL
@@ -204,7 +208,9 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
     CALL IGRIB_SET_VALUE(KGRIB_HANDLE_LAKE(IP),'missingValue',ZMISS)
     CALL IGRIB_GET_VALUE(KGRIB_HANDLE_LAKE(IP),'getNumberOfValues',IVAL)
     IF ( NUMBEROFVALUES /= IVAL ) THEN
-      WRITE(IU06,*) "Checking that file ", INFILENAME(IP)
+      LFILE=0
+      IF (INFILENAME(IP) /= ' ') LFILE=LEN_TRIM(INFILENAME(IP))
+      WRITE(IU06,*) "Checking that file ", INFILENAME(IP)(1:LFILE)
       WRITE(IU06,*) "contains the correct number of values"  
       WRITE(IU06,*) "But it is not the case !!!" 
       WRITE(IU06,*) 'NUMBEROFVALUES = ',NUMBEROFVALUES, 'paramId = ',IVAL
