@@ -74,13 +74,19 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FRATIO
-      USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP 
+      USE YOWCOUP  , ONLY : KCOUSTEP
+      USE YOWCOUT  , ONLY : LFDB, LRSTST0
+      USE YOWFRED  , ONLY : NANG, NFRE_RED, FRATIO, DELTH, FR, TH
+      USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP, CEXPVERCLIM, NDATE_TIME_WINDOW_END
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
-      USE YOWPCONS , ONLY : PI, RAD, G
-      USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,    &
-     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,    &
-     &            IREFDATE ,ISTREAM  ,NLOCGRB
+      USE YOWPCONS , ONLY : PI, ZPI, RAD, DEG, G
+      USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,              &
+     &                      NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,    &
+     &                      IREFDATE ,ISTREAM  ,NLOCGRB
+      USE YOWUBUF  , ONLY : NPROPAGS, NANG_OBS, KTOIS, KTOOBSTRUCT
+      USE YOWUNIT  , ONLY : IU08
+
+      USE YOWGRIB  , ONLY : IGRIB_OPEN_FILE, IGRIB_CLOSE_FILE
 
 ! ----------------------------------------------------------------------
 
@@ -90,6 +96,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 #include "aki.intfb.h"
 #include "iniwcst.intfb.h"
 #include "iwam_get_unit.intfb.h"
+#include "ktoobs.intfb.h"
 #include "mfr.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 
@@ -137,10 +144,12 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM), PARAMETER :: NREF=500
       INTEGER(KIND=JWIM), PARAMETER :: NDPT=1000
 
+      INTEGER(KIND=JWIM), PARAMETER :: NOOBSTRT=1000
+
       INTEGER(KIND=JWIM) :: IU01, IU06, IUGRD, IUNIT
-      INTEGER(KIND=JWIM) :: I, J, IJ, K, KSN, M
+      INTEGER(KIND=JWIM) :: I, J, IJ, K, KSN, M, IANG
       INTEGER(KIND=JWIM) :: NX, NY
-      INTEGER(KIND=JWIM) :: IPER, IRGG, NFRE_RED, IFRE1, ISPECTRUNC, IQGAUSS
+      INTEGER(KIND=JWIM) :: IPER, IRGG, IFRE1, ISPECTRUNC, IQGAUSS
       INTEGER(KIND=JWIM) :: NLANDCENTREPM, NLANDCENTREMAX, NLANDCENTRE, NIOBSLAT
       INTEGER(KIND=JWIM) :: NSEA, NLAND, NSEASH
       INTEGER(KIND=JWIM) :: ILONL, ILONR, ILATB, ILATT
@@ -149,7 +158,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM) :: IX, IXLP, NJM, NJP, NIM, NIP, IH
       INTEGER(KIND=JWIM) :: II, JJ, IK, NPTS, IDPT
       INTEGER(KIND=JWIM) :: ITEMPEW
-      INTEGER(KIND=JWIM) :: IS, KT, KB
+      INTEGER(KIND=JWIM) :: IS, KT, KB, IOBSRT
       INTEGER(KIND=JWIM) :: NOBSTRCT, NIOBSLON, NBLOCKLAND, NTOTPTS
       INTEGER(KIND=JWIM) :: INVRES
 
@@ -169,10 +178,10 @@ PROGRAM CREATE_BATHY_ETOPO1
       REAL(KIND=JWRB) :: AMOSOP, AMONOP, AMOWEP, AMOEAP
       REAL(KIND=JWRB) :: ALONL, ALONR, ALATB, ALATT, XLON
       REAL(KIND=JWRB) :: REXCLTHRSHOLD
-      REAL(KIND=JWRB) :: XLO, XLA, XI, YJ 
-      REAL(KIND=JWRB) :: SEA, XLAND, SEASH 
+      REAL(KIND=JWRB) :: XLO, XLA, XI, YJ, ZCONV
+      REAL(KIND=JWRB) :: SEA, XLAND, SEASH
       REAL(KIND=JWRB) :: OMEGA, XKDEEP, XX, DEPTH
-      REAL(KIND=JWRB) :: STEPT, STEPB, XLATT, XLATB, XLONL, XLONR  
+      REAL(KIND=JWRB) :: STEPT, STEPB, XLATT, XLATB, XLONL, XLONR
       REAL(KIND=JWRB) :: STEPLAT, STEPLON
       REAL(KIND=JWRB) :: RESOL
       REAL(KIND=JWRB) :: RR, XKEXTHRS, ALPR
@@ -180,19 +189,20 @@ PROGRAM CREATE_BATHY_ETOPO1
       REAL(KIND=JWRB), DIMENSION(ILAT) :: ALAT
       REAL(KIND=JWRB), DIMENSION(NDPT) :: XK 
       REAL(KIND=JWRB), DIMENSION(NREF) :: XINF, XSUP, YINF, YSUP
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: ZDELLO,COSPH
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: ZDELLO, COSPH
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: XLAT
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: FR
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: WAMDEPTH
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: PERCENTLAND, PERCENTSHALLOW
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: FIELD
 
+      CHARACTER(LEN=  1) :: C1
       CHARACTER(LEN=  2) :: CFR
       CHARACTER(LEN=  5) :: CWAMRESOL
       CHARACTER(LEN=  5) :: CX
       CHARACTER(LEN= 11) :: FORMAT
       CHARACTER(LEN= 32) :: FILENM
       CHARACTER(LEN= 72) :: LOCATION(NREF)
-      CHARACTER(LEN=144) :: CLINE,FILENAME
+      CHARACTER(LEN=144) :: CLINE, FILENAME
 
       LOGICAL :: LORIGINAL, LLPRINT
       LOGICAL :: LLAND, LREALLAND, L1ST, LNSW
@@ -212,6 +222,10 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       IU01=1
       IU06=6
+
+      NANG=NANG_OBS !!! PSEUDO value used to encode obstruction coefficients in grib
+
+      LFDB = .FALSE.
 
 
 !     READ INPUT SELECTION
@@ -344,8 +358,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 
       MARSTYPE = 'an'
-      YCLASS   = 'rd'
-      YEXPVER  = 'xxxx' 
+      YCLASS   = 'od'
+      YEXPVER = CEXPVERCLIM
       NENSFNB = 0  
       NTOTENS = 0
       ISTREAM = 1045 !! if changed to an ifs stream also change LNEWLVTP
@@ -355,19 +369,37 @@ PROGRAM CREATE_BATHY_ETOPO1
       IREFDATE = 0
       LGRHDIFS =.FALSE.
       LNEWLVTP =.FALSE.
+      NDATE_TIME_WINDOW_END = 0
+      KCOUSTEP = .FALSE.
+      LRSTST0 = .FALSE.
+
 
       IF ( LLGRIBOUT ) THEN
+
         WRITE(IU06,*) ''
         WRITE(IU06,*) 'OUTPUT IN GRIB '
         WRITE(IU06,*) ''
 
 !       PREPARE OUTPUT
-!       FOR INTEGRATED PARAMETERS
-        CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
-!       FOR SPECTRA
-        CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
 
-!        CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'w')
+!       Use direction dimension to save obstruction coefficients
+        DELTH = ZPI/REAL(NANG,JWRB)
+        ALLOCATE(TH(NANG))
+        DO IANG  = 1, NANG
+          TH(IANG) = REAL(IANG-1,JWRB)*DELTH
+        ENDDO 
+
+!       FOR INTEGRATED PARAMETERS
+        CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I,NGRIBV=2,LLCREATE=.true.,NBITSPERVALUE=24)
+!       FOR SPECTRA
+!!!  grib 2 spectra not yet implemented !!!!
+        CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S,NGRIBV=1,LLCREATE=.true.,NBITSPERVALUE=24)
+        
+        DO IP = 0, NPROPAGS 
+          WRITE(C1,'(I1)') IP
+          FILENAME='wam_grib_subgrid_'//C1
+          CALL IGRIB_OPEN_FILE(IU08T(IP),FILENAME,'w')
+        ENDDO
       ENDIF
 
 !     DATASET:
@@ -756,12 +788,13 @@ PROGRAM CREATE_BATHY_ETOPO1
       ALLOCATE(IBLOCKDPT(NX,NY))
       ALLOCATE(LLEXCLTHRSHOLD(NX,NY))
 
-      IOBSLAT(:,:,:)=1000
-      IOBSLON(:,:,:)=1000
-      IOBSCOR(:,:,:)=1000
-      IOBSRLAT(:,:,:)=1000
-      IOBSRLON(:,:,:)=1000
+      IOBSLAT(:,:,:)  = NOOBSTRT
+      IOBSLON(:,:,:)  = NOOBSTRT 
+      IOBSCOR(:,:,:)  = NOOBSTRT 
+      IOBSRLAT(:,:,:) = NOOBSTRT 
+      IOBSRLON(:,:,:) = NOOBSTRT
 
+      ZCONV = 1.0_JWRB/REAL(NOOBSTRT,JWRB)
 
 !     LOOP OVER ALL FREQUENCIES
       DO M=1,NFRE_RED
@@ -942,7 +975,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1) + (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
 !                 WAVE COMPONENT WILL BE ATTENUATED BY THE RATIO OF ALL BLOCKING SUBGRID POINTS TO THE TOTAL NUMBER OF POINTS
-                  IOBSLAT(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  IOBSLAT(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                   IOBSLAT(IX,K,IS) = MAX(IOBSLAT(IX,K,IS), 0)
 
 
@@ -975,7 +1008,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                     ENDDO
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  IOBSLAT(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  IOBSLAT(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                   IOBSLAT(IX,K,IS) = MAX(IOBSLAT(IX,K,IS), 0)
                 ENDIF
 
@@ -1113,7 +1146,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                   NTOTPTS = (ILATB-ILATT+1)*(ILONR-ILONL+1) + (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1) 
 
 !                 WAVE COMPONENT WILL BE ATTENUATED BY THE RATIO OF ALL BLOCKING SUBGRID POINTS TO THE TOTAL NUMBER OF POINTS
-                  IOBSLON(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  IOBSLON(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                   IOBSLON(IX,K,IS) = MAX(IOBSLON(IX,K,IS), 0)
 
 
@@ -1142,7 +1175,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
 
-                  IOBSLON(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  IOBSLON(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                   IOBSLON(IX,K,IS) = MAX(IOBSLON(IX,K,IS), 0)
 
                 ENDIF
@@ -1274,7 +1307,7 @@ PROGRAM CREATE_BATHY_ETOPO1
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
                   IOBSRLAT(IX,K,IS)=                                    &
-     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO I=1,ILONR
@@ -1304,7 +1337,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
                   IOBSRLAT(IX,K,IS)=                                    &
-     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                 ENDIF
 
               ENDIF
@@ -1420,7 +1453,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
-                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -1446,11 +1479,11 @@ PROGRAM CREATE_BATHY_ETOPO1
 2222                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                 ENDIF
                 XX=REAL((IOBSRLAT(IX,K,IS)*ITEMPEW),JWRB)
                 XX=SQRT(XX)
-                IOBSRLAT(IX,K,IS)=MIN(NINT(XX),1000)
+                IOBSRLAT(IX,K,IS)=MIN(NINT(XX),NOOBSTRT)
 
               ENDIF
             ENDDO
@@ -1579,7 +1612,7 @@ PROGRAM CREATE_BATHY_ETOPO1
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
                   IOBSRLON(IX,K,IS)=                                    &
-     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO I=1,ILONR
@@ -1609,7 +1642,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
                   IOBSRLON(IX,K,IS)=                                    &
-     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                 ENDIF
 
               ENDIF
@@ -1725,7 +1758,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
-                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -1751,11 +1784,11 @@ PROGRAM CREATE_BATHY_ETOPO1
 3333                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                 ENDIF
                 XX=REAL((IOBSRLON(IX,K,IS)*ITEMPEW),JWRB)
                 XX=SQRT(XX)
-                IOBSRLON(IX,K,IS)=MIN(NINT(XX),1000)
+                IOBSRLON(IX,K,IS)=MIN(NINT(XX),NOOBSTRT)
 
               ENDIF
             ENDDO
@@ -1896,7 +1929,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
-                  IOBSCOR(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  IOBSCOR(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                   IOBSCOR(IX,K,IS) = MAX(IOBSCOR(IX,K,IS), 0)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
@@ -1926,7 +1959,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                     ENDDO
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  IOBSCOR(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  IOBSCOR(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                   IOBSCOR(IX,K,IS) = MAX(IOBSCOR(IX,K,IS), 0)
                 ENDIF
 
@@ -2048,7 +2081,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
-                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -2074,12 +2107,12 @@ PROGRAM CREATE_BATHY_ETOPO1
 4444                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  ITEMPEW = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
+                  ITEMPEW = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
                   ITEMPEW = MAX(ITEMPEW, 0)
                 ENDIF
                 XX=REAL((IOBSCOR(IX,K,IS)*ITEMPEW),JWRB)
                 XX=PENHCOR*SQRT(XX)
-                IOBSCOR(IX,K,IS)=MIN(NINT(XX),1000)
+                IOBSCOR(IX,K,IS)=MIN(NINT(XX),NOOBSTRT)
 
               ENDIF
             ENDDO
@@ -2187,7 +2220,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                 IF(ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.        &
      &             ALONL <= XLON .AND. XLON <= ALONR ) THEN
                    IF(WAMDEPTH(IX,K) < 0.0_JWRB .AND.                   &
-     &                IOBSLAT(IX,K,IS) < 1000 ) THEN
+     &                IOBSLAT(IX,K,IS) < NOOBSTRT ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON,XLAT(K)+STEPLAT,IOBSLAT(IX,K,IS)
                    ENDIF
@@ -2212,7 +2245,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                 IF(ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.        &
      &             ALONL <= XLON .AND. XLON <= ALONR ) THEN
                    IF(WAMDEPTH(IX,K) < 0.0_JWRB .AND.                   &
-     &                IOBSLON(IX,K,IS) < 1000 ) THEN
+     &                IOBSLON(IX,K,IS) < NOOBSTRT ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON+STEPLON,XLAT(K),IOBSLON(IX,K,IS)
                    ENDIF
@@ -2237,7 +2270,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                 IF(ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.        &
      &             ALONL <= XLON .AND. XLON <= ALONR ) THEN
                    IF(WAMDEPTH(IX,K) < 0.0_JWRB .AND.                   &
-     &                IOBSRLAT(IX,K,IS) < 1000 ) THEN
+     &                IOBSRLAT(IX,K,IS) < NOOBSTRT ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON,XLAT(K)+STEPLAT,IOBSRLAT(IX,K,IS)
                    ENDIF
@@ -2262,7 +2295,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                 IF(ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.        &
      &             ALONL <= XLON .AND. XLON <= ALONR ) THEN
                    IF(WAMDEPTH(IX,K) < 0.0_JWRB .AND.                   &
-     &                IOBSRLON(IX,K,IS) < 1000 ) THEN
+     &                IOBSRLON(IX,K,IS) < NOOBSTRT ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON+STEPLON,XLAT(K),IOBSRLON(IX,K,IS)
                    ENDIF
@@ -2287,7 +2320,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                 IF(ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.        &
      &             ALONL <= XLON .AND. XLON <= ALONR ) THEN
                    IF(WAMDEPTH(IX,K) < 0.0_JWRB .AND.                   &
-     &                IOBSRLON(IX,K,IS) < 1000 ) THEN
+     &                IOBSRLON(IX,K,IS) < NOOBSTRT ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON+STEPLON,XLAT(K),IOBSCOR(IX,K,IS)
                    ENDIF
@@ -2301,47 +2334,89 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 
 !       OUTPUT OBSTRUCTIONS
-!       FOR GLOBAL FIELD (in the same file as mean bathymetry)
 
-        WRITE(CX,'(I5.5)') NLONRGG(1)
-        FORMAT='('//CX//'I4)'
+        IF ( LLGRIBOUT ) THEN
+!         GRIB OUTPUT (convert them to values between 0 and 1)
+          CALL KTOOBS(IU06)
 
-        DO IS =1,2
-          DO K=1,NY
-            DO IXLP = 1,NLONRGG(K),NLONRGG(1)
-              WRITE(IU01,FORMAT) (IOBSLAT(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+          ALLOCATE(FIELD(NX,NY))
+
+          DO IP = 0, NPROPAGS 
+            DO IANG = 1, NANG
+
+              IS = KTOIS(IANG)
+              IOBSRT = KTOOBSTRUCT(IANG) 
+
+              IF( IS > 0 ) THEN
+                SELECT CASE(IOBSRT)
+                CASE(1)
+                  FIELD(:,:) = ZCONV * REAL(IOBSLAT(:,:,IS),JWRB) 
+                CASE(2)
+                  FIELD(:,:) = ZCONV * REAL(IOBSLON(:,:,IS),JWRB) 
+                CASE(3)
+                  FIELD(:,:) = ZCONV * REAL(IOBSRLAT(:,:,IS),JWRB) 
+                CASE(4)
+                  FIELD(:,:) = ZCONV * REAL(IOBSRLON(:,:,IS),JWRB) 
+                CASE(5)
+                  FIELD(:,:) = ZCONV * REAL(IOBSCOR(:,:,IS),JWRB) 
+                END SELECT
+              ENDIF 
+
             ENDDO
           ENDDO
-        ENDDO
-        DO IS =1,2
-          DO K=1,NY
-            DO IXLP = 1,NLONRGG(K),NLONRGG(1)
-              WRITE(IU01,FORMAT) (IOBSLON(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+
+        ELSE
+!         BINARY OUTPUT
+!         FOR GLOBAL FIELD (in the same file as mean bathymetry)
+
+          WRITE(CX,'(I5.5)') NLONRGG(1)
+          FORMAT='('//CX//'I4)'
+
+          DO IS =1,2
+            DO K=1,NY
+              DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+                WRITE(IU01,FORMAT) (IOBSLAT(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+              ENDDO
             ENDDO
           ENDDO
-        ENDDO
-        DO IS =1,2
-          DO K=1,NY
-            DO IXLP = 1,NLONRGG(K),NLONRGG(1)
-              WRITE(IU01,FORMAT) (IOBSRLAT(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+          DO IS =1,2
+            DO K=1,NY
+              DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+                WRITE(IU01,FORMAT) (IOBSLON(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+              ENDDO
             ENDDO
           ENDDO
-        ENDDO
-        DO IS =1,2
-          DO K=1,NY
-            DO IXLP = 1,NLONRGG(K),NLONRGG(1)
-              WRITE(IU01,FORMAT) (IOBSRLON(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+          DO IS =1,2
+            DO K=1,NY
+              DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+                WRITE(IU01,FORMAT) (IOBSRLAT(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+              ENDDO
             ENDDO
           ENDDO
-        ENDDO
-        DO IS =1,4
-          DO K=1,NY
-            DO IXLP = 1,NLONRGG(K),NLONRGG(1)
-              WRITE(IU01,FORMAT) (IOBSCOR(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+          DO IS =1,2
+            DO K=1,NY
+              DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+                WRITE(IU01,FORMAT) (IOBSRLON(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+              ENDDO
             ENDDO
           ENDDO
-        ENDDO
+          DO IS =1,4
+            DO K=1,NY
+              DO IXLP = 1,NLONRGG(K),NLONRGG(1)
+                WRITE(IU01,FORMAT) (IOBSCOR(IX,K,IS),IX=IXLP,MIN(IXLP+NLONRGG(1)-1,NLONRGG(K)))
+              ENDDO
+            ENDDO
+          ENDDO
+
+        ENDIF  ! LLGRIBOUT
 
       ENDDO ! END LOOP ON FREQUENCIES
+
+
+      IF ( LLGRIBOUT ) THEN
+        DO IP = 0, NPROPAGS 
+          CALL IGRIB_CLOSE_FILE(IU08T(IP))
+        ENDDO
+      ENDIF
 
 END PROGRAM CREATE_BATHY_ETOPO1

@@ -101,7 +101,7 @@ PROGRAM preproc
 !       *IU07*   - LOGICAL UNIT FOR OUTPUT OF GRID ORGANISATION
 !                  AND COMPUTED CONSTANTS. (UNFORMATED)
 !                  (SEE SUB OUTCOM).
-!       *IU08*   - LOGICAL UNITS FOR OUTPUT OF MODULE UBUF.
+!       *IU08*   - LOGICAL UNITS FOR BINARY OUTPUT OF MODULE UBUF.
 !                  (UNFORMATED) (SEE SUB MUBUF).
 !       *IU09*   - LOGICAL UNIT FOR UNFORMATED OUTPUT OF COARSE
 !                  GRID BOUNDARY ORGANISATION (MODULE CBOUND),
@@ -145,13 +145,14 @@ PROGRAM preproc
      &                      AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
      &                      XDELLO   ,ZDELLO   ,NLONRGG  ,LAQUA
       USE YOWSHAL  , ONLY : BATHYMAX
-      USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,    &
-     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,    &
-     &            IREFDATE ,ISTREAM  ,NLOCGRB
+      USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,              &
+     &                      NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,    &
+     &                      IREFDATE ,ISTREAM  ,NLOCGRB
       USE YOWTEST  , ONLY : IU06
       USE YOWPARAM , ONLY : LLUNSTR
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD      ,ZMISS
-      USE YOWUNIT  , ONLY : NPROPAGS ,IU08
+      USE YOWUBUF  , ONLY : NPROPAGS
+      USE YOWUNIT  , ONLY : IU08
 #ifdef WAM_HAVE_UNWAM
       USE YOWUNPOOL ,ONLY : LPREPROC
       USE UNWAM     ,ONLY : INIT_UNWAM
@@ -189,7 +190,8 @@ PROGRAM preproc
 
       LOGICAL :: LLEXIST
       LOGICAL :: LLGRID
-      LOGICAL :: LLGRIB_BATHY_OUT, LLGRIB_OBSTRCT_OUT 
+      LOGICAL :: LLGRIB_BATHY_OUT
+      LOGICAL :: LLBINARY_OBSTRT_OUT
 
 ! ----------------------------------------------------------------------
 
@@ -208,7 +210,7 @@ PROGRAM preproc
 !*    2.1 USER INPUT
 !         ----------
 
-      CALL UIPREP (IFORM, LLGRID, LLGRIB_BATHY_OUT, LLGRIB_OBSTRCT_OUT )
+      CALL UIPREP (IFORM, LLGRID, LLGRIB_BATHY_OUT, LLBINARY_OBSTRT_OUT)
 
       FILENAME='wam_topo'
       LLEXIST=.FALSE.
@@ -246,17 +248,15 @@ PROGRAM preproc
         ENDIF
       ENDIF
 
-      DO ICL=0,NPROPAGS
-        WRITE(C1,'(I1)') ICL
-        FILENAME='wam_subgrid_'//C1
-        LFILE=0
-        IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
-        IF ( LLGRIB_OBSTRCT_OUT ) THEN
-          CALL IGRIB_OPEN_FILE(IU08(ICL),FILENAME(1:LFILE),'w')
-        ELSE
+      IF (LLBINARY_OBSTRT_OUT) THEN
+        DO ICL=0,NPROPAGS
+          WRITE(C1,'(I1)') ICL
+          FILENAME='wam_subgrid_'//C1
+          LFILE=0
+          IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
           IU08(ICL) = IWAM_GET_UNIT(IU06,FILENAME(1:LFILE) , 'w', 'u', 0, 'READWRITE')
-        ENDIF
-      ENDDO
+        ENDDO
+      ENDIF
 
       IF (IBOUNC == 1) THEN
 !       Information of the nested grid(s) that will be produce by a coarse grid run
@@ -394,18 +394,6 @@ PROGRAM preproc
         NGRIB_HANDLE_WAM_I=0
       ENDIF
 
-      IF ( LLGRIB_OBSTRCT_OUT ) THEN
-        WRITE(IU06,*) ''
-        WRITE(IU06,*) 'OBSTRUCTION COEFFICIENTS OUTPUT IN GRIB '
-        WRITE(IU06,*) ''
-!       FOR SPECTRA
- !!!!!!!!!!!!!! grib2 not yet implemented !!!!
-        CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S,NGRIBV=1,LLCREATE=.true.,NBITSPERVALUE=24)
-      ELSE
-        NGRIB_HANDLE_WAM_S=0
-      ENDIF
-
-
 ! ----------------------------------------------------------------------
 
 !*    6. COMPUTE NEST INFORMATION.
@@ -437,7 +425,7 @@ PROGRAM preproc
 !*      8. GENERATE AND WRITE MODULE UBUF.
 !          -------------------------------
 
-          CALL MUBUF (IU01, IU08, NPROPAGS)
+        IF ( LLBINARY_OBSTRT_OUT ) CALL MUBUF (IU01, IU08, NPROPAGS)
  
       END IF ! .NOT. LLUNSTR
 

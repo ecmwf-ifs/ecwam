@@ -117,6 +117,7 @@ list( APPEND ecwam_srcs
   jonswap.F90
   kerkei.F90
   kgribsize.F90
+  ktoobs.F90
   kurtosis.F90
   kzeone.F90
   makegrid.F90

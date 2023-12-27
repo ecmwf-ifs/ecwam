@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-    SUBROUTINE UIPREP (IFORM, LLGRID, LLGRIB_BATHY_OUT, LLGRIB_OBSTRCT_OUT)
+    SUBROUTINE UIPREP (IFORM, LLGRID, LLGRIB_BATHY_OUT, LLBINARY_OBSTRT_OUT)
 
 ! ----------------------------------------------------------------------
 
@@ -23,7 +23,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *UIPREP (IFORM, LLGRID, LLGRIB_BATHY_OUT, LLGRIB_OBSTRCT_OUT)*
+!       *CALL* *UIPREP (IFORM, LLGRID, LLGRIB_BATHY_OUT, LLBINARY_OBSTRT_OUT)*
 !          *IFORM*   - OUTPUT FORMAT OPTION = 1 UNFORMATED
 !                                           = 2 FORMATED
 !                                           OTHERWISE BOTH
@@ -31,8 +31,9 @@
 !                      IN INPUT FILE grid_description
 !          NAMELIST SELECTION:
 !          *LLGRIB_BATHY_OUT* - IF TRUE THE BATHYMETRY WILL BE OUTPUT in GRIB 
-!          *LLGRIB_OBSTRCT_OUT* - IF TRUE THE OBSTRUCTION COEFFICIENTS WILL BE OUTPUT in GRIB 
-
+!          *LLBINARY_OBSTRT_OUT* - IF TRUE THE OBSTRUCTION COEFFICIENTS WILL BE PROCESSED
+!                                  AND WRITTEN OUT IN BINARY FORMAT (legacy format)
+!                                  (direct grib format see create_wam_bathymetry_ETOPO1) 
 !     METHOD.
 !     -------
 !         NAMELIST READ.
@@ -85,7 +86,7 @@
       INTEGER(KIND=JWIM), INTENT(OUT) :: IFORM
       LOGICAL, INTENT(OUT) :: LLGRID
       LOGICAL, INTENT(OUT) :: LLGRIB_BATHY_OUT
-      LOGICAL, INTENT(OUT) :: LLGRIB_OBSTRCT_OUT
+      LOGICAL, INTENT(OUT) :: LLBINARY_OBSTRT_OUT
 
       INTEGER(KIND=JWIM) :: K, M, I, II, KSN
       INTEGER(KIND=JWIM) :: IU05, IUGRD
@@ -115,7 +116,7 @@
      &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC, &
      &                  NIBLO, CLDOMAIN,LLOBSTRCT,                      &
      &                  LAQUA, LLUNSTR, LPREPROC,                       &
-     &                  LLGRIB_BATHY_OUT, LLGRIB_OBSTRCT_OUT
+     &                  LLGRIB_BATHY_OUT, LLBINARY_OBSTRT_OUT
 
       NAMELIST /NACORR/ ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
 
@@ -160,7 +161,7 @@
       CLDOMAIN= '-'
 
       LLGRIB_BATHY_OUT = .FALSE.
-      LLGRIB_OBSTRCT_OUT = .FALSE.
+      LLBINARY_OBSTRT_OUT = .FALSE.
 
       IQGAUSS = 0
 ! ----------------------------------------------------------------------

@@ -11,6 +11,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWUBUF  , ONLY : NPROPAGS
+
       IMPLICIT NONE
 
 !*    **  *UNITS* - INPUT / OUTPUT UNITS.
@@ -19,7 +21,6 @@
 !!!! some are obsolete !!! will need to be cleaned
 
       INTEGER(KIND=JWIM), PARAMETER :: IREADG=1
-      INTEGER(KIND=JWIM), PARAMETER :: NPROPAGS=2
       INTEGER(KIND=JWIM) :: IU02
       INTEGER(KIND=JWIM), DIMENSION(0:NPROPAGS) :: IU08
       INTEGER(KIND=JWIM) :: IU11
