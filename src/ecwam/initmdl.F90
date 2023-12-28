@@ -94,7 +94,6 @@ SUBROUTINE INITMDL (NADV,                                 &
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'FBI'
 !                      (OUTPUT OF BOUINT).
 !           *IU06*   - PRINTER OUTPUT.
-!           *IU08*   - INPUT  UNIT OF MODULE YOWUBUF.
 !                      (OUTPUT OF PREPROC).
 !NEST
 !           *IU09*   - INPUT  UNIT MODULE YOWCPBO (OUTPUT OF PREPROC).

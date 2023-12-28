@@ -36,7 +36,7 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
 
 !     PURPOSE.
 !     --------
-!     IT WILL READ wam_grid_tables AND IU08 AND IF MESSAGE PASSING IT WILL
+!     IT WILL READ wam_grid_tables AND IF MESSAGE PASSING IT WILL
 !     DETERMINE AN EVEN DECOMPOSITION OF THE GRID ARRAYS FOR USE ON
 !     A DISTRIBUTED MEMORY COMPUTER USING A MESSAGE PASSING PROTOCOL
 !     FOR THE EXCHANGE OF INFORMATION ACROSS THE DIFFERENT PE's
@@ -175,7 +175,7 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
       INTEGER(KIND=JWIM) :: NLENHALO_MAX
       INTEGER(KIND=JWIM) :: ICOUNTS(NPR)
       INTEGER(KIND=JWIM) :: NPLEN(NPR)
-      INTEGER(KIND=JWIM) :: NGAUSSW_sekf, NLON_sekf, NLAT_sekf
+      INTEGER(KIND=JWIM) :: NGAUSSW, NLON_sekf, NLAT_sekf
       INTEGER(KIND=JWIM) :: MPLENGTH, ICL, ICR, ICOUNT, IPROC
       INTEGER(KIND=JWIM) :: NXDECOMP, NYDECOMP, NYCUT
       INTEGER(KIND=JWIM) :: ISTAGGER, NIJ, NTOT, NAREA
@@ -195,14 +195,14 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:)   :: IJFROMPEX
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: RS_sekf, RN_sekf
+      REAL(KIND=JWRB) :: RSOUTW, RNORTW
       REAL(KIND=JWRB) :: XDELLOINV, STAGGER, XLON, SQRT2O2, A, B
       REAL(KIND=JWRB) :: THETAMAX, SINTHMAX, DELTA
 
       CHARACTER(LEN=80) :: LOGFILENAME
 
       LOGICAL :: LLEXIST
-      LOGICAL :: LL_sekf
+      LOGICAL :: LLCOUPLED
       LOGICAL :: LLRNL
 
 !----------------------------------------------------------------------
@@ -212,12 +212,11 @@ IF (LHOOK) CALL DR_HOOK('MPDECOMP',0,ZHOOK_HANDLE)
 !     0. READ GRID INPUT FROM PREPROC 
 !        ----------------------------
 
-! CALL TO *READPRE* HAS BEEN MOVED TO WVWAMINIT
 ! Re-initilize for SEKF surface analysis loops
 IF (LWVWAMINIT) THEN
-  LL_sekf = .True.
-  LLRNL=.TRUE.
-  CALL WVWAMINIT(LL_sekf,IU06,LLRNL, NGAUSSW_sekf, NLON_sekf,NLAT_sekf,RS_sekf,RN_sekf)
+  LLCOUPLED = .TRUE.
+  LLRNL = .TRUE.
+  CALL WVWAMINIT(LLCOUPLED, IU06, LLRNL, NGAUSSW, NLON_sekf, NLAT_sekf, RSOUTW, RNORTW)
 ENDIF
 
 WRITE(IU06,*) ' WAVE MODEL PREPROC GRID INFORMATION AVAILABLE'
@@ -783,7 +782,7 @@ ELSE
           IF ( KLAT(IJ,IC,ICL) > 0 .AND.                              &
      &         KLAT(IJ,IC,ICL) <= NIBLO .AND.                         &
      &        (KLAT(IJ,IC,ICL) < NSTART(IP) .OR.                      &
-     &         KLAT(IJ,IC,ICL) > NEND(IP)       ) ) THEN 
+     &         KLAT(IJ,IC,ICL) > NEND(IP)       ) ) THEN
              IH=IH+1
              IF (IH > MXPRLEN) THEN
                WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
@@ -843,7 +842,7 @@ ELSE
               IF ( KRLAT(IJ,IC,ICL) > 0 .AND.                          &
      &             KRLAT(IJ,IC,ICL) <= NIBLO .AND.                     &
      &            (KRLAT(IJ,IC,ICL) < NSTART(IP) .OR.                  &
-     &             KRLAT(IJ,IC,ICL) > NEND(IP)       ) ) THEN 
+     &             KRLAT(IJ,IC,ICL) > NEND(IP)       ) ) THEN
                  IH=IH+1
                  IF (IH > MXPRLEN) THEN
                    WRITE(IU06,*) 'MPDECOMP: decomposition problem !!'
@@ -1014,7 +1013,7 @@ ELSE
       ALLOCATE(NTOPELST(NGBTOPE))
       INBNGH=0
       DO IP=1,NPR
-        IF (NTOPE(IP) > 0) THEN 
+        IF (NTOPE(IP) > 0) THEN
           INBNGH=INBNGH+1
           NTOPELST(INBNGH)=IP
         ENDIF
@@ -1031,7 +1030,7 @@ ELSE
       ALLOCATE(NFROMPELST(MAX(1,NGBFROMPE)))
       INBNGH=0
       DO IP=1,NPR
-        IF (NFROMPE(IP) > 0) THEN 
+        IF (NFROMPE(IP) > 0) THEN
           INBNGH=INBNGH+1
           NFROMPELST(INBNGH)=IP
         ENDIF
@@ -1278,6 +1277,7 @@ ELSE
 
 
 !     GET OBSTRUCTION COEFFICIENTS
+!     ----------------------------
 
       CALL GETBOBSTRCT(NPR, MAXLEN, NEWIJ2IJ)
 
@@ -1380,7 +1380,7 @@ IF (LLUNSTR) THEN
 ELSE
 
   IF (LLWVENVI) THEN
-    IF (ALLOCATED(WVENVI%UCUR))THEN
+    IF (ALLOCATED(WVENVI%UCUR)) THEN
         CALL WVENVI%DEALLOC()
     ENDIF
     CALL WVENVI%ALLOC(NPROMA_WAM, NCHNK)

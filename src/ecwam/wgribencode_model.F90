@@ -85,9 +85,11 @@ SUBROUTINE WGRIBENCODE_MODEL (IU06, ITEST, I1, I2, FIELD,   &
  CHARACTER(LEN=14), INTENT(IN) :: CDATE
  REAL(KIND=JWRB), INTENT(INOUT) :: FIELD(I1,I2)
 
-
- INTEGER(KIND=JWIM) :: IPARAMID
+ INTEGER(KIND=JWIM) :: ITABPAR
  REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+
+ LOGICAL :: LLSPECNOT251  ! true if spectral encoding is required for a paramId other than 140251
+                          ! In that case the log10 rescaling will not be used !!!
 
 ! ----------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('WGRIBENCODE_MODEL',0,ZHOOK_HANDLE)
@@ -98,11 +100,22 @@ IF (ITEST > 0) THEN
    CALL FLUSH(IU06)
 ENDIF
 
+IF (ITABLE == 128) THEN
+!       it seems that then default table is not used when defining paramId !
+  ITABPAR=IPARAM
+ELSE
+  ITABPAR=ITABLE*1000+IPARAM
+ENDIF
+
+IF ( ITABPAR /= 140251 .AND. IK > 0 .AND. IM > 0 ) THEN
+  LLSPECNOT251 = .TRUE.
+ELSE
+  LLSPECNOT251 = .FALSE.
+ENDIF
+
 !     CLONE GRIB TEMPLATE:
 
-IPARAMID=1000*ITABLE+IPARAM
-
-IF (IPARAM == 251) THEN
+IF (ITABPAR == 140251 .OR. LLSPECNOT251 ) THEN
    IF (LGRHDIFS) THEN
      CALL PRESET_WGRIB_TEMPLATE("S",IGRIB_HANDLE)
    ELSE

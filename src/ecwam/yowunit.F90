@@ -55,7 +55,7 @@
 !      *IU20*  - LOGICAL UNIT FOR OUTPUT OF INTEGRATED PARAMETERS
 !                OF THE TOTAL SPECTRUM (FIRST GUESS) in pure binary form (OBSOLETE option !)
 
-!      *LWVWAMINIT* - TRUE IF LWVWAMINIT HAS TO BE CALLED.
+!      *LWVWAMINIT* - TRUE IF WVWAMINIT HAS TO BE CALLED.
 ! ----------------------------------------------------------------------
 
       END MODULE YOWUNIT
