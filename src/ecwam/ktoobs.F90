@@ -15,6 +15,8 @@ SUBROUTINE KTOOBS(IU06)
 
 ! ----------------------------------------------------------------------
 
+USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
 USE YOWABORT , ONLY : WAM_ABORT
 USE YOWUBUF  , ONLY : NPROPAGS, NANG_OBS, KTOIS, KTOOBSTRUCT
 
@@ -32,7 +34,7 @@ DO IP = 0, NPROPAGS
   CASE(0)
 
     DO K = 1, NANG_OBS
-      SELECT CASE(K,IP)
+      SELECT CASE(K)
       CASE(1)
         KTOIS(K,IP) = 1
         KTOOBSTRUCT(K,IP) = 1
@@ -67,7 +69,7 @@ DO IP = 0, NPROPAGS
   CASE(1)
 
     DO K = 1, NANG_OBS
-      SELECT CASE(K,IP)
+      SELECT CASE(K)
       CASE(1)
         KTOIS(K,IP) = 1
         KTOOBSTRUCT(K,IP) = 1
@@ -102,7 +104,7 @@ DO IP = 0, NPROPAGS
   CASE(2)
 
     DO K = 1, NANG_OBS
-      SELECT CASE(K,IP)
+      SELECT CASE(K)
       CASE(1)
         KTOIS(K,IP) = 1
         KTOOBSTRUCT(K,IP) = 1
