@@ -450,6 +450,7 @@ ecwam_target_compile_definitions_FILENAME( ${ecwam} )
 
 if( CMAKE_Fortran_COMPILER_ID MATCHES Intel )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
+  set_source_files_properties( propconnect.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
 elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-ffp-contract=off" )
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
