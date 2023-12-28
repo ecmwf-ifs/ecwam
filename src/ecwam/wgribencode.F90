@@ -45,9 +45,9 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 !          *KLEV*       REFERENCE LEVEL IN full METER
 !                       (SHOULD BE 0 EXCEPT FOR 233 AND 245)
 !          *IK*         DIRECTION INDEX,
-!                       ONLY MEANINGFUL FOR SPECTRAL PARAMETERS.
+!                       ONLY MEANINGFUL FOR SPECTRAL PARAMETERS (must be 0 otherwise).
 !          *IM*         FREQUENCY INDEX,
-!                       ONLY MEANINGFUL FOR SPECTRAL PARAMETERS.
+!                       ONLY MEANINGFUL FOR SPECTRAL PARAMETERS (must be 0 otherwise).
 !          *CDATE*      ACTUAL DATE AND TIME. IF NOT A FORECAST (IFCST<=0), OTHERWISE
 !                       DATE AND TIME OF THE START OF THE FOERCAST.
 !          *IFCST*      FORECAST STEP IN HOURS.
@@ -90,9 +90,9 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       ! From yowgribhd
       LOGICAL, INTENT(IN)   :: LGRHDIFS         ! If true then grib header will use information as provided by the ifs.
       REAL(KIND=JWRB), INTENT(IN)      :: PPMISS  ! every spectral values less or equal ppmiss are replaced by the missing data indicator
-      REAL(KIND=JWRB), INTENT(IN)      :: PPEPS   ! Small number used in spectral packing of 251
-      REAL(KIND=JWRB), INTENT(IN)      :: PPREC   ! Reference value for spectral packing of 251
-      REAL(KIND=JWRB), INTENT(IN)      :: PPRESOL ! Maximun resolution possible when encoding spectra (parameter 251).
+      REAL(KIND=JWRB), INTENT(IN)      :: PPEPS   ! Small number used in spectral packing of 140251
+      REAL(KIND=JWRB), INTENT(IN)      :: PPREC   ! Reference value for spectral packing of 140251
+      REAL(KIND=JWRB), INTENT(IN)      :: PPRESOL ! Maximun resolution possible when encoding spectra (parameter 140251).
       REAL(KIND=JWRB), INTENT(IN)      :: PPMIN_RESET      ! Can be used to set the minimum of ppmin in wgribout to a lower value.
       INTEGER(KIND=JWIM), INTENT(IN)   :: NTENCODE         ! Total number of grid points for encoding
       INTEGER(KIND=JWIM), INTENT(IN)   :: NDATE_TIME_WINDOW_END
@@ -141,6 +141,9 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       CHARACTER(LEN=12) :: C12
       CHARACTER(LEN=14) :: CDATE1, CDATE2
 
+      LOGICAL :: LLSPECNOT251  ! true if spectral encoding is required for a paramId other than 140251
+                               ! In that case the log10 rescaling will not be used !!!
+
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('WGRIBENCODE',0,ZHOOK_HANDLE)
 
@@ -149,6 +152,19 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       IF (ITEST > 0) THEN
         WRITE(IU06,*) '   SUB. WGRIBENCODE CALLED FOR ',IPARAM
         CALL FLUSH(IU06)
+      ENDIF
+
+      IF (ITABLE == 128) THEN
+!       it seems that then default table is not used when defining paramId !
+        ITABPAR=IPARAM
+      ELSE
+        ITABPAR=ITABLE*1000+IPARAM
+      ENDIF
+
+      IF ( ITABPAR /= 140251 .AND. IK > 0 .AND. IM > 0 ) THEN
+        LLSPECNOT251 = .TRUE.
+      ELSE
+        LLSPECNOT251 = .FALSE.
       ENDIF
 
       ALLOCATE(VALUES(NTENCODE))
@@ -225,7 +241,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
         ICOUNT=ICOUNT+NLONRGG(JSN)
       ENDDO
 
-      IF (IPARAM == 251) THEN
+      IF (ITABPAR == 140251 .AND. .NOT. LLSPECNOT251 ) THEN
 
 !       spectra are encoded on a log10 scale and small below a certain threshold are set to missing
         DELTAPP=(2**NGRBRESS-1)*PPRESOL
@@ -279,12 +295,6 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'missingValue',ZMISS)
 
 !     GRIB TABLE AND PARAMETER NUMBER
-      IF (ITABLE == 128) THEN
-!       it seems that then default table is not used when defining paramId !
-        ITABPAR=IPARAM
-      ELSE
-        ITABPAR=ITABLE*1000+IPARAM
-      ENDIF
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR,IERR)
       IF (IERR /= 0) THEN
         WRITE(NULERR,*) ' *********************************************'
@@ -387,13 +397,12 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
               ELSE 
                 NWINOFF=12-MOD(IH2+3,12)
               ENDIF
-              IF (IPARAM == 251) THEN
+              IF (ITABPAR == 140251) THEN
                 CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',4)
               ENDIF
             ENDIF
 !           in hours
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE, &
-             'offsetToEndOf4DvarWindow',NWINOFF)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE, 'offsetToEndOf4DvarWindow',NWINOFF) 
           ENDIF 
         ELSEIF ( MARSTYPE == 'cf' ) THEN
           ICLASS = 10 
@@ -444,7 +453,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
       ENDIF
 
-      IF (IPARAM == 251) THEN
+      IF (ITABPAR == 140251 .OR. LLSPECNOT251 ) THEN
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'directionNumber',IK)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'frequencyNumber',IM)
       ENDIF
