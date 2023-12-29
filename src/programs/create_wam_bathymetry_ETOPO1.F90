@@ -82,7 +82,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       USE YOWMAP   , ONLY : IPER, IRGG, IQGAUSS, AMOWEP, AMOSOP, AMOEAP, AMONOP,  &
      &                      XDELLA, XDELLO, NGX, NGY, NLONRGG, CLDOMAIN
       USE YOWPARAM , ONLY : NANG, NFRE_RED
-      USE YOWPCONS , ONLY : PI, ZPI, RAD, DEG, G
+      USE YOWPCONS , ONLY : PI, ZPI, RAD, DEG, G, ZMISS
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,           &
      &                      NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   , &
      &                      IREFDATE ,ISTREAM  ,NLOCGRB
@@ -171,6 +171,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: ITHRSHOLD
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: IBLOCKDPT
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: IDEPTH
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: ILSM
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSLAT, IOBSLON
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSCOR
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
@@ -211,6 +212,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       LOGICAL :: LLGRID
       LOGICAL :: LLGRIBIN, LLGRIBOUT    !!!! funtionality not yet fully coded
       LOGICAL, ALLOCATABLE, DIMENSION(:,:) :: LLEXCLTHRSHOLD
+      LOGICAL, ALLOCATABLE, DIMENSION(:,:) :: LLSM
 
 !----------------------------------------------------------------------
 
@@ -344,7 +346,7 @@ PROGRAM CREATE_BATHY_ETOPO1
           IF (IRGG == 1) THEN
 !            The silly division by cos(x60*RAD) is an attempt at making sure
 !            that exactly 0.5 is used for cosine of 60 degrees.
-             NLONRGG(K)=MAX(NINT(NGX*(COS(XLAT(K)*RAD)/(2._JWRB*COS(X60*RAD)))),2) 
+             NLONRGG(K)=MAX(NINT(NGX*(COS(XLAT(K)*RAD)/(2._JWRB*COS(X60*RAD)))),2)
             IF (MOD(NLONRGG(K),2) == 1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
             NLONRGG(K) = NGX
@@ -400,7 +402,7 @@ PROGRAM CREATE_BATHY_ETOPO1
         CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I,NGRIBV=2,LLCREATE=.true.,NBITSPERVALUE=24)
 !       FOR SPECTRA
 !!!  grib 2 spectra not yet implemented !!!!
-        CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S,NGRIBV=1,LLCREATE=.true.,NBITSPERVALUE=24)
+        CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S,NGRIBV=1,LLCREATE=.true.,NBITSPERVALUE=12)
         
         DO IP = 0, NPROPAGS 
           WRITE(C1,'(I1)') IP
@@ -787,12 +789,17 @@ PROGRAM CREATE_BATHY_ETOPO1
       ALLOCATE(ITHRSHOLD(NGX,NGY))
       ALLOCATE(IBLOCKDPT(NGX,NGY))
       ALLOCATE(LLEXCLTHRSHOLD(NGX,NGY))
+      ALLOCATE(LLSM(NGX,NGY))
+      ALLOCATE(ILSM(NGX,NGY))
 
       IOBSLAT(:,:,:)  = NOOBSTRT
       IOBSLON(:,:,:)  = NOOBSTRT 
       IOBSCOR(:,:,:)  = NOOBSTRT 
       IOBSRLAT(:,:,:) = NOOBSTRT 
       IOBSRLON(:,:,:) = NOOBSTRT
+      FIELD(:,:) = ZMISS 
+      LLSM(:,:) = .FALSE.
+      ILSM(:,:) = 0 
 
       ZCONV = 1.0_JWRB/REAL(NOOBSTRT,JWRB)
 
@@ -826,6 +833,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !       COMPUTE THE THRESHOLD AT WHICH THE WAVES ARE PARTIALLY OBSTRUCTED BY THE BOTTOM (ITHRSHOLD),
 !       EXCEPT IF WAM DEPTH OF THE SAME ORDER OF MAGITUDE (.NOT. LLEXCLTHRSHOLD) .
 !       ALSO COMPUTE THE DEPTH THAT IS CONSIDERED TO BE FULLY BLOCKING AS IF IT WAS LAND (IBLOCKDPT).
+!       ALSO SET THE LAND SEA MASK
         DO K=1,NGY
           DO IX=1,NLONRGG(K)
             IF (WAMDEPTH(IX,K) < 0.0_JWRB) THEN
@@ -837,6 +845,8 @@ PROGRAM CREATE_BATHY_ETOPO1
               REXCLTHRSHOLD=MAX(XKEXTHRS*ITHRSHOLD(IX,K),-998._JWRB)
               LLEXCLTHRSHOLD(IX,K)=(WAMDEPTH(IX,K) < REXCLTHRSHOLD)
               IBLOCKDPT(IX,K)=INT(-ALPR*XX)
+              LLSM(IX,K) = .TRUE.
+              ILSM(IX,K) = 1
             ENDIF
           ENDDO
         ENDDO
@@ -878,7 +888,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 !           LOOP OVER ALL MODEL POINTS FOR A GIVEN LATITUDE
             DO IX=1,NLONRGG(K)
-              IF (WAMDEPTH(IX,K) < 0.0_JWRB) THEN
+              IF (LLSM(IX,K)) THEN
 !               SEA POINT GRID BOX LATITUNAL EXTEND :
                 XLONL=AMOWEP + (REAL(IX-1,JWRB)-0.5_JWRB)*ZDELLO(K)
                 IF (XLONL > 180._JWRB) THEN
@@ -1051,7 +1061,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 !           LOOP OVER ALL MODEL POINTS FOR A GIVEN LATITUDE
             DO IX=1,NLONRGG(K)
-              IF (WAMDEPTH(IX,K) < 0.0_JWRB) THEN
+              IF (LLSM(IX,K)) THEN
 !               SEA POINT GRID BOX LONGITUDINAL EXTEND :
                 IF (IS == 1) THEN
                   XLONL=AMOWEP + (REAL(IX-2,JWRB))*ZDELLO(K)
@@ -1224,7 +1234,7 @@ PROGRAM CREATE_BATHY_ETOPO1
             IF (ILATB == ILAT+1) ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
-              IF (WAMDEPTH(IX,K) < 0.0_JWRB) THEN
+              IF (LLSM(IX,K)) THEN
                 XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 XLONL=XLON -(IS-1)*XDELLA
                 IF (XLONL > 180._JWRB) THEN
@@ -1367,7 +1377,7 @@ PROGRAM CREATE_BATHY_ETOPO1
             IF (ILATB == ILAT+1) ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
-              IF (WAMDEPTH(IX,K) < 0.0_JWRB) THEN
+              IF (LLSM(IX,K)) THEN
                 XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 IF (IS == 1) THEN
                   XLONL=XLON + RESOL
@@ -1521,7 +1531,7 @@ PROGRAM CREATE_BATHY_ETOPO1
             IF (ILATB == ILAT+1) ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
-              IF (WAMDEPTH(IX,K) < 0.0_JWRB) THEN
+              IF (LLSM(IX,K)) THEN
                 XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 XLONL=XLON -(2-IS)*XDELLA
                 IF (XLONL > 180._JWRB) THEN
@@ -1664,7 +1674,7 @@ PROGRAM CREATE_BATHY_ETOPO1
             IF (ILATB == ILAT+1) ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
-              IF (WAMDEPTH(IX,K) < 0.0_JWRB) THEN
+              IF (LLSM(IX,K)) THEN
                 XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 IF (IS == 1) THEN
                   XLONL=XLON + RESOL
@@ -1831,7 +1841,7 @@ PROGRAM CREATE_BATHY_ETOPO1
             IF (ILATB == ILAT+1) ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
-              IF (WAMDEPTH(IX,K) < 0.0_JWRB) THEN
+              IF (LLSM(IX,K)) THEN
                 XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 XLONL=XLON -((IS-1)/2)*ZDELLO(K)
                 IF (XLONL > 180._JWRB) THEN
@@ -1981,7 +1991,7 @@ PROGRAM CREATE_BATHY_ETOPO1
             IF (ILATB == ILAT+1) ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
-              IF (WAMDEPTH(IX,K) < 0.0_JWRB) THEN
+              IF (LLSM(IX,K)) THEN
                 XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 IF (IS == 1 .OR. IS == 2) THEN
                   XLONL=XLON + RESOL
@@ -2199,7 +2209,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                  ENDIF
                 IF (ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.       &
      &              ALONL <= XLON .AND. XLON <= ALONR ) THEN
-                   IF (WAMDEPTH(IX,K) < 0.0_JWRB .AND. IOBSLAT(IX,K,IS) < NOOBSTRT ) THEN
+                   IF (LLSM(IX,K) .AND. IOBSLAT(IX,K,IS) < NOOBSTRT ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON,XLAT(K)+STEPLAT,IOBSLAT(IX,K,IS)
                    ENDIF
@@ -2223,7 +2233,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                  ENDIF
                 IF (ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.       &
      &              ALONL <= XLON .AND. XLON <= ALONR ) THEN
-                   IF (WAMDEPTH(IX,K) < 0.0_JWRB .AND. IOBSLON(IX,K,IS) < NOOBSTRT ) THEN
+                   IF (LLSM(IX,K) .AND. IOBSLON(IX,K,IS) < NOOBSTRT ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON+STEPLON,XLAT(K),IOBSLON(IX,K,IS)
                    ENDIF
@@ -2247,7 +2257,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                  ENDIF
                 IF (ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.       &
      &              ALONL <= XLON .AND. XLON <= ALONR ) THEN
-                   IF (WAMDEPTH(IX,K) < 0.0_JWRB .AND. IOBSRLAT(IX,K,IS) < NOOBSTRT ) THEN
+                   IF (LLSM(IX,K) .AND. IOBSRLAT(IX,K,IS) < NOOBSTRT ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON,XLAT(K)+STEPLAT,IOBSRLAT(IX,K,IS)
                    ENDIF
@@ -2271,7 +2281,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                  ENDIF
                 IF (ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.       &
      &             ALONL <= XLON .AND. XLON <= ALONR ) THEN
-                   IF (WAMDEPTH(IX,K) < 0.0_JWRB .AND. IOBSRLON(IX,K,IS) < NOOBSTRT ) THEN
+                   IF (LLSM(IX,K) .AND. IOBSRLON(IX,K,IS) < NOOBSTRT ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON+STEPLON,XLAT(K),IOBSRLON(IX,K,IS)
                    ENDIF
@@ -2295,7 +2305,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                  ENDIF
                 IF (ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.       &
      &              ALONL <= XLON .AND. XLON <= ALONR ) THEN
-                   IF (WAMDEPTH(IX,K) < 0.0_JWRB .AND. IOBSRLON(IX,K,IS) < NOOBSTRT ) THEN
+                   IF (LLSM(IX,K) .AND. IOBSRLON(IX,K,IS) < NOOBSTRT ) THEN
                       WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON+STEPLON,XLAT(K),IOBSCOR(IX,K,IS)
                    ENDIF
@@ -2324,20 +2334,66 @@ PROGRAM CREATE_BATHY_ETOPO1
               IF ( IS > 0 ) THEN
                 IOBSRT = KTOOBSTRUCT(IANG,IP) 
                 SELECT CASE(IOBSRT)
+
                 CASE(1)
-                  FIELD(:,:) = ZCONV * REAL(IOBSLAT(:,:,IS),JWRB) 
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,IX)
+                  DO K=1,NGY
+                    DO IX=1,NLONRGG(K)
+                      FIELD(IX,K) = REAL(ILSM(IX,K)*IOBSLAT(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                    ENDDO
+                  ENDDO
+!$OMP END PARALLEL DO
+
                 CASE(2)
-                  FIELD(:,:) = ZCONV * REAL(IOBSLON(:,:,IS),JWRB) 
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,IX)
+                  DO K=1,NGY
+                    DO IX=1,NLONRGG(K)
+                      FIELD(IX,K) = REAL(ILSM(IX,K)*IOBSLON(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                    ENDDO
+                  ENDDO
+!$OMP END PARALLEL DO
+
                 CASE(3)
-                  FIELD(:,:) = ZCONV * REAL(IOBSRLAT(:,:,IS),JWRB) 
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,IX)
+                  DO K=1,NGY
+                    DO IX=1,NLONRGG(K)
+                      FIELD(IX,K) = REAL(ILSM(IX,K)*IOBSRLAT(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                    ENDDO
+                  ENDDO
+!$OMP END PARALLEL DO
+
                 CASE(4)
-                  FIELD(:,:) = ZCONV * REAL(IOBSRLON(:,:,IS),JWRB) 
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,IX)
+                  DO K=1,NGY
+                    DO IX=1,NLONRGG(K)
+                      FIELD(IX,K) = REAL(ILSM(IX,K)*IOBSRLON(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                    ENDDO
+                  ENDDO
+!$OMP END PARALLEL DO
+
                 CASE(5)
-                  FIELD(:,:) = ZCONV * REAL(IOBSCOR(:,:,IS),JWRB) 
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,IX,IS)
+                  DO K=1,NGY
+                    DO IX=1,NLONRGG(K)
+                      FIELD(IX,K) = REAL(ILSM(IX,K)*IOBSCOR(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                    ENDDO
+                  ENDDO
+!$OMP END PARALLEL DO
+
                 END SELECT
+
+              ELSE
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,IX)
+                  DO K=1,NGY
+                    DO IX=1,NLONRGG(K)
+                      FIELD(IX,K) = ZMISS
+                    ENDDO
+                  ENDDO
+!$OMP END PARALLEL DO
+
               ENDIF 
 
-              ITEST = 1
+              ITEST = 0
               ITABLE=140
               IPARAM=80
               IZLEV=0
