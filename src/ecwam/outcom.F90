@@ -85,9 +85,11 @@
       REAL(KIND=JWRB), INTENT(INOUT) :: BATHY(NGX, NGY)
       LOGICAL, INTENT(IN) :: LLGRIB_BATHY_OUT
 
-      INTEGER(KIND=JWIM) :: IDUM, K, M, L
+      INTEGER(KIND=JWIM) :: IDUM, K, M, L, JY
       INTEGER(KIND=JWIM) :: ITABLE, IPARAM, IZLEV, IFCST
       INTEGER(KIND=JWIM) :: NKIND !Precision used when writing
+
+      REAL(KIND=JWRB), ALLOCATABLE :: ZDUM(:)
 
       CHARACTER(LEN=14) :: CDATE
 
@@ -112,7 +114,17 @@
 
         CDATE=CDATECLIM
         IFCST=0
-        
+
+        !!! For grib output the bathymetry file has to be re-order from north to south
+        !!! ecWAM internally has BATHY defined from south to north !!!
+        ALLOCATE(ZDUM(NGX))
+        DO JY=1,NGY/2
+          ZDUM(1:NGX) = BATHY(1:NGX,JY)
+          BATHY(1:NGX,JY) = BATHY(1:NGX,NGY-JY+1)
+          BATHY(1:NGX,NGY-JY+1) = ZDUM(1:NGX)
+        ENDDO
+        DEALLOCATE(ZDUM)
+
         CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, BATHY,        &
      &                  ITABLE, IPARAM, IZLEV, 0 , 0,        &
      &                  CDATE, IFCST, MARSTYPE, LFDB, IU07)

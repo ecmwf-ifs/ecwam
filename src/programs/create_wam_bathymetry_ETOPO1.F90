@@ -151,7 +151,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM), PARAMETER :: NOOBSTRT=1000
 
       INTEGER(KIND=JWIM) :: IU01, IU06, IUGRD, IUNIT
-      INTEGER(KIND=JWIM) :: I, J, IJ, K, KSN, M, IANG, IP
+      INTEGER(KIND=JWIM) :: I, J, IJ, K, KSN, KNS, M, IANG, IP
       INTEGER(KIND=JWIM) :: ISPECTRUNC
       INTEGER(KIND=JWIM) :: NLANDCENTREPM, NLANDCENTREMAX, NLANDCENTRE, NIOBSLAT
       INTEGER(KIND=JWIM) :: NSEA, NLAND, NSEASH
@@ -195,7 +195,8 @@ PROGRAM CREATE_BATHY_ETOPO1
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: XLAT
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: WAMDEPTH
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: PERCENTLAND, PERCENTSHALLOW
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: FIELD
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: FIELD  !!! because it will be used for grib encoding,
+                                                             !!! it needs to be defined from North to South
 
       CHARACTER(LEN=  1) :: C1
       CHARACTER(LEN=  2) :: CFR
@@ -2336,46 +2337,51 @@ PROGRAM CREATE_BATHY_ETOPO1
                 SELECT CASE(IOBSRT)
 
                 CASE(1)
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,IX)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,KNS,IX)
                   DO K=1,NGY
+                    KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,K) = REAL(ILSM(IX,K)*IOBSLAT(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSLAT(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
 
                 CASE(2)
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,IX)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,KNS,IX)
                   DO K=1,NGY
+                    KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,K) = REAL(ILSM(IX,K)*IOBSLON(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSLON(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
 
                 CASE(3)
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,IX)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,KNS,IX)
                   DO K=1,NGY
+                    KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,K) = REAL(ILSM(IX,K)*IOBSRLAT(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSRLAT(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
 
                 CASE(4)
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,IX)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,KNS,IX)
                   DO K=1,NGY
+                    KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,K) = REAL(ILSM(IX,K)*IOBSRLON(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSRLON(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
 
                 CASE(5)
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,IX,IS)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,KNS,IX)
                   DO K=1,NGY
+                    KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,K) = REAL(ILSM(IX,K)*IOBSCOR(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSCOR(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
@@ -2383,10 +2389,11 @@ PROGRAM CREATE_BATHY_ETOPO1
                 END SELECT
 
               ELSE
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,IX)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,KNS,IX)
                   DO K=1,NGY
+                    KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,K) = ZMISS
+                      FIELD(IX,KNS) = ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
@@ -2395,7 +2402,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
               ITEST = 0
               ITABLE=140
-              IPARAM=80
+              IPARAM=219 !! use the parameter id of the model bathymetry to insure the same interpolation method between the 2
               IZLEV=0
               CDATE=CDATECLIM
               IFCST=0

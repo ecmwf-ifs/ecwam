@@ -178,11 +178,10 @@ PROGRAM preproc
 #include "uiprep.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU01, IU02, IU03, IU07, IU09, IU10, IU17, IU19, IU20
-      INTEGER(KIND=JWIM) :: K, IX, JY, ICL, IFORM, LNAME, IINPC, LFILE
+      INTEGER(KIND=JWIM) :: K, IX, ICL, IFORM, LNAME, IINPC, LFILE
 
       REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JWRB) :: XLAT
-      REAL(KIND=JWRB), ALLOCATABLE :: ZDUM(:)
       REAL(KIND=JWRB), ALLOCATABLE :: BATHY(:,:)
 
       CHARACTER(LEN=1) :: C1 
@@ -434,18 +433,6 @@ PROGRAM preproc
 
 !*    9. OUTPUT OF MODULES.
 !        ------------------
-
-      IF ( LLGRIB_BATHY_OUT ) THEN
-        !!! For grib output the bathymetry file has to be re-order from north to south
-        !!! ecWAM internally has BATHY defined from south to north !!!
-        ALLOCATE(ZDUM(NGX))
-        DO JY=1,NGY/2
-          ZDUM(1:NGX) = BATHY(1:NGX,JY)
-          BATHY(1:NGX,JY) = BATHY(1:NGX,NGY-JY+1)
-          BATHY(1:NGX,NGY-JY+1) = ZDUM(1:NGX)
-        ENDDO
-        DEALLOCATE(ZDUM)
-      ENDIF
 
       CALL OUTCOM (IU07, BATHY, LLGRIB_BATHY_OUT)
 
