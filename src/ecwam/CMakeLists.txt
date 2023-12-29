@@ -83,6 +83,7 @@ list( APPEND ecwam_srcs
   gc_dispersion.h
   get_preset_wgrib_template.F90
   getbobstrct.F90
+  getgrbobstrct.F90
   getcurr.F90
   getfrstwnd.F90
   getspec.F90
@@ -305,6 +306,7 @@ list( APPEND ecwam_srcs
   wvdealloc.F90
   wvfricvelo.F90
   wvopenbathy.F90
+  wvopensubbathy.F90
   wvwamdecomp.F90
   wvwaminit.F90
   wvwaminit1.F90
