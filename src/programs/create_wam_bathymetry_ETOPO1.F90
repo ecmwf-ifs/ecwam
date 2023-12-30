@@ -77,7 +77,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       USE YOWCOUP  , ONLY : KCOUSTEP
       USE YOWCOUT  , ONLY : LFDB, LRSTST0
       USE YOWFRED  , ONLY : IFRE1, FRATIO, DELTH, FR, TH
-      USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP, CEXPVERCLIM, NDATE_TIME_WINDOW_END, CDATECLIM
+      USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP, CEXPVERCLIM, NDATE_TIME_WINDOW_END, CDATECLIM, KPARAM_SUBGRIG
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWMAP   , ONLY : IPER, IRGG, IQGAUSS, AMOWEP, AMOSOP, AMOEAP, AMONOP,  &
      &                      XDELLA, XDELLO, NGX, NGY, NLONRGG, CLDOMAIN
@@ -2402,7 +2402,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
               ITEST = 0
               ITABLE=140
-              IPARAM=219 !! use the parameter id of the model bathymetry to insure the same interpolation method between the 2
+              IPARAM=KPARAM_SUBGRIG !! use the parameter id of the model bathymetry to insure the same interpolation method between the 2
               IZLEV=0
               CDATE=CDATECLIM
               IFCST=0

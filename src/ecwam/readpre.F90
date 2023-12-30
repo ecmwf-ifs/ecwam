@@ -59,7 +59,7 @@ SUBROUTINE READPRE (LLBATHY)
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWABORT , ONLY : WAM_ABORT
-      USE YOWGRIBHD, ONLY : CDATECLIM, IMDLGRBID_G
+      USE YOWGRIBHD, ONLY : IMDLGRBID_G
       USE YOWGRIBINFO, ONLY : WVGETGRIDINFO
       USE YOWMAP   , ONLY : NGX      ,NGY      ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
@@ -86,13 +86,13 @@ SUBROUTINE READPRE (LLBATHY)
 #include "abort1.intfb.h"
 #include "adjust.intfb.h"
 #include "mpbcastgrid.intfb.h"
+#include "wvchkmid.intfb.h"
 #include "wvopenbathy.intfb.h"
 
       LOGICAL, INTENT(IN) :: LLBATHY
 
       INTEGER(KIND=JWIM) :: IREAD, IU07, KGRIB_HANDLE
       INTEGER(KIND=JWIM) :: IP, I, K, J, L, JSN
-      INTEGER(KIND=JWIM) :: IDATECLIM, ITIMECLIM, IDATE, ITIME 
       INTEGER(KIND=JWIM) :: NUMBEROFVALUES
       INTEGER(KIND=JWIM) :: KMDLGRDID
       INTEGER(KIND=JWIM) :: NKIND ! Numerical precision of input binary file
@@ -100,8 +100,6 @@ SUBROUTINE READPRE (LLBATHY)
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE :: VALUES(:)
-
-      CHARACTER(LEN=14) :: CDATE
 
       LOGICAL :: LLSCANNS
 
@@ -129,29 +127,10 @@ SUBROUTINE READPRE (LLBATHY)
         !! GRIB INPUT:
 !          ----------
 
-!         CHECK MODEL IDENTIFIER
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'dataDate', IDATE)
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'time', ITIME)
-          CDATE = CDATECLIM
-          READ(CDATE(1:8),'(I8)') IDATECLIM
-          READ(CDATE(9:12),'(I4)') ITIMECLIM
-          IF ( IDATE /= IDATECLIM .OR. ITIME /= ITIMECLIM ) THEN
-            WRITE(IU06,*) '*****************************************'
-            WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
-            WRITE(IU06,*) '*  ==============================       *'
-            WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
-            WRITE(IU06,*) '* MODEL GRIB DATECLIM.                  *' 
-            WRITE(IU06,*) '* MAKE SURE YOU HAVE RUN PREPROC !!!!   *'
-            WRITE(IU06,*) '* IDATE /= IDATECLIM ',IDATE, IDATECLIM
-            WRITE(IU06,*) '* ITIME /= ITIMECLIM ',ITIME, ITIMECLIM 
-            WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
-            WRITE(IU06,*) '* ---------------   --------------      *'
-            WRITE(IU06,*) '*****************************************'
-            CALL ABORT1
-          ENDIF
+!         CHECK MODEL IDENTIFIERS:
+          CALL WVCHKMID(IU06, KGRIB_HANDLE,__FILENAME__)
 
 !         GRID INFO:
-!         ---------
           CALL WVGETGRIDINFO(IU06, KGRIB_HANDLE, &
  &                           NGX, NGY, IPER, IRGG, IQGAUSS, KLONRGG, LLSCANNS, &
  &                           AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO )
