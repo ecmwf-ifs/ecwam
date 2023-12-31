@@ -56,7 +56,7 @@ IF ( KGRIB_HANDLE > 0 ) THEN
     CEXPVER=C12(1:4)
   ENDIF
 
-  IF ( CEXPER /= CEXPVERCLIM ) THEN
+  IF ( CEXPVPER /= CEXPVERCLIM ) THEN
     WRITE(IU06,*) '*****************************************'
     WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. WVCHKMID      *'
     WRITE(IU06,*) '*  ===============================      *'
@@ -64,7 +64,7 @@ IF ( KGRIB_HANDLE > 0 ) THEN
     WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
     WRITE(IU06,*) '* MODEL GRIB CEXPVERCLIM                *' 
     WRITE(IU06,*) '* MAKE SURE YOU HAVE RUN PREPROC !!!!   *'
-    WRITE(IU06,*) '* CEXPER =      ',CEXPER
+    WRITE(IU06,*) '* CEXPVER =      ',CEXPVER
     WRITE(IU06,*) '* CEXPVERCLIM = ',CEXPVERCLIM
     WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
     WRITE(IU06,*) '* ---------------   --------------      *'
