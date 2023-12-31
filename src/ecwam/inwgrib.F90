@@ -7,7 +7,8 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE INWGRIB (FILNM, IREAD, CDATE, IPARAM, KZLEV,  & 
+      SUBROUTINE INWGRIB (FILNAME, IUGRB, NPR, KANGNB, KFRENB,  &
+     &                    IREAD, CDATE, IPARAM, KZLEV,          & 
      &                    NXS, NXE, NYS, NYE, FIELDG, FIELD)
 
 ! -----------------------------------------------------------------     
@@ -24,10 +25,19 @@
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!      *CALL INWGRIB* (FILNM, IREAD, CDATE, IPARAM, KZLEV,
+!      *CALL INWGRIB* (FILNAME, IUGRB, NPR, KANGNB, KFRENB,
+!    *                 IREAD, CDATE, IPARAM, KZLEV,
 !    &                 NXS, NXE, NYS, NYE, FIELDG, FIELD)
 
-!        *FILNM*  - DATA INPUT FILENAME. 
+!        OPTIONAL INPUT (but one needs to be specified):
+!        *FILNAME*- DATA INPUT FILENAME. 
+!        *IUGRB*  - GRIB HANDLE TO AN OPEN GRIB FILE.
+!        *NPR*    - NUMBER OF SUBDOMAINS (USUALLY THE NUMBER OF PE'S )
+
+!        OPTIONAL OUTPUT
+!        *KANGNB*  INDEX FOR SPECTRAL DIRECTION
+!        *KFRENB*  INDEX FOR SPECTRAL FREQUENCY
+
 !        *IREAD*  - ACCESS TO FILE ONLY FOR PE=IREAD.
 !        *CDATE*  - DATE/TIME OF THE DATA READ.         
 !        *IPARAM* - PARAMETER NUMBER. 
@@ -76,7 +86,13 @@
 #include "grib2wgrid.intfb.h"
 #include "kgribsize.intfb.h"
 
-      CHARACTER(LEN=24), INTENT(IN) :: FILNM
+      CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: FILENAME
+      INTEGER(KIND=JWIM), INTENT(IN), OPTIONAL  :: IUGRB 
+      INTEGER(KIND=JWIM), INTENT(IN), OPTIONAL  :: NPR 
+
+      INTEGER(KIND=JWIM), INTENT(OUT), OPTIONAL  :: KANGNB
+      INTEGER(KIND=JWIM), INTENT(OUT), OPTIONAL  :: KFRENB 
+
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       CHARACTER(LEN=14), INTENT(OUT) :: CDATE
       INTEGER(KIND=JWIM), INTENT(OUT) :: IPARAM, KZLEV
@@ -87,8 +103,10 @@
 
       INTEGER(KIND=JWIM) :: NBIT
 
+      INTEGER(KIND=JWIM) :: NPRC 
       INTEGER(KIND=JWIM) :: IFORP
-      INTEGER(KIND=JWIM) :: LFILE, KFILE_HANDLE, KGRIB_HANDLE
+      INTEGER(KIND=JWIM) :: IFORP
+      INTEGER(KIND=JWIM) :: LFILE, KGRIB_HANDLE 
       INTEGER(KIND=JWIM) :: IRET, ISIZE
       INTEGER(KIND=JWIM) :: KK, MM
       INTEGER(KIND=JWIM) :: IBUF(2) 
@@ -99,11 +117,52 @@
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
+      CHARACTER(LEN=*) :: FILNM
       LOGICAL :: LLEXIST
+      LOGICAL :: LL_NO_FILENAME, LL_NO_IUGRB
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('INWGRIB',0,ZHOOK_HANDLE)
+
+      IF( PRESENT(FILENAME) ) THEN
+        FILNM = FILENAME
+        LL_NO_FILENAME = .FALSE.
+      ELSE
+        FILNM = 'filename_not_provided' 
+        LL_NO_FILENAME = .TRUE.
+      ENDIF
+
+      IF( PRESENT(IUGRB) ) THEN
+        KFILE_HANDLE = IUGRB
+        IF ( KFILE_HANDLE > 0 ) THEN
+          LL_NO_IUGRB = .FALSE.
+        ELSE
+          LL_NO_IUGRB = .TRUE.
+        ENDIF
+      ELSE
+        KFILE_HANDLE = -99
+        LL_NO_IUGRB = .TRUE.
+      ENDIF
+
+      IF( PRESENT(NPR) ) THEN
+        NPRC = NPR
+      ELSE
+        NPRC = NPROC
+      ENDIF
+
+      IF ( LL_NO_FILENAME .AND. LL_NO_IUGRB ) THEN
+        CALL WAM_ABORT("FILENAME OR IUGRB MUST BE PROVIDED !!!!",__FILENAME__,__LINE__)
+      ELSE IF ( .NOT. LL_NO_FILENAME .AND. .NOT. LL_NO_IUGRB ) THEN
+        WRITE (IU06,*) ''
+        WRITE (IU06,*) '* IN INWGRIB:                            *'
+        WRITE (IU06,*) '* FILENAME AND IUGRB BOTH PROVIDED       *'
+        WRITE (IU06,*) '* WILL GO FOR THE DATA FOUND IN FILENAME *'
+        LFILE = LEN_TRIM(FILNM)
+        WRITE (IU06,*) '* FILENAME= ',FILNM(1:FILNM)
+        WRITE (IU06,*) ''
+        LL_NO_IUGRB = .FALSE. 
+      ENDIF
 
       NBIT=NIBLO
 
@@ -119,33 +178,43 @@
 
 !     READ DATA ON PE IREAD
       IF (IRANK == IREAD) THEN
-        LLEXIST=.FALSE.
-        LFILE = LEN_TRIM(FILNM)
-        INQUIRE(FILE=FILNM(1:LFILE),EXIST=LLEXIST)
-        IF (.NOT. LLEXIST) THEN
-          WRITE (IU06,*) '*************************************'
-          WRITE (IU06,*) '*                                   *'
-          WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
-          WRITE (IU06,*) '*  IN INWGRIB:                      *'
-          WRITE (IU06,*) '*  COULD NOT FIND FILE ',FILNM
-          WRITE (IU06,*) '*                                   *'
-          WRITE (IU06,*) '*************************************'
-          WRITE (*,*) '*************************************'
-          WRITE (*,*) '*                                   *'
-          WRITE (*,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
-          WRITE (*,*) '*  IN INWGRIB:                      *'
-          WRITE (*,*) '*  COULD NOT FIND FILE ',FILNM
-          WRITE (*,*) '*                                   *'
-          WRITE (*,*) '*************************************'
-          CALL ABORT1
-        ENDIF
 
-        CALL IGRIB_OPEN_FILE(KFILE_HANDLE,FILNM(1:LFILE),'r')
+        IF ( .NOT. LL_NO_FILENAME ) THEN
+          !! INPUT FROM FILE in FILNM
+          LLEXIST=.FALSE.
+          LFILE = LEN_TRIM(FILNM)
+          INQUIRE(FILE=FILNM(1:LFILE),EXIST=LLEXIST)
+          IF (.NOT. LLEXIST) THEN
+            WRITE (IU06,*) '*************************************'
+            WRITE (IU06,*) '*                                   *'
+            WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
+            WRITE (IU06,*) '*  IN INWGRIB:                      *'
+            WRITE (IU06,*) '*  COULD NOT FIND FILE ',FILNM
+            WRITE (IU06,*) '*                                   *'
+            WRITE (IU06,*) '*************************************'
+            WRITE (*,*) '*************************************'
+            WRITE (*,*) '*                                   *'
+            WRITE (*,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
+            WRITE (*,*) '*  IN INWGRIB:                      *'
+            WRITE (*,*) '*  COULD NOT FIND FILE ',FILNM
+            WRITE (*,*) '*                                   *'
+            WRITE (*,*) '*************************************'
+            CALL ABORT1
+          ENDIF
+
+          CALL IGRIB_OPEN_FILE(KFILE_HANDLE,FILNM(1:LFILE),'r')
+
+        ELSE
+          IF ( KFILE_HANDLE < 0 ) THEN
+            CALL WAM_ABORT("IUGRB MUST POINT TO AN OPEN FILE !!!!",__FILENAME__,__LINE__)
+          ENDIF
+        ENDIF
 
 1021    ISIZE=NBIT
         KBYTES=ISIZE*NPRECI
         IF (.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
           CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,KBYTES,IRET)
+
         IF (IRET == JPGRIB_BUFFER_TOO_SMALL) THEN
 !!!       *IGRIB_READ_FROM_FILE* does not read through the file if
 !!!       the size is too small, so figure out the size and read again.
@@ -155,13 +224,21 @@
         ELSEIF (IRET == JPGRIB_END_OF_FILE) THEN
           WRITE(IU06,*) '**********************************'
           WRITE(IU06,*) '* INWGRIB: END OF FILE ENCOUNTED'
-          WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
+          IF ( .NOT. LL_NO_FILENAME ) THEN
+            WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
+          ELSE
+            WRITE(IU06,*) '* FILE CONNECTED TO GRIB HANDLE : ', KFILE_HANDLE
+          ENDIF
           WRITE(IU06,*) '**********************************'
           CALL ABORT1
           ELSEIF (IRET /= JPGRIB_SUCCESS) THEN
           WRITE(IU06,*) '**********************************'
           WRITE(IU06,*) '* INWGRIB: FILE HANDLING ERROR'
-          WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
+          IF ( .NOT. LL_NO_FILENAME ) THEN
+            WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
+          ELSE
+            WRITE(IU06,*) '* FILE CONNECTED TO GRIB HANDLE : ', KFILE_HANDLE
+          ENDIF
           WRITE(IU06,*) '**********************************'
           CALL ABORT1
         ENDIF
@@ -172,22 +249,20 @@
       CALL MPL_BARRIER(CDSTRING='INWGRIB: DATA READ IN')
 
 !     SEND GRIB DATA TO THE OTHER PE'S
-      IF (NPROC > 1) THEN
+      IF (NPRC > 1) THEN
         CALL GSTATS(619,0)
         IF (IRANK == IREAD) THEN
           IBUF(1)=ISIZE
           IBUF(2)=KBYTES
         ENDIF
-        CALL MPL_BROADCAST(IBUF(1:2),KROOT=IREAD,KTAG=1,                &
-     &                     CDSTRING='INWGRIB IBUF:')
+        CALL MPL_BROADCAST(IBUF(1:2),KROOT=IREAD, KTAG=1, CDSTRING='INWGRIB IBUF:') 
         IF (IRANK /= IREAD) THEN
           ISIZE=IBUF(1)
           KBYTES=IBUF(2)
           ALLOCATE(INGRIB(ISIZE))
         ENDIF
 
-        CALL MPL_BROADCAST(INGRIB(1:ISIZE),KROOT=IREAD,KTAG=2,          &
-     &                     CDSTRING='INWGRIB: INGRIB')
+        CALL MPL_BROADCAST(INGRIB(1:ISIZE),KROOT=IREAD, KTAG=2, CDSTRING='INWGRIB: INGRIB')
         CALL GSTATS(619,1)
       ENDIF
 
@@ -205,6 +280,9 @@
      &                 FIELDG%XLON, FIELDG%YLAT,                        &
      &                 ZMISS, PPREC, PPEPS,                             &
      &                 CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
+
+      IF( PRESENT(KANGNB) ) KANGNB = KK 
+      IF( PRESENT(KFRENB) ) KFRENB = MM 
 
       CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
