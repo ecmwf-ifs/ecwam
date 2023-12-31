@@ -56,7 +56,7 @@ IF ( KGRIB_HANDLE > 0 ) THEN
     CEXPVER=C12(1:4)
   ENDIF
 
-  IF ( CEXPVPER /= CEXPVERCLIM ) THEN
+  IF ( CEXPVER /= CEXPVERCLIM ) THEN
     WRITE(IU06,*) '*****************************************'
     WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. WVCHKMID      *'
     WRITE(IU06,*) '*  ===============================      *'
