@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE INWGRIB (FILNAME, IUGRB, NPR, KANGNB, KFRENB,  &
+      SUBROUTINE INWGRIB (FILENAME, IUGRB, NPR, KANGNB, KFRENB, &
      &                    IREAD, CDATE, IPARAM, KZLEV,          & 
      &                    NXS, NXE, NYS, NYE, FIELDG, FIELD)
 
@@ -25,12 +25,12 @@
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!      *CALL INWGRIB* (FILNAME, IUGRB, NPR, KANGNB, KFRENB,
+!      *CALL INWGRIB* (FILENAME, IUGRB, NPR, KANGNB, KFRENB,
 !    *                 IREAD, CDATE, IPARAM, KZLEV,
 !    &                 NXS, NXE, NYS, NYE, FIELDG, FIELD)
 
 !        OPTIONAL INPUT (but one needs to be specified):
-!        *FILNAME*- DATA INPUT FILENAME. 
+!        *FILENAME*- DATA INPUT FILENAME. 
 !        *IUGRB*  - GRIB HANDLE TO AN OPEN GRIB FILE.
 !        *NPR*    - NUMBER OF SUBDOMAINS (USUALLY THE NUMBER OF PE'S )
 
@@ -105,8 +105,7 @@
 
       INTEGER(KIND=JWIM) :: NPRC 
       INTEGER(KIND=JWIM) :: IFORP
-      INTEGER(KIND=JWIM) :: IFORP
-      INTEGER(KIND=JWIM) :: LFILE, KGRIB_HANDLE 
+      INTEGER(KIND=JWIM) :: LFILE, KFILE_HANDLE, KGRIB_HANDLE 
       INTEGER(KIND=JWIM) :: IRET, ISIZE
       INTEGER(KIND=JWIM) :: KK, MM
       INTEGER(KIND=JWIM) :: IBUF(2) 
@@ -117,7 +116,7 @@
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
-      CHARACTER(LEN=*) :: FILNM
+      CHARACTER(LEN=:), ALLOCATABLE :: FILNM
       LOGICAL :: LLEXIST
       LOGICAL :: LL_NO_FILENAME, LL_NO_IUGRB
 
@@ -159,7 +158,7 @@
         WRITE (IU06,*) '* FILENAME AND IUGRB BOTH PROVIDED       *'
         WRITE (IU06,*) '* WILL GO FOR THE DATA FOUND IN FILENAME *'
         LFILE = LEN_TRIM(FILNM)
-        WRITE (IU06,*) '* FILENAME= ',FILNM(1:FILNM)
+        WRITE (IU06,*) '* FILENAME= ',FILNM(1:LFILE)
         WRITE (IU06,*) ''
         LL_NO_IUGRB = .FALSE. 
       ENDIF
