@@ -7,9 +7,9 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE INWGRIB (FILENAME, IUGRB, NPR, KANGNB, KFRENB, &
-     &                    IREAD, CDATE, IPARAM, KZLEV,          & 
-     &                    NXS, NXE, NYS, NYE, FIELDG, FIELD)
+      SUBROUTINE INWGRIB (IREAD, CDATE, IPARAM, KZLEV,          &
+     &                    NXS, NXE, NYS, NYE, FIELDG, FIELD,    &
+     &                    FILENAME, IUGRB, NPR, KANGNB, KFRENB)
 
 ! -----------------------------------------------------------------     
 
@@ -25,18 +25,9 @@
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!      *CALL INWGRIB* (FILENAME, IUGRB, NPR, KANGNB, KFRENB,
-!    *                 IREAD, CDATE, IPARAM, KZLEV,
-!    &                 NXS, NXE, NYS, NYE, FIELDG, FIELD)
-
-!        OPTIONAL INPUT (but one needs to be specified):
-!        *FILENAME*- DATA INPUT FILENAME. 
-!        *IUGRB*  - GRIB HANDLE TO AN OPEN GRIB FILE.
-!        *NPR*    - NUMBER OF SUBDOMAINS (USUALLY THE NUMBER OF PE'S )
-
-!        OPTIONAL OUTPUT
-!        *KANGNB*  INDEX FOR SPECTRAL DIRECTION
-!        *KFRENB*  INDEX FOR SPECTRAL FREQUENCY
+!      *CALL INWGRIB* (IREAD, CDATE, IPARAM, KZLEV,
+!    &                 NXS, NXE, NYS, NYE, FIELDG, FIELD,
+!    &                 FILENAME, IUGRB, NPR, KANGNB, KFRENB)
 
 !        *IREAD*  - ACCESS TO FILE ONLY FOR PE=IREAD.
 !        *CDATE*  - DATE/TIME OF THE DATA READ.         
@@ -48,6 +39,15 @@
 !        *NYS:NYE*  SECOND DIMENSION OF FIELDG
 !        *FIELDG* - INPUT FORCING FIELDS ON THE WAVE MODEL GRID
 !        *FIELD*  - UNPACKED DATA.
+
+!        OPTIONAL INPUT (but one needs to be specified):
+!        *FILENAME*- DATA INPUT FILENAME. 
+!        *IUGRB*  - GRIB HANDLE TO AN OPEN GRIB FILE.
+!        *NPR*    - NUMBER OF SUBDOMAINS (USUALLY THE NUMBER OF PE'S )
+
+!        OPTIONAL OUTPUT
+!        *KANGNB*  INDEX FOR SPECTRAL DIRECTION
+!        *KFRENB*  INDEX FOR SPECTRAL FREQUENCY
 
 !     EXTERNALS.                                                        
 !     ----------                                                        
@@ -86,19 +86,19 @@
 #include "grib2wgrid.intfb.h"
 #include "kgribsize.intfb.h"
 
-      CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: FILENAME
-      INTEGER(KIND=JWIM), INTENT(IN), OPTIONAL  :: IUGRB 
-      INTEGER(KIND=JWIM), INTENT(IN), OPTIONAL  :: NPR 
-
-      INTEGER(KIND=JWIM), INTENT(OUT), OPTIONAL  :: KANGNB
-      INTEGER(KIND=JWIM), INTENT(OUT), OPTIONAL  :: KFRENB 
-
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       CHARACTER(LEN=14), INTENT(OUT) :: CDATE
       INTEGER(KIND=JWIM), INTENT(OUT) :: IPARAM, KZLEV
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
       TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
       REAL(KIND=JWRB), INTENT(OUT) :: FIELD(NXS:NXE, NYS:NYE)
+
+      CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: FILENAME
+      INTEGER(KIND=JWIM), INTENT(IN), OPTIONAL  :: IUGRB 
+      INTEGER(KIND=JWIM), INTENT(IN), OPTIONAL  :: NPR 
+
+      INTEGER(KIND=JWIM), INTENT(OUT), OPTIONAL  :: KANGNB
+      INTEGER(KIND=JWIM), INTENT(OUT), OPTIONAL  :: KFRENB 
 
 
       INTEGER(KIND=JWIM) :: NBIT

@@ -124,8 +124,9 @@
 
       IF (LHOOK) CALL DR_HOOK('READWGRIB',0,ZHOOK_HANDLE)
 
-      CALL INWGRIB(FILENAME=FILNM, IREAD, CCDDATE, KPARAM, KZLEV,  &
-     &             NXS, NXE, NYS, NYE, FIELDG, WORK)
+      CALL INWGRIB(IREAD, CCDDATE, KPARAM, KZLEV,    &
+     &             NXS, NXE, NYS, NYE, FIELDG, WORK, &
+     $             FILENAME=FILNM )
 
 !*    SIMPLE CHECKS ON THE RETRIEVED DATA 
 !     -----------------------------------
