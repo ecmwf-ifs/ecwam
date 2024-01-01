@@ -42,7 +42,7 @@
 
 !        OPTIONAL INPUT (but one needs to be specified):
 !        *FILENAME*- DATA INPUT FILENAME. 
-!        *IUGRB*  - GRIB HANDLE TO AN OPEN GRIB FILE.
+!        *IUGRB*  - GRIB HANDLE POINTING TO AN OPENED GRIB FILE (i.e. IGRIB_OPEN_FILE).
 !        *NPR*    - NUMBER OF SUBDOMAINS (USUALLY THE NUMBER OF PE'S )
 
 !        OPTIONAL OUTPUT
@@ -71,6 +71,7 @@
 #endif
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
       USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_BROADCAST
       USE YOWGRIB, ONLY : IGRIB_OPEN_FILE, IGRIB_CLOSE_FILE, IGRIB_RELEASE, &
                         & IGRIB_NEW_FROM_MESSAGE, IGRIB_READ_FROM_FILE, &
@@ -124,43 +125,10 @@
 
       IF (LHOOK) CALL DR_HOOK('INWGRIB',0,ZHOOK_HANDLE)
 
-      IF( PRESENT(FILENAME) ) THEN
-        FILNM = FILENAME
-        LL_NO_FILENAME = .FALSE.
-      ELSE
-        FILNM = 'filename_not_provided' 
-        LL_NO_FILENAME = .TRUE.
-      ENDIF
-
-      IF( PRESENT(IUGRB) ) THEN
-        KFILE_HANDLE = IUGRB
-        IF ( KFILE_HANDLE > 0 ) THEN
-          LL_NO_IUGRB = .FALSE.
-        ELSE
-          LL_NO_IUGRB = .TRUE.
-        ENDIF
-      ELSE
-        KFILE_HANDLE = -99
-        LL_NO_IUGRB = .TRUE.
-      ENDIF
-
       IF( PRESENT(NPR) ) THEN
         NPRC = NPR
       ELSE
         NPRC = NPROC
-      ENDIF
-
-      IF ( LL_NO_FILENAME .AND. LL_NO_IUGRB ) THEN
-        CALL WAM_ABORT("FILENAME OR IUGRB MUST BE PROVIDED !!!!",__FILENAME__,__LINE__)
-      ELSE IF ( .NOT. LL_NO_FILENAME .AND. .NOT. LL_NO_IUGRB ) THEN
-        WRITE (IU06,*) ''
-        WRITE (IU06,*) '* IN INWGRIB:                            *'
-        WRITE (IU06,*) '* FILENAME AND IUGRB BOTH PROVIDED       *'
-        WRITE (IU06,*) '* WILL GO FOR THE DATA FOUND IN FILENAME *'
-        LFILE = LEN_TRIM(FILNM)
-        WRITE (IU06,*) '* FILENAME= ',FILNM(1:LFILE)
-        WRITE (IU06,*) ''
-        LL_NO_IUGRB = .FALSE. 
       ENDIF
 
       NBIT=NIBLO
@@ -178,6 +146,40 @@
 !     READ DATA ON PE IREAD
       IF (IRANK == IREAD) THEN
 
+        IF( PRESENT(FILENAME) ) THEN
+          FILNM = FILENAME
+          LL_NO_FILENAME = .FALSE.
+        ELSE
+          FILNM = 'filename_not_provided' 
+          LL_NO_FILENAME = .TRUE.
+        ENDIF
+
+        IF( PRESENT(IUGRB) ) THEN
+          KFILE_HANDLE = IUGRB
+          IF ( KFILE_HANDLE > 0 ) THEN
+            LL_NO_IUGRB = .FALSE.
+            FILNM = 'filename_not_provided_but_will_get_info_from_grib_handle' 
+          ELSE
+            LL_NO_IUGRB = .TRUE.
+          ENDIF
+        ELSE
+          KFILE_HANDLE = -99
+          LL_NO_IUGRB = .TRUE.
+        ENDIF
+
+        IF ( LL_NO_FILENAME .AND. LL_NO_IUGRB ) THEN
+          CALL WAM_ABORT("FILENAME OR IUGRB MUST BE PROVIDED !!!!",__FILENAME__,__LINE__)
+        ELSE IF ( .NOT. LL_NO_FILENAME .AND. .NOT. LL_NO_IUGRB ) THEN
+          WRITE (IU06,*) ''
+          WRITE (IU06,*) '* IN INWGRIB:                            *'
+          WRITE (IU06,*) '* FILENAME AND IUGRB BOTH PROVIDED       *'
+          WRITE (IU06,*) '* WILL GO FOR THE DATA FOUND IN FILENAME *'
+          LFILE = LEN_TRIM(FILNM)
+          WRITE (IU06,*) '* FILENAME= ',FILNM(1:LFILE)
+          WRITE (IU06,*) ''
+          LL_NO_IUGRB = .FALSE. 
+        ENDIF
+
         IF ( .NOT. LL_NO_FILENAME ) THEN
           !! INPUT FROM FILE in FILNM
           LLEXIST=.FALSE.
@@ -191,13 +193,13 @@
             WRITE (IU06,*) '*  COULD NOT FIND FILE ',FILNM
             WRITE (IU06,*) '*                                   *'
             WRITE (IU06,*) '*************************************'
-            WRITE (*,*) '*************************************'
-            WRITE (*,*) '*                                   *'
-            WRITE (*,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
-            WRITE (*,*) '*  IN INWGRIB:                      *'
-            WRITE (*,*) '*  COULD NOT FIND FILE ',FILNM
-            WRITE (*,*) '*                                   *'
-            WRITE (*,*) '*************************************'
+            WRITE (NULERR,*) '*************************************'
+            WRITE (NULERR,*) '*                                   *'
+            WRITE (NULERR,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
+            WRITE (NULERR,*) '*  IN INWGRIB:                      *'
+            WRITE (NULERR,*) '*  COULD NOT FIND FILE ',FILNM
+            WRITE (NULERR,*) '*                                   *'
+            WRITE (NULERR,*) '*************************************'
             CALL ABORT1
           ENDIF
 
@@ -223,27 +225,38 @@
         ELSEIF (IRET == JPGRIB_END_OF_FILE) THEN
           WRITE(IU06,*) '**********************************'
           WRITE(IU06,*) '* INWGRIB: END OF FILE ENCOUNTED'
+          WRITE(NULERR,*) '* INWGRIB: END OF FILE ENCOUNTED'
           IF ( .NOT. LL_NO_FILENAME ) THEN
             WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
+            WRITE(NULERR,*) '* FILE: ',FILNM(1:LFILE)
           ELSE
-            WRITE(IU06,*) '* FILE CONNECTED TO GRIB HANDLE : ', KFILE_HANDLE
+            WRITE(IU06,*) '* FILE CONNECTED TO GRIB FILE HANDLE : ', KFILE_HANDLE
+            WRITE(NULERR,*) '* FILE CONNECTED TO GRIB FILE HANDLE : ', KFILE_HANDLE
           ENDIF
           WRITE(IU06,*) '**********************************'
           CALL ABORT1
-          ELSEIF (IRET /= JPGRIB_SUCCESS) THEN
+        ELSEIF (IRET /= JPGRIB_SUCCESS) THEN
           WRITE(IU06,*) '**********************************'
           WRITE(IU06,*) '* INWGRIB: FILE HANDLING ERROR'
+          WRITE(NULERR,*) '* INWGRIB: FILE HANDLING ERROR'
           IF ( .NOT. LL_NO_FILENAME ) THEN
             WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
+            WRITE(NULERR,*) '* FILE: ',FILNM(1:LFILE)
           ELSE
-            WRITE(IU06,*) '* FILE CONNECTED TO GRIB HANDLE : ', KFILE_HANDLE
+            WRITE(IU06,*) '* FILE CONNECTED TO GRIB FILE HANDLE : ', KFILE_HANDLE
+            WRITE(NULERR,*) '* FILE CONNECTED TO GRIB FILE HANDLE : ', KFILE_HANDLE
           ENDIF
           WRITE(IU06,*) '**********************************'
           CALL ABORT1
         ENDIF
-      ENDIF
 
-      WRITE(IU06,*) ' SUB. INWGRIB - READ FROM ',FILNM
+        IF ( LL_NO_FILENAME ) THEN
+          WRITE(IU06,*) ' SUB. INWGRIB - READ FROM GRIB FILE HANDLE ', KFILE_HANDLE
+        ELSE
+          WRITE(IU06,*) ' SUB. INWGRIB - READ FROM ',FILNM
+        ENDIF
+
+      ENDIF
 
       CALL MPL_BARRIER(CDSTRING='INWGRIB: DATA READ IN')
 
