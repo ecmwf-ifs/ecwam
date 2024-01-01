@@ -83,10 +83,10 @@
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS, WVGRIDLOC
 
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
-      USE YOWMPP   , ONLY : IRANK    ,NPROC
+      USE YOWMPP   , ONLY : IRANK, NPROC
       USE YOWPCONS , ONLY : ZMISS
 
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
 
 !-----------------------------------------------------------------------
 
@@ -126,7 +126,7 @@
 
       CALL INWGRIB(IREAD, CCDDATE, KPARAM, KZLEV,    &
      &             NXS, NXE, NYS, NYE, FIELDG, WORK, &
-     $             FILENAME=FILNM )
+     &             FILENAME=FILNM )
 
 !*    SIMPLE CHECKS ON THE RETRIEVED DATA 
 !     -----------------------------------
