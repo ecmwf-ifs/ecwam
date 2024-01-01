@@ -29,6 +29,7 @@ SUBROUTINE INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,     &
 !          LLINIALL  LOGICAL : IF TRUE ALL STRUCTURE IS INITIALISED
 !                              OTHERWISE ONLY XLON and YLAT
 !          LLOCAL    LOGICAL : IF TRUE ONLY THE LOCAL SEA POINTS ARE GIVEN
+!                              (i.e. those that are on a given MPI task)
 !                              VALID COORDINATES (XLON, YLAT) 
 !                              PROVIDED THE LOCAL INDEX ARRAYS EXIST.
 !         *NXS:NXE*  FIRST DIMENSION OF FIELDG
