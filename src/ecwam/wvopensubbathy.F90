@@ -6,7 +6,7 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 !
-SUBROUTINE WVOPENSUBBATHY (IREAD, NPR, KFILE_HANDLE, KGRIB_HANDLE, FILENAME)
+SUBROUTINE WVOPENSUBBATHY (IREAD, NPR, FILENAME, KFILE_HANDLE, KGRIB_HANDLE)
 
 !****  *WVOPENSUBBATHY* - OPENS THE FILE CONTAINING THE MODEL SUBGRID BATHYMETRY INFO (see FILENAME)
 !                         AND DETERMINES WHETHER IT IS A GRIB FILE OR THE OLD BINARY FORMAT
@@ -32,9 +32,9 @@ IMPLICIT NONE
 
 INTEGER(KIND=JWIM), INTENT(IN) :: IREAD            ! task accessing the data file
 INTEGER(KIND=JWIM), INTENT(IN) :: NPR              ! total number of tasks 
+CHARACTER(LEN=72),  INTENT(OUT) :: FILENAME      ! input file name associated with the grib handels 
 INTEGER(KIND=JWIM), INTENT(OUT) :: KFILE_HANDLE    ! grib file handle if input file is in grib
 INTEGER(KIND=JWIM), INTENT(OUT) :: KGRIB_HANDLE    ! grib handle if input file is in grib
-CHARACTER(LEN=*),   INTENT(OUT) :: FILENAME        ! file name associated with the grib handels 
 
 INTEGER(KIND=JWIM):: LFILE, KHANDLE, IRET, IERR, IEDITION
 INTEGER(KIND=JWIM) :: IBUF(3)
@@ -67,7 +67,7 @@ IF (IRANK == IREAD) THEN
   IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
   INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
 
-  IF (.NOT. LLEXIST) THEN
+  IF (.NOT. LLEXIST .OR. LFILE == 0) THEN
     WRITE(IU06,*) '*****************************************************************'
     WRITE(IU06,*) '*                                                               *'
     WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVOPENSUBBATHY                           *'

@@ -160,7 +160,7 @@
           LLEXIST=.FALSE.
           LFILE = LEN_TRIM(FILNM)
           INQUIRE(FILE=FILNM(1:LFILE),EXIST=LLEXIST)
-          IF (.NOT. LLEXIST) THEN
+          IF (.NOT. LLEXIST .OR. LFILE == 0) THEN
             WRITE (IU06,*) '*************************************'
             WRITE (IU06,*) '*                                   *'
             WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'

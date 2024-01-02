@@ -43,7 +43,7 @@ LLEXIST=.FALSE.
 IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
 INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
 
-IF (.NOT. LLEXIST) THEN
+IF (.NOT. LLEXIST .OR. LFILE == 0) THEN
   WRITE(IU06,*) '*****************************************************************'
   WRITE(IU06,*) '*                                                               *'
   WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVOPENBATHY                              *'
