@@ -178,7 +178,7 @@
             CALL ABORT1
           ENDIF
 
-          NBIT=NIBLO/2 + 1
+          NBIT=NIBLO
 
           CALL IGRIB_OPEN_FILE(KFILE_HANDLE,FILNM(1:LFILE),'r')
 
@@ -216,7 +216,9 @@
           CALL ABORT1
         ENDIF
 
-        WRITE(IU06,*) ' SUB. INWGRIB - READ FROM ',FILNM
+        IF (LLOPENFILE) THEN
+          WRITE(IU06,*) ' SUB. INWGRIB - READ FROM ',FILNM(1:LFILE)
+        ENDIF
 
       ENDIF
 
