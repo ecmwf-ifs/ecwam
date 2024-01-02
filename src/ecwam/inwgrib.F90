@@ -9,7 +9,7 @@
 
       SUBROUTINE INWGRIB (FILNM, IREAD, CDATE, IPARAM, KZLEV,          &
      &                    NXS, NXE, NYS, NYE, FIELDG, FIELD,    &
-     &                    NPR, KANGNB, KFRENB)
+     &                    NPR, KANGNB, KFRENB, NFILE_HANDLE)
 
 ! -----------------------------------------------------------------     
 
@@ -184,7 +184,7 @@
 
           IF( LLHANDEL ) NFILE_HANDLE = KFILE_HANDLE
         ELSE
-          KFILE_HANDLE = NFILE_HANDLE
+          IF( LLHANDEL ) KFILE_HANDLE = NFILE_HANDLE
         ENDIF
 
 1021    ISIZE=NBIT
