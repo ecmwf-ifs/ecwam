@@ -96,7 +96,7 @@
 #include "inwgrib.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06
-      CHARACTER(LEN=24), INTENT(IN) :: FILNM
+      CHARACTER(LEN=*), INTENT(IN) :: FILNM
       INTEGER(KIND=JWIM), INTENT(IN) :: IPARAM
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
@@ -124,9 +124,8 @@
 
       IF (LHOOK) CALL DR_HOOK('READWGRIB',0,ZHOOK_HANDLE)
 
-      CALL INWGRIB(IREAD, CCDDATE, KPARAM, KZLEV,    &
-     &             NXS, NXE, NYS, NYE, FIELDG, WORK, &
-     &             FILENAME=FILNM )
+      CALL INWGRIB(FILNM, IREAD, CCDDATE, KPARAM, KZLEV,    &
+     &             NXS, NXE, NYS, NYE, FIELDG, WORK)
 
 !*    SIMPLE CHECKS ON THE RETRIEVED DATA 
 !     -----------------------------------

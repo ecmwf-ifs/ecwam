@@ -7,9 +7,9 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE INWGRIB (IREAD, CDATE, IPARAM, KZLEV,          &
+      SUBROUTINE INWGRIB (FILNM, IREAD, CDATE, IPARAM, KZLEV,          &
      &                    NXS, NXE, NYS, NYE, FIELDG, FIELD,    &
-     &                    FILENAME, IUGRB, NPR, KANGNB, KFRENB)
+     &                    NPR, KANGNB, KFRENB)
 
 ! -----------------------------------------------------------------     
 
@@ -25,10 +25,11 @@
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!      *CALL INWGRIB* (IREAD, CDATE, IPARAM, KZLEV,
+!      *CALL INWGRIB* (FILNM, IREAD, CDATE, IPARAM, KZLEV,
 !    &                 NXS, NXE, NYS, NYE, FIELDG, FIELD,
-!    &                 FILENAME, IUGRB, NPR, KANGNB, KFRENB)
+!    &                 NPR, KANGNB, KFRENB)
 
+!        *FILNM*  - DATA INPUT FILENAME. 
 !        *IREAD*  - ACCESS TO FILE ONLY FOR PE=IREAD.
 !        *CDATE*  - DATE/TIME OF THE DATA READ.         
 !        *IPARAM* - PARAMETER NUMBER. 
@@ -41,8 +42,6 @@
 !        *FIELD*  - UNPACKED DATA.
 
 !        OPTIONAL INPUT (but one needs to be specified):
-!        *FILENAME*- DATA INPUT FILENAME. 
-!        *IUGRB*  - GRIB HANDLE POINTING TO AN OPENED GRIB FILE (i.e. IGRIB_OPEN_FILE).
 !        *NPR*    - NUMBER OF SUBDOMAINS (USUALLY THE NUMBER OF PE'S )
 
 !        OPTIONAL OUTPUT
@@ -87,6 +86,7 @@
 #include "grib2wgrid.intfb.h"
 #include "kgribsize.intfb.h"
 
+      CHARACTER(LEN=*), INTENT(IN) :: FILNM
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       CHARACTER(LEN=14), INTENT(OUT) :: CDATE
       INTEGER(KIND=JWIM), INTENT(OUT) :: IPARAM, KZLEV
@@ -94,15 +94,14 @@
       TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
       REAL(KIND=JWRB), INTENT(OUT) :: FIELD(NXS:NXE, NYS:NYE)
 
-      CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: FILENAME
-      INTEGER(KIND=JWIM), INTENT(IN), OPTIONAL  :: IUGRB 
       INTEGER(KIND=JWIM), INTENT(IN), OPTIONAL  :: NPR 
+      INTEGER(KIND=JWIM), INTENT(INOUT), OPTIONAL  :: NFILE_HANDLE
 
       INTEGER(KIND=JWIM), INTENT(OUT), OPTIONAL  :: KANGNB
       INTEGER(KIND=JWIM), INTENT(OUT), OPTIONAL  :: KFRENB 
 
 
-      INTEGER(KIND=JWIM) :: NBIT
+      INTEGER(KIND=JWIM), SAVE :: NBIT
 
       INTEGER(KIND=JWIM) :: NPRC 
       INTEGER(KIND=JWIM) :: IFORP
@@ -117,13 +116,25 @@
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
-      CHARACTER(LEN=:), ALLOCATABLE :: FILNM
       LOGICAL :: LLEXIST
-      LOGICAL :: LL_NO_FILENAME, LL_NO_IUGRB
+      LOGICAL :: LLOPENFILE, LLHANDEL
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('INWGRIB',0,ZHOOK_HANDLE)
+
+
+      IF( PRESENT(NFILE_HANDLE) ) THEN
+        LLHANDEL = .TRUE.
+        IF ( NFILE_HANDLE < 0 .AND. IRANK == IREAD ) THEN
+          LLOPENFILE = .TRUE.
+        ELSE
+          LLOPENFILE = .FALSE.
+        ENDIF
+      ELSE
+        LLHANDEL = .FALSE.
+        LLOPENFILE = .TRUE.
+      ENDIF
 
       IF( PRESENT(NPR) ) THEN
         NPRC = NPR
@@ -131,7 +142,6 @@
         NPRC = NPROC
       ENDIF
 
-      NBIT=NIBLO
 
       IF (LLUNSTR) THEN
 #ifdef WAM_HAVE_UNWAM
@@ -145,42 +155,7 @@
 
 !     READ DATA ON PE IREAD
       IF (IRANK == IREAD) THEN
-
-        IF( PRESENT(FILENAME) ) THEN
-          FILNM = FILENAME
-          LL_NO_FILENAME = .FALSE.
-        ELSE
-          FILNM = 'filename_not_provided' 
-          LL_NO_FILENAME = .TRUE.
-        ENDIF
-
-        IF( PRESENT(IUGRB) ) THEN
-          KFILE_HANDLE = IUGRB
-          IF ( KFILE_HANDLE > 0 ) THEN
-            LL_NO_IUGRB = .FALSE.
-            FILNM = 'filename_not_provided_but_will_get_info_from_grib_handle' 
-          ELSE
-            LL_NO_IUGRB = .TRUE.
-          ENDIF
-        ELSE
-          KFILE_HANDLE = -99
-          LL_NO_IUGRB = .TRUE.
-        ENDIF
-
-        IF ( LL_NO_FILENAME .AND. LL_NO_IUGRB ) THEN
-          CALL WAM_ABORT("FILENAME OR IUGRB MUST BE PROVIDED !!!!",__FILENAME__,__LINE__)
-        ELSE IF ( .NOT. LL_NO_FILENAME .AND. .NOT. LL_NO_IUGRB ) THEN
-          WRITE (IU06,*) ''
-          WRITE (IU06,*) '* IN INWGRIB:                            *'
-          WRITE (IU06,*) '* FILENAME AND IUGRB BOTH PROVIDED       *'
-          WRITE (IU06,*) '* WILL GO FOR THE DATA FOUND IN FILENAME *'
-          LFILE = LEN_TRIM(FILNM)
-          WRITE (IU06,*) '* FILENAME= ',FILNM(1:LFILE)
-          WRITE (IU06,*) ''
-          LL_NO_IUGRB = .FALSE. 
-        ENDIF
-
-        IF ( .NOT. LL_NO_FILENAME ) THEN
+        IF (LLOPENFILE) THEN
           !! INPUT FROM FILE in FILNM
           LLEXIST=.FALSE.
           LFILE = LEN_TRIM(FILNM)
@@ -203,12 +178,13 @@
             CALL ABORT1
           ENDIF
 
+          NBIT=NIBLO/2 + 1
+
           CALL IGRIB_OPEN_FILE(KFILE_HANDLE,FILNM(1:LFILE),'r')
 
+          IF( LLHANDEL ) NFILE_HANDLE = KFILE_HANDLE
         ELSE
-          IF ( KFILE_HANDLE < 0 ) THEN
-            CALL WAM_ABORT("IUGRB MUST POINT TO AN OPEN FILE !!!!",__FILENAME__,__LINE__)
-          ENDIF
+          KFILE_HANDLE = NFILE_HANDLE
         ENDIF
 
 1021    ISIZE=NBIT
@@ -225,36 +201,22 @@
         ELSEIF (IRET == JPGRIB_END_OF_FILE) THEN
           WRITE(IU06,*) '**********************************'
           WRITE(IU06,*) '* INWGRIB: END OF FILE ENCOUNTED'
+          WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
           WRITE(NULERR,*) '* INWGRIB: END OF FILE ENCOUNTED'
-          IF ( .NOT. LL_NO_FILENAME ) THEN
-            WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
-            WRITE(NULERR,*) '* FILE: ',FILNM(1:LFILE)
-          ELSE
-            WRITE(IU06,*) '* FILE CONNECTED TO GRIB FILE HANDLE : ', KFILE_HANDLE
-            WRITE(NULERR,*) '* FILE CONNECTED TO GRIB FILE HANDLE : ', KFILE_HANDLE
-          ENDIF
+          WRITE(NULERR,*) '* FILE: ',FILNM(1:LFILE)
           WRITE(IU06,*) '**********************************'
           CALL ABORT1
         ELSEIF (IRET /= JPGRIB_SUCCESS) THEN
           WRITE(IU06,*) '**********************************'
           WRITE(IU06,*) '* INWGRIB: FILE HANDLING ERROR'
+          WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
           WRITE(NULERR,*) '* INWGRIB: FILE HANDLING ERROR'
-          IF ( .NOT. LL_NO_FILENAME ) THEN
-            WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
-            WRITE(NULERR,*) '* FILE: ',FILNM(1:LFILE)
-          ELSE
-            WRITE(IU06,*) '* FILE CONNECTED TO GRIB FILE HANDLE : ', KFILE_HANDLE
-            WRITE(NULERR,*) '* FILE CONNECTED TO GRIB FILE HANDLE : ', KFILE_HANDLE
-          ENDIF
+          WRITE(NULERR,*) '* FILE: ',FILNM(1:LFILE)
           WRITE(IU06,*) '**********************************'
           CALL ABORT1
         ENDIF
 
-        IF ( LL_NO_FILENAME ) THEN
-          WRITE(IU06,*) ' SUB. INWGRIB - READ FROM GRIB FILE HANDLE ', KFILE_HANDLE
-        ELSE
-          WRITE(IU06,*) ' SUB. INWGRIB - READ FROM ',FILNM
-        ENDIF
+        WRITE(IU06,*) ' SUB. INWGRIB - READ FROM ',FILNM
 
       ENDIF
 

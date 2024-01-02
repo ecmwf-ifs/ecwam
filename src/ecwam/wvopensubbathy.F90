@@ -6,7 +6,7 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 !
-SUBROUTINE WVOPENSUBBATHY (IREAD, NPR, KFILE_HANDLE, KGRIB_HANDLE)
+SUBROUTINE WVOPENSUBBATHY (IREAD, NPR, KFILE_HANDLE, KGRIB_HANDLE, FILENAME)
 
 !****  *WVOPENSUBBATHY* - OPENS THE FILE CONTAINING THE MODEL SUBGRID BATHYMETRY INFO (see FILENAME)
 !                         AND DETERMINES WHETHER IT IS A GRIB FILE OR THE OLD BINARY FORMAT
@@ -34,11 +34,11 @@ INTEGER(KIND=JWIM), INTENT(IN) :: IREAD            ! task accessing the data fil
 INTEGER(KIND=JWIM), INTENT(IN) :: NPR              ! total number of tasks 
 INTEGER(KIND=JWIM), INTENT(OUT) :: KFILE_HANDLE    ! grib file handle if input file is in grib
 INTEGER(KIND=JWIM), INTENT(OUT) :: KGRIB_HANDLE    ! grib handle if input file is in grib
+CHARACTER(LEN=*),   INTENT(OUT) :: FILENAME        ! file name associated with the grib handels 
 
 INTEGER(KIND=JWIM):: LFILE, KHANDLE, IRET, IERR, IEDITION
 INTEGER(KIND=JWIM) :: IBUF(3)
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-CHARACTER(LEN=80) :: FILENAME
 CHARACTER(LEN=1)  :: C1
 LOGICAL :: LLEXIST
 
@@ -58,10 +58,10 @@ IF (IPROPAGS < 0 .OR. IPROPAGS > NPROPAGS) THEN
   CALL WAM_ABORT("Wrong value for IPROPAGS",__FILENAME__,__LINE__)
 ENDIF
 
-IF (IRANK == IREAD) THEN
-  WRITE(C1,'(I1)') IPROPAGS 
-  FILENAME='wam_subgrid_'//C1
+WRITE(C1,'(I1)') IPROPAGS 
+FILENAME='wam_subgrid_'//C1
 
+IF (IRANK == IREAD) THEN
   LFILE=0
   LLEXIST=.FALSE.
   IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
