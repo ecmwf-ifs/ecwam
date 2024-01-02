@@ -39,7 +39,7 @@ USE YOWGRIB  , ONLY : IGRIB_GET_VALUE, IGRIB_CLOSE_FILE, IGRIB_RELEASE, &
       IMPLICIT NONE
 #include "wvopenbathy.intfb.h"
 
-INTEGER(KIND=JWIM), PARAMETER :: NPARAM=3 
+INTEGER(KIND=JWIM), PARAMETER :: NPARAM=3
 INTEGER(KIND=JWIM) :: IC, K, IP, LFILE, IRET, IVAL
 INTEGER(KIND=JWIM) :: IU06, IU07, KGRIB_HANDLE_BATHY, KGRIB_HANDLE_NEW_BATHY
 INTEGER(KIND=JWIM) :: NUMBEROFVALUES, ISIZE, NPRECI
@@ -76,7 +76,7 @@ WRITE(IU06,*) ' Combining model bathymetry with lsm and lake info'
 
 NPRECI = KIND(I4)
 
-IU06 = 6 
+IU06 = 6
 
 IU07 = -1
 KGRIB_HANDLE_BATHY = -99
@@ -165,8 +165,8 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
          LFILE=0
          IF (INFILENAME(IP) /= ' ') LFILE=LEN_TRIM(INFILENAME(IP))
          WRITE(IU06,*) "Checking that file ", INFILENAME(IP)(1:LFILE)
-         WRITE(IU06,*) "has the same grid as input bathymetry" 
-         WRITE(IU06,*) "But it is not the case !!!" 
+         WRITE(IU06,*) "has the same grid as input bathymetry"
+         WRITE(IU06,*) "But it is not the case !!!"
          WRITE(IU06,*)  NGX, NGY, IPER, IRGG, IQGAUSS, LLSCANNS
          WRITE(IU06,*)  NGX_LAKE, NGY_LAKE, IPER_LAKE, IRGG_LAKE, IQGAUSS_LAKE, LLSCANNS_LAKE
          DO K = 1, NGY
@@ -185,15 +185,15 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
          LFILE=0
          IF (INFILENAME(IP) /= ' ') LFILE=LEN_TRIM(INFILENAME(IP))
          WRITE(IU06,*) "Checking that file ", INFILENAME(IP)(1:LFILE)
-         WRITE(IU06,*) "contains the correct paramId"  
-         WRITE(IU06,*) "But it is not the case !!!" 
+         WRITE(IU06,*) "contains the correct paramId"
+         WRITE(IU06,*) "But it is not the case !!!"
          WRITE(IU06,*) 'IPARAMID = ',IPARAMID(IP), 'paramId = ',IVAL
          CALL WAM_ABORT("paramId not matching !",__FILENAME__,__LINE__)
        ENDIF
 
     ELSE
       WRITE(IU06,*) "Trying to read from file ", INFILENAME(IP)
-      WRITE(IU06,*) "but end of file reached !" 
+      WRITE(IU06,*) "but end of file reached !"
       CALL WAM_ABORT("end of file reached !",__FILENAME__,__LINE__)
     ENDIF
 
@@ -217,8 +217,8 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
       LFILE=0
       IF (INFILENAME(IP) /= ' ') LFILE=LEN_TRIM(INFILENAME(IP))
       WRITE(IU06,*) "Checking that file ", INFILENAME(IP)(1:LFILE)
-      WRITE(IU06,*) "contains the correct number of values"  
-      WRITE(IU06,*) "But it is not the case !!!" 
+      WRITE(IU06,*) "contains the correct number of values"
+      WRITE(IU06,*) "But it is not the case !!!"
       WRITE(IU06,*) 'NUMBEROFVALUES = ',NUMBEROFVALUES, 'paramId = ',IVAL
       CALL WAM_ABORT("number of values not matching !",__FILENAME__,__LINE__)
     ENDIF
@@ -233,15 +233,17 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
     !! If land sea mask < THRSLSM or lake cover > THRSLAKE then add that point to BATHY
     !  -----------------------------------------------------------------------
     IF ( VALUES_LAKE(IC,1) < THRSLSM .OR. VALUES_LAKE(IC,2) > THRSLAKE ) THEN
-
-       IF (VALUES_BATHY(IC) == ZMISS .OR. VALUES_LAKE(IC,2) > THRSLAKE ) THEN
-       !! Take the lake depth value if BATHY did not have that point and trust lake depth data for lakes
-         VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3),BATHYMAX)
+       IF ( VALUES_BATHY(IC) == ZMISS ) THEN
+         !! No BATHY value. Trust lake depth data for lakes or
+         !! Take the lake depth value if BATHY did not have that point but only for LSM not 0
+         !! (in order to avoid North Pole area)
+         IF ( VALUES_LAKE(IC,2) > THRSLAKE .OR. VALUES_LAKE(IC,1) > 0.01_JWRB ) THEN
+           VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3),BATHYMAX)
+         ENDIF
        ELSE
        !! Average the lake depth and BATHY values
          VALUES_BATHY(IC) = 0.5_JWRB * (VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3),BATHYMAX))
        ENDIF
-
     ENDIF
   ENDDO
 
