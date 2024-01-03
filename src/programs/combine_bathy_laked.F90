@@ -237,12 +237,13 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
          !! No BATHY value. Trust lake depth data for lakes or
          !! Take the lake depth value if BATHY did not have that point but only for LSM not 0
          !! (in order to avoid North Pole area)
-         IF ( VALUES_LAKE(IC,2) > THRSLAKE .OR. VALUES_LAKE(IC,1) > 0.0_JWRB ) THEN
+!!!! test         IF ( VALUES_LAKE(IC,2) > THRSLAKE .OR. VALUES_LAKE(IC,1) > 0.0_JWRB ) THEN
+         IF ( VALUES_LAKE(IC,1) > 0.0_JWRB ) THEN
            VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3),BATHYMAX)
          ENDIF
        ELSE
        !! Average the lake depth and BATHY values
-         VALUES_BATHY(IC) = 0.5_JWRB * (VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3),BATHYMAX))
+!!!!! do nothing         VALUES_BATHY(IC) = 0.5_JWRB * (VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3),BATHYMAX))
        ENDIF
     ENDIF
   ENDDO
