@@ -232,14 +232,15 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
   DO IC = 1, NUMBEROFVALUES
     !! If land sea mask < THRSLSM or lake cover > THRSLAKE then add that point to BATHY
     !  -----------------------------------------------------------------------
-    IF ( VALUES_LAKE(IC,1) < THRSLSM .OR. VALUES_LAKE(IC,2) > THRSLAKE ) THEN
+    IF ( VALUES_LAKE(IC,1) <= THRSLSM .OR. VALUES_LAKE(IC,2) > THRSLAKE ) THEN
        IF ( VALUES_BATHY(IC) == ZMISS ) THEN
          !! No BATHY value. Trust lake depth data for lakes or
-         !! Take the lake depth value if BATHY did not have that point but only for LSM not 0
+         !! Take 1/2 the lake depth value if BATHY did not have that point but only for LSM not 0
          !! (in order to avoid North Pole area)
-!!!! test         IF ( VALUES_LAKE(IC,2) > THRSLAKE .OR. VALUES_LAKE(IC,1) > 0.0_JWRB ) THEN
-         IF ( VALUES_LAKE(IC,1) > 0.0_JWRB ) THEN
+         IF ( VALUES_LAKE(IC,2) > THRSLAKE ) THEN
            VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3),BATHYMAX)
+         ELSEIF ( VALUES_LAKE(IC,1) > 0.0_JWRB ) THEN
+           VALUES_BATHY(IC) = MIN(0.5_JWRB*VALUES_LAKE(IC,3),BATHYMAX)
          ENDIF
        ELSE
        !! Average the lake depth and BATHY values
