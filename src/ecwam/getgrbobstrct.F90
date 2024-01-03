@@ -71,7 +71,7 @@ TYPE(FORCING_FIELDS) :: FIELDG
 CHARACTER(LEN= 14) :: CDATE
 
 LOGICAL :: LLSCANNS_SUB, LLSAMEGRID
-LOGICAL :: LLINIALL, LLOCAL
+LOGICAL :: LLINIALL, LLOCAL, LLFIX, LLCHK
 
 !----------------------------------------------------------------------
 
@@ -178,14 +178,19 @@ IF ( LSUBGRID ) THEN
   ALLOCATE(FIELD(NXFFS_LOC:NXFFE_LOC, NYFFS_LOC:NYFFE_LOC))
   IFILE_HANDLE = -99
 
+  LLFIX = .TRUE.
+
+  LLCHK = .FALSE. !! the subgrid data are on the same grid as the model (see check above)
+
   DO M = 1, NFRE_RED ! loop over frequencies
 
     DO K = 1, NANG_OBS
 
       ! Get grib data (read, distribute and decode):
-      CALL INWGRIB (FILNM, IREAD, CDATE, IPARAM, KZLEV,                                 &
+      CALL INWGRIB (FILNM, IREAD, CDATE, IPARAM, KZLEV,                          &
  &                  NXFFS_LOC, NXFFE_LOC, NYFFS_LOC, NYFFE_LOC, FIELDG, FIELD,   &
- &                  NPR=NPR, KANGNB=IANGNB, KFRENB=IFRENB, NFILE_HANDLE=IFILE_HANDLE)
+ &                  LLCHKINT=LLCHK, LLFIXEDSIZE=LLFIX, NPR=NPR,                  &
+ &                  KANGNB=IANGNB, KFRENB=IFRENB, NFILE_HANDLE=IFILE_HANDLE)
 
 
       IF ( IANGNB /= K .OR. IFRENB /= M ) THEN

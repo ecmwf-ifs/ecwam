@@ -7,9 +7,10 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE INWGRIB (FILNM, IREAD, CDATE, IPARAM, KZLEV,          &
-     &                    NXS, NXE, NYS, NYE, FIELDG, FIELD,    &
-     &                    NPR, KANGNB, KFRENB, NFILE_HANDLE)
+      SUBROUTINE INWGRIB (FILNM, IREAD, CDATE, IPARAM, KZLEV,             &
+     &                    NXS, NXE, NYS, NYE, FIELDG, FIELD,              &
+     &                    LLCHKINT, LLFIXEDSIZE, NPR,                     &
+     &                    KANGNB, KFRENB, NFILE_HANDLE)
 
 ! -----------------------------------------------------------------     
 
@@ -27,7 +28,8 @@
 
 !      *CALL INWGRIB* (FILNM, IREAD, CDATE, IPARAM, KZLEV,
 !    &                 NXS, NXE, NYS, NYE, FIELDG, FIELD,
-!    &                 NPR, KANGNB, KFRENB)
+!    &                 LLCHKINT, LLFIXEDSIZE, NPR,
+!    &                 KANGNB, KFRENB, NFILE_HANDLE)
 
 !        *FILNM*  - DATA INPUT FILENAME. 
 !        *IREAD*  - ACCESS TO FILE ONLY FOR PE=IREAD.
@@ -41,7 +43,12 @@
 !        *FIELDG* - INPUT FORCING FIELDS ON THE WAVE MODEL GRID
 !        *FIELD*  - UNPACKED DATA.
 
-!        OPTIONAL INPUT (but one needs to be specified):
+!        OPTIONAL INPUT:
+!        *LLCHKINT*    - IF TRUE CHECK ON WHETHER OR NOT THE INPUT DATA WILL NEED TO BE INTERPOLATED TO THE MODEL GRID
+!                        OTHERWISE INPUT AND TARGET GRID ARE ASSUMED TO BE THE SAME
+!        *LLFIXEDSIZE* - IF TRUE THE SIZE OF THE GRIB RECORD WILL BE FIXEDa TO ITS FIRST GUESS (NBIT)
+!                        RATHER THAN TRYING TO ADJUST IT.
+!                        IF IT IS TOO SMALL, THE RUN WILL ABORT !!
 !        *NPR*    - NUMBER OF SUBDOMAINS (USUALLY THE NUMBER OF PE'S )
 
 !        OPTIONAL OUTPUT
@@ -58,6 +65,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
+      USE YOWABORT,  ONLY : WAM_ABORT
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWPARAM , ONLY : LLUNSTR
@@ -69,14 +77,13 @@
       USE YOWPD, ONLY : MNP => npa
 #endif
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE EC_LUN   , ONLY : NULERR
-      USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_BROADCAST
-      USE YOWGRIB, ONLY : IGRIB_OPEN_FILE, IGRIB_CLOSE_FILE, IGRIB_RELEASE, &
-                        & IGRIB_NEW_FROM_MESSAGE, IGRIB_READ_FROM_FILE, &
-                        & JPKSIZE_T, JPGRIB_BUFFER_TOO_SMALL, &
-                        & JPGRIB_END_OF_FILE, JPGRIB_SUCCESS
-      USE YOWABORT, ONLY : WAM_ABORT
+      USE YOMHOOK   , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   ,  ONLY : NULERR
+      USE MPL_MODULE, ONLY : MPL_BROADCAST
+      USE YOWGRIB, ONLY    : IGRIB_OPEN_FILE, IGRIB_CLOSE_FILE, IGRIB_RELEASE, &
+                           & IGRIB_NEW_FROM_MESSAGE, IGRIB_READ_FROM_FILE, &
+                           & JPKSIZE_T, JPGRIB_BUFFER_TOO_SMALL, &
+                           & JPGRIB_END_OF_FILE, JPGRIB_SUCCESS
 
 ! ----------------------------------------------------------------------
 
@@ -86,19 +93,21 @@
 #include "grib2wgrid.intfb.h"
 #include "kgribsize.intfb.h"
 
-      CHARACTER(LEN=*), INTENT(IN) :: FILNM
-      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
-      CHARACTER(LEN=14), INTENT(OUT) :: CDATE
-      INTEGER(KIND=JWIM), INTENT(OUT) :: IPARAM, KZLEV
-      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
+      CHARACTER(LEN=*), INTENT(IN)     :: FILNM
+      INTEGER(KIND=JWIM), INTENT(IN)   :: IREAD
+      CHARACTER(LEN=14), INTENT(OUT)   :: CDATE
+      INTEGER(KIND=JWIM), INTENT(OUT)  :: IPARAM, KZLEV
+      INTEGER(KIND=JWIM), INTENT(IN)   :: NXS, NXE, NYS, NYE
       TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
-      REAL(KIND=JWRB), INTENT(OUT) :: FIELD(NXS:NXE, NYS:NYE)
+      REAL(KIND=JWRB), INTENT(OUT)     :: FIELD(NXS:NXE, NYS:NYE)
 
-      INTEGER(KIND=JWIM), INTENT(IN), OPTIONAL  :: NPR 
-      INTEGER(KIND=JWIM), INTENT(INOUT), OPTIONAL  :: NFILE_HANDLE
+      LOGICAL, INTENT(IN), OPTIONAL               :: LLCHKINT 
+      LOGICAL, INTENT(IN), OPTIONAL               :: LLFIXEDSIZE
+      INTEGER(KIND=JWIM), INTENT(IN), OPTIONAL    :: NPR 
+      INTEGER(KIND=JWIM), INTENT(INOUT), OPTIONAL :: NFILE_HANDLE
 
-      INTEGER(KIND=JWIM), INTENT(OUT), OPTIONAL  :: KANGNB
-      INTEGER(KIND=JWIM), INTENT(OUT), OPTIONAL  :: KFRENB 
+      INTEGER(KIND=JWIM), INTENT(OUT), OPTIONAL   :: KANGNB
+      INTEGER(KIND=JWIM), INTENT(OUT), OPTIONAL   :: KFRENB 
 
 
       INTEGER(KIND=JWIM), SAVE :: NBIT
@@ -117,7 +126,7 @@
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       LOGICAL :: LLEXIST
-      LOGICAL :: LLOPENFILE, LLHANDEL
+      LOGICAL :: LLOPENFILE, LLHANDEL, LLFIX, LLCHK
 
 ! ----------------------------------------------------------------------
 
@@ -136,12 +145,26 @@
         LLOPENFILE = .TRUE.
       ENDIF
 
+      IF( PRESENT(LLCHKINT) ) THEN
+        LLCHK = LLCHKINT 
+      ELSE
+        LLCHK = .TRUE.
+      ENDIF
+
+      IF( PRESENT(LLFIXEDSIZE) ) THEN
+        LLFIX = LLFIXEDSIZE
+      ELSE
+        LLFIX = .FALSE.
+      ENDIF
+
       IF( PRESENT(NPR) ) THEN
         NPRC = NPR
       ELSE
         NPRC = NPROC
       ENDIF
 
+      NBIT=NIBLO
+      ISIZE=NBIT
 
       IF (LLUNSTR) THEN
 #ifdef WAM_HAVE_UNWAM
@@ -178,8 +201,6 @@
             CALL ABORT1
           ENDIF
 
-          NBIT=NIBLO
-
           CALL IGRIB_OPEN_FILE(KFILE_HANDLE,FILNM(1:LFILE),'r')
 
           IF( LLHANDEL ) NFILE_HANDLE = KFILE_HANDLE
@@ -192,13 +213,21 @@
         IF (.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
           CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,KBYTES,IRET)
 
-        IF (IRET == JPGRIB_BUFFER_TOO_SMALL) THEN
+        IF ( IRET == JPGRIB_BUFFER_TOO_SMALL .AND. LLFIX ) THEN
+          WRITE(IU06,*) '****************************************************'
+          WRITE(IU06,*) '* INWGRIB: BUFFER TOO SMALL BUT LLFIXEDSIZE IS TRUE'
+          WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
+          WRITE(NULERR,*) '* INWGRIB: BUFFER TOO SMALL BUT LLFIXEDSIZE IS TRUE'
+          WRITE(NULERR,*) '* FILE: ',FILNM(1:LFILE)
+          WRITE(IU06,*) '****************************************************'
+          CALL ABORT1
+        ELSEIF ( IRET == JPGRIB_BUFFER_TOO_SMALL .AND. .NOT. LLFIX ) THEN
 !!!       *IGRIB_READ_FROM_FILE* does not read through the file if
 !!!       the size is too small, so figure out the size and read again.
           CALL KGRIBSIZE(IU06, KBYTES, NBIT, 'INWGRIB')
           DEALLOCATE(INGRIB)
           GOTO 1021
-        ELSEIF (IRET == JPGRIB_END_OF_FILE) THEN
+        ELSEIF ( IRET == JPGRIB_END_OF_FILE ) THEN
           WRITE(IU06,*) '**********************************'
           WRITE(IU06,*) '* INWGRIB: END OF FILE ENCOUNTED'
           WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
@@ -206,7 +235,7 @@
           WRITE(NULERR,*) '* FILE: ',FILNM(1:LFILE)
           WRITE(IU06,*) '**********************************'
           CALL ABORT1
-        ELSEIF (IRET /= JPGRIB_SUCCESS) THEN
+        ELSEIF ( IRET /= JPGRIB_SUCCESS ) THEN
           WRITE(IU06,*) '**********************************'
           WRITE(IU06,*) '* INWGRIB: FILE HANDLING ERROR'
           WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
@@ -222,22 +251,23 @@
 
       ENDIF
 
-      CALL MPL_BARRIER(CDSTRING='INWGRIB: DATA READ IN')
 
 !     SEND GRIB DATA TO THE OTHER PE'S
       IF (NPRC > 1) THEN
         CALL GSTATS(619,0)
-        IF (IRANK == IREAD) THEN
-          IBUF(1)=ISIZE
-          IBUF(2)=KBYTES
-        ENDIF
-        CALL MPL_BROADCAST(IBUF(1:2),KROOT=IREAD, KTAG=1, CDSTRING='INWGRIB IBUF:') 
-        IF (IRANK /= IREAD) THEN
-          ISIZE=IBUF(1)
-          KBYTES=IBUF(2)
-          ALLOCATE(INGRIB(ISIZE))
+
+        IF ( .NOT. LLFIX ) THEN
+           IF (IRANK == IREAD) THEN
+            IBUF(1)=ISIZE
+            IBUF(2)=KBYTES
+          ENDIF
+          CALL MPL_BROADCAST(IBUF(1:2),KROOT=IREAD, KTAG=1, CDSTRING='INWGRIB IBUF:') 
+          IF (IRANK /= IREAD) THEN
+            ISIZE=IBUF(1)
+            KBYTES=IBUF(2)
         ENDIF
 
+        ALLOCATE(INGRIB(ISIZE))
         CALL MPL_BROADCAST(INGRIB(1:ISIZE),KROOT=IREAD, KTAG=2, CDSTRING='INWGRIB: INGRIB')
         CALL GSTATS(619,1)
       ENDIF
@@ -250,7 +280,7 @@
 
       CALL GRIB2WGRID (IU06, NPROMA_WAM,                                &
      &                 KGRIB_HANDLE, INGRIB, ISIZE,                     &
-     &                 LLUNSTR,                                         &
+     &                 LLUNSTR, LLCHK,                                  &
      &                 NGY, IRGG, NLONRGG_LOC,                          &
      &                 NXS, NXE, NYS, NYE,                              &
      &                 FIELDG%XLON, FIELDG%YLAT,                        &

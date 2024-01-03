@@ -9,7 +9,7 @@
 
 SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
      &                 KGRIB_HANDLE, KGRIB, ISIZE,                  &
-     &                 LLUNSTR,                                     &
+     &                 LLUNSTR, LLCHKINT,                           &
      &                 NGY, KRGG, KLONRGG_LOC,                      &
      &                 NXS, NXE, NYS, NYE,                          &
      &                 XLON, YLAT,                                  &
@@ -46,7 +46,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
 !      *CALL GRIB2WGRID* (IU06, KPROMA,
 !    &                    KGRIB_HANDLE, KGRIB, ISIZE,
-!    &                    LLUNSTR,
+!    &                    LLUNSTR, LLCHKINT,
 !    &                    NGY, KRGG, KLONRGG_LOC,
 !    &                    NXS, NXE, NYS, NYE,
 !    &                    XLON, YLAT,
@@ -61,7 +61,8 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 !        *KGRIB*  - GRIB CODED DATA ARRAY
 !        *ISIZE*  - SIZE OF KGRIB
 !        *LLUNSTR - FLAG SPECIFYING IF THE UNSTRUCTURED GRID OPTION USED FOR THE MODEL
-
+!        *LLCHKINT- IF TRUE THE CHECK FOR THE NEED OF INTRPOLATION WILL BE DONE
+!                      OTHERWISE THE NO INTERPOLATION OPTION WILL BE SELECTED.
 !      WAVE MODEL GRID SPECIFICATION (ONLY MEANINGFUL IF STRUCTURED GRID):
 !        *NGY*    - TOTAL NUMBER OF LATITUDES
 !        *KRGG*   - GRID DEFINITION PARAMETER (O=REGULAR, 1=IRREGULAR)
@@ -125,6 +126,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       CHARACTER(LEN=14), INTENT(OUT) :: CDATE
 
       LOGICAL, INTENT(IN) :: LLUNSTR
+      LOGICAL, INTENT(IN) :: LLCHKINT
 
 
       INTEGER(KIND=JWIM) :: LL, LS, LE
@@ -656,17 +658,19 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       ENDIF
 
 
-      IF (LLUNSTR) THEN
+      IF ( LLCHKINT ) THEN
+
+        IF (LLUNSTR) THEN
 !!!!!! when we will start input on unstructered grid, we will need to adapt this bit
 !!!!!! for now always interpolation because the input grid is structured
-        LLINTERPOL=.TRUE.
+         LLINTERPOL=.TRUE.
 
-      ELSE
-        LLINTERPOL=.TRUE.
+        ELSE
+          LLINTERPOL=.TRUE.
 
-        IF (KPMONOP == KRMONOP .AND. KPMOSOP == KRMOSOP .AND.           &
-     &      KPMOWEP == KRMOWEP .AND. KPMOEAP == KRMOEAP       ) THEN
-           IF (JRGG == KRGG .AND. NC == NXE .AND. NR == NGY) THEN
+          IF (KPMONOP == KRMONOP .AND. KPMOSOP == KRMOSOP .AND.           &
+     &        KPMOWEP == KRMOWEP .AND. KPMOEAP == KRMOEAP       ) THEN
+            IF (JRGG == KRGG .AND. NXS == 1 .AND. NC == NXE .AND. NYS == 1 .AND. NR == NGY) THEN
 
               LLINTERPOL=.FALSE.
 
@@ -679,11 +683,40 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
                 ENDDO
               ENDIF
 
-           ENDIF
+            ENDIF
+          ENDIF
         ENDIF
-      ENDIF
 
-      IF (.NOT.LLSCANNS) LLINTERPOL=.TRUE.
+        IF (.NOT.LLSCANNS) LLINTERPOL=.TRUE.
+
+      ELSE
+         LLINTERPOL=.FALSE.
+
+         ! Very basic test that the assumption of no interpolation is correct
+         IF (JRGG /= KRGG .OR. NR /= NGY) THEN
+            LLINTERPOL=.TRUE.
+         ELSE
+           IF (KRGG == 1) THEN
+             DO J = 1, NGY 
+               IF (RLONRGG(J) /= KLONRGG_LOC(J)) THEN
+                 LLINTERPOL=.TRUE.
+                 EXIT
+               ENDIF
+             ENDDO
+           ELSE
+             IF ( NC /= KLONRGG_LOC(1) ) LLINTERPOL=.TRUE.
+           ENDIF
+         ENDIF
+
+         IF ( LLINTERPOL ) THEN
+           WRITE(IU06,*) '***********************************************'
+           WRITE(IU06,*) '*   ERROR IN SUB. GRIB2WGRID      *'
+           WRITE(IU06,*) '*  NO INTERPOLATION WAS REQUEST '
+           WRITE(IU06,*) '*  BUT IT DOES SEEM LIKE GRIDS ARE DIFFERENT !!! '
+           WRITE(IU06,*) '***********************************************'
+           CALL ABORT1
+         ENDIF
+      ENDIF
 
 !     GET THE DATA
       CALL IGRIB_SET_VALUE(KGRIB_HANDLE,'missingValue',PMISS)
@@ -735,14 +768,43 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 !!      This means that we have assumed that FIELD will be organised such that
 !!      it goes from NORTH to SOUTH (It is accounted for later by using pointer JFROMIJ
 !!      when transferring to the block structure.
-        L = 0
-        DO K = NYS, NYE
-          JSN = NGY-K+1
-          DO I = NXS, MIN(KLONRGG_LOC(JSN), NXE)
-            L = L+1
-            FIELD(I,K) = VALUES(L)
+
+        IF ( LLCHKINT ) THEN
+          ! Full copy
+          L = 0
+          DO K = 1, NGY
+            JSN = NGY-K+1
+            DO I = 1, KLONRGG_LOC(JSN)
+              L = L + 1
+              FIELD(I,K) = VALUES(L)
+            ENDDO
           ENDDO
-        ENDDO
+
+        ELSE
+
+          ! Copy only what is needed
+          L = 0
+
+          DO K = 1, NYS-1
+            JSN = NGY-K+1
+            L = L + KLONRGG_LOC(JSN)
+          ENDDO
+
+          DO K = NYS, NYE
+            L = L + NSE-1
+
+            JSN = NGY-K+1
+            DO I = NXS, MIN(KLONRGG_LOC(JSN), NXE)
+              L = L + 1
+              FIELD(I,K) = VALUES(L)
+            ENDDO
+
+            L = L + ( KLONRGG_LOC(JSN) - MIN(KLONRGG_LOC(JSN), NXE) )
+          ENDDO
+
+          ! skip the rest
+        ENDIF
+
         DEALLOCATE(VALUES)
 
       ELSE

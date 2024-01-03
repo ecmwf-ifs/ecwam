@@ -153,6 +153,7 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
       LOGICAL :: LFRSDECODE, LOUNIT, LCUNIT, LLEXIST
       LOGICAL :: LLRESIZING=.FALSE.
       LOGICAL :: LLEPSMIN=.TRUE.
+      LOGICAL :: LLCHKINT
 
 ! ----------------------------------------------------------------------
 
@@ -395,9 +396,11 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
 
               IF (.NOT.ALLOCATED(FIELD)) ALLOCATE(FIELD(NXFFS:NXFFE, NYFFS:NYFFE))
 
+              LLCHKINT = .TRUE.
+
               CALL GRIB2WGRID (IU06, NPROMA_WAM,                           &
      &                         KGRIB_HANDLE, INGRIB, ISIZE,                &
-     &                         LLUNSTR,                                    &
+     &                         LLUNSTR, LLCHKINT,                          &
      &                         NGY, IRGG, NLONRGG_LOC,                     &
      &                         NXFFS, NXFFE, NYFFS, NYFFE,                 &
      &                         FIELDG%XLON, FIELDG%YLAT,                   &

@@ -165,6 +165,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
 
       LOGICAL :: LLABORT
       LOGICAL :: LLEXIST
+      LOGICAL :: LLCHKINT
       LOGICAL, ALLOCATABLE :: LLNOTREAD(:)
 ! --------------------------------------------------------------------  
 
@@ -325,9 +326,10 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
           KGRIB_HANDLE=-99
           CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,KGRIB)
           ZDUM=0.0_JWRB
+          LLCHKINT = .TRUE.
           CALL GRIB2WGRID (IU06, NPROMA_WAM,                            &
      &                     KGRIB_HANDLE, KGRIB, ISIZE,                  &
-     &                     LLUNSTR,                                     &
+     &                     LLUNSTR, LLCHKINT,                           &
      &                     NGY, IRGG, NLONRGG_LOC,                      &
      &                     NXS, NXE, NYS, NYE,                          &
      &                     FIELDG%XLON, FIELDG%YLAT,                    &
