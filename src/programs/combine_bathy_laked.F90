@@ -45,6 +45,9 @@ INTEGER(KIND=JWIM) :: IU06, IU07, KGRIB_HANDLE_BATHY, KGRIB_HANDLE_NEW_BATHY
 INTEGER(KIND=JWIM) :: NUMBEROFVALUES, ISIZE, NPRECI
 INTEGER(KIND=JWIM) :: NGX_LAKE, NGY_LAKE, IPER_LAKE, IRGG_LAKE, IQGAUSS_LAKE
 INTEGER(KIND=JWIM) :: I4(2)
+INTEGER(KIND=JWIM) :: NPROMA, MTHREADS, JC, JCS, JCL
+!$ INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
+
 INTEGER(KIND=JWIM), DIMENSION(NPARAM) :: IULAKE, KGRIB_HANDLE_LAKE, IPARAMID
 INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: NLONRGG_LAKE
 INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: KGRIB_BUFR
@@ -230,25 +233,37 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
 ! COMBINING DATA
 ! ---------------
 
-  DO IC = 1, NUMBEROFVALUES
-    !! If land sea mask <= THRSLSM or lake cover > THRSLAKE then add that point to BATHY
-    !  -----------------------------------------------------------------------
-    IF ( VALUES_LAKE(IC,1) <= THRSLSM .OR. VALUES_LAKE(IC,2) > THRSLAKE ) THEN
-       IF ( VALUES_BATHY(IC) == ZMISS ) THEN
-         !! No BATHY value. Trust lake depth data for lakes or
-         !! Take 1/2 the lake depth value if BATHY did not have that point but only for LSM not 0
-         !! (in order to avoid North Pole area)
-         IF ( VALUES_LAKE(IC,2) > THRSLAKE ) THEN
-           VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX)
-         ELSEIF ( VALUES_LAKE(IC,1) > 0.0_JWRB ) THEN
-           VALUES_BATHY(IC) = MIN(0.5_JWRB*VALUES_LAKE(IC,3), BATHYMAX)
-         ENDIF
-       ELSE
-       !! Average the lake depth and BATHY values
-         VALUES_BATHY(IC) = 0.5_JWRB * (VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX))
-       ENDIF
-    ENDIF
+  MTHREADS=1
+!$ MTHREADS=OMP_GET_MAX_THREADS()
+  NPROMA=NUMBEROFVALUES/MTHREADS + 1
+
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC, JCS, JCL, IC)
+  DO JC = 1, NUMBEROFVALUES, NPROMA
+    JCS = JC
+    JCL = MIN(JCS+NPROMA-1, NUMBEROFVALUES)
+
+    DO IC = JCS, JCL
+      !! If land sea mask <= THRSLSM or lake cover > THRSLAKE then add that point to BATHY
+      !  -----------------------------------------------------------------------
+      IF ( VALUES_LAKE(IC,1) <= THRSLSM .OR. VALUES_LAKE(IC,2) > THRSLAKE ) THEN
+        IF ( VALUES_BATHY(IC) == ZMISS ) THEN
+          !! No BATHY value. Trust lake depth data for lakes or
+          !! Take 1/2 the lake depth value if BATHY did not have that point but only for LSM not 0
+          !! (in order to avoid North Pole area)
+          IF ( VALUES_LAKE(IC,2) > THRSLAKE ) THEN
+            VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX)
+          ELSEIF ( VALUES_LAKE(IC,1) > 0.0_JWRB ) THEN
+            VALUES_BATHY(IC) = MIN(0.5_JWRB*VALUES_LAKE(IC,3), BATHYMAX)
+          ENDIF
+        ELSE
+         !! Average the lake depth and BATHY values
+           VALUES_BATHY(IC) = 0.5_JWRB * (VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX))
+        ENDIF
+      ENDIF
+    ENDDO
   ENDDO
+!$OMP END PARALLEL DO
+
 
 
 ! CLEANING UP
