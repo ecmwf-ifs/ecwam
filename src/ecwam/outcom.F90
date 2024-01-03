@@ -105,8 +105,6 @@
         FFLAG(:)=.FALSE.
         NFLAG(:)=.FALSE.
         GFLAG(:)=.TRUE.
-        GFLAG(4)=.FALSE.
-        GFLAG(8)=.FALSE.
 
         CALL MPCRTBL
 
