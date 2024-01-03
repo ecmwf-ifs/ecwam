@@ -54,8 +54,10 @@ INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: KGRIB_BUFR
 INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
 REAL(KIND=JWRB), PARAMETER :: BATHYMAX = 999.0_JWRB !! ecWAM maximum depth
-REAL(KIND=JWRB), PARAMETER :: THRSLSM=0.55_JWRB   !! anything below THRSLSM is assumed to be sea/ocean
-REAL(KIND=JWRB), PARAMETER :: THRSLAKE=0.5_JWRB  !! anything above THRSLAKE is assumed to be lake
+REAL(KIND=JWRB), PARAMETER :: THRSLSM = 0.5_JWRB    !! anything below THRSLSM is assumed to be sea/ocean
+REAL(KIND=JWRB), PARAMETER :: UPDTHRLSM = 0.01_JWRB !! LSM must be above UPDTHRLSM when updating a missing points
+                                                    !! that is not a lake point 
+REAL(KIND=JWRB), PARAMETER :: THRSLAKE = 0.5_JWRB   !! anything above THRSLAKE is assumed to be lake
 
 REAL(KIND=JWRB) ::  AMOWEP_LAKE, AMOSOP_LAKE, AMOEAP_LAKE, AMONOP_LAKE, XDELLA_LAKE, XDELLO_LAKE
 REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: VALUES_BATHY
@@ -248,11 +250,11 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
       IF ( VALUES_LAKE(IC,1) <= THRSLSM .OR. VALUES_LAKE(IC,2) > THRSLAKE ) THEN
         IF ( VALUES_BATHY(IC) == ZMISS ) THEN
           !! No BATHY value. Trust lake depth data for lakes or
-          !! Take 1/2 the lake depth value if BATHY did not have that point but only for LSM not 0
+          !! Take 1/2 the lake depth value if BATHY did not have that point but only for LSM > UPDTHRLSM (small > 0)  
           !! (in order to avoid North Pole area)
           IF ( VALUES_LAKE(IC,2) > THRSLAKE ) THEN
             VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX)
-          ELSEIF ( VALUES_LAKE(IC,1) > 0.0_JWRB ) THEN
+          ELSEIF ( VALUES_LAKE(IC,1) > UPDTHRLSM ) THEN
             VALUES_BATHY(IC) = MIN(0.5_JWRB*VALUES_LAKE(IC,3), BATHYMAX)
           ENDIF
         ELSE
