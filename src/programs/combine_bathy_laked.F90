@@ -71,9 +71,6 @@ LOGICAL :: LLSCANNS, LLSCANNS_LAKE, LLSAMEGRID
 OUTFILENAME='new_bathy'
 
 
-WRITE(IU06,*) ''
-WRITE(IU06,*) ' Combining model bathymetry with lsm and lake info'
-
 NPRECI = KIND(I4)
 
 IU06 = 6
@@ -86,6 +83,10 @@ KGRIB_HANDLE_LAKE(:) = -99
 
 LLSAMEGRID = .TRUE.
 
+
+WRITE(IU06,*) ''
+WRITE(IU06,*) ' Combining model bathymetry with lsm and lake info'
+WRITE(IU06,*) ''
 
 !  INPUT FILE:
 !  -----------
@@ -238,13 +239,13 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
          !! Take 1/2 the lake depth value if BATHY did not have that point but only for LSM not 0
          !! (in order to avoid North Pole area)
          IF ( VALUES_LAKE(IC,2) > THRSLAKE ) THEN
-           VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3),BATHYMAX)
+           VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX)
          ELSEIF ( VALUES_LAKE(IC,1) > 0.0_JWRB ) THEN
-           VALUES_BATHY(IC) = MIN(0.5_JWRB*VALUES_LAKE(IC,3),BATHYMAX)
+           VALUES_BATHY(IC) = MIN(0.5_JWRB*VALUES_LAKE(IC,3), BATHYMAX)
          ENDIF
        ELSE
        !! Average the lake depth and BATHY values
-         VALUES_BATHY(IC) = 0.5_JWRB * (VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3),BATHYMAX))
+         VALUES_BATHY(IC) = 0.5_JWRB * (VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX))
        ENDIF
     ENDIF
   ENDDO
