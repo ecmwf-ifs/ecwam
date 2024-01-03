@@ -791,7 +791,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
           ENDDO
 
           DO K = NYS, NYE
-            L = L + NSE-1
+            L = L + NXS-1
 
             JSN = NGY-K+1
             DO I = NXS, MIN(KLONRGG_LOC(JSN), NXE)
