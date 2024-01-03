@@ -51,7 +51,7 @@ INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: KGRIB_BUFR
 INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
 REAL(KIND=JWRB), PARAMETER :: BATHYMAX = 999.0_JWRB !! ecWAM maximum depth
-REAL(KIND=JWRB), PARAMETER :: THRSLSM=0.5_JWRB   !! anything below THRSLSM is assumed to be sea/ocean
+REAL(KIND=JWRB), PARAMETER :: THRSLSM=0.55_JWRB   !! anything below THRSLSM is assumed to be sea/ocean
 REAL(KIND=JWRB), PARAMETER :: THRSLAKE=0.5_JWRB  !! anything above THRSLAKE is assumed to be lake
 
 REAL(KIND=JWRB) ::  AMOWEP_LAKE, AMOSOP_LAKE, AMOEAP_LAKE, AMONOP_LAKE, XDELLA_LAKE, XDELLO_LAKE
@@ -230,7 +230,7 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
 ! ---------------
 
   DO IC = 1, NUMBEROFVALUES
-    !! If land sea mask < THRSLSM or lake cover > THRSLAKE then add that point to BATHY
+    !! If land sea mask <= THRSLSM or lake cover > THRSLAKE then add that point to BATHY
     !  -----------------------------------------------------------------------
     IF ( VALUES_LAKE(IC,1) <= THRSLSM .OR. VALUES_LAKE(IC,2) > THRSLAKE ) THEN
        IF ( VALUES_BATHY(IC) == ZMISS ) THEN
@@ -244,7 +244,7 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
          ENDIF
        ELSE
        !! Average the lake depth and BATHY values
-!!!!! do nothing         VALUES_BATHY(IC) = 0.5_JWRB * (VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3),BATHYMAX))
+         VALUES_BATHY(IC) = 0.5_JWRB * (VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3),BATHYMAX))
        ENDIF
     ENDIF
   ENDDO
