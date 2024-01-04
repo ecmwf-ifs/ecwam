@@ -57,7 +57,7 @@ REAL(KIND=JWRB), PARAMETER :: BATHYMAX = 999.0_JWRB !! ecWAM maximum depth
 REAL(KIND=JWRB), PARAMETER :: THRSLSM = 0.5_JWRB    !! anything below THRSLSM is assumed to be sea/ocean
 REAL(KIND=JWRB), PARAMETER :: UPDTHRLSM = 0.01_JWRB !! LSM must be above UPDTHRLSM when updating a missing points
                                                     !! that is not a lake point 
-REAL(KIND=JWRB), PARAMETER :: THRSLAKE = 0.5_JWRB   !! anything above THRSLAKE is assumed to be lake
+REAL(KIND=JWRB), PARAMETER :: THRSLAKE = 0.40_JWRB   !! anything above THRSLAKE is assumed to be lake
 
 REAL(KIND=JWRB) ::  AMOWEP_LAKE, AMOSOP_LAKE, AMOEAP_LAKE, AMONOP_LAKE, XDELLA_LAKE, XDELLO_LAKE
 REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: VALUES_BATHY
