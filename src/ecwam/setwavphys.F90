@@ -144,11 +144,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
           Z0TUBMAX = 0.05_JWRB
           Z0RAT = 0.02_JWRB
-!!!          SWELLF4 = 1.15E05_JWRB
-!!!          SWELLF7 = 4.32E05_JWRB
-!!! test reverting to 48R1
-          SWELLF4 = 1.5E05_JWRB
-          SWELLF7 = 3.6E05_JWRB
+          SWELLF4 = 1.15E05_JWRB
+          SWELLF7 = 4.32E05_JWRB
 
           SWELLF7M1 = 1.0_JWRB/SWELLF7 
 
