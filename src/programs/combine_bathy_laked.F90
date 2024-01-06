@@ -258,8 +258,10 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
             VALUES_BATHY(IC) = MIN(0.5_JWRB*VALUES_LAKE(IC,3), BATHYMAX)
           ENDIF
         ELSE
-         !! Average the lake depth and BATHY values
-           VALUES_BATHY(IC) = 0.5_JWRB * (VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX))
+!!!         !! Average the lake depth and BATHY values
+!!!           VALUES_BATHY(IC) = 0.5_JWRB * (VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX))
+!!! test just taking the lake depth infomation
+           VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX))
         ENDIF
       ENDIF
     ENDDO
