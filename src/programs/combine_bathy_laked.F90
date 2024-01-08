@@ -57,10 +57,10 @@ REAL(KIND=JWRB), PARAMETER :: BATHYMAX = 999.0_JWRB !! ecWAM maximum depth
 REAL(KIND=JWRB), PARAMETER :: THRSLSM = 0.5_JWRB    !! anything below THRSLSM is assumed to be sea/ocean
 REAL(KIND=JWRB), PARAMETER :: UPDTHRLSM = 0.01_JWRB !! LSM must be above UPDTHRLSM when updating a missing points
                                                     !! that is not a lake point 
+REAL(KIND=JWRB), PARAMETER :: THRSDPT = 10.0_JWRB   !! Only depth deeper than THRSDPT will be updated 
 REAL(KIND=JWRB), PARAMETER :: THRSLAKE = 0.5_JWRB   !! anything above THRSLAKE is assumed to be lake
 
 REAL(KIND=JWRB) :: AMOWEP_LAKE, AMOSOP_LAKE, AMOEAP_LAKE, AMONOP_LAKE, XDELLA_LAKE, XDELLO_LAKE
-REAL(KIND=JWRB) :: WGHT
 REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: VALUES_BATHY
 REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) ::  VALUES_LAKE
 
@@ -240,7 +240,7 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
 !$ MTHREADS=OMP_GET_MAX_THREADS()
   NPROMA=NUMBEROFVALUES/MTHREADS + 1
 
-!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC, JCS, JCL, IC, WGHT)
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC, JCS, JCL, IC)
   DO JC = 1, NUMBEROFVALUES, NPROMA
     JCS = JC
     JCL = MIN(JCS+NPROMA-1, NUMBEROFVALUES)
@@ -248,24 +248,23 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
     DO IC = JCS, JCL
       !! If land sea mask <= THRSLSM or lake cover > THRSLAKE then add that point to BATHY
       !  -----------------------------------------------------------------------
-      IF ( VALUES_LAKE(IC,1) <= THRSLSM .OR. VALUES_LAKE(IC,2) > THRSLAKE ) THEN
+      IF ( VALUES_LAKE(IC,2) >= THRSLAKE ) THEN
+!       Lake point with cover above and equal to THRSLAKE, take the lake value
+        VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX)
+      ELSEIF ( VALUES_LAKE(IC,1) <= THRSLSM .AND. VALUES_LAKE(IC,2) <= 0.01_JWRB ) THEN
+!       Not a lake point with a land sea mask below and equal THRSLSM (i.e. assumed to be ocean)
         IF ( VALUES_BATHY(IC) == ZMISS ) THEN
-          !! No BATHY value. Trust lake depth data for lakes or
-          !! Take 1/2 the lake depth value if BATHY did not have that point but only for LSM > UPDTHRLSM (small > 0)  
+          !! No BATHY value. Average lake value with bathy=0, BUT with LSM > (small) UPDTHRLSM
           !! (in order to avoid North Pole area)
-          IF ( VALUES_LAKE(IC,2) > THRSLAKE ) THEN
-            VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX)
-          ELSEIF ( VALUES_LAKE(IC,1) > UPDTHRLSM ) THEN
+          IF ( VALUES_LAKE(IC,1) > UPDTHRLSM ) THEN
             VALUES_BATHY(IC) = MIN(0.5_JWRB*VALUES_LAKE(IC,3), BATHYMAX)
           ENDIF
-        ELSE
-!!!         !! Average the lake depth and BATHY values
-!!!           VALUES_BATHY(IC) = 0.5_JWRB * (VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX))
-!!! test just taking the lake depth infomation
-!!!           VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX)
-!   test with weight based on sqrt(LSM)
-           WGHT = SQRT(VALUES_LAKE(IC,1))
-           VALUES_BATHY(IC) = WGHT * VALUES_BATHY(IC) + (1.0_JWRB - WGHT) * MIN(VALUES_LAKE(IC,3), BATHYMAX)
+        ELSEIF ( VALUES_LAKE(IC,3) <= THRSDPT ) THEN
+          !! Take the average between BATHY and lake depth
+           VALUES_BATHY(IC) = 0.5_JWRB ( VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX) )
+        ELSEIF ( VALUES_BATHY(IC) > THRSDPT ) THEN
+          !! Take the average between BATHY and lake depth
+           VALUES_BATHY(IC) = 0.5_JWRB ( VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX) )
         ENDIF
       ENDIF
     ENDDO
