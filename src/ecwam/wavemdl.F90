@@ -147,7 +147,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWASSI  , ONLY : WAMASSI
       USE YOWGRIB  , ONLY : IGRIB_GET_VALUE
       USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_GATHERV
-#ifndef _ECWAM_STANDALONE
+#ifdef WAM_HAVE_ECFLOW
       USE ECFLOW_LIGHT, ONLY : ECFLOW_LIGHT_UPDATE_METER
 #endif
 ! ---------------------------------------------------------------------
@@ -288,7 +288,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       LOGICAL :: LLINIT
       LOGICAL :: LLINIT_FIELDG
 
-#ifndef _ECWAM_STANDALONE
+#ifdef WAM_HAVE_ECFLOW
       CHARACTER(LEN = 64) :: METER_NAME
       INTEGER(KIND=JWIM)  :: METER_VALUE
       INTEGER(KIND=JWIM)  :: ERROR
@@ -670,7 +670,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL DIFDATE (CDATEF, CDTPRO, IFCST)
         IFCSTEP_HOUR=IFCST/3600
         IF (IRANK == 1) THEN
-#ifdef _ECWAM_STANDALONE
+#ifndef WAM_HAVE_ECFLOW
           WRITE(CLSETEV,' (A25,'' step '',I8,''&'') ') CMETER,IFCSTEP_HOUR
           CLSMSNAME="                                             "
           CLECFNAME="                                             "

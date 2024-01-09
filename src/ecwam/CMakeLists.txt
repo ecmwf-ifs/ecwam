@@ -420,19 +420,25 @@ else()
   unset( ${PNAME}_OCEANMODEL_INCLUDE_DIRS )
 endif()
 
+if( HAVE_ECFLOW )
+  list(APPEND ECWAM_PRIVATE_DEFINITIONS WAM_HAVE_ECFLOW)
+endif()
+
 ecbuild_add_library(
     TARGET           ${ecwam}
     SOURCES          ${ecwam_srcs}
-    PUBLIC_LIBS      fiat parkind_${prec} $<$<NOT:${ECWAM_STANDALONE}>:ecflow_lightf> ${ecwam}_intfb
+    PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                      ${MPI_Fortran_LIBRARIES}
                      ${${PNAME}_OCEANMODEL_LIBRARIES}
     PRIVATE_LIBS     eccodes_f90
                      ${MULTIO_LIBRARIES}
                      ${OpenMP_Fortran_LIBRARIES}
                      field_api_${prec}
+                     $<${HAVE_ECFLOW}:ecflow_lightf>
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
     PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS}
-    PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS} $<${ECWAM_STANDALONE}:_ECWAM_STANDALONE>
+    PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS}
+    PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
 )
 
 ecwam_target_fortran_module_directory(

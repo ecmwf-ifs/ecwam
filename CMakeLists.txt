@@ -55,6 +55,10 @@ ecbuild_add_option( FEATURE ECWAM_LAUNCH
                     DEFAULT ON
                     DESCRIPTION "Use share/ecwam/scripts/ecwam-launch script to run ecwam tests" )
 
+ecbuild_add_option( FEATURE ECFLOW
+                    DESCRIPTION "ecflow meter updates"
+                    REQUIRED_PACKAGES "ecflow_light")
+
 if( HAVE_ECWAM_LAUNCH )
   # Overwrite meaning of mpiexec
   set( ECWAM_LAUNCH ${CMAKE_CURRENT_SOURCE_DIR}/share/ecwam/scripts/ecwam-launch )
@@ -88,14 +92,6 @@ endif()
 unset( OpenMP_Fortran_LIBRARIES )
 if( HAVE_OMP )
   set( OpenMP_Fortran_LIBRARIES OpenMP::OpenMP_Fortran )
-endif()
-
-### Check if this is a standalone ecWAM build
-if(PROJECT_IS_TOP_LEVEL OR (PARENT_PROJECT_NAME STREQUAL "ecwam-bundle"))
-  set(ECWAM_STANDALONE 1)
-else()
-  set(ECWAM_STANDALONE 0)
-  ecbuild_find_package( ecflow_light REQUIRED )
 endif()
 
 ### Sources
