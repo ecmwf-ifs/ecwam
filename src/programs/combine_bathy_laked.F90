@@ -58,8 +58,6 @@ REAL(KIND=JWRB), PARAMETER :: BATHYMAX = 999.0_JWRB !! ecWAM maximum depth
 REAL(KIND=JWRB), PARAMETER :: THRSLSM = 0.5_JWRB    !! points with LSM below THRSLSM are assumed to be sea/ocean
 REAL(KIND=JWRB), PARAMETER :: UPDTHRLSM = 0.01_JWRB !! LSM must be above UPDTHRLSM when updating a missing points
                                                     !! that is not a lake point 
-REAL(KIND=JWRB), PARAMETER :: THRSDPT = 10.0_JWRB   !! depth threshold to select how model bathy and 
-                                                    !! lake depth are combined
 REAL(KIND=JWRB), PARAMETER :: THRSLAKE = 0.5_JWRB   !! points with lake cover above THRSLAKE are assumed to be lake
 
 REAL(KIND=JWRB) :: AMOWEP_LAKE, AMOSOP_LAKE, AMOEAP_LAKE, AMONOP_LAKE, XDELLA_LAKE, XDELLO_LAKE
@@ -271,13 +269,7 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
             VALUES_BATHY(IC) = MIN(0.5_JWRB*VALUES_LAKE(IC,3), BATHYMAX)
             INEW(IPR) = INEW(IPR) + 1
           ENDIF
-        ELSEIF ( VALUES_LAKE(IC,3) <= THRSDPT ) THEN
-        !! Lake depth below THRSDPT
-        !! Take the average between BATHY and lake depth
-           VALUES_BATHY(IC) = 0.5_JWRB * ( VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX) )
-           IAVG(IPR) = IAVG(IPR) + 1
-        ELSEIF ( VALUES_BATHY(IC) > THRSDPT ) THEN
-        !! Bathy above THRSDPT
+        ELSE
         !! Take the average between BATHY and lake depth
            VALUES_BATHY(IC) = 0.5_JWRB * ( VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX) )
            IAVG(IPR) = IAVG(IPR) + 1
