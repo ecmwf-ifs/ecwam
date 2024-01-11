@@ -213,7 +213,9 @@ PROGRAM CREATE_BATHY_ETOPO1
       LOGICAL :: LORIGINAL, LLPRINT
       LOGICAL :: LLAND, LREALLAND, L1ST, LNSW
       LOGICAL :: LLGRID
-      LOGICAL :: LLGRIBIN, LLGRIBOUT    !!!! funtionality not yet fully coded
+      LOGICAL :: LLGRIBIN, !! funtionality not yet fully coded
+      LOGICAL :: LLOBSTROUT, LLGRIBOUT
+      LOGICAL :: LLOBSTRON
       LOGICAL, ALLOCATABLE, DIMENSION(:,:) :: LLEXCLTHRSHOLD
       LOGICAL, ALLOCATABLE, DIMENSION(:,:) :: LLSM
 
@@ -234,12 +236,15 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       LFDB = .FALSE.
 
+      LLOBSTRON = .TRUE.
 
 !     READ INPUT SELECTION
 !     --------------------
       READ(5,*) CLINE
       READ(5,*) CLINE
       READ(5,*) LLGRIBIN
+      READ(5,*) CLINE
+      READ(5,*) LLOBSTROUT
       READ(5,*) CLINE
       READ(5,*) LLGRIBOUT
       READ(5,*) CLINE
@@ -386,7 +391,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       LRSTST0 = .FALSE.
 
 
-      IF ( LLGRIBOUT ) THEN
+      IF ( LLOBSTROUT .AND. LLGRIBOUT ) THEN
 
         WRITE(IU06,*) ''
         WRITE(IU06,*) 'OUTPUT IN GRIB '
@@ -785,6 +790,10 @@ PROGRAM CREATE_BATHY_ETOPO1
       ENDIF
 
 
+
+
+IF ( LLOBSTROUT ) THEN
+
 !     CREATE OBSTRUCTIONS COEFFICIENTS:
 !     --------------------------------
 
@@ -823,8 +832,10 @@ PROGRAM CREATE_BATHY_ETOPO1
       ZCONV = 1.0_JWRB/REAL(NOOBSTRT,JWRB)
 
 
+
 !     LOOP OVER ALL FREQUENCIES
 !     -------------------------
+
       DO M=1,NFRE_RED
 
 !!!!    COMPUTE THE OBSTRUCTIONS ONLY WHEN IT IS MEANINGFUL
@@ -838,6 +849,7 @@ PROGRAM CREATE_BATHY_ETOPO1
             WRITE(*,*) '*********************************************'
             WRITE(*,*) ''
           ENDIF
+          LLOBSTRON = .FALSE.
         ELSE 
 
 !       COMPUTE WAVE NUMBERS
@@ -2350,7 +2362,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
               IS = KTOIS(IANG,IP)
 
-              IF ( IS > 0 ) THEN
+              IF ( IS > 0 .AND. LLOBSTRON ) THEN
                 IOBSRT = KTOOBSTRUCT(IANG,IP) 
                 SELECT CASE(IOBSRT)
 
@@ -2406,15 +2418,26 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                 END SELECT
 
+              ELSEIF ( IS <= 0 ) THEN
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,KNS,IX)
+                DO K=1,NGY
+                  KNS=NGY-K+1
+                  DO IX=1,NLONRGG(K)
+                    FIELD(IX,KNS) = ZMISS
+                  ENDDO
+                ENDDO
+!$OMP END PARALLEL DO
+
               ELSE
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,KNS,IX)
-                  DO K=1,NGY
-                    KNS=NGY-K+1
-                    DO IX=1,NLONRGG(K)
-                      FIELD(IX,KNS) = ZMISS
-                    ENDDO
+                DO K=1,NGY
+                  KNS=NGY-K+1
+                  DO IX=1,NLONRGG(K)
+                    FIELD(IX,KNS) = 1.0_JWRB
                   ENDDO
+                ENDDO
 !$OMP END PARALLEL DO
+
 
               ENDIF 
 
@@ -2485,5 +2508,7 @@ PROGRAM CREATE_BATHY_ETOPO1
           CALL IGRIB_CLOSE_FILE(IU08(IP))
         ENDDO
       ENDIF
+
+ENDIF  !!! LLOBSTROUT
 
 END PROGRAM CREATE_BATHY_ETOPO1
