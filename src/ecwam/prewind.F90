@@ -148,6 +148,9 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
       IF (LHOOK) CALL DR_HOOK('PREWIND',0,ZHOOK_HANDLE)
 
 
+      WRITE (IU06,*) '  PREWIND: '
+      CALL FLUSH(IU06)
+
 !*    1. BEGIN AND END DATES OF WIND FIELDS TO BE PROCESSED.
 !        ---------------------------------------------------
 

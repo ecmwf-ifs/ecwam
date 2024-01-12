@@ -207,6 +207,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWWAMI  , ONLY : CBPLTDT
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
      &                      NXFFS    , NXFFE   ,NYFFS    , NYFFE   ,    &
+     &                      NXFFS_LOC,NXFFE_LOC,NYFFS_LOC,NYFFE_LOC,    &
      &                      LLNEWCURR,LLWSWAVE ,LLWDWAVE ,FF_NEXT
 
 #ifdef WAM_HAVE_UNWAM
@@ -272,6 +273,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       INTEGER(KIND=JWIM) :: IDELWH
       INTEGER(KIND=JWIM) :: IU05, IU09, IU10
       INTEGER(KIND=JWIM) :: ICHNK, IPRM, KIJS, KIJL
+      INTEGER(KIND=JWIM) :: NXS, NXE, NYS, NYE
       INTEGER(KIND=JWIM) :: MTHREADS
 
 
@@ -292,6 +294,9 @@ SUBROUTINE INITMDL (NADV,                                 &
       LOGICAL :: LLEXIST
       LOGICAL :: LLINIT
       LOGICAL :: LLINIT_FIELDG
+      LOGICAL, SAVE :: LLINTERPOL
+
+      DATA LLINTERPOL /.TRUE./
 
 !----------------------------------------------------------------------
 
@@ -896,11 +901,26 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       LLINIT = .NOT.LRESTARTED
       LLINIT_FIELDG = .TRUE.
 
-      CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,            &
-     &              NXFFS, NXFFE, NYFFS, NYFFE, LLINIT_FIELDG,   &
-     &              LLINIT, IREAD,                               &
-     &              NFIELDS, NGPTOTG, NC, NR,                    &
-     &              FIELDS, LWCUR, MASK_IN,                      &
+      IF ( LLINTERPOL ) THEN
+!!      This will end up forcing going through the interpolation part in grib2wgrid
+!!      even when the input data are on the same grid as the model run
+!!      but it wil also reduce the memory usage by avoiding large global arrays
+        NXS = NXFFS_LOC
+        NXE = NXFFE_LOC
+        NYS = NYFFS_LOC
+        NYE = NYFFE_LOC
+      ELSE
+        NXS = NXFFS
+        NXE = NXFFE
+        NYS = NYFFS
+        NYE = NYFFE
+      ENDIF
+
+      CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,    &
+     &              NXS, NXE, NYS, NYE, LLINIT_FIELDG,   &
+     &              LLINIT, IREAD,                       &
+     &              NFIELDS, NGPTOTG, NC, NR,            &
+     &              FIELDS, LWCUR, MASK_IN,              &
      &              NEMO2WAM)
 
       WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'

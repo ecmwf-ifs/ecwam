@@ -608,7 +608,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
           IF ( LLINTERPOL ) THEN
 !!          This will end up forcing going through the interpolation part in grib2wgrid
-!!          even when the inpute data are on the same grid as the model run
+!!          even when the input data are on the same grid as the model run
 !!          but it wil also reduce the memory usage by avoiding large global arrays
             NXS = NXFFS_LOC
             NXE = NXFFE_LOC
