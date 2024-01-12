@@ -39,7 +39,7 @@ SUBROUTINE BUILDSTRESS(BLK2LOC, WVENVI, FF_NOW, NEMO2WAM, IREAD)
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,LNSESTART
       USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,             &
-     &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE
+     &                      NXFFS_LOC, NXFFE_LOC, NYFFS_LOC, NYFFE_LOC
       USE MPL_MODULE, ONLY : MPL_BROADCAST
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -84,8 +84,11 @@ SUBROUTINE BUILDSTRESS(BLK2LOC, WVENVI, FF_NOW, NEMO2WAM, IREAD)
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
-      CALL FIELDG%ALLOC(NXFFS, NYFFS, UBND0=NXFFE, UBND1=NYFFE)
 
+      WRITE(IU06,*) ' SUB. BUILDSTRESS: '
+      CALL FLUSH(IU06)
+
+      CALL FIELDG%ALLOC(NXFFS_LOC, NYFFS_LOC, UBND0=NXFFE_LOC, UBND1=NYFFE_LOC)
 
       CDATEWO = ' '
       CDAWIFL = ' '
@@ -96,8 +99,8 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
 !     GETWND AND READWGRIB REQUIRES FIELDG
       LLINIALL=.TRUE.
       LLOCAL=.TRUE.
-      CALL INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,         &
-     &                 NXFFS, NXFFE, NYFFS, NYFFE, FIELDG)
+      CALL INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,                          &
+     &                 NXFFS_LOC, NXFFE_LOC, NYFFS_LOC, NYFFE_LOC, FIELDG)
 
 
 !     1.1 GET ATMOSPHERIC MODEL FORCINGS FIELDS 
@@ -107,12 +110,12 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
       LWNDFILE=.TRUE.
       LCLOSEWND=.TRUE.
 
-      CALL GETWND (BLK2LOC,                             &
-     &             NXFFS, NXFFE, NYFFS, NYFFE, FIELDG,  &
-     &             WVENVI,                              &
-     &             FF_NOW,                              &
-     &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,  &
-     &             LCR, NEMO2WAM,                       &
+      CALL GETWND (BLK2LOC,                                             &
+     &             NXFFS_LOC, NXFFE_LOC, NYFFS_LOC, NYFFE_LOC, FIELDG,  &
+     &             WVENVI,                                              &
+     &             FF_NOW,                                              &
+     &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,                  &
+     &             LCR, NEMO2WAM,                                       &
      &             ICODE_WND)
 
 !     1.2 USE DATA FROM A FILE CONTAINING WIND SPEED MODIFIED BY
@@ -154,9 +157,9 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
       IF ( LWAVEWIND ) THEN
         IPARAM=245
         LLONLYPOS=.TRUE.
-        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,            &
-     &                 BLK2LOC,                                &
-     &                 NXFFS, NXFFE, NYFFS, NYFFE, FIELDG,     &
+        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,                            &
+     &                 BLK2LOC,                                                &
+     &                 NXFFS_LOC, NXFFE_LOC, NYFFS_LOC, NYFFE_LOC, FIELDG,     &
      &                 FF_NOW%WSWAVE , KZLEVUWAVE, LLONLYPOS, IREAD)
 
         WRITE(IU06,*) ' '
@@ -165,9 +168,7 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
         WRITE(IU06,*) ' WAS USED TO UPDATE THE INPUT ATMOSPHERIC WINDS'
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' THE INPUT WINDS AND DRAG COEFFICIENT ARE FOUND'
-        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ',        &
-     &                  KZLEVUWAVE,' m'
-
+        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ', KZLEVUWAVE,' m' 
 
       ELSE
 
@@ -181,8 +182,7 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
         WRITE(IU06,*) ' WAS POSSIBLE'
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' THE INPUT WIND AND DRAG COEFFICIENT ARE ASSUMED'
-        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ',        &
-     &                  KZLEVUWAVE,' m'
+        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ', KZLEVUWAVE,' m'
 
       ENDIF
  
@@ -212,7 +212,9 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
       CALL GSTATS(1444,0)
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
       DO ICHNK = 1, NCHNK
-        CALL CDUSTARZ0 (1, NPROMA_WAM, FF_NOW%WSWAVE(:,ICHNK), TEMPXNLEV, CD(:,ICHNK), FF_NOW%UFRIC(:,ICHNK), FF_NOW%Z0M(:,ICHNK))
+        CALL CDUSTARZ0 (1, NPROMA_WAM, FF_NOW%WSWAVE(:,ICHNK), TEMPXNLEV,        &
+ &                      CD(:,ICHNK), FF_NOW%UFRIC(:,ICHNK), FF_NOW%Z0M(:,ICHNK))
+
         FF_NOW%TAUW(:,ICHNK) = 0.1_JWRB * FF_NOW%UFRIC(:,ICHNK)**2
         FF_NOW%TAUWDIR(:,ICHNK) = FF_NOW%WDWAVE(:,ICHNK)
       ENDDO
@@ -226,9 +228,9 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
         LLONLYPOS=.TRUE.
         FILNM='cdwavein'
 !       !!!! CD was initialised above !!!!
-        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,         &
-     &                 BLK2LOC,                             &
-     &                 NXFFS, NXFFE, NYFFS, NYFFE, FIELDG,  &
+        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,                         &
+     &                 BLK2LOC,                                             &
+     &                 NXFFS_LOC, NXFFE_LOC, NYFFS_LOC, NYFFE_LOC, FIELDG,  &
      &                 CD, KZLEVCD, LLONLYPOS, IREAD)
 
 !       TEST REFERENCE LEVEL FOR UWAVE AND CD
