@@ -56,6 +56,7 @@ IF (LHOOK) CALL DR_HOOK('GETBOBSTRCT',0,ZHOOK_HANDLE)
 
         ITAG = 0
 
+      IF (LSUBGRID) THEN
 !       READ IU08
 !       =========
 
@@ -78,10 +79,10 @@ IF (LHOOK) CALL DR_HOOK('GETBOBSTRCT',0,ZHOOK_HANDLE)
         ENDIF
 
 
-      DO M=1,NFRE_RED ! loop over frequencies
+        DO M=1,NFRE_RED ! loop over frequencies
 
-!       READING KOBSLAT
-!       ---------------
+!         READING KOBSLAT
+!         ---------------
           DO IC=1,2
             ITAG=ITAG+1
             IF (IRANK == IREAD) THEN
@@ -135,8 +136,8 @@ IF (LHOOK) CALL DR_HOOK('GETBOBSTRCT',0,ZHOOK_HANDLE)
 
           ENDDO
 
-!       READING KOBSLON
-!       ---------------
+!         READING KOBSLON
+!         ---------------
 
           DO IC=1,2
 
@@ -191,8 +192,8 @@ IF (LHOOK) CALL DR_HOOK('GETBOBSTRCT',0,ZHOOK_HANDLE)
           ENDDO
 
 
-!       READING KOBSRLAT
-!       ----------------
+!         READING KOBSRLAT
+!         ----------------
           IF (IPROPAGS == 1) THEN
 
             DO IC=1,2
@@ -249,8 +250,8 @@ IF (LHOOK) CALL DR_HOOK('GETBOBSTRCT',0,ZHOOK_HANDLE)
             ENDDO
           ENDIF
 
-!       READING KOBSRLON
-!       ----------------
+!         READING KOBSRLON
+!         ----------------
           IF (IPROPAGS == 1) THEN
 
             DO IC=1,2
@@ -308,8 +309,8 @@ IF (LHOOK) CALL DR_HOOK('GETBOBSTRCT',0,ZHOOK_HANDLE)
           ENDIF
 
 
-!       READING KOBSCOR
-!       ---------------
+!         READING KOBSCOR
+!         ---------------
           IF (IPROPAGS == 2) THEN
             DO IC=1,4
               ITAG=ITAG+1
@@ -365,18 +366,20 @@ IF (LHOOK) CALL DR_HOOK('GETBOBSTRCT',0,ZHOOK_HANDLE)
 
           ENDIF
 
-      ENDDO ! end loop on frequencies
+        ENDDO ! end loop on frequencies
 
 
-      IF (ALLOCATED(ICOMBUF_S)) DEALLOCATE(ICOMBUF_S)
-      IF (ALLOCATED(ICOMBUF_R)) DEALLOCATE(ICOMBUF_R)
+        IF (ALLOCATED(ICOMBUF_S)) DEALLOCATE(ICOMBUF_S)
+        IF (ALLOCATED(ICOMBUF_R)) DEALLOCATE(ICOMBUF_R)
 
-      DEALLOCATE(IDUM)
+        DEALLOCATE(IDUM)
 
-      IF (.NOT.LL1D .AND. NPR > 1 ) DEALLOCATE(KDUM)
+        IF (.NOT.LL1D .AND. NPR > 1 ) DEALLOCATE(KDUM)
 
-      WRITE(IU06,*) ' WAVE MODEL PREPROC UBUF INFORMATION READ IN  (second part)'
-      CALL FLUSH (IU06)
+        WRITE(IU06,*) ' WAVE MODEL PREPROC UBUF INFORMATION READ IN  (second part)'
+        CALL FLUSH (IU06)
+
+      ENDIF  !! LSUBGRID (reading of subgrid information)
 
 
 !     OBSTRUCTION COEFFICIENTS
@@ -428,8 +431,8 @@ IF (LHOOK) CALL DR_HOOK('GETBOBSTRCT',0,ZHOOK_HANDLE)
 !$OMP END PARALLEL DO
       CALL GSTATS(1497,1)
 
-      DEALLOCATE(KOBSLON)
-      DEALLOCATE(KOBSLAT)
+      IF ( ALLOCATED(KOBSLON)) DEALLOCATE(KOBSLON)
+      IF ( ALLOCATED(KOBSLAT)) DEALLOCATE(KOBSLAT)
 
       IF (IPROPAGS == 1) THEN
 !       NOTE: THE VALUE OF OBSRLON WILL NOT BE RESET IN THE FIRST
@@ -473,8 +476,8 @@ IF (LHOOK) CALL DR_HOOK('GETBOBSTRCT',0,ZHOOK_HANDLE)
         ENDDO
 !$OMP END PARALLEL DO
         CALL GSTATS(1497,1)
-        DEALLOCATE(KOBSRLON)
-        DEALLOCATE(KOBSRLAT)
+        IF (ALLOCATED(KOBSRLON)) DEALLOCATE(KOBSRLON)
+        IF (ALLOCATED(KOBSRLAT)) DEALLOCATE(KOBSRLAT)
       ENDIF
 
       IF (IPROPAGS == 2) THEN
@@ -500,7 +503,7 @@ IF (LHOOK) CALL DR_HOOK('GETBOBSTRCT',0,ZHOOK_HANDLE)
         ENDDO
 !$OMP END PARALLEL DO
         CALL GSTATS(1497,1)
-        DEALLOCATE(KOBSCOR)
+        IF (ALLOCATED(KOBSCOR)) DEALLOCATE(KOBSCOR)
       ENDIF
 
       IF (IRANK == IREAD) CLOSE (UNIT=IU08(IPROPAGS))
