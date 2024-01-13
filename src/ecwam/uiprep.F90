@@ -94,6 +94,8 @@
       INTEGER(KIND=JWIM) :: IOS, IOUTA, IOUTANEW, IDUM
       INTEGER(KIND=JWIM), ALLOCATABLE :: NDUMP(:)
 
+      REAL(KIND=JWRU) :: DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO
+
       REAL(KIND=JWRB) :: ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
       REAL(KIND=JWRB) :: WEST, EAST, DW, DE, DS, DN
       REAL(KIND=JWRB), ALLOCATABLE :: XDUMP(:)
@@ -237,21 +239,26 @@
         IUGRD=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0,'READWRITE')
         OPEN(IUGRD,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
         READ (IUGRD,*) ISPECTRUNC
-        READ (IUGRD,*) AMONOP
-        READ (IUGRD,*) AMOSOP
-        READ (IUGRD,*) AMOWEP
-        READ (IUGRD,*) AMOEAP
+        READ (IUGRD,*) DAMONOP
+        READ (IUGRD,*) DAMOSOP
+        READ (IUGRD,*) DAMOWEP
+        READ (IUGRD,*) DAMOEAP
         READ (IUGRD,*) IPER
         READ (IUGRD,*) IRGG
         READ (IUGRD,*) NGY
 
         WRITE(IU06,*) " First part of grid_description read in "
 
-        WRITE(IU06,*) " AMONOP = ",AMONOP
-        WRITE(IU06,*) " AMOSOP = ",AMOSOP
-        WRITE(IU06,*) " AMOWEP = ",AMOWEP
-        WRITE(IU06,*) " AMOEAP = ",AMOEAP
+        WRITE(IU06,*) " DAMONOP = ",DAMONOP
+        WRITE(IU06,*) " DAMOSOP = ",DAMOSOP
+        WRITE(IU06,*) " DAMOWEP = ",DAMOWEP
+        WRITE(IU06,*) " DAMOEAP = ",DAMOEAP
         WRITE(IU06,*) '' 
+
+        AMONOP = REAL(DAMONOP,JWRB)
+        AMOSOP = REAL(DAMOSOP,JWRB)
+        AMOWEP = REAL(DAMOWEP,JWRB)
+        DAMOEAP = REAL(DAMOEAP,JWRB)
 
         ! A spectral truncation > 0 implies a Gaussian grid
         IF (ISPECTRUNC > 0) IQGAUSS=1 
@@ -327,7 +334,7 @@
 !*    SET DIMENSIONS.
 
       IF (LLGRID) THEN
-        XDELLA = (AMONOP-AMOSOP)/REAL(NGY-1,JWRB)
+        XDELLA = (DAMONOP-DAMOSOP)/REAL(NGY-1,JWRU)
         ALLOCATE(NLONRGG(NGY))
 
         NGX = 0
@@ -344,10 +351,13 @@
         ENDDO
 
         IF (IPER == 1) THEN
-          XDELLO  = 360._JWRB/REAL(NGX,JWRB)
-          AMOEAP = AMOWEP + 360._JWRB - XDELLO
+          DXDELLO = 360._JWRU/REAL(NGX,JWRU)
+          DAMOEAP = DAMOWEP + 360._JWRU - DXDELLO
+          XDELLO = REAL(DXDELLO,JWRB)
+          AMOEAP = REAL(DAMOEAP,JWRB)
         ELSE
-          XDELLO = (AMOEAP-AMOWEP)/REAL(NGX-1,JWRB)
+          DXDELLO = 360._JWRU/REAL(NGX,JWRU)
+          XDELLO = REAL(DXDELLO,JWRB)
         ENDIF
 
         CLOSE(IUGRD)
@@ -375,7 +385,7 @@
       WRITE (IU06,'("   RESOLUTION LAT-LON ",2F12.7)') XDELLA, XDELLO
       WRITE (IU06,'("    SOUTHERN LAT  NORTHERN LAT ",                  &
      &  " WESTERN LONG "," EASTERN LONG",                               &
-     &  /,2X,4F14.3)') AMOSOP, AMONOP, AMOWEP, AMOEAP
+     &  /,2X,4F14.7)') AMOSOP, AMONOP, AMOWEP, AMOEAP
       IF (IPER == 1) WRITE (IU06,*) '   THE GRID IS EAST-WEST PERIODIC'
 
       IF (CLDOMAIN == '-' ) THEN

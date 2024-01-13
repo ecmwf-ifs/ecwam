@@ -28,7 +28,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !!!!! BECAUSE ETOPO1 HAS A RESOLUTION At BEST OF 1/60 degrees, IT DOES NOT
 !!!!! MAKE ANY SENSE TO COMPUTE THE SMALL ISLANDS OBSTRUCTIONS IF THE RESOLUTION
 !!!!! IS OF THAT ORDER OR SMALLER !!!!
-!!!!! SO IF XDELLA < 2*1/60, THEN THE OBSTRUCTIONS WILL ALL BE SET TO NON BLOCKING !!!
+!!!!! SO IF DXDELLA < 2*1/60, THEN THE OBSTRUCTIONS WILL ALL BE SET TO NON BLOCKING !!!
 
 
 !     INPUT FILES:
@@ -79,8 +79,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       USE YOWFRED  , ONLY : IFRE1, FRATIO, DELTH, FR, TH
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP, CEXPVERCLIM, NDATE_TIME_WINDOW_END, CDATECLIM, KPARAM_SUBGRIG
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
-      USE YOWMAP   , ONLY : IPER, IRGG, IQGAUSS, AMOWEP, AMOSOP, AMOEAP, AMONOP,  &
-     &                      XDELLA, XDELLO, NGX, NGY, NLONRGG, CLDOMAIN
+      USE YOWMAP   , ONLY : IPER, IRGG, IQGAUSS, NGX, NGY, NLONRGG, CLDOMAIN
       USE YOWPARAM , ONLY : NANG, NFRE_RED
       USE YOWPCONS , ONLY : PI, ZPI, RAD, DEG, G, ZMISS
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,           &
@@ -121,7 +120,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !!    ALPR_DEEP controls the impact of submerged subgrid points in blocking waves as if they were subgrid land points
       REAL(KIND=JWRB), PARAMETER :: ALPR_DEEP=0.025_JWRB
 
-!!    IREINF is used to reinforce land obstructions for small grid spacing (see below as it depends on XDELLA)
+!!    IREINF is used to reinforce land obstructions for small grid spacing (see below as it depends on DXDELLA)
 !!    It works by artificially increasing the number of sub grid points detected as land
       INTEGER(KIND=JWIM) :: IREINF
 !!    IREINF will also be used to reinforce fully blocking submerged obstructions for small grid spacings,
@@ -176,6 +175,10 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSCOR
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
 
+      REAL(KIND=JWRU) :: DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO
+      REAL(KIND=JWRU) :: RESOL
+      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:) :: ZDELLO
+
       REAL(KIND=JWRB), PARAMETER :: RMIN_DEPTH = -0.3_JWRB
       REAL(KIND=JWRB), PARAMETER :: RMIN_DEPTH_SMOOTH = RMIN_DEPTH-0.01_JWRB
       REAL(KIND=JWRB) :: PRPLRADI
@@ -187,13 +190,12 @@ PROGRAM CREATE_BATHY_ETOPO1
       REAL(KIND=JWRB) :: OMEGA, XKDEEP, XX, DEPTH
       REAL(KIND=JWRB) :: STEPT, STEPB, XLATT, XLATB, XLONL, XLONR
       REAL(KIND=JWRB) :: STEPLAT, STEPLON
-      REAL(KIND=JWRB) :: RESOL
       REAL(KIND=JWRB) :: RR, XKEXTHRS, ALPR
       REAL(KIND=JWRB), DIMENSION(ILON) :: ALON
       REAL(KIND=JWRB), DIMENSION(ILAT) :: ALAT
       REAL(KIND=JWRB), DIMENSION(NDPT) :: XK 
       REAL(KIND=JWRB), DIMENSION(NREF) :: XINF, XSUP, YINF, YSUP
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: ZDELLO, COSPH
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: COSPH
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: XLAT
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: WAMDEPTH
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: PERCENTLAND, PERCENTSHALLOW
@@ -227,7 +229,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !     ETOPO1 RESOLUTION
       INVRES=60
       X60=60.0_JWRB
-      RESOL=1.0_JWRB/INVRES
+      RESOL=1.0_JWRU/REAL(INVRES,JWRU)
 
       IU01=1
       IU06=6
@@ -248,9 +250,9 @@ PROGRAM CREATE_BATHY_ETOPO1
       READ(5,*) CLINE
       READ(5,*) LLGRIBOUT
       READ(5,*) CLINE
-      READ(5,*) XDELLA
+      READ(5,*) DXDELLA
       READ(5,*) CLINE
-      READ(5,*) AMOSOP, AMONOP, AMOWEP, AMOEAP
+      READ(5,*) DAMOSOP, DAMONOP, DAMOWEP, DAMOEAP
       READ(5,*) CLINE
       READ(5,*) IPER
       READ(5,*) CLINE
@@ -276,18 +278,18 @@ PROGRAM CREATE_BATHY_ETOPO1
         IUGRD=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0,'READWRITE')
         OPEN(IUGRD,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
         READ (IUGRD,*) ISPECTRUNC
-        READ (IUGRD,*) AMONOP
-        READ (IUGRD,*) AMOSOP
-        READ (IUGRD,*) AMOWEP
-        READ (IUGRD,*) AMOEAP
+        READ (IUGRD,*) DAMONOP
+        READ (IUGRD,*) DAMOSOP
+        READ (IUGRD,*) DAMOWEP
+        READ (IUGRD,*) DAMOEAP
         READ (IUGRD,*) IPER
         READ (IUGRD,*) IRGG
         READ (IUGRD,*) NGY
 
-        WRITE(IU06,*) "AMONOP = ",AMONOP
-        WRITE(IU06,*) "AMOSOP = ",AMOSOP
-        WRITE(IU06,*) "AMOWEP = ",AMOWEP
-        WRITE(IU06,*) "AMOEAP = ",AMOEAP
+        WRITE(IU06,*) "DAMONOP = ",DAMONOP
+        WRITE(IU06,*) "DAMOSOP = ",DAMOSOP
+        WRITE(IU06,*) "DAMOWEP = ",DAMOWEP
+        WRITE(IU06,*) "DAMOEAP = ",DAMOEAP
 
         IF (ISPECTRUNC > 0) THEN
           IQGAUSS=1
@@ -295,7 +297,7 @@ PROGRAM CREATE_BATHY_ETOPO1
           IQGAUSS=0
         ENDIF
 
-        XDELLA = (AMONOP-AMOSOP)/REAL(NGY-1,JWRB)
+        DXDELLA = (DAMONOP-DAMOSOP)/REAL(NGY-1,JWRU)
         ALLOCATE(NLONRGG(NGY))
 
         NGX = 0
@@ -306,26 +308,26 @@ PROGRAM CREATE_BATHY_ETOPO1
         ENDDO
 
         IF (IPER == 1) THEN
-          XDELLO  = 360._JWRB/REAL(NGX,JWRB)
-          AMOEAP = AMOWEP + 360._JWRB - XDELLO
+          DXDELLO  = 360._JWRU/REAL(NGX,JWRU)
+          DAMOEAP = DAMOWEP + 360._JWRU - DXDELLO
           CLDOMAIN = 'g'
         ELSE
-          XDELLO = (AMOEAP-AMOWEP)/(NGX-1)
+          DXDELLO = (DAMOEAP-DAMOWEP)/(NGX-1)
           CLDOMAIN = 'm'
         ENDIF
 
         CLOSE(IUGRD)
 
       ELSE
-        XDELLO=XDELLA     
-        NGX=NINT((AMOEAP-AMOWEP)/XDELLO)+1
-        NGY=NINT((AMONOP-AMOSOP)/XDELLA)+1
+        DXDELLO=DXDELLA     
+        NGX=NINT((DAMOEAP-DAMOWEP)/DXDELLO)+1
+        NGY=NINT((DAMONOP-DAMOSOP)/DXDELLA)+1
 
         ALLOCATE(NLONRGG(NGY))
       ENDIF
 
     
-      IF ( XDELLA < 0.125_JWRB) THEN
+      IF ( DXDELLA < 0.125_JWRU) THEN
         RATIOLAND_THRESHOLD = 0.5_JWRB
         RATIOSHALLOW_THRESHOLD = 1.0_JWRB
       ELSE
@@ -334,7 +336,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       ENDIF
      
   
-      NLANDCENTREPM=(NINT(0.2_JWRB*XDELLA*INVRES)-1)/2
+      NLANDCENTREPM=(NINT(0.2_JWRU*DXDELLA*INVRES)-1)/2
       NLANDCENTREPM=MAX(NLANDCENTREPM,1)
       NLANDCENTREMAX=(2*NLANDCENTREPM+1)**2
 
@@ -344,7 +346,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       ALLOCATE(XLAT(0:NGY+1))
 
       DO K=0,NGY+1
-        XLAT(K) = (AMOSOP + REAL(K-1,JWRB)*XDELLA)
+        XLAT(K) = (DAMOSOP + REAL(K-1,JWRU)*DXDELLA)
       ENDDO
 
       DO K=1,NGY
@@ -363,9 +365,9 @@ PROGRAM CREATE_BATHY_ETOPO1
         ENDIF
 
         IF (IPER == 1) THEN
-          ZDELLO(K)  = 360._JWRB/REAL(NLONRGG(K))
+          ZDELLO(K)  = 360._JWRU/REAL(NLONRGG(K),JWRU)
         ELSE
-          ZDELLO(K)  = (AMOEAP-AMOWEP)/REAL(NLONRGG(K)-1)
+          ZDELLO(K)  = (DAMOEAP-DAMOWEP)/REAL(NLONRGG(K)-1,JWRU)
         ENDIF
       ENDDO
 
@@ -541,9 +543,9 @@ PROGRAM CREATE_BATHY_ETOPO1
       ENDDO
 
 
-      NJM=INT(0.5_JWRB*XDELLA*INVRES)
-      NJP=NINT(0.5_JWRB*XDELLA*INVRES)
-      IF ( XDELLA < 0.125_JWRB) THEN
+      NJM=INT(0.5_JWRU*DXDELLA*INVRES)
+      NJP=NINT(0.5_JWRU*DXDELLA*INVRES)
+      IF ( DXDELLA < 0.125_JWRU) THEN
 !       Allow a bit of extra smoothing
         NJM=NJM+1
         NJP=NJP+1
@@ -560,7 +562,7 @@ PROGRAM CREATE_BATHY_ETOPO1
          DO IX=1,NLONRGG(K)
 
 !          ETOPO1 STARTS AT -180
-           XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
+           XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
            IF (XLON > 180._JWRB) THEN
              XLON=XLON-360._JWRB
            ENDIF
@@ -570,9 +572,9 @@ PROGRAM CREATE_BATHY_ETOPO1
              IF (ALON(I) <= XLON .AND. XLON < ALON(I+1) ) EXIT
            ENDDO
 
-           NIM=INT(0.5_JWRB*ZDELLO(K)*INVRES)
-           NIP=NINT(0.5_JWRB*ZDELLO(K)*INVRES)
-           IF ( XDELLA < 0.125_JWRB) THEN
+           NIM=INT(0.5_JWRU*ZDELLO(K)*REAL(INVRES,JWRU))
+           NIP=NINT(0.5_JWRU*ZDELLO(K)*REAL(INVRES,JWRU))
+           IF ( DXDELLA < 0.125_JWRU) THEN
 !            Allow a bit of extra smoothing
              NIM=NIM+1
              NIP=NIP+1
@@ -686,7 +688,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       IF (LLGRID) THEN
         WRITE(CWAMRESOL,'(I5.5)') NGY-1
       ELSE
-        WRITE(CWAMRESOL,'(I5.5)') INT(1000*XDELLA)
+        WRITE(CWAMRESOL,'(I5.5)') INT(1000*DXDELLA)
       ENDIF
       FILENAME='correction_to_wam_grid_'//CWAMRESOL
 
@@ -695,8 +697,8 @@ PROGRAM CREATE_BATHY_ETOPO1
       DO WHILE(.TRUE.)
          READ(35,*,END=111,ERR=111) XLO,XLA,IX,K,IDPT
          IDPT=-IDPT
-         XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
-         IF (ABS(XLON-XLO) > ZDELLO(K) .OR. ABS(XLAT(K)-XLA) > XDELLA ) THEN
+         XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
+         IF (ABS(XLON-XLO) > REAL(ZDELLO(K),JWRB) .OR. ABS(XLAT(K)-XLA) > REAL(DXDELLA,JWRB) ) THEN
            WRITE(*,*) 'PROBLEM !!!!'
            WRITE(*,*) 'THE CORRECTION TO WAM GRID IS NOT A WAM POINT'
            WRITE(*,*) XLO,XLA,IDPT 
@@ -733,7 +735,7 @@ PROGRAM CREATE_BATHY_ETOPO1
         WRITE(12,'(A5)') '#DATA'
         DO K=1,NGY
            DO IX=1,NLONRGG(K)
-             XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
+             XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
              IF (XLON > 180._JWRB) THEN
                XLON=XLON-360._JWRB
              ENDIF
@@ -753,16 +755,16 @@ PROGRAM CREATE_BATHY_ETOPO1
       IF (LLGRID) THEN
         WRITE(CWAMRESOL,'(I5.5)') ISPECTRUNC
       ELSE
-        WRITE(CWAMRESOL,'(I5.5)') INT(1000*XDELLA)
+        WRITE(CWAMRESOL,'(I5.5)') INT(1000*DXDELLA)
       ENDIF
       FILENAME='wam_topo_'//CWAMRESOL
 
       OPEN(IU01,FILE=FILENAME,FORM='FORMATTED')
       IF (LLGRID) THEN
         WRITE(IU01,'(A)') 'WAM BATHYMETRY'
-        WRITE(IU01,'(6F13.8)') XDELLA,XDELLO,AMOSOP,AMONOP,AMOWEP,AMOEAP
+        WRITE(IU01,'(6F13.8)') DXDELLA, DXDELLO, DAMOSOP, DAMONOP, DAMOWEP, DAMOEAP
       ELSE
-        WRITE(IU01,'(6F10.5)') XDELLA,XDELLO,AMOSOP,AMONOP,AMOWEP,AMOEAP
+        WRITE(IU01,'(6F10.5)') DXDELLA, DXDELLO, DAMOSOP, DAMONOP, DAMOWEP, DAMOEAP
       ENDIF
 
       CX='     '
@@ -806,9 +808,9 @@ IF ( LLOBSTROUT ) THEN
 
       WRITE(1,'(I4)') NFRE_RED
 
-      IF (XDELLA <= 0.125_JWRB) THEN
+      IF (DXDELLA <= 0.125_JWRU) THEN
         IREINF=4
-      ELSEIF (XDELLA <= 0.5_JWRB) THEN
+      ELSEIF (DXDELLA <= 0.5_JWRU) THEN
         IREINF=2
       ELSE
         IREINF=1
@@ -839,7 +841,7 @@ IF ( LLOBSTROUT ) THEN
       DO M=1,NFRE_RED
 
 !!!!    COMPUTE THE OBSTRUCTIONS ONLY WHEN IT IS MEANINGFUL
-        IF (XDELLA <= 2.0_JWRB*RESOL ) THEN
+        IF (DXDELLA <= 2.0_JWRU*RESOL ) THEN
           IF (M == 1) THEN
             WRITE(*,*) ''
             WRITE(*,*) '*********************************************'
@@ -921,17 +923,17 @@ IF ( LLOBSTROUT ) THEN
             DO IX=1,NLONRGG(K)
               IF (LLSM(IX,K)) THEN
 !               SEA POINT GRID BOX LATITUNAL EXTEND :
-                XLONL=AMOWEP + (REAL(IX-1,JWRB)-0.5_JWRB)*ZDELLO(K)
+                XLONL=DAMOWEP + (REAL(IX-1,JWRU)-0.5_JWRU)*ZDELLO(K)
                 IF (XLONL > 180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
                 ENDIF
-                XLONR=AMOWEP + (REAL(IX-1,JWRB)+0.5_JWRB)*ZDELLO(K)
+                XLONR=DAMOWEP + (REAL(IX-1,JWRU)+0.5_JWRU)*ZDELLO(K)
                 IF (XLONR > 180._JWRB) THEN
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
 !               LONGITUDINAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
-                IF ( XDELLA < 0.125_JWRB) THEN
+                IF ( DXDELLA < 0.125_JWRU) THEN
                   ILONL = INT((XLONL + 180._JWRB)*INVRES) + 1
                   ILONR = INT((XLONR + 180._JWRB)*INVRES) + 2
                 ELSE
@@ -1076,9 +1078,9 @@ IF ( LLOBSTROUT ) THEN
 !         LOOP OVER MODEL LATITUDES
           DO K=1,NGY
 !           LATIDUNAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
-            XLATT=XLAT(K)+0.5_JWRB*XDELLA
-            XLATB=XLAT(K)-0.5_JWRB*XDELLA
-            IF ( XDELLA < 0.125_JWRB) THEN
+            XLATT=XLAT(K)+0.5_JWRB*DXDELLA
+            XLATB=XLAT(K)-0.5_JWRB*DXDELLA
+            IF ( DXDELLA < 0.125_JWRU) THEN
               ILATT = INT((90.0_JWRB- XLATT)*INVRES) + 1
               ILATB = INT((90.0_JWRB- XLATB)*INVRES) + 2
             ELSE
@@ -1095,11 +1097,11 @@ IF ( LLOBSTROUT ) THEN
               IF (LLSM(IX,K)) THEN
 !               SEA POINT GRID BOX LONGITUDINAL EXTEND :
                 IF (IS == 1) THEN
-                  XLONL=AMOWEP + (REAL(IX-2,JWRB))*ZDELLO(K)
-                  XLONR=AMOWEP + (REAL(IX-1,JWRB))*ZDELLO(K) -RESOL
+                  XLONL=DAMOWEP + (REAL(IX-2,JWRU))*ZDELLO(K)
+                  XLONR=DAMOWEP + (REAL(IX-1,JWRU))*ZDELLO(K) -RESOL
                 ELSE
-                  XLONL=AMOWEP + (REAL(IX-1,JWRB))*ZDELLO(K) +RESOL
-                  XLONR=AMOWEP + (REAL(IX,JWRB))*ZDELLO(K)
+                  XLONL=DAMOWEP + (REAL(IX-1,JWRU))*ZDELLO(K) +RESOL
+                  XLONR=DAMOWEP + (REAL(IX,JWRU))*ZDELLO(K)
                 ENDIF
                 IF (XLONL > 180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
@@ -1266,17 +1268,17 @@ IF ( LLOBSTROUT ) THEN
 
             DO IX=1,NLONRGG(K)
               IF (LLSM(IX,K)) THEN
-                XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
-                XLONL=XLON -(IS-1)*XDELLA
+                XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
+                XLONL=XLON -(IS-1)*DXDELLA
                 IF (XLONL > 180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
                 ENDIF
-                XLONR=XLON +(2-IS)*XDELLA
+                XLONR=XLON +(2-IS)*DXDELLA
                 IF (XLONR > 180._JWRB) THEN
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
-                IF ( XDELLA < 0.125_JWRB) THEN
+                IF ( DXDELLA < 0.125_JWRU) THEN
                   ILONL = INT((XLONL + 180._JWRB)*INVRES) + 1
                   ILONR = INT((XLONR + 180._JWRB)*INVRES) + 2
                 ELSE
@@ -1393,9 +1395,9 @@ IF ( LLOBSTROUT ) THEN
 !$OMP& PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST) &
 !$OMP& PRIVATE(NTOTPTS,ITEMPEW,XX)
           DO K=1,NGY
-            XLATT=XLAT(K)+(IS-1)*XDELLA
-            XLATB=XLAT(K)-(2-IS)*XDELLA
-            IF ( XDELLA < 0.125_JWRB) THEN
+            XLATT=XLAT(K)+(IS-1)*DXDELLA
+            XLATB=XLAT(K)-(2-IS)*DXDELLA
+            IF ( DXDELLA < 0.125_JWRU) THEN
               ILATT = INT((90.0_JWRB- XLATT)*INVRES) + 1
               ILATB = INT((90.0_JWRB- XLATB)*INVRES) + 2
             ELSE
@@ -1409,12 +1411,12 @@ IF ( LLOBSTROUT ) THEN
 
             DO IX=1,NLONRGG(K)
               IF (LLSM(IX,K)) THEN
-                XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
+                XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
                 IF (IS == 1) THEN
                   XLONL=XLON + RESOL
-                  XLONR=XLON + XDELLA
+                  XLONR=XLON + DXDELLA
                 ELSE
-                  XLONL=XLON -  XDELLA
+                  XLONL=XLON -  DXDELLA
                   XLONR=XLON - RESOL
                 ENDIF
                 IF (XLONL > 180._JWRB) THEN
@@ -1563,17 +1565,17 @@ IF ( LLOBSTROUT ) THEN
 
             DO IX=1,NLONRGG(K)
               IF (LLSM(IX,K)) THEN
-                XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
-                XLONL=XLON -(2-IS)*XDELLA
+                XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
+                XLONL=XLON -(2-IS)*DXDELLA
                 IF (XLONL > 180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
                 ENDIF
-                XLONR=XLON +(IS-1)*XDELLA
+                XLONR=XLON +(IS-1)*DXDELLA
                 IF (XLONR > 180._JWRB) THEN
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
-                IF ( XDELLA < 0.125_JWRB) THEN
+                IF ( DXDELLA < 0.125_JWRU) THEN
                   ILONL = INT((XLONL + 180._JWRB)*INVRES) + 1
                   ILONR = INT((XLONR + 180._JWRB)*INVRES) + 2
                 ELSE
@@ -1690,9 +1692,9 @@ IF ( LLOBSTROUT ) THEN
 !$OMP& PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST) &
 !$OMP& PRIVATE(NTOTPTS,ITEMPEW,XX)
           DO K=1,NGY
-            XLATT=XLAT(K)+(IS-1)*XDELLA
-            XLATB=XLAT(K)-(2-IS)*XDELLA
-            IF ( XDELLA < 0.125_JWRB) THEN
+            XLATT=XLAT(K)+(IS-1)*DXDELLA
+            XLATB=XLAT(K)-(2-IS)*DXDELLA
+            IF ( DXDELLA < 0.125_JWRU) THEN
               ILATT = INT((90.0_JWRB- XLATT)*INVRES) + 1
               ILATB = INT((90.0_JWRB- XLATB)*INVRES) + 2
             ELSE
@@ -1706,12 +1708,12 @@ IF ( LLOBSTROUT ) THEN
 
             DO IX=1,NLONRGG(K)
               IF (LLSM(IX,K)) THEN
-                XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
+                XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
                 IF (IS == 1) THEN
                   XLONL=XLON + RESOL
-                  XLONR=XLON + XDELLA
+                  XLONR=XLON + DXDELLA
                 ELSE
-                  XLONL=XLON - XDELLA
+                  XLONL=XLON - DXDELLA
                   XLONR=XLON - RESOL
                 ENDIF
                 IF (XLONL > 180._JWRB) THEN
@@ -1873,7 +1875,7 @@ IF ( LLOBSTROUT ) THEN
 
             DO IX=1,NLONRGG(K)
               IF (LLSM(IX,K)) THEN
-                XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
+                XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
                 XLONL=XLON -((IS-1)/2)*ZDELLO(K)
                 IF (XLONL > 180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
@@ -1883,7 +1885,7 @@ IF ( LLOBSTROUT ) THEN
                   XLONR=XLONR-360._JWRB
                 ENDIF
 
-                IF ( XDELLA < 0.125_JWRB) THEN
+                IF ( DXDELLA < 0.125_JWRU) THEN
                   ILONL = INT((XLONL + 180._JWRB)*INVRES) + 1
                   ILONR = INT((XLONR + 180._JWRB)*INVRES) + 2
                 ELSE
@@ -2003,13 +2005,13 @@ IF ( LLOBSTROUT ) THEN
 !$OMP& PRIVATE(NTOTPTS,ITEMPEW,XX)
           DO K=1,NGY
             IF (IS == 1 .OR. IS == 4) THEN
-              XLATT=XLAT(K)+XDELLA
+              XLATT=XLAT(K)+DXDELLA
               XLATB=XLAT(K)
             ELSE
               XLATT=XLAT(K)
-              XLATB=XLAT(K)-XDELLA
+              XLATB=XLAT(K)-DXDELLA
             ENDIF
-            IF ( XDELLA < 0.125_JWRB) THEN
+            IF ( DXDELLA < 0.125_JWRU) THEN
               ILATT = INT((90.0_JWRB- XLATT)*INVRES) + 1
               ILATB = INT((90.0_JWRB- XLATB)*INVRES) + 2
             ELSE
@@ -2023,7 +2025,7 @@ IF ( LLOBSTROUT ) THEN
 
             DO IX=1,NLONRGG(K)
               IF (LLSM(IX,K)) THEN
-                XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
+                XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
                 IF (IS == 1 .OR. IS == 2) THEN
                   XLONL=XLON + RESOL
                   XLONR=XLON + ZDELLO(K) 
@@ -2228,13 +2230,13 @@ IF ( LLOBSTROUT ) THEN
           DO IS =1,2
             IUNIT=IUNIT+1
             IF (IS == 1) THEN
-              STEPLAT=-0.25_JWRB*XDELLA
+              STEPLAT=-0.25_JWRB*DXDELLA
             ELSE
-              STEPLAT=0.25_JWRB*XDELLA
+              STEPLAT=0.25_JWRB*DXDELLA
             ENDIF 
             DO K=1,NGY
                DO IX=1,NLONRGG(K)
-                 XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+                 XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
                  IF (XLON > 180._JWRB) THEN
                    XLON=XLON-360._JWRB
                  ENDIF
@@ -2252,13 +2254,13 @@ IF ( LLOBSTROUT ) THEN
           DO IS =1,2
             IUNIT=IUNIT+1
             IF (IS == 1) THEN
-              STEPLON=-0.25_JWRB*XDELLO
+              STEPLON=-0.25_JWRU*DXDELLO
             ELSE
-              STEPLON=0.25_JWRB*XDELLO
+              STEPLON=0.25_JWRU*DXDELLO
             ENDIF 
             DO K=1,NGY
                DO IX=1,NLONRGG(K)
-                 XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+                 XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
                  IF (XLON > 180._JWRB) THEN
                    XLON=XLON-360._JWRB
                  ENDIF
@@ -2276,13 +2278,13 @@ IF ( LLOBSTROUT ) THEN
           DO IS =1,2
             IUNIT=IUNIT+1
             IF (IS == 1) THEN
-              STEPLAT=-0.25_JWRB*XDELLA
+              STEPLAT=-0.25_JWRB*DXDELLA
             ELSE
-              STEPLAT=0.25_JWRB*XDELLA
+              STEPLAT=0.25_JWRB*DXDELLA
             ENDIF 
             DO K=1,NGY
                DO IX=1,NLONRGG(K)
-                 XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+                 XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
                  IF (XLON > 180._JWRB) THEN
                    XLON=XLON-360._JWRB
                  ENDIF
@@ -2300,13 +2302,13 @@ IF ( LLOBSTROUT ) THEN
           DO IS =1,2
             IUNIT=IUNIT+1
             IF (IS == 1) THEN
-              STEPLON=-0.25_JWRB*XDELLO
+              STEPLON=-0.25_JWRU*DXDELLO
             ELSE
-              STEPLON=0.25_JWRB*XDELLO
+              STEPLON=0.25_JWRU*DXDELLO
             ENDIF 
             DO K=1,NGY
                DO IX=1,NLONRGG(K)
-                 XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+                 XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
                  IF (XLON > 180._JWRB) THEN
                    XLON=XLON-360._JWRB
                  ENDIF
@@ -2324,13 +2326,13 @@ IF ( LLOBSTROUT ) THEN
           DO IS =1,4
             IUNIT=IUNIT+1
             IF (IS == 1) THEN
-              STEPLON=-0.25_JWRB*XDELLO
+              STEPLON=-0.25_JWRU*DXDELLO
             ELSE
-              STEPLON=0.25_JWRB*XDELLO
+              STEPLON=0.25_JWRU*DXDELLO
             ENDIF 
             DO K=1,NGY
                DO IX=1,NLONRGG(K)
-                 XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+                 XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
                  IF (XLON > 180._JWRB) THEN
                    XLON=XLON-360._JWRB
                  ENDIF
