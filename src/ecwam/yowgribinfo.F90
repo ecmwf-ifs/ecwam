@@ -172,6 +172,9 @@ IF ( KGRIB_HANDLE > 0 ) THEN
   IF ( IQGAUSS == 1) THEN
     XDELLO = 360.0_JWRB/REAL(MAX(1,NGX),JWRB)
     AMOEAP = AMOWEP+360.0_JWRB - XDELLO
+write(*,*) 'debile 1 ',AMOEAP
+    CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'longitudeOfLastGridPointInDegrees',AMOEAP)
+write(*,*) 'debile 2 ',AMOEAP
     IPER = 1
   ELSE
     CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'longitudeOfLastGridPointInDegrees',AMOEAP)
