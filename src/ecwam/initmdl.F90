@@ -179,6 +179,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            NIBLO    ,NGX      ,NGY      ,                        &
      &            KMNOP    ,KMSOP    ,IPER     ,IRGG     ,IQGAUSS
+      USE YOWMESPAS, ONLY : LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
      &                      LLUNSTR
@@ -192,7 +193,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            CDTINTT  ,CDTBC    ,                                  &
      &            IFRELFMAX, DELPRO_LF, IDELPRO  ,IDELT ,               &
      &            IDELWI   ,IDELWO   ,IDELRES  ,IDELINT  ,              &
-     &            IREFRA   ,                                            &
+     &            IREFRA   ,LNSESTART,                                  &
      &            IPHYS    ,                                            &
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,    &
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
@@ -550,7 +551,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
         CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
         CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I2, NGRIBV=2)
 !       FOR SPECTRA
-        CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
+        IF ( LGRIBOUT ) CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
       ENDIF
 
       IF (MARSTYPE == 'cf' .OR. MARSTYPE == 'pf' .OR. MARSTYPE == 'fc' ) THEN
@@ -943,7 +944,11 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
       CALL GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 
-      WRITE(IU06,*) ' SUB. INITMDL: SPECTRA READ IN'
+      IF ( LNSESTART ) THEN
+        WRITE(IU06,*) ' SUB. INITMDL: SPECTRA INITIALISED AT NOISE LEVEL'
+      ELSE
+        WRITE(IU06,*) ' SUB. INITMDL: SPECTRA READ IN'
+      ENDIF
       WRITE(IU06,*) ' '
       CALL FLUSH (IU06)
 
