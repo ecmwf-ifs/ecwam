@@ -511,7 +511,7 @@
       WRITE (IU06,'('' MOST EASTERN LONGITUDE IS AMOEAP = '',F12.7)') AMOEAP
       WRITE (IU06,                                                      &
      &     '('' LONGITUDE INCREMENT AS FUNCTION OF LATITUDE IS'')')
-      WRITE (IU06,'(10F.3)') ZDELLO
+      WRITE (IU06,'(10F8.3)') ZDELLO
 
       IF (ALLOCATED(AX)) DEALLOCATE(AX)
       IF (ALLOCATED(AXX)) DEALLOCATE(AXX)
