@@ -200,15 +200,6 @@ SUBROUTINE READPRE (LLBATHY)
         !! OLD BINARY INPUT:
 !          -----------------
 
-
-!!!!!1 debile to do 
-!!!          AMONOP = REAL(DAMONOP,JWRB)
-!!!          AMOSOP = REAL(DAMOSOP,JWRB)
-!!!          AMOWEP = REAL(DAMOWEP,JWRB)
-!!!          AMOEAP = REAL(DAMOEAP,JWRB)
-!!!          XDELLA = REAL(DXDELLA,JWRB)
-!!!          XDELLO = REAL(DXDELLO,JWRB)
-
 !         READ MODEL IDENTIFIERS
           CALL READREC(1)
           IF (KMDLGRDID /= IMDLGRBID_G) THEN
@@ -305,6 +296,7 @@ SUBROUTINE READPRE (LLBATHY)
 
       SUBROUTINE READREC(KREC)
       IMPLICIT NONE
+
       INTEGER(KIND=JWIM), INTENT(IN) :: KREC
       INTEGER(KIND=JWIM) :: ISTAT
       REAL(KIND=JWRU) :: R8_AMOEAP,R8_AMONOP,R8_AMOSOP,R8_AMOWEP,R8_XDELLA,R8_XDELLO
@@ -339,19 +331,26 @@ SUBROUTINE READPRE (LLBATHY)
      &                              R8_XDELLA, R8_XDELLO
             IF (ISTAT /= 0) GOTO 1000
 
-            AMOWEP = R8_AMOWEP
-            AMOSOP = R8_AMOSOP
-            AMOEAP = R8_AMOEAP
-            AMONOP = R8_AMONOP
-            XDELLA = R8_XDELLA
-            XDELLO = R8_XDELLO
+            DAMOWEP = R8_AMOWEP
+            DAMOSOP = R8_AMOSOP
+            DAMOEAP = R8_AMOEAP
+            DAMONOP = R8_AMONOP
+            DXDELLA = R8_XDELLA
+            DXDELLO = R8_XDELLO
 
          ELSE
             READ(IU07,IOSTAT=ISTAT) IPER, IRGG, &
-     &                              AMOWEP, AMOSOP, AMOEAP, AMONOP, &
-     &                              XDELLA, XDELLO
+     &                              DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, &
+     &                              DXDELLA, DXDELLO
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
+
+         AMONOP = REAL(DAMONOP,JWRB)
+         AMOSOP = REAL(DAMOSOP,JWRB)
+         AMOWEP = REAL(DAMOWEP,JWRB)
+         AMOEAP = REAL(DAMOEAP,JWRB)
+         XDELLA = REAL(DXDELLA,JWRB)
+         XDELLO = REAL(DXDELLO,JWRB)
 
       CASE(5)
          IF (LLR8TOR4) THEN

@@ -46,6 +46,7 @@ SUBROUTINE INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,     &
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : WVGRIDLOC, FORCING_FIELDS
 
+      USE YOWABORT , ONLY : WAM_ABORT
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO, NLONRGG, NGY
       USE YOWPARAM , ONLY : LLUNSTR
@@ -56,7 +57,6 @@ SUBROUTINE INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,     &
       USE YOWPD    , ONLY : XP=>x, YP=>y
 #endif
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE YOWABORT, ONLY : WAM_ABORT
 
 ! ----------------------------------------------------------------------
 
@@ -154,7 +154,7 @@ ENDIF
         IF (LLUNSTR) THEN
 !!!!
           write(*,*) 'In INIT_FIELDG : not yet ready for unstructured grid '
-          call abort1
+          CALL ABORT1
 
         ELSE
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JY, IX, JSN)
