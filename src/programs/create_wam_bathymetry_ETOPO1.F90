@@ -79,9 +79,10 @@ PROGRAM CREATE_BATHY_ETOPO1
       USE YOWFRED  , ONLY : IFRE1, FRATIO, DELTH, FR, TH
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP, CEXPVERCLIM, NDATE_TIME_WINDOW_END, CDATECLIM, KPARAM_SUBGRIG
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
-      USE YOWMAP   , ONLY : IPER, IRGG, IQGAUSS, NGX, NGY, NLONRGG, CLDOMAIN
+      USE YOWMAP   , ONLY : IPER, IRGG, IQGAUSS, NGX, NGY, NLONRGG, CLDOMAIN, &
+     &                      DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO
       USE YOWPARAM , ONLY : NANG, NFRE_RED
-      USE YOWPCONS , ONLY : PI, ZPI, RAD, DEG, G, ZMISS
+      USE YOWPCONS , ONLY : PI, ZPI, G, ZMISS
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,           &
      &                      NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   , &
      &                      IREFDATE ,ISTREAM  ,NLOCGRB
@@ -115,31 +116,31 @@ PROGRAM CREATE_BATHY_ETOPO1
 !!    Parameters that can be adapted to tune the obstruction scheme
 !!    *************************************************************
 !!    XKDMAX controls the overall impact of subnerged subgrid points in blocking waves (fully or locally)
-      REAL(KIND=JWRU), PARAMETER :: XKDMAX=1.5_JWRB
+      REAL(KIND=JWRU), PARAMETER :: XKDMAX=1.5_JWRU
 
 !!    ALPR_DEEP controls the impact of submerged subgrid points in blocking waves as if they were subgrid land points
-      REAL(KIND=JWRU), PARAMETER :: ALPR_DEEP=0.025_JWRB
+      REAL(KIND=JWRU), PARAMETER :: ALPR_DEEP=0.025_JWRU
 
 !!    IREINF is used to reinforce land obstructions for small grid spacing (see below as it depends on DXDELLA)
 !!    It works by artificially increasing the number of sub grid points detected as land
       INTEGER(KIND=JWIM) :: IREINF
 !!    IREINF will also be used to reinforce fully blocking submerged obstructions for small grid spacings,
 !!    only if the relative count of subgrid submerged points in a grid box is less than PSHALLOWTRHS
-      REAL(KIND=JWRU) :: PSHALLOWTRHS = 0.8_JWRB 
+      REAL(KIND=JWRU) :: PSHALLOWTRHS = 0.8_JWRU
 !!    and
 !!    If the relative count of subgrid land points in a grid box is less than PLANDTRHS then IREINF reinforcement can be applied
-      REAL(KIND=JWRU) :: PLANDTRHS = 0.3_JWRB
+      REAL(KIND=JWRU) :: PLANDTRHS = 0.3_JWRU
 
 
 !!    For a subgrid submerged feature to be blocking, the grid box mean depth need to be at least  XKEXTHRS_DEEP * blocking depth
-      REAL(KIND=JWRU), PARAMETER :: XKEXTHRS_DEEP=100.0_JWRB
+      REAL(KIND=JWRU), PARAMETER :: XKEXTHRS_DEEP=100.0_JWRU
 
 !!    ISWTHRS is used to compute a depth dependent linear reduction factor for ALPR_DEEP
 !!    i.e. ALPR_DEEP is linearly reduced for depth less than ISWTHRS to limit the impact of subgrid points in shallow waters.
       INTEGER(KIND=JWIM), PARAMETER :: ISWTHRS=200
 
 !!    PENHCOR is used to adjust the corner obstructructions for IPROPAGS=2
-      REAL(KIND=JWRU), PARAMETER :: PENHCOR = 1.0_JWRB
+      REAL(KIND=JWRU), PARAMETER :: PENHCOR = 1.0_JWRU
 
 
       INTEGER(KIND=JWIM), PARAMETER :: ILON=21601
@@ -175,19 +176,17 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSCOR
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
 
-      REAL(KIND=JWRU) :: DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO
-      REAL(KIND=JWRU) :: RESOL
+      REAL(KIND=JWRU) :: DRAD, RESOL
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:) :: ZDELLO
 
       REAL(KIND=JWRU), PARAMETER :: RMIN_DEPTH = -0.3_JWRU
       REAL(KIND=JWRU), PARAMETER :: RMIN_DEPTH_SMOOTH = RMIN_DEPTH-0.01_JWRU
-      REAL(KIND=JWRU) :: PRPLRADI
-      REAL(KIND=JWRU) :: X60, FR1
+      REAL(KIND=JWRU) :: X60
       REAL(KIND=JWRU) :: ALONL, ALONR, ALATB, ALATT, XLON
       REAL(KIND=JWRU) :: REXCLTHRSHOLD
-      REAL(KIND=JWRU) :: XLO, XLA, XI, YJ, ZCONV
+      REAL(KIND=JWRU) :: XLO, XLA, XI, YJ
       REAL(KIND=JWRU) :: SEA, XLAND, SEASH
-      REAL(KIND=JWRU) :: OMEGA, XKDEEP, XX, DEPTH
+      REAL(KIND=JWRU) :: XX 
       REAL(KIND=JWRU) :: STEPT, STEPB, XLATT, XLATB, XLONL, XLONR
       REAL(KIND=JWRU) :: STEPLAT, STEPLON
       REAL(KIND=JWRU) :: RR, XKEXTHRS, ALPR
@@ -199,9 +198,11 @@ PROGRAM CREATE_BATHY_ETOPO1
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:) :: XLAT
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) :: WAMDEPTH
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) :: PERCENTLAND, PERCENTSHALLOW
-      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) :: FIELD  !!! because it will be used for grib encoding,
-                                                             !!! it needs to be defined from North to South
 
+
+      REAL(KIND=JWRB) :: PRPLRADI, ZCONV, FR1, OMEGA, DEPTH
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: FIELD  !!! because it will be used for grib encoding,
+                                                             !!! it needs to be defined from North to South
       CHARACTER(LEN=  1) :: C1
       CHARACTER(LEN=  2) :: CFR
       CHARACTER(LEN=  5) :: CWAMRESOL
@@ -223,8 +224,10 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 !----------------------------------------------------------------------
 
-      PRPLRADI=1.0_JWRU
+      PRPLRADI=1.0_JWRB
       CALL INIWCST(PRPLRADI)
+
+      DRAD=4.0_JWRU*ATAN(1.0_JWRU)/180.0_JWRU 
 
 !     ETOPO1 RESOLUTION
       INVRES=60
@@ -351,12 +354,12 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       DO K=1,NGY
 !       !!! from south to north !!!!
-        COSPH(K) = COS(XLAT(K)*RAD)
+        COSPH(K) = COS(XLAT(K)*DRAD)
         IF (.NOT.LLGRID) THEN
           IF (IRGG == 1) THEN
-!            The silly division by cos(x60*RAD) is an attempt at making sure
+!            The silly division by cos(x60*DRAD) is an attempt at making sure
 !            that exactly 0.5 is used for cosine of 60 degrees.
-             NLONRGG(K)=MAX(NINT(NGX*(COS(XLAT(K)*RAD)/(2._JWRU*COS(X60*RAD)))),2)
+             NLONRGG(K)=MAX(NINT(NGX*(COS(XLAT(K)*DRAD)/(2._JWRU*COS(X60*DRAD)))),2)
             IF (MOD(NLONRGG(K),2) == 1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
             NLONRGG(K) = NGX
@@ -402,10 +405,10 @@ PROGRAM CREATE_BATHY_ETOPO1
 !       PREPARE OUTPUT
 
 !       Use direction dimension to save obstruction coefficients
-        DELTH = ZPI/REAL(NANG,JWRU)
+        DELTH = ZPI/REAL(NANG,JWRB)
         ALLOCATE(TH(NANG))
         DO IANG  = 1, NANG
-          TH(IANG) = REAL(IANG-1,JWRU)*DELTH
+          TH(IANG) = REAL(IANG-1,JWRB)*DELTH
         ENDDO 
 
 !       FOR INTEGRATED PARAMETERS
@@ -831,7 +834,7 @@ IF ( LLOBSTROUT ) THEN
       LLSM(:,:) = .FALSE.
       ILSM(:,:) = 0 
 
-      ZCONV = 1.0_JWRU/REAL(NOOBSTRT,JWRU)
+      ZCONV = 1.0_JWRU/REAL(NOOBSTRT,JWRB)
 
 
 
@@ -856,10 +859,9 @@ IF ( LLOBSTROUT ) THEN
 
 !       COMPUTE WAVE NUMBERS
         OMEGA=ZPI*FR(M)
-        XKDEEP=OMEGA**2/G
         DO IDPT=1,NDPT
-          DEPTH=REAL(IDPT,JWRU)
-          XK(IDPT)=AKI(OMEGA,DEPTH)
+          DEPTH=REAL(IDPT,JWRB)
+          XK(IDPT)=REAL(AKI(OMEGA,DEPTH),JWRU)
         ENDDO
 
 
@@ -2373,7 +2375,7 @@ IF ( LLOBSTROUT ) THEN
                   DO K=1,NGY
                     KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSLAT(IX,K,IS),JWRU) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSLAT(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
@@ -2383,7 +2385,7 @@ IF ( LLOBSTROUT ) THEN
                   DO K=1,NGY
                     KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSLON(IX,K,IS),JWRU) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSLON(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
@@ -2393,7 +2395,7 @@ IF ( LLOBSTROUT ) THEN
                   DO K=1,NGY
                     KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSRLAT(IX,K,IS),JWRU) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSRLAT(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
@@ -2403,7 +2405,7 @@ IF ( LLOBSTROUT ) THEN
                   DO K=1,NGY
                     KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSRLON(IX,K,IS),JWRU) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSRLON(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
@@ -2413,7 +2415,7 @@ IF ( LLOBSTROUT ) THEN
                   DO K=1,NGY
                     KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSCOR(IX,K,IS),JWRU) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSCOR(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
@@ -2435,7 +2437,7 @@ IF ( LLOBSTROUT ) THEN
                 DO K=1,NGY
                   KNS=NGY-K+1
                   DO IX=1,NLONRGG(K)
-                    FIELD(IX,KNS) = 1.0_JWRU
+                    FIELD(IX,KNS) = 1.0_JWRB
                   ENDDO
                 ENDDO
 !$OMP END PARALLEL DO
