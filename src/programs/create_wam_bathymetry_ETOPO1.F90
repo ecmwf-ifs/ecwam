@@ -106,40 +106,40 @@ PROGRAM CREATE_BATHY_ETOPO1
 !!    Parameters that can be adapted to tune the mean bathymetry
 !!    **********************************************************
 !     IF RATIOLAND_THRESHOLD OR MORE LAND OR THE CENTER OF THE GRID BOX IS LAND, THEN AVERAGE OVER LAND POINTS
-      REAL(KIND=JWRB) ::  RATIOLAND_THRESHOLD
+      REAL(KIND=JWRU) ::  RATIOLAND_THRESHOLD
 !     IF THERE IS A RATIO OF SHALLOWER POINTS LARGER THAN RATIOSHALLOW_THRESHOLD
 !     THEN THE AVERAGE IS TAKEN OVER THOSE POINTS ALONE.
-      REAL(KIND=JWRB) ::  RATIOSHALLOW_THRESHOLD
+      REAL(KIND=JWRU) ::  RATIOSHALLOW_THRESHOLD
 
 
 !!    Parameters that can be adapted to tune the obstruction scheme
 !!    *************************************************************
 !!    XKDMAX controls the overall impact of subnerged subgrid points in blocking waves (fully or locally)
-      REAL(KIND=JWRB), PARAMETER :: XKDMAX=1.5_JWRB
+      REAL(KIND=JWRU), PARAMETER :: XKDMAX=1.5_JWRB
 
 !!    ALPR_DEEP controls the impact of submerged subgrid points in blocking waves as if they were subgrid land points
-      REAL(KIND=JWRB), PARAMETER :: ALPR_DEEP=0.025_JWRB
+      REAL(KIND=JWRU), PARAMETER :: ALPR_DEEP=0.025_JWRB
 
 !!    IREINF is used to reinforce land obstructions for small grid spacing (see below as it depends on DXDELLA)
 !!    It works by artificially increasing the number of sub grid points detected as land
       INTEGER(KIND=JWIM) :: IREINF
 !!    IREINF will also be used to reinforce fully blocking submerged obstructions for small grid spacings,
 !!    only if the relative count of subgrid submerged points in a grid box is less than PSHALLOWTRHS
-      REAL(KIND=JWRB) :: PSHALLOWTRHS = 0.8_JWRB 
+      REAL(KIND=JWRU) :: PSHALLOWTRHS = 0.8_JWRB 
 !!    and
 !!    If the relative count of subgrid land points in a grid box is less than PLANDTRHS then IREINF reinforcement can be applied
-      REAL(KIND=JWRB) :: PLANDTRHS = 0.3_JWRB
+      REAL(KIND=JWRU) :: PLANDTRHS = 0.3_JWRB
 
 
 !!    For a subgrid submerged feature to be blocking, the grid box mean depth need to be at least  XKEXTHRS_DEEP * blocking depth
-      REAL(KIND=JWRB), PARAMETER :: XKEXTHRS_DEEP=100.0_JWRB
+      REAL(KIND=JWRU), PARAMETER :: XKEXTHRS_DEEP=100.0_JWRB
 
 !!    ISWTHRS is used to compute a depth dependent linear reduction factor for ALPR_DEEP
 !!    i.e. ALPR_DEEP is linearly reduced for depth less than ISWTHRS to limit the impact of subgrid points in shallow waters.
       INTEGER(KIND=JWIM), PARAMETER :: ISWTHRS=200
 
 !!    PENHCOR is used to adjust the corner obstructructions for IPROPAGS=2
-      REAL(KIND=JWRB), PARAMETER :: PENHCOR = 1.0_JWRB
+      REAL(KIND=JWRU), PARAMETER :: PENHCOR = 1.0_JWRB
 
 
       INTEGER(KIND=JWIM), PARAMETER :: ILON=21601
@@ -179,27 +179,27 @@ PROGRAM CREATE_BATHY_ETOPO1
       REAL(KIND=JWRU) :: RESOL
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:) :: ZDELLO
 
-      REAL(KIND=JWRB), PARAMETER :: RMIN_DEPTH = -0.3_JWRB
-      REAL(KIND=JWRB), PARAMETER :: RMIN_DEPTH_SMOOTH = RMIN_DEPTH-0.01_JWRB
-      REAL(KIND=JWRB) :: PRPLRADI
-      REAL(KIND=JWRB) :: X60, FR1
-      REAL(KIND=JWRB) :: ALONL, ALONR, ALATB, ALATT, XLON
-      REAL(KIND=JWRB) :: REXCLTHRSHOLD
-      REAL(KIND=JWRB) :: XLO, XLA, XI, YJ, ZCONV
-      REAL(KIND=JWRB) :: SEA, XLAND, SEASH
-      REAL(KIND=JWRB) :: OMEGA, XKDEEP, XX, DEPTH
-      REAL(KIND=JWRB) :: STEPT, STEPB, XLATT, XLATB, XLONL, XLONR
-      REAL(KIND=JWRB) :: STEPLAT, STEPLON
-      REAL(KIND=JWRB) :: RR, XKEXTHRS, ALPR
-      REAL(KIND=JWRB), DIMENSION(ILON) :: ALON
-      REAL(KIND=JWRB), DIMENSION(ILAT) :: ALAT
-      REAL(KIND=JWRB), DIMENSION(NDPT) :: XK 
-      REAL(KIND=JWRB), DIMENSION(NREF) :: XINF, XSUP, YINF, YSUP
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: COSPH
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: XLAT
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: WAMDEPTH
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: PERCENTLAND, PERCENTSHALLOW
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: FIELD  !!! because it will be used for grib encoding,
+      REAL(KIND=JWRU), PARAMETER :: RMIN_DEPTH = -0.3_JWRU
+      REAL(KIND=JWRU), PARAMETER :: RMIN_DEPTH_SMOOTH = RMIN_DEPTH-0.01_JWRU
+      REAL(KIND=JWRU) :: PRPLRADI
+      REAL(KIND=JWRU) :: X60, FR1
+      REAL(KIND=JWRU) :: ALONL, ALONR, ALATB, ALATT, XLON
+      REAL(KIND=JWRU) :: REXCLTHRSHOLD
+      REAL(KIND=JWRU) :: XLO, XLA, XI, YJ, ZCONV
+      REAL(KIND=JWRU) :: SEA, XLAND, SEASH
+      REAL(KIND=JWRU) :: OMEGA, XKDEEP, XX, DEPTH
+      REAL(KIND=JWRU) :: STEPT, STEPB, XLATT, XLATB, XLONL, XLONR
+      REAL(KIND=JWRU) :: STEPLAT, STEPLON
+      REAL(KIND=JWRU) :: RR, XKEXTHRS, ALPR
+      REAL(KIND=JWRU), DIMENSION(ILON) :: ALON
+      REAL(KIND=JWRU), DIMENSION(ILAT) :: ALAT
+      REAL(KIND=JWRU), DIMENSION(NDPT) :: XK 
+      REAL(KIND=JWRU), DIMENSION(NREF) :: XINF, XSUP, YINF, YSUP
+      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:) :: COSPH
+      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:) :: XLAT
+      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) :: WAMDEPTH
+      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) :: PERCENTLAND, PERCENTSHALLOW
+      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) :: FIELD  !!! because it will be used for grib encoding,
                                                              !!! it needs to be defined from North to South
 
       CHARACTER(LEN=  1) :: C1
@@ -223,12 +223,12 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 !----------------------------------------------------------------------
 
-      PRPLRADI=1.0_JWRB
+      PRPLRADI=1.0_JWRU
       CALL INIWCST(PRPLRADI)
 
 !     ETOPO1 RESOLUTION
       INVRES=60
-      X60=60.0_JWRB
+      X60=60.0_JWRU
       RESOL=1.0_JWRU/REAL(INVRES,JWRU)
 
       IU01=1
@@ -328,11 +328,11 @@ PROGRAM CREATE_BATHY_ETOPO1
 
     
       IF ( DXDELLA < 0.125_JWRU) THEN
-        RATIOLAND_THRESHOLD = 0.5_JWRB
-        RATIOSHALLOW_THRESHOLD = 1.0_JWRB
+        RATIOLAND_THRESHOLD = 0.5_JWRU
+        RATIOSHALLOW_THRESHOLD = 1.0_JWRU
       ELSE
-        RATIOLAND_THRESHOLD = 0.6_JWRB
-        RATIOSHALLOW_THRESHOLD = 0.3_JWRB
+        RATIOLAND_THRESHOLD = 0.6_JWRU
+        RATIOSHALLOW_THRESHOLD = 0.3_JWRU
       ENDIF
      
   
@@ -356,7 +356,7 @@ PROGRAM CREATE_BATHY_ETOPO1
           IF (IRGG == 1) THEN
 !            The silly division by cos(x60*RAD) is an attempt at making sure
 !            that exactly 0.5 is used for cosine of 60 degrees.
-             NLONRGG(K)=MAX(NINT(NGX*(COS(XLAT(K)*RAD)/(2._JWRB*COS(X60*RAD)))),2)
+             NLONRGG(K)=MAX(NINT(NGX*(COS(XLAT(K)*RAD)/(2._JWRU*COS(X60*RAD)))),2)
             IF (MOD(NLONRGG(K),2) == 1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
             NLONRGG(K) = NGX
@@ -402,10 +402,10 @@ PROGRAM CREATE_BATHY_ETOPO1
 !       PREPARE OUTPUT
 
 !       Use direction dimension to save obstruction coefficients
-        DELTH = ZPI/REAL(NANG,JWRB)
+        DELTH = ZPI/REAL(NANG,JWRU)
         ALLOCATE(TH(NANG))
         DO IANG  = 1, NANG
-          TH(IANG) = REAL(IANG-1,JWRB)*DELTH
+          TH(IANG) = REAL(IANG-1,JWRU)*DELTH
         ENDDO 
 
 !       FOR INTEGRATED PARAMETERS
@@ -424,22 +424,22 @@ PROGRAM CREATE_BATHY_ETOPO1
 !     DATASET:
 !     --------
  
-      IF (ALONL < -180._JWRB .OR. ALONR > 180._JWRB) THEN
+      IF (ALONL < -180._JWRU .OR. ALONR > 180._JWRU) THEN
         WRITE(*,*) ' LONGITUDE SPECIFICATION ERROR +- 180'
         WRITE(*,*) ' ALONL, ALONR : ',ALONL,ALONR
         CALL ABORT1
       ENDIF
-      IF (ALATT > 90.0_JWRB .OR. ALATB < -90.0_JWRB) THEN
+      IF (ALATT > 90.0_JWRU .OR. ALATB < -90.0_JWRU) THEN
         WRITE(*,*) ' LATITUDE SPECIFICATION ERROR +- 90'
         WRITE(*,*) ' ALATT, ALATB : ',ALATT,ALATB
         CALL ABORT1
       ENDIF
      
-      ILONL = NINT((ALONL + 180._JWRB)*INVRES) + 1
-      ILONR = NINT((ALONR + 180._JWRB)*INVRES) + 1
-      ILATB = NINT((90.0_JWRB- ALATB)*INVRES) + 1
+      ILONL = NINT((ALONL + 180._JWRU)*INVRES) + 1
+      ILONR = NINT((ALONR + 180._JWRU)*INVRES) + 1
+      ILATB = NINT((90.0_JWRU- ALATB)*INVRES) + 1
       ILATB = MAX(1,MIN(ILATB,ILAT))
-      ILATT = NINT((90.0_JWRB- ALATT)*INVRES) + 1
+      ILATT = NINT((90.0_JWRU- ALATT)*INVRES) + 1
       ILATT = MAX(1,MIN(ILATT,ILAT))
       IF (ILONR == ILON+1) ILONR=ILON
       IF (ILATB == ILAT+1) ILATB=ILAT
@@ -525,9 +525,9 @@ PROGRAM CREATE_BATHY_ETOPO1
 !     THE PROBLEM WITH PERMANENT ICE SHEET
         DO J=1,ILAT
           YJ=ALAT(J)
-          IF (YJ <= -64.0_JWRB) THEN
+          IF (YJ <= -64.0_JWRU) THEN
             DO I=1,ILON
-              IF (IDEPTH(I,J) >= -250_JWRB) THEN
+              IF (IDEPTH(I,J) >= -250_JWRU) THEN
                 IDEPTH(I,J)=1
               ENDIF
             ENDDO
@@ -538,7 +538,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       DO K=1,NGY
          DO IX=1,NGX
-           WAMDEPTH(IX,K)=0.0_JWRB
+           WAMDEPTH(IX,K)=0.0_JWRU
          ENDDO
       ENDDO
 
@@ -563,8 +563,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 !          ETOPO1 STARTS AT -180
            XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
-           IF (XLON > 180._JWRB) THEN
-             XLON=XLON-360._JWRB
+           IF (XLON > 180._JWRU) THEN
+             XLON=XLON-360._JWRU
            ENDIF
 
 !          DETERMINE CLOSEST ETOPO1 I INDEX TO WAM POINT
@@ -581,11 +581,11 @@ PROGRAM CREATE_BATHY_ETOPO1
            ENDIF
 
            NSEA=0
-           SEA=0._JWRB
+           SEA=0._JWRU
            NLAND=0
-           XLAND=0._JWRB
+           XLAND=0._JWRU
            NSEASH=0
-           SEASH=0._JWRB
+           SEASH=0._JWRU
 
 !          AVERAGE OVER LAND AND SEA SEPARATELY
 !          AROUND POINT I,J
@@ -631,18 +631,18 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 !          IF RATIOLAND_THRESHOLD OR MORE LAND OR THE CENTER OF THE GRID BOX IS LAND, THEN AVERAGE OVER LAND POINTS
 !          ELSE AVERAGE OVER SEA POINTS
-           PERCENTLAND(IX,K)=REAL(NLAND,JWRB)/REAL((NLAND+NSEA),JWRB)
+           PERCENTLAND(IX,K)=REAL(NLAND,JWRU)/REAL((NLAND+NSEA),JWRU)
            IF (PERCENTLAND(IX,K) >  RATIOLAND_THRESHOLD .OR. NLANDCENTRE >= NLANDCENTREMAX ) THEN
              WAMDEPTH(IX,K)=XLAND/NLAND
            ELSE
 !            IF THERE IS A PERCENTAGE OF SHALLOWER POINTS THEN
 !            THE AVERAGE IS TAKEN OVER THOSE POINTS ALONE.
-             PERCENTSHALLOW(IX,K)=REAL(NSEASH,JWRB)/REAL(NSEA,JWRB)
+             PERCENTSHALLOW(IX,K)=REAL(NSEASH,JWRU)/REAL(NSEA,JWRU)
              IF (PERCENTSHALLOW(IX,K) >= RATIOSHALLOW_THRESHOLD) THEN
                WAMDEPTH(IX,K)=SEASH/NSEASH
-               IF (PERCENTLAND(IX,K) < 0.10_JWRB) THEN
+               IF (PERCENTLAND(IX,K) < 0.10_JWRU) THEN
 !                IF MOSTLY SEA THEN IT SHOULD BE SEA AND NOT 0 
-                 WAMDEPTH(IX,K)=MIN(WAMDEPTH(IX,K),-1.0_JWRB)
+                 WAMDEPTH(IX,K)=MIN(WAMDEPTH(IX,K),-1.0_JWRU)
                ENDIF
              ELSE 
                WAMDEPTH(IX,K)=SEA/NSEA
@@ -656,7 +656,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       NPTS=0
       DO K=1,NGY
         DO IX=1,NLONRGG(K)
-          IF ( WAMDEPTH(IX,K) > RMIN_DEPTH .AND. WAMDEPTH(IX,K) < 0.0_JWRB ) THEN
+          IF ( WAMDEPTH(IX,K) > RMIN_DEPTH .AND. WAMDEPTH(IX,K) < 0.0_JWRU ) THEN
             NPTS=NPTS+1
             WAMDEPTH(IX,K) = -WAMDEPTH(IX,K)
           ENDIF
@@ -672,7 +672,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       NPTS=0
       DO K=1,NGY
         DO IX=1,NLONRGG(K)
-          IF (WAMDEPTH(IX,K) < 0.0_JWRB) NPTS=NPTS+1
+          IF (WAMDEPTH(IX,K) < 0.0_JWRU) NPTS=NPTS+1
         ENDDO
       ENDDO
       WRITE(IU06,*) 'TOTAL NUMBER OF SEA POINTS BEFORE CORRECTIONS = ',NPTS
@@ -698,19 +698,19 @@ PROGRAM CREATE_BATHY_ETOPO1
          READ(35,*,END=111,ERR=111) XLO,XLA,IX,K,IDPT
          IDPT=-IDPT
          XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
-         IF (ABS(XLON-XLO) > REAL(ZDELLO(K),JWRB) .OR. ABS(XLAT(K)-XLA) > REAL(DXDELLA,JWRB) ) THEN
+         IF (ABS(XLON-XLO) > REAL(ZDELLO(K),JWRU) .OR. ABS(XLAT(K)-XLA) > REAL(DXDELLA,JWRU) ) THEN
            WRITE(*,*) 'PROBLEM !!!!'
            WRITE(*,*) 'THE CORRECTION TO WAM GRID IS NOT A WAM POINT'
            WRITE(*,*) XLO,XLA,IDPT 
            WRITE(*,*) XLON,XLAT(K),WAMDEPTH(IX,K)
            WRITE(*,*) ''
          ELSE
-           IF (WAMDEPTH(IX,K) >= 0.0_JWRB .AND. IDPT < 0) THEN
+           IF (WAMDEPTH(IX,K) >= 0.0_JWRU .AND. IDPT < 0) THEN
              NPTS=NPTS+1
-           ELSEIF (WAMDEPTH(IX,K) < 0.0_JWRB .AND. IDPT >= 0) THEN
+           ELSEIF (WAMDEPTH(IX,K) < 0.0_JWRU .AND. IDPT >= 0) THEN
              NPTS=NPTS-1
            ENDIF  
-           WAMDEPTH(IX,K)=REAL(IDPT,JWRB)
+           WAMDEPTH(IX,K)=REAL(IDPT,JWRU)
          ENDIF
       ENDDO
 111   CONTINUE
@@ -719,7 +719,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !     SET MIN AND MAX TO +-999
       DO K=1,NGY
          DO IX=1,NLONRGG(K)
-           WAMDEPTH(IX,K)=MIN(999._JWRB,MAX(-999._JWRB,WAMDEPTH(IX,K)))
+           WAMDEPTH(IX,K)=MIN(999._JWRU,MAX(-999._JWRU,WAMDEPTH(IX,K)))
         ENDDO
       ENDDO
 
@@ -736,12 +736,12 @@ PROGRAM CREATE_BATHY_ETOPO1
         DO K=1,NGY
            DO IX=1,NLONRGG(K)
              XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
-             IF (XLON > 180._JWRB) THEN
-               XLON=XLON-360._JWRB
+             IF (XLON > 180._JWRU) THEN
+               XLON=XLON-360._JWRU
              ENDIF
             IF (ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.           &
      &          ALONL <= XLON .AND. XLON <= ALONR ) THEN
-               IF (WAMDEPTH(IX,K) < 0.0_JWRB .AND. WAMDEPTH(IX,K) > -999._JWRB ) THEN
+               IF (WAMDEPTH(IX,K) < 0.0_JWRU .AND. WAMDEPTH(IX,K) > -999._JWRU ) THEN
                   WRITE(12,'(3(1X,F8.3))') XLON,XLAT(K),WAMDEPTH(IX,K)
                ENDIF
             ENDIF
@@ -831,7 +831,7 @@ IF ( LLOBSTROUT ) THEN
       LLSM(:,:) = .FALSE.
       ILSM(:,:) = 0 
 
-      ZCONV = 1.0_JWRB/REAL(NOOBSTRT,JWRB)
+      ZCONV = 1.0_JWRU/REAL(NOOBSTRT,JWRU)
 
 
 
@@ -858,7 +858,7 @@ IF ( LLOBSTROUT ) THEN
         OMEGA=ZPI*FR(M)
         XKDEEP=OMEGA**2/G
         DO IDPT=1,NDPT
-          DEPTH=REAL(IDPT,JWRB)
+          DEPTH=REAL(IDPT,JWRU)
           XK(IDPT)=AKI(OMEGA,DEPTH)
         ENDDO
 
@@ -869,13 +869,13 @@ IF ( LLOBSTROUT ) THEN
 !       ALSO SET THE LAND SEA MASK
         DO K=1,NGY
           DO IX=1,NLONRGG(K)
-            IF (WAMDEPTH(IX,K) < 0.0_JWRB) THEN
+            IF (WAMDEPTH(IX,K) < 0.0_JWRU) THEN
               XX=XKDMAX/XK(MAX(MIN(-NINT(WAMDEPTH(IX,K)),NDPT),1))
               ITHRSHOLD(IX,K)=NINT(-XX)
-              RR=MAX(REAL((ISWTHRS-ABS(NINT(WAMDEPTH(IX,K)))),JWRB)/ISWTHRS,0.0_JWRB)
-              XKEXTHRS=XKEXTHRS_DEEP*(1.0_JWRB+RR)
-              ALPR=MAX(ALPR_DEEP*(1.0_JWRB-RR),0.0_JWRB)
-              REXCLTHRSHOLD=MAX(XKEXTHRS*ITHRSHOLD(IX,K),-998._JWRB)
+              RR=MAX(REAL((ISWTHRS-ABS(NINT(WAMDEPTH(IX,K)))),JWRU)/ISWTHRS,0.0_JWRU)
+              XKEXTHRS=XKEXTHRS_DEEP*(1.0_JWRU+RR)
+              ALPR=MAX(ALPR_DEEP*(1.0_JWRU-RR),0.0_JWRU)
+              REXCLTHRSHOLD=MAX(XKEXTHRS*ITHRSHOLD(IX,K),-998._JWRU)
               LLEXCLTHRSHOLD(IX,K)=(WAMDEPTH(IX,K) < REXCLTHRSHOLD)
               IBLOCKDPT(IX,K)=INT(-ALPR*XX)
               LLSM(IX,K) = .TRUE.
@@ -903,19 +903,19 @@ IF ( LLOBSTROUT ) THEN
               KT=K
               KB=K-1
               STEPT=-RESOL
-              STEPB=0._JWRB
+              STEPB=0._JWRU
             ELSE
               KT=K+1
               KB=K
-              STEPT=0._JWRB
+              STEPT=0._JWRU
               STEPB=RESOL
             ENDIF
 !           LATIDUNAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
             XLATT=XLAT(KT)+STEPT
             XLATB=XLAT(KB)+STEPB
-            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
+            ILATT = NINT((90.0_JWRU- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
+            ILATB = NINT((90.0_JWRU- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF (ILATB == ILAT+1) ILATB=ILAT
 
@@ -924,22 +924,22 @@ IF ( LLOBSTROUT ) THEN
               IF (LLSM(IX,K)) THEN
 !               SEA POINT GRID BOX LATITUNAL EXTEND :
                 XLONL=DAMOWEP + (REAL(IX-1,JWRU)-0.5_JWRU)*ZDELLO(K)
-                IF (XLONL > 180._JWRB) THEN
-                  XLONL=XLONL-360._JWRB
+                IF (XLONL > 180._JWRU) THEN
+                  XLONL=XLONL-360._JWRU
                 ENDIF
                 XLONR=DAMOWEP + (REAL(IX-1,JWRU)+0.5_JWRU)*ZDELLO(K)
-                IF (XLONR > 180._JWRB) THEN
-                  XLONR=XLONR-360._JWRB
+                IF (XLONR > 180._JWRU) THEN
+                  XLONR=XLONR-360._JWRU
                 ENDIF
 
 !               LONGITUDINAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
                 IF ( DXDELLA < 0.125_JWRU) THEN
-                  ILONL = INT((XLONL + 180._JWRB)*INVRES) + 1
-                  ILONR = INT((XLONR + 180._JWRB)*INVRES) + 2
+                  ILONL = INT((XLONL + 180._JWRU)*INVRES) + 1
+                  ILONR = INT((XLONR + 180._JWRU)*INVRES) + 2
                 ELSE
 !                 It was decided to not correct the double counting for low resolution (should be removed in future)
-                  ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
-                  ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
+                  ILONL = NINT((XLONL + 180._JWRU)*INVRES) + 1
+                  ILONR = NINT((XLONR + 180._JWRU)*INVRES) + 1
                 ENDIF
 
 !               COMPUTE THE OBSTRUCTIONS:
@@ -1020,7 +1020,7 @@ IF ( LLOBSTROUT ) THEN
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1) + (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
 !                 WAVE COMPONENT WILL BE ATTENUATED BY THE RATIO OF ALL BLOCKING SUBGRID POINTS TO THE TOTAL NUMBER OF POINTS
-                  IOBSLAT(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  IOBSLAT(IX,K,IS) = NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                   IOBSLAT(IX,K,IS) = MAX(IOBSLAT(IX,K,IS), 0)
 
 
@@ -1053,7 +1053,7 @@ IF ( LLOBSTROUT ) THEN
                     ENDDO
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  IOBSLAT(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  IOBSLAT(IX,K,IS) = NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                   IOBSLAT(IX,K,IS) = MAX(IOBSLAT(IX,K,IS), 0)
                 ENDIF
 
@@ -1078,15 +1078,15 @@ IF ( LLOBSTROUT ) THEN
 !         LOOP OVER MODEL LATITUDES
           DO K=1,NGY
 !           LATIDUNAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
-            XLATT=XLAT(K)+0.5_JWRB*DXDELLA
-            XLATB=XLAT(K)-0.5_JWRB*DXDELLA
+            XLATT=XLAT(K)+0.5_JWRU*DXDELLA
+            XLATB=XLAT(K)-0.5_JWRU*DXDELLA
             IF ( DXDELLA < 0.125_JWRU) THEN
-              ILATT = INT((90.0_JWRB- XLATT)*INVRES) + 1
-              ILATB = INT((90.0_JWRB- XLATB)*INVRES) + 2
+              ILATT = INT((90.0_JWRU- XLATT)*INVRES) + 1
+              ILATB = INT((90.0_JWRU- XLATB)*INVRES) + 2
             ELSE
 !             It was decided to not correct the double counting for low resolution (should be removed in future)
-              ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
-              ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
+              ILATT = NINT((90.0_JWRU- XLATT)*INVRES) + 1
+              ILATB = NINT((90.0_JWRU- XLATB)*INVRES) + 1
             ENDIF
             ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = MAX(1,MIN(ILATB,ILAT))
@@ -1103,16 +1103,16 @@ IF ( LLOBSTROUT ) THEN
                   XLONL=DAMOWEP + (REAL(IX-1,JWRU))*ZDELLO(K) +RESOL
                   XLONR=DAMOWEP + (REAL(IX,JWRU))*ZDELLO(K)
                 ENDIF
-                IF (XLONL > 180._JWRB) THEN
-                  XLONL=XLONL-360._JWRB
+                IF (XLONL > 180._JWRU) THEN
+                  XLONL=XLONL-360._JWRU
                 ENDIF
-                IF (XLONR > 180._JWRB) THEN
-                  XLONR=XLONR-360._JWRB
+                IF (XLONR > 180._JWRU) THEN
+                  XLONR=XLONR-360._JWRU
                 ENDIF
 
 !               LONGITUDINAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
-                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
-                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
+                ILONL = NINT((XLONL + 180._JWRU)*INVRES) + 1
+                ILONR = NINT((XLONR + 180._JWRU)*INVRES) + 1
 
 !               COMPUTE THE OBSTRUCTIONS:
 !               TALLY THE NUMBER OF SUB GRID POINTS THAT ARE POTENTIALLY BLOCKING WAVE PROPAGATION (NOBSTRCT)
@@ -1191,7 +1191,7 @@ IF ( LLOBSTROUT ) THEN
                   NTOTPTS = (ILATB-ILATT+1)*(ILONR-ILONL+1) + (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1) 
 
 !                 WAVE COMPONENT WILL BE ATTENUATED BY THE RATIO OF ALL BLOCKING SUBGRID POINTS TO THE TOTAL NUMBER OF POINTS
-                  IOBSLON(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  IOBSLON(IX,K,IS) = NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                   IOBSLON(IX,K,IS) = MAX(IOBSLON(IX,K,IS), 0)
 
 
@@ -1220,7 +1220,7 @@ IF ( LLOBSTROUT ) THEN
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
 
-                  IOBSLON(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  IOBSLON(IX,K,IS) = NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                   IOBSLON(IX,K,IS) = MAX(IOBSLON(IX,K,IS), 0)
 
                 ENDIF
@@ -1251,18 +1251,18 @@ IF ( LLOBSTROUT ) THEN
               KT=K
               KB=K-1
               STEPT=-RESOL
-              STEPB=0._JWRB
+              STEPB=0._JWRU
             ELSE
               KT=K+1
               KB=K
-              STEPT=0._JWRB
+              STEPT=0._JWRU
               STEPB=RESOL
             ENDIF
             XLATT=XLAT(KT)+STEPT
             XLATB=XLAT(KB)+STEPB
-            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
+            ILATT = NINT((90.0_JWRU- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
+            ILATB = NINT((90.0_JWRU- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF (ILATB == ILAT+1) ILATB=ILAT
 
@@ -1270,21 +1270,21 @@ IF ( LLOBSTROUT ) THEN
               IF (LLSM(IX,K)) THEN
                 XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
                 XLONL=XLON -(IS-1)*DXDELLA
-                IF (XLONL > 180._JWRB) THEN
-                  XLONL=XLONL-360._JWRB
+                IF (XLONL > 180._JWRU) THEN
+                  XLONL=XLONL-360._JWRU
                 ENDIF
                 XLONR=XLON +(2-IS)*DXDELLA
-                IF (XLONR > 180._JWRB) THEN
-                  XLONR=XLONR-360._JWRB
+                IF (XLONR > 180._JWRU) THEN
+                  XLONR=XLONR-360._JWRU
                 ENDIF
 
                 IF ( DXDELLA < 0.125_JWRU) THEN
-                  ILONL = INT((XLONL + 180._JWRB)*INVRES) + 1
-                  ILONR = INT((XLONR + 180._JWRB)*INVRES) + 2
+                  ILONL = INT((XLONL + 180._JWRU)*INVRES) + 1
+                  ILONR = INT((XLONR + 180._JWRU)*INVRES) + 2
                 ELSE
 !                 It was decided to not correct the double counting for low resolution (should be removed in future)
-                  ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
-                  ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
+                  ILONL = NINT((XLONL + 180._JWRU)*INVRES) + 1
+                  ILONR = NINT((XLONR + 180._JWRU)*INVRES) + 1
                 ENDIF
 
                 NOBSTRCT=0
@@ -1350,7 +1350,7 @@ IF ( LLOBSTROUT ) THEN
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
-                  IOBSRLAT(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  IOBSRLAT(IX,K,IS) = NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO I=1,ILONR
@@ -1377,7 +1377,7 @@ IF ( LLOBSTROUT ) THEN
                     ENDDO
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  IOBSRLAT(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT) 
+                  IOBSRLAT(IX,K,IS) = NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT) 
                 ENDIF
 
               ENDIF
@@ -1398,12 +1398,12 @@ IF ( LLOBSTROUT ) THEN
             XLATT=XLAT(K)+(IS-1)*DXDELLA
             XLATB=XLAT(K)-(2-IS)*DXDELLA
             IF ( DXDELLA < 0.125_JWRU) THEN
-              ILATT = INT((90.0_JWRB- XLATT)*INVRES) + 1
-              ILATB = INT((90.0_JWRB- XLATB)*INVRES) + 2
+              ILATT = INT((90.0_JWRU- XLATT)*INVRES) + 1
+              ILATB = INT((90.0_JWRU- XLATB)*INVRES) + 2
             ELSE
 !             It was decided to not correct the double counting for low resolution (should be removed in future)
-              ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
-              ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
+              ILATT = NINT((90.0_JWRU- XLATT)*INVRES) + 1
+              ILATB = NINT((90.0_JWRU- XLATB)*INVRES) + 1
             ENDIF
             ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = MAX(1,MIN(ILATB,ILAT))
@@ -1419,15 +1419,15 @@ IF ( LLOBSTROUT ) THEN
                   XLONL=XLON -  DXDELLA
                   XLONR=XLON - RESOL
                 ENDIF
-                IF (XLONL > 180._JWRB) THEN
-                  XLONL=XLONL-360._JWRB
+                IF (XLONL > 180._JWRU) THEN
+                  XLONL=XLONL-360._JWRU
                 ENDIF
-                IF (XLONR > 180._JWRB) THEN
-                  XLONR=XLONR-360._JWRB
+                IF (XLONR > 180._JWRU) THEN
+                  XLONR=XLONR-360._JWRU
                 ENDIF
 
-                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
-                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
+                ILONL = NINT((XLONL + 180._JWRU)*INVRES) + 1
+                ILONR = NINT((XLONR + 180._JWRU)*INVRES) + 1
 
                 NOBSTRCT=0
 
@@ -1492,7 +1492,7 @@ IF ( LLOBSTROUT ) THEN
 
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
-                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  ITEMPEW=NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -1516,9 +1516,9 @@ IF ( LLOBSTROUT ) THEN
 2222                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  ITEMPEW=NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                 ENDIF
-                XX=REAL((IOBSRLAT(IX,K,IS)*ITEMPEW),JWRB)
+                XX=REAL((IOBSRLAT(IX,K,IS)*ITEMPEW),JWRU)
                 XX=SQRT(XX)
                 IOBSRLAT(IX,K,IS)=MIN(NINT(XX),NOOBSTRT)
 
@@ -1548,18 +1548,18 @@ IF ( LLOBSTROUT ) THEN
               KT=K
               KB=K-1
               STEPT=-RESOL
-              STEPB=0._JWRB
+              STEPB=0._JWRU
             ELSE
               KT=K+1
               KB=K
-              STEPT=0._JWRB
+              STEPT=0._JWRU
               STEPB=RESOL
             ENDIF
             XLATT=XLAT(KT)+STEPT
             XLATB=XLAT(KB)+STEPB
-            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
+            ILATT = NINT((90.0_JWRU- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
+            ILATB = NINT((90.0_JWRU- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF (ILATB == ILAT+1) ILATB=ILAT
 
@@ -1567,21 +1567,21 @@ IF ( LLOBSTROUT ) THEN
               IF (LLSM(IX,K)) THEN
                 XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
                 XLONL=XLON -(2-IS)*DXDELLA
-                IF (XLONL > 180._JWRB) THEN
-                  XLONL=XLONL-360._JWRB
+                IF (XLONL > 180._JWRU) THEN
+                  XLONL=XLONL-360._JWRU
                 ENDIF
                 XLONR=XLON +(IS-1)*DXDELLA
-                IF (XLONR > 180._JWRB) THEN
-                  XLONR=XLONR-360._JWRB
+                IF (XLONR > 180._JWRU) THEN
+                  XLONR=XLONR-360._JWRU
                 ENDIF
 
                 IF ( DXDELLA < 0.125_JWRU) THEN
-                  ILONL = INT((XLONL + 180._JWRB)*INVRES) + 1
-                  ILONR = INT((XLONR + 180._JWRB)*INVRES) + 2
+                  ILONL = INT((XLONL + 180._JWRU)*INVRES) + 1
+                  ILONR = INT((XLONR + 180._JWRU)*INVRES) + 2
                 ELSE
 !                 It was decided to not correct the double counting for low resolution (should be removed in future)
-                  ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
-                  ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
+                  ILONL = NINT((XLONL + 180._JWRU)*INVRES) + 1
+                  ILONR = NINT((XLONR + 180._JWRU)*INVRES) + 1
                 ENDIF
 
                 NOBSTRCT=0
@@ -1647,7 +1647,7 @@ IF ( LLOBSTROUT ) THEN
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
-                  IOBSRLON(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  IOBSRLON(IX,K,IS) = NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO I=1,ILONR
@@ -1674,7 +1674,7 @@ IF ( LLOBSTROUT ) THEN
                     ENDDO
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  IOBSRLON(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  IOBSRLON(IX,K,IS) = NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                 ENDIF
 
               ENDIF
@@ -1695,12 +1695,12 @@ IF ( LLOBSTROUT ) THEN
             XLATT=XLAT(K)+(IS-1)*DXDELLA
             XLATB=XLAT(K)-(2-IS)*DXDELLA
             IF ( DXDELLA < 0.125_JWRU) THEN
-              ILATT = INT((90.0_JWRB- XLATT)*INVRES) + 1
-              ILATB = INT((90.0_JWRB- XLATB)*INVRES) + 2
+              ILATT = INT((90.0_JWRU- XLATT)*INVRES) + 1
+              ILATB = INT((90.0_JWRU- XLATB)*INVRES) + 2
             ELSE
 !             It was decided to not correct the double counting for low resolution (should be removed in future)
-              ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
-              ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
+              ILATT = NINT((90.0_JWRU- XLATT)*INVRES) + 1
+              ILATB = NINT((90.0_JWRU- XLATB)*INVRES) + 1
             ENDIF
             ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = MAX(1,MIN(ILATB,ILAT))
@@ -1716,15 +1716,15 @@ IF ( LLOBSTROUT ) THEN
                   XLONL=XLON - DXDELLA
                   XLONR=XLON - RESOL
                 ENDIF
-                IF (XLONL > 180._JWRB) THEN
-                  XLONL=XLONL-360._JWRB
+                IF (XLONL > 180._JWRU) THEN
+                  XLONL=XLONL-360._JWRU
                 ENDIF
-                IF (XLONR > 180._JWRB) THEN
-                  XLONR=XLONR-360._JWRB
+                IF (XLONR > 180._JWRU) THEN
+                  XLONR=XLONR-360._JWRU
                 ENDIF
 
-                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
-                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
+                ILONL = NINT((XLONL + 180._JWRU)*INVRES) + 1
+                ILONR = NINT((XLONR + 180._JWRU)*INVRES) + 1
 
                 NOBSTRCT=0
 
@@ -1789,7 +1789,7 @@ IF ( LLOBSTROUT ) THEN
 
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
-                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  ITEMPEW=NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -1813,9 +1813,9 @@ IF ( LLOBSTROUT ) THEN
 3333                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  ITEMPEW=NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                 ENDIF
-                XX=REAL((IOBSRLON(IX,K,IS)*ITEMPEW),JWRB)
+                XX=REAL((IOBSRLON(IX,K,IS)*ITEMPEW),JWRU)
                 XX=SQRT(XX)
                 IOBSRLON(IX,K,IS)=MIN(NINT(XX),NOOBSTRT)
 
@@ -1846,30 +1846,30 @@ IF ( LLOBSTROUT ) THEN
             IF (IS == 1) THEN
               KT=K+1
               KB=K
-              STEPT=0._JWRB
+              STEPT=0._JWRU
               STEPB=RESOL
             ELSE IF (IS == 2) THEN
               KT=K
               KB=K-1
               STEPT=-RESOL
-              STEPB=0._JWRB
+              STEPB=0._JWRU
             ELSE IF (IS == 3) THEN
               KT=K
               KB=K-1
               STEPT=-RESOL
-              STEPB=0._JWRB
+              STEPB=0._JWRU
             ELSE IF (IS == 4) THEN
               KT=K+1
               KB=K
-              STEPT=0._JWRB
+              STEPT=0._JWRU
               STEPB=RESOL
             ENDIF
 
             XLATT=XLAT(KT)+STEPT
             XLATB=XLAT(KB)+STEPB
-            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
+            ILATT = NINT((90.0_JWRU- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
+            ILATB = NINT((90.0_JWRU- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF (ILATB == ILAT+1) ILATB=ILAT
 
@@ -1877,21 +1877,21 @@ IF ( LLOBSTROUT ) THEN
               IF (LLSM(IX,K)) THEN
                 XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
                 XLONL=XLON -((IS-1)/2)*ZDELLO(K)
-                IF (XLONL > 180._JWRB) THEN
-                  XLONL=XLONL-360._JWRB
+                IF (XLONL > 180._JWRU) THEN
+                  XLONL=XLONL-360._JWRU
                 ENDIF
                 XLONR=XLON +((4-IS)/2)*ZDELLO(K)
-                IF (XLONR > 180._JWRB) THEN
-                  XLONR=XLONR-360._JWRB
+                IF (XLONR > 180._JWRU) THEN
+                  XLONR=XLONR-360._JWRU
                 ENDIF
 
                 IF ( DXDELLA < 0.125_JWRU) THEN
-                  ILONL = INT((XLONL + 180._JWRB)*INVRES) + 1
-                  ILONR = INT((XLONR + 180._JWRB)*INVRES) + 2
+                  ILONL = INT((XLONL + 180._JWRU)*INVRES) + 1
+                  ILONR = INT((XLONR + 180._JWRU)*INVRES) + 2
                 ELSE
 !                 It was decided to not correct the double counting for low resolution (should be removed in future)
-                  ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
-                  ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
+                  ILONL = NINT((XLONL + 180._JWRU)*INVRES) + 1
+                  ILONR = NINT((XLONR + 180._JWRU)*INVRES) + 1
                 ENDIF
 
                 NOBSTRCT=0
@@ -1957,7 +1957,7 @@ IF ( LLOBSTROUT ) THEN
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
-                  IOBSCOR(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  IOBSCOR(IX,K,IS) = NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                   IOBSCOR(IX,K,IS) = MAX(IOBSCOR(IX,K,IS), 0)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
@@ -1985,7 +1985,7 @@ IF ( LLOBSTROUT ) THEN
                     ENDDO
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  IOBSCOR(IX,K,IS) = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  IOBSCOR(IX,K,IS) = NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                   IOBSCOR(IX,K,IS) = MAX(IOBSCOR(IX,K,IS), 0)
                 ENDIF
 
@@ -2012,12 +2012,12 @@ IF ( LLOBSTROUT ) THEN
               XLATB=XLAT(K)-DXDELLA
             ENDIF
             IF ( DXDELLA < 0.125_JWRU) THEN
-              ILATT = INT((90.0_JWRB- XLATT)*INVRES) + 1
-              ILATB = INT((90.0_JWRB- XLATB)*INVRES) + 2
+              ILATT = INT((90.0_JWRU- XLATT)*INVRES) + 1
+              ILATB = INT((90.0_JWRU- XLATB)*INVRES) + 2
             ELSE
 !             It was decided to not correct the double counting for low resolution (should be removed in future)
-              ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
-              ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
+              ILATT = NINT((90.0_JWRU- XLATT)*INVRES) + 1
+              ILATB = NINT((90.0_JWRU- XLATB)*INVRES) + 1
             ENDIF
             ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = MAX(1,MIN(ILATB,ILAT))
@@ -2033,15 +2033,15 @@ IF ( LLOBSTROUT ) THEN
                   XLONL=XLON - ZDELLO(K) 
                   XLONR=XLON - RESOL
                 ENDIF
-                IF (XLONL > 180._JWRB) THEN
-                  XLONL=XLONL-360._JWRB
+                IF (XLONL > 180._JWRU) THEN
+                  XLONL=XLONL-360._JWRU
                 ENDIF
-                IF (XLONR > 180._JWRB) THEN
-                  XLONR=XLONR-360._JWRB
+                IF (XLONR > 180._JWRU) THEN
+                  XLONR=XLONR-360._JWRU
                 ENDIF
 
-                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
-                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
+                ILONL = NINT((XLONL + 180._JWRU)*INVRES) + 1
+                ILONR = NINT((XLONR + 180._JWRU)*INVRES) + 1
 
                 NOBSTRCT=0
 
@@ -2106,7 +2106,7 @@ IF ( LLOBSTROUT ) THEN
 
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
-                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  ITEMPEW=NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -2130,10 +2130,10 @@ IF ( LLOBSTROUT ) THEN
 4444                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  ITEMPEW = NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*NOOBSTRT)
+                  ITEMPEW = NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                   ITEMPEW = MAX(ITEMPEW, 0)
                 ENDIF
-                XX=REAL((IOBSCOR(IX,K,IS)*ITEMPEW),JWRB)
+                XX=REAL((IOBSCOR(IX,K,IS)*ITEMPEW),JWRU)
                 XX=PENHCOR*SQRT(XX)
                 IOBSCOR(IX,K,IS)=MIN(NINT(XX),NOOBSTRT)
 
@@ -2230,15 +2230,15 @@ IF ( LLOBSTROUT ) THEN
           DO IS =1,2
             IUNIT=IUNIT+1
             IF (IS == 1) THEN
-              STEPLAT=-0.25_JWRB*DXDELLA
+              STEPLAT=-0.25_JWRU*DXDELLA
             ELSE
-              STEPLAT=0.25_JWRB*DXDELLA
+              STEPLAT=0.25_JWRU*DXDELLA
             ENDIF 
             DO K=1,NGY
                DO IX=1,NLONRGG(K)
                  XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
-                 IF (XLON > 180._JWRB) THEN
-                   XLON=XLON-360._JWRB
+                 IF (XLON > 180._JWRU) THEN
+                   XLON=XLON-360._JWRU
                  ENDIF
                 IF (ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.       &
      &              ALONL <= XLON .AND. XLON <= ALONR ) THEN
@@ -2261,8 +2261,8 @@ IF ( LLOBSTROUT ) THEN
             DO K=1,NGY
                DO IX=1,NLONRGG(K)
                  XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
-                 IF (XLON > 180._JWRB) THEN
-                   XLON=XLON-360._JWRB
+                 IF (XLON > 180._JWRU) THEN
+                   XLON=XLON-360._JWRU
                  ENDIF
                 IF (ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.       &
      &              ALONL <= XLON .AND. XLON <= ALONR ) THEN
@@ -2278,15 +2278,15 @@ IF ( LLOBSTROUT ) THEN
           DO IS =1,2
             IUNIT=IUNIT+1
             IF (IS == 1) THEN
-              STEPLAT=-0.25_JWRB*DXDELLA
+              STEPLAT=-0.25_JWRU*DXDELLA
             ELSE
-              STEPLAT=0.25_JWRB*DXDELLA
+              STEPLAT=0.25_JWRU*DXDELLA
             ENDIF 
             DO K=1,NGY
                DO IX=1,NLONRGG(K)
                  XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
-                 IF (XLON > 180._JWRB) THEN
-                   XLON=XLON-360._JWRB
+                 IF (XLON > 180._JWRU) THEN
+                   XLON=XLON-360._JWRU
                  ENDIF
                 IF (ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.       &
      &              ALONL <= XLON .AND. XLON <= ALONR ) THEN
@@ -2309,8 +2309,8 @@ IF ( LLOBSTROUT ) THEN
             DO K=1,NGY
                DO IX=1,NLONRGG(K)
                  XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
-                 IF (XLON > 180._JWRB) THEN
-                   XLON=XLON-360._JWRB
+                 IF (XLON > 180._JWRU) THEN
+                   XLON=XLON-360._JWRU
                  ENDIF
                 IF (ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.       &
      &             ALONL <= XLON .AND. XLON <= ALONR ) THEN
@@ -2333,8 +2333,8 @@ IF ( LLOBSTROUT ) THEN
             DO K=1,NGY
                DO IX=1,NLONRGG(K)
                  XLON=DAMOWEP + REAL(IX-1,JWRU)*ZDELLO(K)
-                 IF (XLON > 180._JWRB) THEN
-                   XLON=XLON-360._JWRB
+                 IF (XLON > 180._JWRU) THEN
+                   XLON=XLON-360._JWRU
                  ENDIF
                 IF (ALATB <= XLAT(K) .AND. XLAT(K) <= ALATT .AND.       &
      &              ALONL <= XLON .AND. XLON <= ALONR ) THEN
@@ -2373,7 +2373,7 @@ IF ( LLOBSTROUT ) THEN
                   DO K=1,NGY
                     KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSLAT(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSLAT(IX,K,IS),JWRU) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
@@ -2383,7 +2383,7 @@ IF ( LLOBSTROUT ) THEN
                   DO K=1,NGY
                     KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSLON(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSLON(IX,K,IS),JWRU) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
@@ -2393,7 +2393,7 @@ IF ( LLOBSTROUT ) THEN
                   DO K=1,NGY
                     KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSRLAT(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSRLAT(IX,K,IS),JWRU) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
@@ -2403,7 +2403,7 @@ IF ( LLOBSTROUT ) THEN
                   DO K=1,NGY
                     KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSRLON(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSRLON(IX,K,IS),JWRU) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
@@ -2413,7 +2413,7 @@ IF ( LLOBSTROUT ) THEN
                   DO K=1,NGY
                     KNS=NGY-K+1
                     DO IX=1,NLONRGG(K)
-                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSCOR(IX,K,IS),JWRB) * ZCONV  + (1-ILSM(IX,K))*ZMISS
+                      FIELD(IX,KNS) = REAL(ILSM(IX,K)*IOBSCOR(IX,K,IS),JWRU) * ZCONV  + (1-ILSM(IX,K))*ZMISS
                     ENDDO
                   ENDDO
 !$OMP END PARALLEL DO
@@ -2435,7 +2435,7 @@ IF ( LLOBSTROUT ) THEN
                 DO K=1,NGY
                   KNS=NGY-K+1
                   DO IX=1,NLONRGG(K)
-                    FIELD(IX,KNS) = 1.0_JWRB
+                    FIELD(IX,KNS) = 1.0_JWRU
                   ENDDO
                 ENDDO
 !$OMP END PARALLEL DO

@@ -67,9 +67,10 @@
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : IFRE1    ,FR1      ,FR       ,FRATIO
       USE YOWMAP   , ONLY : NGX      ,NGY      ,IPER     ,IRGG     ,    &
-     &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,              &
+     &            AMOWEP ,  AMOSOP,  AMOEAP,  AMONOP,  XDELLA,  XDELLO, &
+     &            DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO, &
      &            NIBLO    ,CLDOMAIN ,IQGAUSS  ,                        &
-     &            XDELLA   ,XDELLO   ,NLONRGG  ,LLOBSTRCT,LAQUA
+     &            NLONRGG  ,LLOBSTRCT,LAQUA
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
 #ifdef WAM_HAVE_UNWAM
       USE YOWUNPOOL, ONLY : LPREPROC, LVECTOR, IVECTOR
@@ -94,8 +95,6 @@
       INTEGER(KIND=JWIM) :: IOS, IOUTA, IOUTANEW, IDUM
       INTEGER(KIND=JWIM), ALLOCATABLE :: NDUMP(:)
 
-      REAL(KIND=JWRU) :: DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO
-
       REAL(KIND=JWRB) :: ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
       REAL(KIND=JWRB) :: WEST, EAST, DW, DE, DS, DN
       REAL(KIND=JWRB), ALLOCATABLE :: XDUMP(:)
@@ -112,8 +111,8 @@
 ! ----------------------------------------------------------------------
 
       NAMELIST /NALINE/ CLINE, NFRE, NFRE_RED, FR1, IFRE1,              &
-     &                  IRGG, XDELLA, XDELLO,                           &
-     &                  AMOSOP, AMONOP, AMOWEP, AMOEAP,                 &
+     &                  IRGG, DXDELLA, DXDELLO,                         &
+     &                  DAMOSOP, DAMONOP, DAMOWEP, DAMOEAP,             &
      &                  IFORM, ITEST, ITESTB,                           &
      &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC, &
      &                  NIBLO, CLDOMAIN,LLOBSTRCT,                      &
@@ -139,12 +138,12 @@
       FR1    =   0.0_JWRB
       IFRE1 = 1
       IRGG   =  -1
-      XDELLA =   0.0_JWRB
-      XDELLO =   0.0_JWRB
-      AMOSOP =-100.0_JWRB
-      AMONOP =-100.0_JWRB
-      AMOWEP =   0.0_JWRB
-      AMOEAP =   0.0_JWRB
+      DXDELLA =   0.0_JWRU
+      DXDELLO =   0.0_JWRU
+      DAMOSOP =-100.0_JWRU
+      DAMONOP =-100.0_JWRU
+      DAMOWEP =   0.0_JWRU
+      DAMOEAP =   0.0_JWRU
       IFORM  =  -1
       ITEST  =  -1
       ITESTB =  -1
@@ -187,6 +186,14 @@
 
       IU05 =  IWAM_GET_UNIT (IU06, 'procin', 'r', 'f', 0, 'READ')
       READ (IU05, NALINE)
+
+      AMONOP = REAL(DAMONOP,JWRB)
+      AMOSOP = REAL(DAMOSOP,JWRB)
+      AMOWEP = REAL(DAMOWEP,JWRB)
+      AMOEAP = REAL(DAMOEAP,JWRB)
+      XDELLA = REAL(DXDELLA,JWRB)
+      XDELLO = REAL(DXDELLO,JWRB)
+
 
       IF (NFRE_RED > NFRE ) THEN
         WRITE (IU06,*) '**********************************************'
@@ -258,7 +265,7 @@
         AMONOP = REAL(DAMONOP,JWRB)
         AMOSOP = REAL(DAMOSOP,JWRB)
         AMOWEP = REAL(DAMOWEP,JWRB)
-        DAMOEAP = REAL(DAMOEAP,JWRB)
+        AMOEAP = REAL(DAMOEAP,JWRB)
 
         ! A spectral truncation > 0 implies a Gaussian grid
         IF (ISPECTRUNC > 0) IQGAUSS=1 

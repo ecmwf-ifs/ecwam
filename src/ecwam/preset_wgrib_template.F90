@@ -99,10 +99,8 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
       INTEGER(KIND=JWIM) :: IFREQ(NFRE_RED)
       INTEGER(KIND=JWIM), DIMENSION(:), ALLOCATABLE :: PL
 
-      REAL(KIND=JWRU) :: DAMOEAP, DXDELLO
-
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: RMOEAP
+      REAL(KIND=JWRU) :: RMOEAP
       REAL(KIND=JWRB) :: ZTHETA(NANG)
       REAL(KIND=JWRB) :: ZFREQ(NFRE_RED)
       REAL(KIND=JWRB), ALLOCATABLE :: SCFR(:), SCTH(:)
@@ -524,7 +522,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
         ! NUMBER OF POINTS ALONG A MERIDIAN
         IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN 
-          NJ = NINT(180.0_JWRB/XDELLA) + 1
+          NJ = NINT(180.0_JWRB/DXDELLA) + 1
         ELSE
           NJ = NGY
         ENDIF
@@ -540,7 +538,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           ALLOCATE(PL(NJ))
           PL(:)=0
           IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN 
-            KST = NINT((90.0_JWRB - AMONOP ) / XDELLA)
+            KST = NINT((90.0_JWRB - DAMONOP ) / DXDELLA)
           ELSE
             KST = 0
           ENDIF
@@ -564,43 +562,40 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'latitudeOfFirstGridPointInDegrees',90.)
         ELSE
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'latitudeOfFirstGridPointInDegrees',AMONOP)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'latitudeOfFirstGridPointInDegrees',DAMONOP)
         ENDIF
 
         ! LONGITUDE OF ORIGIN (WEST -)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'longitudeOfFirstGridPointInDegrees',AMOWEP)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'longitudeOfFirstGridPointInDegrees',DAMOWEP)
 
         ! LATITUDE OF THE LAST GRID POINT
         IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'latitudeOfLastGridPointInDegrees',-90.)
         ELSE
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'latitudeOfLastGridPointInDegrees',AMOSOP)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'latitudeOfLastGridPointInDegrees',DAMOSOP)
         ENDIF
 
         ! LONGITUDE OF EXTREME POINT (EAST)
         IF ( IQGAUSS /= 1 ) THEN
-          RMOEAP = AMOEAP
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'longitudeOfLastGridPointInDegrees',RMOEAP)
+          RMOEAP = DAMOEAP
         ELSE
           IF ( IGRIB_VERSION == 1 ) THEN
             !!! this is a limitation of grib1   !!!!
-            RMOEAP = REAL(INT(1000._JWRB*AMOEAP),JWRB)/1000._JWRB
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'longitudeOfLastGridPointInDegrees',RMOEAP)
+            RMOEAP = REAL(INT(1000._JWRU*DAMOEAP),JWRU)/1000._JWRU
           ELSE
-            DXDELLO = 360._JWRU/REAL(NGX,JWRU)
-            DAMOEAP = REAL(AMOWEP,JWRU) + 360._JWRU - DXDELLO
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'longitudeOfLastGridPointInDegrees',DAMOEAP)
+            RMOEAP = DAMOEAP
           ENDIF
         ENDIF
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'longitudeOfLastGridPointInDegrees',RMOEAP)
 
         ! LONGITUDE INCREMENT
         IF (IRGG == 0) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'iDirectionIncrementInDegrees',XDELLO)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'iDirectionIncrementInDegrees',DXDELLO)
         ENDIF
 
         ! LATITUDE INCREMENT
         IF ( IQGAUSS /= 1 ) THEN 
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'jDirectionIncrementInDegrees',XDELLA)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'jDirectionIncrementInDegrees',DXDELLA)
         ENDIF
 
       ENDIF

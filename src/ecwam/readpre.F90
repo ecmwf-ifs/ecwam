@@ -61,10 +61,10 @@ SUBROUTINE READPRE (LLBATHY)
       USE YOWABORT , ONLY : WAM_ABORT
       USE YOWGRIBHD, ONLY : IMDLGRBID_G
       USE YOWGRIBINFO, ONLY : WVGETGRIDINFO
-      USE YOWMAP   , ONLY : NGX      ,NGY      ,    &
-     &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
-     &            AMONOP   ,XDELLA   ,XDELLO   ,NLONRGG  ,    &
-     &            IQGAUSS
+      USE YOWMAP   , ONLY : NGX      ,NGY      ,                        &
+     &            IPER     ,IRGG     ,IQGAUSS  ,NLONRGG  ,              &
+     &            AMOWEP ,  AMOSOP,  AMOEAP,  AMONOP,  XDELLA,  XDELLO, &
+     &            DAMOWEP,  DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG     ,NPRECI
       USE YOWPARAM , ONLY : LLR8TOR4 ,LLUNSTR
       USE YOWSHAL  , ONLY : BATHY
@@ -133,7 +133,14 @@ SUBROUTINE READPRE (LLBATHY)
 !         GRID INFO:
           CALL WVGETGRIDINFO(IU06, KGRIB_HANDLE, &
  &                           NGX, NGY, IPER, IRGG, IQGAUSS, KLONRGG, LLSCANNS, &
- &                           AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO )
+ &                           DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO )
+
+          AMONOP = REAL(DAMONOP,JWRB)
+          AMOSOP = REAL(DAMOSOP,JWRB)
+          AMOWEP = REAL(DAMOWEP,JWRB)
+          AMOEAP = REAL(DAMOEAP,JWRB)
+          XDELLA = REAL(DXDELLA,JWRB)
+          XDELLO = REAL(DXDELLO,JWRB)
 
           IF (ALLOCATED(NLONRGG)) DEALLOCATE(NLONRGG)
           ALLOCATE(NLONRGG(NGY))
@@ -192,6 +199,15 @@ SUBROUTINE READPRE (LLBATHY)
         ELSE
         !! OLD BINARY INPUT:
 !          -----------------
+
+
+!!!!!1 debile to do 
+!!!          AMONOP = REAL(DAMONOP,JWRB)
+!!!          AMOSOP = REAL(DAMOSOP,JWRB)
+!!!          AMOWEP = REAL(DAMOWEP,JWRB)
+!!!          AMOEAP = REAL(DAMOEAP,JWRB)
+!!!          XDELLA = REAL(DXDELLA,JWRB)
+!!!          XDELLO = REAL(DXDELLO,JWRB)
 
 !         READ MODEL IDENTIFIERS
           CALL READREC(1)
