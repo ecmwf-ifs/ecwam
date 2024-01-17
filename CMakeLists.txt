@@ -137,6 +137,12 @@ ecbuild_add_option( FEATURE ACC
                     REQUIRED_PACKAGES "OpenACC" 
                     CONDITION HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" AND HAVE_GEN_DERIV_TYPES )
 
+### CUDA-aware MPI
+ecbuild_add_option( FEATURE GPU_AWARE_MPI
+                    DEFAULT OFF
+                    REQUIRED_PACKAGES "MPI COMPONENTS Fortran"
+                    DESCRIPTION "Enable CUDA-aware MPI" )
+
 ### Sources
 
 include(ecwam_compile_flags)
