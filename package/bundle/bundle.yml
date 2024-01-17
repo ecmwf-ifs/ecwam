@@ -75,6 +75,10 @@ options :
             LOKI_ENABLE_NO_INSTALL=ON
             LOKI_ENABLE_CLAW=OFF
 
+    - with-gpu-aware-mpi :
+        help  : Enable direct GPU-to-GPU MPI communications
+        cmake : ENABLE_GPU_AWARE_MPI=ON
+       
     - loki-mode :
         help  : Choose Loki transformation (defaults to scc-stack)
         cmake : LOKI_MODE={{value}}

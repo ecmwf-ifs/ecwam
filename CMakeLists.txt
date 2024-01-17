@@ -119,6 +119,12 @@ if( NOT DEFINED LOKI_MODE )
    set( LOKI_MODE "scc-stack" CACHE STRING "Transformation mode for Loki source transformations" )
 endif()
 
+### CUDA-aware MPI
+ecbuild_add_option( FEATURE GPU_AWARE_MPI
+                    DEFAULT OFF
+                    REQUIRED_PACKAGES "MPI COMPONENTS Fortran"
+                    DESCRIPTION "Enable CUDA-aware MPI" )
+
 # Workaround for the fact that CMake only sets language components to FOUND,
 # so OpenACC_FOUND must be set manually
 find_package( OpenACC )

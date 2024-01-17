@@ -45,6 +45,7 @@ USE YOWPCONS , ONLY : ZPI
 
 
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+USE OPENACC
       
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -82,6 +83,7 @@ LOGICAL, DIMENSION(IJS:IJL) :: LCFLFAIL
 
 LOGICAL, SAVE :: LFRSTCTU
 DATA LFRSTCTU /.TRUE./
+
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('CTUWUPDT',0,ZHOOK_HANDLE)
@@ -105,7 +107,7 @@ IF (LFRSTCTU) THEN
   IF (.NOT. ALLOCATED(JYO)) ALLOCATE(JYO(NANG,2))
   IF (.NOT. ALLOCATED(KCR)) ALLOCATE(KCR(NANG,4))
 
-!$ACC ENTER DATA COPYIN(KLON, KLAT, KCOR, JXO, JYO, KCR) 
+!$acc enter data copyin(KLON, KLAT, KCOR, JXO, JYO, KCR)
  !$acc kernels
   DO K=1,NANG
 
@@ -184,7 +186,8 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
   IF (.NOT. ALLOCATED(LLWMPMN)) ALLOCATE(LLWMPMN(NANG,NFRE_RED,-1:1))
 ENDIF
 
-!$acc enter data copyin(sumwn,LLWKPMN, WLATN,WLONN,WCORN,WKPMN)
+
+!$acc enter data copyin(SUMWN,LLWKPMN, WLATN,WLONN,WCORN,WKPMN)
 
 ! SOME INITIALISATION FOR *CTUW*
 !! NPROMA=NPROMA_WAM
@@ -193,7 +196,7 @@ ENDIF
    NPROMA=(IJL-IJS+1)/MTHREADS + 1
 
 !$acc enter data copyin(BLK2GLO)
-!$acc enter data copyin(BLK2GLO%KXLT)
+!!$acc enter data copyin(BLK2GLO%KXLT)
 
 !$acc update device(KLAT,WLAT,KCOR,WCOR)
 !$acc update device(NFRE_RED,ZPI,FR,DELTH,NANG)
@@ -349,6 +352,7 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
 !$acc end parallel
 ENDIF
 
+!$acc exit data delete(BLK2GLO)
 
 IF (ALLOCATED(THDD)) DEALLOCATE(THDD)
 IF (ALLOCATED(THDC)) DEALLOCATE(THDC)
