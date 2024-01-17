@@ -65,6 +65,11 @@
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE, ONLY : MPL_RECV, MPL_SEND, MPL_WAIT, &
                            & JP_NON_BLOCKING_STANDARD
+!#ifdef WITH_GPU_AWARE_MPI
+      USE MPL_DATA_MODULE ,ONLY : MPL_COMM_OML
+      USE OML_MOD         ,ONLY : OML_MY_THREAD
+      USE MPI
+!#endif
 
 !----------------------------------------------------------------------
 
@@ -84,6 +89,8 @@
       REAL(KIND=JWRB), ALLOCATABLE :: ZCOMBUFR(:,:)
 
       LOGICAL :: LLOK
+      INTEGER(KIND=JWIM) :: IERROR
+!      TYPE(MPI_REAL) :: mpi_real
 
 !----------------------------------------------------------------------
 
@@ -101,12 +108,15 @@
       NBUFMAX=MAX(NTOPEMAX,NFROMPEMAX)*NDIM2*NDIM3
       ALLOCATE(ZCOMBUFS(NBUFMAX,NGBTOPE))
       ALLOCATE(ZCOMBUFR(NBUFMAX,NGBFROMPE))
+#ifdef WITH_GPU_AWARE_MPI
+!$acc data create(ZCOMBUFS,ZCOMBUFR)      
+#endif
 
 !     PACK SEND BUFFERS FOR NGBTOPE NEIGHBOURING PE's
 !     -------------------------------------------------
       CALL GSTATS(1892,0)
-      #ifdef _OPENACC
-      !$acc kernels loop independent private(KCOUNT,IJ) copyout(ZCOMBUFS) copyin(fld)
+#ifdef _OPENACC
+!$acc kernels loop independent private(KCOUNT,IJ)
       DO INGB=1,NGBTOPE !Total number of PE's to which information will be sent
         IPROC=NTOPELST(INGB)  !To which PE to send informations
           !$acc loop independent collapse(3)
@@ -120,7 +130,7 @@
           ENDDO
         ENDDO
       ENDDO
-      !$acc end kernels
+!$acc end kernels
 #else
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(INGB,IPROC,KCOUNT,M,K,IH,IJ)
        DO INGB=1,NGBTOPE
@@ -137,7 +147,7 @@
          ENDDO
        ENDDO
 !$OMP END PARALLEL DO
-      #endif /*_OPENACC*/
+#endif /*_OPENACC*/
 
       CALL GSTATS(1892,1)
 
@@ -145,40 +155,50 @@
 
       IR=0
       CALL GSTATS(676,0)
-
       DO INGB=1,NGBFROMPE
         IR=IR+1
         IPROC=NFROMPELST(INGB)
         KCOUNT=NDIM3*NDIM2*NFROMPE(IPROC)
-!!$acc host_data use_device(ZCOMBUFR)
+#ifdef WITH_GPU_AWARE_MPI
+!$acc host_data use_device(ZCOMBUFR)
+        CALL MPI_IRECV(ZCOMBUFR(1:KCOUNT,INGB),KCOUNT,                 &
+     &     MPI_DOUBLE_PRECISION,IPROC-1, KTAG,                           &
+     &     MPL_COMM_OML(OML_MY_THREAD()),IREQ(IR), IERROR)
+!$acc end host_data
+#else
         CALL MPL_RECV(ZCOMBUFR(1:KCOUNT,INGB),KSOURCE=IPROC,KTAG=KTAG,  &
      &     KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),         &
      &     CDSTRING='MPEXCHNG:')
-!!$acc end host_data
+#endif
       ENDDO
 
       DO INGB=1,NGBTOPE
         IR=IR+1
         IPROC=NTOPELST(INGB)
         KCOUNT=NDIM3*NDIM2*NTOPE(IPROC)
-!!$acc host_data use_device(ZCOMBUFR)
+#ifdef WITH_GPU_AWARE_MPI
+!$acc host_data use_device(ZCOMBUFS)
+        CALL MPI_ISEND(ZCOMBUFS(1:KCOUNT,INGB),KCOUNT,                 &
+     &     MPI_DOUBLE_PRECISION,IPROC-1, KTAG,                           &
+     &     MPL_COMM_OML(OML_MY_THREAD()),IREQ(IR), IERROR)
+!$acc end host_data
+#else                
         CALL MPL_SEND(ZCOMBUFS(1:KCOUNT,INGB),KDEST=IPROC,KTAG=KTAG,    &
      &     KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),         &
      &     CDSTRING='MPEXCHNG:')
-!!$acc end host_data
+#endif
       ENDDO
 
 !     NOW WAIT FOR ALL TO COMPLETE
 
       CALL MPL_WAIT(KREQUEST=IREQ(1:IR),CDSTRING='MPEXCHNG:')
-
       CALL GSTATS(676,1)
 
 !     DECODE THE RECEIVED BUFFERS
 
       CALL GSTATS(1893,0)
       #ifdef _OPENACC
-      !$acc kernels loop independent private(KCOUNT,IJ) copyin(ZCOMBUFR)
+      !$acc kernels loop independent private(KCOUNT,IJ) !copyin(ZCOMBUFR)
       DO INGB=1,NGBFROMPE
         IPROC=NFROMPELST(INGB)
         !$acc loop vector independent collapse(3)
@@ -215,8 +235,12 @@
 
       KTAG=KTAG+1
 
+#ifdef WITH_GPU_AWARE_MPI
+!$acc end data
+#endif
       DEALLOCATE(ZCOMBUFS)
       DEALLOCATE(ZCOMBUFR)
+
 
       IF (LHOOK) CALL DR_HOOK('MPEXCHNG',1,ZHOOK_HANDLE)
 

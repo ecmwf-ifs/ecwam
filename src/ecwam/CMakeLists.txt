@@ -410,6 +410,10 @@ else()
   unset( ${PNAME}_OCEANMODEL_INCLUDE_DIRS )
 endif()
 
+if( HAVE_GPU_AWARE_MPI )
+  list(APPEND ECWAM_DEFINITIONS WITH_GPU_AWARE_MPI )
+endif()
+
 # Using dynamic linking creates undefined references to the device
 # copies of module global variables
 set( LIBRARY_TYPE SHARED )
@@ -432,6 +436,7 @@ ecbuild_add_library(
                      ${MULTIO_LIBRARIES}
                      ${OpenMP_Fortran_LIBRARIES}
                      $<${HAVE_FIELD_API}:field_api_${prec}>
+		     MPI::MPI_Fortran
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
     PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS}
 )
@@ -493,6 +498,7 @@ if( HAVE_WAM_LOKI )
                        ${MULTIO_LIBRARIES}
                        ${OpenMP_Fortran_LIBRARIES}
                        $<${HAVE_FIELD_API}:field_api_${prec}>
+		       MPI::MPI_Fortran
       PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
       PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}
   )
@@ -537,6 +543,7 @@ if( HAVE_WAM_LOKI )
                        ${MULTIO_LIBRARIES}
                        ${OpenMP_Fortran_LIBRARIES}
                        $<${HAVE_FIELD_API}:field_api_${prec}>
+		       MPI::MPI_Fortran
       PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
       PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}
   )
@@ -588,6 +595,7 @@ if( HAVE_WAM_LOKI )
      					 ${MULTIO_LIBRARIES}
      					 ${OpenMP_Fortran_LIBRARIES}
      					 $<${HAVE_FIELD_API}:field_api_${prec}>
+					 MPI::MPI_Fortran
      	PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
      	PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}
      )
@@ -636,6 +644,7 @@ if( HAVE_WAM_LOKI )
      					 ${MULTIO_LIBRARIES}
      					 ${OpenMP_Fortran_LIBRARIES}
      					 $<${HAVE_FIELD_API}:field_api_${prec}>
+					 MPI::MPI_Fortran
      	PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
      	PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}
      )
@@ -684,6 +693,7 @@ if( HAVE_CUDA )
   					 ${MULTIO_LIBRARIES}
   					 ${OpenMP_Fortran_LIBRARIES}
   					 $<${HAVE_FIELD_API}:field_api_${prec}>
+					 MPI::MPI_Fortran
   	PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
   	PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}
   )

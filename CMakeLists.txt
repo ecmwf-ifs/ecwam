@@ -116,6 +116,12 @@ ecbuild_add_option( FEATURE WAM_GPU
                     DESCRIPTION "Offload ecWam physics to the GPU"
                     CONDITION HAVE_FIELD_API )
 
+### CUDA-aware MPI
+ecbuild_add_option( FEATURE GPU_AWARE_MPI
+                    DEFAULT OFF
+                    REQUIRED_PACKAGES "MPI COMPONENTS Fortran"
+                    DESCRIPTION "Enable CUDA-aware MPI" )
+
 ### check for CUDA
 include(CheckLanguage)
 check_language(CUDA)
