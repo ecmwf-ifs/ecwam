@@ -476,7 +476,9 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
               WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
               WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
+#ifdef _OPENACC
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
+#endif
             ENDDO
           ENDDO
         ELSE
@@ -490,7 +492,9 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
               WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
               WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
+#ifdef _OPENACC
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
+#endif
             ENDDO
           ENDDO
         ENDIF
@@ -682,7 +686,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
           ENDDO  ! END LOOP OVER GRID POINTS
         ENDDO  ! END LOOP OVER FREQUENCIES
       ENDDO  ! END LOOP OVER DIRECTIONS
-#ENDIF
+#endif
 
       DO IJ=KIJS,KIJL
         IF (LCFLFAIL(IJ)) THEN
