@@ -16,6 +16,7 @@
 
 
 !     LOTFI AOUF       METEO FRANCE 2023
+!     JOSH KOUSAL      ECMWF 2023
 
 
 !*    PURPOSE.
@@ -79,9 +80,10 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CITH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: ALPFAC
 
-      INTEGER(KIND=JWIM) :: IMODEL                       !! DAMPING MODEL: 1=FIT TO TEMPELFJORD DATA, 2=Jie Yu 2022
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE)        :: ALP  !! ALP=SPATIAL ATTENUATION RATE OF ENERGY
+      
+      INTEGER(KIND=JWIM) :: IMODEL                              !! DAMPING MODEL: 1=FIT TO TEMPELFJORD DATA, 2=Jie Yu 2022
       INTEGER(KIND=JWIM) :: IJ, K, M
-      REAL(KIND=JWRB)    :: ALP              !! ALP=SPATIAL ATTENUATION RATE OF ENERGY
       REAL(KIND=JWRB)    :: TEMP
       REAL(KIND=JWRB)    :: CDICE
       REAL(KIND=JWRB)    :: HICEMAX, HICEMIN
@@ -97,31 +99,39 @@
 !      IF (ITEST.GE.2) WRITE (IU06,*)'IMODEL =',IMODEL
       HICEMAX=4.0_JWRB
       HICEMIN=0.1_JWRB
-!      WRITE (IU06,*)'Ice attenuation due to viscous friction based on: '
-      IF (IMODEL.EQ.1) THEN
-!         WRITE (IU06,*)'  Best fit w Tempelfjorde obs from Lotfi Aouf'
-         CDICE=0.0656_JWRB
-      ELSE IF (IMODEL.EQ.2) THEN
-!         WRITE (IU06,*)'  Jie Yu, W. Erik Rogers, David W. Wang 2022'
-         CDICE=0.1274_JWRB*( ZPI/SQRT(G) )**(4.5_JWRB)
-      END IF
+   
+!     WRITE (IU06,*)'Ice attenuation due to viscous friction based on: '
       
+      IF (IMODEL.EQ.1) THEN
+
+!        WRITE (IU06,*)'  Best fit w Tempelfjorde obs from Lotfi Aouf'
+         CDICE=0.0656_JWRB
+
+         DO M = 1,NFRE
+           DO IJ = KIJS,KIJL
+              ALP(IJ,M) = (CDICE*CITH(IJ)*WAVNUM(IJ,M)**2) * ALPFAC(IJ)    
+           END DO
+         END DO
+
+      ELSE IF (IMODEL.EQ.2) THEN
+
+!        WRITE (IU06,*)'  Jie Yu, W. Erik Rogers, David W. Wang 2022'
+         CDICE=0.1274_JWRB*( ZPI/SQRT(G) )**(4.5_JWRB)
+         
+         DO M = 1,NFRE
+            DO IJ = KIJS,KIJL
+               ALP(IJ,M) = (2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))) * ALPFAC(IJ)
+            END DO
+         END DO
+
+      END IF
+
       DO M = 1,NFRE
          DO K = 1,NANG
             DO IJ = KIJS,KIJL
-
-               IF (IMODEL.EQ.1) THEN
-                  ALP = CDICE*CITH(IJ)*WAVNUM(IJ,M)**2    
-               ELSE IF (IMODEL.EQ.2) THEN
-                  ALP = 2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))
-               END IF
-
-               ALP         = ALP * ALPFAC(IJ) ! APPLY ANY REQUIRED ATTENUATION REDUCTION FACTOR
-
                TEMP        = -CICV(IJ)*ALP*CGROUP(IJ,M)         
                SL(IJ,K,M)  = SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
                FLD(IJ,K,M) = FLD(IJ,K,M) + TEMP
-
             END DO
          END DO
       END DO

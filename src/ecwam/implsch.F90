@@ -107,9 +107,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 #include "sdepthlim.intfb.h"
 #include "sdissip.intfb.h"
 #include "sdiwbk.intfb.h"
-#include "sdice1.intfb.h"
-#include "sdice2.intfb.h"
-#include "sdice3.intfb.h"
+#include "sdice.intfb.h"
 #include "icebreak.intfb.h"
 #include "icebreak_modify_attenuation.intfb.h"
 #include "setice.intfb.h"
@@ -345,14 +343,10 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
            ENDDO
          ENDIF
 
-!        Attenuation of waves in ice (type 1): scattering
-         IF(LCIWA1) CALL SDICE1 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK)
-
-!        Attenuation of waves in ice (type 2): bottom friction
-         IF(LCIWA2) CALL SDICE2 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER      )
-
-!        Attenuation of waves in ice (type 3): viscous friction
-         IF(LCIWA3) CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
+!        Attenuation of waves in ice
+         IF(LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
+            CALL SDICE (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
+         ENDIF
 
 !        Save source term contributions relevant for the calculation of ice fluxes
          IF (LWNEMOCOUWRS) THEN
