@@ -67,7 +67,7 @@
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN,        &
-                            LWNEMOCOUWRS, LWNEMOCOUIBR, LWFLUX_IMPCOR
+                            LWNEMOCOUWRS, LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWICE   , ONLY : LICERUN  ,              &
@@ -76,7 +76,6 @@
       
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
-      USE YOWSTAT  , ONLY : IDELT    
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -142,7 +141,6 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: SLICE, SLTEMP
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ALPFAC
-      REAL(KIND=JWRB) :: GTEMP1, DELT, XIMP, DELT5
 
       LOGICAL :: LCFLX
       LOGICAL :: LUPDTUS
@@ -153,10 +151,6 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 
 !*    1. INITIALISATION.
 !        ---------------
-
-      DELT = IDELT
-      XIMP = 1.0_JWRB
-      DELT5 = XIMP*DELT
 
       LCFLX=LWFLUX.OR.LWFLUXOUT
 ! ----------------------------------------------------------------------
@@ -257,25 +251,14 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
          ENDIF
          
 !         Save source term contributions relevant for the calculation of ice fluxes
-          IF (.NOT. LWFLUX_IMPCOR) THEN
-            DO M=1,NFRE
-              DO K=1,NANG
-                DO IJ=KIJS,KIJL
-                  SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
-                ENDDO
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IJ=KIJS,KIJL
+                SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
               ENDDO
             ENDDO
-          ELSEIF (LWFLUX_IMPCOR) THEN
-            DO M=1,NFRE
-              DO K=1,NANG
-                DO IJ=KIJS,KIJL
-                  GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
-                  SLICE(IJ,K,M) = (SL(IJ,K,M) - SLTEMP(IJ,K,M))/GTEMP1
-                ENDDO
-              ENDDO
-            ENDDO
-          ENDIF
-
+          ENDDO
+        
         ENDIF
             
         IF (.NOT. LWVFLX_SNL) THEN
