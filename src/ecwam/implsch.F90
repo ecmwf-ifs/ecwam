@@ -83,7 +83,8 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                             INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU,           &
-                            LWNEMOCOUSTRN, LWNEMOCOUWRS, LWNEMOCOUIBR
+                            LWNEMOCOUSTRN, LWNEMOCOUWRS, LWNEMOCOUIBR,   &
+                            LWFLUX_IMPCOR
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LICERUN   ,LMASKICE ,              &
@@ -330,18 +331,16 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
          IF(LWNEMOCOUIBR) THEN 
 !           CALL ICEBREAK (KIJS,KIJL,EMEAN,AKMEAN,CITHICK,IBRMEM,ALPFAC)           
           CALL ICEBREAK_MODIFY_ATTENUATION (KIJS,KIJL,IBRMEM,ALPFAC)           
-        ENDIF
+         ENDIF
 
 !        Save source term contributions relevant for the calculation of ice fluxes
-         IF (LWNEMOCOUWRS) THEN
-           DO M=1,NFRE
-             DO K=1,NANG
-               DO IJ=KIJS,KIJL
-                  SLTEMP(IJ,K,M) = SL(IJ,K,M)
-               ENDDO
+         DO M=1,NFRE
+           DO K=1,NANG
+             DO IJ=KIJS,KIJL
+               SLTEMP(IJ,K,M) = SL(IJ,K,M)
              ENDDO
            ENDDO
-         ENDIF
+         ENDDO
 
 !        Attenuation of waves in ice
          IF(LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
@@ -349,14 +348,25 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
          ENDIF
 
 !        Save source term contributions relevant for the calculation of ice fluxes
-         IF (LWNEMOCOUWRS) THEN
-           DO M=1,NFRE
-             DO K=1,NANG
-               DO IJ=KIJS,KIJL
-                 SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
-               ENDDO
-             ENDDO
-           ENDDO
+         IF (LCFLX) THEN
+            IF (.NOT. LWFLUX_IMPCOR) THEN
+              DO M=1,NFRE
+                DO K=1,NANG
+                  DO IJ=KIJS,KIJL
+                    SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
+                  ENDDO
+                ENDDO
+              ENDDO
+            ELSEIF (LWFLUX_IMPCOR) THEN
+              DO M=1,NFRE
+                DO K=1,NANG
+                  DO IJ=KIJS,KIJL
+                    GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
+                    SLICE(IJ,K,M) = (SL(IJ,K,M) - SLTEMP(IJ,K,M))/GTEMP1
+                  ENDDO
+                ENDDO
+              ENDDO
+            ENDIF
          ENDIF
 
       ENDIF

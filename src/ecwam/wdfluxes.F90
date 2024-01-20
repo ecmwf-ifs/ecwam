@@ -66,7 +66,8 @@
       USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN
 
-      USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN, LWNEMOCOUWRS, LWNEMOCOUIBR
+      USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN,        &
+                            LWNEMOCOUWRS, LWNEMOCOUIBR, LWFLUX_IMPCOR
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWICE   , ONLY : LICERUN  ,              &
@@ -236,15 +237,13 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
           ENDIF
 
 !         Save source term contributions relevant for the calculation of ice fluxes
-          IF (LWNEMOCOUWRS) THEN
-            DO M=1,NFRE
-              DO K=1,NANG
-                DO IJ=KIJS,KIJL
-                  SLTEMP(IJ,K,M) = SL(IJ,K,M)
-                ENDDO
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IJ=KIJS,KIJL
+                SLTEMP(IJ,K,M) = SL(IJ,K,M)
               ENDDO
             ENDDO
-          ENDIF
+          ENDDO
 
 !        Attenuation of waves in ice
           IF(LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
@@ -252,11 +251,20 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
          ENDIF
          
 !         Save source term contributions relevant for the calculation of ice fluxes
-          IF (LWNEMOCOUWRS) THEN
+          IF (.NOT. LWFLUX_IMPCOR) THEN
             DO M=1,NFRE
               DO K=1,NANG
                 DO IJ=KIJS,KIJL
                   SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
+                ENDDO
+              ENDDO
+            ENDDO
+          ELSEIF (LWFLUX_IMPCOR) THEN
+            DO M=1,NFRE
+              DO K=1,NANG
+                DO IJ=KIJS,KIJL
+                  GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
+                  SLICE(IJ,K,M) = (SL(IJ,K,M) - SLTEMP(IJ,K,M))/GTEMP1
                 ENDDO
               ENDDO
             ENDDO
