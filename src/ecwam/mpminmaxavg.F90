@@ -74,8 +74,6 @@ IF (LHOOK) CALL DR_HOOK('MPMINMAXAVG',0,ZHOOK_HANDLE)
       ZMIN(:) = HUGE(ZMIN(:))
       ZMAX(:) = -HUGE(ZMAX(:))
 
-      ICOUNT = 0
-
       IF (LLGLOBAL) THEN
 
         IF (LLUNSTR) THEN

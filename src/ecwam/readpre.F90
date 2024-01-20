@@ -315,11 +315,11 @@ SUBROUTINE READPRE (LLBATHY)
          READ(IU07,IOSTAT=ISTAT) NKIND, KMDLGRDID
          IF (ISTAT /= 0) GOTO 1000
 
-         IF (KIND(AMOSOP) == 4 .AND. NKIND /= 4) THEN
+         IF (KIND(DAMOSOP) == 4 .AND. NKIND /= 4) THEN
             LLR8TOR4 = .TRUE.   ! Input REALs are indeed legacy REAL*8, but KIND(AMOSOP) == 4
          ENDIF
-         NKIND = KIND(AMOSOP)   ! Pretend NKIND is in "right precision"
-         WRITE(IU06,1002) 'READPRE(READREC): NKIND=',NKIND, ', KIND(AMOSOP)=',KIND(AMOSOP),', LLR8TOR4=',LLR8TOR4
+         NKIND = KIND(DAMOSOP)   ! Pretend NKIND is in "right precision"
+         WRITE(IU06,1002) 'READPRE(READREC): NKIND=',NKIND, ', KIND(DAMOSOP)=',KIND(DAMOSOP),', LLR8TOR4=',LLR8TOR4
  1002    FORMAT(2X,A,I0,A,I0,A,L1)
 
       CASE(2)
