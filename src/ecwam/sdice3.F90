@@ -129,7 +129,7 @@
       DO M = 1,NFRE
          DO K = 1,NANG
             DO IJ = KIJS,KIJL
-               TEMP        = -CICV(IJ)*ALP*CGROUP(IJ,M)         
+               TEMP        = -CICV(IJ)*ALP(IJ,M)*CGROUP(IJ,M)         
                SL(IJ,K,M)  = SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
                FLD(IJ,K,M) = FLD(IJ,K,M) + TEMP
             END DO
