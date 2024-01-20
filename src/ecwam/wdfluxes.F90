@@ -76,6 +76,7 @@
       
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
+      USE YOWSTAT  , ONLY : IDELT    
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -141,6 +142,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: SLICE, SLTEMP
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ALPFAC
+      REAL(KIND=JWRB) :: GTEMP1, DELT, XIMP, DELT5
 
       LOGICAL :: LCFLX
       LOGICAL :: LUPDTUS
@@ -151,6 +153,10 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 
 !*    1. INITIALISATION.
 !        ---------------
+
+      DELT = IDELT
+      XIMP = 1.0_JWRB
+      DELT5 = XIMP*DELT
 
       LCFLX=LWFLUX.OR.LWFLUXOUT
 ! ----------------------------------------------------------------------
