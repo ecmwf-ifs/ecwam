@@ -86,9 +86,12 @@
 
         ! USE IBRMEM TO CHANGE ATTENUATION FACTOR ALPFAC
         ! OTHERWISE ALPFAC KEEPS VALUE SET IN IMPLSCH
-        IF ((IBRMEM(IJ) >= 0.99_JWRB) .AND. (IBRMEM(IJ) <= 1.01_JWRB)) THEN
-          ALPFAC(IJ)  = IBR_CONST5
-        ENDIF
+            
+!         IF  (IBRMEM(IJ) <= 0.5_JWRB) THEN
+!           ALPFAC(IJ)  = IBR_CONST5
+!         ENDIF
+ 
+        ALPFAC(IJ) = ALPFAC(IJ)*(1._wp-NINT(IBRMEM(IJ))) + IBR_CONST5*NINT(IBRMEM(IJ))
 
       ENDDO
 

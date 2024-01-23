@@ -111,7 +111,7 @@
 
         ! BREAK ICE IF IBR EXCEEDS THRESHOLD
         IF (IBR >= IBR_CONST4) THEN
-          IBRMEM(IJ)  = 1.0_JWRB ! 2=SOLID,1=BROKEN
+          IBRMEM(IJ)  = 0.0_JWRB ! 1=SOLID,0=BROKEN
         ENDIF
 
       ENDDO

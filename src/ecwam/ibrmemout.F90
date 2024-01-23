@@ -79,7 +79,7 @@
 
       DO IJ = KIJS,KIJL
         IF (.NOT. (CICV(IJ) > 0.0_JWRB)) THEN
-          IBRMEMMSK(IJ) = ZMISS ! 2=SOLID,1=BROKEN
+          IBRMEMMSK(IJ) = ZMISS ! 1=SOLID,0=BROKEN
         ENDIF
       ENDDO        
 
