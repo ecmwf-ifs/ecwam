@@ -51,8 +51,9 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMAP   , ONLY : BLK2GLO  ,AMOWEP   ,AMONOP   ,    &
-     &            XDELLA   ,ZDELLO   ,IPER
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,LLUNSTR
+     &            XDELLA   ,ZDELLO   ,IPER     ,              &
+     &            NGX      ,NGY      ,NIBLO
+      USE YOWPARAM , ONLY : LLUNSTR
 #ifdef WAM_HAVE_UNWAM
       USE YOWUNPOOL, ONLY : OUT_METHOD, IE_OUTPTS
       USE OUTPUT_STRUCT, ONLY : IXarr, IYarr

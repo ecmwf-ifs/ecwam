@@ -65,6 +65,7 @@
       USE YOWMPP   , ONLY : NPROC
       USE YOWPHYS  , ONLY : XNLEV
       USE YOWTEST  , ONLY : IU06
+      USE EC_LUN   , ONLY : NULERR
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -480,13 +481,13 @@
 
 !     WILL THERE BE OUTPUT OF PARTITONED PARAMETERS
       IF(NTRAIN*(ITP/NTRAIN).NE.ITP) THEN
-        WRITE(0,*) '******************************************'
-        WRITE(0,*) '*  FATAL ERROR IN SUB. MPCRTBL           *'
-        WRITE(0,*) '*  THE NUMBER OF PARTITONED PARAMETERS   *'
-        WRITE(0,*) '*  DOES NOT MATCH !!!!                   *'
-        WRITE(0,*) '*  NTRAIN = ',NTRAIN
-        WRITE(0,*) '*  ITP = ',ITP
-        WRITE(0,*) '******************************************'
+        WRITE(NULERR,*) '******************************************'
+        WRITE(NULERR,*) '*  FATAL ERROR IN SUB. MPCRTBL           *'
+        WRITE(NULERR,*) '*  THE NUMBER OF PARTITONED PARAMETERS   *'
+        WRITE(NULERR,*) '*  DOES NOT MATCH !!!!                   *'
+        WRITE(NULERR,*) '*  NTRAIN = ',NTRAIN
+        WRITE(NULERR,*) '*  ITP = ',ITP
+        WRITE(NULERR,*) '******************************************'
         WRITE(IU06,*) '******************************************'
         WRITE(IU06,*) '*  FATAL ERROR IN SUB. MPCRTBL           *'
         WRITE(IU06,*) '*  THE NUMBER OF PARTITONED PARAMETERS   *'

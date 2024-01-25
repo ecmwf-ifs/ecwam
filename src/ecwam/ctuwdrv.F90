@@ -32,11 +32,12 @@ USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 USE YOWCURR  , ONLY : LLCFLCUROFF
 USE YOWGRID  , ONLY : NPROMA_WAM
 USE YOWMPP   , ONLY : IRANK
-USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE_RED
+USE YOWPARAM , ONLY : NANG     ,NFRE_RED
 USE YOWSTAT  , ONLY : IREFRA
 USE YOWTEST  , ONLY : IU06
 
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+USE EC_LUN   , ONLY : NULERR
       
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -118,12 +119,12 @@ ENDDO
 DO IJ=IJS,IJL
   IF (LCFLFAIL(IJ)) THEN
     CALL FLUSH (IU06)
-    WRITE(0,*) '!!! ********************************* !!'
-    WRITE(0,*) '!!! WAVE MODEL HAS ABORTED !!!'
-    WRITE(0,*) '!!! FOLLOWING CFL CRITERION VIOLATION !!'
-    WRITE(0,*) '!!! FOR DELPRO = ', DELPRO
-    WRITE(0,*) '!!! ON PE ',IRANK
-    WRITE(0,*) '!!! ********************************* !!'
+    WRITE(NULERR,*) '!!! ********************************* !!'
+    WRITE(NULERR,*) '!!! WAVE MODEL HAS ABORTED !!!'
+    WRITE(NULERR,*) '!!! FOLLOWING CFL CRITERION VIOLATION !!'
+    WRITE(NULERR,*) '!!! FOR DELPRO = ', DELPRO
+    WRITE(NULERR,*) '!!! ON PE ',IRANK
+    WRITE(NULERR,*) '!!! ********************************* !!'
     WRITE(IU06,*) '!!! ********************************* !!'
     WRITE(IU06,*) '!!! WAVE MODEL HAS ABORTED !!!'
     WRITE(IU06,*) '!!! FOLLOWING CFL CRITERION VIOLATION !!'

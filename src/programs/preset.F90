@@ -78,7 +78,7 @@ PROGRAM preset
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWFRED  , ONLY : FR       ,TH
+      USE YOWFRED  , ONLY : FR       ,TH       ,IFRE1    , FR1
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,    &
      &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP ,    &
@@ -86,18 +86,18 @@ PROGRAM preset
       USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL     , NTOTIJ  ,    &
      &            NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK,             & 
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
-      USE YOWMAP   , ONLY : BLK2GLO   ,IRGG     ,AMOWEP   ,             &
+      USE YOWMAP   , ONLY : CLDOMAIN ,BLK2GLO   ,IRGG    ,AMOWEP   ,    &
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,    &
-     &            BLK2LOC 
+     &            BLK2LOC  ,NGX      ,NGY      ,NIBLO
       USE YOWNEMOFLDS , ONLY : NEMO2WAM
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG     ,NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
-     &            NIBLO    ,SWAMPWIND,CLDOMAIN ,LL1D     ,LLUNSTR
+      USE YOWPARAM , ONLY : NANG, NFRE, NFRE_RED,                       &
+     &             SWAMPWIND,LL1D     ,LLUNSTR
       USE YOWPCONS , ONLY : G        ,RAD      ,DEG      ,ZMISS    ,    &
      &            ROAIR
-      USE YOWSHAL  , ONLY : DEPTH_INPUT, WVENVI, BATHYMAX
+      USE YOWSHAL  , ONLY : BATHY, WVENVI, BATHYMAX
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,    &
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,    &
      &            IDELPRO  ,IDELWI   ,IDELWO   ,                        &
@@ -135,12 +135,13 @@ PROGRAM preset
 #include "iniwcst.intfb.h"
 #include "init_fieldg.intfb.h"
 #include "mchunk.intfb.h"
+#include "mfredir.intfb.h"
 #include "mstart.intfb.h"
 #include "mswell.intfb.h"
 #include "outspec.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 #include "prewind.intfb.h"
-#include "readpre.intfb.h"
+#include "readmdlconf.intfb.h"
 #include "savspec.intfb.h"
 #include "savstress.intfb.h"
 
@@ -183,12 +184,14 @@ PROGRAM preset
 ! ----------------------------------------------------------------------
 
       NAMELIST /NALINE/ HEADER,                                         &
+     &          CLDOMAIN,                                               &
+     &          NANG, IFRE1, FR1, NFRE, NFRE_RED,                       &
      &          IOPTI, ITEST, ITESTB,                                   &
      &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH, SWAMPWIND ,      &
      &          USERID, RUNID, PATH, CPATH,                             &
      &          CDATEA, IDELWI, CLTUNIT,                                &
      &          LLUNSTR, LPREPROC,                                      &
-     &          LGRIBOUT,                                               &
+     &          LGRIBOUT, NGRIB_VERSION,                                &
      &          MARSTYPE, YCLASS, YEXPVER, NPROMA_WAM
 
 !     IOPTI : IT SELECTS COLD START SPECTRAL FORM
@@ -226,6 +229,12 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !        ---------------------------------------------
 
       HEADER = ZERO
+      CLDOMAIN  = 'g'
+      NANG      = 0
+      IFRE1     = 3
+      FR1       = 4.177248E-02_JWRB
+      NFRE      = 0
+      NFRE_RED  = 0
       IOPTI  =    1
       ITEST  =   -9
       ITESTB =   -9
@@ -249,6 +258,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       LPREPROC =.FALSE.
 
       LGRIBOUT = .TRUE.
+      NGRIB_VERSION = 1
 
       MARSTYPE = 'an'
       YCLASS   = 'rd'
@@ -301,6 +311,27 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       READ (IU05, NALINE)
 
+      IF( NANG <= 0 ) CALL WAM_ABORT( "Expected positive value for NANG", __FILENAME__, __LINE__ )
+      IF( NFRE <= 0 ) CALL WAM_ABORT( "Expected positive value for NFRE", __FILENAME__, __LINE__ )
+      IF( NFRE_RED <= 0 ) NFRE_RED = NFRE
+      IF( IFRE1 <= 0 ) CALL WAM_ABORT( "Expected positive value for IFRE1",  __FILENAME__, __LINE__ )
+
+      IF (NFRE_RED > NFRE ) THEN
+        WRITE (IU06,*) '**********************************************'
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '*       FATAL ERROR IN SUB. UIPREP           *'
+        WRITE (IU06,*) '*       ==========================           *'
+        WRITE (IU06,*) '* THE REDUCED NUMBER OF FREQUENCIES NFRE_RED *'
+        WRITE (IU06,*) '* IS LARGER THAN THE TOTAL NUMNBER NFRE  !!  *'
+        WRITE (IU06,*) '* NFRE_RED = ', NFRE_RED
+        WRITE (IU06,*) '* NFRE     = ', NFRE
+        WRITE (IU06,*) '**********************************************'
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
+      ENDIF
+
+!     INITIALISE THE FREQUENCY AND DIRECTION ARRAYS
+      CALL MFREDIR
+
       IF (CLTUNIT == 'H') IDELWI = IDELWI*3600
       CDATEF = CDATEA
       CDATER = '000000000000'
@@ -325,7 +356,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !*    3. READ PREPROC OUTPUT.
 !        --------------------
 
-      CALL READPRE (IU07)
+      CALL READMDLCONF (IU07)
 
       NINF=1
       NSUP=NIBLO
@@ -336,6 +367,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         IJL = NIBLO
         NTOTIJ = IJL-IJS+1
         IF(NPROMA_WAM == 0 ) NPROMA_WAM = NTOTIJ
+        NPROMA_WAM = MIN(NPROMA_WAM, NIBLO)
         NXFFS=1
         NXFFE=MNP
         NYFFS=1
@@ -350,10 +382,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
         CALL MCHUNK
 
-        IF (ALLOCATED(BLK2LOC%IFROMIJ))THEN
-           CALL BLK2LOC%DEALLOC()
-        ENDIF
+        IF (ALLOCATED(BLK2LOC%IFROMIJ)) CALL BLK2LOC%DEALLOC()
         CALL BLK2LOC%ALLOC(NPROMA_WAM,NCHNK)
+
         DO ICHNK = 1, NCHNK
           DO IPRM = 1, NPROMA_WAM 
             IJ = IJFROMCHNK(IPRM, ICHNK)
@@ -373,26 +404,26 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 #endif
 
       ELSE
-        NTOTIJ = IJL-IJS+1
+        NTOTIJ = NIBLO 
         IF(NPROMA_WAM == 0 ) NPROMA_WAM = NTOTIJ
+        NPROMA_WAM = MIN(NPROMA_WAM, NIBLO)
         NXFFS=1
         NXFFE=NGX
         NYFFS=1
         NYFFE=NGY
         NSTART=1
-        NEND=IJL
+        NEND=NIBLO
         IJSLOC=1
-        IJLLOC=IJL
+        IJLLOC=NIBLO
         IJGLOBAL_OFFSET=0
         NBLKS=NSTART
         NBLKE=NEND
 
         CALL MCHUNK
 
-        IF (ALLOCATED(BLK2LOC%IFROMIJ))THEN
-           CALL BLK2LOC%DEALLOC()
-        ENDIF
+        IF (ALLOCATED(BLK2LOC%IFROMIJ)) CALL BLK2LOC%DEALLOC()
         CALL BLK2LOC%ALLOC(NPROMA_WAM,NCHNK)
+
         DO ICHNK = 1, NCHNK
           DO IPRM = 1, NPROMA_WAM 
             IJ = IJFROMCHNK(IPRM, ICHNK)
@@ -410,16 +441,14 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       ENDIF
 
-      IF (ALLOCATED(WVENVI%UCUR))THEN
-          CALL WVENVI%DEALLOC()
-      ENDIF
+      IF (ALLOCATED(WVENVI%UCUR)) CALL WVENVI%DEALLOC()
       CALL WVENVI%ALLOC(NPROMA_WAM,NCHNK)
 
       DO ICHNK = 1, NCHNK
         DO IPRM = 1, NPROMA_WAM 
           IJ = IJFROMCHNK(IPRM,ICHNK)
           IF (IJ > 0 ) THEN
-            WVENVI%DEPTH(IPRM,ICHNK) = DEPTH_INPUT(IJ)
+            WVENVI%DEPTH(IPRM,ICHNK) = BATHY( BLK2LOC%IFROMIJ(IPRM,ICHNK), BLK2LOC%KFROMIJ(IPRM,ICHNK) )
           ELSE
             WVENVI%DEPTH(IPRM,ICHNK) = BATHYMAX
           ENDIF
@@ -428,7 +457,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
-      DEALLOCATE(DEPTH_INPUT)
+      DEALLOCATE(BATHY)
 
 
 !!!   deallocate big arrays that were read in with READPRE
@@ -457,9 +486,6 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !*    3.* SET GRIB HEADERS FOR INPUTS/OUTPUTS
 !         -----------------------------------
       IF (.NOT. LGRHDIFS) THEN
-!!!!! We might need to impose girb2 at later stage
-        NGRIB_VERSION = 1
-
 !       FOR INTEGRATED PARAMETERS
         CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
 !       FOR SPECTRA 
@@ -541,14 +567,14 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       IF (.NOT.ALLOCATED(FL1)) ALLOCATE (FL1(NPROMA_WAM,NANG,NFRE,NCHNK))
 
-      IF (.NOT.ALLOCATED(FF_NOW%UWND)) THEN
-         CALL FF_NOW%ALLOC(NPROMA_WAM,NCHNK)
-      ENDIF
+      IF (.NOT.ALLOCATED(FF_NOW%UWND)) CALL FF_NOW%ALLOC(NPROMA_WAM,NCHNK) 
 
       WSPMIN = 0.0_JWRB
       DO ICHNK=1,NCHNK
         FF_NOW%WSWAVE(:,ICHNK) = WSPMIN
         FF_NOW%WDWAVE(:,ICHNK) = 0.0_JWRB
+        FF_NOW%USTRA(:,ICHNK) = 0.0_JWRB
+        FF_NOW%VSTRA(:,ICHNK) = 0.0_JWRB
         FF_NOW%UFRIC(:,ICHNK) =  FF_NOW%WSWAVE(:,ICHNK)*0.035847_JWRB
         FF_NOW%TAUW(:,ICHNK) = 0.1_JWRB*FF_NOW%UFRIC(:,ICHNK)
         FF_NOW%TAUWDIR(:,ICHNK) = 0.0_JWRB
@@ -560,13 +586,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         FF_NOW%CITHICK(:,ICHNK) = 0.0_JWRB
       ENDDO
 
-      IF (.NOT.ALLOCATED(FF_NEXT%UWND)) THEN
-         CALL FF_NEXT%ALLOC(NPROMA_WAM,NCHNK)
-      ENDIF
+      IF (.NOT.ALLOCATED(FF_NEXT%UWND)) CALL FF_NEXT%ALLOC(NPROMA_WAM,NCHNK)
 
-      IF (.NOT.ALLOCATED(NEMO2WAM%NEMOSST)) THEN
-         CALL NEMO2WAM%ALLOC(NPROMA_WAM,NCHNK)
-      ENDIF
+      IF (.NOT.ALLOCATED(NEMO2WAM%NEMOSST)) CALL NEMO2WAM%ALLOC(NPROMA_WAM,NCHNK)
 
       IF (IOPTI > 0 .AND. IOPTI /= 3) THEN
 
@@ -614,7 +636,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         DO ICHNK = 1, NCHNK
           CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,                      &
      &                 FM, ALFA, GAMMA, SA, SB,                          &
-     &                 1, NPROMA_WAM, FL1(:,:,:,ICHNK),                     &
+     &                 1, NPROMA_WAM, FL1(:,:,:,ICHNK),                  &
      &                 FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK))
         ENDDO
 !$OMP END PARALLEL DO

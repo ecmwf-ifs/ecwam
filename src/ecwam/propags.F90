@@ -84,8 +84,8 @@ SUBROUTINE PROPAGS (F1, F3, NINF, NSUP, KIJS, KIJL,           &
       USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,FRATIO   ,    &
      &            COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,SINPH    ,COSPH
-      USE YOWMAP   , ONLY : IRGG
-      USE YOWPARAM , ONLY : NIBLO    , NANG     ,NFRE     ,NFRE_RED
+      USE YOWMAP   , ONLY : IRGG     ,NIBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
       USE YOWPCONS , ONLY : PI       ,ZPI      ,R
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSTAT  , ONLY : IDELPRO  ,ICASE    ,IREFRA

@@ -81,9 +81,9 @@
       XMA = 1.0_JWRB/REAL(MA,JWRB)
       DELTHH = REAL(MA,JWRB)*DELTH
 
-      ALLOCATE(OMEGA(NFREH))
-      ALLOCATE(THH(NANGH))
-      ALLOCATE(DFDTH(NFREH))
+      IF (.NOT. ALLOCATED(OMEGA)) ALLOCATE(OMEGA(NFREH))
+      IF (.NOT. ALLOCATED(THH)) ALLOCATE(THH(NANGH))
+      IF (.NOT. ALLOCATED(DFDTH)) ALLOCATE(DFDTH(NFREH))
 
       DO M=1,NFREH
          OMEGA(M) = ZPI*FR(MR*M)
@@ -91,7 +91,7 @@
 
       DO K=1,NANGH
          K0 = MA*K+1
-         IF (K0.GT.NANG) K0 = K0-NANG
+         IF (K0 > NANG) K0 = K0-NANG
          THH(K) = TH(K0)
       ENDDO
 
@@ -107,14 +107,14 @@
 !***  2.INITIALISE TABLES
 !     -------------------
 !
-      ALLOCATE(TA(NDEPTH,NANGH,NFREH,NFREH))
-      ALLOCATE(TB(NDEPTH,NANGH,NFREH,NFREH))
-      ALLOCATE(TC_QL(NDEPTH,NANGH,NFREH,NFREH))
-      ALLOCATE(TT_4M(NDEPTH,NANGH,NFREH,NFREH))
-      ALLOCATE(TT_4P(NDEPTH,NANGH,NFREH,NFREH))
-      ALLOCATE(IM_P(NFREH,NFREH))
-      ALLOCATE(IM_M(NFREH,NFREH))
-      ALLOCATE(TFAKH(NFREH,NDEPTH))
+      IF (.NOT.ALLOCATED(TA)) ALLOCATE(TA(NDEPTH,NANGH,NFREH,NFREH))
+      IF (.NOT.ALLOCATED(TB)) ALLOCATE(TB(NDEPTH,NANGH,NFREH,NFREH))
+      IF (.NOT.ALLOCATED(TC_QL)) ALLOCATE(TC_QL(NDEPTH,NANGH,NFREH,NFREH))
+      IF (.NOT.ALLOCATED(TT_4M)) ALLOCATE(TT_4M(NDEPTH,NANGH,NFREH,NFREH))
+      IF (.NOT.ALLOCATED(TT_4P)) ALLOCATE(TT_4P(NDEPTH,NANGH,NFREH,NFREH))
+      IF (.NOT.ALLOCATED(IM_P)) ALLOCATE(IM_P(NFREH,NFREH))
+      IF (.NOT.ALLOCATED(IM_M)) ALLOCATE(IM_M(NFREH,NFREH)) 
+      IF (.NOT.ALLOCATED(TFAKH)) ALLOCATE(TFAKH(NFREH,NDEPTH))
 
       CALL TABLES_2ND(NFREH,NANGH,NDEPTH,OMSTART,FRAC,XMR,              &
      &                DFDTH,OMEGA,THH,TA,TB,TC_QL,TT_4M,TT_4P,          &
@@ -139,12 +139,11 @@
       DO M=1,NFREH
          OM0 = OMEGA(M)
          OM1 = OMEGA(2)
-         IF (OM1.LT.OM0/2.0_JWRB) THEN
+         IF (OM1 < OM0/2.0_JWRB) THEN
             XK1 = OM1**2/G
             XK2 = (OM0-OM1)**2/G
             A = (ABS(XK1+XK2)/2.0_JWRB)**2
-            WRITE(IU06,'(I5,2F16.9)')                                   &
-     &                 M,TA(NDEPTH,NANGH,2,M)/DFDTH(2),A 
+            WRITE(IU06,'(I5,2F16.9)') M,TA(NDEPTH,NANGH,2,M)/DFDTH(2),A
          ENDIF
       ENDDO 
 
@@ -156,8 +155,7 @@
          XK1 = OM1**2/G
          XK2 = (OM0+OM1)**2/G
          B = (ABS(XK1-XK2)/2.)**2
-         WRITE(IU06,'(I5,2F16.9)')                                      &
-     &              M,TB(NDEPTH,NANGH,M,M)/DFDTH(M),B 
+         WRITE(IU06,'(I5,2F16.9)') M,TB(NDEPTH,NANGH,M,M)/DFDTH(M),B  
       ENDDO 
 
       WRITE (IU06,'('' '')')
@@ -166,9 +164,10 @@
          OM0 = OMEGA(M)
          XK0 = OM0**2/G
          C_QL = -XK0**2
-         WRITE(IU06,'(I5,2F16.9)')                                      &
-     &              M,TC_QL(NDEPTH,NANGH,M,M)/DFDTH(M),C_QL  
+         WRITE(IU06,'(I5,2F16.9)') M,TC_QL(NDEPTH,NANGH,M,M)/DFDTH(M),C_QL 
       ENDDO
+
+      CALL FLUSH (IU06)
 !
 !----------------------------------------------------------------------
 !

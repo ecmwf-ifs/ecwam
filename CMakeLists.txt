@@ -9,6 +9,7 @@
 cmake_minimum_required( VERSION 3.24 FATAL_ERROR )
 find_package( ecbuild 3.4 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild )
 
+set(PARENT_PROJECT_NAME "${PROJECT_NAME}")
 if( NOT ECWAM_PROJECT_NAME )
   set( ECWAM_PROJECT_NAME ecwam )
 endif()
@@ -53,6 +54,10 @@ ecbuild_add_option( FEATURE OCEAN_COUPLING
 ecbuild_add_option( FEATURE ECWAM_LAUNCH
                     DEFAULT ON
                     DESCRIPTION "Use share/ecwam/scripts/ecwam-launch script to run ecwam tests" )
+
+ecbuild_add_option( FEATURE ECFLOW
+                    DESCRIPTION "ecflow meter updates"
+                    REQUIRED_PACKAGES "ecflow_light")
 
 if( HAVE_ECWAM_LAUNCH )
   # Overwrite meaning of mpiexec

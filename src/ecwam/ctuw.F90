@@ -34,7 +34,7 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
       USE YOWGRID  , ONLY : SINPH    ,COSPH
       USE YOWMAP   , ONLY : IRGG    ,IPER     ,                                   &
      &                      XDELLA   ,ZDELLO   ,AMOWEP   ,AMOSOP 
-      USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE_RED ,NGY
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED
       USE YOWPCONS , ONLY : ZPI      ,R        ,CIRC
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSTAT  , ONLY : ICASE    ,IREFRA
@@ -45,6 +45,7 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
      &                      JXO      ,JYO      ,KCR
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
 
 ! ----------------------------------------------------------------------
 
@@ -527,7 +528,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
                   WRITE(IU06,*) '*                                 *'
                   WRITE(IU06,*) '***********************************'
 
-                  WRITE(0,*) '* CTUW: CFL VIOLATED IN FREQUENCY*',ICALL,IJ,K,M,IC,WMPMN(IJ,K,M,IC),U_EXT(IJ),V_EXT(IJ)
+                  WRITE(NULERR,*) '* CTUW: CFL VIOLATED IN FREQUENCY*',ICALL,IJ,K,M,IC,WMPMN(IJ,K,M,IC),U_EXT(IJ),V_EXT(IJ)
 
                   LCFLFAIL(IJ)=.TRUE.
                   CALl FLUSH(IU06)
@@ -552,7 +553,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               WRITE(IU06,*) '* XLAT= ',XLAT,' XLON= ',XLON 
               WRITE(IU06,*) '* DEPTH= ',DEPTH_EXT(IJ)
               IF (.NOT. LLCFLCUROFF .OR. ICALL > 1 ) THEN 
-                WRITE(0,*) '* CTUW: SUMW IS NOT <1 AND >0, BUT*',ICALL,IJ,K,M,SUMWN(IJ,K,M),XLAT,&
+                WRITE(NULERR,*) '* CTUW: SUMW IS NOT <1 AND >0, BUT*',ICALL,IJ,K,M,SUMWN(IJ,K,M),XLAT,&
      &                     XLON,DEPTH_EXT(IJ),U_EXT(IJ),V_EXT(IJ)
               ENDIF
               DO IP=1,2

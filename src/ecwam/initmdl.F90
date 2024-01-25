@@ -159,11 +159,11 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                         ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, OCEAN2WAVE
 
-      USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC,        &
+      USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,                        &
      &                      GBOUNC  , IPOGBO   ,CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,LWNEMOCOU
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,GFLAG20  ,    &
-     &                      NGOUT    ,IJAR     ,NOUTT    ,LOUTINT
+     &                      NGOUT    ,NOUTT    ,LOUTINT  ,LSECONDORDER
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
@@ -180,11 +180,11 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      NPROMA_WAM, NCHNK, IJFROMCHNK  
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,                        &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
+     &            NIBLO    ,NGX      ,NGY      ,                        &
      &            KMNOP    ,KMSOP    ,IPER     ,IRGG     ,IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
-     &                      NGX      ,NGY      ,                        &
-     &                      NIBLO    ,NIBLD    ,NIBLC    ,LLUNSTR
+     &                      LLUNSTR
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
      &                      RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
       USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
@@ -219,6 +219,8 @@ SUBROUTINE INITMDL (NADV,                                 &
 #endif
       USE YOWABORT , ONLY : WAM_ABORT
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
+
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -235,8 +237,10 @@ SUBROUTINE INITMDL (NADV,                                 &
 #include "init_x0tauhf.intfb.h"
 #include "initdpthflds.intfb.h"
 #include "initnemocpl.intfb.h"
-#include "iwam_get_unit.intfb.h"
 #include "iniwcst.intfb.h"
+#include "iwam_get_unit.intfb.h"
+#include "mcout.intfb.h"
+#include "secondhh_gen.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 #include "prewind.intfb.h"
 #include "readbou.intfb.h"
@@ -455,6 +459,13 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
 !     THE ACTUAL READING HAS BEEN MOVED TO MPDECOMP.
 
+
+!*    2.0 COMPUTE OUTPUT POINT INDICES (MODULE YOWCOUT).
+!         ----------------------------------------------
+
+      IF ( NGOUT > 0 .AND. .NOT. LLUNSTR ) CALL MCOUT
+
+
 !*    2.1 READ MODULE YOWCPBO AND YOWFPBO.
 !     ------------------------------------
 
@@ -504,8 +515,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
             WRITE(IU06,*) '*  WITH OPTION IBOUNF = 1          *'
             WRITE(IU06,*) '*  YOU MUST PROVIDE THE FILE:      *'
             WRITE(IU06,*) '* ',FILENAME(1:LFILE)
-            WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),   &
-     &        ' IS MISSING !!!!'
+            WRITE(NULERR,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),' IS MISSING !!!!'
             WRITE(IU06,*) '*                                  *'
             WRITE(IU06,*) '************************************'
             CALL ABORT1
@@ -853,16 +863,6 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 
 
-!*    8.2  PRECOMPUTE BOTTOM REFRACTION TERMS.
-!          -----------------------------------
-      IF (IREFRA /= 0) THEN
-        NIBLD=NIBLO
-        NIBLC=NIBLO
-      ELSE
-        NIBLD=0
-        NIBLC=0
-      ENDIF
-
 !     INITIALISE CDTCUR
       CDTCUR=CDATECURA
       IF (.NOT.LWCOU .AND. .NOT.LRESTARTED) THEN
@@ -927,6 +927,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       CALL GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 
       WRITE(IU06,*) '    SUB. INITMDL: SPECTRA READ IN'
+      WRITE(IU06,*) ' '
       CALL FLUSH (IU06)
 
 
@@ -935,6 +936,12 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 !         ------------------------------------------------------------
 
       CALL INISNONLIN
+
+
+!*    9.3 HIGHER HARMONICS TABLES
+!         -----------------------
+
+      IF (LSECONDORDER) CALL SECONDHH_GEN
 
 ! ----------------------------------------------------------------------
 !NEST

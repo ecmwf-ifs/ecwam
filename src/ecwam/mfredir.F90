@@ -49,20 +49,37 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
-     &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH    ,    &
-     &            FRATIO
-      USE YOWPCONS , ONLY : G        ,PI       ,ZPI      ,DEG      ,    &
-     &            R
+      USE YOWFRED  , ONLY : IFRE1    ,FR1      ,FRATIO   ,              & 
+     &            FR       ,DFIM     ,GOM      ,C        ,              &
+     &            DELTH    ,TH       ,COSTH    ,SINTH
+      USE YOWPCONS , ONLY : G        ,PI       ,ZPI      ,DEG
       USE YOWTEST  , ONLY : IU06
+
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
+#include "mfr.intfb.h"
+
       INTEGER(KIND=JWIM) :: M, K
 
       REAL(KIND=JWRB) :: CO1
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+
+! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('MFREDIR',0,ZHOOK_HANDLE)
+
+      IF (.NOT.ALLOCATED(FR)) ALLOCATE(FR(NFRE))
+      IF (.NOT.ALLOCATED(DFIM)) ALLOCATE(DFIM(NFRE))
+      IF (.NOT.ALLOCATED(GOM)) ALLOCATE(GOM(NFRE))
+      IF (.NOT.ALLOCATED(C)) ALLOCATE(C(NFRE))
+      IF (.NOT.ALLOCATED(TH)) ALLOCATE(TH(NANG))
+      IF (.NOT.ALLOCATED(COSTH)) ALLOCATE(COSTH(NANG))
+      IF (.NOT.ALLOCATED(SINTH)) ALLOCATE(SINTH(NANG))
+
 
 !*    1. FREQUENCY DEPENDENT CONSTANTS.
 !        ------------------------------
@@ -70,9 +87,8 @@
 !*    1.1 COMPUTE FREQUENCIES.
 !         --------------------
 
-      DO M=2,NFRE
-        FR(M) = FRATIO*FR(M-1)
-      ENDDO
+      CALL MFR(NFRE, IFRE1, FR1, FRATIO, FR)  
+
 
 !*    1.2 COMPUTE DEEP WATER GROUP VELOCITIES.
 !        ------------------------------------
@@ -94,11 +110,7 @@
 !        --------------------------------------------------
 
       DELTH = ZPI/REAL(NANG,JWRB)
-      DELTR = DELTH*R
       DO K=1,NANG
-!CCC        TH(K) = REAL(K-1,JWRB)*DELTH
-!CCC the previous line should be used if spectra should not be rotated.
-!CCC the next line should be used if rotated spectra are used
         TH(K) = REAL(K-1,JWRB)*DELTH + 0.5_JWRB*DELTH
         COSTH(K) = COS(TH(K))
         SINTH(K) = SIN(TH(K))
@@ -121,21 +133,25 @@
 !*    4. PRINTER PROTOCOL
 !         ---------------
 
-      WRITE (IU06,'(''1FREQUENCY AND DIRECTION GRID'')')
-      WRITE (IU06,'(''0NUMBER OF FREQUENCIES IS  NFRE = '',I3)') NFRE
-      WRITE (IU06,'(''0REDUCED NUMBER OF FREQUENCIES IS  NFRE_RED = '',I3)') NFRE_RED
-      WRITE (IU06,'('' NUMBER OF DIRECTIONS  IS  NANG = '',I3)') NANG
-      WRITE (IU06,'(''0MODEL FREQUENCIES IN HERTZ:'')')
+      WRITE (IU06,*) ' '
+      WRITE (IU06,'(''  FREQUENCY AND DIRECTION GRID'')')
+      WRITE (IU06,'(''  NUMBER OF FREQUENCIES IS  NFRE = '',I3)') NFRE
+      WRITE (IU06,'(''  REDUCED NUMBER OF FREQUENCIES IS  NFRE_RED = '',I3)') NFRE_RED
+      WRITE (IU06,'(''  NUMBER OF DIRECTIONS  IS  NANG = '',I3)') NANG
+      WRITE (IU06,'(''  MODEL FREQUENCIES IN HERTZ:'')')
       WRITE (IU06,'(1X,13F10.5)') (FR(M),M=1,NFRE)
-      WRITE (IU06,'(''0MODEL FREQUENCY INTERVALLS TIMES DIRECTION'',    &
-     &              '' INTERVALL IN HERTZ*RADIENS'')')
+      WRITE (IU06,'(''  MODEL FREQUENCY INTERVALS TIMES DIRECTION'',    &
+     &              '' INTERVAL IN HERTZ*RADIANS'')')
       WRITE (IU06,'(1X,13F10.5)') (DFIM(M),M=1,NFRE)
-      WRITE (IU06,'(''0MODEL DEEP WATER GROUPVELOCITY IN M/S:'')')
+      WRITE (IU06,'(''  MODEL DEEP WATER GROUP VELOCITY IN M/S:'')')
       WRITE (IU06,'(1X,13F10.5)') (GOM(M),M=1,NFRE)
-      WRITE (IU06,'(''0MODEL DEEP WATER PHASEVELOCITY IN M/S:'')')
+      WRITE (IU06,'(''  MODEL DEEP WATER PHASE VELOCITY IN M/S:'')')
       WRITE (IU06,'(1X,13F10.5)') (C(M),M=1,NFRE)
-      WRITE (IU06,'(''0MODEL DIRECTIONS IN DEGREE'',                    &
+      WRITE (IU06,'(''  MODEL DIRECTIONS IN DEGREE'',                    &
      &              '' (CLOCKWISE FROM NORTH):'')')
       WRITE (IU06,'(1X,13F10.5)') (TH(K)*DEG,K=1,NANG)
+      WRITE (IU06,*) ' '
+
+      IF (LHOOK) CALL DR_HOOK('MFREDIR',1,ZHOOK_HANDLE)
 
       END SUBROUTINE MFREDIR

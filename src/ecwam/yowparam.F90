@@ -13,8 +13,7 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), PARAMETER :: IMDLGRDID=218
-      INTEGER(KIND=JWIM), PARAMETER :: KWAMVER=8
+      INTEGER(KIND=JWIM), PARAMETER :: KWAMVER=9
 
 !*    ** *PARAM*  GENERAL GRID SIZE INFORMATION.
 
@@ -22,21 +21,12 @@
       INTEGER(KIND=JWIM) :: NFRE
       INTEGER(KIND=JWIM) :: NFRE_RED
       INTEGER(KIND=JWIM) :: NFRE_ODD
-      INTEGER(KIND=JWIM) :: NGX
-      INTEGER(KIND=JWIM) :: NGY
-      INTEGER(KIND=JWIM) :: NIBLO
-      INTEGER(KIND=JWIM) :: NOVER 
-      INTEGER(KIND=JWIM) :: NIBL1 
-      INTEGER(KIND=JWIM) :: NIBLD 
-      INTEGER(KIND=JWIM) :: NIBLC 
 
       REAL(KIND=JWRB) :: SWAMPWIND 
       REAL(KIND=JWRB) :: SWAMPWIND2 
       REAL(KIND=JWRB) :: DTNEWWIND
       REAL(KIND=JWRB) :: SWAMPCIFR
       REAL(KIND=JWRB) :: SWAMPCITH
-
-      CHARACTER(LEN=1)   :: CLDOMAIN
 
       LOGICAL :: LTURN90
       LOGICAL :: LL1D
@@ -48,26 +38,12 @@
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !       ---------   -------   --------
-!      *IMDLGRDID* INTEGER   MODEL GRID IDENTIFICATION NUMBER.
-!                            IT SHOULD BE UPDATED ONLY IF NEW gridglou
-!                            AND ubufglou FILES ARE PRODUCED!!!!
 !      *KWAMVER*   INTEGER   WAM SOFTWARE VERSION NUMBER.
 !      *NANG*      INTEGER   NUMBER OF ANGLES.
 !      *NFRE*      INTEGER   NUMBER OF FREQUENCIES FOR THE PHYSICS.
 !      *NFRE_RED*  INTEGER   REDUCED NUMBER OF FREQUENCIES FOR THE PROPAGATION AND IO
 !                            BY DEFAULT = NFRE
 !      *NFRE_ODD*  INTEGER   NFRE-1 IF NFRE EVEN, BUT NFRE IS NFRE ODD 
-!      *NGX*       INTEGER   NUMBER OF LONGITUDES IN GRID.
-!      *NGY*       INTEGER   NUMBER OF LATITUDES IN GRID.
-!      *NIBLO*     INTEGER   NUMBER OF SEA POINTS IN BLOCK.
-!      *NOVER*     INTEGER   MAXIMUM NUMBER POINTS IN FIRST LATITUDE
-!                            OF BLOCKS.
-!      *NIBL1*     INTEGER   = NIBLO IF MULTI BLOCK VERSION.
-!                            =     1 IF ONE BLOCK VERSION.
-!      *NIBLD*     INTEGER   = NIBLO IF DEPTH OR CURRENT REFRACTION.
-!                            = 1     ELSE.
-!      *NIBLC*     INTEGER   = NIBLO IF CURRENT REFRACTION.
-!                            = 1     ELSE.
 !      *SWAMPWIND* REAL      CONSTANT WIND SPEED USED TO RUN SWAMP CASE.
 !                            FIRST VALUE
 !      *SWAMPWIND2*REAL      CONSTANT WIND SPEED USED TO RUN SWAMP CASE.
@@ -84,8 +60,6 @@
 !                            OVER THE ALL DOMAIN.
 !                            THE PRESENCE OF THE FILE, windforcing_time_series
 !                            WILL DETERMINE WHETHER OR NOT LWDINTS IS TRUE OR NOT
-!      *CLDOMAIN*  CHARACTER DEFINES THE DOMAIN OF THE MODEL (for the
-!                            FDB and for selection of some variables)
 !      *LL1D*      LOGICAL   IF TRUE THEN THE DOMAIN DECOMPOSITION IS ONLY
 !                            DONE IN LATITUNAL BANDS
 !                            (like it used to be done).

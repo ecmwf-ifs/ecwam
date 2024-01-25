@@ -13,8 +13,7 @@
 
       IMPLICIT NONE
 
-!*    ** *CINP* USER INPUT: AREAS TO BE CHANGED, AND
-!*                    SPECIAL OUTPUT POINTS.
+!*    ** *CINP* USER INPUT: AREAS TO BE CHANGED
 
       INTEGER(KIND=JWIM)              :: NOUT 
       REAL(KIND=JWRB), ALLOCATABLE    :: XOUTW(:) 
@@ -22,8 +21,6 @@
       REAL(KIND=JWRB), ALLOCATABLE    :: XOUTE(:) 
       REAL(KIND=JWRB), ALLOCATABLE    :: XOUTN(:) 
       INTEGER(KIND=JWIM), ALLOCATABLE :: NOUTD(:) 
-      REAL(KIND=JWRB), ALLOCATABLE    :: OUTLONG(:) 
-      REAL(KIND=JWRB), ALLOCATABLE    :: OUTLAT(:) 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -33,8 +30,6 @@
 !      *XOUTS*     REAL      SOUTHERN-MOST LAT OF AREA TO BE CHANGED.
 !      *XOUTN*     REAL      NORTHERN-MOST LAT OF AREA TO BE CHANGED.
 !      *NOUTD*     INTEGER   DEPTH IN AREA IN METRES -999 FOR LAND.
-!      *OUTLONG*   REAL      LONGITUDE OF OUTPUT POINTS.
-!      *OUTLAT*    REAL      LATITUDE OF  OUTPUT POINTS.
 
 ! ----------------------------------------------------------------------
       END MODULE YOWCINP

@@ -12,7 +12,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &              IGRIB_HANDLE, RMISS, ZRCHAR, FIELDS,          &
      &              NATMFLX,                                      &
      &              LWCUR, LWSTOKES,                              &
-     &              NWVFIELDS, WVFLDG,                            &
+     &              LLINIT_WVFLDG, NWVFIELDS, WVFLDG,             &
      &              NLONW, NLATW, LDSTOP, LDWRRE,                 &
      &              LDRESTARTED, ZDELATM,                         &
      &              LDWCOUNORMS, LDNORMWAMOUT_GLOBAL,             &
@@ -122,9 +122,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWMAP   , ONLY : BLK2GLO  ,BLK2LOC  ,ZDELLO   ,IQGAUSS,   AMONOP
       USE YOWMEAN  , ONLY : INTFLDS
       USE YOWNEMOFLDS , ONLY : WAM2NEMO, NEMO2WAM
+      USE YOWMAP   , ONLY : NGX      ,NGY
       USE YOWMPP   , ONLY : IRANK    ,NPROC
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE    ,     &
-     &                      LL1D
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,LL1D
       USE YOWPCONS , ONLY : ZMISS    ,G        ,GM1
       USE YOWPHYS  , ONLY : RNU      ,RNUM     ,PRCHAR
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &
@@ -140,12 +140,16 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                      FF_NEXT  ,                                  &
      &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE,        &
      &                      NXFFS_LOC,NXFFE_LOC,NYFFS_LOC,NYFFE_LOC
+      USE EC_LUN   , ONLY : NULERR
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWASSI  , ONLY : WAMASSI
       USE YOWGRIB  , ONLY : IGRIB_GET_VALUE
       USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_GATHERV
+#ifdef WAM_HAVE_ECFLOW
+      USE ECFLOW_LIGHT, ONLY : ECFLOW_LIGHT_UPDATE_METER
+#endif
 ! ---------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -193,6 +197,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       LOGICAL, INTENT(INOUT) :: LWCUR
 !     INDICATES WHETHER THE PRODUCTION OF THE STOKES DRIFT IS REQUIRED FOR THE IFS
       LOGICAL, INTENT(INOUT) :: LWSTOKES
+!     INDICATES WHETHER ARRAY WVFLDG NEEDS TO BE INITIALISED OVER LAND POINTS
+      LOGICAL, INTENT(IN) :: LLINIT_WVFLDG
 !     NUMBER OF FIELDS RETURNED TO ATMOSPHERIC MODEL
       INTEGER(KIND=JWIM), INTENT(IN) :: NWVFIELDS
 !     FIELDS RETURNED TO ATMOSPHERIC MODEL
@@ -281,6 +287,13 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
       LOGICAL :: LLINIT_FIELDG
+
+#ifdef WAM_HAVE_ECFLOW
+      CHARACTER(LEN = 64) :: METER_NAME
+      INTEGER(KIND=JWIM)  :: METER_VALUE
+      INTEGER(KIND=JWIM)  :: ERROR
+      CHARACTER(LEN = 16) :: ERROR_STR
+#endif
 
       DATA LFRST /.TRUE./
       DATA LFRSTCHK /.TRUE./
@@ -657,6 +670,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL DIFDATE (CDATEF, CDTPRO, IFCST)
         IFCSTEP_HOUR=IFCST/3600
         IF (IRANK == 1) THEN
+#ifndef WAM_HAVE_ECFLOW
           WRITE(CLSETEV,' (A25,'' step '',I8,''&'') ') CMETER,IFCSTEP_HOUR
           CLSMSNAME="                                             "
           CLECFNAME="                                             "
@@ -675,6 +689,16 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
             WRITE(IU06,*) 'nor ECF_NAME  is defined. '
             WRITE(IU06,*) ICPLEN_ECF, CLECFNAME
           ENDIF
+#else
+          METER_NAME = "step"
+          METER_VALUE = IFCSTEP_HOUR
+
+          WRITE(NULERR,FMT='("Setting task meter """,A,""" to value """,I0,"""")') TRIM(METER_NAME),METER_VALUE
+          ERROR = ECFLOW_LIGHT_UPDATE_METER(METER_NAME, METER_VALUE)
+
+          WRITE(ERROR_STR, *) ERROR
+          WRITE(NULERR,FMT='("Update task meter finished, with result """,A,"""")') TRIM(ERROR_STR)
+#endif
         ENDIF
       ENDIF
 
@@ -806,7 +830,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
 !       GRIDDED FIELDS ARE NEEDED FOR IFS, GATHERING OF THE NECESSARY
 !       INFORMATION
-        CALL MPFLDTOIFS(IJS, IJL, BLK2GLO, NWVFIELDS, WVBLOCK,              &
+        CALL MPFLDTOIFS(IJS, IJL, BLK2GLO, LLINIT_WVFLDG, NWVFIELDS, WVBLOCK, &
      &                  WVFLDG, DEFVAL, MASK_OUT, LLGLOBAL_WVFLDG)
 
 

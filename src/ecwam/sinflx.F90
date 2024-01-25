@@ -7,16 +7,18 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,                       &
- &                 LUPDTUS,                                        &
- &                 FL1,                                            &
- &                 WAVNUM, CINV, XK2CG,                            &
- &                 WSWAVE, WDWAVE, AIRD, RAORW, WSTAR, CICOVER,    &
- &                 COSWDIF, SINWDIF2,                              &
- &                 FMEAN, HALP, FMEANWS,                           &
- &                 FLM,                                            &
- &                 UFRIC, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, PHIWA,  &
- &                 FLD, SL, SPOS,                                  &
+SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
+ &                 LUPDTUS,                   &
+ &                 FL1,                       &
+ &                 WAVNUM, CINV, XK2CG,       &
+ &                 WSWAVE, WDWAVE, AIRD,      &
+ &                 RAORW,  WSTAR, CICOVER,    &
+ &                 COSWDIF, SINWDIF2,         &
+ &                 FMEAN, HALP, FMEANWS,      &
+ &                 FLM,                       &
+ &                 UFRIC, TAUW, TAUWDIR,      & 
+ &                 Z0M, Z0B, CHRNCK, PHIWA,   &
+ &                 FLD, SL, SPOS,             &
  &                 MIJ, RHOWGDFTH, XLLWS)
 
 ! ----------------------------------------------------------------------
@@ -127,12 +129,12 @@ IF(LUPDTUS) THEN
     IF (LLGCBZ0) THEN
       CALL HALPHAP(KIJS, KIJL, WAVNUM, COSWDIF, FL1, HALP)
     ELSE
-      HALP(KIJS:KIJL) = 0.0_JWRB 
+      HALP(KIJS:KIJL) = 0.0_JWRB
     ENDIF
 
   ENDIF
 
-  CALL AIRSEA (KIJS, KIJL,                     &
+  CALL AIRSEA (KIJS, KIJL,                                  &
 &              HALP, WSWAVE, WDWAVE, TAUW, TAUWDIR, RNFAC,  &
 &              UFRIC, Z0M, Z0B, CHRNCK, ICODE_WND, IUSFG) 
 

@@ -67,7 +67,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,LWAVEWIND
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
-      USE YOWPARAM , ONLY : NIBLO    ,NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &                      CDATER   ,CDATES   ,CDTINTT  ,IDELPRO  ,IDELT    ,    &
      &                      IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &

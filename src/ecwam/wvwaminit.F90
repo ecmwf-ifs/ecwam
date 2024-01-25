@@ -35,10 +35,9 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWMAP   , ONLY : AMOSOP   ,AMONOP   ,IQGAUSS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI   ,    &
-     &            KTAG
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,KWAMVER  ,LLUNSTR
+      USE YOWMAP   , ONLY : AMOSOP   ,AMONOP   ,IQGAUSS  ,NGX      ,NGY
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI   ,KTAG 
+      USE YOWPARAM , ONLY : KWAMVER  ,LLUNSTR
       
       USE YOWTEST  , ONLY : IU06
       USE YOWUNIT  , ONLY : IREADG   ,NPROPAGS ,IU07     ,IU08     ,    &
@@ -46,16 +45,18 @@
       USE YOWSTAT  , ONLY : IPROPAGS
       USE YOWABORT, ONLY : WAM_ABORT
 
-      USE MPL_MODULE, ONLY : MPL_MYRANK, MPL_NPROC, MPL_BARRIER
+      USE MPL_MODULE, ONLY : MPL_MYRANK, MPL_NPROC
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "expand_string.intfb.h"
+#include "iniwcst.intfb.h"
 #include "iwam_get_unit.intfb.h"
+#include "mfredir.intfb.h"
 #include "mpuserin.intfb.h"
 #include "setwavphys.intfb.h"
-#include "readpre.intfb.h"
+#include "readmdlconf.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IULOG
       INTEGER(KIND=JWIM), INTENT(OUT) :: NGAUSSW, NLON, NLAT
@@ -63,6 +64,7 @@
       INTEGER(KIND=JWIM) :: I4(2)
 
       REAL(KIND=JWRB), INTENT(OUT) :: RSOUTW, RNORTW
+      REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JWRB) :: X4(2)
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -118,6 +120,12 @@
         CALL MPUSERIN
         LFRST=.FALSE.
       ENDIF
+
+!     INITIALISE THE FREQUENCY AND DIRECTION ARRAYS
+!     ---------------------------------------------
+      PRPLRADI = 1.0_JWRB
+      CALL INIWCST(PRPLRADI)  !! it will be call again in INITMDL once PRPLRADI is known
+      CALL MFREDIR
 
 !     SET WAVE PHYSICS PACKAGE
 !     ------------------------
@@ -192,10 +200,7 @@
 
       KTAG=1
 
-      CALL MPL_BARRIER(CDSTRING='WVWAMINIT:')
-
-      CALL READPRE (IU07)
-      CALL MPL_BARRIER(CDSTRING='WVWAMINIT:')
+      CALL READMDLCONF (IU07)
 
       WRITE(IU06,*) ' WVWAMINT: WAVE MODEL CONFIGURATION READ IN'
       CALL FLUSH (IU06)

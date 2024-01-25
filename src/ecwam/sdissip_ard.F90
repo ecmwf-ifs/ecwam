@@ -8,7 +8,7 @@
 !
 
       SUBROUTINE SDISSIP_ARD (KIJS, KIJL, FL1, FLD, SL,          &
-     &                        INDEP, WAVNUM, XK2CG,              &
+     &                        WAVNUM, CGROUP, XK2CG,             &
      &                        UFRIC, COSWDIF, RAORW)
 ! ----------------------------------------------------------------------
 
@@ -28,15 +28,15 @@
 !     ----------
 
 !       *CALL* *SDISSIP_ARD (KIJS, KIJL, FL1, FLD,SL,*
-!                            INDEP, WAVNUM, XK2CG,
+!                            WAVNUM, CGROUP, XK2CG,
 !                            UFRIC, COSWDIF, RAORW)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FL1*    - SPECTRUM.
 !          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY
-!          *INDEP*  - DEPTH INDEX
 !          *WAVNUM* - WAVE NUMBER
+!          *CGROUP* - GROUP SPEED
 !          *XK2CG*  - (WAVE NUMBER)**2 * GROUP SPEED
 !          *UFRIC*  - FRICTION VELOCITY IN M/S.
 !          *RAORW*  - RATIO AIR DENSITY TO WATER DENSITY
@@ -62,13 +62,13 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR      , TH     ,ZPIFR
+      USE YOWFRED  , ONLY : FR      , TH     ,ZPIFR   ,FRATIO    ,DELTH
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPHYS  , ONLY : SDSBR   ,ISDSDTH ,ISB     ,IPSAT    ,      &
 &                  SSDSC2  , SSDSC4, SSDSC6,  MICHE, SSDSC3, SSDSBRF1, &
 &                  BRKPBCOEF ,SSDSC5, NSDSNTH, NDIKCUMUL,              &
-&                  INDICESSAT, SATWEIGHTS, CUMULW
+&                  INDICESSAT, SATWEIGHTS
 
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
@@ -80,8 +80,7 @@
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
-      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: INDEP
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, XK2CG 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP, XK2CG 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, RAORW 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(IN) :: COSWDIF 
 
@@ -89,15 +88,19 @@
       INTEGER(KIND=JWIM) :: IJ, K, M, I, J, M2, K2, KK, NANGD
       INTEGER(KIND=JWIM), DIMENSION(NANG) :: KKD
 
-      REAL(KIND=JWRB) :: TPIINV, TPIINVH, TMP01, TMP03
+      REAL(KIND=JWRB) :: TPIINV, TPIINVH, TMP01, TMP02, TMP03
       REAL(KIND=JWRB) :: EPSR, SSDSC6M1, ZCOEF, ZCOEFM1
+      REAL(KIND=JWRB) :: XLOGDFRTH, BRLAMBDA
+
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 
       REAL(KIND=JWRB), DIMENSION(NFRE) :: SIG, SSDSC2_SIG 
+      REAL(KIND=JWRB), DIMENSION(0:NANG/2) :: COSDTH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FACTURB
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: FACSAT, FACWTRB, TEMP1 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: BTH0 !saturation spectrum
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: C_, C_C, DSIP, TRPZ_DSIP
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: BTH !saturation spectrum 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: TEMP2
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: D
@@ -183,6 +186,27 @@
       IF (SSDSC3 /= 0.0_JWRB) THEN
 
         NANGD=NANG/2
+        XLOGDFRTH=LOG(FRATIO)*DELTH
+!       l(k,th)=1/(2*pi²)= the breaking crest density
+        BRLAMBDA=BRKPBCOEF/(2.0_JWRB*ZPI**2)
+        TMP02 = SSDSC3*BRLAMBDA
+
+!       NDIKCUMUL is the  integer difference in frequency bands
+!       between the "large breakers" and short "wiped-out waves"
+!!! wrong !!???        NDIKCUMUL = NINT(SSDSBRF1/(FRATIO-1.))
+        NDIKCUMUL = NINT(-LOG(SSDSBRF1)/LOG(FRATIO))
+
+        DO KK=0,NANGD
+          COSDTH(KK)=COS(KK*DELTH)
+        ENDDO
+
+        DO M=1,NFRE
+          DO IJ=KIJS,KIJL
+            C_(IJ,M)=SIG(M)/WAVNUM(IJ,M)
+            C_C(IJ,M)=C_(IJ,M)**2
+            DSIP(IJ,M)=TMP02*SIG(M)*XLOGDFRTH/CGROUP(IJ,M) !  coef*dtheta*dk = coef*dtheta*dsigma/cg
+          ENDDO
+        ENDDO
 
         DO M2=1,NFRE-NDIKCUMUL
           DO IJ=KIJS,KIJL
@@ -212,10 +236,30 @@
 
         DO M=NDIKCUMUL+1,NFRE
 
+          IF (M-NDIKCUMUL >= 3) THEN
+            DO IJ=KIJS,KIJL
+              TRPZ_DSIP(IJ,1)=0.5_JWRB*DSIP(IJ,1)
+            ENDDO
+            DO M2=2,M-NDIKCUMUL-1
+              DO IJ=KIJS,KIJL
+                TRPZ_DSIP(IJ,M2)=DSIP(IJ,M2)
+              ENDDO
+            ENDDO
+            DO IJ=KIJS,KIJL
+              TRPZ_DSIP(IJ,M-NDIKCUMUL)=0.5_JWRB*DSIP(IJ,M-NDIKCUMUL)
+            ENDDO
+          ELSE
+            DO M2=1,M-NDIKCUMUL
+              DO IJ=KIJS,KIJL
+                TRPZ_DSIP(IJ,M2)=DSIP(IJ,M2)
+              ENDDO
+            ENDDO
+          ENDIF
+
           DO M2=1,M-NDIKCUMUL
             DO KK=0,NANGD
               DO IJ=KIJS,KIJL
-                WCUMUL(IJ,KK,M2)=CUMULW(INDEP(IJ),KK,M2,M)
+                WCUMUL(IJ,KK,M2)=SQRT(ABS(C_C(IJ,M)+C_C(IJ,M2)-2.0_JWRB*C_(IJ,M)*C_(IJ,M2)*COSDTH(KK)))*TRPZ_DSIP(IJ,M2)
               ENDDO
             ENDDO
           ENDDO

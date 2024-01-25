@@ -59,9 +59,9 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
      &            NGRBRESS, LGRHDIFS ,LNEWLVTP 
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWMAP   , ONLY : IRGG     ,IQGAUSS  ,AMOWEP   ,AMOSOP   ,    &
-     &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,NLONRGG
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE_RED ,    &
-     &                      CLDOMAIN
+     &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,NLONRGG  ,    &
+     &            NGX      ,NGY      ,CLDOMAIN
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED
       USE YOWPCONS , ONLY : ZMISS    ,DEG
       USE YOWSTAT  , ONLY : NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,    &
      &            MARSTYPE ,YCLASS   ,YEXPVER  ,ISTREAM  ,NLOCGRB  ,    &
@@ -74,6 +74,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
                           & IGRIB_SET_VALUE, &
                           & IGRIB_GET_VALUE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
@@ -90,9 +91,10 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
       INTEGER(KIND=JWIM) :: IREPR, IRESFLAGS
       INTEGER(KIND=JWIM) :: IGRIB_VERSION, IBITSPERVALUE
       INTEGER(KIND=JWIM) :: IDIRSCALING, IFRESCALING
-      INTEGER(KIND=JWIM) :: NY
+      INTEGER(KIND=JWIM) :: NJ
       INTEGER(KIND=JWIM) :: KSYSNB, KMETNB, KREFDATE
       INTEGER(KIND=JWIM) :: IDUM, IRET 
+      INTEGER(KIND=JWIM) :: IGRIB_VERSION_IFS
       INTEGER(KIND=JWIM) :: ITHETA(NANG)
       INTEGER(KIND=JWIM) :: IFREQ(NFRE_RED)
       INTEGER(KIND=JWIM), DIMENSION(:), ALLOCATABLE :: PL
@@ -123,29 +125,29 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         IGRIB_VERSION = NGRIB_VERSION
       ENDIF
 
+      IF( PRESENT(LLCREATE) ) THEN
+        LLCRT = LLCREATE
+      ELSE
+        LLCRT = .FALSE. 
+      ENDIF
+
 !!!! it seems that grib2 is not yet ready for spectra 
 !!!! for the time being revert to using grib 1
       IF (CT == "S") THEN
         IF ( IGRIB_VERSION == 2 ) THEN
 
          IGRIB_VERSION=1
+         LLCRT = .TRUE.
 
-          WRITE(IU06,*) ''
-          WRITE(IU06,*) '*******************************************************'
-          WRITE(IU06,*) ' WARNING IN PRESET_WGRIB_TEMPLATE !!!!! '
-          WRITE(IU06,*) ' IGRIB_VERSION = 2 FOR SPECTRA NOT YET IMPLEMENTED !!! '
-          WRITE(IU06,*) ' REVERT TO USING GRIB 1 FOR THE SPECTRA' 
-          WRITE(IU06,*) '*******************************************************'
-          WRITE(IU06,*) ''
+          WRITE(NULERR,*) ''
+          WRITE(NULERR,*) '*******************************************************'
+          WRITE(NULERR,*) ' WARNING IN PRESET_WGRIB_TEMPLATE !!!!! '
+          WRITE(NULERR,*) ' IGRIB_VERSION = 2 FOR SPECTRA NOT YET IMPLEMENTED !!! '
+          WRITE(NULERR,*) ' REVERT TO USING GRIB 1 FOR THE SPECTRA' 
+          WRITE(NULERR,*) '*******************************************************'
+          WRITE(NULERR,*) ''
 
         ENDIF
-      ENDIF
-
-
-      IF( PRESENT(LLCREATE) ) THEN
-        LLCRT = LLCREATE
-      ELSE
-        LLCRT = .FALSE. 
       ENDIF
 
       IF( PRESENT(NBITSPERVALUE) ) THEN
@@ -173,6 +175,22 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           CALL ABORT1
         ENDIF
       ELSE
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'editionNumber',IGRIB_VERSION_IFS, KRET=IRET)
+
+        IF ( IGRIB_VERSION_IFS /= IGRIB_VERSION ) THEN
+          WRITE(NULERR,*) ''
+          WRITE(NULERR,*) '*************************************************************'
+          WRITE(NULERR,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!! '
+          WRITE(NULERR,*) ' IGRIB_VERSION_IFS is different than  IGRIB_VERSION !!!!'
+          WRITE(NULERR,*) ' IGRIB_VERSION_IFS = ',IGRIB_VERSION_IFS
+          WRITE(NULERR,*) ' IGRIB_VERSION     = ',IGRIB_VERSION
+          WRITE(NULERR,*) ' For integral parameters, it can be changed in input namelist'
+          WRITE(NULERR,*) ' See NGRIB_VERSION = ',NGRIB_VERSION
+          WRITE(NULERR,*) '*************************************************************'
+          WRITE(NULERR,*) ''
+          CALL ABORT1
+        ENDIF
+
          IGRIB_HANDLE=-99
          CALL IGRIB_CLONE(NGRIB_HANDLE_IFS,IGRIB_HANDLE)
       ENDIF
@@ -500,20 +518,20 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
         ! NUMBER OF POINTS ALONG A MERIDIAN
         IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN 
-          NY = NINT(180.0_JWRB/XDELLA) + 1
+          NJ = NINT(180.0_JWRB/XDELLA) + 1
         ELSE
-          NY = NGY
+          NJ = NGY
         ENDIF
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'Nj',NY)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'Nj',NJ)
         IF ( IQGAUSS == 1 ) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'N',NY/2)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'N',NJ/2)
         ENDIF
 
         ! NUMBER OF POINTS PER LATITUDE
         IF (IRGG == 0) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'Ni',NGX)
         ELSE
-          ALLOCATE(PL(NY))
+          ALLOCATE(PL(NJ))
           PL(:)=0
           IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN 
             KST = NINT((90.0_JWRB - AMONOP ) / XDELLA)
@@ -604,7 +622,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           NTENCODE=NTENCODE+NLONRGG(JC)
         ENDDO
       ELSE
-        NTENCODE=NY*NGX
+        NTENCODE=NJ*NGX
       ENDIF
 
 IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',1,ZHOOK_HANDLE)

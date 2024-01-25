@@ -47,7 +47,8 @@
      &            IRTAUOC  , IRHSWS  ,IRT1WS   ,IRBATHY 
       USE YOWGRID  , ONLY : DELPHI
       USE YOWINTP  , ONLY : GOUT
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,LLUNSTR
+      USE YOWMAP   , ONLY : NGX      ,NGY
+      USE YOWPARAM , ONLY : LLUNSTR
       USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EPSUS    ,    &
      &            EPSU10   ,ZPI
       USE YOWPHYS  , ONLY : XKAPPA   ,XNLEV    ,RNUM     ,ALPHAMIN

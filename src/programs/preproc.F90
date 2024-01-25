@@ -134,17 +134,13 @@ PROGRAM preproc
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NIBLO    ,NIBLD    ,NIBLC    ,              &
-     &            NANG     ,NFRE     ,NFRE_RED ,LLUNSTR
+      USE YOWPARAM , ONLY : LLUNSTR
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
-     &            TH       ,COSTH    ,SINTH
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH
-      USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
-     &            KXLTMIN  ,KXLTMAX  ,                                  &
-     &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
-     &            XDELLO   ,ZDELLO   ,NLONRGG  ,LAQUA
+      USE YOWMAP   , ONLY : NGX      ,NGY      ,IPER     ,IRGG     ,              &
+     &                      KXLTMIN  ,KXLTMAX  ,                                  &
+     &                      AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
+     &                      XDELLO   ,ZDELLO   ,NLONRGG  ,LAQUA
       USE YOWSHAL  , ONLY : BATHYMAX
       USE YOWTEST  , ONLY : IU06
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
@@ -164,15 +160,9 @@ PROGRAM preproc
 #include "iniwcst.intfb.h"
 #include "mbounc.intfb.h"
 #include "mbounf.intfb.h"
-#include "mcout.intfb.h"
-#include "mfredir.intfb.h"
 #include "mgrid.intfb.h"
-#include "mtabs.intfb.h"
 #include "mubuf.intfb.h"
-#include "nlweigt.intfb.h"
 #include "outcom.intfb.h"
-#include "secondhh.intfb.h"
-#include "secondhh_gen.intfb.h"
 #include "topoar.intfb.h"
 #include "uiprep.intfb.h"
 
@@ -180,8 +170,7 @@ PROGRAM preproc
       INTEGER(KIND=JWIM) :: K, IX, ICL, IFORM, LNAME,IINPC,LFILE
 
       REAL(KIND=JWRB) :: PRPLRADI
-      REAL(KIND=JWRB) :: OLDRAD
-      REAL(KIND=JWRB) :: XLAT, XLATD, XLATMAX,PLONS, COSPHMIN
+      REAL(KIND=JWRB) :: XLAT
       REAL(KIND=JWRB), ALLOCATABLE :: BATHY(:,:)
 
       CHARACTER(LEN=1) :: C1 
@@ -211,26 +200,8 @@ PROGRAM preproc
 
 ! ----------------------------------------------------------------------
 
-!*    2.1 ALLOCATE NECESSARY ARRAYS
-!     -----------------------------
+      ALLOCATE(BATHY(NGX, NGY))
 
-      ALLOCATE(BATHY(NX, NY))
-
-!     FR IS ALLOCATED IN UIPREP 
-      ALLOCATE(DFIM(NFRE)) 
-      ALLOCATE(GOM(NFRE)) 
-      ALLOCATE(C(NFRE)) 
-      ALLOCATE(TH(NANG)) 
-      ALLOCATE(COSTH(NANG)) 
-      ALLOCATE(SINTH(NANG)) 
-
-      ALLOCATE(DELLAM(NY)) 
-      ALLOCATE(SINPH(NY)) 
-      ALLOCATE(COSPH(NY)) 
-!     NLONRGG IS ALLOCATED IN UIPREP
-      ALLOCATE(ZDELLO(NY))
-
-      IU01 = IWAM_GET_UNIT(IU06, 'wam_topo', 'r', 'f', 0, 'READWRITE')
 
       FILENAME='wam_topo'
       LLEXIST=.FALSE.
@@ -290,95 +261,42 @@ PROGRAM preproc
 
 ! ----------------------------------------------------------------------
 
-!*    3. INITIALISE TOTAL NUMBER OF BLOCKS,
-!*       AND GRID INCREMENTS IN RADIANS AND METRES.
-!        ------------------------------------------
+!*    3. GRID DEFINITION
+!        ---------------
 
-      DELPHI = XDELLA*CIRC/360.0_JWRB
-      OLDRAD=OLDPI/180.0_JWRB
-      DO K=1,NY
-        XLAT       = (AMOSOP + REAL(K-1)*XDELLA)*RAD
-        XLATD      = (AMOSOP + REAL(K-1)*XDELLA)
-        SINPH(K)   = SIN(XLAT)
-        COSPH(K)   = COS(XLAT)
+      ALLOCATE(ZDELLO(NGY))
+      DO K=1,NGY
+        XLAT = (AMOSOP + REAL(K-1)*XDELLA)*RAD
         IF (.NOT.LLGRID) THEN
           IF (IRGG == 1) THEN
-#ifdef _CRAYFTN
-              NLONRGG(K) = MAX(NINT(NX*COSD(XLATD)),2)
-#else
-              NLONRGG(K) = MAX(NINT(NX*COS(RAD*XLATD)),2)
-#endif
+            NLONRGG(K) = MAX(NINT(NGX*COS(XLAT)),2)
             IF (MOD(NLONRGG(K),2) == 1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
-            NLONRGG(K) = NX
+            NLONRGG(K) = NGX
           ENDIF      
         ENDIF      
 
-        PLONS=(AMOEAP-AMOWEP) + IPER*XDELLO
-        IF (NX == 1 .AND. NY == 1) THEN
-          NLONRGG(K) = NX
-          ZDELLO(K)  = XDELLO
-          DELLAM(K)  = ZDELLO(K)*CIRC/360.0_JWRB
+        IF (NGX == 1 .AND. NGY == 1) THEN
+          NLONRGG(K) = NGX
+          ZDELLO(K) = XDELLO
           EXIT
         ENDIF
+
         IF (IPER == 1) THEN
-          ZDELLO(K)  = 360.0_JWRB/REAL(NLONRGG(K))
+          ZDELLO(K) = 360.0_JWRB/REAL(NLONRGG(K),JWRB)
         ELSE
-          ZDELLO(K)  = PLONS/REAL(NLONRGG(K)-1)
+          ZDELLO(K) = (AMOEAP-AMOWEP)/REAL(NLONRGG(K)-1,JWRB)
         ENDIF
-        DELLAM(K)  = ZDELLO(K)*CIRC/360.0_JWRB
+
       ENDDO
 
-!     IF THE POLES ARE INCLUDED, ARTIFICIALLY REMOVE THE SINGULARITY
-      XLATMAX=87.5_JWRB
-      COSPHMIN=COS(XLATMAX*RAD)
-      DO K=1,NY
-        IF (COSPH(K) <= COSPHMIN) THEN
-          COSPH(K)=COS(XLATMAX*RAD)
-          SINPH(K)=SIN(XLATMAX*RAD)
-        ENDIF
-      ENDDO 
 
       IF (ALLOCATED(KXLTMIN)) DEALLOCATE(KXLTMIN)
       ALLOCATE(KXLTMIN(1))
       KXLTMIN(1) = 1
       IF (ALLOCATED(KXLTMAX)) DEALLOCATE(KXLTMAX)
       ALLOCATE(KXLTMAX(1))
-      KXLTMAX(1) = NY
-
-! ----------------------------------------------------------------------
-
-!*    4. COMPUTE GRID INDEPENDENT MODULE.
-!        -------------------------------
-
-
-!*    4.1 MODULE FREDIR (FREQUENCY/DIRECTION CONST).
-!         ------------------------------------------
-
-      CALL MFREDIR
-
-!*    4.2 MODULE INDNL (WEIGHT OF NON-LINEAR INTERACTION).
-!         ------------------------------------------------
-
-      CALL NLWEIGT
-
-!*    4.3 MODULE SHALLOW (SHALLOW WATER TABLES).
-!         --------------------------------------
-
-      CALL MTABS
-
-!*    4.5 HIGHER HARMONICS TABLES
-!         -----------------------
-!
-!         FIRST ROUTINE IS FOR DEEP WATER ONLY AND IS APPLIED FOR 
-!         ALTIMETRIC CORRECTIONS
-!         SECOND ROUTINE IS MORE GENERAL, HENCE APPLIES TO DEEP AND 
-!         SHALLOW WATER
-!     
-
-      CALL SECONDHH
-
-      CALL SECONDHH_GEN
+      KXLTMAX(1) = NGY
 
 ! ----------------------------------------------------------------------
 
@@ -396,9 +314,9 @@ PROGRAM preproc
 !       AQUA PLANET SET TO DEEP EVERYWHERE
 !       EXCEPT AT THE POLES THAT ARE EXCLUDED AS LAND.
         BATHY(:,:)=BATHYMAX
-        DO IX=1,NX
+        DO IX=1,NGX
           BATHY(IX,1)=-999.0_JWRB
-          BATHY(IX,NY)=-999.0_JWRB
+          BATHY(IX,NGY)=-999.0_JWRB
         ENDDO
       ENDIF
 
@@ -417,13 +335,8 @@ PROGRAM preproc
 #endif
       END IF ! LLUNSTR
 
-      NIBLD=0
-      NIBLC=0
-
 !*    5.3 COMPUTE OUTPUT POINT INDICES (MODULE YOWCOUT).
 !         ----------------------------------------------
-
-      CALL MCOUT
 
 ! ----------------------------------------------------------------------
 
@@ -431,9 +344,9 @@ PROGRAM preproc
 !        -------------------------
 
 
-!*    6.1 COMPUTE FINE GRID NEST INFORMATION (MODULE YOWFPBO).
-!         ---------------------------------------------------
       IF (.NOT. LLUNSTR) THEN
+!*      6.1 COMPUTE FINE GRID NEST INFORMATION (MODULE YOWFPBO).
+!           ---------------------------------------------------
 
         IF (IBOUNF == 1) THEN
           CALL MBOUNF (IU03, IU10, IU20, IFORM, IINPC)
@@ -442,8 +355,8 @@ PROGRAM preproc
           NBOUNF = 0
         ENDIF
 
-!*    6.2 COMPUTE COARSE GRID NEST INFORMATION (MODULE YOWCPBO).
-!         -----------------------------------------------------
+!*      6.2 COMPUTE COARSE GRID NEST INFORMATION (MODULE YOWCPBO).
+!           -----------------------------------------------------
 
         IF (IBOUNC == 1) THEN
           CALL MBOUNC (IU09, IU19, IFORM)
@@ -453,17 +366,10 @@ PROGRAM preproc
 
 ! ----------------------------------------------------------------------
 
-!*    7. GENERATE CURRENT FIELD.
-!        -----------------------
+!*      8. GENERATE AND WRITE MODULE UBUF.
+!          -------------------------------
 
-!     THE READING OF THE INPUT CURRENTS IN NOW DONE IN INITMDL 
-
-! ----------------------------------------------------------------------
-
-!*    8. GENERATE AND WRITE MODULE UBUF.
-!        -------------------------------
-
-          CALL MUBUF (IU01, BATHY, IU08, NPROPAGS)
+          CALL MUBUF (IU01, IU08, NPROPAGS)
  
       END IF ! .NOT. LLUNSTR
 
@@ -473,7 +379,7 @@ PROGRAM preproc
 !*    9. OUTPUT OF MODULES.
 !        ------------------
 
-      CALL OUTCOM (IU07, IU17, IFORM)
+      CALL OUTCOM (IU07, BATHY)
 
 ! ----------------------------------------------------------------------
 

@@ -48,6 +48,7 @@
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX ,LWVFLX_SNL,    &
+     &            LWCOUAST,                                             &
      &            LWCOUNORMS, LLNORMIFS2WAM,LLNORMWAM2IFS,LLNORMWAMOUT, &
      &            LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE,                &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
@@ -68,22 +69,24 @@
      &            NWRTOUTWAM,                                           &
      &            LSECONDORDER,                                         &
      &            LWAM_USE_IO_SERV,                                     &
-     &            LOUTMDLDCP
+     &            LOUTMDLDCP,                                           &
+     &            NGOUT    ,OUTLONG  ,OUTLAT
       USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
-      USE YOWFRED  , ONLY : XKMSS_CUTOFF 
-      USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS ,IMDLGRBID_G, IMDLGRBID_M, &
+      USE YOWFRED  , ONLY : IFRE1, FR1, XKMSS_CUTOFF 
+      USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS,                    &
      &                      LNEWLVTP, LL_GRID_SIMPLE_MATRIX
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI, LCIWABR  ,  &
      &            LICETH
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
+      USE YOWMAP   , ONLY : CLDOMAIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
-      USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
-     &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN ,    &
-     &            LLUNSTR
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
+     &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,              &
+     &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,LLUNSTR
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
 
@@ -105,6 +108,7 @@
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            LRELWIND ,                                            &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD    ,TOOSHALLOW
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,   &
      &            PATH     ,CPATH    ,CWI
@@ -132,9 +136,10 @@
 #include "mpcrtbl.intfb.h"
 #include "wposnam.intfb.h"
 
-      INTEGER(KIND=JWIM) :: IU05
+      INTEGER(KIND=JWIM) :: IU05, LFILE
       INTEGER(KIND=JWIM) :: ISAT, IC, II, ILEN
 
+      REAL(KIND=JWRU) :: R8_DEPTHA, R8_DEPTHD 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=14), PARAMETER :: ZERO = ' '
@@ -144,6 +149,7 @@
       CHARACTER(LEN=:), ALLOCATABLE :: NAMELIST_FILENAME
 
       LOGICAL :: LLEOF 
+      LOGICAL :: LLEXIST
 
 #ifndef WAM_HAVE_UNWAM
       ! dummy read namelist read variables otherwise present in UNWAM module
@@ -167,6 +173,8 @@
 ! ----------------------------------------------------------------------
 
       NAMELIST /NALINE/ CLHEADER,                                       &
+     &   CLDOMAIN,                                                      &
+     &   NANG, IFRE1, FR1, NFRE, NFRE_RED,                              &
      &   CBPLTDT, CEPLTDT, CDATEF,                                      &
      &   IFRELFMAX, DELPRO_LF, IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU,  &
      &   IDELALT, IDELINT, IDELRES,                                     &
@@ -189,13 +197,13 @@
      &   LBIWBK  ,                                                      &
      &   LMASKICE,                                                      &
      &   LWAMRSETCI,                                                    &
+     &   NDEPTH   ,R8_DEPTHA   ,R8_DEPTHD,                              &
      &   IBOUNC, IBOUNF,                                                &
      &   IDELBC, CBCPREF,                                               &
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
      &   NGRIB_VERSION,                                                 &
-     &   IMDLGRBID_G, IMDLGRBID_M,                                      &
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
-     &   LWCOU, LNOCDIN, LODBRALT,                                      &
+     &   LWCOU, LWCOUAST, LNOCDIN, LODBRALT,                            &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
      &   IBUFRSAT, CSATNAME,                                            &
      &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,                   &
@@ -243,8 +251,12 @@
       CHARACTER(LEN=14) :: CLWOUT
       NAMELIST /NAWI/ IDWI, IDWO, CLWOUT
 
+      REAL(KIND=JWRB) :: ZOUTLAT, ZOUTLONG
+      NAMELIST /NAOUTP/ ZOUTLAT, ZOUTLONG
+
 !     NAMELIST NALINE : 
 !     ===============
+!     CLDOMAIN:  CHARACTER DEFINES THE DOMAIN OF THE MODEL 
 !     CBPLTDT: USER INPUT START DATE OF RUN.
 !     CEPLTDT: USER INPUT END DATE OF RUN.
 !     CDATEF: BEGIN DATE OF FORECAST.
@@ -320,6 +332,9 @@
 !     ISNONLIN : 0 FOR OLD SNONLIN, 1 FOR NEW SNONLIN, 2 FOR LATEST BASED ON JANSSEN 2018 (ECMWF TM 813).
 !     IDAMPING : 0 NO WAVE DAMPING, 1 WAVE DAMPING ON.
 !                ONLY MEANINGFUl FOR IPHYS=0
+!     NDEPTH   NUMBER OF ENTRIED IN DEPTH TABLE (if used) 
+!     DEPTHA   MINIMUM DEPTH. IT IS ALSO USED IN DEPTH TABLE (if used)
+!     DEPTHD   MAXIMUM DEPTH IN TABLES = DEPTHA*DEPTHD**(NDEPTH-1)
 !     IBOUNC: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (COARSE GRID).
 !     IBOUNF: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (FINE GRID).
 !     IDELBC: TIMESTEP FOR THE DISPOSAL OF OUTPUT BC FILE(S) INTO PERMANENT
@@ -335,10 +350,6 @@
 !     CPATH: PATH FOR OUTPUT TO DISK (USED WHENEVER OUTPUT IS NOT
 !            TO THE FIELD DATA BASE (SEE LFDBIOOUT)).
 !     NGRIB_VERSION: GRIB VERSION FOR OUTPUT.
-!     IMDLGRBID_G: GLOBAL MODEL IDENTIFICATION NUMBER FOR GRIB CODING.
-!                  DEFAULT VALUE SET IN YOWGRIBHD.
-!     IMDLGRBID_M: LAW MODEL IDENTIFICATION NUMBER FOR GRIB CODING.
-!                  DEFAULT VALUE SET IN YOWGRIBHD.
 !     NTOTENS: TOTAL ENSEMBLE FORECAST MEMBERS (DEFAULT=0).
 !     NENSFNB: ENSEMBLE FORECAST NUMBER (DEFAULT=0).
 !     NSYSNB : SYSTEM NUMBER TO BE USED FOR GRIBBING OF SEASONAL DATA.
@@ -346,6 +357,8 @@
 !     NMETNB : METHOD NUMBER TO BE USED FOR GRIBBING OF SEASONAL DATA.
 !              or MONTHLY FORECAST RUNS
 !     LWCOU: FALSE FOR UNCOUPLED RUN (see WVWAMINIT1 if coupled to IFS).
+!     LWCOUAST: IF TRUE AND LWCOU THEN THE ATMOSPHERIC SURFACE STRESS OVER THE OCEAN WILL BE USED
+!               TO COMPUTE THE OCEAN SIDE STRESS
 !     NEMO COUPLING FLAGS:
 !     LWNEMOCOU: FALSE FOR NO COUPLING TO NEMO RUN.
 !     NEMOFRCO: NEMO COUPLING FREQ IN WAM TIME STEPS
@@ -374,7 +387,9 @@
 !     LODBRALT: IF TRUE THEN THE ALTIMETER DATA WILL BE READ AND PASSED 
 !               THROUGH OBSERVATION DATABASE (ODB)
 !     LALTCOR: IF TRUE THEN THE ALTIMETER DATA WILL BE CORRECTED
-!              SEE GRFIELD. 
+!              SEE GRFIELD(but this is different than the bias correction scheme)
+!              It was implemented when the ERS altimeters were used in operation.
+!              We has since then gone for an overall bias correction scheme and so by default this will not be used.. 
 !     L4VTYPE: IF TRUE THEN MARS TYPE 4V IS USED INSTEAD OF FG.
 !     LFRSTFLD: IF TRUE THEN INITIAL INTEGRATED PARAMETER FIELDS WILL
 !               OUTPUT PROVIDED THEY WERE NOT INPUT.
@@ -396,6 +411,7 @@
 !     LALTLRGR: IF TRUE THEN THE ALTIMETER DATA WILL BE CORRECTED
 !               PRIOR TO THEIR ASSIMILATION USING A LINEAR REGRESSION AS
 !               PROVIDED BY HSCOEFCOR AND HSCONSCOR (see below)
+!               This has been replaced by the bias correction scheme
 !     HSCOEFCOR: COEFFICIENT OF THE CORRECTIVE LINEAR REGRESSION FOR
 !                ALTIMETER WAVE HEIGHTS.
 !     HSCONSCOR: CONSTANT OF THE CORRECTIVE LINEAR REGRESSION FOR
@@ -492,6 +508,14 @@
 !*    0. SET DEFAULT VALUES FOR THE NAMELIST ELEMENTS.
 !        ---------------------------------------------
 
+      CLDOMAIN  = 'g'
+
+      NANG      = 0
+      IFRE1     = 3
+      FR1       = 4.177248E-02_JWRB
+      NFRE      = 0
+      NFRE_RED  = 0
+
       CLMTSU    = 'S'
       CLOTSU    = 'H'
       CLHEADER  =  ZERO
@@ -550,6 +574,9 @@
       ITESTB    = 0 
       IREST     = 0 
       IASSI     = 0 
+      NDEPTH    = 74
+      R8_DEPTHA = 1.0_JWRU
+      R8_DEPTHD = 1.1_JWRU
       IBOUNC    = 0 
       IBOUNF    = 0 
       IDELBC    = 0
@@ -582,7 +609,7 @@
         HSCOEFCOR(ISAT) = 1.0_JWRB
         HSCONSCOR(ISAT) = 0.0_JWRB
 
-        ALTBGTHRSH(ISAT) = 1.0_JWRB
+        ALTBGTHRSH(ISAT) = 1.5_JWRB
 !       if no value is provided in the namelist ALTSDTHRSH will
 !       be set in grfield.
         ALTSDTHRSH(ISAT) = -1.0_JWRB
@@ -590,7 +617,7 @@
 !       HSALTCUT is used in combination with the error estimate of
 !       the altimeter data to determine the minimum Hs allowed for
 !       altimeter data.
-        HSALTCUT(ISAT) = 999999.
+        HSALTCUT(ISAT) = 999999._JWRB
         LALTGRDOUT(ISAT)  = .FALSE.
       ENDDO
 
@@ -641,6 +668,8 @@
       LL1D = .TRUE.
 
       LWCOU = .FALSE.
+
+      LWCOUAST = .TRUE.
 
       LWVFLX_SNL = .TRUE.
 
@@ -738,9 +767,19 @@
 !*    1. READ NAMELIST NALINE.
 !        ---------------------
 
-      NAMELIST_FILENAME='wam_namelist' 
+      NAMELIST_FILENAME='wam_namelist'
+
+      LFILE=0
+      LLEXIST=.FALSE.
+      IF (NAMELIST_FILENAME /= ' ') LFILE=LEN_TRIM(NAMELIST_FILENAME)
+      INQUIRE(FILE=NAMELIST_FILENAME(1:LFILE),EXIST=LLEXIST)
+      IF (.NOT. LLEXIST) THEN
+        CALL WAM_ABORT("INPUT FILE '"//NAMELIST_FILENAME(1:LFILE)//"' IS MISSING !!!",__FILENAME__,__LINE__)
+      ENDIF
+
       WRITE(IU06,*) ' '
-      WRITE(IU06,'(3A)') '  THE WAVE MODEL NAMELIST "', NAMELIST_FILENAME,'" IS BEING READ'
+      WRITE(IU06,'(3A)') '  WAVE MODEL NAMELIST "', NAMELIST_FILENAME,'" IS BEING READ'
+
       IU05 =  IWAM_GET_UNIT (IU06, NAMELIST_FILENAME, 's', 'f', 0, 'READ')
 
       CALL WPOSNAM (IU05, 'NALINE', LLEOF)
@@ -758,12 +797,39 @@
         CALL WAM_ABORT("Could not read namelist '"//NAMELIST_FILENAME//"'",__FILENAME__,__LINE__)
       ENDIF
 
+      IF( NANG <= 0 ) THEN
+         CALL WAM_ABORT( "Expected positive value for NANG in '"//NAMELIST_FILENAME//"' ", __FILENAME__, __LINE__ )
+         CALL WAM_ABORT( "Did you provide a meaningful namelist in '"//NAMELIST_FILENAME//"' ?", __FILENAME__, __LINE__ )
+      ENDIF
+      IF( NFRE <= 0 ) CALL WAM_ABORT( "Expected positive value for NFRE", __FILENAME__, __LINE__ )
+      IF( NFRE_RED <= 0 ) NFRE_RED = NFRE
+      IF( IFRE1 <= 0 ) CALL WAM_ABORT( "Expected positive value for IFRE1",  __FILENAME__, __LINE__ )
+
+      IF (NFRE_RED > NFRE ) THEN
+        WRITE (IU06,*) '**********************************************'
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '*       FATAL ERROR IN SUB. UIPREP           *'
+        WRITE (IU06,*) '*       ==========================           *'
+        WRITE (IU06,*) '* THE REDUCED NUMBER OF FREQUENCIES NFRE_RED *'
+        WRITE (IU06,*) '* IS LARGER THAN THE TOTAL NUMNBER NFRE  !!  *'
+        WRITE (IU06,*) '* NFRE_RED = ', NFRE_RED
+        WRITE (IU06,*) '* NFRE     = ', NFRE
+        WRITE (IU06,*) '**********************************************'
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
+      ENDIF
+
+
       IF (IRANK > 1) THEN
          CNORMWAMOUT_FILE = ''
       ENDIF
 
       ! when coupled to IFS, the control will come from it via calls to wavemdl
       IF (LWCOU) LSMSSIG_WAM=.FALSE.
+
+      DEPTHA = R8_DEPTHA
+      DEPTHD = R8_DEPTHD
+
+      TOOSHALLOW=0.1_JWRB*DEPTHA
 
 
 !           **** OUTPUT TIME AT SPECIFIED TIMES ****
@@ -776,8 +842,8 @@
       ENDDO SPT0
 1900  CONTINUE
       REWIND(IU05)
-      IF (.NOT.ALLOCATED(COUTT)) THEN
-        ALLOCATE(COUTT(NOUTT))
+      IF ( NOUTT > 0) THEN
+        IF (.NOT.ALLOCATED(COUTT)) ALLOCATE(COUTT(NOUTT))
       ENDIF
       SPT: DO IC=1,NOUTT
         CALL WPOSNAM (IU05, 'NAOT', LLEOF)
@@ -797,8 +863,8 @@
       ENDDO SPS0
 1901  CONTINUE
       REWIND(IU05)
-      IF (.NOT.ALLOCATED(COUTS)) THEN
-        ALLOCATE(COUTS(NOUTS))
+      IF ( NOUTS > 0) THEN
+        IF (.NOT.ALLOCATED(COUTS)) ALLOCATE(COUTS(NOUTS)) 
       ENDIF
       SPS: DO IC=1,NOUTS
         CALL WPOSNAM (IU05, 'NAOS', LLEOF)
@@ -818,8 +884,8 @@
       ENDDO SPA0
 1902  CONTINUE
       REWIND(IU05)
-      IF (.NOT.ALLOCATED(CASS)) THEN
-        ALLOCATE(CASS(NASS))
+      IF ( NASS > 0) THEN
+        IF (.NOT.ALLOCATED(CASS)) ALLOCATE(CASS(NASS))
       ENDIF
       SPA: DO IC=1,NASS
         CALL WPOSNAM (IU05, 'NAAT', LLEOF)
@@ -840,25 +906,46 @@
         ENDDO SPWI
 1903    CONTINUE
         REWIND(IU05)
-        IF (.NOT.ALLOCATED(IDELWI_LST)) THEN
-          ALLOCATE(IDELWI_LST(NDELW_LST))
-        ENDIF
-        IF (.NOT.ALLOCATED(IDELWO_LST)) THEN
-          ALLOCATE(IDELWO_LST(NDELW_LST))
-        ENDIF
-        IF (.NOT.ALLOCATED(CDTW_LST)) THEN
-          ALLOCATE(CDTW_LST(NDELW_LST))
+        IF ( NDELW_LST > 0) THEN
+          IF (.NOT.ALLOCATED(IDELWI_LST)) ALLOCATE(IDELWI_LST(NDELW_LST))
+          IF (.NOT.ALLOCATED(IDELWO_LST)) ALLOCATE(IDELWO_LST(NDELW_LST))
+          IF (.NOT.ALLOCATED(CDTW_LST)) ALLOCATE(CDTW_LST(NDELW_LST))
         ENDIF
         SPW: DO IC=1,NDELW_LST
           CALL WPOSNAM (IU05, 'NAWI', LLEOF)
           IF (LLEOF) EXIT SPW
-          READ (IU05, NAWI, END=1913)
-          IDELWI_LST(IC) = IDWI 
-          IDELWO_LST(IC) = IDWO 
-          CDTW_LST(IC) = CLWOUT
-        ENDDO SPW
-1913    CONTINUE
+                  READ (IU05, NAWI, END=1913)
+                  IDELWI_LST(IC) = IDWI 
+                  IDELWO_LST(IC) = IDWO 
+                  CDTW_LST(IC) = CLWOUT
+                ENDDO SPW
+        1913    CONTINUE
       ENDIF
+
+!           **** OUTPUT POINTS READ FROM NAMELIST NAOUTP ****
+      NGOUT = 0
+      REWIND(IU05)
+      SPOU: DO
+        CALL WPOSNAM (IU05, 'NAOUTP', LLEOF)
+        IF (LLEOF) EXIT SPOU
+        READ (IU05, NAOUTP, END=1904)
+        NGOUT = NGOUT+1
+      ENDDO SPOU
+1904  CONTINUE
+      REWIND(IU05)
+      IF (NGOUT > 0) THEN
+        IF (.NOT.ALLOCATED(OUTLAT)) ALLOCATE(OUTLAT(NGOUT))
+        IF (.NOT.ALLOCATED(OUTLONG)) ALLOCATE(OUTLONG(NGOUT))
+      ENDIF
+      SPOUS: DO IC=1,NGOUT
+        CALL WPOSNAM (IU05, 'NAOUTP', LLEOF)
+        IF (LLEOF) EXIT SPOUS
+        READ (IU05, NAOUTP, END=1914)
+        OUTLAT(IC) = ZOUTLAT 
+        OUTLONG(IC) = ZOUTLONG 
+      ENDDO SPOUS
+1914  CONTINUE
+
 
       CLOSE(IU05)
 
@@ -878,7 +965,7 @@
 
 
       ICPLEN=LEN_TRIM(CPATH)
-      IF(ICPLEN.GT.0) THEN
+      IF (ICPLEN > 0) THEN
         IF (CPATH(ICPLEN:ICPLEN).EQ.'/') THEN
           CPATH=CPATH(1:ICPLEN-1)
           ICPLEN=ICPLEN-1
@@ -893,7 +980,7 @@
 
 !     RESET CERTAIN FLAGS:
 
-      IF(IFRELFMAX <= 0) DELPRO_LF = REAL(IDELPRO, JWRB)
+      IF (IFRELFMAX <= 0) DELPRO_LF = REAL(IDELPRO, JWRB)
 
 !     WE SHOULD RECEIVE DATA FROM NEMO
       IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT .OR. LWNEMOCOUCUR) LWNEMOCOURECV = .TRUE.
@@ -910,6 +997,9 @@
       IF (IRANK == 1) THEN
         WRITE(6,*) '==============================================='
         WRITE(6,*) '*** MPUSERIN has read the following settings'
+        WRITE(6,*) '*** NANG=',NANG
+        WRITE(6,*) '*** NFRE=',NFRE
+        WRITE(6,*) '*** NFRE_RED=',NFRE_RED
         WRITE(6,*) '*** CBPLTDT=',CBPLTDT
         WRITE(6,*) '*** CEPLTDT=',CEPLTDT
         WRITE(6,*) '*** LFDB = ',LFDB
@@ -948,6 +1038,12 @@
         WRITE(6,*) '*** YEXPVER = ',YEXPVER
         WRITE(6,*) '*** YCLASS = ',YCLASS
         WRITE(6,*) '*** ISTREAM = ',ISTREAM
+        IF (NGOUT > 0) THEN
+          WRITE (6,*) " OUTPUT POINTS FOR SPECTRA AS DEFINED BY USER INPUT    NO.    LAT.   LONG. "
+          DO IC=1,NGOUT
+            WRITE (6,'(3X,I5,2F8.2)') IC,OUTLAT(IC),OUTLONG(IC)
+          ENDDO
+        ENDIF
         WRITE(6,*) '==============================================='
       ENDIF
 

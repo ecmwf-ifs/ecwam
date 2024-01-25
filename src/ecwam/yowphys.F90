@@ -91,13 +91,13 @@
       REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.66_JWRB ! controls the turbulent swell dissipation
       REAL(KIND=JWRB), PARAMETER :: SWELLF2 = -0.018_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF3 = 0.022_JWRB
-      REAL(KIND=JWRB), PARAMETER :: SWELLF4 = 1.5E05_JWRB
-      REAL(KIND=JWRB) :: SWELLF5  ! controls the viscous swell dissipation
+      REAL(KIND=JWRB) :: SWELLF4  !! See *SETWAVPHYS*
+      REAL(KIND=JWRB), PARAMETER :: SWELLF5 = 1.2_JWRB ! controls the viscous swell dissipation
       REAL(KIND=JWRB), PARAMETER :: SWELLF6 = 1.0_JWRB
-      REAL(KIND=JWRB), PARAMETER :: SWELLF7 = 3.6E05_JWRB
-      REAL(KIND=JWRB), PARAMETER :: SWELLF7M1 = 1.0_JWRB/SWELLF7    !!!! set it to 1 if you decide to have SWELLF7=0
-      REAL(KIND=JWRB) :: Z0RAT
-      REAL(KIND=JWRB) :: Z0TUBMAX
+      REAL(KIND=JWRB) :: SWELLF7  !! See *SETWAVPHYS*
+      REAL(KIND=JWRB) :: SWELLF7M1 !!!! set it to 1 if you decide to have SWELLF7=0
+      REAL(KIND=JWRB) :: Z0RAT   !! See *SETWAVPHYS*
+      REAL(KIND=JWRB) :: Z0TUBMAX   !! See *SETWAVPHYS*
 
       REAL(KIND=JWRB), PARAMETER :: ABMIN = 0.3_JWRB
       REAL(KIND=JWRB), PARAMETER :: ABMAX = 8.0_JWRB 
@@ -146,7 +146,7 @@
       REAL(KIND=JWRB), PARAMETER :: BRKPBCOEF=28.16_JWRB  
 
 !     Wave-turbulence interaction coefficient 
-      REAL(KIND=JWRB), PARAMETER :: SSDSC5  = 0.0_JWRB 
+      REAL(KIND=JWRB) :: SSDSC5  !! See *SETWAVPHYS*
 
 !     NSDSNTH is the number of directions on both used to compute the spectral saturation  
       INTEGER(KIND=JWIM) :: NSDSNTH
@@ -155,6 +155,5 @@
 
       INTEGER(KIND=JWIM), ALLOCATABLE :: INDICESSAT(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: SATWEIGHTS(:,:)
-      REAL(KIND=JWRB), ALLOCATABLE :: CUMULW(:,:,:,:)
 ! ----------------------------------------------------------------------
       END MODULE YOWPHYS

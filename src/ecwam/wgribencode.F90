@@ -70,6 +70,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
       USE YOWGRIB  , ONLY : IGRIB_GET_VALUE, IGRIB_SET_VALUE
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -116,7 +117,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       INTEGER(KIND=JWIM), INTENT(IN)     :: KCOUSTEP        ! Coupling time to the IFS (in seconds).
 
       ! From yowcout
-      LOGICAL, INTENT(IN)     :: LRSTST0      ! True if GRIB header have to be reset such thatthe forecast step points to the start of the run.
+      LOGICAL, INTENT(IN)     :: LRSTST0      ! True if GRIB header have to be reset such that the forecast step points to the start of the run.
 
       ! From yowpcons
       REAL(KIND=JWRB), INTENT(IN)        :: ZMISS           ! Missing data indicator (set in chief or via the ifs).
@@ -288,23 +289,23 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       ENDIF
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR,IERR)
       IF (IERR /= 0) THEN
-        WRITE(0,*) ' *********************************************'
+        WRITE(NULERR,*) ' *********************************************'
         WRITE(IU06,*) ' *********************************************'
         WRITE(IU06,*) ' ECCODES ERROR WHILE SETTING paramId ',ITABPAR
-        WRITE(0,*) ' ECCODES ERROR WHILE SETTING paramId ',ITABPAR
-        WRITE(0,*) ' ECCODES ERROR CODE ', IERR
+        WRITE(NULERR,*) ' ECCODES ERROR WHILE SETTING paramId ',ITABPAR
+        WRITE(NULERR,*) ' ECCODES ERROR CODE ', IERR
         WRITE(IU06,*) ' ECCODES ERROR CODE ', IERR
         CALl FLUSH(IU06)
         IF (IERR == -36) THEN
           ITABPAR = 212*1000+IPARAM
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR)
 
-          WRITE(0,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
-          WRITE(0,*) ' PARAMETERS KNOWN BY ECCODES !!!' 
-          WRITE(0,*) ' IN THE MEAN TIME, THE PROGRAM WILL CONTINUE.' 
-          WRITE(0,*) ' USING EXPERIMENTAL PARAMETER TABLE 212' 
-          WRITE(0,*) ' WITH paramId= ', ITABPAR
-          WRITE(0,*) ' *********************************************'
+          WRITE(NULERR,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
+          WRITE(NULERR,*) ' PARAMETERS KNOWN BY ECCODES !!!' 
+          WRITE(NULERR,*) ' IN THE MEAN TIME, THE PROGRAM WILL CONTINUE.' 
+          WRITE(NULERR,*) ' USING EXPERIMENTAL PARAMETER TABLE 212' 
+          WRITE(NULERR,*) ' WITH paramId= ', ITABPAR
+          WRITE(NULERR,*) ' *********************************************'
           WRITE(IU06,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
           WRITE(IU06,*) ' PARAMETERS KNOWN BY ECCODES !!!' 
           WRITE(IU06,*) ' USING EXPERIMENTAL PARAMETER TABLE 212' 
@@ -312,7 +313,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
           WRITE(IU06,*) ' *********************************************'
 
         ELSE
-          WRITE(0,*) ' *********************************************'
+          WRITE(NULERR,*) ' *********************************************'
           CALL ABORT1
         ENDIF
       ENDIF
@@ -435,7 +436,11 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 !!!   for compatibility with previous coding, impose:
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'timeRangeIndicator',10)
 
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'unitOfTimeRange',1)
+        IF ( IGRIB_VERSION == 1 ) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'unitOfTimeRange',1)
+        ELSE
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'indicatorOfUnitOfTimeRange',1)
+        ENDIF
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepUnits','h')
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'endStep',ISTEP_HRS)
 

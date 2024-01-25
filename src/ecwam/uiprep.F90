@@ -55,20 +55,17 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
-     &            NGX      ,NGY      ,NIBLO    ,CLDOMAIN ,LLUNSTR
+      USE YOWPARAM , ONLY : NFRE     ,NFRE_RED ,LLUNSTR
       USE YOWCPBO  , ONLY : IBOUNC   ,GBOUNC_MAX, GBOUNC ,              &
      &            AMOSOC   ,AMONOC   ,AMOEAC   ,AMOWEC
       USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,    &
-     &            XOUTN    ,NOUTD    ,OUTLONG  ,OUTLAT
-      USE YOWCOUT  , ONLY : NGOUT
+     &            XOUTN    ,NOUTD
       USE YOWFPBO  , ONLY : IBOUNF
-      USE YOWFRED  , ONLY : FR       ,FRATIO
-
-      USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
+      USE YOWFRED  , ONLY : IFRE1    ,FR1      ,FR       ,FRATIO
+      USE YOWMAP   , ONLY : NGX      ,NGY      ,IPER     ,IRGG     ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,              &
+     &            NIBLO    ,CLDOMAIN ,                                  &
      &            XDELLA   ,XDELLO   ,NLONRGG  ,LLOBSTRCT,LAQUA
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD 
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
 #ifdef WAM_HAVE_UNWAM
       USE YOWUNPOOL, ONLY : LPREPROC, LVECTOR, IVECTOR
@@ -80,21 +77,18 @@
       IMPLICIT NONE
 #include "adjust.intfb.h"
 #include "iwam_get_unit.intfb.h"
+#include "mfr.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(OUT) :: IFORM
       LOGICAL, INTENT(OUT) :: LLGRID
 
       INTEGER(KIND=JWIM) :: K, M, I, II, KSN
       INTEGER(KIND=JWIM) :: IU05, IU
-      INTEGER(KIND=JWIM) :: IFRE1, ISPECTRUNC
-      INTEGER(KIND=JWIM) :: MOUTP, MOUTPNEW 
+      INTEGER(KIND=JWIM) :: ISPECTRUNC
       INTEGER(KIND=JWIM) :: IOS, IOUTA, IOUTANEW, IDUM
       INTEGER(KIND=JWIM), ALLOCATABLE :: NDUMP(:)
 
-      REAL(KIND=JWRB) :: FR1 
-      REAL(KIND=JWRB) :: DEPTHMAX
       REAL(KIND=JWRB) :: ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
-      REAL(KIND=JWRB) :: ZOUTLAT, ZOUTLONG 
       REAL(KIND=JWRB) :: WEST, EAST, DW, DE, DS, DN
       REAL(KIND=JWRB), ALLOCATABLE :: XDUMP(:)
 
@@ -109,17 +103,15 @@
 
 ! ----------------------------------------------------------------------
 
-      NAMELIST /NALINE/ CLINE, NFRE, NFRE_RED, FR1, IFRE1, NANG,        &
+      NAMELIST /NALINE/ CLINE, NFRE, NFRE_RED, FR1, IFRE1,              &
      &                  IRGG, XDELLA, XDELLO,                           &
      &                  AMOSOP, AMONOP, AMOWEP, AMOEAP,                 &
      &                  IFORM, ITEST, ITESTB,                           &
      &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC, &
      &                  NIBLO, CLDOMAIN,LLOBSTRCT,                      &
-     &                  NDEPTH   ,DEPTHA   ,DEPTHD,                     &
      &                  LAQUA, LLUNSTR, LPREPROC
 
       NAMELIST /NACORR/ ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
-      NAMELIST /NAOUTP/ ZOUTLAT, ZOUTLONG 
 
 
 ! ----------------------------------------------------------------------
@@ -137,7 +129,6 @@
       NFRE_RED =   0
       FR1    =   0.0_JWRB
       IFRE1 = 1
-      NANG   =   0
       IRGG   =  -1
       XDELLA =   0.0_JWRB
       XDELLO =   0.0_JWRB
@@ -155,9 +146,6 @@
       AMOWEC =   0.0_JWRB
       AMOEAC =   0.0_JWRB
       LLOBSTRCT = .TRUE.
-      NDEPTH = 74
-      DEPTHA = 1.0_JWRB
-      DEPTHD = 1.1_JWRB
       LAQUA =.FALSE. ! to force an aqua planet on irregular grid with xdella
 
 !     THE FOLLOWING DEFAULT VALUES INDICATES THAT THEY ARE DETERMINED
@@ -217,15 +205,12 @@
       ENDIF
 
       IF( NFRE <= 0 ) CALL WAM_ABORT( "Expected positive value for NFRE", __FILENAME__, __LINE__ )
-      IF( FR1  <= 0 ) CALL WAM_ABORT( "Expected positive value for FR1",  __FILENAME__, __LINE__ )
-      IF( NANG <= 0 ) CALL WAM_ABORT( "Expected positive value for NANG", __FILENAME__, __LINE__ )
+      IF( IFRE1 <= 0 ) CALL WAM_ABORT( "Expected positive value for IFRE1",  __FILENAME__, __LINE__ )
 
-      ALLOCATE(FR(NFRE))
+      ALLOCATE(FR(NFRE_RED))
 
-      FR(IFRE1) = FR1
-      DO M=IFRE1-1,1,-1
-        FR(M) = (FR(M+1)/FRATIO)
-      ENDDO
+      CALL MFR(NFRE_RED, IFRE1, FR1, FRATIO, FR)
+
 
       WRITE (IU06,'(2X, A70,/)') CLINE(1:70)
 
@@ -245,7 +230,7 @@
         READ (IU,*) AMOEAP
         READ (IU,*) IPER
         READ (IU,*) IRGG
-        READ (IU,*) NY
+        READ (IU,*) NGY
         WRITE(IU06,*) "grid_description read in "
       ENDIF
 
@@ -265,7 +250,6 @@
       ELSE
         WRITE (IU06,'("  MINIMUM FREQUENCY IS  FR(1) = ",F10.6)') FR(1)
       ENDIF
-      WRITE (IU06,'("   NUMBER OF DIRECTIONS  IS NANG = ",I6)') NANG
 
 !     SET DIMENSIONS.
 
@@ -319,12 +303,12 @@
 !*    SET DIMENSIONS.
 
       IF (LLGRID) THEN
-        XDELLA = (AMONOP-AMOSOP)/(NY-1)
-        ALLOCATE(NLONRGG(NY))
+        XDELLA = (AMONOP-AMOSOP)/(NGY-1)
+        ALLOCATE(NLONRGG(NGY))
 
-        NX = 0
-        DO K=1,NY
-          KSN=NY-K+1
+        NGX = 0
+        DO K=1,NGY
+          KSN=NGY-K+1
           READ(IU,*,IOSTAT=IOS) NLONRGG(KSN)
           IF( IOS < 0 ) THEN
             CALL WAM_ABORT("End of file reached before finishing NLONRGG",__FILENAME__,__LINE__)
@@ -332,42 +316,36 @@
           IF( NLONRGG(KSN) <= 0 ) THEN
             CALL WAM_ABORT("Expected positive value of NLONRGG",__FILENAME__,__LINE__)
           ENDIF
-          NX = MAX(NX,NLONRGG(KSN))
+          NGX = MAX(NGX,NLONRGG(KSN))
         ENDDO
 
         IF (IPER == 1) THEN
-          XDELLO  = 360._JWRB/REAL(NX)
+          XDELLO  = 360._JWRB/REAL(NGX)
           AMOEAP = AMOWEP + 360._JWRB - XDELLO
         ELSE
-          XDELLO = (AMOEAP-AMOWEP)/(NX-1)
+          XDELLO = (AMOEAP-AMOWEP)/(NGX-1)
         ENDIF
 
-
-        NGX = NX
-        NGY = NY
 
         CLOSE(IU)
 
       ELSE
 !       RESET FOR AQUA PLANET IF SELECTED
         IF (LAQUA) THEN
-          NY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
+          NGY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
           WRITE (IU06,*) ' !! RESETING TO AQUA PLANET CONFIGURATION !!'
           AMONOP=90.0_JWRB
           AMOSOP=-90.0_JWRB
-          NY=INT((AMONOP-AMOSOP)/XDELLA)+1
+          NGY=INT((AMONOP-AMOSOP)/XDELLA)+1
           IRGG=1
         ENDIF
 
         IPER = 0
         IF (ABS(AMOEAP-AMOWEP+1.5_JWRB*XDELLO) >= 360.0_JWRB ) IPER = 1
-        NX = NINT((AMOEAP-AMOWEP)/XDELLO) + 1
-        NY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
+        NGX = NINT((AMOEAP-AMOWEP)/XDELLO) + 1
+        NGY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
 
-        NGX = NX
-        NGY = NY
-
-        ALLOCATE(NLONRGG(NY))
+        ALLOCATE(NLONRGG(NGY))
 
       ENDIF
 
@@ -384,14 +362,6 @@
           CLDOMAIN = 'm'
         ENDIF 
       ENDIF 
-
-      WRITE (IU06,*) ' '
-      WRITE (IU06,*) '   MINIMUM DEPTH IN TABLES IS ', DEPTHA
-      WRITE (IU06,*) '   WITH A STEP ', DEPTHD 
-      DEPTHMAX=DEPTHA*DEPTHD**(NDEPTH-1)
-      WRITE (IU06,*) '   MAXIMUM DEPTH IN TABLES IS ', DEPTHMAX
-      WRITE (IU06,*) ' '
- 
 
 ! ----------------------------------------------------------------------
 
@@ -504,87 +474,6 @@
         ENDDO
       ENDIF
 
-! ----------------------------------------------------------------------
-
-!*    2.4 OUTPUT POINTS READ FROM NAMELIST NAOUTP.
-!         ----------------------------------------
-
-      REWIND (IU05)
-      MOUTP = 100 
-      ALLOCATE(OUTLAT(MOUTP))
-      ALLOCATE(OUTLONG(MOUTP))
-      OUTLAT =-100.0_JWRB
-      OUTLONG=   0.0_JWRB
-      NGOUT = 0
-      OUTPP: DO
-        READ(IU05, NAOUTP, ERR=3000, IOSTAT=IOS, END=2400)
-        NGOUT = NGOUT + 1
-        IF (NGOUT > MOUTP) THEN
-          ALLOCATE(XDUMP(MOUTP))
-          MOUTPNEW=MOUTP+100
-          WRITE (IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
-          WRITE (IU06,*) '+                                         +'
-          WRITE (IU06,*) '+     WARINING IN SUB. UIPREP       +'
-          WRITE (IU06,*) '+     =============================       +'
-          WRITE (IU06,*) '+                                         +'
-          WRITE (IU06,*) '+  NUMBER OF OUTPUT POINTS EXCEEDS        +'
-          WRITE (IU06,*) '+  EXCEEDS  DIMENSION      MOUTP = ', MOUTP
-          WRITE (IU06,*) '+  THE DIMEMSION WAS RESET TO ', MOUTPNEW
-          WRITE (IU06,*) '+                                         +'
-          WRITE (IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
-
-          XDUMP=OUTLAT
-          DEALLOCATE(OUTLAT)
-          ALLOCATE(OUTLAT(MOUTPNEW))
-          DO IDUM=1,MOUTP
-            OUTLAT(IDUM)=XDUMP(IDUM)
-          ENDDO
-
-          XDUMP=OUTLONG
-          DEALLOCATE(OUTLONG)
-          ALLOCATE(OUTLONG(MOUTPNEW))
-          DO IDUM=1,MOUTP
-            OUTLONG(IDUM)=XDUMP(IDUM)
-          ENDDO
-
-          DEALLOCATE(XDUMP)
-          MOUTP=MOUTPNEW
-          OUTLAT(NGOUT) = ZOUTLAT
-          OUTLONG(NGOUT) = ZOUTLONG
-        ELSE
-          OUTLAT(NGOUT) = ZOUTLAT
-          OUTLONG(NGOUT) = ZOUTLONG
-        ENDIF
-      ENDDO OUTPP
- 2400 IF (NGOUT > 0) THEN
-        WRITE (IU06,'(" OUTPUT POINTS FOR SPECTRA AS DEFINED",          &
-     &   " BY USER INPUT",/,                                            &
-     &   "     NO.    LAT.   LONG.")')
-        DO I=1,NGOUT
-          WRITE (IU06,'(3X,I5,2F8.2)') I,OUTLAT(I),OUTLONG(I)
-        ENDDO
-
-        ALLOCATE(XDUMP(NGOUT))
-        MOUTPNEW=NGOUT
-        DO IDUM=1,MOUTPNEW
-          XDUMP(IDUM)=OUTLAT(IDUM)
-        ENDDO
-        DEALLOCATE(OUTLAT)
-        ALLOCATE(OUTLAT(MOUTPNEW))
-        DO IDUM=1,MOUTPNEW
-          OUTLAT(IDUM)=XDUMP(IDUM)
-        ENDDO
-
-        DO IDUM=1,MOUTPNEW
-          XDUMP(IDUM)=OUTLONG(IDUM)
-        ENDDO
-        DEALLOCATE(OUTLONG)
-        ALLOCATE(OUTLONG(MOUTPNEW))
-        DO IDUM=1,MOUTPNEW
-          OUTLONG(IDUM)=XDUMP(IDUM)
-        ENDDO
-        DEALLOCATE(XDUMP)
-      ENDIF
 
 ! ----------------------------------------------------------------------
 

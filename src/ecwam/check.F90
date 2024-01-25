@@ -44,16 +44,13 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
-     &            NGX      ,NGY      ,NIBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
       USE YOWPCONS , ONLY : DEG
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF   ,IJARF
-      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWGRID  , ONLY : IJS      ,IJL
-      USE YOWMAP   , ONLY : BLK2GLO  ,NX       ,NY       ,    &
+      USE YOWMAP   , ONLY : BLK2GLO  ,NGX      ,NGY      ,NIBLO,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLO
-      USE YOWSHAL  , ONLY : NDEPTH
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -86,8 +83,8 @@
 !*    2. GENERATE LAND SEA TABLE FROM INDEX ARRAYS.
 !        ------------------------------------------
 
-      DO K=1,NY
-        DO I=1,NX
+      DO K=1,NGY
+        DO I=1,NGX
           LST(I,K) = 'L'
         ENDDO
       ENDDO
@@ -97,32 +94,6 @@
       IF (BLK2GLO%IXLG(IJ) /= 0 .OR. BLK2GLO%KXLT(IJ) /= 0) LST(BLK2GLO%IXLG(IJ),BLK2GLO%KXLT(IJ)) = 'S'
       ENDDO
 
-!*    2.1 INCLUDE OUTPUT POINTS.
-!         ----------------------
-
-      IF (NGOUT > 0) THEN
-        DO IO=1,NGOUT
-          IJ = IJAR(IO)
-          IF (IJ < IJS .OR. IJ > IJL) THEN
-            IERR = IERR+1
-            WRITE (IU06,*) ' ***************************************'
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' *      FATAL ERROR IN SUB. CHECK      *'
-            WRITE (IU06,*) ' *      =========================      *'
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' * GRID POINT NUMBER OF OUTPUT POINT IS*'
-            WRITE (IU06,*) ' * OUT OF RANGE.                       *'
-            WRITE (IU06,*) ' * OUTPUT POINT NUMBER IS IO = ', IO
-            WRITE (IU06,*) ' * GRID POINT NUMBER IS   IJ = ', IJ
-            WRITE (IU06,*) ' * MIN. NUMBER IS        IJS = ', IJS
-            WRITE (IU06,*) ' * MAX. NUMBER IS        IJL = ', IJL
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' ***************************************'
-            IF (IERR > 20) CALL ABORT1
-          ENDIF
-     IF (BLK2GLO%IXLG(IJ) /= 0 .OR. BLK2GLO%KXLT(IJ) /= 0) LST(BLK2GLO%IXLG(IJ),BLK2GLO%KXLT(IJ)) = '+' 
-        ENDDO
-      ENDIF
 
 !*    2.2 INCLUDE COARSE GRID NEST OUTPUT POINTS.
 !         ---------------------------------------
@@ -204,16 +175,11 @@
       WRITE (IU06,'('' NUMBER OF FREQUENCIES   NFRE_RED '', 3I10)')     &
      &           NFRE_RED, NFRE_RED, NFRE_RED 
       WRITE (IU06,'('' NUMBER LONGITUDE GRID POINTS NGX '', 3I10)')     &
-     &           NGX, NX, NX
+     &           NGX, NGX, NGX
       WRITE (IU06,'('' NUMBER LATITUDE GRID POINTS  NGY '', 3I10)')     &
-     &           NGY, NY, NY
+     &           NGY, NGY, NGY
       WRITE (IU06,'('' MAXIMUM BLOCK LENGTH       NIBLO '', 3I10)')     &
      &           NIBLO
-      WRITE (IU06,'('' NUMBER OF OUTPUT POINTS    NGOUT '', 3I10)')     &
-     &           NGOUT, MAX(1,NGOUT), NGOUT 
-
-      WRITE (IU06,'('' SHALLOW WATER TABLE LEN.  NDEPTH '', 3I10)')     &
-     &           NDEPTH, NDEPTH, NDEPTH
 
       WRITE (IU06,'(/,'' THE DIMENSIONS IN PRESET AND CHIEF HAVE TO '', &
      &             '' BE THE VALUES IN COLUMN - REQUIRED - '')')

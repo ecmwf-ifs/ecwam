@@ -76,11 +76,9 @@
 
       USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,    &
      &            XOUTN    ,NOUTD
-      USE YOWMAP   , ONLY : NX       ,NY       ,AMOWEP   ,AMOSOP   ,    &
+      USE YOWMAP   , ONLY : NGX      ,NGY      ,AMOWEP   ,AMOSOP   ,    &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            NLONRGG  ,LLOBSTRCT
-      USE YOWPARAM , ONLY : NGX      ,NGY
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,BATHYMAX 
       USE YOWTEST  , ONLY : IU06, ITEST
 
 ! ----------------------------------------------------------------------
@@ -103,7 +101,6 @@
       INTEGER(KIND=JWIM), ALLOCATABLE :: IDUM(:)
       INTEGER(KIND=JWIM), ALLOCATABLE :: IA2H(:), IA1(:,:)
 
-      REAL(KIND=JWRB) :: BATHYMAX_LOC, TABLEMAX
       REAL(KIND=JWRB) :: XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
       REAL(KIND=JWRB) :: XLAT, XLON, XLAG, XLW, XLA, XLO, XLOH, XLOG
       REAL(KIND=JWRB), ALLOCATABLE :: XA2H(:), XA1(:,:)
@@ -187,7 +184,7 @@
           CALL ABORT1
         ENDIF
 
-        DO K=1,NY
+        DO K=1,NGY
 
 !       READ THE NUMBER OF POINTS PER LATITUDE
           READ (IU01,*) KLONRGG  
@@ -214,7 +211,7 @@
         ALLOCATE(IDUM(NGX))
         CX='     '
         FORMT='          ' 
-        DO K=1,NY
+        DO K=1,NGY
           IF (LLREALIN) THEN
             WRITE(CX,'(I5.5)') NLONRGG(1)
             FORMT='('//CX//'F9.2)'
@@ -436,7 +433,7 @@
  3070   CONTINUE
       ENDDO
  3080 CONTINUE
-      IF (NJ /= NY .OR. NL > NX) THEN
+      IF (NJ /= NGY .OR. NL > NGX) THEN
         WRITE (IU06,*) ' *****************************************'
         WRITE (IU06,*) ' *                                       *'
         WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR      *'
@@ -444,10 +441,10 @@
         WRITE (IU06,*) ' *                                       *'
         WRITE (IU06,*) ' * NUMBER OF LONGITUDES OR LATITUDES IN  *'
         WRITE (IU06,*) ' * IS NOT EQUAL TO EXPECTED NUMBER       *'
-        WRITE (IU06,*) ' * LATITUDES  FOUND      NJ = ', NJ
-        WRITE (IU06,*) ' * LATITUDES  EXPECTED   NY = ', NY
-        WRITE (IU06,*) ' * LONGITUDES FOUND      NL = ', NL
-        WRITE (IU06,*) ' * LONGITUDES EXPECTED   NX = ', NX
+        WRITE (IU06,*) ' * LATITUDES  FOUND      NJ  = ', NJ
+        WRITE (IU06,*) ' * LATITUDES  EXPECTED   NGY = ', NGY
+        WRITE (IU06,*) ' * LONGITUDES FOUND      NL  = ', NL
+        WRITE (IU06,*) ' * LONGITUDES EXPECTED   NGX = ', NGX
         WRITE (IU06,*) ' *                                       *'
         WRITE (IU06,*) ' * PROGRAM WILL BE ABORTED               *'
         WRITE (IU06,*) ' *****************************************'
@@ -463,8 +460,8 @@
 !*       POSITIVE SEA DEPTH IN METRES (-999  FOR LAND).
 !        ----------------------------------------------
 
-      DO J=1,NY
-        DO I=1,NX
+      DO J=1,NGY
+        DO I=1,NGX
           IF (BATHY(I,J) < 0.0_JWRB) THEN
             BATHY(I,J) = -BATHY(I,J)
           ELSE
@@ -472,55 +469,6 @@
           ENDIF
         ENDDO
       ENDDO
-
-!     CHECK THAT MINIMUM DEPTH USED IN TABLES IS MET. 
-      NMINADJT=0
-      DO J=1,NY
-        DO I=1,NX
-          IF (BATHY(I,J) > 0.0_JWRB .AND. BATHY(I,J) < DEPTHA ) THEN
-            BATHY(I,J) = DEPTHA 
-            NMINADJT=NMINADJT+1
-          ENDIF
-        ENDDO
-      ENDDO
-      IF (NMINADJT > 0) THEN
-        WRITE (IU06,*) ' ' 
-        WRITE (IU06,*) ' *******************************************'
-        WRITE (IU06,*) ' *                                         *'
-        WRITE (IU06,*) ' *      WARNING IN SUB. TOPOAR             *'
-        WRITE (IU06,*) ' *      ============================       *'
-        WRITE (IU06,*) ' *                                         *'
-        WRITE (IU06,*) ' * THE DEPTH AT SOME GRID POINTS WAS RESET *' 
-        WRITE (IU06,*) ' * TO THE MINIMUM DEPTH IN TABLES ',DEPTHA
-        WRITE (IU06,*) ' * NUMBER OF AFFECTED GRID POINTS: ',NMINADJT
-        WRITE (IU06,*) ' *                                         *'
-        WRITE (IU06,*) ' *******************************************'
-        WRITE (IU06,*) ' ' 
-      ENDIF
-
-!     CHECK THAT THE MAXIMUM DEPTH IN TABLES IS SUFFICIENTLY LARGE
-      BATHYMAX_LOC=0.0_JWRB
-      DO J=1,NY
-        DO I=1,NX
-          BATHYMAX_LOC=MIN(MAX(BATHY(I,J),BATHYMAX_LOC),BATHYMAX)
-        ENDDO
-      ENDDO
-      TABLEMAX=DEPTHA*DEPTHD**(NDEPTH-1)
-      IF (BATHYMAX_LOC > TABLEMAX) THEN
-        WRITE (IU06,*) ' ******************************************'
-        WRITE (IU06,*) ' *                                        *'
-        WRITE (IU06,*) ' *      WARNING ERROR IN SUB. TOPOAR      *'
-        WRITE (IU06,*) ' *      ============================      *'
-        WRITE (IU06,*) ' *                                        *'
-        WRITE (IU06,*) ' *  THE MAXIMUM DEPTH ',BATHYMAX_LOC
-        WRITE (IU06,*) ' *  IS LARGER THAN '
-        WRITE (IU06,*) ' *  THE MAXIMUM DEPTH IN TABLES ',TABLEMAX 
-        WRITE (IU06,*) ' *  ADJUST DEPTHA, DEPTHD, NDEPTH !       *'
-        WRITE (IU06,*) ' *  (SEE INPUT NAMELIST)                  *'
-        WRITE (IU06,*) ' *                                        *'
-        WRITE (IU06,*) ' ******************************************'
-        CALL ABORT1
-      ENDIF
 
 
 ! ----------------------------------------------------------------------
@@ -530,11 +478,11 @@
 
       IF (NOUT /= 0) THEN
         XLAT=AMOSOP-XDELLA
-        DO J=1,NY
+        DO J=1,NGY
           XLAT=XLAT+XDELLA
           XLON=AMOWEP-ZDELLO(J)
           IF (XLON < 0.0_JWRB) XLON=360.0_JWRB+XLON
-          DO I=1,NX
+          DO I=1,NGX
             XLON=XLON+ZDELLO(J)
             IF (XLON >= 360.0_JWRB) XLON=XLON-360.0_JWRB
             DO JH = 1,NOUT
@@ -553,11 +501,11 @@
 !*    7. AID TO USERS - SIMPLE PLOT OF GRID.
 !        ------------------------------------
 
-      WRITE (IU06,'(''0NUMBER OF LATITUDES IS        NY = '',I5)') NY
+      WRITE (IU06,'(''0NUMBER OF LATITUDES IS       NGY = '',I5)') NGY
       WRITE (IU06,'('' MOST SOUTHERN LATITUDE IS AMOSOP = '',F7.3)') AMOSOP
       WRITE (IU06,'('' MOST NORTHERN LATITUDE IS AMONOP = '',F7.3)') AMONOP 
       WRITE (IU06,'('' LATITUDE INCREMENT IS     XDELLA = '',F7.3)') XDELLA
-      WRITE (IU06,'(''0MAX NUMBER OF LONGITUDES IS   NX = '',I5)') NX
+      WRITE (IU06,'(''0MAX NUMBER OF LONGITUDES IS  NGX = '',I5)') NGX
       WRITE (IU06,'('' MOST WESTERN LONGITUDE IS AMOWEP = '',F7.3)') AMOWEP
       WRITE (IU06,'('' MOST EASTERN LONGITUDE IS AMOEAP = '',F7.3)') AMOEAP
       WRITE (IU06,                                                      &

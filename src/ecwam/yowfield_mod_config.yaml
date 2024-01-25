@@ -44,6 +44,8 @@ objdef:
    - [cicover, real, 2]
    - [cithick, real, 2]
    - [lkfr, real, 2]
+   - [ustra, real, 2]
+   - [vstra, real, 2]
    - [ucur, real, 2]
    - [vcur, real, 2]
    - [wswave, real, 2]

@@ -73,7 +73,6 @@ function cleanup() {
 
 wamresol=$(read_config grid)
 wamnfre=$(read_config frequencies)
-wamnang=$(read_config directions)
 wambathy=$(read_config bathymetry)
 
 assert_executable_is_available ${PREPROC} || abort 33
@@ -111,7 +110,6 @@ cat > procin <<EOF
   NFRE_RED=  ${wamnfre},
   FR1=       ${fr1},
   IFRE1=     ${ifre1},
-  NANG=      ${wamnang},
   IRGG=      ${irgg},
   XDELLA=    ${xdella},
   XDELLO=    ${xdella},
@@ -119,7 +117,6 @@ cat > procin <<EOF
   AMONOP=    ${amonop},
   AMOWEP=    ${amowep},
   AMOEAP=    ${amoeap},
-  DEPTHA=    ${deptha},
   LAQUA=     ${laqua},
   LLOBSTRCT= ${llobstrct},
   LLUNSTR =  ${llunstr},

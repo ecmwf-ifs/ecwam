@@ -60,6 +60,7 @@
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
+include "nlweigt.intfb.h"
 
       INTEGER(KIND=JWIM) :: ICOUNT, IRCOUNT
       INTEGER(KIND=JWIM) :: MC, MP, MP1, MM, MM1, IC, IP, IP1, IM , IM1, ITEMP
@@ -81,6 +82,11 @@
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('INISNONLIN',0,ZHOOK_HANDLE)
+
+!*    MODULE INDNL (WEIGHT OF NON-LINEAR INTERACTION).
+!     ------------------------------------------------
+
+      CALL NLWEIGT
 
 
 !     1. FRONT SPECTRAL TAIL REDUCTION COEFFICIENTS

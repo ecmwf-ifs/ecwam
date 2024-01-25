@@ -79,9 +79,12 @@ PROGRAM CREATE_BATHY
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWFRED  , ONLY : FRATIO
+
       IMPLICIT NONE
 #include "aki.intfb.h"
 #include "iwam_get_unit.intfb.h"
+#include "mfr.intfb.h"
 
       INTEGER(KIND=JWIM), PARAMETER :: ILON=10801
       INTEGER(KIND=JWIM), PARAMETER :: ILAT=5400
@@ -114,7 +117,7 @@ PROGRAM CREATE_BATHY
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
 
       REAL(KIND=JWRB), PARAMETER :: OLDPI = 3.1415927_JWRB
-      REAL(KIND=JWRB) :: PI, RAD, OLDRAD, G, X60, FRATIO, FR1
+      REAL(KIND=JWRB) :: PI, RAD, OLDRAD, G, X60, FR1
       REAL(KIND=JWRB) :: XDELLA, XDELLO
       REAL(KIND=JWRB) :: AMOSOP, AMONOP, AMOWEP, AMOEAP
       REAL(KIND=JWRB) :: ALONL, ALONR, ALATB, ALATT, XLON
@@ -153,8 +156,6 @@ PROGRAM CREATE_BATHY
       G=9.806_JWRB
       X60=60.0_JWRB
 
-      FRATIO=1.1_JWRB
-
       IU06=6
 
 
@@ -179,6 +180,16 @@ PROGRAM CREATE_BATHY
       READ(5,*) ALONL, ALONR, ALATB, ALATT
       READ(5,*) CLINE
       READ(5,*) LORIGINAL 
+
+!!!!debile
+      IF ( IRGG == 1 ) THEN
+        WRITE(*,*) ' Sorry !!!'
+        WRITE(*,*) ' this is not working for irregular grid !!!'
+        WRITE(*,*) ' because the output need to be reformatted'
+        WRITE(*,*) ' as in create_wam_bathymetry_ETOPO1'
+        WRITE(*,*) ' Consider using create_wam_bathymetry_ETOPO1 instead'
+        STOP
+      ENDIF
 
 !     CHECK IF FILE grid_description IS PRESENT
 !     IF IT IS THERE IT WILL SUPERSEDE THE OTHER INPUT
@@ -278,14 +289,7 @@ PROGRAM CREATE_BATHY
 
       ALLOCATE(FR(NFRE_RED))
 
-      FR(IFRE1) = FR1
-      DO M=IFRE1-1,1,-1
-        FR(M) = (FR(M+1)/FRATIO)
-      ENDDO
-      DO M=IFRE1+1,NFRE_RED
-        FR(M) = FRATIO*FR(M-1)
-      ENDDO
-
+      CALL MFR(NFRE_RED, IFRE1, FR1, FRATIO, FR)
 
 !     DATASET:
 !     --------

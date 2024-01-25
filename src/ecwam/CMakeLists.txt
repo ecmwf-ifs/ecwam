@@ -62,11 +62,13 @@ list( APPEND ecwam_srcs
   cireduce.F90
   ciwabr.F90
   ciwaf.F90
+  ctcor.F90
   ctuw.F90
   ctuwdrv.F90
   ctuwini.F90
   ctuwupdt.F90
   current2wam.F90
+  depthprpt.F90
   difdate.F90
   dominant_period.F90
   expand_string.F90
@@ -106,6 +108,7 @@ list( APPEND ecwam_srcs
   initnemocpl.F90
   iniwcst.F90
   intpol.F90
+  intrpolchk.F90
   intspec.F90
   inwgrib.F90
   iwam_get_unit.F90
@@ -126,6 +129,7 @@ list( APPEND ecwam_srcs
   meansqs.F90
   meansqs_gc.F90
   meansqs_lf.F90
+  mfr.F90
   mfredir.F90
   mgrid.F90
   micep.F90
@@ -148,7 +152,6 @@ list( APPEND ecwam_srcs
   mpuserin.F90
   mstart.F90
   mswell.F90
-  mtabs.F90
   mubuf.F90
   mwp1.F90
   mwp2.F90
@@ -191,9 +194,11 @@ list( APPEND ecwam_srcs
   propags.F90
   propags1.F90
   propags2.F90
+  propconnect.F90
   propdot.F90
   readbou.F90
   readfl.F90
+  readmdlconf.F90
   readpre.F90
   readsta.F90
   readstress.F90
@@ -258,8 +263,12 @@ list( APPEND ecwam_srcs
   vmin_d.F90
   vplus.F90
   vplus_d.F90
+  w_cdf.F90
+  w_cdfmax.F90
   w_maxh.F90
   w_mode_st.F90
+  w_pdf.F90
+  w_pmax.F90
   wam_multio_mod.F90
   wam_nproma.F90
   wam_sorti.F90
@@ -411,6 +420,10 @@ else()
   unset( ${PNAME}_OCEANMODEL_INCLUDE_DIRS )
 endif()
 
+if( HAVE_ECFLOW )
+  list(APPEND ECWAM_PRIVATE_DEFINITIONS WAM_HAVE_ECFLOW)
+endif()
+
 ecbuild_add_library(
     TARGET           ${ecwam}
     SOURCES          ${ecwam_srcs}
@@ -421,8 +434,10 @@ ecbuild_add_library(
                      ${MULTIO_LIBRARIES}
                      ${OpenMP_Fortran_LIBRARIES}
                      field_api_${prec}
+                     $<${HAVE_ECFLOW}:ecflow_lightf>
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
     PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS}
+    PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS}
     PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
 )
 
@@ -441,8 +456,13 @@ ecwam_target_compile_definitions_FILENAME( ${ecwam} )
 
 if( CMAKE_Fortran_COMPILER_ID MATCHES Intel )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
+  set_source_files_properties( propconnect.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
 elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-ffp-contract=off" )
+elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
+  set_source_files_properties(
+      sbottom.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros -Mstack_arrays "
+  )
 endif()
 
 ### The file grib2wgrid.F90 is sensitive to optimizations in single precision builds.

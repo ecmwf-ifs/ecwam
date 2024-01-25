@@ -8,7 +8,7 @@
 !
 
       SUBROUTINE SDISSIP (KIJS, KIJL, FL1, FLD, SL,  &
-     &                    INDEP, WAVNUM, XK2CG,      &
+     &                    WAVNUM, CGROUP, XK2CG,     &
      &                    EMEAN, F1MEAN, XKMEAN,     &
      &                    UFRIC, COSWDIF, RAORW)
 ! ----------------------------------------------------------------------
@@ -26,7 +26,7 @@
 !     ----------
 
 !       *CALL* *SDISSIP (KIJS, KIJL, FL1, FLD, SL, *
-!                        INDEP, WAVNUM, XK2CG,  
+!                        WAVNUM, CGROUP, XK2CG,  
 !                        EMEAN, F1MEAN, XKMEAN,*
 !                        UFRIC, COSWDIF, RAORW)*
 !         *KIJS* - INDEX OF FIRST GRIDPOINT
@@ -34,10 +34,10 @@
 !         *FL1*  - SPECTRUM.
 !         *FLD*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*  - TOTAL SOURCE FUNCTION ARRAY
-!       *INDEP*  - DEPTH INDEX
 !       *WAVNUM* - WAVE NUMBER
+!       *CGROUP* - GROUP SPEED
 !       *XK2CG*  - (WAVNUM)**2 * GROUP SPEED
-!        *EMEAN* - MEAN ENERGY DENSITY 
+!       *EMEAN* - MEAN ENERGY DENSITY 
 !       *F1MEAN* - MEAN FREQUENCY BASED ON 1st MOMENT.
 !       *XKMEAN* - MEAN WAVE NUMBER BASED ON 1st MOMENT.
 !       *UFRIC*  - FRICTION VELOCITY IN M/S.
@@ -62,8 +62,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
-      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: INDEP
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, XK2CG
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP, XK2CG
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: EMEAN, F1MEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: UFRIC, RAORW
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(IN) :: COSWDIF
@@ -82,7 +81,7 @@
 
       CASE(1) 
          CALL SDISSIP_ARD (KIJS, KIJL, FL1 ,FLD, SL,   &
-     &                     INDEP, WAVNUM, XK2CG,       &
+     &                     WAVNUM, CGROUP, XK2CG,      &
      &                     UFRIC, COSWDIF, RAORW)
       END SELECT 
 

@@ -47,8 +47,9 @@
      &                      LRSTPARALW
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,        &
      &                      NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
+      USE YOWMAP   , ONLY : NIBLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK

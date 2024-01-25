@@ -93,8 +93,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LWCOU, LWCOU2W, LWCOURNW , LWCOUHMF, LWFLUX,&
-     &                      LWNEMOCOU,                                  &
+      USE YOWCOUP  , ONLY : LWCOU, LWCOU2W, LWCOURNW , LWCOUAST    ,    &
+     &                      LWCOUHMF, LWFLUX, LWNEMOCOU            ,    &
      &                      NEMOINIDATE, NEMOINITIME               ,    &
      &                      NEMOITINI,   NEMOITEND                 ,    &
      &                      NEMOTSTEP,   NEMOFRCO                  ,    &
@@ -131,7 +131,7 @@
 ! DIMENSION DUMMY COUPLED VARIABLES
       INTEGER(KIND=JWIM), PARAMETER :: NLONW=1
       INTEGER(KIND=JWIM), PARAMETER :: NLATW=1
-      INTEGER(KIND=JWIM), PARAMETER :: NWVFIELDS=8
+      INTEGER(KIND=JWIM), PARAMETER :: NWVFIELDS=10
       INTEGER(KIND=JWIM), PARAMETER :: NC=1
       INTEGER(KIND=JWIM), PARAMETER :: NR=1
       INTEGER(KIND=JWIM), PARAMETER :: NGPTOTG=NC*NR
@@ -164,6 +164,7 @@
       CHARACTER(LEN=14) :: ZERO,CBEGDAT
 
       LOGICAL :: LLSTOP, LLWRRE, LLRESTARTED, LLIRANK, LLNORMWAMOUT_GLOBAL
+      LOGICAL :: LLINIT_WVFLDG
       LOGICAL :: LDWCOUNORMS
       LOGICAL :: FRSTIME
       LOGICAL :: LWCUR
@@ -215,10 +216,12 @@
       LWCOU=.FALSE.
       LWCOU2W=.FALSE.
       LWCOURNW=.FALSE.
+      LWCOUAST=.FALSE.
       LWCOUHMF=.FALSE.
       LWFLUX=.FALSE. ! will be reset to true if ocean fluxes are output.
       LWCUR=.FALSE. ! only used in coupled runs with atmospheric model
       LFDBIFS=.FALSE.
+      LLINIT_WVFLDG=.FALSE.
 
 
       PRPLRADI=1.0_JWRB
@@ -334,7 +337,7 @@
      &             IGRIB_HANDLE_DUM, RMISS, ZRCHAR, FIELDS,             &
      &             NATMFLX,                                             &
      &             LWCUR, LWSTOKES,                                     &
-     &             NWVFIELDS, WVFLDG,                                   &
+     &             LLINIT_WVFLDG, NWVFIELDS, WVFLDG,                    &
      &             NLONW, NLATW, LLSTOP, LLWRRE,                        &
      &             LLRESTARTED, ZDELATM,                                &
      &             LDWCOUNORMS, LLNORMWAMOUT_GLOBAL,                    &

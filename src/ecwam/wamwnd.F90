@@ -14,6 +14,7 @@
      &                   U10, US,                    &
      &                   THW, ADS,                   &
      &                   WSTAR, CITH,                &
+     &                   USTRA, VSTRA,               &
      &                   LWCUR, ICODE_WND)
 
 ! ----------------------------------------------------------------------
@@ -42,6 +43,7 @@
 !                     UCUR, VCUR,
 !                     U10, US,
 !                     THW, ADS, WSTAR, CITH,
+!                     USTRA, VSTRA,
 !                     LWCUR, ICODE_WND)
 !          *KIJS:KIJL* DIMENSION OF PASSED ARRAYS
 !          *IFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
@@ -55,8 +57,10 @@
 !          *US*   - INTERPOLATED FRICTION VELOCITY
 !          *THW*  - INTERPOLATED WIND DIRECTION AT ALL POINTS.
 !          *ADS*  - INTERPOLATED AIR DENSITY AT ALL POINTS.
-!          *WSTAR* - INTERPOLATED CONVECTIVE VELOCITY AT ALL POINTS
+!          *WSTAR*- INTERPOLATED CONVECTIVE VELOCITY AT ALL POINTS
 !          *CITH* - SEA ICE THICKNESS. 
+!          *USTRA*- U-COMPONENT OF THE ATMOSPHERIC SURFACE STRESS
+!          *VSTRA*- V-COMPONENT OF THE ATMOSPHERIC SURFACE STRESS
 !          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 !          *ICODE_WND* - INTEGER INDICATES WHAT IS SAVED IN FIELDG%UWND, and
 !                        FIELDG%VWND
@@ -103,6 +107,7 @@
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(IN) :: UCUR, VCUR 
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(INOUT) :: U10, US
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(OUT) :: THW, ADS, WSTAR, CITH
+      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(OUT) :: USTRA, VSTRA 
       LOGICAL, INTENT(IN) :: LWCUR
 
 
@@ -138,6 +143,8 @@
         ADS(IJ) = FIELDG%AIRD(IX,JY)
         WSTAR(IJ)= FIELDG%WSTAR(IX,JY)
         CITH(IJ)= FIELDG%CITHICK(IX,JY)
+        USTRA(IJ)= FIELDG%USTRA(IX,JY)
+        VSTRA(IJ)= FIELDG%VSTRA(IX,JY)
       ENDDO
 
 

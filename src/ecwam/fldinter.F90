@@ -7,14 +7,15 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE FLDINTER (IU06, NGPTOTG, NC, NR, NFIELDS,FIELDS,       &
-     &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,     &
-     &                     IFROMIJ, JFROMIJ, KIJS, KIJL, KIJLMAX,       &
-     &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,   &
-     &                     ILONRGG, IJBLOCK, PMISS,                     &
-     &                     LADEN, ROAIR, LGUST, WSTAR0, LLKC, LWCUR,    &
-     &                     LLINTERPOL,                                  &
-     &                     DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN,&
+      SUBROUTINE FLDINTER (IU06, NGPTOTG, NC, NR, NFIELDS, FIELDS,        &
+     &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,       &
+     &                     IFROMIJ, JFROMIJ, KIJS, KIJL, KIJLMAX,         &
+     &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,     &
+     &                     ILONRGG, IJBLOCK, PMISS,                       &
+     &                     LADEN, ROAIR, LGUST, WSTAR0, LLKC, LWCUR,      &
+     &                     LLINTERPOL,                                    &
+     &                     NWX, NWY, DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, &
+     &                     MASK_IN,                                       &
      &                     NXS, NXE, NYS, NYE, FIELDG)
 ! ----------------------------------------------------------------------    
 
@@ -41,16 +42,6 @@
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!      *CALL* *FLDINTER* (IU06, NGPTOTG, NC, NR, FIELDS,
-!    &                    NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
-!    &                    IFROMIJ ,JFROMIJ, KIJS, KIJL,
-!    &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-!    &                    ILONRGG, IJBLOCK, PMISS,
-!    &                    LADEN, ROAIR, LGUST, WSTAR0,LWCUR, LLKC,
-!    &                    LLINTERPOL,
-!    &                    DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN,
-!    &                    NXS, NXE, NYS, NYE, FIELDG)
-!
 !        *IU06*   - OUTPUT UNIT.
 !        ATMOSPHERIC MODEL GRID AND FIELD (INPUT):
 !        *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
@@ -61,9 +52,13 @@
 !                   FIELDS(:,1) = U COMPONENT OF NEUTRAL WIND SPEED (U10)
 !                   FIELDS(:,2) = V COMPONENT OF NEUTRAL WIND SPEED (V10)
 !                   FIELDS(:,3) = AIR DENSITY
-!                   FIELDS(:,4) = ZI/L USED FOR GUSTINESS
+!                   FIELDS(:,4) = CONVECTIVE VELOCITY SCALE (w*)
 !                   FIELDS(:,5) = SEA ICE FRACTION 
 !                   FIELDS(:,6) = LAKE FRACTION 
+!                   FIELDS(:,7) = U COMPONENT OF ATMOSPHERIC SURFACE STRESS
+!                   FIELDS(:,8) = V COMPONENT OF ATMOSPHERIC SURFACE STRESS
+!                   FIELDS(:,9) = U COMPONENT OF OCEAN SURFACE CURREMT 
+!                   FIELDS(:,10)= V COMPONENT OF OCEAN SURFACE CURREMT 
 
 !        WAVE MODEL GRID SPECIFICATION (INPUT):
 !        *NGX*    - NUMBER OF COLUMNS IN ARRAY FIELD USED.              
@@ -91,6 +86,8 @@
 !        *LWCUR*  - SURFACE CURRENTS ARE USED.
 !        *LLKC*   - GRAB LAKE COVER INFORMATION
 !        *LLINTERPOL* - FLAG (TRUE=DO INTERPOLATION, FALSE=ASSIGN ONLY)
+!        *NWX*    - FIRST DIMENSION FOR THE INTERPOLATION COEFFICIENTS 
+!        *NWY*    - SECOND DIMENSION FOR THE INTERPOLATION COEFFICIENTS
 !        *DJ1M*   - COEFFICIENT
 !        *DII1M*  - COEFFICIENT
 !        *DIIP1M* - COEFFICIENT
@@ -127,7 +124,8 @@
       INTEGER(KIND=JWIM), DIMENSION(NR), INTENT(IN) :: ILONRGG
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IFROMIJ, JFROMIJ
       INTEGER(KIND=JWIM), DIMENSION(0:NC+1,NR), INTENT(IN) :: IJBLOCK
-      INTEGER(KIND=JWIM), DIMENSION(NGX,NGY), INTENT(IN) :: IIM, IIPM
+      INTEGER(KIND=JWIM), INTENT(IN) :: NWX, NWY
+      INTEGER(KIND=JWIM), DIMENSION(NWX,NWY), INTENT(IN) :: IIM, IIPM
       INTEGER(KIND=JWIM), DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
       TYPE(FORCING_FIELDS), INTENT(INOUT) :: FIELDG
@@ -135,9 +133,10 @@
 
       REAL(KIND=JWRB), INTENT(IN) :: XDELLA, AMOWEP, AMOSOP, AMOEAP, AMONOP, PMISS
       REAL(KIND=JWRB), INTENT(IN) :: ROAIR, WSTAR0
-      REAL(KIND=JWRB), DIMENSION(NGY), INTENT(IN) :: ZDELLO, DJ1M
+      REAL(KIND=JWRB), DIMENSION(NGY), INTENT(IN) :: ZDELLO
+      REAL(KIND=JWRB), DIMENSION(NWY), INTENT(IN) :: DJ1M
       REAL(KIND=JWRB), DIMENSION(NGPTOTG,NFIELDS), INTENT(IN) :: FIELDS
-      REAL(KIND=JWRB), DIMENSION(NGX,NGY), INTENT(IN) :: DII1M, DIIP1M
+      REAL(KIND=JWRB), DIMENSION(NWX,NWY), INTENT(IN) :: DII1M, DIIP1M
 
       LOGICAL, INTENT(IN):: LADEN, LGUST, LWCUR, LLKC, LLINTERPOL
 
@@ -190,7 +189,8 @@
             FIELDG%WSTAR(I,J) = ZLGUST*FIELDS(IJBLOCK(I,J),4) + (1.0_JWRB-ZLGUST)*WSTAR0
             FIELDG%CICOVER(I,J) = FIELDS(IJBLOCK(I,J),5)
             FIELDG%LKFR(I,J) = ZLLKC*FIELDS(IJBLOCK(I,J),6)
-
+            FIELDG%USTRA(I,J) = FIELDS(IJBLOCK(I,J),7)
+            FIELDG%VSTRA(I,J) = FIELDS(IJBLOCK(I,J),8)
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
             FIELDG%CITHICK(I,J) = 0.0_JWRB
           ENDDO
@@ -200,8 +200,8 @@
               DO IJ = KIJS, KIJLMAX
                 I = IFROMIJ(IJ)
                 J = JFROMIJ(IJ)
-                FIELDG%UCUR(I,J) = FIELDS(IJBLOCK(I,J),7)
-                FIELDG%VCUR(I,J) = FIELDS(IJBLOCK(I,J),8)
+                FIELDG%UCUR(I,J) = FIELDS(IJBLOCK(I,J),9)
+                FIELDG%VCUR(I,J) = FIELDS(IJBLOCK(I,J),10)
               ENDDO
             ELSE
               DO IJ = KIJS, KIJLMAX
@@ -341,17 +341,27 @@
               FIELDG%LKFR(I,J) = 0.0_JWRB
             ENDIF
 
+            FIELDG%USTRA(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),7) +  &
+     &                        DII1*FIELDS(IJBLOCK(II1,JJ),7) ) +     &
+     &                  DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),7) +     &
+     &                        DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),7) )
+
+            FIELDG%VSTRA(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),8) +  &
+     &                        DII1*FIELDS(IJBLOCK(II1,JJ),8) ) +     &
+     &                  DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),8) +     &
+     &                        DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),8) )
+
             IF (LLNEWCURR) THEN
               IF (LWCUR) THEN
-                FIELDG%UCUR(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),7) +  &
-     &                           DII1*FIELDS(IJBLOCK(II1,JJ),7) ) +     &
-     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),7) +     &
-     &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),7) )
+                FIELDG%UCUR(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),9) +  &
+     &                           DII1*FIELDS(IJBLOCK(II1,JJ),9) ) +     &
+     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),9) +     &
+     &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),9) )
 
-                FIELDG%VCUR(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),8) +  &
-     &                           DII1*FIELDS(IJBLOCK(II1,JJ),8) ) +     &
-     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),8) +     &
-     &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),8) )
+                FIELDG%VCUR(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),10) +  &
+     &                           DII1*FIELDS(IJBLOCK(II1,JJ),10) ) +     &
+     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),10) +     &
+     &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),10) )
               ELSE
                 FIELDG%UCUR(I,J) = 0.0_JWRB
                 FIELDG%VCUR(I,J) = 0.0_JWRB

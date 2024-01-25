@@ -34,6 +34,7 @@ SUBROUTINE GETWND (BLK2LOC,                               &
 !                       NXS, NXE, NYS, NYE, FIELDG,
 !                       UCUR, VCUR,
 !                       U10, THW, ADS, WSTAR, CICOVER, CITHICK,
+!                       USTRA, VSTRA,
 !                       CDTWIS, LWNDFILE, LCLOSEWND,
 !                       LWCUR, NEMOCICOVER, NEMOCITHICK, 
 !                       ICODE_WND)*
@@ -48,8 +49,11 @@ SUBROUTINE GETWND (BLK2LOC,                               &
 !         *THW*    - DIRECTION OF 10m WIND AT EACH POINT AND BLOCK.
 !         *ADS*    - AIR DENSITY AT EACH POINT AND BLOCK.
 !         *WSTAR*  - CONVECTIVE VELOCITY.
-!         *CICOVER*  - SEA ICE COVER.
-!         *CITHICK*   - SEA ICE THICKNESS.
+!         *CICOVER*- SEA ICE COVER.
+!         *CITHICK*- SEA ICE THICKNESS.
+!         *USTRA*  - U-COMPONENT OF THE ATMOSPHERIC SURFACE STRESS
+!         *VSTRA*  - V-COMPONENT OF THE ATMOSPHERIC SURFACE STRESS
+
 !         *CDTWIS* - DATE OF WIND FIELD TO BE LOOKED FOR.
 !         *LWNDFILE - FLAG USED TO DETERMINE WHETHER WINDS ARE READ FROM
 !                     FILE OR ARE AVAILABLE IN ARRAY FIELDG (SEE *IFSTOWAM).
@@ -72,8 +76,9 @@ SUBROUTINE GETWND (BLK2LOC,                               &
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWICE   , ONLY : IPARAMCI
+      USE YOWMAP   , ONLY : CLDOMAIN
       USE YOWMPP   , ONLY : IRANK
-      USE YOWPARAM , ONLY : CLDOMAIN , LWDINTS
+      USE YOWPARAM , ONLY : LWDINTS
       USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : IUNITW
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
@@ -205,18 +210,19 @@ IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
         DO ICHNK = 1, NCHNK
           KIJS=1
           KIJL=NPROMA_WAM
-          CALL WAMWND (KIJS, KIJL,                                      &
+          CALL WAMWND (KIJS, KIJL,                                          &
      &                 BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK),  &
-     &                 NXS, NXE, NYS, NYE, FIELDG,                      &
+     &                 NXS, NXE, NYS, NYE, FIELDG,                          &
      &                 WVENVI%UCUR(:,ICHNK), WVENVI%VCUR(:,ICHNK),          &
      &                 FF_NOW%WSWAVE(:,ICHNK), FF_NOW%UFRIC(:,ICHNK),       &
      &                 FF_NOW%WDWAVE(:,ICHNK), FF_NOW%AIRD(:,ICHNK),        &
      &                 FF_NOW%WSTAR(:,ICHNK), FF_NOW%CITHICK(:,ICHNK),      &
+     &                 FF_NOW%USTRA(:,ICHNK), FF_NOW%VSTRA(:,ICHNK),        &
      &                 LWCUR, ICODE_WND)
 
 
           CALL MICEP(IPARAMCI, KIJS, KIJL, BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK),  &
-     &               NXS, NXE, NYS, NYE, FIELDG,                                            &
+     &               NXS, NXE, NYS, NYE, FIELDG,                                                &
      &               FF_NOW%CICOVER(:,ICHNK), FF_NOW%CITHICK(:,ICHNK),                          &
      &               NEMO2WAM%NEMOCICOVER(:,ICHNK), NEMO2WAM%NEMOCITHICK(:,ICHNK))
         ENDDO
