@@ -181,10 +181,12 @@ jobs:
           ecmwf/ecbuild
           ecmwf/eccodes
           ecmwf-ifs/fiat
+          ecmwf-ifs/field_api@refs/tags/v0.2.2
         dependency_branch: develop
         dependency_cmake_options: |
           ecmwf-ifs/fiat: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF"
           ecmwf/eccodes: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_MEMFS=ON -DENABLE_JPG=OFF"
+          ecmwf-ifs/field_api: "-DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_ACC=OFF"
         cmake_options: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.cmake_options }} -DENABLE_MPI=ON"
         ctest_options: "${{ matrix.ctest_options }}"
 
