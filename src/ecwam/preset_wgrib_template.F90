@@ -538,7 +538,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           ALLOCATE(PL(NJ))
           PL(:)=0
           IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN 
-            KST = NINT((90.0_JWRB - DAMONOP ) / DXDELLA)
+            KST = NINT((90.0_JWRU - DAMONOP ) / DXDELLA)
           ELSE
             KST = 0
           ENDIF
