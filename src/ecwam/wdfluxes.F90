@@ -231,10 +231,10 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
           ENDIF
 
 !        Coupling of waves and sea ice (type 1): wave-induced sea ice break up + reduced attenuation
-          IF(LWNEMOCOUIBR) THEN 
-!             CALL ICEBREAK (KIJS,KIJL,EMEAN,AKMEAN,CITHICK,IBRMEM,ALPFAC)           
-            CALL ICEBREAK_MODIFY_ATTENUATION (KIJS,KIJL,IBRMEM,ALPFAC)           
-          ENDIF
+!           IF(LWNEMOCOUIBR) THEN 
+! !             CALL ICEBREAK (KIJS,KIJL,EMEAN,AKMEAN,CITHICK,IBRMEM,ALPFAC)           
+!             CALL ICEBREAK_MODIFY_ATTENUATION (KIJS,KIJL,IBRMEM,ALPFAC)           
+!           ENDIF
 
 !         Save source term contributions relevant for the calculation of ice fluxes
           DO M=1,NFRE
