@@ -23,6 +23,13 @@ projects :
         git     : https://github.com/ecmwf-ifs/fiat 
         version : main 
 
+    - field_api :
+        git     : https://github.com/ecmwf-ifs/field_api.git
+        version : v0.2.2
+        cmake   : >
+            ENABLE_SINGLE_PRECISION=OFF
+            ENABLE_ACC=OFF 
+
     - ecwam :
         dir     : $PWD
         version : main
@@ -32,7 +39,7 @@ options :
 
     - with-single-precision :
         help  : Enable single precision build of the dwarf
-        cmake : ENABLE_SINGLE_PRECISION=ON
+        cmake : ENABLE_SINGLE_PRECISION=ON ENABLE_DOUBLE_PRECISION=OFF
 
     - without-mpi :
         help  : Disable MPI
