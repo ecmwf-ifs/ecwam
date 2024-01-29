@@ -107,7 +107,7 @@ IF (LFRSTCTU) THEN
   IF (.NOT. ALLOCATED(JYO)) ALLOCATE(JYO(NANG,2))
   IF (.NOT. ALLOCATED(KCR)) ALLOCATE(KCR(NANG,4))
 
-!$acc enter data copyin(KLON, KLAT, KCOR, JXO, JYO, KCR)
+!$acc update device(KLON, KLAT, KCOR, JXO, JYO, KCR)
  !$acc kernels
   DO K=1,NANG
 
@@ -186,9 +186,6 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
   IF (.NOT. ALLOCATED(LLWMPMN)) ALLOCATE(LLWMPMN(NANG,NFRE_RED,-1:1))
 ENDIF
 
-
-!$acc enter data copyin(SUMWN,LLWKPMN, WLATN,WLONN,WCORN,WKPMN)
-
 ! SOME INITIALISATION FOR *CTUW*
 !! NPROMA=NPROMA_WAM
    MTHREADS=1
@@ -197,10 +194,7 @@ ENDIF
 #endif /*_OPENACC*/
    NPROMA=(IJL-IJS+1)/MTHREADS + 1
 
-!$acc enter data copyin(BLK2GLO)
-!!$acc enter data copyin(BLK2GLO%KXLT)
-
-!$acc update device(KLAT,WLAT,KCOR,WCOR)
+!$acc update device(WLAT,WCOR)
 !$acc update device(NFRE_RED,ZPI,FR,DELTH,NANG)
 #ifndef _OPENACC
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
