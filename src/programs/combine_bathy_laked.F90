@@ -56,9 +56,10 @@ INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
 REAL(KIND=JWRU), PARAMETER :: BATHYMAX = 999.0_JWRU !! ecWAM maximum depth
 REAL(KIND=JWRU), PARAMETER :: THRSLSM = 0.5_JWRU    !! points with LSM below THRSLSM are assumed to be sea/ocean
+REAL(KIND=JWRU), PARAMETER :: THRSLSMADD = 0.2_JWRU !! ocean points with LSM below THRSLSMADD will be added 
 REAL(KIND=JWRU), PARAMETER :: UPDTHRLSM = 0.01_JWRU !! LSM must be above UPDTHRLSM when updating a missing points
                                                     !! that is not a lake point 
-REAL(KIND=JWRU), PARAMETER :: THRSLAKE = 0.5_JWRU   !! points with lake cover above THRSLAKE are assumed to be lake
+REAL(KIND=JWRU), PARAMETER :: THRSLAKE = 0.65_JWRU  !! points with lake cover above THRSLAKE are assumed to be resolved lake
 
 REAL(KIND=JWRU) :: DAMOWEP_LAKE, DAMOSOP_LAKE, DAMOEAP_LAKE, DAMONOP_LAKE, DXDELLA_LAKE, DXDELLO_LAKE
 REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:) :: VALUES_BATHY
@@ -265,8 +266,9 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
       !! Not a lake point with a land sea mask below and equal THRSLSM (i.e. assumed to be ocean)
         IF ( VALUES_BATHY(IC) == ZMISS ) THEN
         !! No BATHY value:
-          IF ( VALUES_LAKE(IC,1) > UPDTHRLSM ) THEN
+          IF ( VALUES_LAKE(IC,1) > UPDTHRLSM .AND. VALUES_LAKE(IC,1) < THRSLSMADD  ) THEN
           !! Average lake value with bathy=0, BUT with LSM > (small) UPDTHRLSM (in order to avoid North Pole area)
+          !! but below THRSLSMADD to avoid adding points that might still be surrounded by too much land
             VALUES_BATHY(IC) = MIN(0.5_JWRU*VALUES_LAKE(IC,3), BATHYMAX)
             INEW(IPR) = INEW(IPR) + 1
           ENDIF
