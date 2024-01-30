@@ -157,7 +157,7 @@ IF (LHOOK) CALL DR_HOOK('UNSETICE',0,ZHOOK_HANDLE)
           DO K=1,NANG
             DO IJ=KIJS,KIJL
               FL1(IJ,K,M) = MAX(FL1(IJ,K,M),ET(IJ,M)*SPRD(IJ,K))
-              FLLOWEST = FLMIN*COS2NOISE(IJ,K)
+              FLLOWEST = FLMIN*COS2NOISE(IJ,K)*(1.0_JWRB-CICOVER(IJ))
               FL1(IJ,K,M) = MAX(FL1(IJ,K,M),FLLOWEST)
             ENDDO
           ENDDO
