@@ -49,16 +49,13 @@ INTEGER(KIND=JWIM) :: NPROMA, MTHREADS, JC, JCS, JCL, IPR
 !$ INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
 INTEGER(KIND=JWIM), DIMENSION(NPARAM) :: IULAKE, KGRIB_HANDLE_LAKE, IPARAMID
-INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: INEWLAKE, INEW, IAVG
+INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: INEWLAKE, IAVG
 INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: NLONRGG_LAKE
 INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: KGRIB_BUFR
 INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
 REAL(KIND=JWRU), PARAMETER :: BATHYMAX = 999.0_JWRU !! ecWAM maximum depth
 REAL(KIND=JWRU), PARAMETER :: THRSLSM = 0.5_JWRU    !! points with LSM below THRSLSM are assumed to be sea/ocean
-REAL(KIND=JWRU), PARAMETER :: THRSLSMADD = 0.2_JWRU !! ocean points with LSM below THRSLSMADD will be added 
-REAL(KIND=JWRU), PARAMETER :: UPDTHRLSM = 0.01_JWRU !! LSM must be above UPDTHRLSM when updating a missing points
-                                                    !! that is not a lake point 
 REAL(KIND=JWRU), PARAMETER :: THRSLAKE = 0.65_JWRU  !! points with lake cover above THRSLAKE are assumed to be resolved lake
 
 REAL(KIND=JWRU) :: DAMOWEP_LAKE, DAMOSOP_LAKE, DAMOEAP_LAKE, DAMONOP_LAKE, DXDELLA_LAKE, DXDELLO_LAKE
@@ -243,10 +240,8 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
   NPROMA=NUMBEROFVALUES/MTHREADS + 1
 
   ALLOCATE(INEWLAKE(MTHREADS))
-  ALLOCATE(INEW(MTHREADS))
   ALLOCATE(IAVG(MTHREADS))
   INEWLAKE(:) = 0
-  INEW(:) = 0
   IAVG(:) = 0
 
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC, JCS, JCL, IC, IPR)
@@ -264,18 +259,10 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
         INEWLAKE(IPR) = INEWLAKE(IPR) + 1
       ELSEIF ( VALUES_LAKE(IC,1) <= THRSLSM .AND. VALUES_LAKE(IC,2) <= 0.01_JWRU ) THEN
       !! Not a lake point with a land sea mask below and equal THRSLSM (i.e. assumed to be ocean)
-        IF ( VALUES_BATHY(IC) == ZMISS ) THEN
-        !! No BATHY value:
-          IF ( VALUES_LAKE(IC,1) > UPDTHRLSM .AND. VALUES_LAKE(IC,1) < THRSLSMADD  ) THEN
-          !! Average lake value with bathy=0, BUT with LSM > (small) UPDTHRLSM (in order to avoid North Pole area)
-          !! but below THRSLSMADD to avoid adding points that might still be surrounded by too much land
-            VALUES_BATHY(IC) = MIN(0.5_JWRU*VALUES_LAKE(IC,3), BATHYMAX)
-            INEW(IPR) = INEW(IPR) + 1
-          ENDIF
-        ELSE
-        !! Take the average between BATHY and lake depth
-           VALUES_BATHY(IC) = 0.5_JWRU * ( VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX) )
-           IAVG(IPR) = IAVG(IPR) + 1
+        IF ( VALUES_BATHY(IC) /= ZMISS ) THEN
+          !! Take the average between BATHY and lake depth
+          VALUES_BATHY(IC) = 0.5_JWRU * ( VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX) )
+          IAVG(IPR) = IAVG(IPR) + 1
         ENDIF
       ENDIF
     ENDDO
@@ -314,7 +301,6 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
   WRITE(IU06,*) ' New bathymetry file can be found in ',OUTFILENAME(1:LFILE)
   WRITE(IU06,*) ''
   WRITE(IU06,*) '  Number of new lake points      = ', SUM(INEWLAKE(:))
-  WRITE(IU06,*) '  Number of new ocean points     = ', SUM(INEW(:))
   WRITE(IU06,*) '  Number of average ocean points = ', SUM(IAVG(:))
   WRITE(IU06,*) ''
 
