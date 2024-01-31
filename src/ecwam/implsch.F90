@@ -148,7 +148,8 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: ICALL, NCALL
-
+      INTEGER(KIND=JWIM) :: CIFLAG
+      
       REAL(KIND=JWRB) :: DELT, DELTM, XIMP, DELT5
       REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB, BETA
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -237,10 +238,14 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                    &
      &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
+      ! equals zero for any sea ice
+      DO IJ=KIJS,KIJL
+        CIFLAG    = 1 - CEILING(MIN(CICOVER(IJ),0.99_JWRB))
+      ENDDO
+
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-!            FLM(IJ,K)=FLMIN*MAX(0.0_JWRB, COSWDIF(IJ,K))**2
-          FLM(IJ,K)=FLMIN*MAX(0.0_JWRB, COSWDIF(IJ,K))**2 * (1.0_JWRB-CICOVER(IJ))
+          FLM(IJ,K) = CIFLAG*FLMIN*MAX(0.0_JWRB, COSWDIF(IJ,K))**2 
         ENDDO
       ENDDO
 
