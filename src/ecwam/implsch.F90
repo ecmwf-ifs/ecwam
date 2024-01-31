@@ -84,7 +84,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU,           &
                             LWNEMOCOUSTRN, LWNEMOCOUWRS, LWNEMOCOUIBR,   &
-                            LWFLUX_IMPCOR
+ &                          LWFLUX_IMPCOR
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LICERUN   ,LMASKICE ,              &
@@ -339,13 +339,15 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
          ENDIF
 
 !        Save source term contributions relevant for the calculation of ice fluxes
-         DO M=1,NFRE
-           DO K=1,NANG
-             DO IJ=KIJS,KIJL
-               SLTEMP(IJ,K,M) = SL(IJ,K,M)
+         IF(LWNEMOCOUWRS) THEN 
+           DO M=1,NFRE
+             DO K=1,NANG
+               DO IJ=KIJS,KIJL
+                 SLTEMP(IJ,K,M) = SL(IJ,K,M)
+               ENDDO
              ENDDO
            ENDDO
-         ENDDO
+        ENDIF
 
 !        Attenuation of waves in ice
          IF(LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
@@ -353,7 +355,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
          ENDIF
 
 !        Save source term contributions relevant for the calculation of ice fluxes
-         IF (LCFLX) THEN
+         IF (LWNEMOCOUWRS) THEN
             IF (.NOT. LWFLUX_IMPCOR) THEN
               DO M=1,NFRE
                 DO K=1,NANG
