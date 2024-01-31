@@ -26,7 +26,7 @@ objtypes:
   wave2ocean:
      rank: 2
      types: [ocean]
-     vars: [[nswh, nmwp, nwnum, nphieps, nemophif, ntauoc, nemotaux, nemotauy, nemoustokes, nemovstokes,
+     vars: [[nswh, nmwp, nphieps, nemophif, ntauoc, nemotaux, nemotauy, nemoustokes, nemovstokes,
             nemostrn, nemowswave, nemotauicx, nemotauicy]]
   intgt_param_fields:
      rank: 2

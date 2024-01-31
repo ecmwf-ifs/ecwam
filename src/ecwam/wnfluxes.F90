@@ -11,11 +11,11 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
  &                   MIJ, RHOWGDFTH,                   &
  &                   CINV,                             &
  &                   SSURF, SLICE, CICOVER,            &
- &                   PHIWA, XKMEAN,                    &
+ &                   PHIWA,                            &
  &                   EM, F1, WSWAVE, WDWAVE,           &
  &                   USTRA, VSTRA,                     &
  &                   UFRIC, AIRD,                      &
- &                   NPHIEPS, NTAUOC, NSWH, NMWP,NWNUM,&
+ &                   NPHIEPS, NTAUOC, NSWH, NMWP,      &
  &                   NEMOTAUX, NEMOTAUY,               &
  &                   NEMOTAUICX, NEMOTAUICY,           &
  &                   NEMOWSWAVE, NEMOPHIF,             &
@@ -91,14 +91,14 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: CINV 
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: SSURF, SLICE
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CICOVER 
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: PHIWA,XKMEAN
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: PHIWA
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: EM, F1, WSWAVE, WDWAVE
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: USTRA, VSTRA
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: UFRIC, AIRD
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUICX, TAUICY 
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: PHIOCD, PHIEPS, PHIAW
-      REAL(KIND=JWRO), DIMENSION(KIJL), INTENT(INOUT) :: NPHIEPS, NTAUOC, NSWH, NMWP,NWNUM, NEMOTAUX
+      REAL(KIND=JWRO), DIMENSION(KIJL), INTENT(INOUT) :: NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX
       REAL(KIND=JWRO), DIMENSION(KIJL), INTENT(INOUT) :: NEMOTAUY, NEMOWSWAVE, NEMOPHIF
       REAL(KIND=JWRO), DIMENSION(KIJL), INTENT(INOUT) :: NEMOTAUICX, NEMOTAUICY
       LOGICAL, INTENT(IN) :: LNUPD
@@ -294,8 +294,6 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
           ELSE
              NMWP(IJ) = 0.0_JWRO
           ENDIF
-
-          NWNUM(IJ) = XKMEAN(IJ)!  PASS OPEN WATER MEAN WAVENUMBER
 
           IF (LWNEMOTAUOC) THEN
             NEMOTAUX(IJ) = NEMOTAUX(IJ) + TAUOCXD(IJ)
