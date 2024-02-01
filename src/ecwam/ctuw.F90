@@ -316,7 +316,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
                     WRITE (IU06,*) '********************************'
                     LCFLFAIL(IJ)=.TRUE.
                   ENDIF
-#ENDIF
+#endif
     
 
 !                 BASIC CFL CHECKS (IN EACH DIRECTION)
@@ -354,7 +354,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
                     WRITE (IU06,*) '********************************'
                     LCFLFAIL(IJ)=.TRUE.
                   ENDIF
-#ENDIF
+#endif
 
 
               ENDDO  ! END LOOP OVER GRID POINTS

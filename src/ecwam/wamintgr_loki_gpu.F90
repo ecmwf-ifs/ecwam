@@ -166,6 +166,7 @@ IF (CDATE == CDTPRA) THEN
 ENDIF
 !$acc end data
 
+
 !* RETRIEVING NEW FORCING FIELDS IF NEEDED.
 !  ----------------------------------------
 CALL NEWWIND(CDTIMP, CDATEWH, LLNEWFILE,      &
