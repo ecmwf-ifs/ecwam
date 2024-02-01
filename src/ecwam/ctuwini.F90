@@ -115,7 +115,6 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
       ENDDO
       !$acc end parallel
 
-
       !$acc parallel loop independent collapse(4)
       DO IC=1,2
         DO M=1,NFRE_RED
@@ -127,7 +126,6 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
       !$acc end parallel
-
 
       !$acc parallel loop  independent collapse(5)
       DO ICL=1,2
@@ -149,7 +147,7 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
 
 !*      SPHERICAL GRID.
 !       ---------------
-!
+
 !*        COMPUTE COS PHI FACTOR FOR ADJOINING GRID POINT.
 !         (for all grid points)
       !$acc parallel loop independent collapse(2) private(KY,KK,KKM)
@@ -163,7 +161,6 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
           ENDDO
       !$acc end parallel
        ENDIF
-
 
 IF (LHOOK) CALL DR_HOOK('CTUWINI',1,ZHOOK_HANDLE)
 

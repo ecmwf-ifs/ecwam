@@ -4,9 +4,9 @@ frequencies: 29
 bathymetry:  ETOPO1
 
 advection:
-    timestep: 450
+    timestep: 225
 physics:
-    timestep: 450
+    timestep: 225
 
 analysis.begin: 2022-12-31 12:00:00
 analysis.end:   2023-01-01 00:00:00
