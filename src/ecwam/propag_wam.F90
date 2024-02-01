@@ -37,9 +37,6 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
 
 ! -------------------------------------------------------------------
 
-#ifndef _OPENACC
-      use openacc
-#endif /*_OPENACC*/
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : WVGRIDGLO, ENVIRONMENT, FREQUENCY
 

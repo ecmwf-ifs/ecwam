@@ -45,9 +45,6 @@ USE YOWPCONS , ONLY : ZPI
 
 
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-#ifdef _OPENACC
-USE OPENACC
-#endif /*_OPENACC*/
       
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
