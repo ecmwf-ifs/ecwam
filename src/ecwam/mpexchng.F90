@@ -199,7 +199,7 @@
 !     DECODE THE RECEIVED BUFFERS
 
       CALL GSTATS(1893,0)
-      #ifdef _OPENACC
+#ifdef _OPENACC
       !$acc kernels loop independent private(KCOUNT,IJ) !copyin(ZCOMBUFR)
       DO INGB=1,NGBFROMPE
         IPROC=NFROMPELST(INGB)
@@ -215,7 +215,7 @@
         ENDDO
       ENDDO
       !$acc end kernels
-      #else
+#else
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(INGB,IPROC,KCOUNT,M,K,IH,IJ)
       DO INGB=1,NGBFROMPE
         IPROC=NFROMPELST(INGB)
@@ -231,7 +231,7 @@
         ENDDO
       ENDDO
 !$OMP END PARALLEL DO
-      #endif /*_OPENACC*/
+#endif /*_OPENACC*/
       CALL GSTATS(1893,1)
 
       KTAG=KTAG+1
