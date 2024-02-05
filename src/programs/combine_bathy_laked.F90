@@ -261,7 +261,13 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
       !! Not a lake point with a land sea mask below and equal THRSLSM (i.e. assumed to be ocean)
         IF ( VALUES_BATHY(IC) /= ZMISS ) THEN
           !! Take the average between BATHY and lake depth
-          VALUES_BATHY(IC) = 0.5_JWRU * ( VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX) )
+          IF ( VALUES_BATHY(IC) <= 3.0_JWRU ) THEN
+            VALUES_BATHY(IC) = 0.25_JWRU * VALUES_BATHY(IC) + 0.75_JWRU * MIN(VALUES_LAKE(IC,3), BATHYMAX)
+          ELSEIF (VALUES_LAKE(IC,3) <= 3.0_JWRU ) THEN
+            VALUES_BATHY(IC) = 0.75_JWRU * VALUES_BATHY(IC) + 0.25_JWRU * MIN(VALUES_LAKE(IC,3), BATHYMAX)
+          ELSE
+            VALUES_BATHY(IC) = 0.5_JWRU * ( VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX) )
+          ENDIF
           IAVG(IPR) = IAVG(IPR) + 1
         ENDIF
       ENDIF
