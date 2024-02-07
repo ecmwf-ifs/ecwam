@@ -243,7 +243,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
       IF (ITABPAR == 140251 .AND. .NOT. LLSPECNOT251 ) THEN
 
-!       spectra are encoded on a log10 scale and small below a certain threshold are set to missing
+!       spectra are encoded on a log10 scale and small values below a certain threshold are set to missing
         DELTAPP=(2**NGRBRESS-1)*PPRESOL
         ABSPPREC=ABS(PPREC)
         ZMINSPEC = LOG10(PPEPS)+ABSPPREC
@@ -397,7 +397,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
               ELSE 
                 NWINOFF=12-MOD(IH2+3,12)
               ENDIF
-              IF (ITABPAR == 140251) THEN
+              IF (IPARAM == 251 .AND. IGRIB_VERSION == 1 ) THEN
                 CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',4)
               ENDIF
             ENDIF
@@ -443,19 +443,20 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 !!!   for compatibility with previous coding, impose:
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'timeRangeIndicator',10)
 
-!!!        IF ( IGRIB_VERSION == 1 ) THEN
-!!!          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'unitOfTimeRange',1)
-!!!        ELSE
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'indicatorOfUnitOfTimeRange',1)
-!!!!        ENDIF
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepUnits','h')
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'endStep',ISTEP_HRS)
 
       ENDIF
 
-      IF (ITABPAR == 140251 .OR. LLSPECNOT251 ) THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'directionNumber',IK)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'frequencyNumber',IM)
+      IF (IPARAM == 251) THEN
+        IF ( IGRIB_VERSION == 1 ) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'directionNumber',IK)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'frequencyNumber',IM)
+        ELSE
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveDirectionNumber',IK)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveFrequencyNumber',IM)
+        ENDIF
       ENDIF
 
 !     ENCODE DATA:
