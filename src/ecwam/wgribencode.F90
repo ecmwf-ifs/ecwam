@@ -443,11 +443,11 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 !!!   for compatibility with previous coding, impose:
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'timeRangeIndicator',10)
 
-        IF ( IGRIB_VERSION == 1 ) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'unitOfTimeRange',1)
-        ELSE
+!!!        IF ( IGRIB_VERSION == 1 ) THEN
+!!!          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'unitOfTimeRange',1)
+!!!        ELSE
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'indicatorOfUnitOfTimeRange',1)
-        ENDIF
+!!!!        ENDIF
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepUnits','h')
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'endStep',ISTEP_HRS)
 
