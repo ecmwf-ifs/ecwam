@@ -712,7 +712,7 @@
 
       LGRHDIFS = .FALSE.
 
-      NGRIB_VERSION = 1
+      NGRIB_VERSION = 2
 
       LNEWLVTP = .FALSE.
 

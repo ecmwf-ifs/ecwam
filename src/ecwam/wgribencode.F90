@@ -402,7 +402,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
               ENDIF
             ENDIF
 !           in hours
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE, 'offsetToEndOf4DvarWindow',NWINOFF) 
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'offsetToEndOf4DvarWindow',NWINOFF)
           ENDIF 
         ELSEIF ( MARSTYPE == 'cf' ) THEN
           ICLASS = 10 
@@ -442,8 +442,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
 !!!   for compatibility with previous coding, impose:
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'timeRangeIndicator',10)
-
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'indicatorOfUnitOfTimeRange',1)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'indicatorOfUnitOfTimeRange',1)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepUnits','h')
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'endStep',ISTEP_HRS)
 
@@ -454,8 +453,14 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'directionNumber',IK)
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'frequencyNumber',IM)
         ELSE
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveDirectionNumber',IK)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveFrequencyNumber',IM)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveDirectionNumber',IK,IERR)
+          IF (IERR /= 0) THEN
+              write(NULERR,*) 'debile error setting waveDirectionNumber ',IK,IERR
+          ENDIF
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveFrequencyNumber',IM,IERR)
+          IF (IERR /= 0) THEN
+              write(NULLERR,*) 'debile error setting waveFrequencyNumber ',IM,IERR
+          ENDIF
         ENDIF
       ENDIF
 
