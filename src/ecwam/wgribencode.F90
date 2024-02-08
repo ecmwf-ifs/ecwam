@@ -456,13 +456,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'frequencyNumber',IM)
         ELSE
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveDirectionNumber',IK,IERR)
-          IF (IERR /= 0) THEN
-              write(NULERR,*) 'debile error setting waveDirectionNumber ',IK,IERR
-          ENDIF
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveFrequencyNumber',IM,IERR)
-          IF (IERR /= 0) THEN
-              write(NULERR,*) 'debile error setting waveFrequencyNumber ',IM,IERR
-          ENDIF
         ENDIF
       ENDIF
 
