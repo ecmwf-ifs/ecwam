@@ -330,7 +330,7 @@
                            & 'SEA ICE COVER' )
 
 !     PARAMETER 056
-      IR = DEFINE_PARAMETER( 56, '056', 003092, 0, .False., .True., &
+      IR = DEFINE_PARAMETER( 56, '056', 174098, 0, .False., .True., &
                            & 'SEA ICE THICKNESS' )
 
 !     PARAMETER 057
