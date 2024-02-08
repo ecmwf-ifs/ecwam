@@ -7,7 +7,8 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
+SUBROUTINE PROPAG_WAM (BLK2GLO, WAVNUM, CGROUP, OMOSNH2KD, FL1, &
+&  DEPTH, DELLAM1, COSPHM1, UCUR, VCUR)
 
 ! ----------------------------------------------------------------------
 
@@ -69,9 +70,9 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
 #include "propdot.intfb.h"
 
       TYPE(WVGRIDGLO), INTENT(IN) :: BLK2GLO
-      TYPE(ENVIRONMENT), INTENT(IN) :: WVENVI
-      TYPE(FREQUENCY), INTENT(IN) :: WVPRPT
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NFRE, NCHNK), INTENT(IN) :: WAVNUM, CGROUP, OMOSNH2KD
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: DEPTH, DELLAM1, COSPHM1, UCUR, VCUR
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, J, II
@@ -99,7 +100,8 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WVENVI, WVPRPT, FL1)
 IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 
-!$acc data PRESENT(FL1) CREATE(FL1_EXT,FL3_EXT)
+!$acc data present(FL1, WAVNUM, CGROUP, OMOSNH2KD, DEPTH, DELLAM1,COSPHM1,UCUR,VCUR) CREATE(FL1_EXT,FL3_EXT) &
+!$acc & create(WAVNUM_EXT,CGROUP_EXT,OMOSNH2KD_EXT,DELLAM1_EXT,COSPHM1_EXT,DEPTH_EXT,UCUR_EXT,VCUR_EXT)
       IF (NIBLO > 1) THEN
 
         IJSG = IJFROMCHNK(1,1)
@@ -172,8 +174,8 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 !            NEED HALO VALUES
              CALL  PROENVHALO (NINF, NSUP,                            &
-&                              WVPRPT,                                &
-&                              WVENVI,                                &
+&                              WAVNUM, CGROUP, OMOSNH2KD,            &
+&                              DEPTH, DELLAM1, COSPHM1, UCUR, VCUR,   &
 &                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
 &                              DELLAM1_EXT, COSPHM1_EXT,              & 
 &                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
@@ -206,8 +208,8 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
              IF (LUPDTWGHT) THEN
 !              NEED HALO VALUES
                CALL  PROENVHALO (NINF, NSUP,                            &
-&                                WVPRPT,                                &
-&                                WVENVI,                                &
+&                                WAVNUM, CGROUP, OMOSNH2KD,            &
+&                                DEPTH, DELLAM1, COSPHM1, UCUR, VCUR,   &
 &                                WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
 &                                DELLAM1_EXT, COSPHM1_EXT,              & 
 &                                DEPTH_EXT, UCUR_EXT, VCUR_EXT )
@@ -288,8 +290,8 @@ ENDIF  ! end sub time steps (if needed)
 
 !            NEED HALO VALUES
              CALL  PROENVHALO (NINF, NSUP,                            &
-&                              WVPRPT,                                &
-&                              WVENVI,                                &
+&                              WAVNUM, CGROUP, OMOSNH2KD,            &
+&                              DEPTH, DELLAM1, COSPHM1, UCUR, VCUR,   &
 &                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
 &                              DELLAM1_EXT, COSPHM1_EXT,              & 
 &                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
@@ -313,8 +315,8 @@ ENDIF  ! end sub time steps (if needed)
 
 !            NEED HALO VALUES
              CALL  PROENVHALO (NINF, NSUP,                            &
-&                              WVPRPT,                                &
-&                              WVENVI,                                &
+&                              WAVNUM, CGROUP, OMOSNH2KD,            &
+&                              DEPTH, DELLAM1, COSPHM1, UCUR, VCUR,   &
 &                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
 &                              DELLAM1_EXT, COSPHM1_EXT,              & 
 &                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
@@ -382,7 +384,7 @@ ENDIF  ! end sub time steps (if needed)
         ENDIF  ! end propagation
 
       ENDIF ! more than one grid point
-!$ACC END DATA
+!$acc end data
 
       L1STCALL=.FALSE.
       LLCHKCFL=.FALSE.
