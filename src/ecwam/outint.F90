@@ -77,7 +77,7 @@
 
       INTEGER(KIND=JWIM) :: I, J, ITG, IFLAG, IT
       INTEGER(KIND=JWIM) :: ICOUNT      ! Field counter
-      INTEGER(KIND=JWIM) :: IPARAM, ITABLE, IZLEV
+      INTEGER(KIND=JWIM) :: IPARAM, ITABLE, IZLEV, ITMIN, ITMAX
       INTEGER(KIND=JWIM) :: IERR
       INTEGER(KIND=JWIM) :: LFILE, IUOUT 
   
@@ -160,9 +160,11 @@
               ITABLE=INFOBOUT(IT,1)
               IPARAM=INFOBOUT(IT,2)
               IZLEV=INFOBOUT(IT,3)
+              ITMIN=INFOBOUT(IT,4)
+              ITMAX=INFOBOUT(IT,5)
 
-              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, GOUT(ICOUNT,:,:),  &
-     &                        ITABLE, IPARAM, IZLEV, 0 , 0,             &
+              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, GOUT(ICOUNT,:,:),    &
+     &                        ITABLE, IPARAM, IZLEV, ITMIN, ITMAX, 0 , 0, &
      &                        CDATE, IFCST, MARSTYPE, LFDB, IUOUT)
             ENDIF
           ENDIF

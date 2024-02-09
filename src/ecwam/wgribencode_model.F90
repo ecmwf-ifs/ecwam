@@ -7,9 +7,9 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE WGRIBENCODE_MODEL (IU06, ITEST, I1, I2, FIELD,   &
- &                            ITABLE, IPARAM, KLEV, IK, IM, &
- &                            CDATE, IFCST, MARSTYPE,       &
+SUBROUTINE WGRIBENCODE_MODEL (IU06, ITEST, I1, I2, FIELD,                 &
+ &                            ITABLE, IPARAM, KLEV, ITMIN, ITMAX, IK, IM, &
+ &                            CDATE, IFCST, MARSTYPE,                     &
  &                            IGRIB_HANDLE)
 
 ! ----------------------------------------------------------------------
@@ -39,6 +39,8 @@ SUBROUTINE WGRIBENCODE_MODEL (IU06, ITEST, I1, I2, FIELD,   &
 !          *IPARAM*  PARAMETER IDENTIFIER.
 !          *KLEV*    REFERENCE LEVEL IN full METER
 !                    (SHOULD BE 0 EXCEPT FOR 233 AND 245)
+!          *ITMIN*   MINIMUM WAVE PERIOD FOR WHICH THE PARAMETER IS DEFINED (s)
+!          *ITMAX*   MAXIMUM WAVE PERIOD FOR WHICH THE PARAMETER IS DEFINED (s)
 !          *IK*      DIRECTION INDEX,
 !                    ONLY MEANINGFUL FOR SPECTRAL PARAMETERS.
 !          *IM*      FREQUENCY INDEX,
@@ -79,7 +81,7 @@ SUBROUTINE WGRIBENCODE_MODEL (IU06, ITEST, I1, I2, FIELD,   &
 #include "wgribencode.intfb.h"
 
  INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, I1, I2
- INTEGER(KIND=JWIM), INTENT(IN) :: ITABLE, IPARAM, KLEV, IK, IM, IFCST
+ INTEGER(KIND=JWIM), INTENT(IN) :: ITABLE, IPARAM, KLEV, ITMIN, ITMAX, IK, IM, IFCST
  INTEGER(KIND=JWIM), INTENT(OUT) :: IGRIB_HANDLE
  CHARACTER(LEN=2), INTENT(IN) :: MARSTYPE
  CHARACTER(LEN=14), INTENT(IN) :: CDATE
@@ -146,6 +148,7 @@ CALL WGRIBENCODE( IU06, ITEST, &
  &                FIELD, &
  &                ITABLE, IPARAM, &
  &                KLEV, &
+ &                ITMIN, ITMAX, &
  &                IK, IM, &
  &                CDATE, IFCST, MARSTYPE, &
  &                PPMISS, PPEPS, PPREC, PPRESOL, PPMIN_RESET, NTENCODE, &
