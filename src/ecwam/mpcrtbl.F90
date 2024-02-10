@@ -419,7 +419,7 @@
                            & 'U-COMP STRESS INTO OCEANS' )
 
 !     PARAMETER 077
-      IR = DEFINE_PARAMETER( 77, '077', 140104, 0, .False., .True., &
+      IR = DEFINE_PARAMETER( 77, '077', 140104, 0, 0, 0, .False., .True., &
                            & 'V-COMP STRESS INTO OCEANS' )
 
 !     PARAMETER 078
