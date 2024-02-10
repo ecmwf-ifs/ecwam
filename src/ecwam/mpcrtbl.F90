@@ -493,7 +493,7 @@
         DO IFLAG=1,JPPFLAG
           IT=ITOBOUT(IFLAG)
           IF(IT > 0) THEN
-            DO IC 1, NINFOBOUT
+            DO IC = 1, NINFOBOUT
               INFOBOUT(IT,IC)=IPRMINFO(IFLAG,IC)
             ENDDO
           ENDIF
