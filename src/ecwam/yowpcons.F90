@@ -109,6 +109,7 @@
 !     *ACD*       REAL      COEFFICIENTS FOR SIMPLE CD(U10) RELATION
 !     *BCD*       REAL      CD = ACD + BCD*U10
 
+!     Cd and Z0 from Hersbach 2010, ECMWF Tech Memo 630 eqn. 11 (without the viscous part)
 !     *ACDLIN*    REAL      COEFFICIENTS FOR SIMPLE LINEARISED CD(U10,CHARNOCK) RELATION
 !     *BCDLIN*    REAL      CD = ACDLIN + BCDLIN*SQRT(CHARNOCK) * U10
 
