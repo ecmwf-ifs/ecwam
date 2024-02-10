@@ -53,7 +53,7 @@
      &            NTRAIN   ,LLPARTITION,NIPRMINFO,IPRMINFO          ,   &
      &            IRWDIR, IRCD ,IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
      &            IRHS     ,IRTP     ,IRT1       ,IRPHIAW  ,IRPHIOC ,   &
-     &            IRTAUOC   , IRHSWS   ,IRT1WS   ,IRBATHY  ,IRMSS   ,   &
+     &            IRTAUOC   , IRHSWS   ,IRT1WS   ,IRBATHY  ,NTEWH   ,   &
      &            IFRSTPARTI, NINFOBOUT,INFOBOUT ,COUTDESCRIPTION
 !      *IPRMINFO* INTEGER    AUXILIARY INFORMATION FOR OUTPUT OF INTEGRATED PARAMETERS
 !                            IPRMINFO(:,1)  : GRIB TABLE NUMBER.
@@ -86,6 +86,7 @@
       COUTDESCRIPTION(:)='VARIABLE NOT DEFINED, see MPCRTBL'
       COUTNAME(:)='undef'
       IPRMINFO(:,:)=0
+      NTEWH = 0
 
 !     PARAMETER 001
       IRHS = DEFINE_PARAMETER( 1, 'swh', 140229, 0, 0, 0, .True., .True., &
@@ -104,7 +105,7 @@
       ! Use a spare extra grib parameter number
       IR = DEFINE_PARAMETER( 4, '004', 140084, 0, 0, 0, .False., .True., &
                            & 'FRICTION VELOCITY' )
-      IF(GFLAG(IR) ) THEN
+      IF (GFLAG(IR) ) THEN
         WRITE(IU06,*) ' ******************* NOTE ********************'
         WRITE(IU06,*) ' GRIB OUTPUT POSSIBLE FOR ', COUTDESCRIPTION(IR)
         WRITE(IU06,*) ' USING SPARE PARAMETER NUMBER ', IPRMINFO(IR,2)
@@ -127,7 +128,7 @@
       ! Use a spare extra grib parameter number
       IR = DEFINE_PARAMETER( 8, '008', 140083, 0, 0, 0, .True., .True., &
                            & 'NORMALISED WAVE STRESS' )
-      IF(GFLAG(IR) ) THEN
+      IF (GFLAG(IR) ) THEN
         WRITE(IU06,*) ' ******************* NOTE ********************'
         WRITE(IU06,*) ' GRIB OUTPUT POSSIBLE FOR ', COUTDESCRIPTION(IR)
         WRITE(IU06,*) ' USING SPARE PARAMETER NUMBER ', IPRMINFO(IR,2)
@@ -371,26 +372,32 @@
                            & 'WAVE ENERGY FLUX DIRECTION' )
 
 !     PARAMETER 065
+      NTEWH = NTEWH + 1
       IR = DEFINE_PARAMETER( 65, '065', 140114, 0, 10, 12, .True., .True., &
                            & 'SIG. WAVE HEIGHT 10<=T<=12' )
 
 !     PARAMETER 066
+      NTEWH = NTEWH + 1
       IR = DEFINE_PARAMETER( 66, '066', 140115, 0, 12, 14, .True., .True., &
                            & 'SIG. WAVE HEIGHT 12<=T<=14' )
 
 !     PARAMETER 067
+      NTEWH = NTEWH + 1
       IR = DEFINE_PARAMETER( 67, '067', 140116, 0, 14, 17, .True., .True., &
                            & 'SIG. WAVE HEIGHT 14<=T<=17' )
 
 !     PARAMETER 068
+      NTEWH = NTEWH + 1
       IR = DEFINE_PARAMETER( 68, '068', 140117, 0, 17, 21, .True., .True., &
                            & 'SIG. WAVE HEIGHT 17<=T<=21' )
 
 !     PARAMETER 069
+      NTEWH = NTEWH + 1
       IR = DEFINE_PARAMETER( 69, '069', 140118, 0, 21, 25, .True., .True., &
                            & 'SIG. WAVE HEIGHT 21<=T<=25' )
 
 !     PARAMETER 070
+      NTEWH = NTEWH + 1
       IR = DEFINE_PARAMETER( 70, '070', 140119, 0, 25, 30, .True., .True., &
                            & 'SIG. WAVE HEIGHT 25<=T<=30' )
 
@@ -459,16 +466,16 @@
       NIPRMOUT=0
       IR=1
       DO IFLAG=1,JPPFLAG
-        IF(FFLAG(IFLAG).OR.GFLAG(IFLAG).OR.NFLAG(IFLAG)) THEN
+        IF (FFLAG(IFLAG).OR.GFLAG(IFLAG).OR.NFLAG(IFLAG)) THEN
 
-          IF(FFLAG(IFLAG)) THEN
+          IF (FFLAG(IFLAG)) THEN
 !!!!        IN CASE OF NON GRIB OUTPUT, REDIRECT TO PE 1 
             IPFGTBL(IFLAG)=1
           ELSE IF (GFLAG(IFLAG)) THEN
-            IF(LFDB) THEN
+            IF (LFDB) THEN
               IPFGTBL(IFLAG)=IR
               IR=IR+NWRTOUTWAM
-              IF(IR.GT.NPROC) IR=1
+              IF (IR > NPROC) IR=1
             ELSE
 !!!!        IN CASE OF NO FDB REDIRECT TO PE 1 
               IPFGTBL(IFLAG)=1
@@ -488,11 +495,11 @@
       ENDDO
 
       IF (NIPRMOUT > 0) THEN
-        IF(ALLOCATED(INFOBOUT)) DEALLOCATE(INFOBOUT)
+        IF (ALLOCATED(INFOBOUT)) DEALLOCATE(INFOBOUT)
         ALLOCATE(INFOBOUT(NIPRMOUT,NINFOBOUT))
         DO IFLAG=1,JPPFLAG
           IT=ITOBOUT(IFLAG)
-          IF(IT > 0) THEN
+          IF (IT > 0) THEN
             DO IC = 1, NINFOBOUT
               INFOBOUT(IT,IC)=IPRMINFO(IFLAG,IC)
             ENDDO
@@ -501,7 +508,7 @@
       ENDIF
 
 !     WILL THERE BE OUTPUT OF PARTITONED PARAMETERS
-      IF(NTRAIN*(ITP/NTRAIN).NE.ITP) THEN
+      IF (NTRAIN*(ITP/NTRAIN) /= ITP) THEN
         WRITE(NULERR,*) '******************************************'
         WRITE(NULERR,*) '*  FATAL ERROR IN SUB. MPCRTBL           *'
         WRITE(NULERR,*) '*  THE NUMBER OF PARTITONED PARAMETERS   *'
@@ -521,7 +528,7 @@
       LLPARTITION=.FALSE.
       IFLAG=IFRSTPARTI
       DO ITT=1,ITP
-        IF(IPFGTBL(IFLAG).NE.0) THEN
+        IF (IPFGTBL(IFLAG) /= 0) THEN
           LLPARTITION=.TRUE.
           EXIT
         ENDIF
@@ -539,7 +546,7 @@
 !!!         IFLAG=IFLAG-1
 !!!      END DO
 !!!      IPFGTBL(JPPFLAG+1)=IPFGTBL(IFLAG)+1
-!!!      IF(IPFGTBL(JPPFLAG+1).GT.NPROC)IPFGTBL(JPPFLAG+1)=1
+!!!      IF (IPFGTBL(JPPFLAG+1) > NPROC)IPFGTBL(JPPFLAG+1)=1
 
 
       CONTAINS
@@ -557,7 +564,7 @@
                   LOGICAL,            INTENT(IN) :: LSHALLOW_TO_MISSING !  TRUE IF TOO SHALLOW POINTS ARE SET TO MISSING
                   CHARACTER(LEN=*),   INTENT(IN) :: CDESCRIPTION        !  PARAMETER DESCRIPTION
 
-                  IF(KPARAMETER.GT.JPPFLAG) CALL MPABORT('KPARAMETER > JPPFLAG IN MPCRTBL')
+                  IF (KPARAMETER > JPPFLAG) CALL MPABORT('KPARAMETER > JPPFLAG IN MPCRTBL')
 
                   COUTNAME(KPARAMETER)   = CNAME
                   IPRMINFO(KPARAMETER,1) = KGRIB_PARAMID / 1000
@@ -565,8 +572,8 @@
                   IPRMINFO(KPARAMETER,3) = KGRIB_REFLEVEL
                   IPRMINFO(KPARAMETER,4) = KTMIN
                   IPRMINFO(KPARAMETER,5) = KTMAX
-                  IF(LSEA_ICE_MASK)       IPRMINFO(KPARAMETER,6) = 1
-                  IF(LSHALLOW_TO_MISSING) IPRMINFO(KPARAMETER,7) = 1
+                  IF (LSEA_ICE_MASK)       IPRMINFO(KPARAMETER,6) = 1
+                  IF (LSHALLOW_TO_MISSING) IPRMINFO(KPARAMETER,7) = 1
 
                   COUTDESCRIPTION(KPARAMETER) = CDESCRIPTION
                   DEFINE_PARAMETER = KPARAMETER
