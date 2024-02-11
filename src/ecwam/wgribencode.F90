@@ -310,19 +310,23 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
           IF ( ITMIN /= 0 .AND. ITMAX /= 0 ) THEN
 !           [ ITMIN , ITMAX ]
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 2)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 7)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfLowerWavePeriodLimit', 0)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfLowerWavePeriodLimit', ITMIN)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfUpperWavePeriodLimit', 0)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfUpperWavePeriodLimit', ITMAX)
           ELSEIF ( ITMIN /= 0 ) THEN
 !           [ ITMIN 
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 3)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 8)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfLowerWavePeriodLimit', 0)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfLowerWavePeriodLimit', ITMIN)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfUpperWavePeriodLimit', 0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfUpperWavePeriodLimit', ITMIN)
           ELSEIF ( ITMAX /= 0 ) THEN
 !           ITMAX ]
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 1)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 9)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfLowerWavePeriodLimit', 0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfLowerWavePeriodLimit', ITMAX)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfUpperWavePeriodLimit', 0)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfUpperWavePeriodLimit', ITMAX)
           ENDIF
