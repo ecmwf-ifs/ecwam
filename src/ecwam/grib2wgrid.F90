@@ -132,7 +132,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       INTEGER(KIND=JWIM) :: LL, LS, LE
       INTEGER(KIND=JWIM) :: ITABLE, ITABPAR, IERR
       INTEGER(KIND=JWIM) :: NC, NR, I, J, JSN, K, L, JRGG, IREPR, IR, IVAL, IDUM
-      INTEGER(KIND=JWIM) :: IRET, ILEN1, IEN
+      INTEGER(KIND=JWIM) :: IRET, ILEN1, IGRIB_VERSION 
       INTEGER(KIND=JWIM) :: ISCAN, ILOC, ISTAG, ICRLST, ICFG3, ICFG4, KSKIP, NGCOR
       INTEGER(KIND=JWIM) :: ITOP, IBOT, NDIM
       INTEGER(KIND=JWIM) :: NRFULL, ISTART, ISTOP
@@ -223,8 +223,10 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
         ENDDO
       ENDDO
 
-!*    UNPACK MARS FIELDS.                                           
+!*    UNPACK GRIB FIELDS.                                           
 !     -------------------                                           
+
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'editionNumber',IGRIB_VERSION)
 
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Nj',NRFULL)
       NR=NRFULL
@@ -249,10 +251,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
 !     MAKE A DISTINCTION FOR OCEAN MODEL DATA AND TEST CONFIGURATION.
 !     ??? The option argument KRET does not seem to work
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'editionNumber',IEN)
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'section1Length',ILEN1)
 
-      IF ((IEN == 1 .AND. ILEN1 > 28) .OR. IEN /= 1) THEN
+      IF ((IGRIB_VERSION == 1 .AND. ILEN1 > 28) .OR. IGRIB_VERSION /= 1) THEN
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'localDefinitionNumber',ILOC,KRET=IRET)
         IF (IRET /= JPGRIB_SUCCESS) THEN
           WRITE(IU06,*) '   Data do not contain localDefinitionNumber !'
@@ -721,12 +722,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 !     GET THE DATA
       CALL IGRIB_SET_VALUE(KGRIB_HANDLE,'missingValue',PMISS)
 
-      IF (IEN == 1) THEN
+      IF ( IGRIB_VERSION == 1 ) THEN
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberOfEffectiveValues',NUMBEROFVALUES)
       ELSE
-!!      for reason I do not understand, I had a user who could not read grib2 wind data with
-!!      numberOfEffectiveValues
-!!      Instead, it worked with the following:
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'getNumberOfValues',NUMBEROFVALUES)
       ENDIF
 
