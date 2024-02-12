@@ -732,13 +732,16 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'values',VALUES)
 
 !     TRANSFORM WAVE SPECTRAL VALUE TO THEIR ACTUAL SCALE
-
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'directionNumber',KKK,IERR)
-      IF ( IERR /= 0 ) KKK=0
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'frequencyNumber',MMM,IERR)
-      IF ( IERR /= 0 ) MMM=0
-
-      IF (ITABPAR == 140251 .AND. CSTREAM /= '****') THEN
+      KKK=0
+      MMM=0
+      IF (IPARAM == 251 .AND. CSTREAM /= '****') THEN
+        IF ( IGRIB_VERSION == 1 ) THEN
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'directionNumber',KKK)
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'frequencyNumber',MMM)
+        ELSE
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'waveDirectionNumber',KKK)
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'waveFrequencyNumber',MMM)
+        ENDIF
 
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(LL, LS, LE, L)
         DO LL = 1, NUMBEROFVALUES, KPROMA
