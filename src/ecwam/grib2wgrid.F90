@@ -263,8 +263,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       ELSE
         ILOC=-1
       ENDIF
-      IF (ILOC == 4) THEN
-        WRITE(IU06,*) '   OCEAN MODEL DATA DECODED, PARAM= ',IPARAM
+      IF (ILOC == 4 .AND. IGRIB_VERSION == 1) THEN
+!       Ocean data before NEMO
+        WRITE(IU06,*) '   OLD OCEAN MODEL DATA DECODED, PARAM= ',IPARAM
 
         LLOCEAN=.TRUE.
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'flagForNormalOrStaggeredGrid',ISTAG)
@@ -407,10 +408,15 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
         CALL ABORT1
       ENDIF
 
-      IF (ILEVTYPE == 105 .OR. ILEVTYPE == 160) THEN
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'level',KZLEV)
+      IF ( IGRIB_VERSION == 1 ) THEN
+        IF (ILEVTYPE == 105 .OR. ILEVTYPE == 160) THEN
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'level',KZLEV)
+        ELSE
+          KZLEV=0
+        ENDIF
       ELSE
-        KZLEV=0
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'level',KZLEV,KRET=IRET)
+        IF (IRET /= JPGRIB_SUCCESS) KZLEV = 0
       ENDIF
 
 !*    DETERMINE INFORMATION ABOUT THE DECODED DATA 
