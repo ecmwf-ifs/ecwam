@@ -71,7 +71,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWGRIBHD, ONLY : NTRG2TMPD, NTRG2TMPP
+      USE YOWGRIBHD, ONLY : NTRG2TMPD, NTRG2TMPP, LLRSTGRIBPARAM
 
       USE YOWGRIB  , ONLY : IGRIB_GET_VALUE, IGRIB_SET_VALUE
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
@@ -338,14 +338,14 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 !     GRIB TABLE AND PARAMETER NUMBER
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR,IERR)
       IF (IERR /= 0) THEN
-        WRITE(NULERR,*) ' *********************************************'
+        WRITE(NULERR,*) ' ************************************************************************'
         WRITE(IU06,*) ' *********************************************'
         WRITE(IU06,*) ' ECCODES ERROR WHILE SETTING paramId ',ITABPAR
         WRITE(NULERR,*) ' ECCODES ERROR WHILE SETTING paramId ',ITABPAR
         WRITE(NULERR,*) ' ECCODES ERROR CODE ', IERR
         WRITE(IU06,*) ' ECCODES ERROR CODE ', IERR
         CALl FLUSH(IU06)
-        IF (IERR == -36) THEN
+        IF (IERR == -36 .AND. LLRSTGRIBPARAM) THEN
           ITABPAR = 212*1000+IPARAM
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR)
 
@@ -362,7 +362,13 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
           WRITE(IU06,*) ' *********************************************'
 
         ELSE
-          WRITE(NULERR,*) ' *********************************************'
+          WRITE(NULERR,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
+          WRITE(NULERR,*) ' PARAMETERS KNOWN BY ECCODES !!!' 
+          WRITE(NULERR,*) ' ' 
+          WRITE(NULERR,*) ' IN THE MEANTIME, YOU MIGHT WANT TO USE EXPERIMENTAL PARAMETER TABLE 212' 
+          WRITE(NULERR,*) ' SET LLRSTGRIBPARAM TO TRUE IN THE INPUT NAMELIST AND RERUN' 
+          WRITE(NULERR,*) ' ADAPT THE ARCHIVING ACCORDINGLY.' 
+          WRITE(NULERR,*) ' ************************************************************************'
           CALL ABORT1
         ENDIF
       ENDIF
