@@ -803,14 +803,19 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL GSTATS(1443,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, KIJS, KIJL, IJSB, IJLB, IFLDOFFSET, IFLD)
         DO ICHNK = 1, NCHNK
-          CALL OUTBETA (1, NPROMA_WAM,                                                                          &
-     &                 FF_NOW%WSWAVE(:,ICHNK), FF_NOW%UFRIC(:,ICHNK), FF_NOW%Z0M(:,ICHNK), FF_NOW%Z0B(:,ICHNK), &
-     &                 FF_NOW%CHRNCK(:,ICHNK), BETAM(:,ICHNK), BETAB(:,ICHNK))
 
           KIJS = 1
           IJSB = IJFROMCHNK(KIJS,ICHNK)
           KIJL = KIJL4CHNK(ICHNK)
           IJLB = IJFROMCHNK(KIJL,ICHNK)
+
+          IF (LWCOU2W) THEN
+            CALL OUTBETA (1, NPROMA_WAM,                                                                          &
+     &                   FF_NOW%WSWAVE(:,ICHNK), FF_NOW%UFRIC(:,ICHNK), FF_NOW%Z0M(:,ICHNK), FF_NOW%Z0B(:,ICHNK), &
+     &                   FF_NOW%CHRNCK(:,ICHNK), BETAM(:,ICHNK), BETAB(:,ICHNK))
+          ELSE
+            BETAM(KIJS:KIJL,ICHNK) = PRCHAR 
+          ENDIF
 
           IFLDOFFSET=1
           WVBLOCK(IJSB:IJLB,IFLDOFFSET)=BETAM(KIJS:KIJL,ICHNK)
@@ -984,7 +989,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
             NTOT=NMASK
             DO JF=1,NWVFIELDS
               ICOUNT=ICOUNT+1
-              FAVG(JF)=NMASK*ZCOMBUFR(ICOUNT)
+              FAVG(JF)=MAX(NMASK,1)*ZCOMBUFR(ICOUNT)
               ICOUNT=ICOUNT+2
             ENDDO
             DO IP=1,NPROC
