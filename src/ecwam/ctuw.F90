@@ -278,7 +278,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !            LOOP OVER GRID POINTS
 !            ---------------------
             
-#IFNDEF _OPENACC
+#ifndef _OPENACC
 
 !               FLUX VELOCITIES AT THE GRID BOX INTERFACE 
 
@@ -321,7 +321,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
 !                 BASIC CFL CHECKS (IN EACH DIRECTION)
 !                 ----------------
-#IFNDEF _OPENACC
+#ifndef _OPENACC
                   IF (ADXP(2) > ZDELLO(KY))THEN
                     WRITE (IU06,*) '********************************'
                     WRITE (IU06,*) '* CTUW:                        *'
@@ -531,7 +531,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !     AND COMPUTE THEIR SUM AND CHECK IT IS LESS THAN 1 AS WELL
 !!!   THE SUM IS NEEDED LATER ON !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#IFNDEF _OPENACC
+#ifndef _OPENACC
       DO K=1,NANG
         DO M = MSTART, MEND
           DO IJ=KIJS,KIJL
