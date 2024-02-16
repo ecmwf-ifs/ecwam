@@ -386,8 +386,6 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       ENDIF
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'level',IDUM,KRET=IRET)
       IF ( IRET == JPGRIB_SUCCESS ) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',KLEV)
-!!debile
-      write(*,*) 'debile wgribencode ',ITABLE, IPARAM, KLEV, IRET, JPGRIB_SUCCESS
 
       IF (.NOT. LGRHDIFS .OR. & 
      &   (MARSTYPE == 'an' .AND. IFCST == 0) .OR. &
