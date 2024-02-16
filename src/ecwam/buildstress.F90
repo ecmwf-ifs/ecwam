@@ -257,7 +257,7 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
 
 !       TEST REFERENCE LEVEL FOR UWAVE AND CD
 
-        IF (KZLEVUWAVE /= 0 .AND. KZLEVCD /= 0) THEN
+!!        IF (KZLEVUWAVE /= 0 .AND. KZLEVCD /= 0) THEN
           IF (KZLEVUWAVE /= KZLEVCD) THEN
             WRITE(IU06,*)'************************************'
             WRITE(IU06,*)'*                                  *'
@@ -271,7 +271,7 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
             WRITE(IU06,*)'************************************'
             CALL ABORT1
           ENDIF
-        ENDIF
+!!        ENDIF
 
 !       1.5 COMPUTE TAUW, UFRIC AND Z0M
 !           ----------------------------
