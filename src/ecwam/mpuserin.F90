@@ -224,6 +224,7 @@
      &   LSMSSIG_WAM,CMETER,CEVENT,                                     &
      &   LLWSWAVE, LLWDWAVE,                                            &
      &   NPROMA_WAM, LL1D, LGRHDIFS , LNEWLVTP, LL_GRID_SIMPLE_MATRIX,  &
+     &   LLRSTGRIBPARAM,                                                &
      &   LWCOUNORMS, LLNORMIFS2WAM, LLNORMWAM2IFS, LLNORMWAMOUT,        &
      &   LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE,                         &
      &   LICERUN, LCIWABR, LICETH,                                      &
