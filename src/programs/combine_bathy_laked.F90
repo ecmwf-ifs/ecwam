@@ -255,8 +255,11 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
       !  -----------------------------------------------------------------------
       IF ( VALUES_LAKE(IC,2) >= THRSLAKE ) THEN
       !! Lake point with cover above and equal to THRSLAKE, take the lake value
-        VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX)
-        INEWLAKE(IPR) = INEWLAKE(IPR) + 1
+        IF ( VALUES_BATHY(IC) /= ZMISS ) THEN
+!!!! for now only update lakes that were already in BATHY !!!!!!!!!!!!
+          VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX)
+          INEWLAKE(IPR) = INEWLAKE(IPR) + 1
+        ENDIF
       ELSEIF ( VALUES_LAKE(IC,1) <= THRSLSM .AND. VALUES_LAKE(IC,2) <= 0.01_JWRU ) THEN
       !! Not a lake point with a land sea mask below and equal THRSLSM (i.e. assumed to be ocean)
         IF ( VALUES_BATHY(IC) /= ZMISS ) THEN
