@@ -190,7 +190,7 @@ PROGRAM preproc
       LOGICAL :: LLEXIST
       LOGICAL :: LLGRID
       LOGICAL :: LLGRIB_BATHY_OUT
-      LOGICAL :: LLBINARY_OBSTRT_OUT
+      LOGICAL :: LLGRIB_OBSTRT_OUT
 
 ! ----------------------------------------------------------------------
 
@@ -209,7 +209,7 @@ PROGRAM preproc
 !*    2.1 USER INPUT
 !         ----------
 
-      CALL UIPREP (IFORM, LLGRID, LLGRIB_BATHY_OUT, LLBINARY_OBSTRT_OUT)
+      CALL UIPREP (IFORM, LLGRID, LLGRIB_BATHY_OUT, LLGRIB_OBSTRT_OUT)
 
       FILENAME='wam_topo'
       LLEXIST=.FALSE.
@@ -247,7 +247,7 @@ PROGRAM preproc
         ENDIF
       ENDIF
 
-      IF (LLBINARY_OBSTRT_OUT) THEN
+      IF ( .NOT. LLGRIB_OBSTRT_OUT) THEN
         DO ICL=0,NPROPAGS
           WRITE(C1,'(I1)') ICL
           FILENAME='wam_subgrid_'//C1
@@ -424,7 +424,7 @@ PROGRAM preproc
 !*      8. GENERATE AND WRITE MODULE UBUF.
 !          -------------------------------
 
-        IF ( LLBINARY_OBSTRT_OUT ) CALL MUBUF (IU01, IU08, NPROPAGS)
+        IF ( .NOT. LLGRIB_OBSTRT_OUT ) CALL MUBUF (IU01, IU08, NPROPAGS)
  
       END IF ! .NOT. LLUNSTR
 
