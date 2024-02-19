@@ -178,6 +178,9 @@ SUBROUTINE READPRE (LLBATHY)
                   L = L+1
                   BATHY(I,JSN) = VALUES(L)
                 ENDDO
+                DO I = NLONRGG(JSN)+1, NGX
+                  BATHY(I,JSN) = ZMISS
+                ENDDO
               ENDDO
             ELSE
               L = 0 
@@ -185,6 +188,9 @@ SUBROUTINE READPRE (LLBATHY)
                 DO I = 1, NLONRGG(K)
                   L = L+1
                   BATHY(I,K) = VALUES(L)
+                ENDDO
+                DO I = NLONRGG(K)+1, NGX
+                  BATHY(I,K) = ZMISS
                 ENDDO
               ENDDO
             ENDIF
