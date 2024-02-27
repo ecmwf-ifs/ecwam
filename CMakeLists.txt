@@ -23,6 +23,7 @@ ecbuild_enable_fortran( REQUIRED NO_MODULE_DIRECTORY )
 
 ecbuild_find_package( fiat      REQUIRED )
 ecbuild_find_package( eccodes   REQUIRED )
+ecbuild_find_package( field_api REQUIRED )
 
 ### Options
 
@@ -67,11 +68,6 @@ if( HAVE_ECWAM_LAUNCH )
   set( MPIEXEC_NUMTHREAD_FLAG -c )
   set( CMAKE_CROSSCOMPILING_EMULATOR ${ECWAM_LAUNCH} ) # For serial runs
 endif()
-
-### field_api
-
-include(cmake/ecwam_fetchcontent_field_api.cmake)
-ecbuild_find_package( NAME field_api REQUIRED )
 
 ### Optional dependencies
 
