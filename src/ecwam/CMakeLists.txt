@@ -356,17 +356,11 @@ list( APPEND ecwam_srcs
   z0wave.F90
 )
 
-# check for nemo single-precision
-set(WAM_NEMO_SINGLE 0)
-if( ${PNAME}_OCEANMODEL_HAVE_SINGLE_PRECISION )
-   set(WAM_NEMO_SINGLE 1)
-endif()
-
 if( HAVE_GEN_DERIV_TYPES )
    list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
    add_custom_command(
        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90
-       COMMAND ${FYPP} -m io -m yaml -m os -DWAM_NEMO_SINGLE=${WAM_NEMO_SINGLE} ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
+       COMMAND ${FYPP} -m io -m yaml -m os ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp
        VERBATIM)
 else()
