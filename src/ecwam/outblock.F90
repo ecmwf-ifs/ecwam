@@ -556,11 +556,12 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
       ENDIF
 
 !!    alternative ways to determine wave height extremes 
-      IF (IPFGTBL(64 + 3*NTRAIN + NTEWH) /= 0 .OR. IPFGTBL(65 + 3*NTRAIN + NTEWH) /= 0  .OR. &
-&         IPFGTBL(66 + 3*NTRAIN + NTEWH) /= 0 .OR. IPFGTBL(67 + 3*NTRAIN + NTEWH) /= 0 ) THEN
-        CALL W_MAXH (KIJS, KIJL, FL1, DEPTH, WAVNUM,            &
-     &               CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST)
-      ENDIF 
+!       suspect W_MAXH breaking due to WAVNUM not defined in ice at step zero
+!      IF (IPFGTBL(64 + 3*NTRAIN + NTEWH) /= 0 .OR. IPFGTBL(65 + 3*NTRAIN + NTEWH) /= 0  .OR. &
+!&         IPFGTBL(66 + 3*NTRAIN + NTEWH) /= 0 .OR. IPFGTBL(67 + 3*NTRAIN + NTEWH) /= 0 ) THEN
+!        CALL W_MAXH (KIJS, KIJL, FL1, DEPTH, WAVNUM,            &
+!     &               CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST)
+!      ENDIF 
 
       IF (IPFGTBL(64 + 3*NTRAIN + NTEWH) /= 0) THEN
 !        BOUT(KIJS:KIJL,ITOBOUT(64 + 3*NTRAIN + NTEWH))=IBRMEM(KIJS:KIJL)
