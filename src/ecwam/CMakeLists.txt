@@ -360,10 +360,6 @@ else()
    list( APPEND ecwam_srcs yowfield_mod.F90)
 endif()
 
-if( NOT HAVE_FIELD_API )
-   list( APPEND ecwam_srcs field_module.F90)
-endif()
-
 unset( MPI_Fortran_LIBRARIES )
 if( HAVE_UNWAM )
   list(APPEND ecwam_srcs ${unwam_srcs})
