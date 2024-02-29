@@ -198,8 +198,10 @@ IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
                 JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
 !              if lake cover = 0, we assume open ocean point, then get currents directly from NEMO
                 IF (FIELDG%LKFR(IX,JY) <= 0.0_JWRB ) THEN
-                  WVENVI%UCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOUCUR(IJ,ICHNK)),CURRENT_MAX),NEMO2WAM%NEMOUCUR(IJ,ICHNK))
-                  WVENVI%VCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOVCUR(IJ,ICHNK)),CURRENT_MAX),NEMO2WAM%NEMOVCUR(IJ,ICHNK))
+                  WVENVI%UCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOUCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
+ &                                             NEMO2WAM%NEMOUCUR(IJ,ICHNK))
+                  WVENVI%VCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOVCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
+ &                                             NEMO2WAM%NEMOVCUR(IJ,ICHNK))
                 ELSE
                   WVENVI%UCUR(IJ,ICHNK)=0.0_JWRB
                   WVENVI%VCUR(IJ,ICHNK)=0.0_JWRB
