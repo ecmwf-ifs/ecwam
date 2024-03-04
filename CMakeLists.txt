@@ -9,7 +9,6 @@
 cmake_minimum_required( VERSION 3.24 FATAL_ERROR )
 find_package( ecbuild 3.4 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild )
 
-set(PARENT_PROJECT_NAME "${PROJECT_NAME}")
 if( NOT ECWAM_PROJECT_NAME )
   set( ECWAM_PROJECT_NAME ecwam )
 endif()
