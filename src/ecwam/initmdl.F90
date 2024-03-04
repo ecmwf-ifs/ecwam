@@ -636,7 +636,9 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
           ENDIF
         ENDDO
 
-!       INITIALISE IBRMEM AS SOLID IF NOT COUPLED
+!       INITIALISE IBRMEM AS SOLID IF NOT COUPLED [LWNEMOCOUIBR] (dummy values still required)
+!       actually is required to always be initialized for analysis (for now)
+!       TODO: initialize from restart file? currently the IBRMEM analysis output will be wrong
 !         IF (.NOT. LWNEMOCOUIBR) THEN
         WVENVI%IBRMEM(KIJS:KIJL,ICHNK)  = 1.0_JWRB ! 1=SOLID,0=BROKEN
 !         ENDIF
