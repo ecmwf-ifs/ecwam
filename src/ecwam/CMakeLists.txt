@@ -356,17 +356,11 @@ list( APPEND ecwam_srcs
   z0wave.F90
 )
 
-# check for mixed precision build
-set(MIXED_PRECISION 0)
-if(${HAVE_SINGLE_PRECISION} AND NOT ${PNAME}_OCEANMODEL_HAVE_SINGLE_PRECISION)
-   set(MIXED_PRECISION 1)
-endif()
-
 if( HAVE_GEN_DERIV_TYPES )
    list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
    add_custom_command(
        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90
-       COMMAND ${FYPP} -m io -m yaml -m os -DMIXED_PRECISION=${MIXED_PRECISION} ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
+       COMMAND ${FYPP} -m io -m yaml -m os ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp
        VERBATIM)
 else()
