@@ -40,12 +40,12 @@
       REAL(KIND=JWRB) :: ZMISS=-999.0_JWRB
       REAL(KIND=JWRB) :: ROAIR = 1.225_JWRB
       REAL(KIND=JWRB) :: ROWATER = 1000.0_JWRB
-      REAL(KIND=JWRB) :: ROWATERM1 = 1.0_JWRB/ROWATER
-      REAL(KIND=JWRB) :: YEPS = ROAIR/ROWATER
-      REAL(KIND=JWRB) :: YINVEPS = 1.0_JWRB/YEPS
-      REAL(KIND=JWRB), PARAMETER :: GAM_SURF = 0.0717_JWRB   !!!! will need to be adapted if you change ROWATER
-      REAL(KIND=JWRB), PARAMETER :: SURFT =  GAM_SURF/ROWATER
-      REAL(KIND=JWRB) :: SQRTGOSURFT  !! SQRT(G/SURFT) (see wavemdl)
+      REAL(KIND=JWRB) :: ROWATERM1 = 0.001_JWRB
+      REAL(KIND=JWRB) :: YEPS = 0.001225_JWRB 
+      REAL(KIND=JWRB) :: YINVEPS = 816.3265306_JWRB
+      REAL(KIND=JWRB) :: GAM_SURF = 0.0717_JWRB
+      REAL(KIND=JWRB) :: SURFT = 0.0000717_JWRB 
+      REAL(KIND=JWRB) :: SQRTGOSURFT  !! SQRT(G/SURFT) (see initgc)
       REAL(KIND=JWRB), PARAMETER :: WSTAR0 = 0.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: Rconstant = 287.16_JWRB   ! The gas constant
       REAL(KIND=JWRB), PARAMETER :: EpsWaterVapor = 0.61_JWRB ! The mass ratio of  water vapor to dry air
@@ -97,7 +97,7 @@
 !     *ROAIR*     REAL      AIR DENSITY.
 !     *ROWATER*   REAL      WATER DENSITY.
 !     *ROWATERM1* REAL      1 /(WATER DENSITY).
-!     *GAM_SURF*  REAL      SURFACE TENSION (in N/m)
+!     *GAM_SURF*  REAL      WATER SURFACE TENSION (in N/m)
 !     *SURFT*     REAL      SURFACE TENSION divided by water density (in m**3 s**-2)
 !     *YEPS*      REAL      ROAIR/ROWATER.
 !     *YINVEPS*   REAL      1./YEPS.

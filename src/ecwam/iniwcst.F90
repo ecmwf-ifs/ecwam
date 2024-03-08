@@ -40,7 +40,7 @@
       USE YOWPCONS , ONLY : PI       ,CIRC     ,ZPI      ,ZCONST   ,    &
      &            RAD      ,DEG      ,R        ,ZPISQRT  ,ZPI4GM1  ,    &
      &            ZPI4GM2  ,G        ,THREEZPI ,ROAIR    ,ROWATER  ,    &
-     &            ROWATERM1,YEPS     ,YINVEPS
+     &            ROWATERM1,YEPS     ,YINVEPS  ,GAM_SURF ,SURFT
 
 ! ----------------------------------------------------------------------
 
@@ -66,6 +66,7 @@
       ROWATERM1 = 1.0_JWRB/ROWATER
       YEPS = ROAIR/ROWATER
       YINVEPS = 1.0_JWRB/YEPS
+      SURFT = GAM_SURF/ROWATER
 
 !     DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS
 !     -----------------------------------------------------

@@ -87,7 +87,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
      &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,              &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,LLUNSTR
-      USE YOWPCONS , ONLY : ROAIR    ,ROWATER
+      USE YOWPCONS , ONLY : ROAIR    ,ROWATER  ,GAM_SURF
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
 
@@ -238,7 +238,7 @@
      &   LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                                &
      &   LWAM_USE_IO_SERV,                                              &
      &   LOUTMDLDCP,                                                    &
-     &   ROAIR, ROWATER
+     &   ROAIR, ROWATER, GAM_SURF
 
 
       CHARACTER(LEN=14) :: CLOUT
@@ -486,6 +486,7 @@
 !     CEVENT :  SMS or ECFLOW event command (ECMWF supervisor)
 !     ROAIR : DEFAULT VALUES FOR AIR DENSITY (kg m**-3)
 !     ROWATER : DEFAULT VALUES FOR WATER DENSITY (kg m**-3)
+!     GAM_SURF : DEFAUT VALUE FOR WATER SURFACE TENSION (in N/m)
 
 
 !     NAMELIST NAOT : 
@@ -771,6 +772,7 @@
 
       ROAIR = 1.225_JWRB
       ROWATER = 1000.0_JWRB
+      GAM_SURF = 0.0717_JWRB
 
 ! ----------------------------------------------------------------------
 
@@ -1051,6 +1053,7 @@
         WRITE(6,*) '*** ISTREAM = ',ISTREAM
         WRITE(6,*) '*** ROAIR = ',ROAIR
         WRITE(6,*) '*** ROWATER = ',ROWATER
+        WRITE(6,*) '*** GAM_SURF = ',GAM_SURF
         IF (NGOUT > 0) THEN
           WRITE (6,*) " OUTPUT POINTS FOR SPECTRA AS DEFINED BY USER INPUT    NO.    LAT.   LONG. "
           DO IC=1,NGOUT
