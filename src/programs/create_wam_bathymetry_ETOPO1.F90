@@ -165,7 +165,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM) :: IS, KT, KB, IOBSRT
       INTEGER(KIND=JWIM) :: NOBSTRCT, NIOBSLON, NBLOCKLAND, NTOTPTS
       INTEGER(KIND=JWIM) :: INVRES
-      INTEGER(KIND=JWIM) :: ITABLE, IPARAM, IZLEV, IFCST, ITEST
+      INTEGER(KIND=JWIM) :: ITABLE, IPARAM, IZLEV, IFCST, ITEST, ITMIN, ITMAX
 
       INTEGER(KIND=JWIM) :: IDUM(15)
       INTEGER(KIND=JWIM), DIMENSION(NREF) :: LEVEL, NDEPTH
@@ -2457,11 +2457,14 @@ IF ( LLOBSTROUT ) THEN
               ITABLE=140
               IPARAM=KPARAM_SUBGRIG !! use the parameter id of the model bathymetry to insure the same interpolation method between the 2
               IZLEV=0
+              ITMIN=0
+              ITMAX=0
               CDATE=CDATECLIM
               IFCST=0
 
-              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,           &
-     &                        ITABLE, IPARAM, IZLEV, IANG , M,        &
+
+              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,                   &
+     &                        ITABLE, IPARAM, IZLEV, ITMIN, ITMAX, IANG , M,  &
      &                        CDATE, IFCST, MARSTYPE, LFDB, IU08(IP))
 
             ENDDO

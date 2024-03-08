@@ -86,7 +86,7 @@
       LOGICAL, INTENT(IN) :: LLGRIB_BATHY_OUT
 
       INTEGER(KIND=JWIM) :: IDUM, K, M, L, JY
-      INTEGER(KIND=JWIM) :: ITABLE, IPARAM, IZLEV, IFCST
+      INTEGER(KIND=JWIM) :: ITABLE, IPARAM, IZLEV, IFCST, ITMIN, ITMAX
       INTEGER(KIND=JWIM) :: NKIND !Precision used when writing
 
       REAL(KIND=JWRB), ALLOCATABLE :: ZDUM(:)
@@ -111,6 +111,8 @@
         ITABLE=INFOBOUT(IRBATHY,1)
         IPARAM=INFOBOUT(IRBATHY,2)
         IZLEV=INFOBOUT(IRBATHY,3)
+        ITMIN=INFOBOUT(IRBATHY,4)
+        ITMAX=INFOBOUT(IRBATHY,5)
 
         CDATE=CDATECLIM
         IFCST=0
@@ -125,8 +127,8 @@
         ENDDO
         DEALLOCATE(ZDUM)
 
-        CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, BATHY,        &
-     &                  ITABLE, IPARAM, IZLEV, 0 , 0,        &
+        CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, BATHY,               &
+     &                  ITABLE, IPARAM, IZLEV, ITMIN, ITMAX, 0, 0,  &
      &                  CDATE, IFCST, MARSTYPE, LFDB, IU07)
 
       ELSE
