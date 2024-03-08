@@ -39,7 +39,8 @@
       USE YOWMPP   , ONLY : NPRECR   ,NPRECI
       USE YOWPCONS , ONLY : PI       ,CIRC     ,ZPI      ,ZCONST   ,    &
      &            RAD      ,DEG      ,R        ,ZPISQRT  ,ZPI4GM1  ,    &
-     &            ZPI4GM2  ,G        ,THREEZPI
+     &            ZPI4GM2  ,G        ,THREEZPI ,ROAIR    ,ROWATER  ,    &
+     &            ROWATERM1,YEPS     ,YINVEPS
 
 ! ----------------------------------------------------------------------
 
@@ -61,6 +62,10 @@
       RAD = PI/180.0_JWRB
       DEG = 180./PI
       R = CIRC/ZPI*PRPLRADI
+
+      ROWATERM1 = 1.0_JWRB/ROWATER
+      YEPS = ROAIR/ROWATER
+      YINVEPS = 1.0_JWRB/YEPS
 
 !     DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS
 !     -----------------------------------------------------

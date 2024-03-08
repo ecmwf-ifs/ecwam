@@ -87,6 +87,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
      &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,              &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,LLUNSTR
+      USE YOWPCONS , ONLY : ROAIR    ,ROWATER
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
 
@@ -236,7 +237,8 @@
      &   LWNEMOCOUDEBUG,                                                &
      &   LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                                &
      &   LWAM_USE_IO_SERV,                                              &
-     &   LOUTMDLDCP
+     &   LOUTMDLDCP,                                                    &
+     &   ROAIR, ROWATER
 
 
       CHARACTER(LEN=14) :: CLOUT
@@ -482,6 +484,8 @@
 !     LSMSSIG_WAM : .T. = send signals to ECFLOW (ECMWF supervisor)
 !     CMETER :  SMS or ECFLOW meter command (ECMWF supervisor)
 !     CEVENT :  SMS or ECFLOW event command (ECMWF supervisor)
+!     ROAIR : DEFAULT VALUES FOR AIR DENSITY (kg m**-3)
+!     ROWATER : DEFAULT VALUES FOR WATER DENSITY (kg m**-3)
 
 
 !     NAMELIST NAOT : 
@@ -765,6 +769,8 @@
       NGRIB_HANDLE_IFS = -1
       NGRIB_HANDLE_IFS2 = -1
 
+      ROAIR = 1.225_JWRB
+      ROWATER = 1000.0_JWRB
 
 ! ----------------------------------------------------------------------
 
@@ -1043,6 +1049,8 @@
         WRITE(6,*) '*** YEXPVER = ',YEXPVER
         WRITE(6,*) '*** YCLASS = ',YCLASS
         WRITE(6,*) '*** ISTREAM = ',ISTREAM
+        WRITE(6,*) '*** ROAIR = ',ROAIR
+        WRITE(6,*) '*** ROWATER = ',ROWATER
         IF (NGOUT > 0) THEN
           WRITE (6,*) " OUTPUT POINTS FOR SPECTRA AS DEFINED BY USER INPUT    NO.    LAT.   LONG. "
           DO IC=1,NGOUT
