@@ -19,6 +19,8 @@ if( NOT ECWAM_PROJECT_NAME )
   set( ECWAM_PROJECT_NAME ecwam )
 endif()
 
+string( TOUPPER ${ECWAM_PROJECT_NAME} PNAME )
+set( ${PNAME}_ECBUILD_COMPILE_FLAGS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ecwam_init_flags.cmake CACHE FILEPATH "")
 project( ${ECWAM_PROJECT_NAME} LANGUAGES Fortran C CXX )
 
 include( ecwam_macros )
