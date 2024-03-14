@@ -30,6 +30,8 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
   set(autopromote_flags   "-r8")
   set(fpe_flags           "-Ktrap=fp")
+  set(vectorization_flags "-O3 -fast")
+  string(REPLACE "-O2" "" ${PNAME}_Fortran_FLAGS_BIT ${${PNAME}_Fortran_FLAGS_BIT})
 #  set(checkbounds_flags   "-Mbounds") # Added by default by CMake in NVHPC debug builds
 
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
