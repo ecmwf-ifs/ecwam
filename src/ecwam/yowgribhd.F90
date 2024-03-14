@@ -19,8 +19,8 @@
       CHARACTER(LEN=4), PARAMETER :: CEXPVERCLIM='0001'  !! reference expver for wave climate fields (see *preproc*) 
       INTEGER(KIND=JWIM), PARAMETER :: KPARAM_SUBGRIG=219 !! parameter id of the model bathymetry to insure the same interpolation method
                                                           !! is used for the sub grid obstruction coeeficient
-      INTEGER(KIND=JWIM), PARAMETER :: IMDLGRBID_G=106 !! see below the rule on how to select IMDLGRBID_G
-      INTEGER(KIND=JWIM), PARAMETER :: IMDLGRBID_M=206
+      INTEGER(KIND=JWIM), PARAMETER :: IMDLGRBID_G=107 !! see below the rule on how to select IMDLGRBID_G
+      INTEGER(KIND=JWIM), PARAMETER :: IMDLGRBID_M=207
 
       INTEGER(KIND=JWIM) :: NDATE_TIME_WINDOW_END=0
       INTEGER(KIND=JWIM) :: NWINOFF
