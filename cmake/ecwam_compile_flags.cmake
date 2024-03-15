@@ -7,9 +7,9 @@
 # nor does it submit to any jurisdiction.
 
 # Capture ecbuild defaults and/or flags set by a toolchain
-set( ${PNAME}_Fortran_FLAGS ${ECBUILD_Fortran_FLAGS} )
-set( ${PNAME}_Fortran_FLAGS_BIT ${ECBUILD_Fortran_FLAGS_BIT} )
-set( ${PNAME}_Fortran_FLAGS_DEBUG ${ECBUILD_Fortran_FLAGS_DEBUG} )
+set( ${PNAME}_Fortran_FLAGS "${${PNAME}_Fortran_FLAGS} ${ECBUILD_Fortran_FLAGS}" )
+set( ${PNAME}_Fortran_FLAGS_BIT "${${PNAME}_Fortran_FLAGS_BIT} ${ECBUILD_Fortran_FLAGS_BIT}" )
+set( ${PNAME}_Fortran_FLAGS_DEBUG "${${PNAME}_Fortran_FLAGS_DEBUG} ${ECBUILD_Fortran_FLAGS_DEBUG}" )
 
 if(CMAKE_Fortran_COMPILER_ID MATCHES "Cray")
   set(autopromote_flags   "-sreal64")
@@ -37,7 +37,7 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
   set(fpe_flags           "-Ktrap=fp")
   set(vectorization_flags "-O3 -fast")
   string(REPLACE "-O2" "" ${PNAME}_Fortran_FLAGS_BIT ${${PNAME}_Fortran_FLAGS_BIT})
-#  set(checkbounds_flags   "-Mbounds") # Added by default by CMake in NVHPC debug builds
+  set(checkbounds_flags   "-Mbounds")
 
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
   set(autopromote_flags   "-fdefault-real-8")
@@ -59,16 +59,15 @@ if( DEFINED transcendentals_flags )
   ecbuild_add_fortran_flags( "${transcendentals_flags}"   NAME transcendentals )
 endif()
 
-## Debug flags for NVHPC are applied selectively to sourcefiles in src/ecwam/CMakeLists.txt
-if( CMAKE_BUILD_TYPE MATCHES "Debug" AND NOT CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
+if( CMAKE_BUILD_TYPE MATCHES "Debug" )
   foreach( debug_flag    fpe initsnan checkbounds )
     if( ${debug_flag}_flags )
-      ecbuild_add_fortran_flags( "${${debug_flag}_flags}" NAME ${debug_flag} )
+      set( ${PNAME}_Fortran_FLAGS_DEBUG "${${PNAME}_Fortran_FLAGS_DEBUG} ${${debug_flag}_flags}" )
     endif()
   endforeach()
   if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     # In case '-check all' has been added, we need to remove the '-check arg_temp_created' warnings
-    ecbuild_add_fortran_flags( "-check noarg_temp_created" NAME check_noarg_temp_created BUILD DEBUG ) # the BUILD DEBUG argument makes sure it is appended after '-check all'
+    set( ${PNAME}_Fortran_FLAGS_DEBUG "${${PNAME}_Fortran_FLAGS_DEBUG} -check noarg_temp_created" )
   endif()
 endif()
 
