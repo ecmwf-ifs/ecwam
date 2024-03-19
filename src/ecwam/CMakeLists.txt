@@ -404,14 +404,13 @@ if( HAVE_MULTIO )
   list(APPEND ECWAM_DEFINITIONS WAM_HAVE_MULTIO)
 endif()
 
+set( ${PNAME}_OCEANMODEL_LIBRARIES "" )
 if( HAVE_OCEAN_COUPLING )
   list(APPEND ECWAM_DEFINITIONS WITH_NEMO )
   if( ${PNAME}_OCEANMODEL_HAVE_SINGLE_PRECISION )
     list(APPEND ECWAM_DEFINITIONS PARKIND1_SINGLE_NEMO )
   endif()
-else()
-  unset( ${PNAME}_OCEANMODEL_LIBRARIES )
-  unset( ${PNAME}_OCEANMODEL_INCLUDE_DIRS )
+  set( ${PNAME}_OCEANMODEL_LIBRARIES nemogcmcoup.${OCEAN_PREC} )
 endif()
 
 if( HAVE_ECFLOW )
@@ -430,7 +429,6 @@ ecbuild_add_library(
                      field_api_${prec}
                      $<${HAVE_ECFLOW}:ecflow_lightf>
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
-    PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS}
     PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS}
     PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
 )
@@ -453,10 +451,14 @@ if( CMAKE_Fortran_COMPILER_ID MATCHES Intel )
   set_source_files_properties( propconnect.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
 elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-ffp-contract=off" )
-elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
+elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHES "Bit")
   set_source_files_properties(
-      sbottom.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros -Mstack_arrays "
+      sbottom.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros "
   )
+elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHES "Debug")
+  string(REPLACE "-Ktrap=fp" "" ${PNAME}_Fortran_FLAGS_DEBUG ${${PNAME}_Fortran_FLAGS_DEBUG})
+  set_source_files_properties( outbeta.F90 PROPERTIES COMPILE_OPTIONS "${${PNAME}_Fortran_FLAGS_DEBUG} -Ktrap=divz")
+  set_source_files_properties( secondhh.F90 PROPERTIES COMPILE_OPTIONS "${${PNAME}_Fortran_FLAGS_DEBUG} -Ktrap=inv,ovf")
 endif()
 
 ### The file grib2wgrid.F90 is sensitive to optimizations in single precision builds.
@@ -465,21 +467,4 @@ endif()
 
 if( CMAKE_Fortran_COMPILER_ID MATCHES Intel AND HAVE_SINGLE_PRECISION )
   set_source_files_properties( grib2wgrid.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
-endif()
-
-### NVHPC debug flags applied selectively to sourcefiles to avoid single-precision overflow
-if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC AND CMAKE_BUILD_TYPE MATCHES "Debug" )
-  foreach( debug_flag    initsnan checkbounds )
-    if( ${debug_flag}_flags )
-      ecbuild_add_fortran_flags( "${${debug_flag}_flags}" NAME ${debug_flag} )
-    endif()
-  endforeach()
-  
-  list(REMOVE_ITEM ecwam_srcs outbeta.F90 secondhh.F90)
-  if( fpe_flags )
-     set_source_files_properties( ${ecwam_srcs} PROPERTIES COMPILE_OPTIONS ${fpe_flags} )
-     set_source_files_properties( outbeta.F90 PROPERTIES COMPILE_OPTIONS "-Ktrap=divz" )
-     set_source_files_properties( secondhh.F90 PROPERTIES COMPILE_OPTIONS "-Ktrap=inv,ovf" )
-  endif()
-  list(APPEND ecwam_srcs outbeta.F90 secondhh.F90)
 endif()

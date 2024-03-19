@@ -9,15 +9,32 @@
 cmake_minimum_required( VERSION 3.24 FATAL_ERROR )
 find_package( ecbuild 3.4 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild )
 
-set(PARENT_PROJECT_NAME "${PROJECT_NAME}")
+# If the directory name matches ecwam_dp or ecwam_sp, that will be chosen as PROJECT_NAME instead
+get_filename_component( ecwam-source_dir ${CMAKE_CURRENT_SOURCE_DIR} NAME )
+if( ecwam-source_dir MATCHES "ecwam_(dp|sp)" )
+  set( ECWAM_PROJECT_NAME ${ecwam-source_dir} )
+endif()
+
 if( NOT ECWAM_PROJECT_NAME )
   set( ECWAM_PROJECT_NAME ecwam )
 endif()
 
+string( TOUPPER ${ECWAM_PROJECT_NAME} PNAME )
+set( ${PNAME}_ECBUILD_COMPILE_FLAGS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ecwam_init_flags.cmake CACHE FILEPATH "")
 project( ${ECWAM_PROJECT_NAME} LANGUAGES Fortran C CXX )
 
 include( ecwam_macros )
 ecbuild_enable_fortran( REQUIRED NO_MODULE_DIRECTORY )
+
+### Determine ocean model precision
+if( NOT DEFINED OCEAN_PREC )
+  if( HAVE_SINGLE_PRECISION )
+     set(OCEAN_PREC SP)
+  else()
+     set(OCEAN_PREC DP)
+  endif()
+endif()
+string( TOLOWER "${OCEAN_PREC}" ocean_prec )
 
 ### Dependencies
 
@@ -50,7 +67,7 @@ ecbuild_add_option( FEATURE UNWAM
 ecbuild_add_option( FEATURE OCEAN_COUPLING 
                     DEFAULT ON
                     DESCRIPTION "Support ocean coupling"
-                    CONDITION ${PNAME}_OCEANMODEL_LIBRARIES )
+                    REQUIRED_PACKAGES "nemo_${ocean_prec}" )
 
 ecbuild_add_option( FEATURE ECWAM_LAUNCH
                     DEFAULT ON

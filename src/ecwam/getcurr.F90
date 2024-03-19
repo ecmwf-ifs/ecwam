@@ -158,8 +158,10 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
                     JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
                     IF (FIELDG%LKFR(IX,JY) <=  0.0_JWRB ) THEN
 !                     if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
-                      WVENVI%UCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOUCUR(IJ,ICHNK)),CURRENT_MAX),NEMO2WAM%NEMOUCUR(IJ,ICHNK))
-                      WVENVI%VCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOVCUR(IJ,ICHNK)),CURRENT_MAX),NEMO2WAM%NEMOVCUR(IJ,ICHNK))
+                      WVENVI%UCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOUCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
+ &                                                 NEMO2WAM%NEMOUCUR(IJ,ICHNK))
+                      WVENVI%VCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOVCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
+ &                                                 NEMO2WAM%NEMOVCUR(IJ,ICHNK))
                     ELSE
 !                     no currents over lakes and land
                       WVENVI%UCUR(IJ,ICHNK) = 0.0_JWRB

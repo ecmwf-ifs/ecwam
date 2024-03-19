@@ -1016,7 +1016,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &                     TRIM(CSATNAME(ISAT)),' (',IBUFRSAT(ISAT),')'
             IF (LALTPAS(ISAT)) THEN
               WRITE(IU06,*) ' THE DATA WILL ONLY BE USED PASSIVELY !!! '
-              WRITE(IU06,*) '  '
             ENDIF
             IF (LALTLRGR(ISAT)) THEN
               WRITE(IU06,*) ' THE DATA WILL BE CORRECTED '
@@ -1038,8 +1037,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &                      ' THE OBSERVATION ERROR.'
             ENDIF
             IF (LALTGRDOUT(ISAT)) THEN
-              WRITE(IU06,*) ' GRIDDED ALTIMETER FIELDS WILL BE'
-              WRITE(IU06,*) ' PRODUCED FOR THIS ALTIMETER.'
+              WRITE(IU06,*) ' GRIDDED ALTIMETER FIELDS WILL BE PRODUCED FOR THIS ALTIMETER.'
               LLNALTGO = .FALSE.
             ENDIF
             WRITE(IU06,*) '  '
