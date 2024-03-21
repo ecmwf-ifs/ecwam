@@ -46,12 +46,12 @@ if( HAVE_WAM_LOKI )
         )
         ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-chief-loki-scc)
 
-	#  ecbuild_add_executable(
-	#     TARGET          ${PROJECT_NAME}-chief-loki-scc-stack
-	#     SOURCES         chief.F90
-	#     LIBS            ${PROJECT_NAME}_scc_stack ${OpenMP_Fortran_LIBRARIES}
-	# )
-	# ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-chief-loki-scc-stack)
+        ecbuild_add_executable(
+            TARGET          ${PROJECT_NAME}-chief-loki-scc-stack
+            SOURCES         chief.F90
+            LIBS            ${PROJECT_NAME}_scc_stack ${OpenMP_Fortran_LIBRARIES}
+        )
+        ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-chief-loki-scc-stack)
     endif()
 endif()
 
