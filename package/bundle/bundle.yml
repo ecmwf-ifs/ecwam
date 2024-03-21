@@ -75,6 +75,6 @@ options :
             LOKI_ENABLE_NO_INSTALL=ON
             LOKI_ENABLE_CLAW=OFF
 
-    - loki-frontend :
-        help  : Frontend parser to use for Loki transformations
-        cmake : LOKI_FRONTEND={{value}}
+    - loki-mode :
+        help  : Choose Loki transformation (defaults to scc-stack)
+        cmake : LOKI_MODE={{value}}
