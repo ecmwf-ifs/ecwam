@@ -92,7 +92,7 @@ ecbuild_find_package( NAME loki )
 ecwam_find_python_mods()
 ecbuild_add_option( FEATURE GEN_DERIV_TYPES
                     DEFAULT ON
-                    DESCRIPTION "Generate derived-type data structures using fypp pre-processor"
+                    DESCRIPTION "Generate derived-type data structures using fypp pre-processor and yaml config"
                     CONDITION FYPP_FOUND AND PYYAML_FOUND )
 
 ### Set third party libraries
@@ -108,6 +108,17 @@ if( HAVE_OMP )
   set( OpenMP_Fortran_LIBRARIES OpenMP::OpenMP_Fortran )
 endif()
 
+### Apply Loki source-to-source transformations to the ecWam physics
+ecbuild_add_option( FEATURE WAM_LOKI
+                    DEFAULT OFF
+                    DESCRIPTION "Apply Loki transformations to ecWam physics"
+                    CONDITION loki_FOUND )
+
+# Determine Loki transformation type
+if( NOT DEFINED LOKI_MODE )
+   set( LOKI_MODE "scc-stack" CACHE STRING "Transformation mode for Loki source transformations" )
+endif()
+
 # Workaround for the fact that CMake only sets language components to FOUND,
 # so OpenACC_FOUND must be set manually
 find_package( OpenACC )
@@ -115,21 +126,9 @@ if( OpenACC_Fortran_FOUND AND OpenACC_C_FOUND )
   set( OpenACC_FOUND ON )
 endif()
 ecbuild_add_option( FEATURE ACC
-                    DESCRIPTION "OpenACC" DEFAULT ON
+                    DESCRIPTION "OpenACC" DEFAULT OFF
                     REQUIRED_PACKAGES "OpenACC" 
-                    CONDITION CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" )
-
-### Apply Loki source-to-source transformations to the ecWam physics
-ecbuild_add_option( FEATURE WAM_LOKI
-                    DEFAULT OFF
-                    DESCRIPTION "Apply Loki transformations to ecWam physics"
-                    CONDITION HAVE_LOKI )
-
-### Apply Loki source-to-source transformations to the ecWam physics with GPU offload
-ecbuild_add_option( FEATURE WAM_LOKI_GPU
-                    DEFAULT OFF
-                    DESCRIPTION "Apply Loki transformations to ecWam physics with GPU offload"
-                    CONDITION HAVE_ACC AND field_api_FOUND AND HAVE_LOKI )
+                    CONDITION HAVE_WAM_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" AND HAVE_GEN_DERIV_TYPES )
 
 ### Sources
 

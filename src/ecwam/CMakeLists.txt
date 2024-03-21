@@ -495,7 +495,7 @@ if( HAVE_WAM_LOKI )
   set( LOKI_FRONTEND "fp" CACHE STRING "Frontend parser for Loki source transformations" )
   set( SCC_ARGS "")
 
-  if( ${LOKI_DEBUG} )
+  if( LOKI_MODE MATCHES "idem|idem-stack" )
      set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config )
   else()
      set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
