@@ -477,14 +477,27 @@ if( HAVE_WAM_LOKI )
      list(APPEND loki_idem_srcs ${fnm})
   endforeach()
 
-  loki_transform_convert(
-      MODE idem FRONTEND ${LOKI_FRONTEND} CPP
-      CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config
-      PATH ${CMAKE_CURRENT_SOURCE_DIR}
-      INCLUDES ${ecwam_intfb_includes}
-      OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-idem
-      OUTPUT ${loki_idem_srcs}
-      DEPENDS ${phys_srcs}
+  # loki_transform_convert(
+  #     MODE idem FRONTEND ${LOKI_FRONTEND} CPP
+  #     CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config
+  #     PATH ${CMAKE_CURRENT_SOURCE_DIR}
+  #     INCLUDES ${ecwam_intfb_includes}
+  #     OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-idem
+  #     OUTPUT ${loki_idem_srcs}
+  #     DEPENDS ${phys_srcs}
+  # )
+
+  loki_transform(
+        COMMAND convert
+        OUTPUT ${loki_idem_srcs}
+        BUILDDIR ${CMAKE_CURRENT_BINARY_DIR}/loki-idem
+        DEPENDS ${phys_srcs}
+        MODE idem
+        CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config
+        CPP
+        FRONTEND ${LOKI_FRONTEND}
+        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}
+        INCLUDES ${ecwam_intfb_includes} 
   )
 
   ecbuild_add_library(
@@ -517,19 +530,32 @@ if( HAVE_WAM_LOKI )
 ##   * Internal "do-nothing" mode for Loki debug          ##
 ############################################################
   foreach(src ${phys_srcs} wamintgr.F90)
-     string(REPLACE ".F90" "" fnc ${src})
-     string(CONCAT fnm "loki-idem-stack/" ${fnc} ".idem_stack.F90")
-     list(APPEND loki_idem_stack_srcs ${fnm})
-  endforeach()
+    string(REPLACE ".F90" "" fnc ${src})
+    string(CONCAT fnm "loki-idem-stack/" ${fnc} ".idem_stack.F90")
+    list(APPEND loki_idem_stack_srcs ${fnm})
+ endforeach()
 
-  loki_transform_convert(
-      MODE idem-stack FRONTEND ${LOKI_FRONTEND} CPP
-      CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config
-      PATH ${CMAKE_CURRENT_SOURCE_DIR}
-      INCLUDES ${ecwam_intfb_includes}
-      OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-idem-stack
-      OUTPUT ${loki_idem_stack_srcs}
-      DEPENDS ${phys_srcs}
+  # loki_transform_convert(
+  #     MODE idem-stack FRONTEND ${LOKI_FRONTEND} CPP
+  #     CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config
+  #     PATH ${CMAKE_CURRENT_SOURCE_DIR}
+  #     INCLUDES ${ecwam_intfb_includes}
+  #     OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-idem-stack
+  #     OUTPUT ${loki_idem_stack_srcs}
+  #     DEPENDS ${phys_srcs}
+  # )
+
+  loki_transform(
+        COMMAND convert
+        OUTPUT ${loki_idem_stack_srcs}
+        BUILDDIR ${CMAKE_CURRENT_BINARY_DIR}/loki-idem-stack
+        DEPENDS ${phys_srcs}
+        MODE idem-stack
+        CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config
+        CPP
+        FRONTEND ${LOKI_FRONTEND}
+        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}
+        INCLUDES ${ecwam_intfb_includes}
   )
 
   ecbuild_add_library(
@@ -554,9 +580,9 @@ if( HAVE_WAM_LOKI )
       MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/${ecwam}_idem_stack
       INSTALL_DIRECTORY module/${ecwam}_idem_stack
   )
-
+  
   ecwam_target_compile_definitions_FILENAME( ${ecwam}_idem_stack )
-
+  
   if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
       target_compile_options( ${ecwam}_idem_stack PUBLIC "-Mcray=pointer" )
   elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
@@ -573,14 +599,27 @@ if( HAVE_WAM_LOKI )
         list(APPEND loki_scc_srcs ${fnm})
      endforeach()
 
-     loki_transform_convert(
-         MODE scc FRONTEND ${LOKI_FRONTEND} CPP GLOBAL_VAR_OFFLOAD TRIM_VECTOR_SECTIONS
-         CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config
-         PATH ${CMAKE_CURRENT_SOURCE_DIR}
-         INCLUDES ${ecwam_intfb_includes}
-         OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-scc
-         OUTPUT ${loki_scc_srcs}
-         DEPENDS ${phys_srcs} wamintgr_loki_gpu.F90 ${global_var_mods}
+     # loki_transform_convert(
+     #     MODE scc FRONTEND ${LOKI_FRONTEND} CPP GLOBAL_VAR_OFFLOAD TRIM_VECTOR_SECTIONS
+     #     CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config
+     #     PATH ${CMAKE_CURRENT_SOURCE_DIR}
+     #     INCLUDES ${ecwam_intfb_includes}
+     #     OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-scc
+     #     OUTPUT ${loki_scc_srcs}
+     #     DEPENDS ${phys_srcs} wamintgr_loki_gpu.F90 ${global_var_mods}
+     #  )
+
+     loki_transform(
+        COMMAND convert
+        OUTPUT ${loki_scc_srcs}
+        BUILDDIR ${CMAKE_CURRENT_BINARY_DIR}/loki-scc
+        DEPENDS ${phys_srcs} wamintgr_loki_gpu.F90 ${global_var_mods}
+        MODE scc
+        CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config
+        CPP GLOBAL_VAR_OFFLOAD TRIM_VECTOR_SECTIONS
+        FRONTEND ${LOKI_FRONTEND}
+        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}
+        INCLUDES ${ecwam_intfb_includes}
      )
 
      ecbuild_add_library(
@@ -616,56 +655,56 @@ if( HAVE_WAM_LOKI )
 ############################################################
 ##  Loki SCC with pool allocator for temporaries:         ##
 ############################################################
-     foreach(src ${phys_srcs} wamintgr_loki_gpu.F90 ${global_var_mods})
-        string(REPLACE ".F90" "" fnc ${src})
-        string(CONCAT fnm "loki-scc-stack/" ${fnc} ".scc_stack.F90")
-        list(APPEND loki_scc_stack_srcs ${fnm})
-     endforeach()
+     #foreach(src ${phys_srcs} wamintgr_loki_gpu.F90 ${global_var_mods})
+     #   string(REPLACE ".F90" "" fnc ${src})
+     #   string(CONCAT fnm "loki-scc-stack/" ${fnc} ".scc_stack.F90")
+     #   list(APPEND loki_scc_stack_srcs ${fnm})
+     #endforeach()
 
-     loki_transform_convert(
-         MODE scc-stack FRONTEND ${LOKI_FRONTEND} CPP GLOBAL_VAR_OFFLOAD TRIM_VECTOR_SECTIONS
-         CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config
-         PATH ${CMAKE_CURRENT_SOURCE_DIR}
-         INCLUDES ${ecwam_intfb_includes}
-         OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-scc-stack
-         OUTPUT ${loki_scc_stack_srcs}
-         DEPENDS ${phys_srcs} wamintgr_loki_gpu.F90 ${global_var_mods}
-     )
+     #loki_transform_convert(
+     #    MODE scc-stack FRONTEND ${LOKI_FRONTEND} CPP GLOBAL_VAR_OFFLOAD TRIM_VECTOR_SECTIONS
+     #    CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config
+     #    PATH ${CMAKE_CURRENT_SOURCE_DIR}
+     #    INCLUDES ${ecwam_intfb_includes}
+     #    OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/loki-scc-stack
+     #    OUTPUT ${loki_scc_stack_srcs}
+     #    DEPENDS ${phys_srcs} wamintgr_loki_gpu.F90 ${global_var_mods}
+     #)
 
-     ecbuild_add_library(
-     	TARGET           ${ecwam}_scc_stack
-     	TYPE             ${LIBRARY_TYPE}
-     	DEFINITIONS      ${ECWAM_DEFINITIONS} WAM_PHYS_GPU
-     	SOURCES          ${ecwam_srcs} ${loki_scc_stack_srcs} ${phys_srcs}
-     	PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
-     					 ${MPI_Fortran_LIBRARIES}
-     					 ${${PNAME}_OCEANMODEL_LIBRARIES}
-                         $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
-     	PRIVATE_LIBS     eccodes_f90
-     					 ${MULTIO_LIBRARIES}
-     					 ${OpenMP_Fortran_LIBRARIES}
-     					 $<${HAVE_FIELD_API}:field_api_${prec}>
-					 MPI::MPI_Fortran
-     	PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
-     	PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}
-     )
+     #ecbuild_add_library(
+     #	TARGET           ${ecwam}_scc_stack
+     #	TYPE             ${LIBRARY_TYPE}
+     #	DEFINITIONS      ${ECWAM_DEFINITIONS} WAM_PHYS_GPU
+     #	SOURCES          ${ecwam_srcs} ${loki_scc_stack_srcs} ${phys_srcs}
+     #	PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
+     #					 ${MPI_Fortran_LIBRARIES}
+     #					 ${${PNAME}_OCEANMODEL_LIBRARIES}
+     #                    $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
+     #	PRIVATE_LIBS     eccodes_f90
+     #					 ${MULTIO_LIBRARIES}
+     #					 ${OpenMP_Fortran_LIBRARIES}
+     #					 $<${HAVE_FIELD_API}:field_api_${prec}>
+     #   				 MPI::MPI_Fortran
+     #	PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
+     #	PRIVATE_INCLUDES ${${PNAME}_OCEANMODEL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}
+     #)
      
-     ecwam_target_fortran_module_directory(
-     	TARGET ${ecwam}_scc_stack
-     	MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/${ecwam}_scc_stack
-     	INSTALL_DIRECTORY module/${ecwam}_scc_stack
-     )
+     #ecwam_target_fortran_module_directory(
+     #	TARGET ${ecwam}_scc_stack
+     #	MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/${ecwam}_scc_stack
+     #	INSTALL_DIRECTORY module/${ecwam}_scc_stack
+     #)
      
-     ecwam_target_compile_definitions_FILENAME( ${ecwam}_scc_stack )
+     #ecwam_target_compile_definitions_FILENAME( ${ecwam}_scc_stack )
      
-     if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
-        target_compile_options( ${ecwam}_scc_stack PUBLIC "-Mcray=pointer" )
-        if( HAVE_ACC )
-           target_compile_options( ${ecwam}_scc_stack PUBLIC "-gpu=gvmode,maxregcount:128" )
-        endif()
-     elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
-        target_compile_options( ${ecwam}_scc_stack PUBLIC "-fcray-pointer" )
-     endif()
+     #if( CMAKE_Fortran_COMPILER_ID MATCHES PGI|NVHPC )
+     #   target_compile_options( ${ecwam}_scc_stack PUBLIC "-Mcray=pointer" )
+     #   if( HAVE_ACC )
+     #      target_compile_options( ${ecwam}_scc_stack PUBLIC "-gpu=gvmode,maxregcount:128" )
+     #   endif()
+     #elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
+     #   target_compile_options( ${ecwam}_scc_stack PUBLIC "-fcray-pointer" )
+     #endif()
   endif()
 endif()
 
