@@ -512,7 +512,7 @@ if( HAVE_WAM_LOKI )
     PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_plan_ecwam.cmake
     ${SCC_ARGS}
     CPP
-    DEFINITIONS WAM_PHYS_GPU
+    DEFINITIONS WAM_GPU
     INCLUDES ${ecwam_intfb_includes}
     SOURCES
       ${CMAKE_CURRENT_SOURCE_DIR}/

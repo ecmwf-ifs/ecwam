@@ -386,7 +386,7 @@
       WRITE (IU06,'(A,F18.2,A)') ' + ', time, '         +'
       WRITE (IU06,'(A)') ' + WAVE PROPAGATION TIME      +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PROPAG, '         +'
-#if defined(WAM_PHYS_GPU)
+#if defined(WAM_GPU)
       WRITE (IU06,'(A)') ' + SOURCE TERM TOTAL TIME     +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
       WRITE (IU06,'(A)') ' + SOURCE TERM KERNEL TIME    +'
@@ -404,7 +404,7 @@
         WRITE (6,'(A,F18.2,A)') ' + ', time, '         +'
         WRITE (6,'(A)') ' + WAVE PROPAGATION TIME      +'
         WRITE (6,'(A,F18.2,A)') ' + ', TIME_PROPAG, '         +'
-#if defined(WAM_PHYS_GPU)
+#if defined(WAM_GPU)
         WRITE (6,'(A)') ' + SOURCE TERM TOTAL TIME     +'
         WRITE (6,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
         WRITE (6,'(A)') ' + SOURCE TERM KERNEL TIME    +'

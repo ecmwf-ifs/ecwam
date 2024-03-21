@@ -89,7 +89,7 @@
       IRANK = MPL_MYRANK()
       NPROC = MPL_NPROC()
 
-#if defined(WAM_PHYS_GPU) || defined(WAM_CUDA)
+#if defined(WAM_GPU)
       CALL WAM_INIT_GPU(IRANK)
 #endif
 

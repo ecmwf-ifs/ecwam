@@ -111,7 +111,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #include "updnemostress.intfb.h"
 #include "writsta.intfb.h"
 
-#ifdef WAM_PHYS_GPU
+#ifdef WAM_GPU
 #include "wamintgr_loki_gpu.intfb.h"
 #else
 #include "wamintgr.intfb.h"
@@ -253,7 +253,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
         CDATEWH = CDATEWO
         ILOOP = 1
         DO WHILE ( ILOOP == 1 .OR. CDTIMPNEXT <= CDTPRO)
-#ifdef WAM_PHYS_GPU
+#ifdef WAM_GPU
           CALL WAMINTGR_LOKI_GPU(CDTPRA, CDATE, CDATEWH, CDTIMP, CDTIMPNEXT, &
  &                       BLK2GLO,                                    &
  &                       WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,   &
