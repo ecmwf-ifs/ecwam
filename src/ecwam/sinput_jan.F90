@@ -302,10 +302,6 @@
             XLLWS(IJ,K,M)= 0.0_JWRB
           ENDDO
 
-          DO IJ=KIJS,KIJL
-            XLLWS(IJ,K,M)= 0.0_JWRB
-          ENDDO
-
           DO IGST=1,NGST
             DO IJ=KIJS,KIJL
               IF (LZ(IJ,K)) THEN
