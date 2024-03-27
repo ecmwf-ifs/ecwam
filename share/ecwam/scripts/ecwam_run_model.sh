@@ -84,6 +84,7 @@ wamnfre=$(read_config frequencies)
 nproma=$(read_config nproma --default=24)
 iphys=$(read_config iphys --default=1)
 llgcbz0=$(read_config llgcbz0 --default=F)
+llnormagam=$(read_config llnormagam --default=F)
 
 # read timesteps
 phys_tstp=$(read_config physics.timestep --format=seconds --default=900)
@@ -224,7 +225,7 @@ cat > wam_namelist << EOF
   LBIWBK                = T,
   LLCAPCHNK             = T,
   LLGCBZ0               = ${llgcbz0},
-  LLNORMAGAM            = F,
+  LLNORMAGAM            = ${llnormagam},
   IPROPAGS              = 2,
   LSUBGRID              = F,
   IREFRA                = 0,
