@@ -82,6 +82,8 @@ wamnang=$(read_config directions)
 wamnfre=$(read_config frequencies)
 
 nproma=$(read_config nproma --default=24)
+iphys=$(read_config iphys --default=1)
+llgcbz0=$(read_config llgcbz0 --default=F)
 
 # read timesteps
 phys_tstp=$(read_config physics.timestep --format=seconds --default=900)
@@ -216,12 +218,12 @@ cat > wam_namelist << EOF
   IREST                 = 1,
   LFDBIOOUT             = F,
   LFDB                  = F,
-  IPHYS                 = 1,
+  IPHYS                 = ${iphys},
   ISHALLO               = 0,
   ISNONLIN              = 0,
   LBIWBK                = T,
   LLCAPCHNK             = T,
-  LLGCBZ0               = F,
+  LLGCBZ0               = ${llgcbz0},
   LLNORMAGAM            = F,
   IPROPAGS              = 2,
   LSUBGRID              = F,

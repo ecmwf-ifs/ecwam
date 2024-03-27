@@ -5,6 +5,7 @@ name    : ecwam-bundle
 version : 0.0.0
 cmake   : CMAKE_LINK_DEPENDS_NO_SHARED=ON
           ENABLE_OMP=ON
+          ENABLE_SINGLE_PRECISION=OFF
 
 
 projects :
