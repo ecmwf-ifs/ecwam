@@ -59,6 +59,7 @@ SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)
      &            JXO      ,JYO      ,KCR      ,KPM      ,MPM
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWABORT , ONLY : WAM_ABORT
 
 ! ----------------------------------------------------------------------
 
@@ -190,6 +191,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
         ELSE
 !*      DEPTH AND CURRENT REFRACTION.
 !       -----------------------------
+#ifdef _OPENACC
+           CALL WAM_ABORT("PROPAGS2: BRANCH NOT YET PORTED FOR GPU EXECUTION")
+#endif
 
           DO M = ND3S, ND3E
             DO K = 1, NANG
