@@ -55,6 +55,7 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WAVNUM, CGROUP, OMOSNH2KD, FL1, &
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE EC_LUN   , ONLY : NULERR
+      USE YOWABORT , ONLY : WAM_ABORT
 
 ! ----------------------------------------------------------------------
 
@@ -168,6 +169,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 !          ---------------------
 
            IF (LLUPDTTD) THEN
+#ifdef _OPENACC
+           CALL WAM_ABORT("PROPAG_WAM: BRANCH NOT YET PORTED FOR GPU EXECUTION")
+#endif
              IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJSG:IJLG, NANG))
              IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJSG:IJLG, NANG))
              IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJSG:IJLG, NANG, NFRE_RED))
@@ -286,6 +290,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 ENDIF  ! end sub time steps (if needed)
 
            CASE(1)
+#ifdef _OPENACC
+           CALL WAM_ABORT("PROPAG_WAM: BRANCH NOT YET PORTED FOR GPU EXECUTION")
+#endif
              IF (L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
 
 !            NEED HALO VALUES
