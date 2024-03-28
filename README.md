@@ -218,11 +218,11 @@ there are following options:
 Note that only `ecwam-run-model` currently supports MPI.
 
 
-Running with source-term computation offloaded to the GPU
-=========================================================
-The calculation of the source-terms in ecWam, i.e. the physics, can be offloaded for GPU execution.
-GPU optimised code is generated at build-time using ECMWF's source-to-source translation toolchain Loki. Currently,
-three Loki transformations are supported:
+GPU offload
+===========
+ecWAM can be offloaded for GPU execution. GPU optimised code for the wave propagation kernel is commited to source,
+whereas GPU code for the source-term computation is generated at build-time build-time using ECMWF's source-to-source
+translation toolchain Loki. Currently, three Loki transformations are supported:
 - Single-column-coalesced (scc): Fuse vector loops and promote to the outermost level to target the SIMT execution model
 - scc-hoist: The scc transformation with temporary arrays hoisted to the driver-layer (the default)
 - scc-stack: The scc transformation with a pool allocator used to allocate temporary arrays
@@ -232,17 +232,19 @@ OpenACC programming model on Nvidia GPUs is supported.
 
 Building
 --------
-The recommended option for building the GPU enabled variants is to use the provided bundle, and pass the `--with-loki --with-acc`
-options. Different Loki transformations can also be chosen at build-time via the following bundle option: `--loki-mode=<trafo>`.
+The recommended option for building the GPU enabled ecWAM is to use the provided bundle, and pass the
+`--with-loki --with-acc` options. Different Loki transformations can also be chosen at build-time via the following 
+bundle option: `--loki-mode=<trafo>`. Direct GPU-to-GPU MPI communications can be enabled by passing the 
+`--with-gpu-aware-mpi` option.
 
 The ecwam-bundle also provides appropriate arch files for the nvhpc suite on the ECMWF ATOS system.
 
 Running
 -------
-No extra run-time options are needed to run the GPU enabled ecWam. Please note that this means that if ecWam is built with 
-`--with-loki` and `--with-acc` bundle arguments, the source-term computation will necessarily be offloaded for GPU execution.
-For multi-GPU runs, the number of GPUs maps to the number of MPI ranks. Thus multiple GPUs can be requested by launching
-with multiple MPI ranks. The mapping of MPI ranks to GPUs assumes at most 4 GPUs per host node.
+No extra run-time options are needed to run the GPU enabled ecWam. Please note that this means that if ecWam is built
+using the `--with-loki` and `--with-acc` bundle arguments, it will necessarily be offloaded for GPU execution.
+For multi-GPU runs, the number of GPUs maps to the number of MPI ranks. Thus multiple GPUs can be requested by
+launching with multiple MPI ranks. The mapping of MPI ranks to GPUs assumes at most 4 GPUs per host node.
 
 Environment variables
 ---------------------
@@ -261,6 +263,7 @@ Known issues
    a floating point exception during during call to `MPI_INIT`.
    The flag `-ffpe-trap=overflow` is set e.g. for `Debug` build type.
    Floating point exceptions on arm64 manifest as a `SIGILL`.
+2) The coarsest configuration, i.e. `O48`, should be run with no more than one GPU.
 
 Reporting Bugs
 ==============
