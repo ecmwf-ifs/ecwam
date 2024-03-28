@@ -88,7 +88,7 @@ DATA LFRSTCTU /.TRUE./
 IF (LHOOK) CALL DR_HOOK('CTUWUPDT',0,ZHOOK_HANDLE)
 
 !$acc update device(sinth,costh)
-!$acc update device(icase, COSPH, nang, nfre_red)
+!$acc update device(COSPH, nang, nfre_red)
 ! DEFINE JXO, JYO, KCR
 IF (LFRSTCTU) THEN
 
