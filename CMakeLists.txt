@@ -116,7 +116,7 @@ ecbuild_add_option( FEATURE WAM_LOKI
 
 # Determine Loki transformation type
 if( NOT DEFINED LOKI_MODE )
-   set( LOKI_MODE "scc-stack" CACHE STRING "Transformation mode for Loki source transformations" )
+   set( LOKI_MODE "scc-hoist" CACHE STRING "Transformation mode for Loki source transformations" )
 endif()
 
 # Workaround for the fact that CMake only sets language components to FOUND,

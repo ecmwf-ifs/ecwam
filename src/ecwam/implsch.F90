@@ -88,6 +88,8 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1 
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
+      USE YOWINDN  , ONLY : MLSTHG  ! needed for Loki
+      USE YOWFRED  , ONLY : NWAV_GC ! needed for Loki
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 

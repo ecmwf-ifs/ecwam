@@ -217,15 +217,18 @@ there are following options:
 
 Note that only `ecwam-run-model` currently supports MPI.
 
+
 Running with source-term computation offloaded to the GPU
 =========================================================
-The calculation of the source-terms in ecWam, i.e. the physics, can be offloaded for GPU execution. GPU optimised code is 
-generated at build-time using ECMWF's source-to-source translation toolchain Loki. Currently, two Loki transformations are supported 
-(in ascending order of performance):
+The calculation of the source-terms in ecWam, i.e. the physics, can be offloaded for GPU execution.
+GPU optimised code is generated at build-time using ECMWF's source-to-source translation toolchain Loki. Currently,
+three Loki transformations are supported:
 - Single-column-coalesced (scc): Fuse vector loops and promote to the outermost level to target the SIMT execution model
-- scc-stack: The scc transformation with a pool allocator used to allocate temporary arrays (the default)
+- scc-hoist: The scc transformation with temporary arrays hoisted to the driver-layer (the default)
+- scc-stack: The scc transformation with a pool allocator used to allocate temporary arrays
 
-Currently, only the OpenACC programming model is supported.
+The scc-hoist and scc-stack transformations offer superior performance to the scc transformation. Currently, only the
+OpenACC programming model on Nvidia GPUs is supported.
 
 Building
 --------
