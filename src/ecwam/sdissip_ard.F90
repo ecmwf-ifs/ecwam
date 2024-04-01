@@ -67,7 +67,7 @@
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPHYS  , ONLY : SDSBR   ,ISDSDTH ,ISB     ,IPSAT    ,      &
 &                  SSDSC2  , SSDSC4, SSDSC6,  MICHE, SSDSC3, SSDSBRF1, &
-&                  BRKPBCOEF ,SSDSC5, NSDSNTH, NDIKCUMUL,              &
+&                  BRKPBCOEF ,SSDSC5, NSDSNTH,                         &
 &                  INDICESSAT, SATWEIGHTS
 
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
@@ -86,6 +86,8 @@
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, I, J, M2, K2, KK, NANGD
+!     NDIKCUMUL is the  integer difference in frequency bands
+      INTEGER(KIND=JWIM) :: NDIKCUMUL
 
       REAL(KIND=JWRB) :: TPIINV, TPIINVH, TMP01, TMP02, TMP03
       REAL(KIND=JWRB) :: EPSR, SSDSC6M1, ZCOEF, ZCOEFM1

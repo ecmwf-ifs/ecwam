@@ -150,8 +150,6 @@
 
 !     NSDSNTH is the number of directions on both used to compute the spectral saturation  
       INTEGER(KIND=JWIM) :: NSDSNTH
-!     NDIKCUMUL is the  integer difference in frequency bands
-      INTEGER(KIND=JWIM) :: NDIKCUMUL
 
       INTEGER(KIND=JWIM), ALLOCATABLE :: INDICESSAT(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: SATWEIGHTS(:,:)
