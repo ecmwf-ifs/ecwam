@@ -347,7 +347,7 @@ ENDIF  ! end sub time steps (if needed)
 !!! the advection schemes are still written in block structure
 !!!  So need to convert back to the nproma_wam chuncks
 #ifndef _OPENACC
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K)
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K, II, J)
 #endif /*_OPENACC*/
         !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
           DO ICHNK = 1, NCHNK
