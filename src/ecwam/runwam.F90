@@ -102,7 +102,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO                       ,    &
      &            IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO, TIME_PHYS,     &
-     &            TIME_PROPAG, TIME_PHYS_KERNEL
+     &            TIME_PROPAG, TIME_OFFLOAD
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT
       USE YOWALTAS , ONLY : LODBRALT
       USE MPL_MODULE, ONLY : MPL_INIT, MPL_END, MPL_COMM
@@ -387,10 +387,10 @@
       WRITE (IU06,'(A)') ' + WAVE PROPAGATION TIME      +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PROPAG, '         +'
 #if defined(WAM_GPU)
-      WRITE (IU06,'(A)') ' + SOURCE TERM TOTAL TIME     +'
+      WRITE (IU06,'(A)') ' + SOURCE TERM TIME           +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
-      WRITE (IU06,'(A)') ' + SOURCE TERM KERNEL TIME    +'
-      WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PHYS_KERNEL, '         +'
+      WRITE (IU06,'(A)') ' + DATA OFFLOAD TIME          +'
+      WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_OFFLOAD, '         +'
 #else
       WRITE (IU06,'(A)') ' + SOURCE TERM TIME           +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
@@ -405,10 +405,10 @@
         WRITE (6,'(A)') ' + WAVE PROPAGATION TIME      +'
         WRITE (6,'(A,F18.2,A)') ' + ', TIME_PROPAG, '         +'
 #if defined(WAM_GPU)
-        WRITE (6,'(A)') ' + SOURCE TERM TOTAL TIME     +'
+        WRITE (6,'(A)') ' + SOURCE TERM TIME           +'
         WRITE (6,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
-        WRITE (6,'(A)') ' + SOURCE TERM KERNEL TIME    +'
-        WRITE (6,'(A,F18.2,A)') ' + ', TIME_PHYS_KERNEL, '         +'
+        WRITE (6,'(A)') ' + DATA OFFLOAD TIME          +'
+        WRITE (6,'(A,F18.2,A)') ' + ', TIME_OFFLOAD, '         +'
 #else
         WRITE (6,'(A)') ' + SOURCE TERM TIME           +'
         WRITE (6,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
