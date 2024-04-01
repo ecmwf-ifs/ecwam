@@ -117,10 +117,11 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 !!! the advection schemes are still written in block structure
 !!! mapping chuncks to block ONLY for actual grid points !!!!
-#ifndef _OPENACC
+#ifdef _OPENACC
+        !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
+#else
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K)
 #endif /*_OPENACC*/
-        !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
         DO ICHNK = 1, NCHNK
           KIJS = 1
           IJSB = IJFROMCHNK(KIJS, ICHNK)
@@ -134,8 +135,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
             ENDDO
           ENDDO
         ENDDO
+#ifdef _OPENACC
         !$acc end kernels
-#ifndef _OPENACC
+#else
 !$OMP   END PARALLEL DO
 #endif /*_OPENACC*/
 
@@ -246,10 +248,11 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
                DO WHILE (ISUBST <= NSTEP_LF)
 
-#ifndef _OPENACC
+#ifdef _OPENACC
+!$acc kernels loop private(KIJS, KIJL, FL1_EXT)
+#else
 !$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, M, K, IJ)
 #endif /*_OPENACC*/
-!$acc kernels loop private(KIJS, KIJL, FL1_EXT) 
                  DO JKGLO = IJSG, IJLG, NPROMA
                    KIJS=JKGLO
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
@@ -262,8 +265,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                      ENDDO
                    ENDDO
                  ENDDO
+#ifdef _OPENACC
 !$acc end kernels
-#ifndef _OPENACC
+#else
 !$OMP            END PARALLEL DO
 #endif /*_OPENACC*/
 
@@ -346,10 +350,11 @@ ENDIF  ! end sub time steps (if needed)
 
 !!! the advection schemes are still written in block structure
 !!!  So need to convert back to the nproma_wam chuncks
-#ifndef _OPENACC
+#ifdef _OPENACC
+        !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
+#else
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K, II, J)
 #endif /*_OPENACC*/
-        !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
           DO ICHNK = 1, NCHNK
             KIJS = 1
             IJSB = IJFROMCHNK(KIJS, ICHNK)
@@ -380,9 +385,9 @@ ENDIF  ! end sub time steps (if needed)
             ENDIF
 
           ENDDO
+#ifdef _OPENACC
         !$acc end kernels
-
-#ifndef _OPENACC
+#else
 !$OMP     END PARALLEL DO
 #endif /*_OPENACC*/
 

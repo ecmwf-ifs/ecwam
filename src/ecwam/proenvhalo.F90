@@ -68,10 +68,11 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
 !$acc WAVNUM_EXT,CGROUP_EXT,OMOSNH2KD_EXT,DELLAM1_EXT,COSPHM1_EXT,DEPTH_EXT,U_EXT,V_EXT)
 
 !!! mapping chuncks to block ONLY for actual grid points !!!!
-#ifndef _OPENACC
+#ifdef _OPENACC
+!$acc kernels loop private(ICHNK, KIJS, IJSB, KIJL, IJLB)
+#else
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M)
 #endif /*_OPENACC*/
-!$acc kernels loop private(ICHNK, KIJS, IJSB, KIJL, IJLB)
       DO ICHNK = 1, NCHNK
         KIJS = 1
         IJSB = IJFROMCHNK(KIJS, ICHNK)
@@ -91,8 +92,9 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
         U_EXT(IJSB:IJLB) = UCUR(KIJS:KIJL,ICHNK)
         V_EXT(IJSB:IJLB) = VCUR(KIJS:KIJL,ICHNK)
       ENDDO
+#ifdef _OPENACC
 !$acc end kernels
-#ifndef _OPENACC
+#else
 !$OMP END PARALLEL DO
 #endif /*_OPENACC*/
 
