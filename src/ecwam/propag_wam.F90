@@ -130,7 +130,6 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
           !$acc loop independent collapse(2)
           DO M = 1, NFRE_RED
             DO K = 1, NANG
-!              FL1_EXT(IJFROMCHNK(1, ICHNK):IJFROMCHNK(KIJL4CHNK(ICHNK), ICHNK), K, M) = FL1(1:KIJL4CHNK(ICHNK), K, M, ICHNK)
               FL1_EXT(IJSB:IJLB, K, M) = FL1(1:KIJL, K, M, ICHNK)
             ENDDO
           ENDDO
@@ -366,7 +365,6 @@ ENDIF  ! end sub time steps (if needed)
                  DO J = KIJS, KIJL
                    II = IJSB + J - KIJS
                    FL1(J, K, M, ICHNK) = FL3_EXT(II, K, M)
-!                FL1(KIJS:KIJL, K, M, ICHNK) = FL3_EXT(IJSB:IJLB, K, M)
                  ENDDO
               ENDDO
             ENDDO
@@ -378,7 +376,6 @@ ENDIF  ! end sub time steps (if needed)
                 DO K = 1, NANG
                   DO J = KIJL+1,NPROMA_WAM
                     FL1(J, K, M, ICHNK) = FL1(1, K, M, ICHNK)
-                    !FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)
                   ENDDO
                 ENDDO
               ENDDO
