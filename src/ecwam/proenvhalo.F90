@@ -64,8 +64,8 @@ SUBROUTINE PROENVHALO (NINF, NSUP,                            &
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
-!$acc data present(WAVNUM,CGROUP,OMOSNH2KD,DELLAM1,COSPHM1,DEPTH, UCUR,VCUR,&
-!$acc WAVNUM_EXT,CGROUP_EXT,OMOSNH2KD_EXT,DELLAM1_EXT,COSPHM1_EXT,DEPTH_EXT,U_EXT,V_EXT)
+!$acc data present(WAVNUM,CGROUP,OMOSNH2KD,DELLAM1,COSPHM1,DEPTH,UCUR,VCUR) &
+!$acc present(WAVNUM_EXT,CGROUP_EXT,OMOSNH2KD_EXT,DELLAM1_EXT,COSPHM1_EXT,DEPTH_EXT,U_EXT,V_EXT)
 
 !!! mapping chuncks to block ONLY for actual grid points !!!!
 #ifdef _OPENACC
@@ -98,9 +98,8 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
 !$OMP END PARALLEL DO
 #endif /*_OPENACC*/
 
-!$acc enter data copyin(WVPRPT_LAND)
-!$acc enter data copyin(WVPRPT_LAND%WAVNUM,WVPRPT_LAND%CGROUP,WVPRPT_LAND%OMOSNH2KD)
-!$acc data present(WVPRPT_LAND) copyin(BATHYMAX)
+!$acc data copyin(WVPRPT_LAND) &
+!$acc copyin(WVPRPT_LAND%WAVNUM,WVPRPT_LAND%CGROUP,WVPRPT_LAND%OMOSNH2KD)
 !!    should be combined into one single data exchange, when we start using this option.... !!!
       CALL MPEXCHNG(WAVNUM_EXT, NFRE_RED, 1, 1)
       !$acc kernels
@@ -142,8 +141,6 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
       V_EXT(NSUP+1) = 0.0_JWRB
       !$acc end kernels
 !$acc end data
-!$acc exit data delete(WVPRPT_LAND%WAVNUM,WVPRPT_LAND%CGROUP,WVPRPT_LAND%OMOSNH2KD)
-!$acc exit data delete(WVPRPT_LAND)
 !$acc end data
 
 IF (LHOOK) CALL DR_HOOK('PROENVHALO',1,ZHOOK_HANDLE)
