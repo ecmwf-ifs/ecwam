@@ -77,10 +77,8 @@ SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)
       INTEGER(KIND=JWIM) :: K, M, IJ
       INTEGER(KIND=JWIM) :: IC, ICR, ICL 
       INTEGER(KIND=JWIM) :: KP1, KM1, MM1, MP1, KNS, KEW
-      INTEGER(KIND=JWIM) :: JJK, JJY, JJX
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FJ1, FJ2, FJ3, FJ4, FJ5
 
 ! ----------------------------------------------------------------------
 
@@ -97,7 +95,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
 
-!$acc kernels loop present(F1,F3) create(FJ1, FJ2, FJ3, FJ4, FJ5) PRESENT(KLON,KLAT,KCOR,WKPMN,LLWKPMN, SUMWN, WLONN, WLATN, WCORN) PRESENT(JXO,JYO,KCR)
+!$acc kernels loop present(F1,F3,KLON,KLAT,KCOR,WKPMN,LLWKPMN,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR)
         DO K = 1, NANG
       
             DO M = ND3S, ND3E
