@@ -26,16 +26,6 @@ project( ${ECWAM_PROJECT_NAME} LANGUAGES Fortran C CXX )
 include( ecwam_macros )
 ecbuild_enable_fortran( REQUIRED NO_MODULE_DIRECTORY )
 
-### Determine ocean model precision
-if( NOT DEFINED OCEAN_PREC )
-  if( HAVE_SINGLE_PRECISION )
-     set(OCEAN_PREC SP)
-  else()
-     set(OCEAN_PREC DP)
-  endif()
-endif()
-string( TOLOWER "${OCEAN_PREC}" ocean_prec )
-
 ### Dependencies
 
 ecbuild_find_package( fiat      REQUIRED )
@@ -63,6 +53,16 @@ ecbuild_add_option( FEATURE SINGLE_PRECISION
 ecbuild_add_option( FEATURE UNWAM
                     DEFAULT OFF
                     DESCRIPTION "Support for UNWAM" )
+
+### Determine ocean model precision
+if( NOT DEFINED OCEAN_PREC )
+  if( HAVE_SINGLE_PRECISION )
+     set(OCEAN_PREC SP)
+  else()
+     set(OCEAN_PREC DP)
+  endif()
+endif()
+string( TOLOWER "${OCEAN_PREC}" ocean_prec )
 
 ecbuild_add_option( FEATURE OCEAN_COUPLING 
                     DEFAULT ON
