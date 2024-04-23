@@ -357,7 +357,9 @@ list( APPEND ecwam_srcs
   z0wave.F90
 )
 
-if(HAVE_WAM_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack")
+# Loki GPU transformations must use the alternate driver-layer with the FIELD_API
+# offload instructions
+if(HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack")
   list(APPEND ecwam_srcs wamintgr_loki_gpu.F90)
   list(REMOVE_ITEM ecwam_srcs wamintgr.F90)
 endif()
@@ -490,7 +492,7 @@ if( CMAKE_Fortran_COMPILER_ID MATCHES Intel AND HAVE_SINGLE_PRECISION )
   set_source_files_properties( grib2wgrid.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
 endif()
 
-if( HAVE_WAM_LOKI )
+if( HAVE_LOKI )
 
   set( LOKI_FRONTEND "fp" CACHE STRING "Frontend parser for Loki source transformations" )
   set( SCC_ARGS "")

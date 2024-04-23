@@ -33,7 +33,7 @@ projects :
 
     - loki :
         git     : https://github.com/ecmwf-ifs/loki
-        version : main
+        version : v0.2.2
         optional: true
         require : ecbuild
         cmake   : >
@@ -61,7 +61,7 @@ options :
     - with-loki :
         help  : Enable Loki source-to-source transformations for ecWam physics
         cmake : >
-            ENABLE_WAM_LOKI=ON
+            ENABLE_LOKI=ON
             LOKI_ENABLE_NO_INSTALL=OFF
 
     - with-acc :

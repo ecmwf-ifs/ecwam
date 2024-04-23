@@ -88,7 +88,6 @@ endif()
 
 ### Optional dependencies
 
-ecbuild_find_package( NAME loki )
 ecwam_find_python_mods()
 ecbuild_add_option( FEATURE GEN_DERIV_TYPES
                     DEFAULT ON
@@ -109,15 +108,13 @@ if( HAVE_OMP )
 endif()
 
 ### Apply Loki source-to-source transformations to the ecWam physics
-ecbuild_add_option( FEATURE WAM_LOKI
+ecbuild_add_option( FEATURE LOKI
                     DEFAULT OFF
                     DESCRIPTION "Apply Loki transformations to ecWam physics"
-                    CONDITION loki_FOUND )
+                    REQUIRED_PACKAGES "loki" )
 
-# Determine Loki transformation type
-if( NOT DEFINED LOKI_MODE )
-   set( LOKI_MODE "scc-hoist" CACHE STRING "Transformation mode for Loki source transformations" )
-endif()
+# Set default Loki transformation mode
+set( LOKI_MODE "scc-hoist" CACHE STRING "Transformation mode for Loki source transformations" )
 
 ### OpenACC
 if( ${CMAKE_VERSION} VERSION_LESS "3.25" AND (NOT DEFINED ENABLE_ACC OR ENABLE_ACC ) )
@@ -138,7 +135,7 @@ endif()
 ecbuild_add_option( FEATURE ACC
                     DESCRIPTION "OpenACC" DEFAULT OFF
                     REQUIRED_PACKAGES "OpenACC" 
-                    CONDITION HAVE_WAM_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" AND HAVE_GEN_DERIV_TYPES )
+                    CONDITION HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" AND HAVE_GEN_DERIV_TYPES )
 
 ### Sources
 
