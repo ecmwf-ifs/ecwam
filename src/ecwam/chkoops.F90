@@ -68,7 +68,9 @@
       IF(PRESENT(LDUPDATEOOPS)) LUPDATEOOPS = LDUPDATEOOPS
 
       IF (LUPDATEOOPS .AND. TRIM(IFSCONTEXT) == 'OOPS') THEN
-        ! OOPS-IFS may do wave assimilation only in the outer loop MUPTRA - 1
+        ! OOPS-IFS may do wave assimilation only:
+        !  - in the outer loop MUPTRA - 1
+        !  - in the final traj MUPTRA
         IF (LFRST_OOPS) THEN
           LFRST_OOPS = .FALSE.
           IASSI_ORIG = IASSI
@@ -76,7 +78,7 @@
         ENDIF
 
         IF( NTRAJ /= IFSNUPTRA ) THEN
-          IF (IFSNUPTRA /= IFSMUPTRA - 1) THEN
+          IF (IFSNUPTRA < IFSMUPTRA - 1) THEN
             IASSI = 0
             LWAMANOUT = .FALSE.
           ELSE
