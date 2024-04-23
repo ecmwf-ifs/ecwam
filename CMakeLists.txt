@@ -119,11 +119,21 @@ if( NOT DEFINED LOKI_MODE )
    set( LOKI_MODE "scc-hoist" CACHE STRING "Transformation mode for Loki source transformations" )
 endif()
 
-# Workaround for the fact that CMake only sets language components to FOUND,
-# so OpenACC_FOUND must be set manually
-find_package( OpenACC )
-if( OpenACC_Fortran_FOUND AND OpenACC_C_FOUND )
-  set( OpenACC_FOUND ON )
+### OpenACC
+if( ${CMAKE_VERSION} VERSION_LESS "3.25" AND (NOT DEFINED ENABLE_ACC OR ENABLE_ACC ) )
+    # Incredibly inconvenient: FindOpenACC does _not_ set OpenACC_FOUND, only
+    # the language-specific components OpenACC_Fortran_FOUND and OpenACC_C_FOUND.
+    # This means, even internally CMake considers OpenACC as not found.
+    # (See eg get_property(... GLOBAL PROPERTY PACKAGES_NOT_FOUND))
+    # Therefore, we search for OpenACC, set OpenACC_FOUND ourselves according to
+    # the result, and then, trigger a second find_package via ecbuild_add_option.
+    # This then conveniently takes the previously set OpenACC_FOUND into account
+    # and rectifies CMake's internal bookkeeping in the process.
+    # This has been fixed in CMake 3.25
+    find_package( OpenACC )
+    if( OpenACC_Fortran_FOUND AND OpenACC_C_FOUND )
+        set( OpenACC_FOUND ON )
+    endif()
 endif()
 ecbuild_add_option( FEATURE ACC
                     DESCRIPTION "OpenACC" DEFAULT OFF
