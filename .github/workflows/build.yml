@@ -47,6 +47,7 @@ jobs:
             compiler_cxx: g++-10
             compiler_fc: gfortran-10
             caching: true
+            cmake_options: "-DECBUILD_Fortran_FLAGS=-fcray-pointer"
 
           - name: linux clang-12
             os: ubuntu-20.04
@@ -55,6 +56,7 @@ jobs:
             compiler_cxx: clang++-12
             compiler_fc: gfortran-10
             caching: true
+            cmake_options: "-DECBUILD_Fortran_FLAGS=-fcray-pointer"
 
           - name: linux clang-12
             build_type: Release
@@ -64,6 +66,7 @@ jobs:
             compiler_cxx: clang++-12
             compiler_fc: gfortran-10
             caching: true
+            cmake_options: "-DECBUILD_Fortran_FLAGS=-fcray-pointer"
 
 # Disable due to problematic environment
 #          - name: linux nvhpc-21.9
@@ -91,6 +94,7 @@ jobs:
             compiler_cxx: ~
             compiler_fc: gfortran-11
             caching: true
+            cmake_options: "-DECBUILD_Fortran_FLAGS=-fcray-pointer"
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -115,6 +119,12 @@ jobs:
           brew install libomp
           brew install libaec
           brew install coreutils
+          brew install pyenv
+
+          pyenv install 3.11.4
+          pyenv global 3.11.4
+
+          echo "LOKI_PYTHON_ROOT_DIR=$HOME/.pyenv/versions/3.11.4/bin" >> $GITHUB_ENV
         else
           sudo apt-get update
           sudo apt-get install libaec-dev
@@ -123,6 +133,7 @@ jobs:
 
         pip3 install pyyaml
         pip3 install numpy
+
 
         printenv
 
@@ -168,7 +179,6 @@ jobs:
         # Add mpirun to path for testing
         [ -z ${MPI_HOME+x} ] || echo "${MPI_HOME}/bin" >> $GITHUB_PATH
 
-
     - name: Build & Test
       id: build-test
       uses: ecmwf-actions/build-package@v2
@@ -176,18 +186,19 @@ jobs:
         self_coverage: false
         force_build: true
         cache_suffix: "${{ matrix.build_type }}-${{ env.CACHE_SUFFIX }}"
-        recreate_cache: ${{ matrix.caching == false }}
+        recreate_cache: true
         dependencies: |
           ecmwf/ecbuild
           ecmwf/eccodes
           ecmwf-ifs/fiat
           ecmwf-ifs/field_api@refs/tags/v0.2.2
-          ecmwf-ifs/loki@refs/tags/v0.2.2
+          ecmwf-ifs/loki@refs/tags/v0.2.3
         dependency_branch: develop
         dependency_cmake_options: |
           ecmwf-ifs/fiat: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF"
           ecmwf/eccodes: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_MEMFS=ON -DENABLE_JPG=OFF"
-          ecmwf-ifs/field_api: "-DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_ACC=OFF -DENABLE_SINGLE_PRECISION=OFF"
+          ecmwf-ifs/field_api: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_ACC=OFF -DENABLE_SINGLE_PRECISION=OFF"
+          ecmwf-ifs/loki: "-G Ninja -DENABLE_TESTS=OFF -DENABLE_EDITABLE=ON -DPython3_ROOT_DIR=${{ env.LOKI_PYTHON_ROOT_DIR }}
         cmake_options: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.cmake_options }} -DENABLE_MPI=ON -DENABLE_LOKI=ON -DLOKI_MODE=idem-stack"
         ctest_options: "${{ matrix.ctest_options }}"
 

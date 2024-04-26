@@ -22,7 +22,7 @@ macro( ecwam_find_python_mods )
    ecbuild_find_package( fypp QUIET )
 
    # Look for python interpreter and pyyaml package
-   ecbuild_find_python()
+   find_package( Python3 COMPONENTS Interpreter )
    execute_process(
        COMMAND python3 -c "import yaml"
        RESULT_VARIABLE EXIT_CODE
