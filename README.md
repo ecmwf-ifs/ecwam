@@ -41,6 +41,8 @@ Requirements
 - fiat (see https://github.com/ecmwf-ifs/fiat)
 - eccodes (see https://github.com/ecmwf/eccodes)
 - field_api (see https://github.com/ecmwf-ifs/field_api)
+- Python with ruamel.yaml<0.18.0 package
+- fypp
 
 Further optional dependencies:
 - MPI Fortran libraries
@@ -51,11 +53,7 @@ Further optional dependencies:
 
 Some driver scripts to run tests and validate results rely on availability of:
 - md5sum (part of GNU Coreutils; on MacOS, install with `brew install coreutils`)
-- Python with pyyaml package
-
-Generating the derived-type data structures (read end of next section) requires:
-- Python with pyyaml package
-- fypp
+- Python with ruamel.yaml<0.18.0 package
 
 Building ecWAM
 --------------
@@ -107,7 +105,7 @@ Optionally, tests can be run to check succesful compilation, when the feature TE
     $ ctest
 
 ### Generate derived-types data structures
-The derived-types storing grid-point data in ecWam can be configured in `src/ecwam/yowfield_mod_config.yaml`. If the fypp preprocessor and Python + pyyaml are found, then the configuration file is used to expand the accompanying `src/ecwam/yowfield_mod.fypp` into Fortran derived-type objects. The glue-code required to turn the derived-types members into FIELD API objects is also generated. If fypp and pyyaml are not found, then the existing `src/ecwam/yowfield_mod.F90` is used. Generation of the derived-type data structures can be disabled by passing the following build time option: `-DENABLE_GEN_DERIV_TYPES=OFF`.
+The derived-types storing grid-point data in ecWam can be configured in `src/ecwam/yowfield_mod_config.yaml`, which is used to expand the accompanying `src/ecwam/yowfield_mod.fypp` into Fortran derived-type objects. The glue-code required to turn the derived-types members into FIELD API objects is also generated.
 
 ## Build using ecWAM bundle
 
