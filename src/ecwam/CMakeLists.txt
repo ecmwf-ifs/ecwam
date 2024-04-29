@@ -365,16 +365,12 @@ if(HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack")
   list(REMOVE_ITEM ecwam_srcs wamintgr.F90)
 endif()
 
-if( HAVE_GEN_DERIV_TYPES )
-   list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
-   add_custom_command(
-       OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90
-       COMMAND ${FYPP} -m io -m yaml -m os ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
-       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp
-       VERBATIM)
-else()
-   list( APPEND ecwam_srcs yowfield_mod.F90)
-endif()
+list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90
+    COMMAND ${FYPP} -m io -m ruamel.yaml -m os ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp
+    VERBATIM)
 
 unset( MPI_Fortran_LIBRARIES )
 if( HAVE_GPU_AWARE_MPI )

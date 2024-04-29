@@ -7,33 +7,28 @@
 # nor does it submit to any jurisdiction.
 
 macro( ecwam_find_python_mods )
-   set(FYPP_FOUND OFF)
-   set(PYYAML_FOUND OFF)
-
    # Look for fypp pre-processor
    find_program( FYPP fypp HINTS ${fypp_ROOT} )
    if( FYPP )
      ecbuild_info( "${ECWAM_PROJECT_NAME} FOUND fypp" )
-     set(FYPP_FOUND ON)
    else()
-     ecbuild_info( "${ECWAM_PROJECT_NAME} FAILED to find optional package fypp" )
+     ecbuild_critical( "${ECWAM_PROJECT_NAME} FAILED to find required package fypp" )
    endif()
    # We do a QUIET ecbuild_find_package to update the ecbuild project summary
    ecbuild_find_package( fypp QUIET )
 
-   # Look for python interpreter and pyyaml package
+   # Look for python interpreter and ruamel package
    find_package( Python3 COMPONENTS Interpreter )
    execute_process(
-       COMMAND python3 -c "import yaml"
+       COMMAND python3 -c "import ruamel.yaml"
        RESULT_VARIABLE EXIT_CODE
        OUTPUT_QUIET
    )
    if( EXIT_CODE EQUAL 0 )
-     ecbuild_info("${ECWAM_PROJECT_NAME} FOUND pyyaml")
-     set(PYYAML_FOUND ON)
+     ecbuild_info("${ECWAM_PROJECT_NAME} FOUND ruamel.yaml")
    else()
-     ecbuild_info( "${ECWAM_PROJECT_NAME} FAILED to find optional package pyyaml" )
+     ecbuild_critical( "${ECWAM_PROJECT_NAME} FAILED to find required package ruamel.yaml" )
    endif()
    # We do a QUIET ecbuild_find_package to update the ecbuild project summary
-   ecbuild_find_package( pyyaml QUIET)
+   ecbuild_find_package( ruamel QUIET)
 endmacro()

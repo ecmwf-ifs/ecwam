@@ -9,7 +9,7 @@
 # granted to it by virtue of its status as an intergovernmental organisation nor
 # does it submit to any jurisdiction.
 
-import yaml
+from ruamel.yaml import YAML
 from datetime import datetime, timedelta
 import sys
 import re
@@ -29,7 +29,7 @@ args = parser.parse_args()
 
 f = open(args.config,'r')
 yaml_document = f.read()
-config = yaml.safe_load(yaml_document)
+config = YAML().load(yaml_document)
 f.close()
 
 request = args.request
@@ -76,7 +76,7 @@ class Duration:
             if match:
                 return Duration(hours=int(match.group(1)),minutes=int(match.group(2)))
         raise ValueError("Could not convert time "+str(time)+" to Duration with format "+format)
-            
+
 
     def strftime(self,format):
         if "%H" in format:

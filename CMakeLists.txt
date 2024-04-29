@@ -89,10 +89,6 @@ endif()
 ### Optional dependencies
 
 ecwam_find_python_mods()
-ecbuild_add_option( FEATURE GEN_DERIV_TYPES
-                    DEFAULT ON
-                    DESCRIPTION "Generate derived-type data structures using fypp pre-processor and yaml config"
-                    CONDITION FYPP_FOUND AND PYYAML_FOUND )
 
 ### Set third party libraries
 

@@ -10,7 +10,7 @@
 # does it submit to any jurisdiction.
 
 import argparse
-import yaml
+from ruamel.yaml import YAML
 import os
 
 parser = argparse.ArgumentParser(
@@ -25,7 +25,7 @@ parameters_file=os.path.dirname(os.path.realpath(__file__))+'/../parameters.yml'
 
 f = open(parameters_file,'r')
 yaml_document = f.read()
-parameters = yaml.safe_load(yaml_document)['parameters']
+parameters = YAML().load(yaml_document)['parameters']
 f.close()
 
 # print(parameters)

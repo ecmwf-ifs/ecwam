@@ -7,8 +7,9 @@
 #! nor does it submit to any jurisdiction.
 #!
 #!
-#:set f = io.open(os.path.dirname(_THIS_FILE_)+'/yowfield_mod_config.yaml', 'r')
-#:set input = yaml.safe_load(f)
+#:set f = io.open(os.path.dirname(_THIS_FILE_)+'/yowfield_mod_config.yaml')
+#:set ymlstring = f.read()
+#:set input = ruamel.yaml.YAML().load(ymlstring)
 #:set objtypes = input['objtypes']
 #:set objdef = input['objdef']
 #!
