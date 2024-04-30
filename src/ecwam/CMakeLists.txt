@@ -368,7 +368,8 @@ endif()
 list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90
-    COMMAND ${FYPP} -m io -m ruamel.yaml -m os ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
+    COMMAND ${FYPP} -m io -M ${CMAKE_CURRENT_SOURCE_DIR}/../../share/ecwam/scripts -m ecwam_yaml_reader -m os
+    ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp
     VERBATIM)
 

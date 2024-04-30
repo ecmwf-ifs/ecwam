@@ -86,7 +86,7 @@ if( HAVE_ECWAM_LAUNCH )
   set( CMAKE_CROSSCOMPILING_EMULATOR ${ECWAM_LAUNCH} ) # For serial runs
 endif()
 
-### Optional dependencies
+### Find python dependencies
 
 ecwam_find_python_mods()
 

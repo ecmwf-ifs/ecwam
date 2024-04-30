@@ -41,14 +41,13 @@ Requirements
 - fiat (see https://github.com/ecmwf-ifs/fiat)
 - eccodes (see https://github.com/ecmwf/eccodes)
 - field_api (see https://github.com/ecmwf-ifs/field_api)
-- Python with ruamel.yaml<0.18.0 package
-- fypp
+- Python with either pyyaml or ruamel.yaml<0.18.0
+- fypp (see https://github.com/aradi/fypp)
 
 Further optional dependencies:
 - MPI Fortran libraries
 - multio (see https://github.com/ecmwf/multio)
 - ocean model (e.g. NEMO or FESOM)
-- fypp (see https://github.com/aradi/fypp)
 - loki (see https://github.com/ecmwf-ifs/loki)
 
 Some driver scripts to run tests and validate results rely on availability of:

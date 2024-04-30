@@ -9,7 +9,7 @@
 # granted to it by virtue of its status as an intergovernmental organisation nor
 # does it submit to any jurisdiction.
 
-from ruamel.yaml import YAML
+from ecwam_yaml_reader import YAML
 from datetime import datetime, timedelta
 import sys
 import re

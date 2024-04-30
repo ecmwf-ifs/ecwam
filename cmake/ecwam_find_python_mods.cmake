@@ -17,18 +17,38 @@ macro( ecwam_find_python_mods )
    # We do a QUIET ecbuild_find_package to update the ecbuild project summary
    ecbuild_find_package( fypp QUIET )
 
-   # Look for python interpreter and ruamel package
-   find_package( Python3 COMPONENTS Interpreter )
+   set( PYYAML_FOUND OFF )
+   set( RUAMEL_FOUND OFF )
+
+   # Look for python interpreter and yaml parsers
+   find_package( Python3 COMPONENTS Interpreter REQUIRED)
    execute_process(
-       COMMAND python3 -c "import ruamel.yaml"
+       COMMAND python3 -c "import yaml"
        RESULT_VARIABLE EXIT_CODE
        OUTPUT_QUIET
    )
    if( EXIT_CODE EQUAL 0 )
-     ecbuild_info("${ECWAM_PROJECT_NAME} FOUND ruamel.yaml")
-   else()
-     ecbuild_critical( "${ECWAM_PROJECT_NAME} FAILED to find required package ruamel.yaml" )
+     ecbuild_info("${ECWAM_PROJECT_NAME} FOUND pyyaml")
+     set( PYYAML_FOUND ON)
    endif()
+
+   if( NOT PYYAML_FOUND )
+       execute_process(
+           COMMAND python3 -c "import ruamel.yaml"
+           RESULT_VARIABLE EXIT_CODE
+           OUTPUT_QUIET
+       )
+
+       if( EXIT_CODE EQUAL 0 )
+         ecbuild_info("${ECWAM_PROJECT_NAME} FOUND ruamel.yaml")
+         set( RUAMEL_FOUND ON)
+       else()
+         ecbuild_critical( "${ECWAM_PROJECT_NAME} FAILED to find a compatible yaml parser" )
+       endif()
+       # We do a QUIET ecbuild_find_package to update the ecbuild project summary
+       ecbuild_find_package( ruamel QUIET)
+   endif()
+
    # We do a QUIET ecbuild_find_package to update the ecbuild project summary
-   ecbuild_find_package( ruamel QUIET)
+   ecbuild_find_package( pyyaml QUIET)
 endmacro()
