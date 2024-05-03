@@ -269,6 +269,7 @@ list( APPEND ecwam_srcs
   w_mode_st.F90
   w_pdf.F90
   w_pmax.F90
+  wam_init_gpu_mod.F90
   wam_multio_mod.F90
   wam_nproma.F90
   wam_sorti.F90
@@ -356,6 +357,13 @@ list( APPEND ecwam_srcs
   z0wave.F90
 )
 
+# Loki GPU transformations must use the alternate driver-layer with the FIELD_API
+# offload instructions
+if(HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack")
+  list(APPEND ecwam_srcs wamintgr_loki_gpu.F90)
+  list(REMOVE_ITEM ecwam_srcs wamintgr.F90)
+endif()
+
 if( HAVE_GEN_DERIV_TYPES )
    list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
    add_custom_command(
@@ -417,8 +425,16 @@ if( HAVE_ECFLOW )
   list(APPEND ECWAM_PRIVATE_DEFINITIONS WAM_HAVE_ECFLOW)
 endif()
 
+# Using dynamic linking creates undefined references to the device
+# copies of module global variables
+set( LIBRARY_TYPE SHARED )
+if( HAVE_ACC )
+  set( LIBRARY_TYPE STATIC )
+endif()
+
 ecbuild_add_library(
     TARGET           ${ecwam}
+    TYPE             ${LIBRARY_TYPE}
     SOURCES          ${ecwam_srcs}
     PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                      ${MPI_Fortran_LIBRARIES}
@@ -428,7 +444,9 @@ ecbuild_add_library(
                      ${OpenMP_Fortran_LIBRARIES}
                      field_api_${prec}
                      $<${HAVE_ECFLOW}:ecflow_lightf>
+                     $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
+    PRIVATE_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
     PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS}
     PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
 )
@@ -438,6 +456,10 @@ ecwam_target_fortran_module_directory(
     MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/${ecwam}
     INSTALL_DIRECTORY module/${ecwam}
 )
+
+if( HAVE_ACC )
+   target_compile_options( ${ecwam} PUBLIC "-gpu=gvmode,maxregcount:128" )
+endif()
 
 ecwam_target_compile_definitions_FILENAME( ${ecwam} )
 
@@ -455,6 +477,7 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHE
   set_source_files_properties(
       sbottom.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros "
   )
+  set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-Mnofma" )
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHES "Debug")
   string(REPLACE "-Ktrap=fp" "" ${PNAME}_Fortran_FLAGS_DEBUG ${${PNAME}_Fortran_FLAGS_DEBUG})
   set_source_files_properties( outbeta.F90 PROPERTIES COMPILE_OPTIONS "${${PNAME}_Fortran_FLAGS_DEBUG} -Ktrap=divz")
@@ -467,4 +490,34 @@ endif()
 
 if( CMAKE_Fortran_COMPILER_ID MATCHES Intel AND HAVE_SINGLE_PRECISION )
   set_source_files_properties( grib2wgrid.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
+endif()
+
+if( HAVE_LOKI )
+
+  set( LOKI_FRONTEND "fp" CACHE STRING "Frontend parser for Loki source transformations" )
+  set( SCC_ARGS "")
+
+  if( LOKI_MODE MATCHES "idem|idem-stack" )
+     set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config )
+  else()
+     set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
+     target_compile_definitions( ${ecwam} PRIVATE WAM_GPU )
+     set( SCC_ARGS "TRIM_VECTOR_SECTIONS;GLOBAL_VAR_OFFLOAD")
+  endif()
+
+  # Apply Loki source file transformation to lib target
+  loki_transform_target( TARGET ${ecwam}
+    MODE ${LOKI_MODE}
+    DIRECTIVE openacc
+    FRONTEND ${LOKI_FRONTEND}
+    CONFIG ${LOKI_CONFIG_FILE}
+    PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_plan_ecwam.cmake
+    ${SCC_ARGS}
+    CPP
+    DEFINITIONS WAM_GPU
+    INCLUDES ${ecwam_intfb_includes}
+    SOURCES
+      ${CMAKE_CURRENT_SOURCE_DIR}/
+  )
+
 endif()

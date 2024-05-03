@@ -17,13 +17,12 @@ foreach( program
     ecbuild_add_executable(
         TARGET          ${PROJECT_NAME}-${program}
         SOURCES         ${program}.F90
-        LIBS            ${PROJECT_NAME} ${OpenMP_Fortran_LIBRARIES}
+        LIBS            ${PROJECT_NAME} ${OpenMP_Fortran_LIBRARIES} $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
         LINKER_LANGUAGE Fortran
     )
     ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-${program})
 
 endforeach()
-
 
 string( TOUPPER ${PROJECT_NAME} PNAME )
 foreach( lang Fortran C CXX )

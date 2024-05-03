@@ -15,6 +15,20 @@
 set( OpenMP_Fortran_FLAGS "-mp=bind,allcores,numa" CACHE STRING "" FORCE)
 
 ####################################################################
+# OpenAcc FLAGS
+####################################################################
+
+set( OpenACC_Fortran_FLAGS "-acc=gpu -gpu=cc80,lineinfo,fastmath" CACHE STRING "" )
+
+####################################################################
+# CUDA FLAGS
+####################################################################
+
+if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+  set(CMAKE_CUDA_ARCHITECTURES 80)
+endif()
+
+####################################################################
 # COMMON FLAGS
 ####################################################################
 

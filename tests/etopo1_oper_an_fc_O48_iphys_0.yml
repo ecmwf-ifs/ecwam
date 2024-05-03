@@ -18,7 +18,6 @@ end:   ${forecast.end}
 
 nproma: 24
 iphys: 0
-llgcbz0: T
 
 forcings:
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O48.grib
@@ -65,26 +64,26 @@ validation:
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1502963828906638E+01
+      average: 0.1490254256202220E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF80C23CCC39966']
+      hashes: ['0x3FF7D814D8D1D03D']
 
     # 6h into forcast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1563171263196180E+01
+      average: 0.1549565412792532E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF902BFDED797F8']
+      hashes: ['0x3FF8CB051A2F4E7F']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.1778555863566463E-01
+      minimum: 0.2299719388056846E-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3F923660A2B99ED6']
+      hashes: ['0x3F978C938E779DCC']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.7659061909985634E+01
+      maximum: 0.7301171333479556E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x401EA2E12015B5DB']
+      hashes: ['0x401D3466420F264D']
 
   single_precision:
 
@@ -98,23 +97,23 @@ validation:
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1502959609031677E+01
+      average: 0.1490258693695068E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF80C1F60000000']
+      hashes: ['0x3FF7D81980000000']
 
     # 6h into forcast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1563124537467957E+01
+      average: 0.1549525499343872E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF9028EE0000000']
+      hashes: ['0x3FF8CADB40000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.1778554916381836E-01
+      minimum: 0.2299719676375389E-01
       relative_tolerance: 1.e-6
-      hashes: ['0x3F92366000000000']
+      hashes: ['0x3F978C93C0000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.7659064292907715E+01
+      maximum: 0.7301169872283936E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x401EA2E1C0000000']
+      hashes: ['0x401D3465E0000000']

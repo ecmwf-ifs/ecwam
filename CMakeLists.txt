@@ -91,7 +91,7 @@ endif()
 ecwam_find_python_mods()
 ecbuild_add_option( FEATURE GEN_DERIV_TYPES
                     DEFAULT ON
-                    DESCRIPTION "Generate derived-type data structures using fypp pre-processor"
+                    DESCRIPTION "Generate derived-type data structures using fypp pre-processor and yaml config"
                     CONDITION FYPP_FOUND AND PYYAML_FOUND )
 
 ### Set third party libraries
@@ -106,6 +106,36 @@ unset( OpenMP_Fortran_LIBRARIES )
 if( HAVE_OMP )
   set( OpenMP_Fortran_LIBRARIES OpenMP::OpenMP_Fortran )
 endif()
+
+### Apply Loki source-to-source transformations to the ecWam physics
+ecbuild_add_option( FEATURE LOKI
+                    DEFAULT OFF
+                    DESCRIPTION "Apply Loki transformations to ecWam physics"
+                    REQUIRED_PACKAGES "loki" )
+
+# Set default Loki transformation mode
+set( LOKI_MODE "scc-hoist" CACHE STRING "Transformation mode for Loki source transformations" )
+
+### OpenACC
+if( ${CMAKE_VERSION} VERSION_LESS "3.25" AND (NOT DEFINED ENABLE_ACC OR ENABLE_ACC ) )
+    # Incredibly inconvenient: FindOpenACC does _not_ set OpenACC_FOUND, only
+    # the language-specific components OpenACC_Fortran_FOUND and OpenACC_C_FOUND.
+    # This means, even internally CMake considers OpenACC as not found.
+    # (See eg get_property(... GLOBAL PROPERTY PACKAGES_NOT_FOUND))
+    # Therefore, we search for OpenACC, set OpenACC_FOUND ourselves according to
+    # the result, and then, trigger a second find_package via ecbuild_add_option.
+    # This then conveniently takes the previously set OpenACC_FOUND into account
+    # and rectifies CMake's internal bookkeeping in the process.
+    # This has been fixed in CMake 3.25
+    find_package( OpenACC )
+    if( OpenACC_Fortran_FOUND AND OpenACC_C_FOUND )
+        set( OpenACC_FOUND ON )
+    endif()
+endif()
+ecbuild_add_option( FEATURE ACC
+                    DESCRIPTION "OpenACC" DEFAULT OFF
+                    REQUIRED_PACKAGES "OpenACC" 
+                    CONDITION HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" AND HAVE_GEN_DERIV_TYPES )
 
 ### Sources
 
