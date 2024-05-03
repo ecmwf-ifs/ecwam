@@ -7,18 +7,19 @@
 # nor does it submit to any jurisdiction.
 
 macro( ecwam_find_python_mods )
+
    # Look for fypp pre-processor
    find_program( FYPP fypp HINTS ${fypp_ROOT} )
-   if( FYPP )
+   if( fypp_FOUND )
      ecbuild_info( "${ECWAM_PROJECT_NAME} FOUND fypp" )
-   else()
-     ecbuild_critical( "${ECWAM_PROJECT_NAME} FAILED to find required package fypp" )
-   endif()
-   # We do a QUIET ecbuild_find_package to update the ecbuild project summary
-   ecbuild_find_package( fypp QUIET )
 
-   set( PYYAML_FOUND OFF )
-   set( RUAMEL_FOUND OFF )
+     # We do a QUIET ecbuild_find_package to update the ecbuild project summary
+     ecbuild_find_package( fypp QUIET )
+   else()
+     list(APPEND ecfypp_env_components fypp)
+   endif()
+
+   set( yaml_FOUND OFF )
 
    # Look for python interpreter and yaml parsers
    find_package( Python3 COMPONENTS Interpreter REQUIRED)
@@ -29,10 +30,13 @@ macro( ecwam_find_python_mods )
    )
    if( EXIT_CODE EQUAL 0 )
      ecbuild_info("${ECWAM_PROJECT_NAME} FOUND pyyaml")
-     set( PYYAML_FOUND ON)
+     set( yaml_FOUND ON)
+
+     # We do a QUIET ecbuild_find_package to update the ecbuild project summary
+     ecbuild_find_package( pyyaml QUIET)
    endif()
 
-   if( NOT PYYAML_FOUND )
+   if( NOT yaml_FOUND )
        execute_process(
            COMMAND python3 -c "import ruamel.yaml"
            RESULT_VARIABLE EXIT_CODE
@@ -41,14 +45,22 @@ macro( ecwam_find_python_mods )
 
        if( EXIT_CODE EQUAL 0 )
          ecbuild_info("${ECWAM_PROJECT_NAME} FOUND ruamel.yaml")
-         set( RUAMEL_FOUND ON)
+         set( yaml_FOUND ON)
+
+         # We do a QUIET ecbuild_find_package to update the ecbuild project summary
+         ecbuild_find_package( ruamel QUIET)
        else()
-         ecbuild_critical( "${ECWAM_PROJECT_NAME} FAILED to find a compatible yaml parser" )
+         list(APPEND ecfypp_env_components yaml)
        endif()
-       # We do a QUIET ecbuild_find_package to update the ecbuild project summary
-       ecbuild_find_package( ruamel QUIET)
    endif()
 
-   # We do a QUIET ecbuild_find_package to update the ecbuild project summary
-   ecbuild_find_package( pyyaml QUIET)
+   if ( DEFINED ecfypp_env_components )
+     ecbuild_find_package(ecfypp_env REQUIRED COMPONENTS ${ecfypp_env_components} )
+     if( ecfypp_env_yaml_FOUND )
+        set( FYPP_COMMAND ${ECFYPP_VENV_EXE} -m fypp )
+     else()
+        set( FYPP_COMMAND ${FYPP} )
+     endif()
+   endif()
+
 endmacro()

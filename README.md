@@ -52,7 +52,7 @@ Further optional dependencies:
 
 Some driver scripts to run tests and validate results rely on availability of:
 - md5sum (part of GNU Coreutils; on MacOS, install with `brew install coreutils`)
-- Python with ruamel.yaml<0.18.0 package
+- Python with either pyyaml or ruamel.yaml<0.18.0
 
 Building ecWAM
 --------------
