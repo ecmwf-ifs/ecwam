@@ -10,8 +10,9 @@
 # does it submit to any jurisdiction.
 
 try:
-    from ecwam_pyyaml_reader import pyyaml_yaml_reader as YAML
+    import yaml
 except ImportError:
-    from ruamel.yaml import YAML
+    from fckit_yaml_reader import YAML
+    yaml = YAML()
 
-__all__ = ["YAML"]
+__all__ = ["yaml"]
