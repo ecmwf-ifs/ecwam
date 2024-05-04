@@ -41,8 +41,7 @@ Requirements
 - fiat (see https://github.com/ecmwf-ifs/fiat)
 - eccodes (see https://github.com/ecmwf/eccodes)
 - field_api (see https://github.com/ecmwf-ifs/field_api)
-- Python with either pyyaml or ruamel.yaml<0.18.0
-- fypp (see https://github.com/aradi/fypp)
+- Python with pyyaml + [fypp](https://github.com/aradi/fypp) or fckit
 
 Further optional dependencies:
 - MPI Fortran libraries
@@ -52,7 +51,7 @@ Further optional dependencies:
 
 Some driver scripts to run tests and validate results rely on availability of:
 - md5sum (part of GNU Coreutils; on MacOS, install with `brew install coreutils`)
-- Python with either pyyaml or ruamel.yaml<0.18.0
+- Python with pyyaml or fckit
 
 Building ecWAM
 --------------

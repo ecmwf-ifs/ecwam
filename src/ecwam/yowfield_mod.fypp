@@ -9,7 +9,7 @@
 #!
 #:set f = io.open(os.path.dirname(_THIS_FILE_)+'/yowfield_mod_config.yaml')
 #:set ymlstring = f.read()
-#:set input = ecwam_yaml_reader.YAML().load(ymlstring)
+#:set input = ecwam_yaml_reader.yaml.safe_load(ymlstring)
 #:set objtypes = input['objtypes']
 #:set objdef = input['objdef']
 #!
