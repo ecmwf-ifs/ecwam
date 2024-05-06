@@ -21,6 +21,7 @@ macro( ecwam_find_python_mods )
 
    # Look for python interpreter and pyyaml
    find_package( Python3 COMPONENTS Interpreter REQUIRED)
+   set(ECWAM_PYTHON_INTERP ${Python3_EXECUTABLE})
    execute_process(
        COMMAND python3 -c "import yaml"
        RESULT_VARIABLE EXIT_CODE
@@ -35,7 +36,9 @@ macro( ecwam_find_python_mods )
    endif()
 
    if( NOT yaml_FOUND OR NOT fypp_FOUND )
+     ecbuild_info("${ECWAM_PROJECT_NAME} did not find either fypp or pyyaml, therefore searching for fckit")
      ecbuild_find_package( fckit REQUIRED )
+     set(ECWAM_PYTHON_INTERP ${FCKIT_VENV_EXE})
    endif()
 
 endmacro()

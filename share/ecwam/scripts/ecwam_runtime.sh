@@ -49,3 +49,6 @@ export MBX_SIZE=${MBX_SIZE:-150000000}
 export MPL_MBX_SIZE=${MPL_MBX_SIZE:-${MBX_SIZE}}
 
 [[ ! (-d ${ecwam_ROOT}/bin) ]] || export PATH=${ecwam_ROOT}/bin:${ecwam_ROOT}/share/${ECWAM_PROJECT_NAME}/scripts:$PATH
+
+# export python interpreter
+export ECWAM_PYTHON_INTERP=@ECWAM_PYTHON_INTERP@
