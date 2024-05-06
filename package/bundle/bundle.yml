@@ -7,7 +7,7 @@ cmake   : CMAKE_LINK_DEPENDS_NO_SHARED=ON
           ENABLE_OMP=ON
           ENABLE_SINGLE_PRECISION=OFF
           ENABLE_ACC=OFF 
-
+          BUILD_fckit=OFF
 
 projects :
 
@@ -20,6 +20,11 @@ projects :
         git     : https://github.com/ecmwf/eccodes
         version : master
         cmake   : ENABLE_MEMFS=ON
+
+    - fckit :
+        git     : https://github.com/ecmwf/fckit
+        version : 0.13.0
+        cmake   : ENABLE_FCKIT_VENV=ON
 
     - fiat :
         git     : https://github.com/ecmwf-ifs/fiat 
@@ -82,3 +87,7 @@ options :
     - loki-mode :
         help  : Choose Loki transformation (defaults to scc-stack)
         cmake : LOKI_MODE={{value}}
+
+    - with-fckit :
+        help  : Build fckit with Python virtual environment containing fypp and yaml parser
+        cmake : BUILD_fckit=ON

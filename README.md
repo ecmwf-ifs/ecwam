@@ -41,7 +41,7 @@ Requirements
 - fiat (see https://github.com/ecmwf-ifs/fiat)
 - eccodes (see https://github.com/ecmwf/eccodes)
 - field_api (see https://github.com/ecmwf-ifs/field_api)
-- Python with pyyaml + [fypp](https://github.com/aradi/fypp) or fckit
+- Python with pyyaml + [fypp](https://github.com/aradi/fypp) or fckit (see https://github.com/ecmwf/fckit)
 
 Further optional dependencies:
 - MPI Fortran libraries
@@ -63,6 +63,7 @@ Environment variables
     $ export fiat_ROOT=<path-to-fiat>
     $ export eccodes_ROOT=<path-to-eccodes>
     $ export field_api_ROOT=<path-to-field_api>
+    $ export fckit_ROOT=<path-to-fckit> (optional)
     $ export CC=<path-to-C-compiler>
     $ export FC=<path-to-Fortran-compiler>
     $ export CXX=<path-to-C++-compiler>
