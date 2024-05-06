@@ -35,7 +35,7 @@ function trace_ls() {
 }
 
 function read_config() {
-  ${SCRIPTS_DIR}/ecwam_read_config.py ${RUN_DIR}/config.yml "$@"
+  ${ECWAM_PYTHON_INTERP} ${SCRIPTS_DIR}/ecwam_read_config.py ${RUN_DIR}/config.yml "$@"
 }
 
 function workdir() {

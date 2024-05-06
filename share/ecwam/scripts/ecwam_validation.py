@@ -9,7 +9,7 @@
 # granted to it by virtue of its status as an intergovernmental organisation nor
 # does it submit to any jurisdiction.
 
-from ecwam_yaml_reader import YAML
+from ecwam_yaml_reader import yaml
 from datetime import datetime
 import argparse
 
@@ -25,7 +25,7 @@ args = parser.parse_args()
 
 f = open(args.config,'r')
 yaml_document = f.read()
-config = YAML().load(yaml_document)
+config = yaml.safe_load(yaml_document)
 f.close()
 
 class Stats:
