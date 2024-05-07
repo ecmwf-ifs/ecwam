@@ -106,7 +106,7 @@ IF (LFRSTCTU) THEN
   IF (.NOT. ALLOCATED(JYO)) ALLOCATE(JYO(NANG,2))
   IF (.NOT. ALLOCATED(KCR)) ALLOCATE(KCR(NANG,4))
 
-!$acc update device(KLON, KLAT, KCOR, JXO, JYO, KCR)
+!$acc update device(KLON, KLAT, KCOR, JXO, JYO, KCR, KPM)
  !$acc kernels
   DO K=1,NANG
 

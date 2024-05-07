@@ -168,4 +168,5 @@
 !$acc declare create(WKPMN)
 !$acc declare create(SUMWN)
 !$acc declare create(LLWKPMN)
+!$acc declare create(KPM)
         END MODULE YOWUBUF

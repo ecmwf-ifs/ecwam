@@ -130,7 +130,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
           !$acc loop independent collapse(2)
           DO M = 1, NFRE_RED
             DO K = 1, NANG
-              FL1_EXT(IJSB:IJLB, K, M) = FL1(1:KIJL, K, M, ICHNK)
+              FL1_EXT(IJSB:IJLB, K, M) = FL1(KIJS:KIJL, K, M, ICHNK)
             ENDDO
           ENDDO
         ENDDO

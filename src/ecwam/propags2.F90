@@ -95,64 +95,40 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
 
-!$acc kernels loop present(F1,F3,KLON,KLAT,KCOR,WKPMN,LLWKPMN,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR)
-        DO K = 1, NANG
-      
+          !$acc kernels loop present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
+          DO K = 1, NANG
             DO M = ND3S, ND3E
-!JFH Loop split to enhance vectorisation
 
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
-              IF (LLWKPMN(K,M,-1).AND.(.NOT.LLWKPMN(K,M,1))) THEN
-                DO IJ = KIJS, KIJL
-                  F3(IJ,K,M) =                                            &
-     &                  (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ           ,K  ,M) &
-    &           + WLONN(IJ,K,M,JXO(K,1)) * F1(KLON(IJ,JXO(K,1))  ,K  ,M) &
-    &           +WLATN(IJ,K,M,JYO(K,1),1)* F1(KLAT(IJ,JYO(K,1),1),K  ,M) &
-    &           +WLATN(IJ,K,M,JYO(K,1),2)* F1(KLAT(IJ,JYO(K,1),2),K  ,M) &
-    &           +       WCORN(IJ,K,M,1,1)* F1(KCOR(IJ,KCR(K,1),1),K  ,M) &
-    &           +       WCORN(IJ,K,M,1,2)* F1(KCOR(IJ,KCR(K,1),2),K  ,M) 
-                      F3(IJ,K,M) = F3(IJ,K,M)                             &
-     &           +      WKPMN(IJ,K,M,-1)* F1(IJ,KPM(K,-1),M)
-                ENDDO
-              ELSE IF (LLWKPMN(K,M,-1).AND.LLWKPMN(K,M,1)) THEN
-                DO IJ = KIJS, KIJL
-                  F3(IJ,K,M) =                                            &
-     &                  (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ           ,K  ,M) &
-    &           + WLONN(IJ,K,M,JXO(K,1)) * F1(KLON(IJ,JXO(K,1))  ,K  ,M) &
-    &           +WLATN(IJ,K,M,JYO(K,1),1)* F1(KLAT(IJ,JYO(K,1),1),K  ,M) &
-    &           +WLATN(IJ,K,M,JYO(K,1),2)* F1(KLAT(IJ,JYO(K,1),2),K  ,M) &
-    &           +       WCORN(IJ,K,M,1,1)* F1(KCOR(IJ,KCR(K,1),1),K  ,M) &
-    &           +       WCORN(IJ,K,M,1,2)* F1(KCOR(IJ,KCR(K,1),2),K  ,M) 
-                      F3(IJ,K,M) = F3(IJ,K,M)                             &
-     &           +      WKPMN(IJ,K,M,-1)* F1(IJ,KPM(K,-1),M)
-                      F3(IJ,K,M) = F3(IJ,K,M)                             &
-     &           +      WKPMN(IJ,K,M,1)* F1(IJ,KPM(K,1),M)
-                ENDDO
-              ELSE IF (LLWKPMN(K,M,1).AND.(.NOT.LLWKPMN(K,M,-1))) THEN
-                DO IJ = KIJS, KIJL
-                  F3(IJ,K,M) =                                            &
-     &                  (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ           ,K  ,M) &
-    &           + WLONN(IJ,K,M,JXO(K,1)) * F1(KLON(IJ,JXO(K,1))  ,K  ,M) &
-    &           +WLATN(IJ,K,M,JYO(K,1),1)* F1(KLAT(IJ,JYO(K,1),1),K  ,M) &
-    &           +WLATN(IJ,K,M,JYO(K,1),2)* F1(KLAT(IJ,JYO(K,1),2),K  ,M) &
-    &           +       WCORN(IJ,K,M,1,1)* F1(KCOR(IJ,KCR(K,1),1),K  ,M) &
-    &           +       WCORN(IJ,K,M,1,2)* F1(KCOR(IJ,KCR(K,1),2),K  ,M) 
-                      F3(IJ,K,M) = F3(IJ,K,M)                             &
-     &           +      WKPMN(IJ,K,M,1)* F1(IJ,KPM(K,1),M)
-                ENDDO
-              ELSE IF ((.not.LLWKPMN(K,M,-1)).and.(.not.LLWKPMN(K,M,1))) THEN
-                DO IJ = KIJS, KIJL
-                  F3(IJ,K,M) =                                            &
-     &                  (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ           ,K  ,M) &
-    &           + WLONN(IJ,K,M,JXO(K,1)) * F1(KLON(IJ,JXO(K,1))  ,K  ,M) &
-    &           +WLATN(IJ,K,M,JYO(K,1),1)* F1(KLAT(IJ,JYO(K,1),1),K  ,M) &
-    &           +WLATN(IJ,K,M,JYO(K,1),2)* F1(KLAT(IJ,JYO(K,1),2),K  ,M) &
-    &           +       WCORN(IJ,K,M,1,1)* F1(KCOR(IJ,KCR(K,1),1),K  ,M) &
-    &           +       WCORN(IJ,K,M,1,2)* F1(KCOR(IJ,KCR(K,1),2),K  ,M) 
-                ENDDO
-              END IF
+              DO IJ = KIJS, KIJL
+                F3(IJ,K,M) =                                            &
+     &                (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ           ,K  ,M) &
 
+     &         + WLONN(IJ,K,M,JXO(K,1))   * F1(KLON(IJ,JXO(K,1))  ,K  ,M) &
+     &         + WLATN(IJ,K,M,JYO(K,1),1) * F1(KLAT(IJ,JYO(K,1),1),K  ,M) &
+     &         + WLATN(IJ,K,M,JYO(K,1),2) * F1(KLAT(IJ,JYO(K,1),2),K  ,M) &
+     &         + WCORN(IJ,K,M,1,1)        * F1(KCOR(IJ,KCR(K,1),1),K  ,M) &
+     &         + WCORN(IJ,K,M,1,2)        * F1(KCOR(IJ,KCR(K,1),2),K  ,M)
+              ENDDO
+
+              IF (LLWKPMN(K,M,-1)) THEN
+!DIR$ IVDEP
+!DIR$ PREFERVECTOR
+                DO IJ = KIJS, KIJL
+                  F3(IJ,K,M) = F3(IJ,K,M)                             &
+     &       +    WKPMN(IJ,K,M,-1)* F1(IJ,KPM(K,-1),M)
+                ENDDO
+              ENDIF
+
+              IF (LLWKPMN(K,M, 1)) THEN
+!DIR$ IVDEP
+!DIR$ PREFERVECTOR
+                DO IJ = KIJS, KIJL
+                  F3(IJ,K,M) = F3(IJ,K,M)                             &
+     &       +    WKPMN(IJ,K,M, 1)* F1(IJ,KPM(K, 1),M)
+                ENDDO
+              ENDIF
             ENDDO
           ENDDO
           !$acc end kernels 
