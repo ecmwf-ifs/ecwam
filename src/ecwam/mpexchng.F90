@@ -62,12 +62,13 @@
      &          NTOPELST   ,NFROMPE  ,NFROMPEMAX,NIJSTART,NGBFROMPE,    &
      &          NFROMPELST
 
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOMHOOK   , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE, ONLY : MPL_RECV, MPL_SEND, MPL_WAIT, &
-                           & JP_NON_BLOCKING_STANDARD
-      USE MPL_DATA_MODULE ,ONLY : MPL_COMM_OML
-      USE OML_MOD         ,ONLY : OML_MY_THREAD
-      USE MPI
+                           & JP_NON_BLOCKING_STANDARD, MPL_COMM_OML
+#ifdef WITH_GPU_AWARE_MPI
+      USE OML_MOD   , ONLY : OML_MY_THREAD
+      USE MPI       , ONLY : MPI_IRECV, MPI_ISEND, MPI_DOUBLE_PRECISION
+#endif
 
 !----------------------------------------------------------------------
 

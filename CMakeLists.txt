@@ -140,8 +140,8 @@ ecbuild_add_option( FEATURE ACC
 ### CUDA-aware MPI
 ecbuild_add_option( FEATURE GPU_AWARE_MPI
                     DEFAULT OFF
-                    REQUIRED_PACKAGES "MPI COMPONENTS Fortran"
-                    DESCRIPTION "Enable CUDA-aware MPI" )
+                    DESCRIPTION "Enable GPU-aware MPI" 
+                    CONDITION HAVE_ACC AND HAVE_MPI )
 
 ### Sources
 
