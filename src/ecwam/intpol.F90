@@ -79,7 +79,7 @@
       INTEGER(KIND=JWIM) :: NEWM, NEWM1, KH 
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL) :: NEWF, NEWFLA, KNEW
 
-      REAL(KIND=JWRB) :: PI2G, FRE0, CDF 
+      REAL(KIND=JWRB) :: FRE0, CDF, COEF 
       REAL(KIND=JWRB) :: FNEW, GWH
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE) :: DFTH
@@ -94,8 +94,9 @@
 !*    0. INITIAL OUTPUT ARRAY WITH ZERO.
 !        -------------------------------
 
-      PI2G = ZPI/G 
       FRE0 = FRATIO-1.0_JWRB
+
+      COEF = IRA/ZPI
 
 !!!??? I believe that in order to be energy conserving, since
 !!! DFIM(1) is only the part above FR(1)
@@ -154,7 +155,7 @@
 !           ----------------------------------------------
 
           DO IJ = KIJS, KIJL
-            FNEF(IJ) = FR(M) + IRA*WAVNUM(IJ,M)*(COSTH(K)*VCUR(IJ) + SINTH(K)*UCUR(IJ))
+            FNEF(IJ) = FR(M) + COEF*WAVNUM(IJ,M)*(COSTH(K)*VCUR(IJ) + SINTH(K)*UCUR(IJ))
             IF (FNEF(IJ) > 0.0_JWRB) THEN
               KNEW(IJ) = K
             ELSE
