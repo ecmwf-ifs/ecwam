@@ -227,6 +227,26 @@
 
       ENDDO
 
+!     A F**-5 LAW IS ASSUMED FOR FREQUENCIES ABOVE FR(NFRE)
+!     SO IF THE SPECTRUM WAS SHIFTED DOWN THEN THE F**-5 LAW
+!     IS REESTABLISHED
+      DO K = 1, NANG
+        DO IJ = KIJS, KIJL
+          NEWF(IJ)=NFRE
+          M=NFRE
+          DO WHILE(FLA(IJ,K,M) <= 0.0_JWRB .AND. M > 1)
+            M=M-1
+            NEWF(IJ)=M
+          ENDDO
+        ENDDO
+        DO IJ = IJS, IJL
+          DO M = NEWF(IJ)+1,NFRE
+            FLA(IJ,K,M)=FLA(IJ,K,NEWF(IJ))*(FR(NEWF(IJ))/FR(M))**5
+          ENDDO
+        ENDDO
+      ENDDO
+
+
       DO M = 1, NFRE
         DO K = 1, NANG
           DO IJ = KIJS, KIJL
