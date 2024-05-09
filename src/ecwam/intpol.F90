@@ -239,7 +239,7 @@
             NEWF(IJ)=M
           ENDDO
         ENDDO
-        DO IJ = IJS, IJL
+        DO IJ = KIJS, KIJL
           DO M = NEWF(IJ)+1,NFRE
             FLA(IJ,K,M)=FLA(IJ,K,NEWF(IJ))*(FR(NEWF(IJ))/FR(M))**5
           ENDDO
