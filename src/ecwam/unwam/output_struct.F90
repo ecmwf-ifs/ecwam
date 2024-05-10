@@ -8,15 +8,16 @@
 !
 
 MODULE OUTPUT_STRUCT
+        use mpl_mpif
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWSPHERE, only : SPHERICAL_COORDINATE_DISTANCE
       USE YOWCOUT, ONLY : JPPFLAG, IPFGTBL
       USE YOWPCONS , ONLY : ZMISS
-      INTEGER(KIND=JWIM), dimension(:), pointer :: out_recv_rqst
-      INTEGER(KIND=JWIM), dimension(:), pointer :: out_send_rqst
-      INTEGER(KIND=JWIM), dimension(:,:), pointer :: out_recv_stat
-      INTEGER(KIND=JWIM), dimension(:,:), pointer :: out_send_stat
-      INTEGER(KIND=JWIM), dimension(:), pointer :: block_type
+      type(mpi_request), dimension(:), pointer :: out_recv_rqst
+      type(mpi_request), dimension(:), pointer :: out_send_rqst
+      type(mpi_status), dimension(:), pointer :: out_recv_stat
+      type(mpi_status), dimension(:), pointer :: out_send_stat
+      type(mpi_datatype), dimension(:), pointer :: block_type
       INTEGER(KIND=JWIM) :: NbProcOut, NbProcOutRed
       INTEGER(KIND=JWIM) :: nbPointCovered
       TYPE CONTAINER_ARR
@@ -40,7 +41,7 @@ MODULE OUTPUT_STRUCT
       INTEGER(KIND=JWIM), allocatable :: IXarr(:), IYarr(:)
       real(KIND=JWRB), allocatable :: WIarr(:,:)
       logical, allocatable :: ApplyZMISS(:)
-      INTEGER(KIND=JWIM) :: MPI_EXCH_STR
+      type(mpi_datatype) :: MPI_EXCH_STR
       INTEGER(KIND=JWIM) :: MaxLen
       INTEGER(KIND=JWIM) :: NIBLO_FD_EXP
 
@@ -205,7 +206,7 @@ END INTERFACE
             WRITE(740+MyRankGlobal,*) 'U10NEW: max(ARR_OUT_SEND)=', maxval(ARR_OUT_SEND_C(jProcOut) % ARR(pos,:))
           END IF
           WRITE(740+MyRankGlobal,*) 'Before call to MPI_ISEND'
-          WRITE(740+MyRankGlobal,*) 'MPI_EXCH_STR=', MPI_EXCH_STR
+          WRITE(740+MyRankGlobal,*) 'MPI_EXCH_STR=', MPI_EXCH_STR%MPI_VAL
           WRITE(740+MyRankGlobal,*) 'Maxlen=', Maxlen
           FLUSH(740+MyRankGlobal)
 #endif
@@ -483,7 +484,7 @@ END INTERFACE
       IMPLICIT NONE
       INTEGER(KIND=JWIM) :: IX, IY
       REAL(JWRB) :: XLA, XLO
-      INTEGER(KIND=JWIM) :: istatus(MPI_STATUS_SIZE)
+      TYPE(MPI_STATUS) :: istatus
       real(KIND=JWRB), allocatable :: XLOmat(:,:), XLAmat(:,:)
       INTEGER(KIND=JWIM), allocatable :: eInt(:)
       INTEGER(KIND=JWIM), allocatable :: ListPointCovered(:)
@@ -901,7 +902,7 @@ END INTERFACE
       !
       ! allocation of the MPI stuff
       !
-      allocate(out_recv_rqst(nproc-1), out_recv_stat(MPI_STATUS_SIZE,nproc-1), stat=istat)
+      allocate(out_recv_rqst(nproc-1), out_recv_stat(nproc-1), stat=istat)
       NbProcOutRed=0
       DO iProcOut=1,NbProcOut
         eProcOut = ListProcOut(iProcOut)
@@ -909,7 +910,7 @@ END INTERFACE
           NbProcOutRed = NbProcOutRed + 1
         END IF
       END DO
-      allocate(out_send_rqst(NbProcOutRed), out_send_stat(MPI_STATUS_SIZE,NbProcOutRed), stat=istat)
+      allocate(out_send_rqst(NbProcOutRed), out_send_stat(NbProcOutRed), stat=istat)
       !
       ! Construction of single mapping local global for FD
       !
@@ -986,7 +987,7 @@ END INTERFACE
           dspl_sendMPI(IP)=Maxlen * (iNodeExp - 1)
         END DO
 #ifdef DEBUG
-        WRITE(740+MyRankGlobal,*) 'MPI_EXCH_STR=', MPI_EXCH_STR
+        WRITE(740+MyRankGlobal,*) 'MPI_EXCH_STR=', MPI_EXCH_STR%MPI_VAL
         FLUSH(740+MyRankGlobal)
 #endif
         call mpi_type_create_indexed_block(nbPointCoveredLoc,Maxlen,dspl_sendMPI,MPI_EXCH_STR,block_type(iProc), ierr)
