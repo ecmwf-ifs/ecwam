@@ -212,7 +212,7 @@
 
       CALL GSTATS(1893,0)
 #ifdef _OPENACC
-      !$acc kernels loop independent private(KCOUNT,IJ) !copyin(ZCOMBUFR)
+      !$acc kernels loop independent private(KCOUNT,IJ)
       DO INGB=1,NGBFROMPE
         IPROC=NFROMPELST(INGB)
         !$acc loop vector independent collapse(3)
