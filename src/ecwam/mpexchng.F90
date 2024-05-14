@@ -115,18 +115,17 @@
       NBUFMAX=MAX(NTOPEMAX,NFROMPEMAX)*NDIM2*NDIM3
       ALLOCATE(ZCOMBUFS(NBUFMAX,NGBTOPE))
       ALLOCATE(ZCOMBUFR(NBUFMAX,NGBFROMPE))
-#ifdef WITH_GPU_AWARE_MPI
-!$acc data create(ZCOMBUFS,ZCOMBUFR)      
-#endif
+!$acc enter data create(ZCOMBUFS,ZCOMBUFR)
 
 !     PACK SEND BUFFERS FOR NGBTOPE NEIGHBOURING PE's
 !     -------------------------------------------------
       CALL GSTATS(1892,0)
 #ifdef _OPENACC
-!$acc kernels loop independent private(KCOUNT,IJ)
+!$acc kernels loop independent private(IPROC) present(ZCOMBUFS,FLD) &
+!$acc copyin(NTOPELST,NTOPE,IJTOPE)
       DO INGB=1,NGBTOPE !Total number of PE's to which information will be sent
         IPROC=NTOPELST(INGB)  !To which PE to send informations
-          !$acc loop independent collapse(3)
+          !$acc loop independent collapse(3) private(IJ,KCOUNT,M,K,IH)
           DO M = ND3S, ND3E
             DO K = 1, NDIM2
               DO IH = 1, NTOPE(IPROC) !How many halo points to be sent
@@ -195,7 +194,8 @@
      &     ICOMM,IREQUEST_LOCAL, IERROR)
 !$acc end host_data
         IREQ(IR) = IREQUEST_LOCAL%MPI_VAL
-#else                
+#else              
+!$acc update self(ZCOMBUFS)
         CALL MPL_SEND(ZCOMBUFS(1:KCOUNT,INGB),KDEST=IPROC,KTAG=KTAG,    &
      &     KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),         &
      &     CDSTRING='MPEXCHNG:')
@@ -205,6 +205,9 @@
 !     NOW WAIT FOR ALL TO COMPLETE
 
       CALL MPL_WAIT(KREQUEST=IREQ(1:IR),CDSTRING='MPEXCHNG:')
+#ifndef WITH_GPU_AWARE_MPI
+!$acc update device(ZCOMBUFR)
+#endif
 
       CALL GSTATS(676,1)
 
@@ -212,10 +215,11 @@
 
       CALL GSTATS(1893,0)
 #ifdef _OPENACC
-      !$acc kernels loop independent private(KCOUNT,IJ)
+      !$acc kernels loop independent private(IPROC) present(ZCOMBUFR,FLD) &
+      !$acc copyin(NFROMPELST,NFROMPE,NIJSTART)
       DO INGB=1,NGBFROMPE
         IPROC=NFROMPELST(INGB)
-        !$acc loop vector independent collapse(3)
+        !$acc loop vector independent collapse(3) private(IJ,KCOUNT,M,K,IH)
         DO M = ND3S, ND3E
           DO K = 1, NDIM2
             DO IH = 1, NFROMPE(IPROC)
@@ -248,9 +252,7 @@
 
       KTAG=KTAG+1
 
-#ifdef WITH_GPU_AWARE_MPI
-!$acc end data
-#endif
+!$acc exit data delete(ZCOMBUFS,ZCOMBUFR)
       DEALLOCATE(ZCOMBUFS)
       DEALLOCATE(ZCOMBUFR)
 
