@@ -601,12 +601,6 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
         BOUT(KIJS:KIJL,ITOBOUT(IR))=MAX(-PHIOCD(KIJS:KIJL),0.0_JWRB)
       ENDIF
 
-
-!     COMPUTE OUTPUT EXTRA FIELDS
-!     add necessary code to compute the extra output fields
-      IR=IR+1
-
-!!!for testing
 !!    alternative ways to determine wave height extremes 
       IF (IPFGTBL(IR  ) /= 0 .OR. IPFGTBL(IR+1) /= 0  .OR. &
 &         IPFGTBL(IR+2) /= 0 .OR. IPFGTBL(IR+3) /= 0 ) THEN
@@ -632,11 +626,38 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
       IF (IPFGTBL(IR) /= 0) THEN
         BOUT(KIJS:KIJL,ITOBOUT(IR))=HMAX_ST(KIJS:KIJL)
       ENDIF
+!!
 
+
+!     COMPUTE OUTPUT EXTRA FIELDS
+!     add necessary code to compute the extra output fields
+!!!for testing
       IR=IR+1
       IF (IPFGTBL(IR) /= 0) THEN
         CALL CTCOR (KIJS, KIJL, FL1, BOUT(KIJS,ITOBOUT(IR)))
       ENDIF
+
+      IR=IR+1
+      IF (IPFGTBL(IR) /= 0) THEN
+        XMODEL_CUTOFF=(ZPI*FR(NFRE))**2/G
+        CALL MEANSQS (XMODEL_CUTOFF, KIJS, KIJL, FL1, WAVNUM, UFRIC, COSWDIF, BOUT(KIJS,ITOBOUT(IR)))
+      ENDIF
+
+      IR=IR+1
+      IF (IPFGTBL(IR) /= 0) THEN
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=0.
+      ENDIF
+
+      IR=IR+1
+      IF (IPFGTBL(IR) /= 0) THEN
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=0.
+      ENDIF
+
+      IR=IR+1
+      IF (IPFGTBL(IR) /= 0) THEN
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=0.
+      ENDIF
+
 
 
 !     APPLY SEA ICE MASK AND SEA MASK IF NECESSARY

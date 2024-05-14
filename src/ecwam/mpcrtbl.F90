@@ -228,7 +228,7 @@
 
 !     PARAMETER 033
       IR = DEFINE_PARAMETER( 33, 'hmax', 140218, 0, .True., .True., &
-                           & 'MAXIMUM WAVE HEIGHT' )
+                           & 'ENVELOP MAXIMUM WAVE HEIGHT' )
 
 !     PARAMETER 034
       IR = DEFINE_PARAMETER( 34, 'tmax', 140217, 0, .True., .True., &
@@ -421,6 +421,23 @@
 !     PARAMETER 078
       IR = DEFINE_PARAMETER( 78, '078', 140105, 0, .False., .True., &
                            & 'TURB ENERGY FLUX INTO OCEANS' )
+
+!     PARAMETER 079
+      IR = DEFINE_PARAMETER( 79, 'tdcmax', 140131, 0, .True., .True., &
+                           & 'TIME DOMAIN MAXIMUM CREST HEIGHT' )
+
+!     PARAMETER 080
+      IR = DEFINE_PARAMETER( 80, 'tdhmax', 140132, 0, .True., .True., &
+                           & 'TIME DOMAIN MAXIMUM WAVE HEIGHT' )
+
+!     PARAMETER 081
+      IR = DEFINE_PARAMETER( 81, 'stcmax', 140133, 0, .True., .True., &
+                           & 'SPACE TIME MAXIMUM CREST HEIGHT' )
+
+!     PARAMETER 082
+      IR = DEFINE_PARAMETER( 82, 'sthmax', 140134, 0, .True., .True., &
+                           & 'SPACE TIME MAXIMUM WAVE HEIGHT' )
+
 
 !     add new definition here:
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
