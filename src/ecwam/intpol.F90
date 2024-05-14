@@ -55,8 +55,9 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCURR  , ONLY : CURRENT_MAX
       USE YOWFRED  , ONLY : FR       ,DFIM     ,COSTH    ,SINTH     ,   &
-     &              DELTH  ,FRATIO   ,FLOGSPRDM1
+     &              DELTH  ,FRATIO   ,FLOGSPRDM1, FR5
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWTEST  , ONLY : IU06
@@ -76,14 +77,14 @@
 
 
       INTEGER(KIND=JWIM) :: IJ, M, K
-      INTEGER(KIND=JWIM) :: NEWM, NEWM1, KH 
+      INTEGER(KIND=JWIM) :: NFRE_MAX, NEWM, NEWM1, KH
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL) :: NEWF, NEWFLA, KNEW
 
-      REAL(KIND=JWRB) :: PI2G, FRE0, CDF 
+      REAL(KIND=JWRB) :: FRE0, CDF, ZPI2GM, COEF, FMAX, FREQ, DFREQTH, FR5OFREQ5
       REAL(KIND=JWRB) :: FNEW, GWH
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE) :: DFTH
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: OLDFL 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: OLDFL, WAVN
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FNEF, GWP, GWM
 
       LOGICAL, DIMENSION(KIJS:KIJL) :: LICE2SEA
@@ -94,8 +95,14 @@
 !*    0. INITIAL OUTPUT ARRAY WITH ZERO.
 !        -------------------------------
 
-      PI2G = ZPI/G 
       FRE0 = FRATIO-1.0_JWRB
+      ZPI2GM = ZPI**2/G
+
+      COEF = IRA/ZPI
+
+!!    MAXIMUM EXTEND OF THE HIGH FRQUENCY TAIL THAT CAN BE REMAPPED ONTO THE FREQUENCY DISCRETISATION
+      FMAX = FR(NFRE) + (ZPI/G)*FR(NFRE)**2 * CURRENT_MAX
+      NFRE_MAX=FLOOR(LOG10(FMAX/FR(1))*FLOGSPRDM1)+1
 
 !!!??? I believe that in order to be energy conserving, since
 !!! DFIM(1) is only the part above FR(1)
@@ -126,7 +133,7 @@
       DO K=1,NANG
         DO M=1,NFRE
           DO IJ = KIJS, KIJL
-             IF (FLR(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
+             IF (FLR(IJ,K,M) > EPSMIN) LICE2SEA(IJ) = .FALSE. 
           ENDDO
         ENDDO
       ENDDO
@@ -143,7 +150,23 @@
 !*    1. LOOP OVER FREQUENCIES.
 !        ----------------------
 
-      DO M = 1, NFRE
+      DO M = 1, NFRE_MAX
+
+        IF ( M <= NFRE ) THEN
+          FREQ = FR(M)
+          DFREQTH = DFTH(M)
+          DO IJ = KIJS, KIJL
+            WAVN(IJ) = WAVNUM(IJ,M)
+          ENDDO
+        ELSE
+          FREQ = FR(NFRE)*FRATIO**(M-NFRE)
+          DFREQTH = FREQ*CDF
+          DO IJ = KIJS, KIJL
+            WAVN(IJ) = ZPI2GM * FREQ**2
+          ENDDO
+        ENDIF
+
+        FR5OFREQ5 = FR5(NFRE)/(FREQ**5)
 
 !*    1.3 LOOP OVER DIRECTONS.
 !         --------------------
@@ -154,7 +177,7 @@
 !           ----------------------------------------------
 
           DO IJ = KIJS, KIJL
-            FNEF(IJ) = FR(M) + IRA*WAVNUM(IJ,M)*(COSTH(K)*VCUR(IJ) + SINTH(K)*UCUR(IJ))
+            FNEF(IJ) = FREQ + COEF*WAVN(IJ)*(COSTH(K)*VCUR(IJ) + SINTH(K)*UCUR(IJ))
             IF (FNEF(IJ) > 0.0_JWRB) THEN
               KNEW(IJ) = K
             ELSE
@@ -176,30 +199,42 @@
 
 !*    1.3.3 INTERPOLATED ENERGY DENSITIES AT ALL GRIDPOINTS.
 !           ------------------------------------------------
-          DO IJ = KIJS, KIJL
-            IF (LICE2SEA(IJ)) THEN
-              OLDFL(IJ)=0.0_JWRB
-            ELSE
-              OLDFL(IJ)=FLR(IJ,K,M)
-            ENDIF
-          ENDDO
+          IF ( M <= NFRE ) THEN
+            DO IJ = KIJS, KIJL
+              IF (LICE2SEA(IJ)) THEN
+                OLDFL(IJ)=0.0_JWRB
+              ELSE
+                OLDFL(IJ)=FLR(IJ,K,M)
+              ENDIF
+            ENDDO
+          ELSE
+            DO IJ = KIJS, KIJL
+              IF (LICE2SEA(IJ)) THEN
+                OLDFL(IJ)=0.0_JWRB
+              ELSE
+                !! Extend with a f**-5 tail
+                OLDFL(IJ)=FLR(IJ,K,NFRE)*FR5OFREQ5
+              ENDIF
+            ENDDO
+          ENDIF
 
           DO IJ = KIJS, KIJL
             FNEW = FNEF(IJ)
             NEWM = NEWF(IJ)
             IF (NEWM < NFRE .AND. NEWM >= 1) THEN
+              !!!! DFTH is only defined between 1 and NFRE
               NEWM1 = NEWM + 1
-              GWH = DFTH(M)/(FR(NEWM1)-FR(NEWM)) *OLDFL(IJ)
+              GWH = DFREQTH/(FR(NEWM1)-FR(NEWM)) *OLDFL(IJ)
               GWM(IJ) = GWH*(FR(NEWM1)-FNEW)/DFTH(NEWM)
               GWP(IJ) = GWH*(FNEW-FR(NEWM))/DFTH(NEWM1)
               NEWFLA(IJ) = NEWM1
             ELSEIF (NEWM == 0) THEN
-              GWH = FRATIO*DFTH(M)/(FRE0*FR(1)) * OLDFL(IJ)
+              GWH = FRATIO*DFREQTH/(FRE0*FR(1)) * OLDFL(IJ)
               GWP(IJ) = GWH*(FNEW-FR(1)/FRATIO)/DFTH(1)
               NEWF (IJ) = -1
               NEWFLA(IJ) = 1
             ELSEIF (NEWM == NFRE) THEN
-              GWH = DFTH(M)/(FRE0*FR(NFRE)) * OLDFL(IJ)
+              GWH = DFREQTH/(FRE0*FR(NFRE)) * OLDFL(IJ)
               GWM(IJ) = GWH*(FRATIO*FR(NFRE)-FNEW)/DFTH(NFRE)
               NEWFLA(IJ) = -1
             ELSE
