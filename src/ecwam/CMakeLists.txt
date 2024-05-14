@@ -376,6 +376,10 @@ else()
 endif()
 
 unset( MPI_Fortran_LIBRARIES )
+if( HAVE_GPU_AWARE_MPI )
+  set( MPI_Fortran_LIBRARIES MPI::MPI_Fortran )
+endif()
+
 if( HAVE_UNWAM )
   list(APPEND ecwam_srcs ${unwam_srcs})
   list(APPEND ECWAM_DEFINITIONS WAM_HAVE_UNWAM)
@@ -423,6 +427,10 @@ endif()
 
 if( HAVE_ECFLOW )
   list(APPEND ECWAM_PRIVATE_DEFINITIONS WAM_HAVE_ECFLOW)
+endif()
+
+if( HAVE_GPU_AWARE_MPI )
+  list(APPEND ECWAM_DEFINITIONS WITH_GPU_AWARE_MPI )
 endif()
 
 # Using dynamic linking creates undefined references to the device

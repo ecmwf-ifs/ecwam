@@ -29,7 +29,7 @@ USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
 USE YOWCURR  , ONLY : LLCFLCUROFF
 USE YOWFRED  , ONLY : COSTH    ,SINTH
-USE YOWGRID  , ONLY : NPROMA_WAM
+USE YOWGRID  , ONLY : NPROMA_WAM, COSPH
 USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
 USE YOWMPP   , ONLY : IRANK    ,NPROC
 USE YOWPARAM , ONLY : NANG     ,NFRE_RED
@@ -38,9 +38,14 @@ USE YOWTEST  , ONLY : IU06
 USE YOWUBUF  , ONLY : SUMWN    ,                                            &
 &                     JXO      ,JYO      ,KCR      ,KPM      ,MPM,          &
 &                     WLATN    ,WLONN    ,WCORN    ,WKPMN    ,WMPMN    ,    &
-&                     LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN
+&                     LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN  ,    &
+&                     KLON, KLAT, WLAT, KCOR, WCOR
+USE YOWFRED  , ONLY : FR       ,DELTH, COSTH    ,SINTH
+USE YOWPCONS , ONLY : ZPI
+
 
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+USE OML_MOD  , ONLY : OML_GET_MAX_THREADS
       
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -65,7 +70,6 @@ INTEGER(KIND=JWIM) :: IJ, K, M, J, KM1, KP1
 INTEGER(KIND=JWIM) :: IC, ICL, ICR
 INTEGER(KIND=JWIM) :: MSTART, MEND
 INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, MTHREADS
-!$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 REAL(KIND=JWRB) :: DELPRO
@@ -83,21 +87,27 @@ DATA LFRSTCTU /.TRUE./
 
 IF (LHOOK) CALL DR_HOOK('CTUWUPDT',0,ZHOOK_HANDLE)
 
+!$acc update device(sinth,costh)
+!$acc update device(COSPH, nang, nfre_red)
 ! DEFINE JXO, JYO, KCR
 IF (LFRSTCTU) THEN
 
   IF (.NOT. ALLOCATED(MPM)) ALLOCATE(MPM(NFRE_RED,-1:1))
+  !$acc kernels
   DO M=1,NFRE_RED
     MPM(M,-1)= MAX(1,M-1)
     MPM(M,0) = M
     MPM(M,1) = MIN(NFRE_RED,M+1)
   ENDDO
+  !$acc end kernels
 
   IF (.NOT. ALLOCATED(KPM)) ALLOCATE(KPM(NANG,-1:1))
   IF (.NOT. ALLOCATED(JXO)) ALLOCATE(JXO(NANG,2))
   IF (.NOT. ALLOCATED(JYO)) ALLOCATE(JYO(NANG,2))
   IF (.NOT. ALLOCATED(KCR)) ALLOCATE(KCR(NANG,4))
 
+!$acc update device(KLON, KLAT, KCOR, JXO, JYO, KCR, KPM)
+ !$acc kernels
   DO K=1,NANG
 
     KM1 = K-1
@@ -149,6 +159,7 @@ IF (LFRSTCTU) THEN
       ENDIF
     ENDIF
   ENDDO
+  !$acc end kernels
 
   LFRSTCTU = .FALSE.
 
@@ -180,17 +191,29 @@ ENDIF
 ! SOME INITIALISATION FOR *CTUW*
 !! NPROMA=NPROMA_WAM
    MTHREADS=1
-!$ MTHREADS=OMP_GET_MAX_THREADS()
+#ifndef _OPENACC
+   MTHREADS=OML_GET_MAX_THREADS()
+#endif /*_OPENACC*/
    NPROMA=(IJL-IJS+1)/MTHREADS + 1
 
+#ifdef _OPENACC
+!$acc update device(WLAT,WCOR)
+!$acc update device(NFRE_RED,ZPI,FR,DELTH,NANG)
+!$acc data present(KLAT,WLAT,KCOR,WCOR,WLATN,WLONN,WCORN)
+#else
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
+#endif /*_OPENACC*/
 DO JKGLO = IJS, IJL, NPROMA
   KIJS=JKGLO
   KIJL=MIN(KIJS+NPROMA-1,IJL)
-  CALL CTUWINI(KIJS, KIJL, NINF, NSUP, BLK2GLO, COSPHM1_EXT,     &
-&              WLATM1, WCORM1, DP )
+  CALL CTUWINI (KIJS, KIJL, NINF, NSUP, BLK2GLO, COSPHM1_EXT,   &
+ &                  WLATM1, WCORM1, DP)
 ENDDO
+#ifdef _OPENACC
+!$acc end data
+#else
 !$OMP  END PARALLEL DO
+#endif /*_OPENACC*/
 
 
 ! COMPUTES THE WEIGHTS
@@ -207,6 +230,7 @@ ELSE
   MSTART = 1 
   MEND   = IFRELFMAX 
 ENDIF
+
 
 CALL CTUWDRV (DELPRO, MSTART, MEND,                 &
  &           IJS, IJL, NINF, NSUP,                  &
@@ -234,14 +258,15 @@ IF (IFRELFMAX > 0 .AND. IFRELFMAX < NFRE_RED) THEN
 ENDIF
 
 
-
 ! FIND THE LOGICAL FLAGS THAT WILL LIMIT THE EXTEND OF THE CALCULATION IN PROPAGS2
 
+!$acc parallel loop independent collapse(4)
 DO IC=1,2
   DO ICL=1,2
     DO K=1,NANG
       DO M=1,NFRE_RED
         LLWLATN(K,M,IC,ICL)=.FALSE.
+        !$acc loop
         DO IJ=IJS,IJL
           IF (WLATN(IJ,K,M,IC,ICL) > 0.0_JWRB) THEN
             LLWLATN(K,M,IC,ICL)=.TRUE.
@@ -252,11 +277,14 @@ DO IC=1,2
     ENDDO
   ENDDO
 ENDDO
+!$acc end parallel
 
+!$acc parallel loop independent collapse(3)
 DO IC=1,2
   DO M=1,NFRE_RED
     DO K=1,NANG
       LLWLONN(K,M,IC)=.FALSE.
+      !$acc loop
       DO IJ=IJS,IJL
         IF (WLONN(IJ,K,M,IC) > 0.0_JWRB) THEN
           LLWLONN(K,M,IC)=.TRUE.
@@ -266,12 +294,15 @@ DO IC=1,2
     ENDDO
   ENDDO
 ENDDO
+!$acc end parallel
 
+!$acc parallel loop independent collapse(4)
 DO ICL=1,2
   DO ICR=1,4
     DO M=1,NFRE_RED
       DO K=1,NANG
         LLWCORN(K,M,ICR,ICL)=.FALSE.
+        !$acc loop
         DO IJ=IJS,IJL
           IF (WCORN(IJ,K,M,ICR,ICL) > 0.0_JWRB) THEN
             LLWCORN(K,M,ICR,ICL)=.TRUE.
@@ -282,11 +313,14 @@ DO ICL=1,2
     ENDDO
   ENDDO
 ENDDO
+!$acc end parallel
 
+!$acc parallel loop independent collapse(3)
 DO IC=-1,1
   DO M=1,NFRE_RED
     DO K=1,NANG
       LLWKPMN(K,M,IC)=.FALSE.
+      !$acc loop
       DO IJ=IJS,IJL
         IF (WKPMN(IJ,K,M,IC) > 0.0_JWRB) THEN
           LLWKPMN(K,M,IC)=.TRUE.
@@ -296,12 +330,15 @@ DO IC=-1,1
     ENDDO
   ENDDO
 ENDDO
+!$acc end parallel
 
 IF (IREFRA == 2 .OR. IREFRA == 3) THEN
+!$acc parallel loop independent collapse(3)
   DO IC=-1,1
     DO M=1,NFRE_RED
       DO K=1,NANG
         LLWMPMN(K,M,IC)=.FALSE.
+        !$acc loop
         DO IJ=IJS,IJL
           IF (WMPMN(IJ,K,M,IC) > 0.0_JWRB) THEN
             LLWMPMN(K,M,IC)=.TRUE.
@@ -311,8 +348,10 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
       ENDDO
     ENDDO
   ENDDO
+!$acc end parallel
 ENDIF
 
+!$acc exit data delete(BLK2GLO)
 
 IF (ALLOCATED(THDD)) DEALLOCATE(THDD)
 IF (ALLOCATED(THDC)) DEALLOCATE(THDC)

@@ -154,4 +154,19 @@
 !      *LLWMPMN*   LOGICAL ARRAY, TRUE IF WMPMN > 0. AT ALL GRID POINTS.
 
 ! ----------------------------------------------------------------------
-      END MODULE YOWUBUF
+!$acc declare create(WLAT)
+!$acc declare create(KLAT)
+!$acc declare create(KLON)
+!$acc declare create(WCOR)
+!$acc declare create(KCOR)
+!$acc declare create(KCR)
+!$acc declare create(JXO)
+!$acc declare create(JYO)
+!$acc declare create(WLATN)
+!$acc declare create(WCORN)
+!$acc declare create(WLONN)
+!$acc declare create(WKPMN)
+!$acc declare create(SUMWN)
+!$acc declare create(LLWKPMN)
+!$acc declare create(KPM)
+        END MODULE YOWUBUF
