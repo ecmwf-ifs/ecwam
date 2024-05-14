@@ -433,6 +433,10 @@ if( HAVE_GPU_AWARE_MPI )
   list(APPEND ECWAM_DEFINITIONS WITH_GPU_AWARE_MPI )
 endif()
 
+if( HAVE_SINGLE_PRECISION )
+  list(APPEND ECWAM_DEFINITIONS WAM_HAVE_SINGLE_PRECISION )
+endif()
+
 # Using dynamic linking creates undefined references to the device
 # copies of module global variables
 set( LIBRARY_TYPE SHARED )

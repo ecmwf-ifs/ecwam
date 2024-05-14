@@ -67,7 +67,12 @@
                            & JP_NON_BLOCKING_STANDARD, MPL_COMM_OML
 #ifdef WITH_GPU_AWARE_MPI
       USE OML_MOD   , ONLY : OML_MY_THREAD
-      USE MPI       , ONLY : MPI_IRECV, MPI_ISEND, MPI_DOUBLE_PRECISION
+      USE MPI_F08   , ONLY : MPI_ISEND, MPI_IRECV, MPI_COMM, MPI_REQUEST
+#ifdef WAM_HAVE_SINGLE_PRECISION
+      USE MPI_F08   , ONLY : ECWAM_MPI_DATATYPE => MPI_REAL4
+#else
+      USE MPI_F08   , ONLY : ECWAM_MPI_DATATYPE => MPI_REAL8
+#endif
 #endif
 
 !----------------------------------------------------------------------
@@ -86,6 +91,10 @@
       REAL(KIND=JWRB) :: ZDUM(2)
       REAL(KIND=JWRB), ALLOCATABLE :: ZCOMBUFS(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: ZCOMBUFR(:,:)
+#ifdef WITH_GPU_AWARE_MPI
+      TYPE(MPI_COMM) :: ICOMM
+      TYPE(MPI_REQUEST) :: IREQUEST_LOCAL
+#endif
 
       LOGICAL :: LLOK
       INTEGER(KIND=JWIM) :: IERROR
@@ -122,7 +131,7 @@
             DO K = 1, NDIM2
               DO IH = 1, NTOPE(IPROC) !How many halo points to be sent
                 IJ=IJTOPE(IH,IPROC) !The index of which points to send
-                KCOUNT = (M - 1) * (NDIM2 * NTOPE(IPROC)) + (K - 1) * NTOPE(IPROC) + IH
+                KCOUNT = (M - ND3S) * (NDIM2 * NTOPE(IPROC)) + (K - 1) * NTOPE(IPROC) + IH
                 ZCOMBUFS(KCOUNT,INGB)=FLD(IJ,K,M)
             ENDDO
           ENDDO
@@ -159,11 +168,13 @@
         IPROC=NFROMPELST(INGB)
         KCOUNT=NDIM3*NDIM2*NFROMPE(IPROC)
 #ifdef WITH_GPU_AWARE_MPI
+        ICOMM%MPI_VAL=MPL_COMM_OML(OML_MY_THREAD())
 !$acc host_data use_device(ZCOMBUFR)
         CALL MPI_IRECV(ZCOMBUFR(1:KCOUNT,INGB),KCOUNT,                 &
-     &     MPI_DOUBLE_PRECISION,IPROC-1, KTAG,                           &
-     &     MPL_COMM_OML(OML_MY_THREAD()),IREQ(IR), IERROR)
+     &     ECWAM_MPI_DATATYPE,IPROC-1, KTAG,                           &
+     &     ICOMM,IREQUEST_LOCAL, IERROR)
 !$acc end host_data
+        IREQ(IR) = IREQUEST_LOCAL%MPI_VAL
 #else
         CALL MPL_RECV(ZCOMBUFR(1:KCOUNT,INGB),KSOURCE=IPROC,KTAG=KTAG,  &
      &     KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),         &
@@ -175,12 +186,15 @@
         IR=IR+1
         IPROC=NTOPELST(INGB)
         KCOUNT=NDIM3*NDIM2*NTOPE(IPROC)
+
 #ifdef WITH_GPU_AWARE_MPI
+        ICOMM%MPI_VAL=MPL_COMM_OML(OML_MY_THREAD())
 !$acc host_data use_device(ZCOMBUFS)
         CALL MPI_ISEND(ZCOMBUFS(1:KCOUNT,INGB),KCOUNT,                 &
-     &     MPI_DOUBLE_PRECISION,IPROC-1, KTAG,                           &
-     &     MPL_COMM_OML(OML_MY_THREAD()),IREQ(IR), IERROR)
+     &     ECWAM_MPI_DATATYPE,IPROC-1, KTAG,                           &
+     &     ICOMM,IREQUEST_LOCAL, IERROR)
 !$acc end host_data
+        IREQ(IR) = IREQUEST_LOCAL%MPI_VAL
 #else                
         CALL MPL_SEND(ZCOMBUFS(1:KCOUNT,INGB),KDEST=IPROC,KTAG=KTAG,    &
      &     KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),         &
@@ -206,7 +220,7 @@
           DO K = 1, NDIM2
             DO IH = 1, NFROMPE(IPROC)
               IJ=NIJSTART(IPROC)+IH-1
-              KCOUNT = (M - 1) * (NDIM2 * NFROMPE(IPROC)) + (K - 1) * NFROMPE(IPROC) + IH
+              KCOUNT = (M - ND3S) * (NDIM2 * NFROMPE(IPROC)) + (K - 1) * NFROMPE(IPROC) + IH
               FLD(IJ,K,M)=ZCOMBUFR(KCOUNT,INGB)
             ENDDO
           ENDDO
