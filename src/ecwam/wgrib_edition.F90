@@ -29,10 +29,17 @@ INTEGER(KIND=JWIM), INTENT(IN) :: IPARAMID   ! grib parameter id (6 digit)
 
 ! ----------------------------------------------------------------------
 
+!!debile
+       write(0,*) 'wgrib_edition ',IPARAMID, NGRIB_VERSION
+
+
 IF ( IPARAMID >= 140131 .AND. IPARAMID <= 140134 ) THEN
   WGRIB_EDITION = 2
 ELSE
   WGRIB_EDITION = NGRIB_VERSION
 ENDIF
+
+!!debile
+       write(0,*) 'wgrib_edition ',WGRIB_EDITION
 
 END FUNCTION WGRIB_EDITION
