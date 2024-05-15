@@ -324,7 +324,6 @@ list( APPEND ecwam_srcs
   yowcurg.F90
   yowcurr.F90
   yowdes.F90
-  yowdrvtype.F90
   yowfpbo.F90
   yowfred.F90
   yowgrib.F90
@@ -372,13 +371,17 @@ if(HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack")
   list(REMOVE_ITEM ecwam_srcs wamintgr.F90)
 endif()
 
-list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
+if( ${PNAME}_OCEANMODEL_HAVE_SINGLE_PRECISION )
+   list(APPEND FYPP_ARGS -DPARKIND1_SINGLE_NEMO)
+endif()
+
 add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90
-    COMMAND ${FYPP} -m io -M ${CMAKE_CURRENT_SOURCE_DIR}/../../share/ecwam/scripts -m ecwam_yaml_reader -m os
-    ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/yowdrvtype.F90
+    COMMAND ${FYPP} ${FYPP_ARGS} -m io -m os -M ${CMAKE_CURRENT_SOURCE_DIR}/../../share/ecwam/scripts -m ecwam_yaml_reader
+            ${CMAKE_CURRENT_SOURCE_DIR}/yowdrvtype.fypp > yowdrvtype.F90
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowdrvtype.fypp
     VERBATIM)
+list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowdrvtype.F90)
 
 unset( MPI_Fortran_LIBRARIES )
 if( HAVE_GPU_AWARE_MPI )
