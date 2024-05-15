@@ -1,0 +1,92 @@
+#! (C) Copyright 2022- ECMWF.
+#!
+#! This software is licensed under the terms of the Apache Licence Version 2.0
+#! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+#! In applying this licence, ECMWF does not waive the privileges and immunities
+#! granted to it by virtue of its status as an intergovernmental organisation
+#! nor does it submit to any jurisdiction.
+#!
+#!
+#:mute
+#:set f = io.open(os.path.dirname(_THIS_FILE_)+'/yowdrvtype_config.yml')
+#:set ymlstring = f.read()
+#:set input = ecwam_yaml_reader.yaml.safe_load(ymlstring)
+#:set objtypes = input['objtypes']
+#:if defined('PARKIND1_SINGLE_NEMO')
+#:set type2field = {'real': 'RB', 'int': 'IM', 'ocean': 'RM'}
+#:else
+#:set type2field = {'real': 'RB', 'int': 'IM', 'ocean': 'RD'}
+#:endif
+#:set type2dtype = {'real': 'REAL(KIND=JWRB)', 'int': 'INTEGER(KIND=JWIM)', 'ocean': 'REAL(KIND=JWRO)'}
+$:f.close()
+#:endmute
+#!
+#!
+MODULE YOWDRVTYPE
+
+   USE PARKIND_WAVE, ONLY : JWRB, JWIM, JWRO
+   USE FIELD_MODULE, ONLY : FIELD_3RB, FIELD_2IM, FIELD_2RB, FIELD_3IM, FIELD_4RB, FIELD_4IM, FIELD_2RD, &
+   &                        FIELD_2RM, FIELD_1IM, FIELD_1RB
+   USE FIELD_FACTORY_MODULE, ONLY : FIELD_NEW, FIELD_DELETE
+   IMPLICIT NONE
+
+#:for obj, _def in objtypes.items()
+   TYPE ${obj.upper()}$
+   #:set rank = _def['rank']
+   #:for type, vars in zip(_def['types'], _def['vars'])
+       #:for var in vars
+            #:set field = '      CLASS(FIELD_' + str(rank) + type2field[type] + '), POINTER :: F_' + var.upper() +  ' => NULL()'
+            #:set ptr = f'      {type2dtype[type]}, POINTER :: ' + var.upper() + '(' + ','.join(':' * rank) + ') => NULL()'
+            $:field
+            $:ptr
+       #:endfor
+   #:endfor
+      LOGICAL :: LALLOC = .FALSE.
+   CONTAINS
+      PROCEDURE :: ALLOC => ${obj.upper()}$_ALLOC
+      PROCEDURE :: DEALLOC => ${obj.upper()}$_DEALLOC
+   END TYPE ${obj.upper()}$
+
+#:endfor
+
+   CONTAINS
+
+#:for obj, _def in objtypes.items()
+   SUBROUTINE ${obj.upper()}$_ALLOC(SELF, UBOUNDS, LBOUNDS)
+      #:set rank = _def['rank']
+      CLASS(${obj.upper()}$) :: SELF
+      INTEGER(KIND=JWIM), INTENT(IN) :: UBOUNDS(${rank}$)
+      INTEGER(KIND=JWIM), INTENT(IN), OPTIONAL :: LBOUNDS(${rank}$)
+      INTEGER(KIND=JWIM) :: LLBOUNDS(${rank}$)
+
+      LLBOUNDS(:) = 1
+      IF(PRESENT(LBOUNDS)) LLBOUNDS = LBOUNDS
+
+      #:for _, vars in zip(_def['types'], _def['vars'])
+          #:for var in vars
+      CALL FIELD_NEW(SELF%F_${var.upper()}$, LBOUNDS=LLBOUNDS, UBOUNDS=UBOUNDS, PERSISTENT=.TRUE.)
+      CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDWR(SELF%${var.upper()}$)
+          #:endfor
+      #:endfor
+
+      SELF%LALLOC = .TRUE.
+
+   END SUBROUTINE ${obj.upper()}$_ALLOC
+
+   SUBROUTINE ${obj.upper()}$_DEALLOC(SELF)
+      CLASS(${obj.upper()}$) :: SELF
+
+      #:for _, vars in zip(_def['types'], _def['vars'])
+          #:for var in vars
+      NULLIFY(SELF%${var.upper()}$)
+      CALL FIELD_DELETE(SELF%F_${var.upper()}$)
+          #:endfor
+      #:endfor
+
+      SELF%LALLOC = .FALSE.
+
+   END SUBROUTINE ${obj.upper()}$_DEALLOC
+
+#:endfor
+
+END MODULE YOWDRVTYPE
