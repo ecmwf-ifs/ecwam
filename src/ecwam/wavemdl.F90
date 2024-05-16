@@ -468,7 +468,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                IREAD,                                   &
      &                BLK2GLO, BLK2LOC,                        &
      &                WVENVI, WVPRPT, FF_NOW,                  &
-     &                FL1,                                     &
+     &                FL1%PTR,                                 &
      &                NFIELDS, NGPTOTG, NC, NR,                &
      &                FIELDS, LWCUR, MASK_IN, PRPLRADI,        &
      &                NEMO2WAM)
@@ -676,12 +676,12 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           IF ( CDTPRO == CDTASS ) THEN
             CALL WAMASSI (LDSTOP, LDWRRE, BLK2GLO,          &
  &                        WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
- &                        WAM2NEMO, NEMO2WAM, FL1)
+ &                        WAM2NEMO, NEMO2WAM, FL1%PTR)
           ENDIF
         ELSEIF ( (.NOT.LWCOU .AND. CDTPRO <= CDATEF ) .OR. (LWCOU .AND. CDTPRO == CDATEF) ) THEN
           CALL WAMASSI (LDSTOP, LDWRRE, BLK2GLO,          &
  &                      WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
- &                      WAM2NEMO, NEMO2WAM, FL1)
+ &                      WAM2NEMO, NEMO2WAM, FL1%PTR)
         ENDIF
       ENDIF
 
