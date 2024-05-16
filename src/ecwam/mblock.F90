@@ -71,7 +71,7 @@
 !        -------------------------------------------
 
 
-      CALL BLK2GLO%ALLOC(NIBLO)
+      IF(.NOT. BLK2GLO%LALLOC) CALL BLK2GLO%ALLOC(UBOUNDS=[NIBLO])
 
       DO IJ=1,NIBLO
         BLK2GLO%IXLG(IJ) = 0
