@@ -15,8 +15,6 @@
 
 ! ----------------------------------------------------------------------
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOURNW, LWCOUHMF, LWFLUX
       USE YOWCOUT  , ONLY : LFDB
       USE YOWMESPAS, ONLY : LFDBIOOUT
