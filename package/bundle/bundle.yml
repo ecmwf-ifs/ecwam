@@ -7,6 +7,7 @@ cmake   : CMAKE_LINK_DEPENDS_NO_SHARED=ON
           ENABLE_OMP=ON
           ENABLE_SINGLE_PRECISION=OFF
           ENABLE_ACC=OFF 
+          ENABLE_CUDA=OFF
           BUILD_fckit=OFF
 
 projects :
@@ -32,7 +33,7 @@ projects :
 
     - field_api :
         git     : https://github.com/ecmwf-ifs/field_api.git
-        version : v0.2.2
+        version : v0.3.1
         cmake   : >
             ENABLE_SINGLE_PRECISION=OFF
 
