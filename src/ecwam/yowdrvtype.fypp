@@ -45,6 +45,8 @@ MODULE YOWDRVTYPE
    CONTAINS
       PROCEDURE :: ALLOC => ${obj.upper()}$_ALLOC
       PROCEDURE :: DEALLOC => ${obj.upper()}$_DEALLOC
+      PROCEDURE :: GET_DEVICE_DATA => ${obj.upper()}$_GET_DEVICE_DATA
+      PROCEDURE :: SYNC_HOST => ${obj.upper()}$_SYNC_HOST
    END TYPE ${obj.upper()}$
 
 #:endfor
@@ -86,6 +88,32 @@ MODULE YOWDRVTYPE
       SELF%LALLOC = .FALSE.
 
    END SUBROUTINE ${obj.upper()}$_DEALLOC
+
+   SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
+      CLASS(${obj.upper()}$) :: SELF
+      #:for type, vars in zip(_def['types'], _def['vars'])
+          #:for var in vars
+            #:set ptr = f'      {type2dtype[type]}, POINTER, CONTIGUOUS, INTENT(OUT), OPTIONAL :: ' + var.upper() + '(' + ','.join(':' * rank) + ')'
+            $:ptr
+          #:endfor
+      #:endfor
+
+      #:for _, vars in zip(_def['types'], _def['vars'])
+          #:for var in vars
+      IF(PRESENT(${var.upper()}$)) CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDWR(${var.upper()}$)
+          #:endfor
+      #:endfor
+   END SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA
+
+   SUBROUTINE ${obj.upper()}$_SYNC_HOST(SELF)
+      CLASS(${obj.upper()}$) :: SELF
+
+      #:for _, vars in zip(_def['types'], _def['vars'])
+          #:for var in vars
+      CALL SELF%F_${var.upper()}$%SYNC_HOST_RDWR()
+          #:endfor
+      #:endfor
+   END SUBROUTINE ${obj.upper()}$_SYNC_HOST
 
 #:endfor
 
