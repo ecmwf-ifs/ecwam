@@ -39,7 +39,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
    #:for type, vars in zip(_def['types'], _def['vars'])
        #:for var in vars
             #:set field = '      CLASS(FIELD_' + str(rank) + type2field[type] + '), POINTER :: F_' + var.upper() +  ' => NULL()'
-            #:set ptr = f'      {type2dtype[type]}, POINTER :: ' + var.upper() + '(' + ','.join(':' * rank) + ') => NULL()'
+            #:set ptr = f'      {type2dtype[type]}, POINTER, CONTIGUOUS :: ' + var.upper() + '(' + ','.join(':' * rank) + ') => NULL()'
             $:field
             $:ptr
        #:endfor
@@ -48,8 +48,12 @@ MODULE ${obj.upper()}$_TYPE_MOD
    CONTAINS
       PROCEDURE :: ALLOC => ${obj.upper()}$_ALLOC
       PROCEDURE :: DEALLOC => ${obj.upper()}$_DEALLOC
-      PROCEDURE :: GET_DEVICE_DATA => ${obj.upper()}$_GET_DEVICE_DATA
-      PROCEDURE :: SYNC_HOST => ${obj.upper()}$_SYNC_HOST
+#:if defined('WAM_GPU')
+      PROCEDURE :: SYNC_DEVICE_RDWR => ${obj.upper()}$_SYNC_DEVICE_RDWR
+      PROCEDURE :: SYNC_DEVICE_RDONLY => ${obj.upper()}$_SYNC_DEVICE_RDONLY
+      PROCEDURE :: SYNC_HOST_RDWR => ${obj.upper()}$_SYNC_HOST_RDWR
+      PROCEDURE :: SYNC_HOST_RDONLY => ${obj.upper()}$_SYNC_HOST_RDONLY
+#:endif
    END TYPE ${obj.upper()}$
 
    PUBLIC :: ${obj.upper()}$
@@ -74,6 +78,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
       #:endfor
 
       SELF%LALLOC = .TRUE.
+      !$acc enter data copyin(SELF)
 
    END SUBROUTINE ${obj.upper()}$_ALLOC
 
@@ -83,38 +88,175 @@ MODULE ${obj.upper()}$_TYPE_MOD
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
       NULLIFY(SELF%${var.upper()}$)
+      !$acc exit data detach(SELF%${var.upper()}$)
       CALL FIELD_DELETE(SELF%F_${var.upper()}$)
           #:endfor
       #:endfor
 
       SELF%LALLOC = .FALSE.
+      !$acc exit data delete(SELF)
 
    END SUBROUTINE ${obj.upper()}$_DEALLOC
 
-   SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
+#:if defined('WAM_GPU')
+   SUBROUTINE ${obj.upper()}$_SYNC_DEVICE_RDWR(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
       CLASS(${obj.upper()}$) :: SELF
-      #:for type, vars in zip(_def['types'], _def['vars'])
-          #:for var in vars
-            #:set ptr = f'      {type2dtype[type]}, POINTER, CONTIGUOUS, INTENT(OUT), OPTIONAL :: ' + var.upper() + '(' + ','.join(':' * rank) + ')'
-            $:ptr
-          #:endfor
-      #:endfor
-
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
-      IF(PRESENT(${var.upper()}$)) CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDWR(${var.upper()}$)
+            #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
+            $:flag
+            #:set flag = '      LOGICAL :: ' + f'L_{var.upper()} = .FALSE.'
+            $:flag
           #:endfor
       #:endfor
-   END SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA
 
-   SUBROUTINE ${obj.upper()}$_SYNC_HOST(SELF)
+     #:for _, vars in zip(_def['types'], _def['vars'])
+         #:for var in vars
+     IF(PRESENT(${var.upper()}$)) L_${var.upper()}$ = ${var.upper()}$
+         #:endfor
+     #:endfor
+
+
+      IF(${'.OR.'.join(f'L_{var.upper()}' for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)THEN
+         !... copy only selected members
+         #:for _, vars in zip(_def['types'], _def['vars'])
+             #:for var in vars
+         IF(${f'L_{var.upper()}'}$)THEN
+             CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDWR(SELF%${var.upper()}$)
+             !$acc enter data attach(SELF%${var.upper()}$)
+         ENDIF
+             #:endfor
+         #:endfor
+      ELSE
+         !... copy entire struct
+         #:for _, vars in zip(_def['types'], _def['vars'])
+             #:for var in vars
+         CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDWR(SELF%${var.upper()}$)
+         !$acc enter data attach(SELF%${var.upper()}$)
+             #:endfor
+         #:endfor
+      ENDIF
+
+   END SUBROUTINE ${obj.upper()}$_SYNC_DEVICE_RDWR
+
+   SUBROUTINE ${obj.upper()}$_SYNC_DEVICE_RDONLY(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
       CLASS(${obj.upper()}$) :: SELF
-
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
-      CALL SELF%F_${var.upper()}$%SYNC_HOST_RDWR()
+            #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
+            $:flag
+            #:set flag = '      LOGICAL :: ' + f'L_{var.upper()} = .FALSE.'
+            $:flag
           #:endfor
       #:endfor
-   END SUBROUTINE ${obj.upper()}$_SYNC_HOST
+
+     #:for _, vars in zip(_def['types'], _def['vars'])
+         #:for var in vars
+     IF(PRESENT(${var.upper()}$)) L_${var.upper()}$ = ${var.upper()}$
+         #:endfor
+     #:endfor
+
+
+      IF(${'.OR.'.join(f'L_{var.upper()}' for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)THEN
+         !... copy only selected members
+         #:for _, vars in zip(_def['types'], _def['vars'])
+             #:for var in vars
+         IF(${f'L_{var.upper()}'}$)THEN
+             CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDONLY(SELF%${var.upper()}$)
+             !$acc enter data attach(SELF%${var.upper()}$)
+         ENDIF
+             #:endfor
+         #:endfor
+      ELSE
+         !... copy entire struct
+         #:for _, vars in zip(_def['types'], _def['vars'])
+             #:for var in vars
+         CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDONLY(SELF%${var.upper()}$)
+         !$acc enter data attach(SELF%${var.upper()}$)
+             #:endfor
+         #:endfor
+      ENDIF
+
+   END SUBROUTINE ${obj.upper()}$_SYNC_DEVICE_RDONLY
+
+   SUBROUTINE ${obj.upper()}$_SYNC_HOST_RDONLY(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
+      CLASS(${obj.upper()}$) :: SELF
+      #:for _, vars in zip(_def['types'], _def['vars'])
+          #:for var in vars
+            #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
+            $:flag
+            #:set flag = '      LOGICAL :: ' + f'L_{var.upper()} = .FALSE.'
+            $:flag
+          #:endfor
+      #:endfor
+
+     #:for _, vars in zip(_def['types'], _def['vars'])
+         #:for var in vars
+     IF(PRESENT(${var.upper()}$)) L_${var.upper()}$ = ${var.upper()}$
+         #:endfor
+     #:endfor
+
+
+      IF(${'.OR.'.join(f'L_{var.upper()}' for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)THEN
+         !... copy only selected members
+         #:for _, vars in zip(_def['types'], _def['vars'])
+             #:for var in vars
+         IF(${f'L_{var.upper()}'}$)THEN
+             !$acc exit data detach(SELF%${var.upper()}$)
+             CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDONLY(SELF%${var.upper()}$)
+         ENDIF
+             #:endfor
+         #:endfor
+      ELSE
+         !... copy entire struct
+         #:for _, vars in zip(_def['types'], _def['vars'])
+             #:for var in vars
+         !$acc exit data detach(SELF%${var.upper()}$)
+         CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDONLY(SELF%${var.upper()}$)
+             #:endfor
+         #:endfor
+      ENDIF
+
+   END SUBROUTINE ${obj.upper()}$_SYNC_HOST_RDONLY
+
+   SUBROUTINE ${obj.upper()}$_SYNC_HOST_RDWR(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
+      CLASS(${obj.upper()}$) :: SELF
+      #:for _, vars in zip(_def['types'], _def['vars'])
+          #:for var in vars
+            #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
+            $:flag
+            #:set flag = '      LOGICAL :: ' + f'L_{var.upper()} = .FALSE.'
+            $:flag
+          #:endfor
+      #:endfor
+
+     #:for _, vars in zip(_def['types'], _def['vars'])
+         #:for var in vars
+     IF(PRESENT(${var.upper()}$)) L_${var.upper()}$ = ${var.upper()}$
+         #:endfor
+     #:endfor
+
+      IF(${'.OR.'.join(f'L_{var.upper()}' for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)THEN
+         !... copy only selected members
+         #:for _, vars in zip(_def['types'], _def['vars'])
+             #:for var in vars
+         IF(${f'L_{var.upper()}'}$)THEN
+             !$acc exit data detach(SELF%${var.upper()}$)
+             CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDWR(SELF%${var.upper()}$)
+         ENDIF
+             #:endfor
+         #:endfor
+      ELSE
+         !... copy entire struct
+         #:for _, vars in zip(_def['types'], _def['vars'])
+             #:for var in vars
+         !$acc exit data detach(SELF%${var.upper()}$)
+         CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDWR(SELF%${var.upper()}$)
+             #:endfor
+         #:endfor
+      ENDIF
+
+   END SUBROUTINE ${obj.upper()}$_SYNC_HOST_RDWR
+#:endif
 
 END MODULE ${obj.upper()}$_TYPE_MOD
