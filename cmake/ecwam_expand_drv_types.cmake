@@ -18,6 +18,10 @@ macro( ecwam_expand_drv_types )
       list(APPEND FYPP_ARGS -DPARKIND1_SINGLE_NEMO)
    endif()
 
+   if( HAVE_ACC )
+      list(APPEND FYPP_ARGS -DWAM_GPU)
+   endif()
+
    execute_process(
        COMMAND ${ECWAM_PYTHON_INTERP} -c
        "import sys; sys.path.append('${CMAKE_CURRENT_SOURCE_DIR}/../../share/ecwam/scripts'); \
