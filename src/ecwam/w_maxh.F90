@@ -281,6 +281,9 @@ DO IJ = KIJS, KIJL
       Z0 = LOG(RNW)
       CMAX_F(IJ) = ALFA*Z0**(1._JWRB/BETA)*(1._JWRB+GAMMA_E/(BETA*Z0))*HS(IJ)
 
+!!!debile debugging"
+      CMAX_F(IJ) = HS(IJ)
+
 !         1b. DETERMINE EXPECTED MAXIMUM WAVE HEIGHT - TIME (NAESS).
 !        -----------------------------------------------------------
       PHIST(IJ) = ACF(IJ)/EMEAN(IJ)
