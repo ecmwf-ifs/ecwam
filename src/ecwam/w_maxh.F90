@@ -109,8 +109,8 @@ TMAX = 1._JWRB/FR(1)
 WVLMIN = G / (ZPI*FR(NFRE)**2)
 
 !!! see below, we are now using wave state dependant values
-!WMDX(:) = 100._JWRB
-!WMDY(:) = 100._JWRB
+WMDX(:) = 100._JWRB
+WMDY(:) = 100._JWRB
 
 !!! use a constant duration
 WMDUR(:) = 1200._JWRB
@@ -214,8 +214,8 @@ WHERE (EMEAN > ZEPSILON)
    RMU = (ZPI*T1)**2*(1._JWRB-RNI+RNI**2)/(G*EMEAN**THREEHALF)
    T1 = MIN(MAX(EMEAN/T1,TMIN),TMAX)
    T2 = MIN(MAX(SQRT(EMEAN/T2),TMIN),TMAX)
-   WMDX = MAX(RLX,WVLMIN)
-   WMDY = MAX(RLY,WVLMIN)
+!!   WMDX = MAX(RLX,WVLMIN)
+!!   WMDY = MAX(RLY,WVLMIN)
 !!!   WMDUR = XNWVP*T2
 ELSEWHERE
    AXY = 0._JWRB
@@ -227,8 +227,8 @@ ELSEWHERE
    RMU = 0._JWRB
    T1 = TMIN
    T2 = TMIN
-   WMDX = MAX(RLX,WVLMIN)
-   WMDY = MAX(RLY,WVLMIN)
+!!   WMDX = MAX(RLX,WVLMIN)
+!!   WMDY = MAX(RLY,WVLMIN)
 !!!   WMDUR = XNWVP*T2
 END WHERE 
 
