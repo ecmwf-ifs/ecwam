@@ -53,6 +53,7 @@ SUBROUTINE CIREDUCE_LOKI_GPU (WVPRPT, FF_NOW)
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWDRVTYPE ,ONLY: FREQUENCY, FORCING_FIELDS
+      USE YOWSTAT, ONLY: LUPDATE_GPU_GLOBALS
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -93,7 +94,9 @@ IF (LHOOK) CALL DR_HOOK('CIREDUCE',0,ZHOOK_HANDLE)
 
         ELSE
 
+IF(LUPDATE_GPU_GLOBALS)THEN
 !$loki update_device
+ENDIF
           CALL GSTATS(1493,0)
 !         DETERMINE THE WAVE ATTENUATION FACTOR
 !$acc parallel loop gang present(FF_NOW, WVPRPT) vector_length(NPROMA_WAM)
@@ -103,7 +106,6 @@ IF (LHOOK) CALL DR_HOOK('CIREDUCE',0,ZHOOK_HANDLE)
           ENDDO
 !$acc end parallel loop
           CALL GSTATS(1493,1)
-!$loki update_host
         ENDIF
 
 IF (LHOOK) CALL DR_HOOK('CIREDUCE',1,ZHOOK_HANDLE)
