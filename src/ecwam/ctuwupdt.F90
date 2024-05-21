@@ -87,8 +87,6 @@ DATA LFRSTCTU /.TRUE./
 
 IF (LHOOK) CALL DR_HOOK('CTUWUPDT',0,ZHOOK_HANDLE)
 
-!$acc update device(sinth,costh)
-!$acc update device(COSPH, nang, nfre_red)
 ! DEFINE JXO, JYO, KCR
 IF (LFRSTCTU) THEN
 
@@ -106,7 +104,7 @@ IF (LFRSTCTU) THEN
   IF (.NOT. ALLOCATED(JYO)) ALLOCATE(JYO(NANG,2))
   IF (.NOT. ALLOCATED(KCR)) ALLOCATE(KCR(NANG,4))
 
-!$acc update device(KLON, KLAT, KCOR, JXO, JYO, KCR, KPM)
+!$acc update device(JXO, JYO, KCR, KPM)
  !$acc kernels
   DO K=1,NANG
 
@@ -195,8 +193,6 @@ ENDIF
    NPROMA=(IJL-IJS+1)/MTHREADS + 1
 
 #ifdef _OPENACC
-!$acc update device(WLAT,WCOR)
-!$acc update device(NFRE_RED,ZPI,FR,DELTH,NANG)
 !$acc data present(KLAT,WLAT,KCOR,WCOR,WLATN,WLONN,WCORN)
 #else
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
