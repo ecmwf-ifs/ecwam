@@ -76,7 +76,11 @@ SUBROUTINE NEWWIND (CDATE, CDATEWH, LLNEWFILE,           &
       IMPLICIT NONE
 
 #include "abort1.intfb.h"
+#ifdef WAM_GPU
+#include "cireduce_loki_gpu.intfb.h"
+#else
 #include "cireduce.intfb.h"
+#endif
 #include "incdate.intfb.h"
 
       CHARACTER(LEN=14), INTENT(IN)    :: CDATE
@@ -119,11 +123,16 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
         CDATEWL = CDTNEXT
 
         CALL GSTATS(1492,0)
+#ifdef _OPENACC
+!$acc parallel loop gang present(FF_NEXT,FF_NOW) private(KIJS,KIJL) vector_length(NPROMA_WAM)
+#else
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, KIJL, IJ, TLWMAX)
+#endif
         DO ICHNK = 1, NCHNK
           KIJS = 1
           KIJL = NPROMA_WAM
           IF (ICODE_WND == 3 ) THEN
+            !$acc loop vector
             DO IJ = KIJS, KIJL
               FF_NOW%WSWAVE(IJ,ICHNK) = FF_NEXT%WSWAVE(IJ,ICHNK)
 ! adapt first estimate of wave induced stress for low winds
@@ -135,6 +144,7 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
               ENDIF
             ENDDO
           ELSE
+            !$acc loop vector
             DO IJ = KIJS, KIJL
               FF_NOW%UFRIC(IJ,ICHNK) = FF_NEXT%UFRIC(IJ,ICHNK)
 ! update the estimate of TAUW
@@ -144,23 +154,34 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
             ENDDO
           ENDIF
 
-          FF_NOW%WDWAVE(KIJS:KIJL,ICHNK)  = FF_NEXT%WDWAVE(KIJS:KIJL,ICHNK)
-          FF_NOW%AIRD(KIJS:KIJL,ICHNK)    = FF_NEXT%AIRD(KIJS:KIJL,ICHNK)
-          FF_NOW%WSTAR(KIJS:KIJL,ICHNK)   = FF_NEXT%WSTAR(KIJS:KIJL,ICHNK)
-          FF_NOW%CICOVER(KIJS:KIJL,ICHNK) = FF_NEXT%CICOVER(KIJS:KIJL,ICHNK)
-          FF_NOW%CITHICK(KIJS:KIJL,ICHNK) = FF_NEXT%CITHICK(KIJS:KIJL,ICHNK)
-          FF_NOW%USTRA(KIJS:KIJL,ICHNK)   = FF_NEXT%USTRA(KIJS:KIJL,ICHNK)
-          FF_NOW%VSTRA(KIJS:KIJL,ICHNK)   = FF_NEXT%VSTRA(KIJS:KIJL,ICHNK)
+          !$acc loop vector
+          DO IJ = KIJS, KIJL
+            FF_NOW%WDWAVE(IJ,ICHNK)  = FF_NEXT%WDWAVE(IJ,ICHNK)
+            FF_NOW%AIRD(IJ,ICHNK)    = FF_NEXT%AIRD(IJ,ICHNK)
+            FF_NOW%WSTAR(IJ,ICHNK)   = FF_NEXT%WSTAR(IJ,ICHNK)
+            FF_NOW%CICOVER(IJ,ICHNK) = FF_NEXT%CICOVER(IJ,ICHNK)
+            FF_NOW%CITHICK(IJ,ICHNK) = FF_NEXT%CITHICK(IJ,ICHNK)
+            FF_NOW%USTRA(IJ,ICHNK)   = FF_NEXT%USTRA(IJ,ICHNK)
+            FF_NOW%VSTRA(IJ,ICHNK)   = FF_NEXT%VSTRA(IJ,ICHNK)
+          ENDDO
 
         ENDDO
+#ifdef _OPENACC
+!$acc end parallel loop
+#else
 !$OMP   END PARALLEL DO
+#endif
         CALL GSTATS(1492,1)
 
 
         CALL INCDATE(CDATEWH, IDELWO)
 
 !       UPDATE THE SEA ICE REDUCTION FACTOR
+#ifdef WAM_GPU
+        CALL CIREDUCE_LOKI_GPU (WVPRPT, FF_NOW)
+#else
         CALL CIREDUCE (WVPRPT, FF_NOW)
+#endif
 
       ENDIF
 
