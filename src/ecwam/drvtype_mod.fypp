@@ -90,6 +90,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
       NULLIFY(SELF%${var.upper()}$)
       !$acc exit data detach(SELF%${var.upper()}$)
       CALL FIELD_DELETE(SELF%F_${var.upper()}$)
+      NULLIFY(SELF%F_${var.upper()}$)
           #:endfor
       #:endfor
 
