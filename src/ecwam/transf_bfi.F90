@@ -35,6 +35,7 @@ REAL(KIND=JWRB) FUNCTION TRANSF_BFI(XK0,D,XNU,SIG_TH)
 !----------------------------------------------------------------------
 
       IMPLICIT NONE
+!$loki routine seq
       REAL(KIND=JWRB), INTENT(IN) :: XK0,D,XNU,SIG_TH
 
       REAL(KIND=JWRB), PARAMETER :: EPS=0.0001_JWRB

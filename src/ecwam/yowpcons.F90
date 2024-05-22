@@ -66,6 +66,7 @@
       REAL(KIND=JWRB), PARAMETER :: CDMAX=0.0025_JWRB
 
       REAL(KIND=JWRB), PARAMETER :: FM2FP=0.9_JWRB
+      INTEGER(KIND=JWIM), PARAMETER :: NPMAX=20
 
 !*    VARIABLE.   TYPE.     PURPOSE.
 !     ---------   -------   --------

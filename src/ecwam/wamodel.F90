@@ -74,7 +74,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
      &                      IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &
      &                      CDTBC    ,IDELBC   ,                                  &
      &                      IASSI    ,MARSTYPE ,                                  &
-     &                      LLSOURCE ,LANAONLY ,LFRSTFLD ,IREFDATE
+     &                      LLSOURCE ,LANAONLY ,LFRSTFLD ,IREFDATE, LUPDATE_GPU_GLOBALS
       USE YOWSPEC, ONLY   : NBLKS    ,NBLKE
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
@@ -103,7 +103,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #include "iwam_get_unit.intfb.h"
 #include "incdate.intfb.h"
 #include "outbc.intfb.h"
-#include "outbs.intfb.h"
 #include "outspec.intfb.h"
 #include "outstep0.intfb.h"
 #include "savspec.intfb.h"
@@ -114,8 +113,10 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #include "writsta.intfb.h"
 
 #ifdef WAM_GPU
+#include "outbs_loki_gpu.intfb.h"
 #include "wamintgr_loki_gpu.intfb.h"
 #else
+#include "outbs.intfb.h"
 #include "wamintgr.intfb.h"
 #endif
 
@@ -140,7 +141,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       TYPE(MIJ_TYPE) :: MIJ
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, MAX(NIPRMOUT,1), NCHNK) :: BOUT
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK) :: BOUT
 
       CHARACTER(LEN= 2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, CZERO
@@ -327,6 +328,27 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
             CALL FF_NOW%SYNC_HOST_RDONLY()
 
             CALL OUTWPSP (VARS_4D%FL1, FF_NOW)
+
+            CALL VARS_4D%F_FL1%SYNC_DEVICE_RDWR()
+            CALL FF_NOW%SYNC_DEVICE_RDWR(AIRD=.TRUE., WDWAVE=.TRUE., CICOVER=.TRUE., WSWAVE=.TRUE.,  &
+            & WSTAR=.TRUE., UFRIC=.TRUE., TAUW=.TRUE., TAUWDIR=.TRUE., Z0M=.TRUE., Z0B=.TRUE.,  &
+            & CHRNCK=.TRUE., CITHICK=.TRUE., USTRA=.TRUE., VSTRA=.TRUE.)
+        ENDIF
+
+
+!       1.6 COMPUTE OUTPUT PARAMETERS FIELDS AND PRINT OUT NORMS
+!           ----------------------------------------------------
+        IF ( (CDTINTT == CDTPRO .OR. LRST) .AND. NIPRMOUT > 0 ) THEN
+
+#ifdef WAM_GPU
+          CALL OUTBS_LOKI_GPU (MIJ%PTR, VARS_4D%FL1, VARS_4D%XLLWS, &
+     &                WVPRPT, WVENVI, FF_NOW, INTFLDS, NEMO2WAM,   &
+     &                BOUT)
+#else
+          CALL OUTBS (MIJ%PTR, VARS_4D%FL1, VARS_4D%XLLWS, &
+     &                WVPRPT, WVENVI, FF_NOW, INTFLDS, NEMO2WAM,   &
+     &                BOUT)
+#endif
         ENDIF
 
         CALL WVPRPT%SYNC_HOST_RDWR()
@@ -338,15 +360,6 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
         CALL VARS_4D%SYNC_HOST_RDWR()
         CALL MIJ%SYNC_HOST_RDWR()
         CALL BLK2GLO%SYNC_HOST_RDWR()
-
-!       1.6 COMPUTE OUTPUT PARAMETERS FIELDS AND PRINT OUT NORMS
-!           ----------------------------------------------------
-        IF ( (CDTINTT == CDTPRO .OR. LRST) .AND. NIPRMOUT > 0 ) THEN
-          CALL OUTBS (MIJ%PTR, VARS_4D%FL1, VARS_4D%XLLWS, &
-     &                WVPRPT, WVENVI, FF_NOW, INTFLDS, NEMO2WAM,   &
-     &                BOUT)
-        ENDIF
-
 
 !*      1.7 ONE PROPAGATION TIMESTEP DONE
 !           -----------------------------
@@ -561,6 +574,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
         ENDIF
 
 
+        LUPDATE_GPU_GLOBALS = .FALSE.
 !*    BRANCHING BACK TO 1.0 FOR NEXT PROPAGATION STEP.
       ENDDO ADVECTION
 
