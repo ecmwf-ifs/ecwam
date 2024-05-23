@@ -57,6 +57,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
       PROCEDURE :: GET_DEVICE_DATA_RDONLY => ${obj.upper()}$_GET_DEVICE_DATA_RDONLY
       PROCEDURE :: GET_HOST_DATA_RDWR => ${obj.upper()}$_GET_HOST_DATA_RDWR
       PROCEDURE :: GET_HOST_DATA_RDONLY => ${obj.upper()}$_GET_HOST_DATA_RDONLY
+      PROCEDURE :: DELETE_DEVICE_DATA => ${obj.upper()}$_DELETE_DEVICE_DATA
 #:endif
    END TYPE ${obj.upper()}$
 
@@ -418,6 +419,17 @@ MODULE ${obj.upper()}$_TYPE_MOD
       ENDIF
 
    END SUBROUTINE ${obj.upper()}$_SYNC_HOST_RDWR
+   
+   SUBROUTINE ${obj.upper()}$_DELETE_DEVICE_DATA(SELF)
+      CLASS(${obj.upper()}$) :: SELF
+
+      #:for _, vars in zip(_def['types'], _def['vars'])
+          #:for var in vars
+      CALL SELF%F_${var.upper()}$%DELETE_DEVICE_DATA()
+          #:endfor
+      #:endfor
+
+   END SUBROUTINE ${obj.upper()}$_DELETE_DEVICE_DATA
 #:endif
 
 END MODULE ${obj.upper()}$_TYPE_MOD
