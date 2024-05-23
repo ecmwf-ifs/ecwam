@@ -74,7 +74,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
      &                      IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &
      &                      CDTBC    ,IDELBC   ,                                  &
      &                      IASSI    ,MARSTYPE ,                                  &
-     &                      LLSOURCE ,LANAONLY ,LFRSTFLD ,IREFDATE, LUPDATE_GPU_GLOBALS
+     &                      LLSOURCE ,LANAONLY ,LFRSTFLD ,IREFDATE, LUPDATE_GPU_GLOBALS, &
+     &                      MODEL_TIME
       USE YOWSPEC, ONLY   : NBLKS    ,NBLKE
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
@@ -112,6 +113,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #include "updnemofields.intfb.h"
 #include "updnemostress.intfb.h"
 #include "writsta.intfb.h"
+#include "wam_user_clock.intfb.h"
 
 #ifdef WAM_GPU
 #include "outbs_loki_gpu.intfb.h"
@@ -140,6 +142,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       INTEGER(KIND=JWIM) :: JSTPNEMO, IDATE, ITIME
       INTEGER(KIND=JWIM) :: IU04
       TYPE(MIJ_TYPE) :: MIJ
+      REAL(KIND=JWRB) :: TIME0
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK) :: BOUT
@@ -202,6 +205,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !*    1. ADVECTION/PHYSICS TIME LOOP.
 !        ----------------------------
 
+      TIME0=-WAM_USER_CLOCK()
 #ifdef WAM_GPU
       CALL WVPRPT_LAND%SYNC_DEVICE_RDONLY(QUEUE=0)
       CALL VARS_4D%F_FL1%SYNC_DEVICE_RDWR(QUEUE=0)
@@ -632,6 +636,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 #endif
 
       IF(MIJ%LALLOC) CALL MIJ%DEALLOC()
+      MODEL_TIME = MODEL_TIME + (TIME0+WAM_USER_CLOCK())*1.E-06
 
 IF (LHOOK) CALL DR_HOOK('WAMODEL',1,ZHOOK_HANDLE)
 
