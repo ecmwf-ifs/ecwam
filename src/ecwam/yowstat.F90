@@ -93,7 +93,7 @@
 
       REAL(KIND=JWRB) :: TIME_PROPAG = 0._JWRB
       REAL(KIND=JWRB) :: TIME_PHYS = 0._JWRB
-      REAL(KIND=JWRB) :: TIME_OFFLOAD = 0._JWRB
+      REAL(KIND=JWRB) :: MODEL_TIME = 0._JWRB
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
