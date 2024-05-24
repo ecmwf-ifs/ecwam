@@ -466,6 +466,10 @@ if( HAVE_ACC )
    target_compile_options( ${ecwam} PRIVATE "-gpu=maxregcount:128" )
 endif()
 
+if( HAVE_CUDA )
+  target_link_options( ${ecwam} PUBLIC "-cuda;-gpu=pinned" )
+endif()
+
 ecwam_target_compile_definitions_FILENAME( ${ecwam} )
 
 ### The file mubuf.F90, which is only used for "preproc" is sensitive to optimisations
