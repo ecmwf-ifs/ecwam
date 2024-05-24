@@ -28,6 +28,7 @@
       USE YOWNEMOFLDS , ONLY : WAM2NEMO, NEMO2WAM
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE FIELD_DEFAULTS_MODULE, ONLY : INIT_PINNED_VALUE
 
 ! ----------------------------------------------------------------------
 
@@ -43,6 +44,11 @@
 
 !     1.  ALLOCATE NECESSARY ARRAYS
 !         -------------------------
+
+#ifdef _CUDA
+!.... Enable pinning of fields in page-locked memory
+      INIT_PINNED_VALUE=.TRUE.
+#endif
 
       IF (.NOT. WVPRPT%LALLOC)THEN
          CALL WVPRPT%ALLOC(UBOUNDS=[NPROMA_WAM, NFRE, NCHNK])

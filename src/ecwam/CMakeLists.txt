@@ -446,7 +446,7 @@ ecbuild_add_library(
                      $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
     PRIVATE_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
-    PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS}
+    PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS} $<${HAVE_CUDA}:_CUDA>
     PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
 )
 
@@ -459,6 +459,10 @@ ecwam_target_fortran_module_directory(
 if( HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
    target_link_options( ${ecwam} INTERFACE SHELL:${OpenACC_Fortran_FLAGS} )
    target_compile_options( ${ecwam} PRIVATE "-gpu=maxregcount:128" )
+endif()
+
+if( HAVE_CUDA )
+  target_link_options( ${ecwam} PUBLIC "-cuda;-gpu=pinned" )
 endif()
 
 ecwam_target_compile_definitions_FILENAME( ${ecwam} )
