@@ -77,7 +77,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
 
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
+#:if defined('CUDA')
+      CALL FIELD_NEW(SELF%F_${var.upper()}$, LBOUNDS=LLBOUNDS, UBOUNDS=UBOUNDS, PERSISTENT=.TRUE., PINNED=.TRUE.)
+#:else
       CALL FIELD_NEW(SELF%F_${var.upper()}$, LBOUNDS=LLBOUNDS, UBOUNDS=UBOUNDS, PERSISTENT=.TRUE.)
+#:endif
       CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDWR(SELF%${var.upper()}$)
           #:endfor
       #:endfor
@@ -419,7 +423,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
       ENDIF
 
    END SUBROUTINE ${obj.upper()}$_SYNC_HOST_RDWR
-   
+
    SUBROUTINE ${obj.upper()}$_DELETE_DEVICE_DATA(SELF)
       CLASS(${obj.upper()}$) :: SELF
 

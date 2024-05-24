@@ -22,6 +22,10 @@ macro( ecwam_expand_drv_types )
       list(APPEND FYPP_ARGS -DWAM_GPU)
    endif()
 
+   if( HAVE_CUDA )
+      list(APPEND FYPP_ARGS -DCUDA)
+   endif()
+
    execute_process(
        COMMAND ${ECWAM_PYTHON_INTERP} -c
        "import sys; sys.path.append('${CMAKE_CURRENT_SOURCE_DIR}/../../share/ecwam/scripts'); \
