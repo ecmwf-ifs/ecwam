@@ -78,7 +78,7 @@ INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL) :: K_THMAX
 
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 REAL(KIND=JWRB) :: Z0, RNW, ALFA, BETA, URSN, STEEP, WNUM1
-REAL(KIND=JWRB) :: XK, XK2, AXYT, RN3, RN2, RN1, SQRTEM, TMIN, TMAX, WVLMIN
+REAL(KIND=JWRB) :: XK, XK2, AXYT, RN3, RN2, RN1, SQRTEM, TMIN, TMAX, WVLMIN, XX
 REAL(KIND=JWRB) :: ZEPSILON
 REAL(KIND=JWRB) :: DELT25, EM, XK2_DFIM, XK_ZPI_DFIM
 REAL(KIND=JWRB), DIMENSION(4) :: TLGS, ACFS
@@ -110,13 +110,13 @@ TMAX = 1._JWRB/FR(1)
 WVLMIN = G / (ZPI*FR(NFRE)**2)
 
 !!! see below, we are now using wave state dependant values
-!!!!WMDX(:) = 100._JWRB
-!!!!WMDY(:) = 100._JWRB
+!!!!WMDX(KIJS:KIJL) = 100._JWRB
+!!!!WMDY(KIJS:KIJL) = 100._JWRB
 
 !!! use a constant duration for time domain
-WMDUR_TD(:) = 1200._JWRB
+WMDUR_TD(KIJS:KIJL) = 1200._JWRB
 !!! but not for space time
-!!!WMDUR_ST(:) = 1200._JWRB
+!!!WMDUR_ST(KIJS:KIJL) = 1200._JWRB
 
 ! INITIALIZE VARIABLES FOR INTEGRATION
 
@@ -315,14 +315,15 @@ DO IJ = KIJS, KIJL
 !         Z0 = SQRT(2._JWRB*LOG(REAL(RN1)))
 !      END IF
 
-      CMAX_ST(IJ) = ((Z0+0.5_JWRB*RMU(IJ)*Z0**2)+GAMMA_E*((1._JWRB+RMU(IJ)*Z0) &
-&                   *(Z0-(2._JWRB*RN3*Z0+RN2)/(RN3*Z0**2+RN2*Z0+RN1))**(-1))) *SQRTEM
+      XX = 1._JWRB/(Z0-(2._JWRB*RN3*Z0+RN2)/(RN3*Z0**2+RN2*Z0+RN1))
+
+      CMAX_ST(IJ) = ((Z0+0.5_JWRB*RMU(IJ)*Z0**2)+GAMMA_E*((1._JWRB+RMU(IJ)*Z0)*XX) ) *SQRTEM
 
 !     2b. DETERMINE EXPECTED MAXIMUM WAVE HEIGHT - SPACE-TIME (STQD).
 !     ---------------------------------------------------------------
 
-      HMAX_ST(IJ) = (Z0+GAMMA_E*(Z0-(2._JWRB*RN3*Z0+RN2)/(RN3*Z0**2+RN2*Z0+RN1))**(-1))* &
-&                   SQRT(2._JWRB*(1._JWRB-PHIST(IJ))) *SQRTEM
+      HMAX_ST(IJ) = (Z0+GAMMA_E*XX)*SQRT(2._JWRB*(1._JWRB-PHIST(IJ))) *SQRTEM
+
    ELSE
       CMAX_F(IJ) = 0._JWRB
       HMAX_N(IJ) = 0._JWRB
