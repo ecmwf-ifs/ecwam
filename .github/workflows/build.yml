@@ -188,7 +188,7 @@ jobs:
           ecmwf/eccodes
           ecmwf-ifs/fiat
           ecmwf-ifs/field_api@refs/tags/v0.2.2
-          ecmwf-ifs/loki@refs/tags/v0.2.3
+          ecmwf-ifs/loki@refs/tags/v0.2.4
         dependency_branch: develop
         dependency_cmake_options: |
           ecmwf-ifs/fiat: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF"

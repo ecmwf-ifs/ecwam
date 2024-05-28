@@ -33,7 +33,7 @@ projects :
 
     - loki :
         git     : https://github.com/ecmwf-ifs/loki
-        version : v0.2.3
+        version : v0.2.4
         optional: true
         require : ecbuild
         cmake   : >
