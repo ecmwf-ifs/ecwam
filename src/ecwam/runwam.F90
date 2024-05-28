@@ -102,7 +102,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO                       ,    &
      &            IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO, TIME_PHYS,     &
-     &            TIME_PROPAG, MODEL_TIME
+     &            TIME_PROPAG, MODEL_TIME, IO_TIME, MPI_TIME
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT
       USE YOWALTAS , ONLY : LODBRALT
       USE MPL_MODULE, ONLY : MPL_INIT, MPL_END, MPL_COMM
@@ -392,6 +392,10 @@
       WRITE (IU06,'(A,F18.2,A)') ' + ', time, '         +'
       WRITE (IU06,'(A)') ' + MODEL TIME                 +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', MODEL_TIME, '         +'
+      WRITE (IU06,'(A)') ' + IO TIME                    +'
+      WRITE (IU06,'(A,F18.2,A)') ' + ', IO_TIME, '         +'
+      WRITE (IU06,'(A)') ' + MPI TIME                   +'
+      WRITE (IU06,'(A,F18.2,A)') ' + ', MPI_TIME, '         +'
       WRITE (IU06,'(A)') ' + WAVE PROPAGATION TIME      +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PROPAG, '         +'
 #if defined(WAM_GPU)
@@ -410,6 +414,10 @@
         WRITE (6,'(A,F18.2,A)') ' + ', time, '         +'
         WRITE (6,'(A)') ' + MODEL TIME                 +'
         WRITE (6,'(A,F18.2,A)') ' + ', MODEL_TIME, '         +'
+        WRITE (6,'(A)') ' + IO TIME                    +'
+        WRITE (6,'(A,F18.2,A)') ' + ', IO_TIME, '         +'
+        WRITE (6,'(A)') ' + MPI TIME                   +'
+        WRITE (6,'(A,F18.2,A)') ' + ', MPI_TIME, '         +'
         WRITE (6,'(A)') ' + WAVE PROPAGATION TIME      +'
         WRITE (6,'(A,F18.2,A)') ' + ', TIME_PROPAG, '         +'
 #if defined(WAM_GPU)

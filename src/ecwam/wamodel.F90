@@ -75,7 +75,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
      &                      CDTBC    ,IDELBC   ,                                  &
      &                      IASSI    ,MARSTYPE ,                                  &
      &                      LLSOURCE ,LANAONLY ,LFRSTFLD ,IREFDATE, LUPDATE_GPU_GLOBALS, &
-     &                      MODEL_TIME
+     &                      MODEL_TIME, IO_TIME
       USE YOWSPEC, ONLY   : NBLKS    ,NBLKE, MIJ
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
@@ -141,7 +141,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       INTEGER(KIND=JWIM) :: ICHNK
       INTEGER(KIND=JWIM) :: JSTPNEMO, IDATE, ITIME
       INTEGER(KIND=JWIM) :: IU04
-      REAL(KIND=JWRB) :: TIME0
+      REAL(KIND=JWRB) :: TIME0, TIME1
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK) :: BOUT
@@ -441,6 +441,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
               &                                EMAXDPT=.TRUE., IOBND=.TRUE., IODP=.TRUE.)
 #endif
 
+              TIME1=-WAM_USER_CLOCK()
               CALL SAVSTRESS(WVENVI, FF_NOW, NBLKS, NBLKE, CDTPRO, CDATEF)
               WRITE(IU06,*) ' '
               WRITE(IU06,*) '  BINARY STRESS FILE DISPOSED AT........ CDTPRO  = ', CDTPRO
@@ -450,6 +451,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
               WRITE(IU06,*) '  BINARY WAVE SPECTRA DISPOSED AT........ CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
               CALL FLUSH(IU06)
+              IO_TIME = IO_TIME + (TIME1+WAM_USER_CLOCK())*1.E-06
             ENDIF
 
 
@@ -519,7 +521,9 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
             MARSTYPE='an'
           ENDIF
 
+          TIME1=-WAM_USER_CLOCK()
           CALL OUTWINT(BOUT)
+          IO_TIME = IO_TIME + (TIME1+WAM_USER_CLOCK())*1.E-06
           LLFLUSH = .TRUE.
 
           MARSTYPE=MARSTYPEBAK
