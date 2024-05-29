@@ -141,7 +141,7 @@ ecbuild_add_option( FEATURE ACC
 ecbuild_add_option( FEATURE GPU_AWARE_MPI
                     DEFAULT OFF
                     DESCRIPTION "Enable GPU-aware MPI" 
-                    CONDITION HAVE_ACC AND HAVE_MPI )
+                    CONDITION HAVE_ACC AND MPI_Fortran_HAVE_F08_MODULE )
 
 ### Sources
 

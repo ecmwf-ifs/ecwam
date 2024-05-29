@@ -88,9 +88,7 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WAVNUM, CGROUP, OMOSNH2KD, FL1, &
 !     But limited to NFRE_RED frequencies
 !!! the advection schemes are still written in block structure
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NANG, NFRE_RED) :: FL1_EXT, FL3_EXT
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED) :: WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1) :: DELLAM1_EXT, COSPHM1_EXT 
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1) :: DEPTH_EXT, UCUR_EXT, VCUR_EXT
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, 3*NFRE_RED + 5) :: BUFFER_EXT
 
       LOGICAL :: L1STCALL
 
@@ -102,7 +100,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 
 !$acc data present(FL1, WAVNUM, CGROUP, OMOSNH2KD, DEPTH, DELLAM1,COSPHM1,UCUR,VCUR) CREATE(FL1_EXT,FL3_EXT) &
-!$acc & create(WAVNUM_EXT,CGROUP_EXT,OMOSNH2KD_EXT,DELLAM1_EXT,COSPHM1_EXT,DEPTH_EXT,UCUR_EXT,VCUR_EXT)
+!$acc & create(BUFFER_EXT)
       IF (NIBLO > 1) THEN
 
         IJSG = IJFROMCHNK(1,1)
@@ -181,9 +179,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
              CALL  PROENVHALO (NINF, NSUP,                            &
 &                              WAVNUM, CGROUP, OMOSNH2KD,            &
 &                              DEPTH, DELLAM1, COSPHM1, UCUR, VCUR,   &
-&                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
-&                              DELLAM1_EXT, COSPHM1_EXT,              & 
-&                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
+&                              BUFFER_EXT)
 
 
 !            DOT THETA TERM:
@@ -192,10 +188,12 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
              DO JKGLO = IJSG, IJLG, NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1, IJLG)
-               CALL PROPDOT(KIJS, KIJL, NINF, NSUP,                                     &
-     &                      BLK2GLO,                                                    &
-     &                      WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT,                      &
-     &                      COSPHM1_EXT, DEPTH_EXT, UCUR_EXT, VCUR_EXT,                 &
+               CALL PROPDOT(KIJS, KIJL, NINF, NSUP,                                &
+     &                      BLK2GLO,                                               &
+     &                      BUFFER_EXT(:,1:NFRE_RED), BUFFER_EXT(:,NFRE_RED+1:2*NFRE_RED), &
+     &                      BUFFER_EXT(:,2*NFRE_RED+1:3*NFRE_RED),      &
+     &                      BUFFER_EXT(:,3*NFRE_RED+2), BUFFER_EXT(:,3*NFRE_RED+3),    &
+     &                      BUFFER_EXT(:,3*NFRE_RED+4), BUFFER_EXT(:,3*NFRE_RED+5),    &
      &                      THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
              ENDDO
 !$OMP        END PARALLEL DO
@@ -215,15 +213,14 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                CALL  PROENVHALO (NINF, NSUP,                            &
 &                                WAVNUM, CGROUP, OMOSNH2KD,            &
 &                                DEPTH, DELLAM1, COSPHM1, UCUR, VCUR,   &
-&                                WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
-&                                DELLAM1_EXT, COSPHM1_EXT,              & 
-&                                DEPTH_EXT, UCUR_EXT, VCUR_EXT )
+&                                BUFFER_EXT )
 
 !              COMPUTES ADVECTION WEIGTHS AND CHECK CFL CRITERIA
                CALL CTUWUPDT(IJSG, IJLG, NINF, NSUP,                      &
 &                            BLK2GLO,                                     &
-&                            CGROUP_EXT, OMOSNH2KD_EXT,                   &
-&                            COSPHM1_EXT, DEPTH_EXT, UCUR_EXT, VCUR_EXT )
+&                            BUFFER_EXT(:,NFRE_RED+1:2*NFRE_RED), BUFFER_EXT(:,2*NFRE_RED+1:3*NFRE_RED),        &
+&                            BUFFER_EXT(:,3*NFRE_RED+2), BUFFER_EXT(:,3*NFRE_RED+3), &
+&                            BUFFER_EXT(:,3*NFRE_RED+4), BUFFER_EXT(:,3*NFRE_RED+5) )
 
                LUPDTWGHT=.FALSE.
              ENDIF
@@ -302,9 +299,7 @@ ENDIF  ! end sub time steps (if needed)
              CALL  PROENVHALO (NINF, NSUP,                            &
 &                              WAVNUM, CGROUP, OMOSNH2KD,            &
 &                              DEPTH, DELLAM1, COSPHM1, UCUR, VCUR,   &
-&                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
-&                              DELLAM1_EXT, COSPHM1_EXT,              & 
-&                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
+&                              BUFFER_EXT)
 
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
              DO JKGLO = IJSG, IJLG, NPROMA
@@ -312,10 +307,10 @@ ENDIF  ! end sub time steps (if needed)
                KIJL=MIN(KIJS+NPROMA-1, IJLG)
                CALL PROPAGS1(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL,       &
 &                            BLK2GLO,                                        &
-&                            DEPTH_EXT,                                      &
-&                            CGROUP_EXT, OMOSNH2KD_EXT,                      &
-&                            DELLAM1_EXT, COSPHM1_EXT,                       &
-&                            UCUR_EXT, VCUR_EXT,                             &
+&                            BUFFER_EXT(:,3*NFRE_RED+3),                       &
+&                            BUFFER_EXT(:,NFRE_RED+1:2*NFRE_RED), BUFFER_EXT(:,2*NFRE_RED+1:3*NFRE_RED),           &
+&                            BUFFER_EXT(:,3*NFRE_RED+1), BUFFER_EXT(:,3*NFRE_RED+2), &
+&                            BUFFER_EXT(:,3*NFRE_RED+4), BUFFER_EXT(:,3*NFRE_RED+5), &
 &                            L1STCALL)
              ENDDO
 !$OMP       END PARALLEL DO
@@ -327,9 +322,7 @@ ENDIF  ! end sub time steps (if needed)
              CALL  PROENVHALO (NINF, NSUP,                            &
 &                              WAVNUM, CGROUP, OMOSNH2KD,            &
 &                              DEPTH, DELLAM1, COSPHM1, UCUR, VCUR,   &
-&                              WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
-&                              DELLAM1_EXT, COSPHM1_EXT,              & 
-&                              DEPTH_EXT, UCUR_EXT, VCUR_EXT )
+&                              BUFFER_EXT)
 
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
              DO JKGLO = IJSG, IJLG, NPROMA
@@ -337,10 +330,10 @@ ENDIF  ! end sub time steps (if needed)
                KIJL=MIN(KIJS+NPROMA-1, IJLG)
                CALL PROPAGS(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL,       &
 &                           BLK2GLO,                                        &
-&                           DEPTH_EXT,                                      &
-&                           CGROUP_EXT, OMOSNH2KD_EXT,                      &
-&                           DELLAM1_EXT, COSPHM1_EXT,                       &
-&                           UCUR_EXT, VCUR_EXT,                             &
+&                           BUFFER_EXT(:,3*NFRE_RED+3),                       &
+&                           BUFFER_EXT(:,NFRE_RED+1:2*NFRE_RED), BUFFER_EXT(:,2*NFRE_RED+1:3*NFRE_RED), &
+&                           BUFFER_EXT(:,3*NFRE_RED+1), BUFFER_EXT(:,3*NFRE_RED+2), &
+&                           BUFFER_EXT(:,3*NFRE_RED+4), BUFFER_EXT(:,3*NFRE_RED+5), &
 &                           L1STCALL)
              ENDDO
 !$OMP        END PARALLEL DO
