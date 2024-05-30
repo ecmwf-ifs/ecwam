@@ -399,7 +399,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                IREAD,                                   &
      &                NLONW, NLATW,                            &
      &                BLK2GLO, BLK2LOC,                        &
-     &                WVENVI, WVPRPT, FF_NOW,                  &
+     &                WVENVI, WVPRPT, FF_NOW, INTFLDS,         &
      &                VARS_4D%FL1,                             &
      &                NFIELDS, NGPTOTG, NC, NR,                &
      &                FIELDS, LWCUR, MASK_IN, PRPLRADI,        &
