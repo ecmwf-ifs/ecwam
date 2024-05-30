@@ -11,7 +11,7 @@ SUBROUTINE INITMDL (NADV,                                 &
  &                  IREAD,                                &
  &                  NLONW, NLATW,                         &
  &                  BLK2GLO,  BLK2LOC,                    &
- &                  WVENVI, WVPRPT, FF_NOW,               &
+ &                  WVENVI, WVPRPT, FF_NOW, INTFLDS,      &
  &                  FL1,                                  &
  &                  NFIELDS, NGPTOTG, NC, NR,             &
  &                  FIELDS, LWCUR, MASK_IN, PRPLRADI,     &
@@ -60,7 +60,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 !    *CALL* *INITMDL (NADV,
 !    &                IREAD,
 !    &                BLK2GLO, BLK2LOC, 
-!    &                WVENVI, WVPRPT, FF_NOW,
+!    &                WVENVI, WVPRPT, FF_NOW, INTFLDS,
 !    &                FL1,                  
 !    &                NFIELDS, NGPTOTG, NC, NR,
 !    &                FIELDS, LWCUR, MASK_IN,
@@ -74,6 +74,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 !      *WVENVI*    WAVE ENVIRONMENT FIELDS
 !      *WVPRPT*    WAVE PROPERTIES FIELDS
 !      *FF_NOW*    FORCING FIELDS AT CURRENT TIME.
+!      *INTFLDS*   INTEGRATED/DERIVED PARAMETERS
 !      *FL1*       SPECTRUM
 !      *NFIELDS*   NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
 !      *NGPTOTG*   NUMBER OF ATMOSPHERIC GRID POINTS
@@ -265,6 +266,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       TYPE(ENVIRONMENT), INTENT(INOUT) :: WVENVI
       TYPE(FREQUENCY), INTENT(INOUT) :: WVPRPT
       TYPE(FORCING_FIELDS), INTENT(INOUT) :: FF_NOW
+      TYPE(INTGT_PARAM_FIELDS), INTENT(INOUT) :: INTFLDS
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
       INTEGER(KIND=JWIM), INTENT(IN) :: NFIELDS
       INTEGER(KIND=JWIM), INTENT(IN) :: NGPTOTG
