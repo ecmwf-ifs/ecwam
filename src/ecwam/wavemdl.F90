@@ -403,7 +403,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                VARS_4D%FL1,                             &
      &                NFIELDS, NGPTOTG, NC, NR,                &
      &                FIELDS, LWCUR, MASK_IN, PRPLRADI,        &
-     &                NEMO2WAM)
+     &                WAM2NEMO, NEMO2WAM)
 
 
         LLCHKCFL=.FALSE.

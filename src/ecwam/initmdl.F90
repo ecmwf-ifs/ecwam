@@ -15,7 +15,7 @@ SUBROUTINE INITMDL (NADV,                                 &
  &                  FL1,                                  &
  &                  NFIELDS, NGPTOTG, NC, NR,             &
  &                  FIELDS, LWCUR, MASK_IN, PRPLRADI,     &
- &                  NEMO2WAM)
+ &                  WAM2NEMO, NEMO2WAM)
 
 ! ----------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 !    &                FL1,                  
 !    &                NFIELDS, NGPTOTG, NC, NR,
 !    &                FIELDS, LWCUR, MASK_IN,
-!    &                NEMO2WAM)*
+!    &                WAM2NEMO, NEMO2WAM)*
 
 !      *NADV*      NUMBER OF ADVECTION ITERATIONS
 !      *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
@@ -83,6 +83,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 !      *LWCUR*     INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 !      *MASK_IN*   MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
 !      *PRPLRADI*  EARTH RADIUS REDUCTION FACTOR FOR SMALL PLANET
+!      *WAM2NEMO*  WAVE FIELDS PASSED TO NEMO
 !      *NEMO2WAM*  FIELDS FRON OCEAN MODEL to WAM
 
 !          ---- INPUT/OUTPUT UNITS ---
@@ -155,7 +156,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : WVGRIDGLO, WVGRIDLOC,                    &
      &                         ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
-     &                         INTGT_PARAM_FIELDS, OCEAN2WAVE
+     &                         INTGT_PARAM_FIELDS, WAVE2OCEAN, OCEAN2WAVE
 
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,                        &
      &                      GBOUNC  , IPOGBO   ,CBCPREF
@@ -273,6 +274,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       LOGICAL, INTENT(IN) :: LWCUR
       INTEGER(KIND=JWIM),DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
       REAL(KIND=JWRB), INTENT(IN) :: PRPLRADI
+      TYPE(WAVE2OCEAN), INTENT(INOUT) :: WAM2NEMO
       TYPE(OCEAN2WAVE), INTENT(INOUT) :: NEMO2WAM
 
 
