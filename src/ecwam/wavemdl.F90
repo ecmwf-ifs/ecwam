@@ -137,7 +137,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWWNDG  , ONLY : ICODE_CPL
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,VARS_4D
-      USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW   ,CDATEWO  ,CDATEFL ,     &
+      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,              &
      &                      FF_NEXT  ,                                  &
      &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE,        &
      &                      NXFFS_LOC,NXFFE_LOC,NYFFS_LOC,NYFFE_LOC
@@ -146,7 +146,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS, NGRIB_HANDLE_IFS2
       USE YOWASSI  , ONLY : WAMASSI
-      USE YOWGRIB  , ONLY : IGRIB_GET_VALUE
       USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_GATHERV
 #ifdef WAM_HAVE_ECFLOW
       USE ECFLOW_LIGHT, ONLY : ECFLOW_LIGHT_UPDATE_METER
@@ -259,7 +258,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       INTEGER(KIND=JWIM), ALLOCATABLE :: ZCOMCNT(:)
 
       REAL(KIND=JWRB) :: VAL
-      REAL(KIND=JWRB) :: STEP
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB) :: DURATION, DURATION_MAX, PSTEP8
@@ -273,10 +271,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       CHARACTER(LEN=7), PARAMETER :: CL_CPENV="SMSNAME"
       CHARACTER(LEN=8), PARAMETER :: CL_CPENV_ECF="ECF_NAME"
 
-      CHARACTER(LEN=2) :: CCLASS, CTYPE
-      CHARACTER(LEN=4) :: CSTREAM
-      CHARACTER(LEN=4) :: CEXPVER
-      CHARACTER(LEN=12) :: C12
       CHARACTER(LEN=12) :: FLABEL(NWVFIELDS)
       CHARACTER(LEN=14) :: CDUM
       CHARACTER(LEN=14) :: CDTASS
@@ -285,7 +279,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       LOGICAL, SAVE :: LFRST
       LOGICAL, SAVE :: LFRSTCHK
-      LOGICAL, SAVE :: LLGRAPI
       LOGICAL, SAVE :: LLINTERPOL
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
@@ -300,7 +293,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       DATA LFRST /.TRUE./
       DATA LFRSTCHK /.TRUE./
-      DATA LLGRAPI /.TRUE./
       DATA LLINTERPOL /.TRUE./
 
 ! ---------------------------------------------------------------------
@@ -328,25 +320,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       ICODE_CPL=NATMFLX
 
       IF (LWCOU) THEN
-        IF ( IQGAUSS /= 1 ) THEN
-          IF ( AMONOP < 90._JWRB ) THEN
-              WRITE (IU06,*) ' *********************************'
-              WRITE (IU06,*) ' *                               *'
-              WRITE (IU06,*) ' * PROBLEM IN WAVEMDL..........  *'
-              WRITE (IU06,*) ' *   *'
-              WRITE (IU06,*) ' * AMONOP SHOULD NOT BE < 90 IF  *'
-              WRITE (IU06,*) ' * COUPLED AND ON LAT LON GRID   *'
-              WRITE (IU06,*) ' * ============================= *'
-              WRITE (IU06,*) ' *                               *'
-              WRITE (IU06,*) ' * AMONOP=', AMONOP
-              WRITE (IU06,*) ' *                               *'
-              WRITE (IU06,*) ' *                               *'
-              WRITE (IU06,*) ' *********************************'
-              CALL FLUSH(IU06)
-              CALL ABORT1
-          ENDIF
-        ENDIF
-
         NGRIB_HANDLE_IFS=IGRIB_HANDLE
         IF (NGRIB_HANDLE_IFS < 0 ) THEN
           WRITE(IU06,*)' SUB: WAVEMDL:  NGRIB_HANDLE_IFS < 0 !'
@@ -363,34 +336,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           CALL ABORT1
         ENDIF
 
-        IF (LLGRAPI) THEN
-           WRITE(IU06,*)'  '
-           WRITE (IU06,*) ' WAVEMDL: GRIB HANDLE FROM IFS'
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'dataDate',IYYYYMMDD)
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'time',IHHMM)
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'step',STEP)
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'endStep',ISTEP)
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'expver',C12,KRET=IRET)
-           IF (IRET /= 0) THEN
-             CEXPVER='****'
-           ELSE
-             CEXPVER=C12(1:4)
-           ENDIF
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'class',C12)
-           CCLASS=C12(1:2)
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'stream',C12)
-           CSTREAM=C12(1:4)
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'type',C12)
-           CTYPE=C12(1:2)
-           WRITE(IU06,*)' EXPVER=', CEXPVER,   &
-     &                  ' CLASS=', CCLASS,     &
-     &                  ' STREAM=', CSTREAM,   &
-     &                  ' TYPE=', CTYPE
-           LLGRAPI=.FALSE.
-        ENDIF
-
         LLNORMWAMOUT_GLOBAL = LLNORMWAMOUT_GLOBAL .OR. LDNORMWAMOUT_GLOBAL
-
       ENDIF
 
       KCOUSTEP=KDELWI
@@ -429,43 +375,29 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
            CALL INCDATE (CDATEE,IDURAT)
           ENDDO
 
-          WRITE (IU06,1011)
-          WRITE (IU06,1012)
-          WRITE (IU06,1013)
+          WRITE (IU06,*) '  *                                                *'
+          WRITE (IU06,*) '  *    WAVEMDL: INITMDL STARTS FOR (RE-)START.     *' 
+          WRITE (IU06,*) '  *    ========================================    *'
           IF (LWCOU2W) THEN
-            WRITE (IU06,1014)
+            WRITE (IU06,*) '  *    TWO-WAY INTERACTION WIND AND WAVES          *'
           ELSE
-            WRITE (IU06,1015)
+            WRITE (IU06,*) '  *    ONE-WAY INTERACTION WIND AND WAVES          *'
           ENDIF
-          WRITE (IU06,1011)
-          WRITE (IU06,1016) CDATEA
-          WRITE (IU06,1018) CDATEE
-          WRITE (IU06,1019) NINT(PSTEP)
-          WRITE (IU06,1020) KSTOP
-          WRITE (IU06,1021) KDELWI
-          WRITE (IU06,1011)
-          WRITE (IU06,1010)
+          WRITE (IU06,*) '  *                                                *'
+          WRITE (IU06,*) '  * START DATE OF RUN CDATEA = ',CDATEA
+          WRITE (IU06,*) '  * END DATE OF RUN   CDATEE = ',CDATEE
+          WRITE (IU06,*) '  * IFS MODEL TIME STEP PSTEP = ',NINT(PSTEP)
+          WRITE (IU06,*) '  * TOTAL NUMBER OF PSTEP  KSTOP = ', KSTOP
+          WRITE (IU06,*) '  * INTERACTION TIME STEP  KDELWI = ', KDELWI
+          WRITE (IU06,*) '  *                                                *'
+          WRITE (IU06,*) '  **************************************************'
           CALL FLUSH(IU06)
-
- 1010 FORMAT ('  **************************************************')
- 1011 FORMAT ('  *                                                *')
- 1012 FORMAT ('  *    WAVEMDL: INITMDL STARTS FOR (RE-)START.     *')
- 1013 FORMAT ('  *    ========================================    *')
- 1014 FORMAT ('  *    TWO-WAY INTERACTION WIND AND WAVES          *')
- 1015 FORMAT ('  *    ONE-WAY INTERACTION WIND AND WAVES          *')
- 1016 FORMAT ('  * START DATE OF RUN      ', A14,  ' (CDATEA) *')
- 1018 FORMAT ('  * END DATE OF RUN        ', A14,  ' (CDATEE) *')
- 1019 FORMAT ('  * IFS MODEL TIME STEP    ', I10,  ' (PSTEP)     *')
- 1020 FORMAT ('  * TOTAL NUMBER OF PSTEP  ', I10,  ' (KSTOP)     *')
- 1021 FORMAT ('  * INTERACTION TIME STEP  ', I10,  ' (KDELWI)    *')
 
         ENDIF
 
-!       INQUIRE IF IUNITW IS ALREADY OPEN THEN CLOSE IT
-        IF (IUNITW /= 0) CLOSE(IUNITW)
-
         CALL INITMDL (NADV,                                    &
      &                IREAD,                                   &
+     &                NLONW, NLATW,                            &
      &                BLK2GLO, BLK2LOC,                        &
      &                WVENVI, WVPRPT, FF_NOW,                  &
      &                VARS_4D%FL1,                             &
@@ -479,26 +411,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         FRSTIME = .FALSE.
 
         IF (LWCOU) THEN
-          IF (NLONW /= NGX .OR. NLATW /= NGY) THEN
-            WRITE (IU06,*) ' *********************************'
-            WRITE (IU06,*) ' *                               *'
-            WRITE (IU06,*) ' * PROBLEM IN WAVEMDL..........  *'
-            WRITE (IU06,*) ' * PROBLEM WITH NLONW AND NLATW  *'
-            WRITE (IU06,*) ' * NOT EQUAL TO NGX   AND NGY  : *'
-            WRITE (IU06,*) ' * ============================= *'
-            WRITE (IU06,*) ' *                               *'
-            WRITE (IU06,*) ' * NLONW=',NLONW
-            WRITE (IU06,*) ' * NLATW=',NLATW
-            WRITE (IU06,*) ' * NGX=',NGX
-            WRITE (IU06,*) ' * NGY=',NGY
-            WRITE (IU06,*) ' *                               *'
-            WRITE (IU06,*) ' *                               *'
-            WRITE (IU06,*) ' *********************************'
-            CALL ABORT1
-          ENDIF
           IF (LRESTARTED)  THEN
             LDRESTARTED = .TRUE.
-!            RETURN
           ELSE
             LDRESTARTED = .FALSE.
           ENDIF
@@ -575,7 +489,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
 
 !*      REFORMAT FORCING FIELDS FROM INPUT GRID TO BLOCKED.
-!       ---------------------------------------------------
         IF (LWCOU) THEN
           NXS = NXFFS_LOC
           NXE = NXFFE_LOC

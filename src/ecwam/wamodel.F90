@@ -108,7 +108,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #include "outstep0.intfb.h"
 #include "savspec.intfb.h"
 #include "savstress.intfb.h"
-#include "unsetice.intfb.h"
 #include "updnemofields.intfb.h"
 #include "updnemostress.intfb.h"
 #include "writsta.intfb.h"
@@ -170,33 +169,12 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !     TIME FOR WIND INPUT UPDATE (SEE NEWWIND)
       CDTIMP = CDTPRO
 
-!     0.1 MINIMUM ENERGY
-!         --------------
-      IF (CDTPRO == CDATEA .AND. LLSOURCE ) THEN
-!       INSURE THERE IS SOME WAVE ENERGY FOR GRID POINTS THAT HAVE BEEN
-!       FREED FROM SEA ICE (ONLY DONE INITIALLY AND IF THE MODEL IS NOT
-!       RESTARTED).
-!       IT ALSO RESETS THE MIMIMUM ENERGY LEVEL THAT MIGHT HAVE BEEN LOST
-!       WHEN GETTING THE DATA FROM GRIB.
-        CALL GSTATS(1236,0)
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
-        DO ICHNK = 1, NCHNK
-          CALL UNSETICE(1, NPROMA_WAM, WVENVI%DEPTH(:,ICHNK), WVENVI%EMAXDPT(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK), &
- &                      FF_NOW%WSWAVE(:,ICHNK), FF_NOW%CICOVER(:,ICHNK), VARS_4D%FL1(:,:,:,ICHNK) )
-        ENDDO
-!$OMP   END PARALLEL DO
-        CALL GSTATS(1236,1)
-      ENDIF
-
-
-!     0.2 OUTPUT INITIAL CONDITION AND/OR FORECAST STEP 0
-!         -----------------------------------------------
-      IF (CDTPRO == CDATEA .OR. CDTPRO == CDATEF) THEN
+!     0.2 FORECAST STEP 0 IF ANALYSIS IS FOLLOWED BY FORECAST (uncoupled only)
+!         --------------------------------------------------------------------
+      IF (.NOT.LWCOU .AND. CDTPRO /= CDATEA .AND. CDTPRO == CDATEF) THEN
          CALL OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
  &                      WAM2NEMO, NEMO2WAM, VARS_4D%FL1)
       ENDIF
-
-
 
 !*    1. ADVECTION/PHYSICS TIME LOOP.
 !        ----------------------------

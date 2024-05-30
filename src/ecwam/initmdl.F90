@@ -9,6 +9,7 @@
 
 SUBROUTINE INITMDL (NADV,                                 &
  &                  IREAD,                                &
+ &                  NLONW, NLATW,                         &
  &                  BLK2GLO,  BLK2LOC,                    &
  &                  WVENVI, WVPRPT, FF_NOW,               &
  &                  FL1,                                  &
@@ -195,7 +196,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            CDTINTT  ,CDTBC    ,                                  &
      &            IFRELFMAX, DELPRO_LF, IDELPRO  ,IDELT ,               &
      &            IDELWI   ,IDELWO   ,IDELRES  ,IDELINT  ,              &
-     &            IREFRA   ,LNSESTART,                                  &
+     &            IREFRA   ,LNSESTART, LLSOURCE,                        &
      &            IPHYS    ,                                            &
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,    &
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
@@ -209,6 +210,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      IU14     ,IU15     ,IU19     ,IU20
       USE YOWWAMI  , ONLY : CBPLTDT
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
+     &                      IUNITW   ,                                  &
      &                      NXFFS    , NXFFE   ,NYFFS    , NYFFE   ,    &
      &                      NXFFS_LOC,NXFFE_LOC,NYFFS_LOC,NYFFE_LOC,    &
      &                      LLNEWCURR,LLWSWAVE ,LLWDWAVE ,FF_NEXT
@@ -219,6 +221,8 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE UNSTRUCT_BOUND , ONLY : IOBP
 #endif
       USE YOWABORT , ONLY : WAM_ABORT
+      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
+      USE YOWGRIB  , ONLY : IGRIB_GET_VALUE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE EC_LUN   , ONLY : NULERR
       USE OML_MOD  , ONLY : OML_GET_MAX_THREADS
@@ -241,16 +245,20 @@ SUBROUTINE INITMDL (NADV,                                 &
 #include "iniwcst.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "mcout.intfb.h"
-#include "secondhh_gen.intfb.h"
+#include "outstep0.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 #include "prewind.intfb.h"
 #include "readbou.intfb.h"
+#include "secondhh_gen.intfb.h"
 #include "setmarstype.intfb.h"
 #include "tabu_swellft.intfb.h"
+#include "unsetice.intfb.h"
 #include "userin.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(OUT) :: NADV
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
+      INTEGER(KIND=JWIM), INTENT(IN) :: NLONW
+      INTEGER(KIND=JWIM), INTENT(IN) :: NLATW
       TYPE(WVGRIDGLO), INTENT(IN) :: BLK2GLO
       TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
       TYPE(ENVIRONMENT), INTENT(INOUT) :: WVENVI
@@ -268,6 +276,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       TYPE(OCEAN2WAVE), INTENT(INOUT) :: NEMO2WAM
 
 
+      INTEGER(KIND=JWIM) :: IYYYYMMDD, IHHMM, ISTEP, IRET, KRET
       INTEGER(KIND=JWIM) :: IFORCA
       INTEGER(KIND=JWIM) :: IJ, I, II, K, M, IP, LFILE, IX, IY, KX, ID
       INTEGER(KIND=JWIM) :: IC, ICR
@@ -279,6 +288,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       INTEGER(KIND=JWIM) :: MTHREADS
 
 
+      REAL(KIND=JWRB) :: STEP
       REAL(KIND=JWRB) :: FCRANGE, XD
       REAL(KIND=JWRB) :: GVE, DPH, CFLP, CFLL, DLH, DLH_KX
       REAL(KIND=JWRB) :: FAC, SCDF_L, SCDF_U
@@ -289,6 +299,9 @@ SUBROUTINE INITMDL (NADV,                                 &
 
       REAL(KIND=JWRB) :: XLA, XLO
 
+      CHARACTER(LEN=2) :: CCLASS, CTYPE
+      CHARACTER(LEN=4) :: CSTREAM, CEXPVER
+      CHARACTER(LEN=12) :: C12
       CHARACTER(LEN=14) :: ZERO, CDUM
       CHARACTER(LEN=24) :: FILNM
       CHARACTER(LEN=80) :: FILENAME
@@ -303,6 +316,56 @@ SUBROUTINE INITMDL (NADV,                                 &
 !----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
+
+!*    0.  SOME INITIAL TESTS
+!        -------------------
+
+      IF (LWCOU) THEN
+        IF ( IQGAUSS /= 1 ) THEN
+          IF ( AMONOP < 90._JWRB ) THEN
+              WRITE (IU06,*) ' *********************************'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' * PROBLEM IN WAVEMDL..........  *'
+              WRITE (IU06,*) ' *   *'
+              WRITE (IU06,*) ' * AMONOP SHOULD NOT BE < 90 IF  *'
+              WRITE (IU06,*) ' * COUPLED AND ON LAT LON GRID   *'
+              WRITE (IU06,*) ' * ============================= *'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' * AMONOP=', AMONOP
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' *********************************'
+              CALL FLUSH(IU06)
+              CALL ABORT1
+          ENDIF
+        ENDIF
+
+        WRITE(IU06,*)'  '
+        WRITE (IU06,*) ' INITMDL: GRIB HANDLE FROM IFS'
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'dataDate',IYYYYMMDD)
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'time',IHHMM)
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'step',STEP)
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'endStep',ISTEP)
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'expver',C12,KRET=IRET)
+        IF (IRET /= 0) THEN
+             CEXPVER='****'
+        ELSE
+             CEXPVER=C12(1:4)
+        ENDIF
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'class',C12)
+        CCLASS=C12(1:2)
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'stream',C12)
+        CSTREAM=C12(1:4)
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'type',C12)
+        CTYPE=C12(1:2)
+        WRITE(IU06,*)' EXPVER=', CEXPVER,   &
+     &               ' CLASS=', CCLASS,     &
+     &               ' STREAM=', CSTREAM,   &
+     &               ' TYPE=', CTYPE
+      ENDIF
+
+!     INQUIRE IF IUNITW IS ALREADY OPEN THEN CLOSE IT
+      IF (IUNITW /= 0) CLOSE(IUNITW)
 
 
       CALL INIWCST(PRPLRADI)
@@ -945,11 +1008,29 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
       IF ( LNSESTART ) THEN
         WRITE(IU06,*) ' SUB. INITMDL: SPECTRA INITIALISED AT NOISE LEVEL'
+        WRITE(IU06,*) ' '
+        CALL FLUSH (IU06)
       ELSE
         WRITE(IU06,*) ' SUB. INITMDL: SPECTRA READ IN'
+        WRITE(IU06,*) ' '
+        CALL FLUSH (IU06)
+
+        IF (CDTPRO == CDATEA .AND. LLSOURCE ) THEN
+!         INSURE THERE IS SOME WAVE ENERGY FOR GRID POINTS THAT HAVE BEEN
+!         FREED FROM SEA ICE (ONLY DONE INITIALLY AND IF THE MODEL IS NOT RESTARTED
+!         IT ALSO RESETS THE MIMIMUM ENERGY LEVEL THAT MIGHT HAVE BEEN LOST
+!         WHEN GETTING THE DATA FROM GRIB.
+          CALL GSTATS(1236,0)
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
+          DO ICHNK = 1, NCHNK
+            CALL UNSETICE(1, NPROMA_WAM, WVENVI%DEPTH(:,ICHNK), WVENVI%EMAXDPT(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK), &
+ &                        FF_NOW%WSWAVE(:,ICHNK), FF_NOW%CICOVER(:,ICHNK), FL1(:,:,:,ICHNK) )
+          ENDDO
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1236,1)
+        ENDIF
+
       ENDIF
-      WRITE(IU06,*) ' '
-      CALL FLUSH (IU06)
 
 
 !     9.2 COMPUTE FREQUENCY DEPENDENT INDICES AND COEFFICIENTS FOR SNONLIN
@@ -982,6 +1063,39 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
         ENDIF
       ENDIF
 !NEST
+
+
+!     11. SOME MORE TESTS
+!         ---------------
+
+        IF (LWCOU) THEN
+          IF (NLONW /= NGX .OR. NLATW /= NGY) THEN
+            WRITE (IU06,*) ' *********************************'
+            WRITE (IU06,*) ' *                               *'
+            WRITE (IU06,*) ' * PROBLEM IN INITMDL..........  *'
+            WRITE (IU06,*) ' * PROBLEM WITH NLONW AND NLATW  *'
+            WRITE (IU06,*) ' * NOT EQUAL TO NGX   AND NGY  : *'
+            WRITE (IU06,*) ' * ============================= *'
+            WRITE (IU06,*) ' *                               *'
+            WRITE (IU06,*) ' * NLONW=',NLONW
+            WRITE (IU06,*) ' * NLATW=',NLATW
+            WRITE (IU06,*) ' * NGX=',NGX
+            WRITE (IU06,*) ' * NGY=',NGY
+            WRITE (IU06,*) ' *                               *'
+            WRITE (IU06,*) ' *                               *'
+            WRITE (IU06,*) ' *********************************'
+            CALL ABORT1
+          ENDIF
+        ENDIF
+
+
+!     12. OUTPUT INITIAL CONDITIONS (IF IT IS NOT A RESTART)
+!         --------------------------------------------------
+      IF (CDTPRO == CDATEA) THEN
+         CALL OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
+ &                      WAM2NEMO, NEMO2WAM, FL1)
+      ENDIF
+
 
 IF (LHOOK) CALL DR_HOOK('INITMDL',1,ZHOOK_HANDLE)
 
