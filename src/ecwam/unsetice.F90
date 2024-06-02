@@ -163,7 +163,9 @@ IF (LHOOK) CALL DR_HOOK('UNSETICE',0,ZHOOK_HANDLE)
           DO K=1,NANG
             DO IJ=KIJS,KIJL
               FL1(IJ,K,M) = MAX(FL1(IJ,K,M),ET(IJ,M)*SPRD(IJ,K))
-              FLLOWEST    = CIFLAG*FLMIN*COS2NOISE(IJ,K)
+!               FLLOWEST    = CIFLAG*FLMIN*COS2NOISE(IJ,K)
+              ! still allow noise in full sea ice cover, but only ten percent
+              FLLOWEST    =  (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN*COS2NOISE(IJ,K)
               FL1(IJ,K,M) = MAX(FL1(IJ,K,M),FLLOWEST)
             ENDDO
           ENDDO

@@ -245,7 +245,9 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-          FLM(IJ,K) = CIFLAG*FLMIN*MAX(0.0_JWRB, COSWDIF(IJ,K))**2 
+!           FLM(IJ,K) = CIFLAG*FLMIN*MAX(0.0_JWRB, COSWDIF(IJ,K))**2 
+          ! still allow noise in full sea ice cover, but only ten percent
+          FLM(IJ,K) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN*MAX(0.0_JWRB, COSWDIF(IJ,K))**2 
         ENDDO
       ENDDO
 
