@@ -249,10 +249,6 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
 
         IF (LLMORE) THEN
 !         Update forcing
-
-              WRITE (IU06,*) ' *debile calling NOTIM CDATEWL= ',CDATEWL
-              call flush(iu06)
-
           CALL NOTIM (CDTWIS, CDTWIE,             &
      &                NXS, NXE, NYS, NYE, FIELDG, &
      &                BLK2LOC, WVENVI, FF_NEXT,   &

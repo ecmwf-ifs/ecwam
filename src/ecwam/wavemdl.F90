@@ -280,7 +280,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
       CHARACTER(LEN=256) :: CLSMSNAME,CLECFNAME
 
       LOGICAL, SAVE :: LFRST
-      LOGICAL, SAVE :: LFRST_debug
+      LOGICAL, SAVE :: LFRST_step0_hack  !! this is only here to insure that results are bit identical
+                                         !! following the change to split the output of step 0 in coupled model
+                                         !! from the time integration loop. It would be more correct to not
+                                         !! re-initialise air density and w* (LLINIT = .FALSE.).
+                                         !! Change it as soon as you can.
       LOGICAL, SAVE :: LFRSTCHK
       LOGICAL, SAVE :: LLINTERPOL
       LOGICAL :: LLGLOBAL_WVFLDG
@@ -295,7 +299,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
 #endif
 
       DATA LFRST /.TRUE./
-      DATA LFRST_debug /.TRUE./
+      DATA LFRST_step0_hack /.TRUE./
       DATA LFRSTCHK /.TRUE./
       DATA LLINTERPOL /.TRUE./
 
@@ -425,11 +429,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
         ENDIF
 
 !!      INITIALISATION ONLY
+!       +++++++++++++++++++
         IF (LLWAVEINIT_ONLY) THEN
 !         RESET OF THE LAST WIND READ
-          CDATEWL=CDATEA
-          CDAWIFL=CDATEA
-          CALL INCDATE(CDAWIFL,IDELWI)
           CALL MPL_BARRIER(CDSTRING='WAVEMDL INITIALISATION: END')
 !         TELL ATMOS MODEL THE WAM REQUIREMENT FOR GLOBAL NORMS
           LDWCOUNORMS=LWCOUNORMS
@@ -557,13 +559,14 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
 
         ENDIF
 
-        IF (LFRST_debug) THEN
-!!!1 will not work for restart file use
+        IF (LFRST_step0_hack .AND. LWCOU .AND. .NOT.LRESTARTED) THEN
+!!        see comment above regarding LFRST_step0_hack
           LLINIT = .TRUE.
-          LFRST_debug = .FALSE.
+          LFRST_step0_hack = .FALSE.
         ELSE
           LLINIT = .FALSE.
         ENDIF
+
         LLINIT_FIELDG = .NOT. LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
 
@@ -801,8 +804,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
         CALL GSTATS(1443,1)
 
 
-!       GRIDDED FIELDS ARE NEEDED FOR IFS, GATHERING OF THE NECESSARY
-!       INFORMATION
+!       GRIDDED FIELDS ARE NEEDED FOR IFS, GATHERING OF THE NECESSARY INFORMATION
         CALL MPFLDTOIFS(IJS, IJL, BLK2GLO, LLINIT_WVFLDG, NWVFIELDS, WVBLOCK, &
      &                  WVFLDG, DEFVAL, MASK_OUT, LLGLOBAL_WVFLDG)
 
