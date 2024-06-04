@@ -117,6 +117,8 @@
       REAL(KIND=JWRB), DIMENSION(KIJL) :: SUMT, SUMX, SUMY
 
       LOGICAL :: LTAUWSHELTER
+!... needed for Loki
+#include "ns_gc.intfb.h"
 
 ! ----------------------------------------------------------------------
 
@@ -210,6 +212,7 @@
         ENDDO
       ENDIF
 
+      !$loki inline
       CALL TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
      &                FL1, AIRD, RNFAC,                          &
      &                COSWDIF, SINWDIF2,                         &
