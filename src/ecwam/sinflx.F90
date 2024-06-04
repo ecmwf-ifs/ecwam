@@ -29,7 +29,8 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : WETAIL, FRTAIL, DFIMOFR ! needed for Loki
+      USE YOWFRED  , ONLY : WETAIL, FRTAIL, DFIMOFR, DFIM, FRIC, FLOGSPRDM1 ! needed for Loki
+      USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM ! needed for Loki
       USE YOWCOUP  , ONLY : LWCOU    ,LLCAPCHNK , LLGCBZ0, LLNORMAGAM
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPHYS  , ONLY : DTHRN_A  ,DTHRN_U 
@@ -97,6 +98,8 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 REAL(KIND=JWRB), DIMENSION(KIJL) :: RNFAC
 
 LOGICAL :: LLPHIWA, LLSNEG
+!... needed for Loki
+#include "ns_gc.intfb.h"
 
 ! ----------------------------------------------------------------------
 
@@ -172,6 +175,7 @@ CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, FMEANWS)
 CALL FRCUTINDEX(KIJS, KIJL, FMEAN, FMEANWS, UFRIC, CICOVER, MIJ, RHOWGDFTH)
 
 ! UPDATE TAUW
+!$loki inline
 CALL STRESSO (KIJS, KIJL, MIJ, RHOWGDFTH,          &
 &             FL1, SL, SPOS,                       &
 &             CINV,                                &
