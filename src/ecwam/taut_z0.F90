@@ -127,13 +127,7 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG,          &
 
 ! ----------------------------------------------------------------------
 
-!     INLINE FUNCTION.
-!     ----------------
-
-!     Simple empirical fit to model drag coefficient
-      REAL(KIND=JWRB) :: CDM, U10
-
-      CDM(U10) = MAX(MIN(0.0006_JWRB+0.00008_JWRB*U10, 0.001_JWRB+0.0018_JWRB*EXP(-0.05_JWRB*(U10-33._JWRB))),0.001_JWRB)
+#include "cdm.func.h"
 
 ! ----------------------------------------------------------------------
 
