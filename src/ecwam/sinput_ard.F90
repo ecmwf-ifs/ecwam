@@ -135,9 +135,9 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       REAL(KIND=JWRB), DIMENSION(KIJL) :: CNSN, SUMF, SUMFSIN2
       REAL(KIND=JWRB), DIMENSION(KIJL) :: CSTRNFAC
       REAL(KIND=JWRB), DIMENSION(KIJL) :: FLP_AVG, SLP_AVG
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: ROGOROAIR, AIRD_PVISC
-      REAL(KIND=JWRB), DIMENSION(KIJL,2) :: XSTRESS, YSTRESS, FLP, SLP
-      REAL(KIND=JWRB), DIMENSION(KIJL,2) :: USG2, TAUX, TAUY, USTP, USTPM1, USDIRP, UCN
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: ROGOROAIR, AIRD_PVISC, USG2, FLP, SLP
+      REAL(KIND=JWRB), DIMENSION(KIJL,2) :: XSTRESS, YSTRESS
+      REAL(KIND=JWRB), DIMENSION(KIJL,2) :: TAUX, TAUY, USTP, USTPM1, USDIRP, UCN
       REAL(KIND=JWRB), DIMENSION(KIJL,2) :: UCNZALPD
       REAL(KIND=JWRB), DIMENSION(KIJL) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(KIJL,2) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
@@ -306,9 +306,9 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
           DO IJ=KIJS,KIJL
             XSTRESS(IJ,IGST)=0.0_JWRB
             YSTRESS(IJ,IGST)=0.0_JWRB
-            USG2(IJ,IGST)=USTP(IJ,IGST)**2
-            TAUX(IJ,IGST)=USG2(IJ,IGST)*SIN(WDWAVE(IJ))
-            TAUY(IJ,IGST)=USG2(IJ,IGST)*COS(WDWAVE(IJ))
+            USG2(IJ)=USTP(IJ,IGST)**2
+            TAUX(IJ,IGST)=USG2(IJ)*SIN(WDWAVE(IJ))
+            TAUY(IJ,IGST)=USG2(IJ)*COS(WDWAVE(IJ))
           ENDDO
         ENDDO
 
@@ -459,40 +459,36 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
           DO IGST=1,NGST
             DO IJ=KIJS,KIJL
               ! SLP: only the positive contributions
-              SLP(IJ,IGST) =  GAM0(IJ,K,IGST) * GAMNORMA(IJ,IGST)
-              FLP(IJ,IGST) = SLP(IJ,IGST)+DSTAB(IJ,K,IGST)
+              SLP(IJ) =  GAM0(IJ,K,IGST) * GAMNORMA(IJ,IGST)
+              FLP(IJ) = SLP(IJ)+DSTAB(IJ,K,IGST)
             ENDDO
-          ENDDO
 
-          DO IGST=1,NGST
             DO IJ=KIJS,KIJL
-              SLP(IJ,IGST) = SLP(IJ,IGST)*FL1(IJ,K,M)
+              SLP(IJ) = SLP(IJ)*FL1(IJ,K,M)
             ENDDO
-          ENDDO
 
-          IF (LTAUWSHELTER) THEN
-            DO IJ=KIJS,KIJL
-              CONST11(IJ)=CONSTF(IJ)*SINTH(K)
-              CONST22(IJ)=CONSTF(IJ)*COSTH(K)
-            ENDDO
-            DO IGST=1,NGST
+            IF (LTAUWSHELTER) THEN
               DO IJ=KIJS,KIJL
-                XSTRESS(IJ,IGST)=XSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST11(IJ)
-                YSTRESS(IJ,IGST)=YSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST22(IJ)
+                CONST11(IJ)=CONSTF(IJ)*SINTH(K)
+                CONST22(IJ)=CONSTF(IJ)*COSTH(K)
               ENDDO
-            ENDDO
-          ENDIF
+              DO IJ=KIJS,KIJL
+                XSTRESS(IJ,IGST)=XSTRESS(IJ,IGST)+SLP(IJ)*CONST11(IJ)
+                YSTRESS(IJ,IGST)=YSTRESS(IJ,IGST)+SLP(IJ)*CONST22(IJ)
+              ENDDO
+            ENDIF
 
-          IGST=1
-            DO IJ=KIJS,KIJL
-              SLP_AVG(IJ) = SLP(IJ,IGST)
-              FLP_AVG(IJ) = FLP(IJ,IGST)
-            ENDDO
-          DO IGST=2,NGST
-            DO IJ=KIJS,KIJL
-              SLP_AVG(IJ) = SLP_AVG(IJ)+SLP(IJ,IGST)
-              FLP_AVG(IJ) = FLP_AVG(IJ)+FLP(IJ,IGST)
-            ENDDO
+            IF(IGST == 1)THEN
+              DO IJ=KIJS,KIJL
+                SLP_AVG(IJ) = SLP(IJ)
+                FLP_AVG(IJ) = FLP(IJ)
+              ENDDO
+            ELSE
+              DO IJ=KIJS,KIJL
+                SLP_AVG(IJ) = SLP_AVG(IJ)+SLP(IJ)
+                FLP_AVG(IJ) = FLP_AVG(IJ)+FLP(IJ)
+              ENDDO
+            ENDIF
           ENDDO
 
           DO IJ=KIJS,KIJL
