@@ -88,6 +88,8 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1 
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
+      USE YOWFRED  , ONLY : COSTH, SINTH, WP1TAIL, DFIMFR ! needed for Loki
+      USE YOWPCONS , ONLY : GM1, EPSUS, G, EPSU10, TAUOCMIN, TAUOCMAX, PHIEPSMAX, PHIEPSMIN, ZPI  ! needed for Loki
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -299,8 +301,10 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       ENDIF
 
 
+      !$loki inline
       CALL SDIWBK(KIJS, KIJL, FL1 ,FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)
 
+      !$loki inline
       CALL SBOTTOM (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH)
 
 ! ----------------------------------------------------------------------
@@ -357,6 +361,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       ENDIF
 
       IF (LCFLX) THEN
+        !$loki inline
         CALL WNFLUXES (KIJS, KIJL,                       &
      &                 MIJ, RHOWGDFTH,                   &
      &                 CINV,                             &
@@ -377,6 +382,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
 
+      !$loki inline
       CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                      &
      &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
