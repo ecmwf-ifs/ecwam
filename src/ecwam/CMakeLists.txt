@@ -467,7 +467,7 @@ ecwam_target_fortran_module_directory(
 )
 
 if( HAVE_ACC )
-   target_compile_options( ${ecwam} PUBLIC "-gpu=gvmode,maxregcount:128" )
+   target_compile_options( ${ecwam} PUBLIC "-gpu=maxregcount:128" )
 endif()
 
 ecwam_target_compile_definitions_FILENAME( ${ecwam} )
