@@ -8,7 +8,7 @@
 !
 
       SUBROUTINE AIRSEA (KIJS, KIJL, &
-&                        HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,  &
+&                        HALP, UTOP, U10DIR, TAUW, TAUWDIR, RNFAC,  &
 &                        US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
@@ -62,6 +62,9 @@
       USE YOWPHYS,  ONLY : XKAPPA, XNLEV
       USE YOWTEST,  ONLY : IU06
       USE YOWWIND,  ONLY : WSPMIN
+      USE YOWPHYS,  ONLY : RNU, ALPHAMAX, ANG_GC_A, ANG_GC_B, ANG_GC_C, RNUM, & ! needed for Loki
+      &                    ALPHAMIN
+      USE YOWPCONS,  ONLY : BCD, EPSUS, EPSMIN, ACD, CDMAX ! needed for Loki
 
       USE YOMHOOK, ONLY: LHOOK, DR_HOOK, JPHOOK
 
@@ -71,10 +74,14 @@
 #include "abort1.intfb.h"
 #include "taut_z0.intfb.h"
 #include "z0wave.intfb.h"
+! needed for Loki
+#include "stress_gc.intfb.h"
+#include "chnkmin.intfb.h"
+#include "cdm.func.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (IN) :: HALP, U10DIR, TAUW, TAUWDIR, RNFAC
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (INOUT) :: U10, US
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (INOUT) :: UTOP, US
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (OUT) :: Z0, Z0B, CHRNCK
 
       INTEGER(KIND=JWIM) :: IJ, I, J
@@ -92,8 +99,9 @@
 
       IF (ICODE_WND == 3) THEN
 
+        !$loki inline
         CALL TAUT_Z0 (KIJS, KIJL, IUSFG,          &
-     &                HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
+     &                HALP, UTOP, U10DIR, TAUW, TAUWDIR, RNFAC, &
      &                US, Z0, Z0B, CHRNCK)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
@@ -101,7 +109,8 @@
 !*    3. DETERMINE ROUGHNESS LENGTH (if needed).
 !        ---------------------------
 
-        CALL Z0WAVE (KIJS, KIJL, US, TAUW, U10, Z0, Z0B, CHRNCK)
+        !$loki inline
+        CALL Z0WAVE (KIJS, KIJL, US, TAUW, UTOP, Z0, Z0B, CHRNCK)
 
 !*    3. DETERMINE U10 (if needed).
 !        ---------------------------
@@ -110,8 +119,8 @@
         XLOGLEV = LOG (XNLEV)
 
         DO IJ = KIJS, KIJL
-          U10 (IJ) = XKAPPAD * US (IJ) * (XLOGLEV - LOG (Z0 (IJ)))
-          U10 (IJ) = MAX (U10 (IJ), WSPMIN)
+          UTOP (IJ) = XKAPPAD * US (IJ) * (XLOGLEV - LOG (Z0 (IJ)))
+          UTOP (IJ) = MAX (UTOP (IJ), WSPMIN)
         ENDDO
 
       ELSE
