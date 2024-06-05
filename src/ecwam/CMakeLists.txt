@@ -463,7 +463,7 @@ ecwam_target_fortran_module_directory(
 )
 
 if( HAVE_ACC )
-   target_compile_options( ${ecwam} PRIVATE "-gpu=maxregcount:128" )
+   target_compile_options( ${ecwam} PRIVATE "-gpu=maxregcount:128,fastmath" )
 endif()
 
 if( HAVE_CUDA )
