@@ -239,7 +239,13 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'missingValue',ZMISS)
 
 !     GRIB TABLE AND PARAMETER NUMBER
-      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR,IERR)
+
+      SELECT CASE (ITABPAR)
+      CASE(140254)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramIdECMF',ITABPAR,IERR)
+      CASE DEFAULT
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR,IERR)
+      END SELECT
       IF (IERR /= 0) THEN
         WRITE(NULERR,*) ' ************************************************************************'
         WRITE(IU06,*) ' *********************************************'
