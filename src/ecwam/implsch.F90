@@ -89,11 +89,22 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
       USE YOWPARAM , ONLY : NFRE_RED ! needed for Loki
-      USE YOWICE   , ONLY : CIBLOCK, CDICWA, CITHRSH, LWAMRSETCI ! needed for Loki
-      USE YOWCOUP  , ONLY : LWCOUAST, LWNEMOTAUOC ! needed for Loki
-      USE YOWFRED  , ONLY : COSTH, SINTH, WP1TAIL, DFIMFR, WETAIL, FRTAIL, DFIMOFR, DFIM_SIM ! needed for Loki
+      USE YOWICE   , ONLY : CIBLOCK, CDICWA, CITHRSH, LWAMRSETCI, CITHRSH_TAIL ! needed for Loki
+      USE YOWCOUP  , ONLY : LWCOUAST, LWNEMOTAUOC, X0TAUHF, JTOT_TAUHF, WTAUHF ! needed for Loki
+      USE YOWFRED  , ONLY : COSTH, SINTH, WP1TAIL, DFIMFR, WETAIL, FRTAIL, DFIMOFR, DFIM_SIM, &
+      &                     RHOWG_DFIM, XK_GC, OMEGA_GC, DFIMFR2, WP2TAIL ! needed for Loki
       USE YOWPCONS , ONLY : GM1, EPSUS, G, EPSU10, TAUOCMIN, TAUOCMAX, PHIEPSMAX, PHIEPSMIN, ZPI, &  ! needed for Loki
- &                          EPSMIN
+ &                          EPSMIN, ZPI4GM2, ZPI4GM1, ROWATER
+      USE YOWFRED  , ONLY : WETAIL, FRTAIL, DFIMOFR, DFIM, FRIC, FLOGSPRDM1, FR5, ZPIFR, FRATIO ! needed for Loki
+      USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM, BETAMAXOXKAPPA2, RNUM, ALPHAMAX, ALPHAMIN, &! needed for Loki
+      &                     RNU, SWELLF3, SWELLF2, ABMAX, ABMIN, Z0RAT, Z0TUBMAX, SWELLF6, SWELLF4, &
+      &                     SWELLF7, SWELLF7M1, SWELLF, SWELLF5, XNLEV, ALPHA, ANG_GC_A, ANG_GC_B, ANG_GC_C, &
+      &                     ALPHAPMAX, DTHRN_A, DTHRN_U, XKAPPA, ZALP, TAUWSHELTER, GAMNCONST, SDSBR, MICHE, &
+      &                     SSDSC6, SSDSC2, SSDSC4, SSDSC5, IPSAT, SSDSC3, NSDSNTH, SATWEIGHTS, INDICESSAT, BRKPBCOEF, &
+      &                     SSDSBRF1, DELTA_SDIS, CDIS, CDISVIS
+      USE YOWPCONS , ONLY : BCD, EPSMIN, EPSUS, ACD, CDMAX ! needed for Loki
+      USE YOWCOUP  , ONLY : LLCAPCHNK , LLGCBZ0, LLNORMAGAM ! needed for Loki
+      USE YOWSTAT  , ONLY : IDAMPING, IPHYS, ISNONLIN ! needed for Loki
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
@@ -115,6 +126,10 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 #include "wnfluxes.intfb.h"
 ! needed for Loki
 #include "aki_ice.intfb.h"
+#include "stress_gc.intfb.h"
+#include "chnkmin.intfb.h"
+#include "ns_gc.intfb.h"
+#include "cdm.func.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
@@ -257,6 +272,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       LUPDTUS = .TRUE.
       NCALL = 2
       DO ICALL = 1, NCALL 
+        !$loki inline
         CALL SINFLX (ICALL, NCALL, KIJS, KIJL,  &
      &               LUPDTUS,                   &
      &               FL1,                       &
@@ -276,6 +292,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
 
+      !$loki inline
       CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,   &
      &              WAVNUM, CGROUP, XK2CG,      &
      &              EMEAN, F1MEAN, XKMEAN,      &

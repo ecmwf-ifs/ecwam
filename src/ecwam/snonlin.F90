@@ -149,6 +149,7 @@
         ENDDO
 
       CASE(2)      
+        !$loki inline      
         CALL PEAK_ANG(KIJS, KIJL, FL1, XNU, SIG_TH)
         DO MC=1,NFRE
           DO IJ = KIJS, KIJL 
