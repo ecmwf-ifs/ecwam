@@ -29,12 +29,6 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : WETAIL, FRTAIL, DFIMOFR, DFIM, FRIC, FLOGSPRDM1 ! needed for Loki
-      USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM, BETAMAXOXKAPPA2, RNUM, ALPHAMAX, ALPHAMIN, &! needed for Loki
-      &                     RNU, SWELLF3, SWELLF2, ABMAX, ABMIN, Z0RAT, Z0TUBMAX, SWELLF6, SWELLF4, &
-      &                     SWELLF7, SWELLF7M1, SWELLF, SWELLF5, XNLEV, ALPHA, ANG_GC_A, ANG_GC_B, ANG_GC_C, &
-      &                     ALPHAPMAX
-      USE YOWPCONS , ONLY : BCD, EPSMIN, EPSUS, ACD, CDMAX ! needed for Loki
       USE YOWCOUP  , ONLY : LWCOU    ,LLCAPCHNK , LLGCBZ0, LLNORMAGAM
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPHYS  , ONLY : DTHRN_A  ,DTHRN_U 
@@ -52,11 +46,6 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
 #include "halphap.intfb.h"
 #include "sinput.intfb.h"
 #include "stresso.intfb.h"
-! needed for Loki
-#include "stress_gc.intfb.h"
-#include "chnkmin.intfb.h"
-#include "ns_gc.intfb.h"
-#include "cdm.func.h"
 
 INTEGER(KIND=JWIM), INTENT(IN) :: ICALL  !! CALL NUMBER.
 INTEGER(KIND=JWIM), INTENT(IN) :: NCALL  !! TOTAL NUMBER OF CALLS.

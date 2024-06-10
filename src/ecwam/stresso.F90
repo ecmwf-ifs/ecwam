@@ -117,8 +117,6 @@
       REAL(KIND=JWRB), DIMENSION(KIJL) :: SUMT, SUMX, SUMY
 
       LOGICAL :: LTAUWSHELTER
-!... needed for Loki
-#include "ns_gc.intfb.h"
 
 ! ----------------------------------------------------------------------
 
