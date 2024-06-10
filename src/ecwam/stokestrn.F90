@@ -47,8 +47,6 @@ SUBROUTINE STOKESTRN (KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, WSWAVE, WDWAVE, C
       IMPLICIT NONE
 #include "cimsstrn.intfb.h"
 #include "stokesdrift.intfb.h"
-! needed for Loki
-#include "aki_ice.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
