@@ -62,9 +62,6 @@
       USE YOWPHYS,  ONLY : XKAPPA, XNLEV
       USE YOWTEST,  ONLY : IU06
       USE YOWWIND,  ONLY : WSPMIN
-      USE YOWPHYS,  ONLY : RNU, ALPHAMAX, ANG_GC_A, ANG_GC_B, ANG_GC_C, RNUM, & ! needed for Loki
-      &                    ALPHAMIN
-      USE YOWPCONS,  ONLY : BCD, EPSUS, EPSMIN, ACD, CDMAX ! needed for Loki
 
       USE YOMHOOK, ONLY: LHOOK, DR_HOOK, JPHOOK
 
@@ -74,10 +71,6 @@
 #include "abort1.intfb.h"
 #include "taut_z0.intfb.h"
 #include "z0wave.intfb.h"
-! needed for Loki
-#include "stress_gc.intfb.h"
-#include "chnkmin.intfb.h"
-#include "cdm.func.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (IN) :: HALP, U10DIR, TAUW, TAUWDIR, RNFAC

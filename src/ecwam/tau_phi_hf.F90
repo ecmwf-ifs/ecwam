@@ -117,8 +117,6 @@ SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
       REAL(KIND=JWRB), DIMENSION(KIJL) :: F1DCOS2, F1DCOS3 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: F1D, F1DSIN2 
 
-!... needed for Loki
-#include "ns_gc.intfb.h"
 
 ! ----------------------------------------------------------------------
 
