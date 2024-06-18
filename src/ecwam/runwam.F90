@@ -139,6 +139,7 @@
       INTEGER(KIND=JWIM) :: NATMFLX
       INTEGER(KIND=JWIM) :: NGAUSSW, NLON, NLAT
       INTEGER(KIND=JWIM) :: IGRIB_HANDLE_DUM
+      INTEGER(KIND=JWIM) :: IGRIB_HANDLE_DUM2
       INTEGER(KIND=JWIM) :: NADV
       INTEGER(KIND=JWIM) :: KSTOP, KSTPW
       INTEGER(KIND=JWIM) :: IDUM
@@ -278,6 +279,7 @@
       KSTPW=0  ! only used in coupled model
       IDUM=0
       IGRIB_HANDLE_DUM=-99 ! only used in coupled model
+      IGRIB_HANDLE_DUM2=-99 ! only used in coupled model
       NATMFLX=0
       LWSTOKES=.FALSE.  ! only used in coupled runs with atmospheric model
       RMISS=-999.0_JWRB ! missing data indicator
@@ -331,7 +333,8 @@
         timestep_start = - wam_user_clock()
         CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW,                      &
      &             NFIELDS, NGPTOTG, NC, NR,                            &
-     &             IGRIB_HANDLE_DUM, RMISS, ZRCHAR, FIELDS,             &
+     &             IGRIB_HANDLE_DUM, IGRIB_HANDLE_DUM2,                 &
+     &             RMISS, ZRCHAR, FIELDS,                               &
      &             NATMFLX,                                             &
      &             LWCUR, LWSTOKES,                                     &
      &             LLINIT_WVFLDG, NWVFIELDS, WVFLDG,                    &

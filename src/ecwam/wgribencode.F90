@@ -77,7 +77,6 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "difdate.intfb.h"
-#include "preset_wgrib_template.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, I1, I2
       INTEGER(KIND=JWIM), INTENT(IN) :: ITABLE, IPARAM, KLEV, IK, IM, IFCST

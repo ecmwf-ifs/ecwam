@@ -77,7 +77,7 @@
       USE YOWFRED  , ONLY : IFRE1, FR1, XKMSS_CUTOFF 
       USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS,                    &
      &                      LNEWLVTP, LL_GRID_SIMPLE_MATRIX
-      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
+      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS, NGRIB_HANDLE_IFS2
       USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI, LCIWABR  ,  &
      &            LICETH
@@ -760,6 +760,7 @@
       LBCWA = .FALSE.
 
       NGRIB_HANDLE_IFS = -1
+      NGRIB_HANDLE_IFS2 = -1
 
 
 ! ----------------------------------------------------------------------

@@ -9,7 +9,8 @@
 
 SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &              NFIELDS, NGPTOTG, NC, NR,                     &
-     &              IGRIB_HANDLE, RMISS, ZRCHAR, FIELDS,          &
+     &              IGRIB_HANDLE, IGRIB_HANDLE2,                  &
+     &              RMISS, ZRCHAR, FIELDS,                        &
      &              NATMFLX,                                      &
      &              LWCUR, LWSTOKES,                              &
      &              LLINIT_WVFLDG, NWVFIELDS, WVFLDG,             &
@@ -143,7 +144,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE EC_LUN   , ONLY : NULERR
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
+      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS, NGRIB_HANDLE_IFS2
       USE YOWASSI  , ONLY : WAMASSI
       USE YOWGRIB  , ONLY : IGRIB_GET_VALUE
       USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_GATHERV
@@ -181,8 +182,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       INTEGER(KIND=JWIM), INTENT(IN) :: NC
 !     NUMBER OF ATM. ROWS OF LATITUDES
       INTEGER(KIND=JWIM), INTENT(IN) :: NR
-!     IFS GRIB HANDLE
+!     IFS GRIB HANDLES
       INTEGER(KIND=JWIM), INTENT(IN) :: IGRIB_HANDLE
+      INTEGER(KIND=JWIM), INTENT(IN) :: IGRIB_HANDLE2
 !     GRIB MISSING DATA INDICATOR
       REAL(KIND=JWRB), INTENT(IN) :: RMISS
 !     DEFAULT VALUE FOR CHARNOCK
@@ -344,10 +346,16 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         ENDIF
 
         NGRIB_HANDLE_IFS=IGRIB_HANDLE
-
-
         IF (NGRIB_HANDLE_IFS < 0 ) THEN
           WRITE(IU06,*)' SUB: WAVEMDL:  NGRIB_HANDLE_IFS < 0 !'
+          WRITE(IU06,*)' CALL ABORT1 '
+          WRITE(IU06,*)'  '
+          CALL ABORT1
+        ENDIF
+
+        NGRIB_HANDLE_IFS2 = IGRIB_HANDLE2
+        IF (NGRIB_HANDLE_IFS2 < 0 ) THEN
+          WRITE(IU06,*)' SUB: WAVEMDL:  NGRIB_HANDLE_IFS2 < 0 !'
           WRITE(IU06,*)' CALL ABORT1 '
           WRITE(IU06,*)'  '
           CALL ABORT1
