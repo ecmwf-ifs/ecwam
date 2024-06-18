@@ -86,13 +86,9 @@ if( HAVE_ECWAM_LAUNCH )
   set( CMAKE_CROSSCOMPILING_EMULATOR ${ECWAM_LAUNCH} ) # For serial runs
 endif()
 
-### Optional dependencies
+### Find python dependencies
 
 ecwam_find_python_mods()
-ecbuild_add_option( FEATURE GEN_DERIV_TYPES
-                    DEFAULT ON
-                    DESCRIPTION "Generate derived-type data structures using fypp pre-processor and yaml config"
-                    CONDITION FYPP_FOUND AND PYYAML_FOUND )
 
 ### Set third party libraries
 
@@ -135,7 +131,7 @@ endif()
 ecbuild_add_option( FEATURE ACC
                     DESCRIPTION "OpenACC" DEFAULT OFF
                     REQUIRED_PACKAGES "OpenACC" 
-                    CONDITION HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" AND HAVE_GEN_DERIV_TYPES )
+                    CONDITION HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" )
 
 ### CUDA-aware MPI
 ecbuild_add_option( FEATURE GPU_AWARE_MPI

@@ -7,33 +7,46 @@
 # nor does it submit to any jurisdiction.
 
 macro( ecwam_find_python_mods )
-   set(FYPP_FOUND OFF)
-   set(PYYAML_FOUND OFF)
 
-   # Look for fypp pre-processor
-   find_program( FYPP fypp HINTS ${fypp_ROOT} )
-   if( FYPP )
-     ecbuild_info( "${ECWAM_PROJECT_NAME} FOUND fypp" )
-     set(FYPP_FOUND ON)
-   else()
-     ecbuild_info( "${ECWAM_PROJECT_NAME} FAILED to find optional package fypp" )
-   endif()
-   # We do a QUIET ecbuild_find_package to update the ecbuild project summary
-   ecbuild_find_package( fypp QUIET )
+   # Find the system python install
+   set( Python3_FIND_VIRTUALENV STANDARD )
 
-   # Look for python interpreter and pyyaml package
-   find_package( Python3 COMPONENTS Interpreter )
+   # Look for python interpreter and pyyaml
+   find_package( Python3 COMPONENTS Interpreter REQUIRED)
+   set(ECWAM_PYTHON_INTERP ${Python3_EXECUTABLE})
+
+   set( pyyaml_FOUND OFF )
+   # Look for pyyaml
    execute_process(
        COMMAND python3 -c "import yaml"
        RESULT_VARIABLE EXIT_CODE
-       OUTPUT_QUIET
+       OUTPUT_QUIET ERROR_QUIET
    )
    if( EXIT_CODE EQUAL 0 )
      ecbuild_info("${ECWAM_PROJECT_NAME} FOUND pyyaml")
-     set(PYYAML_FOUND ON)
-   else()
-     ecbuild_info( "${ECWAM_PROJECT_NAME} FAILED to find optional package pyyaml" )
+
+     set( pyyaml_FOUND ON )
    endif()
-   # We do a QUIET ecbuild_find_package to update the ecbuild project summary
-   ecbuild_find_package( pyyaml QUIET)
+
+   set( fypp_FOUND OFF )
+   ecbuild_find_package( fckit )
+   # Look for (non-fckit) fypp pre-processor
+   find_program( FYPP fypp )
+   if( NOT fckit_HAVE_FCKIT_VENV AND NOT FYPP MATCHES FYPP-NOTFOUND )
+     ecbuild_info( "${ECWAM_PROJECT_NAME} FOUND fypp" )
+
+     set( fypp_FOUND ON )
+   endif()
+
+   if( NOT pyyaml_FOUND OR NOT fypp_FOUND )
+     if( NOT fckit_HAVE_FCKIT_VENV )
+        ecbuild_critical("${ECWAM_PROJECT_NAME}: fckit python virtual environment was not installed")
+     endif()
+
+     ecbuild_info("${ECWAM_PROJECT_NAME} did not find either fypp or pyyaml, therefore using fckit python virtual environment")
+
+     set( FYPP ${FCKIT_VENV_EXE} -m fypp )
+     set(ECWAM_PYTHON_INTERP ${FCKIT_VENV_EXE})
+   endif()
+
 endmacro()
