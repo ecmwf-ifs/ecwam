@@ -234,7 +234,7 @@
 
 !     PARAMETER 033
       IR = DEFINE_PARAMETER( 33, 'hmax', 140218, 0, 0, 0, .True., .True., &
-                           & 'MAXIMUM WAVE HEIGHT' )
+                           & 'ENVELOP MAXIMUM WAVE HEIGHT' )
 
 !     PARAMETER 034
       IR = DEFINE_PARAMETER( 34, 'tmax', 140217, 0, 0, 0, .True., .True., &
