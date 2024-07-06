@@ -167,6 +167,7 @@ list( APPEND ecwam_srcs
   out_onegrdpt_sp.F90
   outbc.F90
   outbeta.F90
+  outch.F90
   outblock.F90
   outbs.F90
   outcom.F90
