@@ -89,7 +89,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LICERUN   ,LMASKICE ,              &
                             LCIWA1   ,LCIWA2    ,LCIWA3   ,LCISCAL   ,   &
- &                          ALPFACX
+ &                          ZALPFACX
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LLUNSTR
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1 
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK
@@ -195,7 +195,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       ENDDO
 
       DO IJ=KIJS,KIJL 
-        ALPFAC(IJ)  = ALPFACX ! <1=some reduction, 1=no reduction to attenuation
+        ALPFAC(IJ)  = ZALPFACX ! <1=some reduction, 1=no reduction to attenuation
       ENDDO
 
       DO K=1,NANG
@@ -349,6 +349,15 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
 !        Save source term contributions relevant for the calculation of ice fluxes
          IF (LWNEMOCOUWRS) THEN
+          IF (.NOT. LWFLUX_IMPCOR) THEN
+            DO M=1,NFRE
+              DO K=1,NANG
+                DO IJ=KIJS,KIJL
+                  SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
+                ENDDO
+              ENDDO
+            ENDDO
+          ELSEIF (LWFLUX_IMPCOR) THEN
             DO M=1,NFRE
               DO K=1,NANG
                 DO IJ=KIJS,KIJL
@@ -357,7 +366,8 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
                 ENDDO
               ENDDO
             ENDDO
-         ENDIF
+          ENDIF
+       ENDIF
 
       ENDIF
 
