@@ -87,7 +87,6 @@
 #include "fkmean.intfb.h"
 #include "sdissip.intfb.h"
 #include "sdice.intfb.h"
-#include "icebreak.intfb.h"
 #include "icebreak_modify_attenuation.intfb.h"
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
@@ -104,7 +103,6 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: XK2CG
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NFRE), INTENT(IN) :: STOKFAC
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH
-!       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: IBRMEM      
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: IBRMEM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: WSWAVE, WDWAVE
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(INOUT) :: AIRD, WSTAR
@@ -238,7 +236,6 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 
 !        Coupling of waves and sea ice (type 1): wave-induced sea ice break up + reduced attenuation
           IF(LWNEMOCOUIBR) THEN 
-!             CALL ICEBREAK (KIJS,KIJL,EMEAN,AKMEAN,CITHICK,IBRMEM,ALPFAC)           
             CALL ICEBREAK_MODIFY_ATTENUATION (KIJS,KIJL,IBRMEM,ALPFAC)           
           ENDIF
 
@@ -262,24 +259,14 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 
 !        Save source term contributions relevant for the calculation of ice fluxes
          IF (LWNEMOCOUWRS) THEN
-            IF (.NOT. LWFLUX_IMPCOR) THEN
-              DO M=1,NFRE
-                DO K=1,NANG
-                  DO IJ=KIJS,KIJL
-                    SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
-                  ENDDO
+            DO M=1,NFRE
+              DO K=1,NANG
+                DO IJ=KIJS,KIJL
+                  GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
+                  SLICE(IJ,K,M) = (SL(IJ,K,M) - SLTEMP(IJ,K,M))/GTEMP1
                 ENDDO
               ENDDO
-            ELSEIF (LWFLUX_IMPCOR) THEN
-              DO M=1,NFRE
-                DO K=1,NANG
-                  DO IJ=KIJS,KIJL
-                    GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
-                    SLICE(IJ,K,M) = (SL(IJ,K,M) - SLTEMP(IJ,K,M))/GTEMP1
-                  ENDDO
-                ENDDO
-              ENDDO
-            ENDIF
+            ENDDO
          ENDIF
         
         ENDIF
