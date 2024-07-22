@@ -102,29 +102,28 @@
    
 !     WRITE (IU06,*)'Ice attenuation due to viscous friction based on: '
       
-      IF (IMODEL.EQ.1) THEN
+      SELECT CASE (IMODEL)
+         CASE (1)
+!          WRITE (IU06,*)'  Best fit w Tempelfjorde obs from Lotfi Aouf'
+           CDICE=0.0656_JWRB
 
-!        WRITE (IU06,*)'  Best fit w Tempelfjorde obs from Lotfi Aouf'
-         CDICE=0.0656_JWRB
-
-         DO M = 1,NFRE
-           DO IJ = KIJS,KIJL
-              ALP(IJ,M) = (CDICE*CITH(IJ)*WAVNUM(IJ,M)**2) * ALPFAC(IJ)    
+           DO M = 1,NFRE
+             DO IJ = KIJS,KIJL
+                ALP(IJ,M) = (CDICE*CITH(IJ)*WAVNUM(IJ,M)**2) * ALPFAC(IJ)    
+             END DO
            END DO
-         END DO
 
-      ELSE IF (IMODEL.EQ.2) THEN
-
-!        WRITE (IU06,*)'  Jie Yu, W. Erik Rogers, David W. Wang 2022'
-         CDICE=0.1274_JWRB*( ZPI/SQRT(G) )**(4.5_JWRB)
+         CASE (2)
+!          WRITE (IU06,*)'  Jie Yu, W. Erik Rogers, David W. Wang 2022'
+           CDICE=0.1274_JWRB*( ZPI/SQRT(G) )**(4.5_JWRB)
          
-         DO M = 1,NFRE
-            DO IJ = KIJS,KIJL
-               ALP(IJ,M) = (2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))) * ALPFAC(IJ)
-            END DO
-         END DO
-
-      END IF
+           DO M = 1,NFRE
+              DO IJ = KIJS,KIJL
+                 ALP(IJ,M) = (2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))) * ALPFAC(IJ)
+              END DO
+           END DO
+         END IF
+      END SELECT
 
       DO M = 1,NFRE
          DO K = 1,NANG
