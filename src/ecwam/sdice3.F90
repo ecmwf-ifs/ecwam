@@ -122,7 +122,7 @@
                  ALP(IJ,M) = (2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))) * ALPFAC(IJ)
               END DO
            END DO
-         END IF
+         
       END SELECT
 
       DO M = 1,NFRE
