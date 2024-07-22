@@ -121,7 +121,6 @@
 
 !     *FM2FP*    REAL      EMPIRICAL FACTOR FOR THE CONVERSION OF WINDSEA MEAN FREQUENCY
 !                          TO WINDSEA PEAK FREQUENCY.
-
 !----------------------------------------------------------------------
 
       END MODULE YOWPCONS
