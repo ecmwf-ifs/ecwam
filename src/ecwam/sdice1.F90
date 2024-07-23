@@ -59,7 +59,7 @@
 
       USE YOWFRED  , ONLY : FR      
       USE YOWICE   , ONLY : NICT   ,NICH     ,TICMIN   ,HICMIN   ,      &
-     &              DTIC   ,DHIC   ,CIDEAC   ,CIBLOCK
+     &              DTIC   ,DHIC   ,CIDEAC  
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPCONS , ONLY : G       ,ZPI
 
