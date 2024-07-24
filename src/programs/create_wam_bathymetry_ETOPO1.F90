@@ -640,6 +640,7 @@ PROGRAM CREATE_BATHY_ETOPO1
            ENDDO
 
 !          IF RATIOLAND_THRESHOLD OR MORE LAND OR THE CENTER OF THE GRID BOX IS LAND, THEN AVERAGE OVER LAND POINTS
+!          IF RATIOLAND_THRESHOLD OR MORE LAND OR THE CENTER OF THE GRID BOX IS LAND, THEN AVERAGE OVER LAND POINTS
 !          ELSE AVERAGE OVER SEA POINTS
            PERCENTLAND(IX,K)=REAL(NLAND,JWRU)/REAL((NLAND+NSEA),JWRU)
            IF (PERCENTLAND(IX,K) >  RATIOLAND_THRESHOLD .OR. NLANDCENTRE >= NLANDCENTREMAX ) THEN
@@ -897,6 +898,7 @@ IF ( LLOBSTROUT ) THEN
 !       NORTH-SOUTH OBSTRUCTIONS
 !       -----------------------
 !       LOOP OVER ADEVECTION DIRECTIONS
+!       LOOP OVER ADEVECTION DIRECTIONS
 !       IS=1 is for the south-north advection
 !       IS=2 is for the north-south advection
         WRITE(IU06,*) 'CREATE NORTH-SOUTH OBSTRUCTIONS '
@@ -920,6 +922,7 @@ IF ( LLOBSTROUT ) THEN
               STEPB=RESOL
             ENDIF
 !           LATIDUNAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
+!           LATIDUNAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
             XLATT=XLAT(KT)+STEPT
             XLATB=XLAT(KB)+STEPB
             ILATT = NINT((90.0_JWRU- XLATT)*INVRES) + 1
@@ -928,6 +931,7 @@ IF ( LLOBSTROUT ) THEN
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF (ILATB == ILAT+1) ILATB=ILAT
 
+!           LOOP OVER ALL MODEL POINTS FOR A GIVEN LATITUDE
 !           LOOP OVER ALL MODEL POINTS FOR A GIVEN LATITUDE
             DO IX=1,NLONRGG(K)
               IF (LLSM(IX,K)) THEN
@@ -959,10 +963,12 @@ IF ( LLOBSTROUT ) THEN
                 IF (ILONL <= ILONR) THEN
                   NBLOCKLAND=0
 !                 LOOP OVER SUBGRID LONGITUDE LINE:
+!                 LOOP OVER SUBGRID LONGITUDE LINE:
                   DO I=ILONL,ILONR
                     NIOBSLON=0
                     LLAND=.FALSE.
                     LREALLAND=.FALSE.
+!                   SCAN EACH SUBGRID LATTUDE:
 !                   SCAN EACH SUBGRID LATTUDE:
                     DO J=ILATT,ILATB
                       IF (IDEPTH(I,J) >= IBLOCKDPT(IX,K) ) THEN
@@ -1028,6 +1034,9 @@ IF ( LLOBSTROUT ) THEN
 !                 TOTAL NUMBER OF SUBGRID POINTS, INCLUDING THE ARTIFICIALLY ENHANCED BLOCKING LINE(S)
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1) + (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
+!                 TOTAL NUMBER OF SUBGRID POINTS, INCLUDING THE ARTIFICIALLY ENHANCED BLOCKING LINE(S)
+                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1) + (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
+
 !                 WAVE COMPONENT WILL BE ATTENUATED BY THE RATIO OF ALL BLOCKING SUBGRID POINTS TO THE TOTAL NUMBER OF POINTS
                   IOBSLAT(IX,K,IS) = NINT((1._JWRU-REAL(NOBSTRCT,JWRU)/NTOTPTS)*NOOBSTRT)
                   IOBSLAT(IX,K,IS) = MAX(IOBSLAT(IX,K,IS), 0)
@@ -1036,6 +1045,7 @@ IF ( LLOBSTROUT ) THEN
 !               AT THE DATELINE, DEALING WITH THE PERIODICITY (simplified version)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
+
 
                   DO I=1,ILONR
                     NIOBSLON=0
@@ -1049,6 +1059,7 @@ IF ( LLOBSTROUT ) THEN
                     ENDDO
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
+
 
                   DO I=ILONL,ILON
                     NIOBSLON=0
@@ -1071,6 +1082,7 @@ IF ( LLOBSTROUT ) THEN
           ENDDO
 !$OMP END PARALLEL DO
         ENDDO
+
 
 
 !       EAST-WEST OBSTRUCTIONS
@@ -1102,6 +1114,7 @@ IF ( LLOBSTROUT ) THEN
             IF (ILATB == ILAT+1) ILATB=ILAT
 
 !           LOOP OVER ALL MODEL POINTS FOR A GIVEN LATITUDE
+!           LOOP OVER ALL MODEL POINTS FOR A GIVEN LATITUDE
             DO IX=1,NLONRGG(K)
               IF (LLSM(IX,K)) THEN
 !               SEA POINT GRID BOX LONGITUDINAL EXTEND :
@@ -1125,16 +1138,21 @@ IF ( LLOBSTROUT ) THEN
 
 !               COMPUTE THE OBSTRUCTIONS:
 !               TALLY THE NUMBER OF SUB GRID POINTS THAT ARE POTENTIALLY BLOCKING WAVE PROPAGATION (NOBSTRCT)
+!               COMPUTE THE OBSTRUCTIONS:
+!               TALLY THE NUMBER OF SUB GRID POINTS THAT ARE POTENTIALLY BLOCKING WAVE PROPAGATION (NOBSTRCT)
                 NOBSTRCT=0
 
 !               AWAY FROM THE DATELINE
                 IF (ILONL <= ILONR) THEN
                   NBLOCKLAND=0
 !                 LOOP OVER SUBGRID LATITUDE LINE:
+!                 LOOP OVER SUBGRID LATITUDE LINE:
                   DO J=ILATT,ILATB
                     NIOBSLAT=0
                     LLAND=.FALSE.
                     LREALLAND=.FALSE.
+
+!                   SCAN EACH SUBGRID LONGITUDE:
 
 !                   SCAN EACH SUBGRID LONGITUDE:
                     DO I=ILONL,ILONR
@@ -1241,6 +1259,7 @@ IF ( LLOBSTROUT ) THEN
         ENDDO
 
 
+!       NORTH-WEST-SOUTH-EAST OBSTRUCTIONS (for IPROPAGS = 1)
 !       NORTH-WEST-SOUTH-EAST OBSTRUCTIONS (for IPROPAGS = 1)
 !       ----------------------------------
 !       IS=1 is for the southeast-northwest advection
@@ -1539,6 +1558,7 @@ IF ( LLOBSTROUT ) THEN
 
 
 !       SOUTH-WEST-NORTH-EAST OBSTRUCTIONS (for IPROPAGS = 1)
+!       SOUTH-WEST-NORTH-EAST OBSTRUCTIONS (for IPROPAGS = 1)
 !       ----------------------------------
 !       IS=1 is for the southwest-northeast advection
 !       IS=2 is for the northeast-southwest advection
@@ -1835,6 +1855,7 @@ IF ( LLOBSTROUT ) THEN
         ENDDO
 
 
+!       GRID CORNER POINT OBSTRUCTIONS (for IPROPAGS = 2)
 !       GRID CORNER POINT OBSTRUCTIONS (for IPROPAGS = 2)
 !       ------------------------------
 !       IS=1 is for the northeast-southwest advection
