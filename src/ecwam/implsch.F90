@@ -100,7 +100,6 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
       IMPLICIT NONE
 
-#include "cimsstrn.intfb.h"
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
 #include "sbottom.intfb.h"

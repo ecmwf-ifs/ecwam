@@ -59,9 +59,6 @@ list( APPEND ecwam_srcs
   chnkmin.F90
   cigetdeac.F90
   cimsstrn.F90
-  cireduce.F90
-  ciwabr.F90
-  ciwaf.F90
   ctcor.F90
   ctuw.F90
   ctuwdrv.F90

@@ -190,6 +190,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWREFD  , ONLY : LLUPDTTD
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,TOOSHALLOW
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT
+      USE YOWICE   , ONLY : LCIWA1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDTINTT  ,CDTBC    ,                                  &
      &            IFRELFMAX, DELPRO_LF, IDELPRO  ,IDELT ,               &
@@ -228,7 +229,6 @@ SUBROUTINE INITMDL (NADV,                                 &
 
 #include "abort1.intfb.h"
 #include "cigetdeac.intfb.h"
-#include "cireduce.intfb.h"
 #include "getspec.intfb.h"
 #include "getstress.intfb.h"
 #include "headbc.intfb.h"
@@ -934,9 +934,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
 !    GET SEA ICE DIMENSIONLESS ENERGY ATTENUATION COEFFICIENT
 !!!! might need to restrict call when needed !!!
-      CALL CIGETDEAC
-
-      WRITE(IU06,*) ' SUB. INITMDL: CIREDUCE DONE'                   
+      IF(LCIWA1) CALL CIGETDEAC
 
 ! ----------------------------------------------------------------------
 

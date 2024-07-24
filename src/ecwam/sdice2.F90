@@ -13,7 +13,7 @@
 ! ----------------------------------------------------------------------
 
 !**** *SDICE2* - COMPUTE SEA ICE WAVE ATTENUATION FACTORS DUE TO ICE FLOES
-!                BOTTOM FRICTION.
+!                BOTTOM FRICTION (CAME FROM CIWABR)
 
 
 !     JEAN BIDLOT       ECMWF ~2012

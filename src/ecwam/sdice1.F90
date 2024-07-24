@@ -12,7 +12,7 @@
      &                   CICV,CITH)
 ! ----------------------------------------------------------------------
 
-!**** *SDICE1* - COMPUTATION OF SEA ICE ATTENUATION DUE TO SCATTERING
+!**** *SDICE1* - COMPUTATION OF SEA ICE ATTENUATION DUE TO SCATTERING (CAME FROM CIWAF)
 
 
 !     JEAN BIDLOT       ECMWF ~2012
