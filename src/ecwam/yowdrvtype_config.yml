@@ -13,7 +13,7 @@ objtypes:
   environment:
      rank: 2
      types: [int, real]
-     vars: [[indep, iodp, iobnd], [dellam1, cosphm1, depth, emaxdpt, ucur, vcur]]
+     vars: [[indep, iodp, ibrmem, iobnd], [dellam1, cosphm1, depth, emaxdpt, ucur, vcur]]
   frequency:
      rank: 3
      types: [real]

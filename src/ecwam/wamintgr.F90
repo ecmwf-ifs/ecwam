@@ -122,6 +122,7 @@ IF (CDATE >= CDTIMPNEXT) THEN
  &                  WVPRPT%CINV(:,:,ICHNK), WVPRPT%XK2CG(:,:,ICHNK), WVPRPT%STOKFAC(:,:,ICHNK), &
  &                  WVENVI%EMAXDPT(:,ICHNK), &
  &                  WVENVI%DEPTH(:,ICHNK), WVENVI%IOBND(:,ICHNK), WVENVI%IODP(:,ICHNK), &
+ &                  WVENVI%IBRMEM(:,ICHNK), &
  &                  FF_NOW%AIRD(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK), FF_NOW%CICOVER(:,ICHNK), &
  &                  FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WSTAR(:,ICHNK), &
  &                  FF_NOW%USTRA(:,ICHNK), FF_NOW%VSTRA(:,ICHNK), &

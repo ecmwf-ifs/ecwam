@@ -100,7 +100,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
      &                FL1(:,:,:,ICHNK), XLLWS(:,:,:,ICHNK),               &
      &                WVPRPT%WAVNUM(:,:,ICHNK), WVPRPT%CINV(:,:,ICHNK), WVPRPT%CGROUP(:,:,ICHNK), &
      &                WVENVI%DEPTH(:,ICHNK), WVENVI%UCUR(:,ICHNK), WVENVI%VCUR(:,ICHNK), &
-     &                WVENVI%IODP(:,ICHNK),                               &
+     &                WVENVI%IODP(:,ICHNK),WVENVI%IBRMEM(:,ICHNK),                               &
      &                INTFLDS%ALTWH(:,ICHNK), INTFLDS%CALTWH(:,ICHNK), INTFLDS%RALTCOR(:,ICHNK), &
      &                INTFLDS%USTOKES(:,ICHNK), INTFLDS%VSTOKES(:,ICHNK), INTFLDS%STRNMS(:,ICHNK), &
      &                INTFLDS%TAUXD(:,ICHNK), INTFLDS%TAUYD(:,ICHNK), INTFLDS%TAUOCXD(:,ICHNK), &
