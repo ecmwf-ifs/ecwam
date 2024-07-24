@@ -83,7 +83,8 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU, LWNEMOCOUSTRN 
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
-      USE YOWICE   , ONLY : FLMIN    ,LCIWABR  ,LICERUN   ,LMASKICE, LCISCAL
+      USE YOWICE   , ONLY : FLMIN    ,LICERUN   ,LMASKICE ,              &
+                            LCIWA1   ,LCIWA2    ,LCIWA3   ,LCISCAL
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LLUNSTR
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1 
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK
@@ -94,7 +95,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
       IMPLICIT NONE
 
-#include "ciwabr.intfb.h"
+#include "cimsstrn.intfb.h"
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
 #include "sbottom.intfb.h"
@@ -102,7 +103,9 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 #include "sdepthlim.intfb.h"
 #include "sdissip.intfb.h"
 #include "sdiwbk.intfb.h"
-#include "sdice.intfb.h"
+#include "sdice1.intfb.h"
+#include "sdice2.intfb.h"
+#include "sdice3.intfb.h"
 #include "setice.intfb.h"
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
@@ -222,28 +225,6 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
-!     COMPUTE DAMPING COEFFICIENT DUE TO FRICTION ON BOTTOM OF THE SEA ICE.
-!!! testing sea ice attenuation (might need to restrict usage when needed)
-      IF (LCIWABR) THEN
-        !$loki inline
-        CALL CIWABR(KIJS, KIJL, CICOVER, FL1, WAVNUM, CGROUP, CIREDUC)
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=KIJS,KIJL
-              CIREDUC(IJ,K,M)=CIWA(IJ,M)*CIREDUC(IJ,K,M)
-            ENDDO
-          ENDDO
-        ENDDO
-      ELSE
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=KIJS,KIJL
-              CIREDUC(IJ,K,M)=CIWA(IJ,M)
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDIF
-
 ! ----------------------------------------------------------------------
 
 !*    2.3 COMPUTATION OF SOURCE FUNCTIONS.
@@ -312,8 +293,17 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       !$loki inline
       CALL SDIWBK(KIJS, KIJL, FL1 ,FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)
 
-!     Allow waves to propagate under the sea ice
-      IF(.NOT.LCIWABR) CALL SDICE (KIJS, KIJL, FL1, FLD, SL, INDEP, CICOVER, CITH)
+!     Attenuation of waves in ice (type 1): scattering
+      IF(LCIWA1) CALL SDICE1 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITH)
+
+!     Attenuation of waves in ice (type 2): bottom friction
+      IF(LCIWA2) CALL SDICE2 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER      )
+
+!     Attenuation of waves in ice (type 3): viscous friction
+      IF(LCIWA3) CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITH)
+
+      !     Mask if >CITHRESH ?
+      !     Concern about IF ( .NOT. LICERUN .OR. LMASKICE ) ?
       
 
       IF (LCISCAL) THEN
@@ -362,8 +352,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
               FLHAB = ABS(GTEMP2)
               FLHAB = MIN(FLHAB,TEMP(IJ,M))
               FL1(IJ,K,M) = FL1(IJ,K,M) + IOBND(IJ)*SIGN(FLHAB,GTEMP2)
-!              FL1(IJ,K,M) = MAX(IODP(IJ)*CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
-              FL1(IJ,K,M) =  MAX(IODP(IJ)                *FL1(IJ,K,M),FLM(IJ,K)) ! don't use CIREDUC
+              FL1(IJ,K,M) =  MAX(IODP(IJ)*FL1(IJ,K,M),FLM(IJ,K)) 
               SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M) + DELTM * MIN(FLMAX(M)-FL1(IJ,K,M),0.0_JWRB)
               FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
             ENDDO
@@ -378,8 +367,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
               FLHAB = ABS(GTEMP2)
               FLHAB = MIN(FLHAB,TEMP(IJ,M))
               FL1(IJ,K,M) = FL1(IJ,K,M) + SIGN(FLHAB,GTEMP2)
-!              FL1(IJ,K,M) = MAX(CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
-              FL1(IJ,K,M)  = MAX(                FL1(IJ,K,M),FLM(IJ,K)) ! don't use CIREDUC
+              FL1(IJ,K,M)  = MAX(FL1(IJ,K,M),FLM(IJ,K))
               SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M) + DELTM * MIN(FLMAX(M)-FL1(IJ,K,M),0.0_JWRB)
               FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
             ENDDO
