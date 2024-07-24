@@ -531,19 +531,6 @@ PROGRAM CREATE_BATHY_ETOPO1
       ENDDO
       CALL FLUSH(IU06)
 
-!     SOUTH OF 64S ALL NON DEEP POINTS ARE SET TO LAND TO AVOID
-!     THE PROBLEM WITH PERMANENT ICE SHEET
-        DO J=1,ILAT
-          YJ=ALAT(J)
-          IF (YJ <= -64.0_JWRU) THEN
-            DO I=1,ILON
-              IF (IDEPTH(I,J) >= -250_JWRU) THEN
-                IDEPTH(I,J)=1
-              ENDIF
-            ENDDO
-          ENDIF
-        ENDDO
-
 !     COMPUTE MEAN DEPTH 
 
       DO K=1,NGY
