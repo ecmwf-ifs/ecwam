@@ -944,7 +944,7 @@ IF ( LLOBSTROUT ) THEN
 
 !               AWAY FROM THE DATELINE
                 IF (ILONL <= ILONR) THEN
-                  
+                  NBLOCKLAND=0                  
 !                 LOOP OVER SUBGRID LONGITUDE LINE:
                   DO I=ILONL,ILONR
                     NIOBSLON=0
