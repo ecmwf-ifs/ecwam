@@ -445,7 +445,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
               ELSE 
                 NWINOFF=12-MOD(IH2+3,12)
               ENDIF
-              IF (IPARAM == 251 .AND. IGRIB_VERSION == 1 ) THEN
+              IF ( ITABPAR == 140251 .AND. IGRIB_VERSION == 1 ) THEN
                 CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',4)
               ENDIF
             ENDIF
