@@ -93,6 +93,7 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG,          &
       INTEGER(KIND=JWIM), PARAMETER :: NITER=17
 
       REAL(KIND=JWRB), PARAMETER :: TWOXMP1=3.0_JWRB
+      REAL(KIND=JWRB), PARAMETER :: PMAX=0.99_JWRB
 
       INTEGER(KIND=JWIM) :: IJ, ITER
       INTEGER(KIND=JWIM) :: IFRPH
@@ -168,7 +169,8 @@ IF (LLGCBZ0) THEN
 
       RNUKAPPAM1 = RNUEFF/XKAPPA
 
-      PCE_GC = 0.001_JWRB * IUSFG + (1-IUSFG) * 0.005_JWRB
+!      PCE_GC = 0.001_JWRB * IUSFG + (1-IUSFG) * 0.005_JWRB
+      PCE_GC = 0.005_JWRB
 
       IF (IUSFG == 0 ) THEN
         ALPHAGM1 = ALPHA*GM1
@@ -176,7 +178,7 @@ IF (LLGCBZ0) THEN
           IF ( UTOP(IJ) < 1.0_JWRB ) THEN
             CDFG = 0.002_JWRB
           ELSEIF ( LLCOSDIFF(IJ) ) THEN
-            X = MIN(TAUWACT(IJ)/MAX(USTAR(IJ),EPSUS)**2,0.99_JWRB)
+            X = MIN(TAUWACT(IJ)/MAX(USTAR(IJ),EPSUS)**2,PMAX)
             ZCHAR = MIN( ALPHAGM1 * USTAR(IJ)**2 / SQRT(1.0_JWRB - X), 0.05_JWRB*EXP(-0.05_JWRB*(UTOP(IJ)-35._JWRB)) )
             ZCHAR = MIN(ZCHAR,ALPHAMAX)
             CDFG = ACDLIN + BCDLIN*SQRT(ZCHAR) * UTOP(IJ)
@@ -214,12 +216,15 @@ IF (LLGCBZ0) THEN
 
 !         CONVERGENCE ?
           DEL = USTAR(IJ)-USTOLD
-          IF (ABS(DEL) < PCE_GC*USTAR(IJ)) EXIT 
+          IF (ABS(DEL) < PCE_GC*USTAR(IJ)) EXIT
           TAUOLD = USTAR(IJ)**2
           USTOLD = USTAR(IJ)
         ENDDO
+
+        X = TAUWEFF(IJ)/TAUOLD
+
         ! protection just in case there is no convergence
-        IF (ITER > NITER ) THEN
+        IF (ITER > NITER .AND. X >= PMAX ) THEN
           CDFG = CDM(UTOP(IJ))
           USTAR(IJ) = UTOP(IJ)*SQRT(CDFG)
           Z0MINRST = USTAR(IJ)**2 * ALPHA*GM1
@@ -231,59 +236,61 @@ IF (LLGCBZ0) THEN
         ENDIF
 
 !       Refine solution
-        X = TAUWEFF(IJ)/TAUOLD
 
-        IF (X < 0.99_JWRB) THEN
-          USTOLD = USTAR(IJ)
-          TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
-
-          DO ITER=1,NITER
-            X = MIN(TAUWEFF(IJ)/TAUOLD, 0.99_JWRB)
-            USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS)
-            !!!! Limit how small z0 could become
-            !!!! This is a bit of a compromise to limit very low Charnock for intermediate high winds (15 -25 m/s)
-            !!!! It is not ideal !!!
-            Z0(IJ) = MAX(XNLEV/(EXP(MIN(XKUTOP/USTOLD, 50.0_JWRB))-1.0_JWRB), Z0MIN)
-
-            TAUUNR(IJ) = STRESS_GC(ANG_GC(IJ), USTOLD, Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ))
-
-            Z0B(IJ) = MAX( Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), ALPHAOG(IJ)*TAUOLD)
-            Z0VIS = RNUM*USTM1
-            HZ0VISO1MX = 0.5_JWRB*Z0VIS/(1.0_JWRB-X)
-            Z0(IJ) = HZ0VISO1MX+SQRT(HZ0VISO1MX**2+Z0B(IJ)**2/(1.0_JWRB-X))
-
-            XOLOGZ0= 1.0_JWRB/(XLOGXL-LOG(Z0(IJ)))
-            F = USTOLD-XKUTOP*XOLOGZ0
-            ZZ = 2.0_JWRB*USTM1*(3.0_JWRB*Z0B(IJ)**2+0.5_JWRB*Z0VIS*Z0(IJ)-Z0(IJ)**2) &
-&                / (2.0_JWRB*Z0(IJ)**2*(1.0_JWRB-X)-Z0VIS*Z0(IJ))
-
-            DELF= 1.0_JWRB-XKUTOP*XOLOGZ0**2*ZZ
-            IF (DELF /= 0.0_JWRB) USTAR(IJ) = USTOLD-F/DELF
-
-!           CONVERGENCE ?
-            DEL = USTAR(IJ)-USTOLD
-
-            IF (ABS(DEL) < PCE_GC*USTAR(IJ)) EXIT 
-            USTOLD = USTAR(IJ)
-            TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
-          ENDDO
-          ! protection just in case there is no convergence
-          IF (ITER > NITER ) THEN
-            CDFG = CDM(UTOP(IJ))
-            USTAR(IJ) = UTOP(IJ)*SQRT(CDFG)
-            Z0MINRST = USTAR(IJ)**2 * ALPHA*GM1
-            Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MINRST)
-            Z0B(IJ) = Z0MINRST
-            CHRNCK(IJ) = MAX(G*Z0(IJ)/USTAR(IJ)**2, ALPHAMIN)
-          ELSE
-            CHRNCK(IJ) = MAX( G*(Z0B(IJ)/SQRT(1.0_JWRB-X))/MAX(USTAR(IJ),EPSUS)**2, ALPHAMIN)
-          ENDIF
-
-        ELSE
+!        IF (X < PMAX) THEN
+!          USTOLD = USTAR(IJ)
+!          TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
+!
+!          DO ITER=1,NITER
+!            X = MIN(TAUWEFF(IJ)/TAUOLD, PMAX)
+!            USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS)
+!            !!!! Limit how small z0 could become
+!            !!!! This is a bit of a compromise to limit very low Charnock for intermediate high winds (15 -25 m/s)
+!            !!!! It is not ideal !!!
+!            Z0(IJ) = MAX(XNLEV/(EXP(MIN(XKUTOP/USTOLD, 50.0_JWRB))-1.0_JWRB), Z0MIN)
+!
+!            TAUUNR(IJ) = STRESS_GC(ANG_GC(IJ), USTOLD, Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ))
+!
+!            Z0B(IJ) = MAX( Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), ALPHAOG(IJ)*TAUOLD)
+!            Z0VIS = RNUM*USTM1
+!            HZ0VISO1MX = 0.5_JWRB*Z0VIS/(1.0_JWRB-X)
+!            Z0(IJ) = HZ0VISO1MX+SQRT(HZ0VISO1MX**2+Z0B(IJ)**2/(1.0_JWRB-X))
+!
+!            XOLOGZ0= 1.0_JWRB/(XLOGXL-LOG(Z0(IJ)))
+!            F = USTOLD-XKUTOP*XOLOGZ0
+!            ZZ = 2.0_JWRB*USTM1*(3.0_JWRB*Z0B(IJ)**2+0.5_JWRB*Z0VIS*Z0(IJ)-Z0(IJ)**2) &
+!&                / (2.0_JWRB*Z0(IJ)**2*(1.0_JWRB-X)-Z0VIS*Z0(IJ))
+!
+!            DELF= 1.0_JWRB-XKUTOP*XOLOGZ0**2*ZZ
+!            IF (DELF /= 0.0_JWRB) USTAR(IJ) = USTOLD-F/DELF
+!
+!!           CONVERGENCE ?
+!            DEL = USTAR(IJ)-USTOLD
+!
+!            IF (ABS(DEL) < PCE_GC*USTAR(IJ)) EXIT
+!            USTOLD = USTAR(IJ)
+!            TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
+!          ENDDO
+!          ! protection just in case there is no convergence
+!          IF (ITER > NITER ) THEN
+!            CDFG = CDM(UTOP(IJ))
+!            USTAR(IJ) = UTOP(IJ)*SQRT(CDFG)
+!            Z0MINRST = USTAR(IJ)**2 * ALPHA*GM1
+!            Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MINRST)
+!            Z0B(IJ) = Z0MINRST
+!            CHRNCK(IJ) = MAX(G*Z0(IJ)/USTAR(IJ)**2, ALPHAMIN)
+!
+!            IF(IRANK <= 4) PRINT *, IJ, ICHNK, ABS(DEL), PCE_GC*USTAR(IJ), IUSFG, IRANK
+!            STOP
+!          ELSE
+!            CHRNCK(IJ) = MAX( G*(Z0B(IJ)/SQRT(1.0_JWRB-X))/MAX(USTAR(IJ),EPSUS)**2, ALPHAMIN)
+!          ENDIF
+!
+!        ELSE
           USTM1 = 1.0_JWRB/MAX(USTAR(IJ), EPSUS)
           Z0VIS = RNUM*USTM1
           CHRNCK(IJ) = MAX(G*(Z0(IJ)-Z0VIS) * USTM1**2, ALPHAMIN)
-        ENDIF
+!        ENDIF
 
       ENDDO
 
