@@ -9,7 +9,7 @@
 # granted to it by virtue of its status as an intergovernmental organisation nor
 # does it submit to any jurisdiction.
 
-import yaml
+from ecwam_yaml_reader import yaml
 from datetime import datetime, timedelta
 import sys
 import re
@@ -76,7 +76,7 @@ class Duration:
             if match:
                 return Duration(hours=int(match.group(1)),minutes=int(match.group(2)))
         raise ValueError("Could not convert time "+str(time)+" to Duration with format "+format)
-            
+
 
     def strftime(self,format):
         if "%H" in format:

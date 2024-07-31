@@ -10,7 +10,7 @@
 # does it submit to any jurisdiction.
 
 import argparse
-import yaml
+from ecwam_yaml_reader import yaml
 import os
 
 parser = argparse.ArgumentParser(

@@ -365,16 +365,13 @@ if(HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack")
   list(REMOVE_ITEM ecwam_srcs wamintgr.F90)
 endif()
 
-if( HAVE_GEN_DERIV_TYPES )
-   list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
-   add_custom_command(
-       OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90
-       COMMAND ${FYPP} -m io -m yaml -m os ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
-       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp
-       VERBATIM)
-else()
-   list( APPEND ecwam_srcs yowfield_mod.F90)
-endif()
+list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90
+    COMMAND ${FYPP} -m io -M ${CMAKE_CURRENT_SOURCE_DIR}/../../share/ecwam/scripts -m ecwam_yaml_reader -m os
+    ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp
+    VERBATIM)
 
 unset( MPI_Fortran_LIBRARIES )
 if( HAVE_GPU_AWARE_MPI )
@@ -420,7 +417,7 @@ endif()
 set( ${PNAME}_OCEANMODEL_LIBRARIES "" )
 if( HAVE_OCEAN_COUPLING )
   list(APPEND ECWAM_DEFINITIONS WITH_NEMO )
-  if( ${PNAME}_OCEANMODEL_HAVE_SINGLE_PRECISION )
+  if( ${OCEAN_PREC} STREQUAL SP )
     list(APPEND ECWAM_DEFINITIONS PARKIND1_SINGLE_NEMO )
   endif()
   set( ${PNAME}_OCEANMODEL_LIBRARIES nemogcmcoup.${OCEAN_PREC} )
@@ -471,7 +468,7 @@ ecwam_target_fortran_module_directory(
 )
 
 if( HAVE_ACC )
-   target_compile_options( ${ecwam} PUBLIC "-gpu=gvmode,maxregcount:128" )
+   target_compile_options( ${ecwam} PRIVATE "-gpu=maxregcount:128" )
 endif()
 
 ecwam_target_compile_definitions_FILENAME( ${ecwam} )

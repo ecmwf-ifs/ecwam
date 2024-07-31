@@ -9,7 +9,7 @@
 # granted to it by virtue of its status as an intergovernmental organisation nor
 # does it submit to any jurisdiction.
 
-import yaml
+from ecwam_yaml_reader import yaml
 from datetime import datetime
 import argparse
 
@@ -31,13 +31,13 @@ f.close()
 class Stats:
     def __init__(self):
         self.entries = []
-    
+
     @classmethod
     def load(self,doc):
         self = Stats()
         def parse_line(self,line):
             [time, index, name, avg_dec, avg_hex, min_dec, min_hex, max_dec, max_hex, non_missing] = line.split()
-            entry = { 
+            entry = {
                         'time': datetime.strptime(time, "%Y%m%d%H%M%S"),
                         'index': int(index),
                         'name': name,
@@ -86,7 +86,7 @@ class Stats:
         for entry in self.entries:
             lines +=  '\n' + ' '.join([str(value) for [key,value] in entry.items()])
         return lines
-   
+
 
 f = open(args.stats,'r')
 stats = Stats.load(f.read())
