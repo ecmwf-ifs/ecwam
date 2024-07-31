@@ -32,12 +32,14 @@ endforeach()
 # scripts
 ###############################################################################################
 
+set( install_permissions OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE WORLD_EXECUTE OWNER_WRITE )
 file (GLOB files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} scripts/*.sh scripts/*.py scripts/ecwam-*)
+list( REMOVE_ITEM files scripts/ecwam_runtime.sh )
 
 install(
     FILES       ${files}
     DESTINATION ${destination}/scripts
-    PERMISSIONS OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE WORLD_EXECUTE OWNER_WRITE )
+    PERMISSIONS ${install_permissions} )
 
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/${destination}/scripts)
 
@@ -46,6 +48,14 @@ foreach( file ${files} )
       "${CMAKE_CURRENT_SOURCE_DIR}/${file}"
       "${CMAKE_BINARY_DIR}/${destination}/${file}")
 endforeach()
+
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/scripts/ecwam_runtime.sh
+                ${CMAKE_BINARY_DIR}/${destination}/scripts/ecwam_runtime.sh @ONLY )
+
+install(
+    FILES       ${CMAKE_BINARY_DIR}/${destination}/scripts/ecwam_runtime.sh
+    DESTINATION ${destination}/scripts
+    PERMISSIONS ${install_permissions} )
 
 ###############################################################################################
 # run scripts symlinks
