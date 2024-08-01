@@ -74,6 +74,8 @@ IF (LHOOK) CALL DR_HOOK('MPMINMAXAVG',0,ZHOOK_HANDLE)
       ZMIN(:) = HUGE(ZMIN(:))
       ZMAX(:) = -HUGE(ZMAX(:))
 
+      ICOUNT = 0
+
       IF (LLGLOBAL) THEN
 
         IF (LLUNSTR) THEN
@@ -127,7 +129,6 @@ IF (LHOOK) CALL DR_HOOK('MPMINMAXAVG',0,ZHOOK_HANDLE)
             CALL MPGATHERSCFLD(IRECV, NBLKS, NBLKE, ZGLOBAL, NIBLO)
 
             IF (IRANK == IRECV) THEN
-
               ICOUNT = 0
               DO IJOLD = 1, NIBLO
                 IF (LL1D .OR. LLUNSTR .OR. NPROC == 1) THEN
