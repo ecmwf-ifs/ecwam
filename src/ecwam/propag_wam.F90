@@ -226,13 +226,18 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                LUPDTWGHT=.FALSE.
              ENDIF
 
+
+             ND3SF1=1
+             ND3EF1=NFRE_RED
+             ND3S=1
+             ND3E=NFRE_RED
+
 #ifndef _OPENACC
 !$OMP        PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
 #endif /*_OPENACC*/
              DO JKGLO = IJSG, IJLG, NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1, IJLG)
-
                CALL PROPAGS2(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)
              ENDDO
 #ifndef _OPENACC             
@@ -245,9 +250,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                ISUBST = 2  ! The first step was done as part of the previous call to PROPAGS2
 
                ND3SF1=1
-               ND3EF1=NFRE_RED
+               ND3EF1=IFRELFMAX+1
                ND3S=1
-               ND3E=NFRE_RED
+               ND3E=IFRELFMAX
 
                DO WHILE (ISUBST <= NSTEP_LF)
 
@@ -283,9 +288,8 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                  DO JKGLO = IJSG, IJLG, NPROMA
                    KIJS=JKGLO
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
-
-                  CALL PROPAGS2(FL1_EXT(:,:,ND3SF1:ND3EF1), FL3_EXT(:,:,ND3S:ND3E), &
-                  &             NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)
+                   CALL PROPAGS2(FL1_EXT(:,:,ND3SF1:ND3EF1), FL3_EXT(:,:,ND3S:ND3E), &
+                  &              NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)
                  ENDDO
 #ifndef _OPENACC
 !$OMP            END PARALLEL DO

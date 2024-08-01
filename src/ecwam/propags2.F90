@@ -149,9 +149,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
                     ENDDO
                   ENDIF
                 ENDDO
-              ENDDO
 
-              DO ICL=1,2
                 DO ICR=1,4
                   IF (LLWCORN(K,M,ICR,ICL)) THEN
                     DO IJ = KIJS, KIJL
