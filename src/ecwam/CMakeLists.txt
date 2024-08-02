@@ -82,6 +82,8 @@ list( APPEND ecwam_srcs
   frcutindex.F90
   gc_dispersion.h
   get_preset_wgrib_template.F90
+  getbobstrct.F90
+  getgrbobstrct.F90
   getcurr.F90
   getfrstwnd.F90
   getspec.F90
@@ -116,6 +118,7 @@ list( APPEND ecwam_srcs
   jonswap.F90
   kerkei.F90
   kgribsize.F90
+  ktoobs.F90
   kurtosis.F90
   kzeone.F90
   makegrid.F90
@@ -300,8 +303,11 @@ list( APPEND ecwam_srcs
   wsmfen.F90
   wstream_strg.F90
   wvalloc.F90
+  wvchkmid.F90
   wvdealloc.F90
   wvfricvelo.F90
+  wvopenbathy.F90
+  wvopensubbathy.F90
   wvwamdecomp.F90
   wvwaminit.F90
   wvwaminit1.F90
@@ -324,6 +330,7 @@ list( APPEND ecwam_srcs
   yowgrib.F90
   yowgrib_handles.F90
   yowgribhd.F90
+  yowgribinfo.F90
   yowgrid.F90
   yowgstats.F90
   yowice.F90

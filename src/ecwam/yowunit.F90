@@ -11,6 +11,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWUBUF  , ONLY : NPROPAGS
+
       IMPLICIT NONE
 
 !*    **  *UNITS* - INPUT / OUTPUT UNITS.
@@ -19,9 +21,7 @@
 !!!! some are obsolete !!! will need to be cleaned
 
       INTEGER(KIND=JWIM), PARAMETER :: IREADG=1
-      INTEGER(KIND=JWIM), PARAMETER :: NPROPAGS=2
       INTEGER(KIND=JWIM) :: IU02
-      INTEGER(KIND=JWIM) :: IU07
       INTEGER(KIND=JWIM), DIMENSION(0:NPROPAGS) :: IU08
       INTEGER(KIND=JWIM) :: IU11
       INTEGER(KIND=JWIM) :: IU12
@@ -55,7 +55,7 @@
 !      *IU20*  - LOGICAL UNIT FOR OUTPUT OF INTEGRATED PARAMETERS
 !                OF THE TOTAL SPECTRUM (FIRST GUESS) in pure binary form (OBSOLETE option !)
 
-!      *LWVWAMINIT* - TRUE IF LWVWAMINIT HAS TO BE CALLED.
+!      *LWVWAMINIT* - TRUE IF WVWAMINIT HAS TO BE CALLED.
 ! ----------------------------------------------------------------------
 
       END MODULE YOWUNIT

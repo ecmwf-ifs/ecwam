@@ -34,6 +34,9 @@ function ecwam_configure {
   #     cldomain: g for global model, m for limited area model and       #
   #               s for swamp and one grid point cases.                  #
   #     llunstr   unstructured grid option
+  #     llgrib_bathy_out: T if model input bathymetry in grib
+  #     llgrib_obstrt_out: T if subgrid obstruction coefficients in grib 
+  #     llobstrout: T if subgrid obstruction coefficients produced
   #                                                                      #
   #     Usage   : ecwam_configure $wamresol $wamnfre $wambathy           #
   #     -----                                                            #
@@ -52,17 +55,35 @@ function ecwam_configure {
   else
     ifre1=3
   fi
-  if [[ $wambathy = "ETOPO1" ]] ; then
-    deptha=3.0
-  else
-    deptha=5.0
-  fi
 
   cldomain=g
   llobstrct=T
 
   llunstr=F
   irgg=1
+
+  if [[ $wambathy == "aqua" ]]; then
+    llgrib_bathy_out=F
+    llgrib_obstrt_out=F
+  else
+    # preproc will output the bathymetry in grib
+    llgrib_bathy_out=T
+    # the unresolved bathymetry blocking coefficients in grib
+    llgrib_obstrt_out=T
+  fi
+
+  llobstrout=T
+  llgribout=T
+
+  if [[ $wambathy = "ETOPO1" ]] ; then
+    if [[ $llgrib_bathy_out = T ]] ; then
+      deptha=2.0
+    else
+      deptha=3.0
+    fi
+  else
+    deptha=5.0
+  fi
 
   # set up different configuration
   if [[ ${wamresol} =~ ^O[0-9]+$ ]]; then  # Octahedral grids pattern.   (Grid for TCO1279: O1280)
@@ -197,6 +218,9 @@ function ecwam_configure {
     ##!!
     cldomain=s
     llobstrct=F
+    llgrib_bathy_out=F
+    llgrib_obstrt_out=F
+    llobstrout=F
     ##!!
   elif [[ $wamresol = swamp ]] ; then
     # swamp setup
@@ -211,6 +235,9 @@ function ecwam_configure {
     ##!!
     cldomain=s
     llobstrct=F
+    llgrib_bathy_out=F
+    llgrib_obstrt_out=F
+    llobstrout=F
     ##!!
   elif [[ $wamresol = standrewbay ]] ; then
     # St Andrew Bay setup
@@ -225,6 +252,9 @@ function ecwam_configure {
     ##!!
     cldomain=m
     llobstrct=F
+    llgrib_bathy_out=F
+    llgrib_obstrt_out=F
+    llobstrout=F
     fr1=0.3
     ##!!
   elif [[ $wamresol = gm20 ]] ; then
@@ -239,6 +269,9 @@ function ecwam_configure {
     ##!!
     cldomain=m
     llobstrct=F
+    llgrib_bathy_out=F
+    llgrib_obstrt_out=F
+    llobstrout=F
     ##!!
   elif [[ ${wamresol} = custom ]] ; then
     xdella=3.0

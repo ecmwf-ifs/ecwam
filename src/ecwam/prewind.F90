@@ -148,6 +148,9 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
       IF (LHOOK) CALL DR_HOOK('PREWIND',0,ZHOOK_HANDLE)
 
 
+      WRITE (IU06,*) '  PREWIND: '
+      CALL FLUSH(IU06)
+
 !*    1. BEGIN AND END DATES OF WIND FIELDS TO BE PROCESSED.
 !        ---------------------------------------------------
 
@@ -175,7 +178,7 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
 !*    2.0 GLOBAL FIELD FOR THE INPUTS
 !         ---------------------------
 
-      CALL FIELDG%ALLOC(NXS, NYS, NXE, NYE)
+      CALL FIELDG%ALLOC(NXS, NYS, UBND0=NXE, UBND1=NYE)
 
       IF (LLINIT_FIELDG) THEN
         LLINIALL=.TRUE.

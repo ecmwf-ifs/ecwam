@@ -15,8 +15,6 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
 
 !     J. BIDLOT    ECMWF   MARCH 1996  MESSAGE PASSING
 !     J. BIDLOT    ECMWF   JANUARY 1998 introduce NPR 
-!     J. BIDLOT    ECMWF   OCTOBER 1998 COMPLETE READING OF
-!                                       IU07
 !     J. BIDLOT    ECMWF   FEBRUARY 1999 TAUT --> SQRT(TAUT)
 !     J. BIDLOT    ECMWF   OCTOBER 2000 NOW READING SQRT(TAUT)
 
@@ -38,7 +36,7 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
 
 !     PURPOSE.
 !     --------
-!     IT WILL READ IU07 AND IU08 AND IF MESSAGE PASSING IT WILL
+!     IT WILL READ wam_grid_tables AND IF MESSAGE PASSING IT WILL
 !     DETERMINE AN EVEN DECOMPOSITION OF THE GRID ARRAYS FOR USE ON
 !     A DISTRIBUTED MEMORY COMPUTER USING A MESSAGE PASSING PROTOCOL
 !     FOR THE EXCHANGE OF INFORMATION ACROSS THE DIFFERENT PE's
@@ -124,9 +122,8 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,              &
      &            KMNOP    ,KMSOP    ,NIBLO    ,NGX      ,NGY
-      USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG     ,    &
-     &                      NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,LLUNSTR  ,LL1D
+      USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG
+      USE YOWPARAM , ONLY : NANG     ,LLUNSTR  ,LL1D
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI
       USE YOWSHAL  , ONLY : BATHY    ,LLOCEANMASK, WVENVI
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID
@@ -135,19 +132,17 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
      &            IJTOPE   ,NGBTOPE  ,NTOPELST ,NGBFROMPE,NFROMPELST,   &
      &            IJ2NEWIJ ,NBLKS    ,NBLKE
       USE YOWTEST  , ONLY : IU06
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR      ,             &
-     &            KRLAT    ,KRLON    ,                                  &
-     &            WLAT     ,WCOR     ,WRLAT    ,WRLON    ,              &
-     &            OBSLAT   ,OBSLON   ,OBSCOR   ,OBSRLAT  ,OBSRLON
-      USE YOWUNIT  , ONLY : IREADG   ,IU07     ,IU08     ,LWVWAMINIT
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR      ,KRLAT    ,KRLON    , &
+     &                      WLAT     ,WCOR     ,WRLAT    ,WRLON
+      USE YOWUNIT  , ONLY : IREADG   ,LWVWAMINIT
       USE YOWWIND  , ONLY : NXFFS    ,NXFFE    ,NYFFS    ,NYFFE,        &
-     &                      NXFFS_LOC,NXFFE_LOC,NYFFS_LOC,NYFFE_LOC
+     &                      NXFFS_LOC, NXFFE_LOC, NYFFS_LOC, NYFFE_LOC
 
 #ifdef WAM_HAVE_UNWAM
       USE YOWPD, ONLY : MNP => npa, RANK
 #endif
 
-      USE MPL_MODULE, ONLY : MPL_BROADCAST, MPL_ALLGATHERV, MPL_SCATTERV
+      USE MPL_MODULE, ONLY : MPL_BROADCAST, MPL_ALLGATHERV
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWABORT , ONLY : WAM_ABORT
       USE OML_MOD  , ONLY : OML_GET_MAX_THREADS
@@ -157,10 +152,12 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
       IMPLICIT NONE
 
 #include "abort1.intfb.h"
-#include "jonswap.intfb.h"
+#include "getbobstrct.intfb.h"
+#include "getgrbobstrct.intfb.h"
 #include "mchunk.intfb.h"
 #include "propconnect.intfb.h"
 #include "wvwaminit.intfb.h"
+#include "wvopensubbathy.intfb.h"
 #include "wam_sortini.intfb.h"
 #include "wam_sorti.intfb.h"
 #include "wam_nproma.intfb.h"
@@ -172,26 +169,24 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
 
 
       INTEGER(KIND=JWIM) :: IJ, M, K, I, J, IP, IPR, IAR, IX, JSN, IH
-      INTEGER(KIND=JWIM) :: IC, ICC, JC, JCS, JCM, IIL, NGOU, NH, JH, INBNGH 
-      INTEGER(KIND=JWIM) :: ITAG, IREAD 
+      INTEGER(KIND=JWIM) :: IC, ICC, JC, JCS, JCM, IIL, NH, JH, INBNGH 
       INTEGER(KIND=JWIM) :: NLAND 
       INTEGER(KIND=JWIM) :: ICHNK, IPRM, KIJS, IJSB, KIJL, IJLB, JKGLO 
+      INTEGER(KIND=JWIM) :: IREAD
       INTEGER(KIND=JWIM) :: NPROMA, MTHREADS
       INTEGER(KIND=JWIM) :: NTEMP(1)
       INTEGER(KIND=JWIM) :: NLENHALO_MAX
       INTEGER(KIND=JWIM) :: ICOUNTS(NPR)
       INTEGER(KIND=JWIM) :: NPLEN(NPR)
-      INTEGER(KIND=JWIM) :: NGAUSSW_sekf, NLON_sekf, NLAT_sekf
-      INTEGER(KIND=JWIM) :: MPLENGTH, KCOUNT, ICL, ICR, ICOUNT, IPROC
+      INTEGER(KIND=JWIM) :: KFILE_HANDLE, KGRIB_HANDLE 
+      INTEGER(KIND=JWIM) :: NGAUSSW, NLON_sekf, NLAT_sekf
+      INTEGER(KIND=JWIM) :: MPLENGTH, ICL, ICR, ICOUNT, IPROC
       INTEGER(KIND=JWIM) :: NXDECOMP, NYDECOMP, NYCUT
       INTEGER(KIND=JWIM) :: ISTAGGER, NIJ, NTOT, NAREA
       INTEGER(KIND=JWIM) :: NMEAN, NREST, NPTS, IXLONMAX
       INTEGER(KIND=JWIM) :: KLATBOT, KLATTOP, KXLAT, NLONGMAX, KMIN, IXLONMIN
       INTEGER(KIND=JWIM) :: MAXPERMLEN, MXPRLEN 
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: NXS, NXE, NYS, NYE 
-      INTEGER(KIND=JWIM), ALLOCATABLE :: ICOMBUF_S(:)
-      INTEGER(KIND=JWIM), ALLOCATABLE :: ICOMBUF_R(:)
-      INTEGER(KIND=JWIM), ALLOCATABLE :: IDUM(:)
       INTEGER(KIND=JWIM), ALLOCATABLE :: KDUM(:)
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: INDEX, IJNDEX, NTOTSUB
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: NEWIJ2IJ
@@ -202,23 +197,16 @@ SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK, LLWVENVI)
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: KTEMP
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: IJFROMPE, IPROCFROM
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:)   :: IJFROMPEX
-      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSLON, KOBSLAT
-      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSCOR
-      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSRLON, KOBSRLAT
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: RS_sekf, RN_sekf
+      REAL(KIND=JWRB) :: RSOUTW, RNORTW
       REAL(KIND=JWRB) :: XDELLOINV, STAGGER, XLON, SQRT2O2, A, B
       REAL(KIND=JWRB) :: THETAMAX, SINTHMAX, DELTA
-      REAL(KIND=JWRB) :: X4(2)
-      REAL(KIND=JWRB),ALLOCATABLE :: RCOMBUF_S(:)
-      REAL(KIND=JWRB),ALLOCATABLE :: RCOMBUF_R(:)
-      REAL(KIND=JWRB),ALLOCATABLE :: RDUM(:)
 
-      CHARACTER(LEN=80) :: LOGFILENAME
+      CHARACTER(LEN=72) :: FILENAME
 
       LOGICAL :: LLEXIST
-      LOGICAL :: LL_sekf
+      LOGICAL :: LLCOUPLED
       LOGICAL :: LLRNL
 
 !----------------------------------------------------------------------
@@ -228,20 +216,32 @@ IF (LHOOK) CALL DR_HOOK('MPDECOMP',0,ZHOOK_HANDLE)
 !     0. READ GRID INPUT FROM PREPROC 
 !        ----------------------------
 
-!AR: ITAG was not set
-ITAG =0 
-IREAD=IREADG
+IREAD = IREADG
 
-! CALL TO *READPRE* HAS BEEN MOVED TO WVWAMINIT
 ! Re-initilize for SEKF surface analysis loops
 IF (LWVWAMINIT) THEN
-  LL_sekf = .True.
-  LLRNL=.TRUE.
-  CALL WVWAMINIT(LL_sekf,IU06,LLRNL, NGAUSSW_sekf, NLON_sekf,NLAT_sekf,RS_sekf,RN_sekf)
+  LLCOUPLED = .TRUE.
+  LLRNL = .TRUE.
+  CALL WVWAMINIT(LLCOUPLED, IU06, LLRNL, NGAUSSW, NLON_sekf, NLAT_sekf, RSOUTW, RNORTW)
 ENDIF
 
-WRITE(IU06,*) ' WAVE MODEL PREPROC GRID INFORMATION AVAILABLE'
+WRITE(IU06,*) ' WAVE MODEL GRID INFORMATION AVAILABLE'
 CALL FLUSH (IU06)
+
+
+IF ( LSUBGRID ) THEN
+  CALL WVOPENSUBBATHY (IREAD, NPR, FILENAME, KFILE_HANDLE, KGRIB_HANDLE )
+  WRITE(IU06,*) ''
+  WRITE(IU06,*) ' WAVE MODEL SUBGRID INFORMATION AVAILABLE ', KFILE_HANDLE, KGRIB_HANDLE
+  CALL FLUSH (IU06)
+ELSE
+  FILENAME='LSUBGRID_IS_FALSE_NO_READING_NECESSARY'
+  KFILE_HANDLE = -99
+  KGRIB_HANDLE = -99
+  WRITE(IU06,*) ''
+  WRITE(IU06,*) ' WAVE MODEL SUBGRID INFORMATION NOT NEEDED. '
+  CALL FLUSH (IU06)
+ENDIF
 
 
 IF (LLUNSTR) THEN
@@ -435,14 +435,7 @@ ELSE
 !       roughly scale like (nxdecomp-1)/nxdecomp the number of points
 !       in the remaining bottom nycut bands
 
-        IF (XDELLA < 0.05_JWRB) THEN
-          NMEAN=INT( REAL(IJL,JWRU) * (REAL(NXDECOMP,JWRU)/REAL(((NXDECOMP-1)*NYDECOMP+NYCUT),JWRU)) )
-        ELSE
-          ! this is to insure that low resolution cases behaves exactly as before.
-          ! But this should be removed as soon as possible !!!!
-          NMEAN=NXDECOMP*IJL/((NXDECOMP-1)*NYDECOMP+NYCUT)
-        ENDIF
-      
+        NMEAN=INT( REAL(IJL,JWRU) * (REAL(NXDECOMP,JWRU)/REAL(((NXDECOMP-1)*NYDECOMP+NYCUT),JWRU)) )
         NSTART1D(1)=1
         NPTS=NMEAN
         NEND1D(1)=NSTART1D(1)+NPTS-1
@@ -467,7 +460,6 @@ ELSE
           NEND1D(IP)=NSTART1D(IP)+NPTS-1
         ENDDO
       ENDIF 
-
 
 !     SECOND 1-D DECOMPOSITION IN EACH LATITUDINAL BAND
 
@@ -759,7 +751,6 @@ ELSE
       ALLOCATE(IPROCFROM(MAXPERMLEN,NPR))
       ALLOCATE(NLENHALO(NPR))
 
-      CALL GSTATS(1497,0)
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(IP,IH)
       DO IP=1,NPR
         DO IH=1,MAXPERMLEN
@@ -768,7 +759,6 @@ ELSE
         ENDDO
       ENDDO
 !$OMP END PARALLEL DO
-      CALL GSTATS(1497,1)
 
 !     DETERMINE IJFROMPE
       NLENHALO_MAX=0
@@ -811,7 +801,7 @@ ELSE
           IF ( KLAT(IJ,IC,ICL) > 0 .AND.                              &
      &         KLAT(IJ,IC,ICL) <= NIBLO .AND.                         &
      &        (KLAT(IJ,IC,ICL) < NSTART(IP) .OR.                      &
-     &         KLAT(IJ,IC,ICL) > NEND(IP)       ) ) THEN 
+     &         KLAT(IJ,IC,ICL) > NEND(IP)       ) ) THEN
              IH=IH+1
              IF (IH > MXPRLEN) THEN
                WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
@@ -871,7 +861,7 @@ ELSE
               IF ( KRLAT(IJ,IC,ICL) > 0 .AND.                          &
      &             KRLAT(IJ,IC,ICL) <= NIBLO .AND.                     &
      &            (KRLAT(IJ,IC,ICL) < NSTART(IP) .OR.                  &
-     &             KRLAT(IJ,IC,ICL) > NEND(IP)       ) ) THEN 
+     &             KRLAT(IJ,IC,ICL) > NEND(IP)       ) ) THEN
                  IH=IH+1
                  IF (IH > MXPRLEN) THEN
                    WRITE(IU06,*) 'MPDECOMP: decomposition problem !!'
@@ -1042,7 +1032,7 @@ ELSE
       ALLOCATE(NTOPELST(NGBTOPE))
       INBNGH=0
       DO IP=1,NPR
-        IF (NTOPE(IP) > 0) THEN 
+        IF (NTOPE(IP) > 0) THEN
           INBNGH=INBNGH+1
           NTOPELST(INBNGH)=IP
         ENDIF
@@ -1059,7 +1049,7 @@ ELSE
       ALLOCATE(NFROMPELST(MAX(1,NGBFROMPE)))
       INBNGH=0
       DO IP=1,NPR
-        IF (NFROMPE(IP) > 0) THEN 
+        IF (NFROMPE(IP) > 0) THEN
           INBNGH=INBNGH+1
           NFROMPELST(INBNGH)=IP
         ENDIF
@@ -1304,458 +1294,6 @@ ELSE
           ENDDO
         ENDIF
 
-
-!       READ IU08
-!       =========
-
-        IF (.NOT.LL1D .AND. NPR > 1) ALLOCATE(KDUM(NIBLO))
-
-        MPLENGTH=MAXLEN
-        ALLOCATE(ICOMBUF_S(MPLENGTH*NPR))
-        ALLOCATE(ICOMBUF_R(MPLENGTH))
-
-        ALLOCATE(IDUM(NIBLO))
-
-        ALLOCATE(KOBSLON(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
-        ALLOCATE(KOBSLAT(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
-        IF (IPROPAGS == 1) THEN
-          ALLOCATE(KOBSRLAT(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
-          ALLOCATE(KOBSRLON(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
-        ENDIF
-        IF (IPROPAGS == 2) THEN
-          ALLOCATE(KOBSCOR(NSTART(IRANK):NEND(IRANK),NFRE_RED,4))
-        ENDIF
-
-        DO M=1,NFRE_RED ! loop over frequencies
-
-!       READING KOBSLAT
-!       ---------------
-          DO IC=1,2
-            ITAG=ITAG+1
-            IF (IRANK == IREAD) THEN
-
-              CALL GSTATS(1771,0)
-              READ (IU08(IPROPAGS)) IDUM 
-              CALL GSTATS(1771,1)
-
-!             RELABELLING OF THE ARRAY
-              IF (.NOT.LL1D .AND. NPR > 1) THEN
-                DO NIJ=NSTART(1),NEND(NPR)
-                  KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
-                ENDDO
-                DO NIJ=NSTART(1),NEND(NPR)
-                  IDUM(NIJ)=KDUM(NIJ)
-                ENDDO
-              ENDIF
-
-!             FILL THE SEND BUFFER
-              DO IP=1,NPR
-                KCOUNT=(IP-1)*MPLENGTH
-                DO IJ=NSTART(IP),NEND(IP)
-                  KCOUNT=KCOUNT+1
-                  ICOMBUF_S(KCOUNT)=IDUM(IJ)
-                ENDDO
-              ENDDO
-            ENDIF
-
-            IF (NPR > 1) THEN
-              CALL GSTATS(694,0)
-              ICOUNTS(:)=MPLENGTH
-              CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,                  &
-     &          KSENDBUF=ICOMBUF_S,                                     &
-     &          KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 1:')
-              CALL GSTATS(694,1)
-            ENDIF
-
-!           KEEP THE RELEVANT PART OF KOBSLAT
-            IF (IRANK == IREAD) THEN
-              KCOUNT=(IRANK-1)*MPLENGTH
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                KCOUNT=KCOUNT+1
-                KOBSLAT(IJ,M,IC)=ICOMBUF_S(KCOUNT)
-              ENDDO
-            ELSE
-              KCOUNT=0
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                KCOUNT=KCOUNT+1
-                KOBSLAT(IJ,M,IC)=ICOMBUF_R(KCOUNT)
-              ENDDO
-            ENDIF
-
-          ENDDO
-
-!       READING KOBSLON
-!       ---------------
-
-          DO IC=1,2
-
-            ITAG=ITAG+1
-            IF (IRANK == IREAD) THEN
-              CALL GSTATS(1771,0)
-              READ (IU08(IPROPAGS)) IDUM 
-              CALL GSTATS(1771,1)
-
-!             RELABELLING OF THE ARRAY
-              IF (.NOT.LL1D .AND. NPR > 1) THEN
-                DO NIJ=NSTART(1),NEND(NPR)
-                   KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
-                ENDDO
-                DO NIJ=NSTART(1),NEND(NPR)
-                  IDUM(NIJ)=KDUM(NIJ)
-                ENDDO
-              ENDIF
-!             FILL THE SEND BUFFER
-              DO IP=1,NPR
-                KCOUNT=(IP-1)*MPLENGTH
-                DO IJ=NSTART(IP),NEND(IP)
-                  KCOUNT=KCOUNT+1
-                  ICOMBUF_S(KCOUNT)=IDUM(IJ)
-                ENDDO
-              ENDDO
-            ENDIF
-
-            IF (NPR > 1) THEN
-              CALL GSTATS(694,0)
-              ICOUNTS(:)=MPLENGTH
-              CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,                  &
-     &          KSENDBUF=ICOMBUF_S,                                     &
-     &          KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 2:')
-              CALL GSTATS(694,1)
-            ENDIF
-
-!           KEEP THE RELEVANT PART OF KOBSLON
-            IF (IRANK == IREAD) THEN
-              KCOUNT=(IRANK-1)*MPLENGTH
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                KCOUNT=KCOUNT+1
-                KOBSLON(IJ,M,IC)=ICOMBUF_S(KCOUNT)
-              ENDDO
-            ELSE
-              KCOUNT=0
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                KCOUNT=KCOUNT+1
-                KOBSLON(IJ,M,IC)=ICOMBUF_R(KCOUNT)
-              ENDDO
-            ENDIF
-
-          ENDDO
-
-
-!       READING KOBSRLAT
-!       ----------------
-          IF (IPROPAGS == 1) THEN
-
-            DO IC=1,2
-              ITAG=ITAG+1
-
-              IF (IRANK == IREAD) THEN
-                CALL GSTATS(1771,0)
-                READ (IU08(IPROPAGS)) IDUM 
-                CALL GSTATS(1771,1)
-
-!               RELABELLING OF THE ARRAY
-                IF (.NOT.LL1D .AND. NPR > 1) THEN
-                  DO NIJ=NSTART(1),NEND(NPR)
-                    KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
-                  ENDDO
-                  DO NIJ=NSTART(1),NEND(NPR)
-                    IDUM(NIJ)=KDUM(NIJ)
-                  ENDDO
-                ENDIF
-
-!               FILL THE SEND BUFFER
-                DO IP=1,NPR
-                  KCOUNT=(IP-1)*MPLENGTH
-                  DO IJ=NSTART(IP),NEND(IP)
-                    KCOUNT=KCOUNT+1
-                    ICOMBUF_S(KCOUNT)=IDUM(IJ)
-                  ENDDO
-                ENDDO
-              ENDIF
-
-              IF (NPR > 1) THEN
-                CALL GSTATS(694,0)
-                ICOUNTS(:)=MPLENGTH
-                CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,                &
-     &            KSENDBUF=ICOMBUF_S,                                   &
-     &            KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 3:')
-                CALL GSTATS(694,1)
-              ENDIF
-
-!             KEEP THE RELEVANT PART OF KOBSRLAT
-              IF (IRANK == IREAD) THEN
-                KCOUNT=(IRANK-1)*MPLENGTH
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  KCOUNT=KCOUNT+1
-                  KOBSRLAT(IJ,M,IC)=ICOMBUF_S(KCOUNT)
-                ENDDO
-              ELSE
-                KCOUNT=0
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  KCOUNT=KCOUNT+1
-                  KOBSRLAT(IJ,M,IC)=ICOMBUF_R(KCOUNT)
-                ENDDO
-              ENDIF
-
-            ENDDO
-          ENDIF
-
-!       READING KOBSRLON
-!       ----------------
-          IF (IPROPAGS == 1) THEN
-
-            DO IC=1,2
-              ITAG=ITAG+1
-
-              IF (IRANK == IREAD) THEN
-                CALL GSTATS(1771,0)
-                READ (IU08(IPROPAGS)) IDUM 
-                CALL GSTATS(1771,1)
-
-!               RELABELLING OF THE ARRAY
-                IF (.NOT.LL1D .AND. NPR > 1) THEN
-                  DO NIJ=NSTART(1),NEND(NPR)
-                     KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
-                  ENDDO
-                  DO NIJ=NSTART(1),NEND(NPR)
-                    IDUM(NIJ)=KDUM(NIJ)
-                  ENDDO
-                ENDIF
-
-!               FILL THE SEND BUFFER
-                DO IP=1,NPR
-                  KCOUNT=(IP-1)*MPLENGTH
-                  DO IJ=NSTART(IP),NEND(IP)
-                    KCOUNT=KCOUNT+1
-                    ICOMBUF_S(KCOUNT)=IDUM(IJ)
-                  ENDDO
-                ENDDO
-              ENDIF
-
-              IF (NPR > 1) THEN
-                CALL GSTATS(694,0)
-                ICOUNTS(:)=MPLENGTH
-                CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,                &
-     &            KSENDBUF=ICOMBUF_S,                                   &
-     &            KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 4:')
-                CALL GSTATS(694,1)
-              ENDIF
-
-!             KEEP THE RELEVANT PART OF KOBSRLON
-              IF (IRANK == IREAD) THEN
-                KCOUNT=(IRANK-1)*MPLENGTH
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  KCOUNT=KCOUNT+1
-                  KOBSRLON(IJ,M,IC)=ICOMBUF_S(KCOUNT)
-                ENDDO
-              ELSE
-                KCOUNT=0
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  KCOUNT=KCOUNT+1
-                  KOBSRLON(IJ,M,IC)=ICOMBUF_R(KCOUNT)
-                ENDDO
-              ENDIF
-
-            ENDDO
-          ENDIF
-
-
-!       READING KOBSCOR
-!       ---------------
-          IF (IPROPAGS == 2) THEN
-            DO IC=1,4
-              ITAG=ITAG+1
-
-              IF (IRANK == IREAD) THEN
-                CALL GSTATS(1771,0)
-                READ (IU08(IPROPAGS)) IDUM 
-                CALL GSTATS(1771,1)
-
-!               RELABELLING OF THE ARRAY
-                IF (.NOT.LL1D .AND. NPR > 1 ) THEN
-                  DO NIJ=NSTART(1),NEND(NPR)
-                   KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
-                  ENDDO
-                  DO NIJ=NSTART(1),NEND(NPR)
-                    IDUM(NIJ)=KDUM(NIJ)
-                  ENDDO
-                ENDIF
-
-!               FILL THE SEND BUFFER
-                DO IP=1,NPR
-                  KCOUNT=(IP-1)*MPLENGTH
-                  DO IJ=NSTART(IP),NEND(IP)
-                    KCOUNT=KCOUNT+1
-                    ICOMBUF_S(KCOUNT)=IDUM(IJ)
-                  ENDDO
-                ENDDO
-              ENDIF
-
-              IF (NPR > 1) THEN
-                CALL GSTATS(694,0)
-                ICOUNTS(:)=MPLENGTH
-                CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,                &
-     &            KSENDBUF=ICOMBUF_S,                                   &
-     &            KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 5:')
-                CALL GSTATS(694,1)
-              ENDIF           
-
-!             KEEP THE RELEVANT PART OF KOBSCOR
-              IF (IRANK == IREAD) THEN
-                KCOUNT=(IRANK-1)*MPLENGTH
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  KCOUNT=KCOUNT+1
-                  KOBSCOR(IJ,M,IC)=ICOMBUF_S(KCOUNT)
-                ENDDO
-              ELSE
-                KCOUNT=0
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  KCOUNT=KCOUNT+1
-                  KOBSCOR(IJ,M,IC)=ICOMBUF_R(KCOUNT)
-                ENDDO
-              ENDIF
-            ENDDO
-
-          ENDIF
-
-        ENDDO ! end loop on frequencies
-
-        IF (ALLOCATED(ICOMBUF_S)) DEALLOCATE(ICOMBUF_S)
-        IF (ALLOCATED(ICOMBUF_R)) DEALLOCATE(ICOMBUF_R)
-
-        DEALLOCATE(IDUM)
-
-        IF (.NOT.LL1D .AND. NPR > 1 ) DEALLOCATE(KDUM)
-
-      WRITE(IU06,*) ' WAVE MODEL PREPROC UBUF INFORMATION READ IN  (second part)'
-      CALL FLUSH (IU06)
-
-      DEALLOCATE(NEWIJ2IJ)
-
-
-!     OBSTRUCTION COEFFICIENTS
-
-!     NOTE: THE VALUE OF OBSLON WILL BE RESET IN THE FIRST
-!     CALL TO PROPAGS TO CONTAIN THE OBSTRUCTION TIME THE GROUP
-!     VELOCITY At THE INTERFACE !!!!!!!!
-      IF (ALLOCATED(OBSLON)) DEALLOCATE(OBSLON)
-      ALLOCATE(OBSLON(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
-!     NOTE: THE VALUE OF OBSLAT WILL BE RESET IN THE FIRST
-!     CALL TO PROPAGS TO CONTAIN THE OBSTRUCTION TIME THE GROUP
-!     VELOCITY At THE INTERFACE !!!!!!!!
-      IF (ALLOCATED(OBSLAT)) DEALLOCATE(OBSLAT)
-      ALLOCATE(OBSLAT(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
-
-      CALL GSTATS(1497,0)
-!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICC,IC,M,IJ)
-      DO ICC=1,2
-        IC=ICC
-        DO M=1,NFRE_RED
-          DO IJ=NSTART(IRANK),NEND(IRANK)
-            IF (.NOT. LSUBGRID) THEN
-              OBSLON(IJ,M,IC)=1.0_JWRB
-            ELSEIF (KOBSLON(IJ,M,IC) == 0) THEN
-              OBSLON(IJ,M,IC)=0.0_JWRB
-            ELSEIF (MOD(KOBSLON(IJ,M,IC),1000) == 0) THEN
-              OBSLON(IJ,M,IC)=1.0_JWRB
-            ELSE
-              OBSLON(IJ,M,IC)=REAL(KOBSLON(IJ,M,IC),JWRB)*0.001_JWRB
-            ENDIF
-          ENDDO
-        ENDDO
-
-        DO M=1,NFRE_RED
-          DO IJ=NSTART(IRANK),NEND(IRANK)
-            IF (.NOT. LSUBGRID) THEN
-              OBSLAT(IJ,M,IC)=1.0_JWRB
-            ELSEIF (KOBSLAT(IJ,M,IC) == 0) THEN
-              OBSLAT(IJ,M,IC)=0.0_JWRB
-            ELSEIF (MOD(KOBSLAT(IJ,M,IC),1000) == 0) THEN
-              OBSLAT(IJ,M,IC)=1.0_JWRB
-            ELSE
-              OBSLAT(IJ,M,IC)=REAL(KOBSLAT(IJ,M,IC),JWRB)*0.001_JWRB
-            ENDIF
-          ENDDO
-        ENDDO
-      ENDDO
-!$OMP END PARALLEL DO
-      CALL GSTATS(1497,1)
-
-      DEALLOCATE(KOBSLON)
-      DEALLOCATE(KOBSLAT)
-
-      IF (IPROPAGS == 1) THEN
-!       NOTE: THE VALUE OF OBSRLON WILL NOT BE RESET IN THE FIRST
-        IF (ALLOCATED(OBSRLON)) DEALLOCATE(OBSRLON)
-        ALLOCATE(OBSRLON(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
-!       NOTE: THE VALUE OF OBSRLAT WILL NOT BE RESET IN THE FIRST
-        IF (ALLOCATED(OBSRLAT)) DEALLOCATE(OBSRLAT)
-        ALLOCATE(OBSRLAT(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
-        CALL GSTATS(1497,0)
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICC,IC,M,IJ)
-        DO ICC=1,2
-          IC=ICC
-          DO M=1,NFRE_RED
-            DO IJ=NSTART(IRANK),NEND(IRANK)
-              IF (.NOT. LSUBGRID) THEN
-                OBSRLON(IJ,M,IC)=1.0_JWRB
-              ELSEIF (KOBSRLON(IJ,M,IC) == 0) THEN
-                OBSRLON(IJ,M,IC)=0.0_JWRB
-              ELSEIF (MOD(KOBSRLON(IJ,M,IC),1000) == 0) THEN
-                OBSRLON(IJ,M,IC)=1.0_JWRB
-              ELSE
-                OBSRLON(IJ,M,IC)=REAL(KOBSRLON(IJ,M,IC),JWRB)*0.001_JWRB
-              ENDIF
-            ENDDO
-          ENDDO
-
-          DO M=1,NFRE_RED
-            DO IJ=NSTART(IRANK),NEND(IRANK)
-              IF (.NOT. LSUBGRID) THEN
-                OBSRLAT(IJ,M,IC)=1.0_JWRB
-              ELSEIF (KOBSRLAT(IJ,M,IC) == 0) THEN
-                OBSRLAT(IJ,M,IC)=0.0_JWRB
-               ELSEIF (MOD(KOBSRLAT(IJ,M,IC),1000) == 0) THEN
-              OBSRLAT(IJ,M,IC)=1.0_JWRB
-              ELSE
-                OBSRLAT(IJ,M,IC)=REAL(KOBSRLAT(IJ,M,IC),JWRB)*0.001_JWRB
-              ENDIF
-            ENDDO
-          ENDDO
-
-        ENDDO
-!$OMP END PARALLEL DO
-        CALL GSTATS(1497,1)
-        DEALLOCATE(KOBSRLON)
-        DEALLOCATE(KOBSRLAT)
-      ENDIF
-
-      IF (IPROPAGS == 2) THEN
-        IF (ALLOCATED(OBSCOR)) DEALLOCATE(OBSCOR)
-        ALLOCATE(OBSCOR(NSTART(IRANK):NEND(IRANK),NFRE_RED,4))
-        CALL GSTATS(1497,0)
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICC,IC,M,IJ)
-        DO ICC=1,4
-          IC=ICC
-          DO M=1,NFRE_RED
-            DO IJ=NSTART(IRANK),NEND(IRANK)
-              IF (.NOT. LSUBGRID) THEN
-                OBSCOR(IJ,M,IC)=1.0_JWRB
-              ELSEIF (KOBSCOR(IJ,M,IC) == 0) THEN
-                OBSCOR(IJ,M,IC)=0.0_JWRB
-              ELSEIF (MOD(KOBSCOR(IJ,M,IC),1000) == 0) THEN
-                OBSCOR(IJ,M,IC)=1.0_JWRB
-              ELSE
-                OBSCOR(IJ,M,IC)=REAL(KOBSCOR(IJ,M,IC),JWRB)*0.001_JWRB
-              ENDIF
-            ENDDO
-          ENDDO
-        ENDDO
-!$OMP END PARALLEL DO
-        CALL GSTATS(1497,1)
-        DEALLOCATE(KOBSCOR)
-      ENDIF
-
 !     7. DETERMINE KXLTMIN, KXLTMAX
 
       IF (ALLOCATED(KXLTMIN)) DEALLOCATE(KXLTMIN)
@@ -1793,7 +1331,6 @@ ELSE
 
       KTAG=KTAG+1
 
-      IF (IRANK == IREAD) CLOSE (UNIT=IU08(IPROPAGS))
       ! For the SEKF surface analysis
       LWVWAMINIT=.TRUE.
 
@@ -1853,7 +1390,7 @@ IF (LLUNSTR) THEN
 ELSE
 
   IF (LLWVENVI) THEN
-    IF (ALLOCATED(WVENVI%UCUR))THEN
+    IF (ALLOCATED(WVENVI%UCUR)) THEN
         CALL WVENVI%DEALLOC()
     ENDIF
     CALL WVENVI%ALLOC(NPROMA_WAM, NCHNK)
@@ -1935,8 +1472,25 @@ DEALLOCATE(NXE)
 DEALLOCATE(NYS)
 DEALLOCATE(NYE)
 
+
+! GET OBSTRUCTION COEFFICIENTS
+! ----------------------------
+IF ( .NOT. LLUNSTR ) THEN
+
+  IF ( KGRIB_HANDLE > 0 .OR. .NOT. LSUBGRID ) THEN
+    ! FROM GRIB INPUT OR SIMPLE INITIALISATION BECAUSE IT IS NOT USED
+    CALL GETGRBOBSTRCT(BLK2GLO, BLK2LOC, IREAD, NPR, FILENAME, KFILE_HANDLE, KGRIB_HANDLE)
+  ELSE
+    ! FROM BINARY INPUT
+    CALL GETBOBSTRCT(IREAD, NPR, MAXLEN, NEWIJ2IJ)
+  ENDIF
+
+  IF(ALLOCATED(NEWIJ2IJ)) DEALLOCATE(NEWIJ2IJ)
+
+ENDIF
+
+
 WRITE(IU06,*) ' WAVE MODEL DECOMPOSITION FINISHED.'
-WRITE(IU06,*) ''
 CALL FLUSH(IU06)
 
 IF (LHOOK) CALL DR_HOOK('MPDECOMP',1,ZHOOK_HANDLE)

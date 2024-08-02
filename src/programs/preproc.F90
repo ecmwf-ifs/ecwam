@@ -101,7 +101,7 @@ PROGRAM preproc
 !       *IU07*   - LOGICAL UNIT FOR OUTPUT OF GRID ORGANISATION
 !                  AND COMPUTED CONSTANTS. (UNFORMATED)
 !                  (SEE SUB OUTCOM).
-!       *IU08*   - LOGICAL UNITS FOR OUTPUT OF MODULE UBUF.
+!       *IU08*   - LOGICAL UNITS FOR BINARY OUTPUT OF MODULE UBUF.
 !                  (UNFORMATED) (SEE SUB MUBUF).
 !       *IU09*   - LOGICAL UNIT FOR UNFORMATED OUTPUT OF COARSE
 !                  GRID BOUNDARY ORGANISATION (MODULE CBOUND),
@@ -134,22 +134,32 @@ PROGRAM preproc
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : LLUNSTR
+      USE YOWCOUP  , ONLY : KCOUSTEP
+      USE YOWCOUT  , ONLY : LFDB, LRSTST0
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
+      USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP, CEXPVERCLIM, NDATE_TIME_WINDOW_END
+      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWMAP   , ONLY : NGX      ,NGY      ,IPER     ,IRGG     ,              &
      &                      KXLTMIN  ,KXLTMAX  ,                                  &
      &                      AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
      &                      XDELLO   ,ZDELLO   ,NLONRGG  ,LAQUA
       USE YOWSHAL  , ONLY : BATHYMAX
+      USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,              &
+     &                      NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,    &
+     &                      IREFDATE ,ISTREAM  ,NLOCGRB
       USE YOWTEST  , ONLY : IU06
-      USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
-      USE YOWUNIT  , ONLY : NPROPAGS ,IU07     ,IU08
+      USE YOWPARAM , ONLY : LLUNSTR
+      USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD      ,ZMISS
+      USE YOWUBUF  , ONLY : NPROPAGS
+      USE YOWUNIT  , ONLY : IU08
 #ifdef WAM_HAVE_UNWAM
       USE YOWUNPOOL ,ONLY : LPREPROC
       USE UNWAM     ,ONLY : INIT_UNWAM
 #endif
       USE YOWABORT , ONLY : WAM_ABORT
+
+      USE YOWGRIB , ONLY : IGRIB_OPEN_FILE
 
 ! ----------------------------------------------------------------------
 
@@ -163,11 +173,12 @@ PROGRAM preproc
 #include "mgrid.intfb.h"
 #include "mubuf.intfb.h"
 #include "outcom.intfb.h"
+#include "preset_wgrib_template.intfb.h"
 #include "topoar.intfb.h"
 #include "uiprep.intfb.h"
 
-      INTEGER(KIND=JWIM) :: IU01, IU02, IU03, IU09, IU10, IU17,IU19,IU20
-      INTEGER(KIND=JWIM) :: K, IX, ICL, IFORM, LNAME,IINPC,LFILE
+      INTEGER(KIND=JWIM) :: IU01, IU02, IU03, IU07, IU09, IU10, IU17, IU19, IU20
+      INTEGER(KIND=JWIM) :: K, IX, ICL, IFORM, LNAME, IINPC, LFILE
 
       REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JWRB) :: XLAT
@@ -178,6 +189,8 @@ PROGRAM preproc
 
       LOGICAL :: LLEXIST
       LOGICAL :: LLGRID
+      LOGICAL :: LLGRIB_BATHY_OUT
+      LOGICAL :: LLGRIB_OBSTRT_OUT
 
 ! ----------------------------------------------------------------------
 
@@ -193,15 +206,10 @@ PROGRAM preproc
 
 ! ----------------------------------------------------------------------
 
-!*    2. USER INPUT AND LINEPRINTER PROTOCOL.
-!        ------------------------------------
+!*    2.1 USER INPUT
+!         ----------
 
-      CALL UIPREP (IFORM, LLGRID)
-
-! ----------------------------------------------------------------------
-
-      ALLOCATE(BATHY(NGX, NGY))
-
+      CALL UIPREP (IFORM, LLGRID, LLGRIB_BATHY_OUT, LLGRIB_OBSTRT_OUT)
 
       FILENAME='wam_topo'
       LLEXIST=.FALSE.
@@ -219,19 +227,35 @@ PROGRAM preproc
       ENDIF
       IU01 = IWAM_GET_UNIT(IU06, FILENAME(1:LNAME), 'r', 'f', 0, 'READWRITE')
 
-      IF (IFORM /= 2) THEN
-        IU07 = IWAM_GET_UNIT(IU06, 'wam_grid_tables', 'w', 'u', 0, 'READWRITE')
+! ----------------------------------------------------------------------
+
+!*    2.2 USER OUTPUT
+!         -----------
+
+      LFDB = .FALSE.
+
+      FILENAME='wam_grid_tables'
+      LFILE=0
+      IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
+      IF ( LLGRIB_BATHY_OUT ) THEN
+        CALL IGRIB_OPEN_FILE(IU07,FILENAME(1:LFILE),'w')
       ELSE
-        IU17 = IWAM_GET_UNIT(IU06, 'wam_grid_tables_form', 'w', 'f', 0, 'READWRITE')
+        IF (IFORM /= 2) THEN
+          IU07 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE), 'w', 'u', 0, 'READWRITE')
+        ELSE
+          IU17 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE)//'_form', 'w', 'f', 0, 'READWRITE')
+        ENDIF
       ENDIF
 
-      DO ICL=0,NPROPAGS
-        WRITE(C1,'(I1)') ICL
-        FILENAME='wam_subgrid_'//C1
-        LFILE=0
-        IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
-        IU08(ICL) = IWAM_GET_UNIT(IU06,FILENAME(1:LFILE) , 'w', 'u', 0, 'READWRITE')
-      ENDDO
+      IF ( .NOT. LLGRIB_OBSTRT_OUT) THEN
+        DO ICL=0,NPROPAGS
+          WRITE(C1,'(I1)') ICL
+          FILENAME='wam_subgrid_'//C1
+          LFILE=0
+          IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
+          IU08(ICL) = IWAM_GET_UNIT(IU06,FILENAME(1:LFILE) , 'w', 'u', 0, 'READWRITE')
+        ENDDO
+      ENDIF
 
       IF (IBOUNC == 1) THEN
 !       Information of the nested grid(s) that will be produce by a coarse grid run
@@ -263,6 +287,8 @@ PROGRAM preproc
 
 !*    3. GRID DEFINITION
 !        ---------------
+
+      ALLOCATE(BATHY(NGX, NGY))
 
       ALLOCATE(ZDELLO(NGY))
       DO K=1,NGY
@@ -315,8 +341,8 @@ PROGRAM preproc
 !       EXCEPT AT THE POLES THAT ARE EXCLUDED AS LAND.
         BATHY(:,:)=BATHYMAX
         DO IX=1,NGX
-          BATHY(IX,1)=-999.0_JWRB
-          BATHY(IX,NGY)=-999.0_JWRB
+          BATHY(IX,1)=ZMISS
+          BATHY(IX,NGY)=ZMISS
         ENDDO
       ENDIF
 
@@ -335,8 +361,37 @@ PROGRAM preproc
 #endif
       END IF ! LLUNSTR
 
-!*    5.3 COMPUTE OUTPUT POINT INDICES (MODULE YOWCOUT).
-!         ----------------------------------------------
+
+
+!*    5.3 PREPARE GRIB OUPUT
+!         ------------------
+
+      MARSTYPE = 'an'
+      YCLASS   = 'od'
+      YEXPVER = CEXPVERCLIM 
+      NENSFNB = 0  
+      NTOTENS = 0
+      ISTREAM = 1045 !! if changed to an ifs stream also change LNEWLVTP
+      NLOCGRB = 1
+      NSYSNB  = -1
+      NMETNB  = -1
+      IREFDATE = 0
+      LGRHDIFS =.FALSE.
+      LNEWLVTP =.FALSE.
+      NDATE_TIME_WINDOW_END = 0
+      KCOUSTEP = .FALSE.
+      LRSTST0 = .FALSE.
+
+      IF ( LLGRIB_BATHY_OUT ) THEN
+        WRITE(IU06,*) ''
+        WRITE(IU06,*) 'BATHYMETRY OUTPUT IN GRIB '
+        WRITE(IU06,*) ''
+!       PREPARE OUTPUT
+!       FOR INTEGRATED PARAMETERS
+        CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I,NGRIBV=2,LLCREATE=.true.,NBITSPERVALUE=24)
+      ELSE 
+        NGRIB_HANDLE_WAM_I=0
+      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -369,7 +424,7 @@ PROGRAM preproc
 !*      8. GENERATE AND WRITE MODULE UBUF.
 !          -------------------------------
 
-          CALL MUBUF (IU01, IU08, NPROPAGS)
+        IF ( .NOT. LLGRIB_OBSTRT_OUT ) CALL MUBUF (IU01, IU08, NPROPAGS)
  
       END IF ! .NOT. LLUNSTR
 
@@ -379,7 +434,7 @@ PROGRAM preproc
 !*    9. OUTPUT OF MODULES.
 !        ------------------
 
-      CALL OUTCOM (IU07, BATHY)
+      CALL OUTCOM (IU07, BATHY, LLGRIB_BATHY_OUT)
 
 ! ----------------------------------------------------------------------
 

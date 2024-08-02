@@ -165,6 +165,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
 
       LOGICAL :: LLABORT
       LOGICAL :: LLEXIST
+      LOGICAL :: LLCHKINT
       LOGICAL, ALLOCATABLE :: LLNOTREAD(:)
 ! --------------------------------------------------------------------  
 
@@ -325,9 +326,10 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
           KGRIB_HANDLE=-99
           CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,KGRIB)
           ZDUM=0.0_JWRB
+          LLCHKINT = .TRUE.
           CALL GRIB2WGRID (IU06, NPROMA_WAM,                            &
      &                     KGRIB_HANDLE, KGRIB, ISIZE,                  &
-     &                     LLUNSTR,                                     &
+     &                     LLUNSTR, LLCHKINT,                           &
      &                     NGY, IRGG, NLONRGG_LOC,                      &
      &                     NXS, NXE, NYS, NYE,                          &
      &                     FIELDG%XLON, FIELDG%YLAT,                    &
@@ -590,14 +592,12 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
           CDTTURN = CDATEA
           IDTTURN=DTNEWWIND*3600
           CALL INCDATE(CDTTURN,IDTTURN)
-          IF (SWAMPWIND2 <= 0.0_JWRB .OR. CDTWIR <= CDTTURN) THEN
-            WRITE(IU06,*) ' READWIND - SWAMP CASE WITH WIND SPEED = ',  &
-     &                    SWAMPWIND 
+          IF (SWAMPWIND2 == 0.0_JWRB .OR. CDTWIR <= CDTTURN) THEN
+            WRITE(IU06,*) ' READWIND - SWAMP CASE WITH WIND SPEED = ', SWAMPWIND
             UWIND=0.0_JWRB
             VWIND=SWAMPWIND
           ELSE
-            WRITE(IU06,*) ' READWIND - SWAMP CASE WITH WIND SPEED = ',  &
-     &                    SWAMPWIND2 
+            WRITE(IU06,*) ' READWIND - SWAMP CASE WITH WIND SPEED = ', SWAMPWIND2
             IF (LTURN90) THEN
               UWIND=SWAMPWIND2
               VWIND=0.0_JWRB

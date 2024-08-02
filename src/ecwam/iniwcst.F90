@@ -36,15 +36,20 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWMPP   , ONLY : NPRECR   ,NPRECI
       USE YOWPCONS , ONLY : PI       ,CIRC     ,ZPI      ,ZCONST   ,    &
      &            RAD      ,DEG      ,R        ,ZPISQRT  ,ZPI4GM1  ,    &
-     &            ZPI4GM2  ,G        ,THREEZPI
+     &            ZPI4GM2  ,G        ,THREEZPI ,ROAIR    ,ROWATER  ,    &
+     &            ROWATERM1,YEPS     ,YINVEPS  ,GAM_SURF ,SURFT
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
       REAL(KIND=JWRB), INTENT(IN) :: PRPLRADI
+
+      INTEGER(KIND=JWIM) :: I4(2)
+      REAL(KIND=JWRB) :: X4(2)
 
       PI = 4.0_JWRB*ATAN(1.0_JWRB)
       ZPI= 2.0_JWRB*PI
@@ -57,5 +62,17 @@
       RAD = PI/180.0_JWRB
       DEG = 180./PI
       R = CIRC/ZPI*PRPLRADI
+
+      ROWATERM1 = 1.0_JWRB/ROWATER
+      YEPS = ROAIR/ROWATER
+      YINVEPS = 1.0_JWRB/YEPS
+      SURFT = GAM_SURF/ROWATER
+
+!     DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS
+!     -----------------------------------------------------
+      X4=1.0_JWRB
+      NPRECR = KIND(X4)
+      I4=1
+      NPRECI = KIND(I4)
 
       END SUBROUTINE INIWCST

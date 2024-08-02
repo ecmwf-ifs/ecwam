@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)
+SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)
 
 ! ----------------------------------------------------------------------
 
@@ -21,15 +21,17 @@ SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PROPAGS2(F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)*
+!       *CALL* *PROPAGS2(F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)*
 !          *F1*          - SPECTRUM AT TIME T (with exchange halo).
 !          *F3*          - SPECTRUM AT TIME T+DELT
 !          *NINF:NSUP+1* - 1st DIMENSION OF F1 and F3
 !          *KIJS*        - ACTIVE INDEX OF FIRST POINT
 !          *KIJL*        - ACTIVE INDEX OF LAST POINT
 !          *NANG*        - NUMBER OF DIRECTIONS
+!          *ND3SF1*      - LOWER 3rd DIMENSION OF F1 
+!          *ND3EF1*      - UPPER 3d DIMENSION OF F1 
 !          *ND3S*        - FREQUENCY INDEX SOLVED BY THIS CALL ND3S:ND3E
-!          *ND3E*
+!          *ND3E*        - FREQUENCY INDEX SOLVED BY THIS CALL ND3S:ND3E
 
 !     METHOD.
 !     -------
@@ -67,11 +69,10 @@ SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3S, ND3E)
 
 #include "abort1.intfb.h"
 
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3S:ND3E), INTENT(IN) :: F1
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3SF1:ND3EF1), INTENT(IN) :: F1
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3S:ND3E), INTENT(OUT) :: F3
-      INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP
-      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
-      INTEGER(KIND=JWIM), INTENT(IN) :: NANG, ND3S, ND3E 
+      INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: NANG, ND3SF1, ND3EF1, ND3S, ND3E
 
 
       INTEGER(KIND=JWIM) :: K, M, IJ
@@ -109,26 +110,11 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
      &         + WLATN(IJ,K,M,JYO(K,1),1) * F1(KLAT(IJ,JYO(K,1),1),K  ,M) &
      &         + WLATN(IJ,K,M,JYO(K,1),2) * F1(KLAT(IJ,JYO(K,1),2),K  ,M) &
      &         + WCORN(IJ,K,M,1,1)        * F1(KCOR(IJ,KCR(K,1),1),K  ,M) &
-     &         + WCORN(IJ,K,M,1,2)        * F1(KCOR(IJ,KCR(K,1),2),K  ,M)
+     &         + WCORN(IJ,K,M,1,2)        * F1(KCOR(IJ,KCR(K,1),2),K  ,M) &
+     &         + WKPMN(IJ,K,M,-1)         * F1(IJ,KPM(K,-1),M)            &
+     &         + WKPMN(IJ,K,M, 1)         * F1(IJ,KPM(K, 1),M)
               ENDDO
 
-              IF (LLWKPMN(K,M,-1)) THEN
-!DIR$ IVDEP
-!DIR$ PREFERVECTOR
-                DO IJ = KIJS, KIJL
-                  F3(IJ,K,M) = F3(IJ,K,M)                             &
-     &       +    WKPMN(IJ,K,M,-1)* F1(IJ,KPM(K,-1),M)
-                ENDDO
-              ENDIF
-
-              IF (LLWKPMN(K,M, 1)) THEN
-!DIR$ IVDEP
-!DIR$ PREFERVECTOR
-                DO IJ = KIJS, KIJL
-                  F3(IJ,K,M) = F3(IJ,K,M)                             &
-     &       +    WKPMN(IJ,K,M, 1)* F1(IJ,KPM(K, 1),M)
-                ENDDO
-              ENDIF
             ENDDO
           ENDDO
           !$acc end kernels 
@@ -146,12 +132,11 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
               DO IJ = KIJS, KIJL
                 F3(IJ,K,M) = (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ,K,M)
               ENDDO
-              
+
               DO IC=1,2
                 IF (LLWLONN(K,M,IC)) THEN
                   DO IJ = KIJS, KIJL
-                    F3(IJ,K,M) = F3(IJ,K,M)                             &
-     &           +      WLONN(IJ,K,M,IC)*F1(KLON(IJ,IC) ,K,M)
+                    F3(IJ,K,M) = F3(IJ,K,M) + WLONN(IJ,K,M,IC)*F1(KLON(IJ,IC),K,M)
                   ENDDO
                 ENDIF
               ENDDO
@@ -160,46 +145,37 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
                 DO IC=1,2
                   IF (LLWLATN(K,M,IC,ICL)) THEN
                     DO IJ = KIJS, KIJL
-                      F3(IJ,K,M) = F3(IJ,K,M)                           &
-     &         +        WLATN(IJ,K,M,IC,ICL)*F1(KLAT(IJ,IC,ICL) ,K,M)
+                      F3(IJ,K,M) = F3(IJ,K,M) + WLATN(IJ,K,M,IC,ICL)*F1(KLAT(IJ,IC,ICL),K,M)
                     ENDDO
-                 ENDIF
+                  ENDIF
                 ENDDO
-              ENDDO
 
-              DO ICL=1,2
                 DO ICR=1,4
                   IF (LLWCORN(K,M,ICR,ICL)) THEN
                     DO IJ = KIJS, KIJL
-                      F3(IJ,K,M) = F3(IJ,K,M)                           &
-     &         +   WCORN(IJ,K,M,ICR,ICL)*F1(KCOR(IJ,KCR(K,ICR),ICL),K,M)
+                      F3(IJ,K,M) = F3(IJ,K,M) + WCORN(IJ,K,M,ICR,ICL)*F1(KCOR(IJ,KCR(K,ICR),ICL),K,M)
                     ENDDO
                   ENDIF
                 ENDDO
               ENDDO
 
               DO IC=-1,1,2
+
                 IF (LLWKPMN(K,M,IC)) THEN
                   DO IJ = KIJS, KIJL
-                    F3(IJ,K,M) = F3(IJ,K,M)                             &
-     &         +      WKPMN(IJ,K,M,IC)* F1(IJ,KPM(K,IC),M)
+                    F3(IJ,K,M) = F3(IJ,K,M) + WKPMN(IJ,K,M,IC)* F1(IJ,KPM(K,IC),M)
                   ENDDO
                 ENDIF
-              ENDDO
 
-
-              DO IC=-1,1,2
                 IF (LLWMPMN(K,M,IC)) THEN
                   DO IJ = KIJS, KIJL
-                    F3(IJ,K,M) = F3(IJ,K,M)                             &
-     &         +      WMPMN(IJ,K,M,IC)* F1(IJ,K  ,MPM(M,IC))
+                    F3(IJ,K,M) = F3(IJ,K,M) + WMPMN(IJ,K,M,IC)* F1(IJ,K,MPM(M,IC))
                   ENDDO
                 ENDIF
+
               ENDDO
 
-
             ENDDO
-
           ENDDO
 
         ENDIF

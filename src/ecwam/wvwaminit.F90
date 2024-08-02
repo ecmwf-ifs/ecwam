@@ -36,17 +36,15 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMAP   , ONLY : AMOSOP   ,AMONOP   ,IQGAUSS  ,NGX      ,NGY
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI   ,KTAG 
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
       USE YOWPARAM , ONLY : KWAMVER  ,LLUNSTR
       
       USE YOWTEST  , ONLY : IU06
-      USE YOWUNIT  , ONLY : IREADG   ,NPROPAGS ,IU07     ,IU08     ,    &
-     &            LWVWAMINIT
+      USE YOWUNIT  , ONLY : LWVWAMINIT
       USE YOWSTAT  , ONLY : IPROPAGS
-      USE YOWABORT, ONLY : WAM_ABORT
 
       USE MPL_MODULE, ONLY : MPL_MYRANK, MPL_NPROC
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOMHOOK   , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE WAM_INIT_GPU_MOD, ONLY : WAM_INIT_GPU
 
 ! ----------------------------------------------------------------------
@@ -61,20 +59,16 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IULOG
       INTEGER(KIND=JWIM), INTENT(OUT) :: NGAUSSW, NLON, NLAT
-      INTEGER(KIND=JWIM) :: IREAD, LFILE
-      INTEGER(KIND=JWIM) :: I4(2)
-
       REAL(KIND=JWRB), INTENT(OUT) :: RSOUTW, RNORTW
-      REAL(KIND=JWRB) :: PRPLRADI
-      REAL(KIND=JWRB) :: X4(2)
-      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-
-      CHARACTER(LEN=1) :: C1 
-      CHARACTER(LEN=80) :: FILENAME
-      CHARACTER(LEN=80) :: LOGFILENAME
-
       LOGICAL, INTENT(IN) :: LLRNL
       LOGICAL, INTENT(IN) :: LLCOUPLED
+
+
+      REAL(KIND=JWRB) :: PRPLRADI
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+
+      CHARACTER(LEN=80) :: LOGFILENAME
+
       LOGICAL :: LLEXIST
       LOGICAL, SAVE :: LFRST
 
@@ -92,6 +86,8 @@
 #if defined(WAM_GPU)
       CALL WAM_INIT_GPU(IRANK)
 #endif
+
+      KTAG = 1
 
 !     STANDARD OUTPUT UNIT
 !     --------------------
@@ -137,78 +133,14 @@
 
       CALL SETWAVPHYS
 
-!     DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS
-!     -----------------------------------------------------
+!     READ MODEL GRID CONFIGURATION
+!     -----------------------------
 
-      X4=1.0_JWRB
-      NPRECR = KIND(X4)
-      I4=1
-      NPRECI = KIND(I4)
+      CALL READMDLCONF
 
-!     READ GRID INPUT FROM PREPROC 
-!     ----------------------------
-
-      IREAD=IREADG
-
-!     CONSTANT FILES INPUT UNIT
-!     -------------------------
-      IF (IRANK == IREAD) THEN
-        FILENAME='wam_grid_tables'
-        LFILE=0
-        LLEXIST=.FALSE.
-        IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
-        INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
-        IF (.NOT. LLEXIST) THEN
-          WRITE(IU06,*) '************************************'
-          WRITE(IU06,*) '*                                  *'
-          WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVWAMINIT   *'
-          WRITE(IU06,*) '*  =============================   *'
-          WRITE(IU06,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE), ' IS MISSING !!!!'
-          WRITE(IU06,*) '*                                  *'
-          WRITE(IU06,*) '************************************'
-          CALL WAM_ABORT("WAVE MODEL INPUT FILE '"//FILENAME(1:LFILE)//"' IS MISSING !!!",&
-                        &__FILENAME__,__LINE__)
-        ENDIF
-        IU07 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u',0,'READWRITE')
-
-        IF (IPROPAGS < 0 .OR. IPROPAGS > NPROPAGS) THEN
-          WRITE(IU06,*) '************************************'
-          WRITE(IU06,*) '*                                  *'
-          WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVWAMINIT   *'
-          WRITE(IU06,*) '*  WRONG VALUE FOR IPROPAGS:       *'
-          WRITE(IU06,*) '*  IPROPAGS= ',IPROPAGS
-          WRITE(IU06,*) '*                                  *'
-          WRITE(IU06,*) '************************************'
-          CALL WAM_ABORT("Wrong value for IPROPAGS",__FILENAME__,__LINE__)
-        ENDIF
-
-        WRITE(C1,'(I1)') IPROPAGS 
-        FILENAME='wam_subgrid_'//C1
-
-        LFILE=0
-        LLEXIST=.FALSE.
-        IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
-        INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
-        IF (.NOT. LLEXIST) THEN
-          WRITE(IU06,*) '************************************'
-          WRITE(IU06,*) '*                                  *'
-          WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVWAMINIT   *'
-          WRITE(IU06,*) '*  =============================   *'
-          WRITE(IU06,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE), ' IS MISSING !!!!'
-          WRITE(IU06,*) '*                                  *'
-          WRITE(IU06,*) '************************************'
-          CALL WAM_ABORT("WAVE MODEL INPUT FILE '"//FILENAME(1:LFILE)//"' IS MISSING !!!",&
-                        &__FILENAME__,__LINE__)
-        ENDIF
-        IU08(IPROPAGS) = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE),'r','u',0,'READWRITE')
-      ENDIF
-
-      KTAG=1
-
-      CALL READMDLCONF (IU07)
-
-      WRITE(IU06,*) ' WVWAMINT: WAVE MODEL CONFIGURATION READ IN'
+      WRITE(IU06,*) ' WVWAMINT: WAVE MODEL GRID CONFIGURATION READ IN'
       CALL FLUSH (IU06)
+
 
 !     RETURN NECESSARY PARAMETERS
       NGAUSSW = IQGAUSS

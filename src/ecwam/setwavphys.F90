@@ -117,7 +117,6 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ZALP    = 0.008_JWRB
         TAILFACTOR = 2.5_JWRB
         TAILFACTOR_PM = 3.0_JWRB
-        ALPHAMIN = 0.0001_JWRB
 
 !       ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
         IF (NANG <= 24) THEN
@@ -130,28 +129,27 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ANG_GC_C = 3.0_JWRB
         ENDIF
 
-!       directionality correction factors in the gowth rate renormalisation 
-        DELTA_THETA_RN = 0.75_JWRB
-        DTHRN_A = 0.60_JWRB
-        DTHRN_U = 33.0_JWRB
-
 !       DIRECTIONALITY CORRECTION FACTOR FOR THE GRAVITY-CAPILLARY MODEL
         RN1_RN = 0.25_JWRB
 
         IF(LLGCBZ0) THEN
           ALPHA   = 0.0055_JWRB
+          ALPHAMIN = 0.0001_JWRB
           CHNKMIN_U = 28._JWRB
+          ALPHAPMAX = 0.03_JWRB
 
-          SWELLF4 = 1.15E05_JWRB
-          SWELLF7 = 4.32E05_JWRB
-          SWELLF7M1 = 1.0_JWRB/SWELLF7 
-
-          SSDSC5  = 0.0_JWRB
+          DELTA_THETA_RN = 0.75_JWRB
+          DTHRN_A = 0.60_JWRB
+          DTHRN_U = 33.0_JWRB
 
           Z0TUBMAX = 0.05_JWRB
           Z0RAT = 0.02_JWRB
+          SWELLF4 = 1.15E05_JWRB
+          SWELLF7 = 4.32E05_JWRB
 
-          ALPHAPMAX = 0.03_JWRB
+          SWELLF7M1 = 1.0_JWRB/SWELLF7 
+
+          SSDSC5  = 0.0_JWRB
 
           IF(LLNORMAGAM) THEN
             BETAMAX = 1.39_JWRB
@@ -164,26 +162,30 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
         ELSE 
           ALPHA   = 0.0065_JWRB
-          CHNKMIN_U = 33._JWRB
+          ALPHAPMAX = 0.031_JWRB
 
+          DELTA_THETA_RN = 0.75_JWRB
+          DTHRN_A = 0.60_JWRB
+          DTHRN_U = 200.0_JWRB  ! i.e. not used 
+
+          Z0TUBMAX = 0.0005_JWRB
+          Z0RAT = 0.04_JWRB
           SWELLF4 = 1.5E05_JWRB
           SWELLF7 = 3.6E05_JWRB
           SWELLF7M1 = 1.0_JWRB/SWELLF7 
 
           SSDSC5  = 0.0_JWRB
 
-          Z0TUBMAX = 0.0005_JWRB
-          Z0RAT = 0.04_JWRB
-
-          ALPHAPMAX = 0.031_JWRB
-
           IF(LLNORMAGAM) THEN
-            !!! not yet tested !!!
-            BETAMAX = 1.40_JWRB
+            BETAMAX = 1.39_JWRB
             TAUWSHELTER = 0.0_JWRB
+            ALPHAMIN = 0.0005_JWRB
+            CHNKMIN_U = 30._JWRB
           ELSE
             BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.25_JWRB
+            ALPHAMIN = 0.0001_JWRB
+            CHNKMIN_U = 33._JWRB
           ENDIF
         ENDIF
 

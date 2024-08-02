@@ -22,6 +22,10 @@ source ${SCRIPTS_DIR}/ecwam_runtime.sh
 source ${SCRIPTS_DIR}/ecwam_parse_commandline.sh
 source ${SCRIPTS_DIR}/ecwam_helper_functions.sh
 
+if [[ $(uname) == "Darwin" ]]; then
+  export DR_HOOK_ASSERT_MPI_INITIALIZED=0
+fi
+
 function cleanup() {
   shopt -s nullglob
   LOG_DIR=${RUN_DIR}/logs/preproc
@@ -35,9 +39,11 @@ function cleanup() {
 
   mv ${WORK_DIR}/wam_grid_tables  ${RUN_DIR}/wam_grid_tables
 
-  for ip in 0 1 2; do
-    mv ${WORK_DIR}/wam_subgrid_${ip} ${RUN_DIR}/wam_subgrid_${ip}
-  done
+  if [[ ${laqua} = true ]]; then
+    for ip in 0 1 2; do
+      mv ${WORK_DIR}/wam_subgrid_${ip} ${RUN_DIR}/wam_subgrid_${ip}
+    done
+  fi
   
   # Does not seem to be used further
   # mv PARWAM ${RUN_DIR}/wam_parwam
@@ -111,15 +117,17 @@ cat > procin <<EOF
   FR1=       ${fr1},
   IFRE1=     ${ifre1},
   IRGG=      ${irgg},
-  XDELLA=    ${xdella},
-  XDELLO=    ${xdella},
-  AMOSOP=    ${amosop},
-  AMONOP=    ${amonop},
-  AMOWEP=    ${amowep},
-  AMOEAP=    ${amoeap},
+  DXDELLA=    ${xdella},
+  DXDELLO=    ${xdella},
+  DAMOSOP=    ${amosop},
+  DAMONOP=    ${amonop},
+  DAMOWEP=    ${amowep},
+  DAMOEAP=    ${amoeap},
   LAQUA=     ${laqua},
   LLOBSTRCT= ${llobstrct},
   LLUNSTR =  ${llunstr},
+  LLGRIB_BATHY_OUT=${llgrib_bathy_out},
+  LLGRIB_OBSTRT_OUT=${llgrib_obstrt_out},
   IFORM=     1,
   ITEST=     0,
   ITESTB=    4,

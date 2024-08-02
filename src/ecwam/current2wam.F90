@@ -116,6 +116,7 @@
       CHARACTER(LEN=14) :: CDATEIN_OLD 
 
       LOGICAL :: FRSTIME
+      LOGICAL :: LLCHKINT
 
       DATA FRSTIME / .TRUE. /
       SAVE KFILE_HANDLE1
@@ -212,9 +213,10 @@
 
         KK=0
         MM=0
+        LLCHKINT = .TRUE.
         CALL GRIB2WGRID (IU06, NPROMA_WAM,                              &
      &                   KGRIB_HANDLE, INGRIB, ISIZE,                   &
-     &                   LLUNSTR,                                       &
+     &                   LLUNSTR, LLCHKINT,                             &
      &                   NGY, IRGG, NLONRGG_LOC,                        &
      &                   NXS, NXE, NYS, NYE,                            &
      &                   FIELDG%XLON, FIELDG%YLAT,                      &

@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-    SUBROUTINE UIPREP (IFORM, LLGRID)
+    SUBROUTINE UIPREP (IFORM, LLGRID, LLGRIB_BATHY_OUT, LLGRIB_OBSTRT_OUT)
 
 ! ----------------------------------------------------------------------
 
@@ -23,13 +23,17 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *UIPREP (IFORM, LLGRID)*
+!       *CALL* *UIPREP (IFORM, LLGRID, LLGRIB_BATHY_OUT, LLGRIB_OBSTRT_OUT)*
 !          *IFORM*   - OUTPUT FORMAT OPTION = 1 UNFORMATED
 !                                           = 2 FORMATED
 !                                           OTHERWISE BOTH
 !          *LLGRID*  - TRUE IF THE GRID DEFINITION HAS BEEN SPECIFIED
 !                      IN INPUT FILE grid_description
-
+!          NAMELIST SELECTION:
+!          *LLGRIB_BATHY_OUT* - IF TRUE THE BATHYMETRY WILL BE OUTPUT in GRIB 
+!          *LLGRIB_OBSTRT_OUT* - IF FALSE THE OBSTRUCTION COEFFICIENTS WILL BE PROCESSED
+!                                AND WRITTEN OUT IN BINARY FORMAT (legacy format)
+!                                (direct grib format see create_wam_bathymetry_ETOPO1) 
 !     METHOD.
 !     -------
 !         NAMELIST READ.
@@ -63,9 +67,10 @@
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : IFRE1    ,FR1      ,FR       ,FRATIO
       USE YOWMAP   , ONLY : NGX      ,NGY      ,IPER     ,IRGG     ,    &
-     &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,              &
-     &            NIBLO    ,CLDOMAIN ,                                  &
-     &            XDELLA   ,XDELLO   ,NLONRGG  ,LLOBSTRCT,LAQUA
+     &            AMOWEP ,  AMOSOP,  AMOEAP,  AMONOP,  XDELLA,  XDELLO, &
+     &            DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO, &
+     &            NIBLO    ,CLDOMAIN ,IQGAUSS  ,                        &
+     &            NLONRGG  ,LLOBSTRCT,LAQUA
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
 #ifdef WAM_HAVE_UNWAM
       USE YOWUNPOOL, ONLY : LPREPROC, LVECTOR, IVECTOR
@@ -81,9 +86,11 @@
 
       INTEGER(KIND=JWIM), INTENT(OUT) :: IFORM
       LOGICAL, INTENT(OUT) :: LLGRID
+      LOGICAL, INTENT(OUT) :: LLGRIB_BATHY_OUT
+      LOGICAL, INTENT(OUT) :: LLGRIB_OBSTRT_OUT
 
       INTEGER(KIND=JWIM) :: K, M, I, II, KSN
-      INTEGER(KIND=JWIM) :: IU05, IU
+      INTEGER(KIND=JWIM) :: IU05, IUGRD
       INTEGER(KIND=JWIM) :: ISPECTRUNC
       INTEGER(KIND=JWIM) :: IOS, IOUTA, IOUTANEW, IDUM
       INTEGER(KIND=JWIM), ALLOCATABLE :: NDUMP(:)
@@ -104,12 +111,13 @@
 ! ----------------------------------------------------------------------
 
       NAMELIST /NALINE/ CLINE, NFRE, NFRE_RED, FR1, IFRE1,              &
-     &                  IRGG, XDELLA, XDELLO,                           &
-     &                  AMOSOP, AMONOP, AMOWEP, AMOEAP,                 &
+     &                  IRGG, DXDELLA, DXDELLO,                         &
+     &                  DAMOSOP, DAMONOP, DAMOWEP, DAMOEAP,             &
      &                  IFORM, ITEST, ITESTB,                           &
      &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC, &
      &                  NIBLO, CLDOMAIN,LLOBSTRCT,                      &
-     &                  LAQUA, LLUNSTR, LPREPROC
+     &                  LAQUA, LLUNSTR, LPREPROC,                       &
+     &                  LLGRIB_BATHY_OUT, LLGRIB_OBSTRT_OUT
 
       NAMELIST /NACORR/ ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
 
@@ -130,12 +138,12 @@
       FR1    =   0.0_JWRB
       IFRE1 = 1
       IRGG   =  -1
-      XDELLA =   0.0_JWRB
-      XDELLO =   0.0_JWRB
-      AMOSOP =-100.0_JWRB
-      AMONOP =-100.0_JWRB
-      AMOWEP =   0.0_JWRB
-      AMOEAP =   0.0_JWRB
+      DXDELLA =   0.0_JWRU
+      DXDELLO =   0.0_JWRU
+      DAMOSOP =-100.0_JWRU
+      DAMONOP =-100.0_JWRU
+      DAMOWEP =   0.0_JWRU
+      DAMOEAP =   0.0_JWRU
       IFORM  =  -1
       ITEST  =  -1
       ITESTB =  -1
@@ -153,6 +161,10 @@
       NIBLO  = -1 ! 
       CLDOMAIN= '-'
 
+      LLGRIB_BATHY_OUT = .FALSE.
+      LLGRIB_OBSTRT_OUT = .FALSE.
+
+      IQGAUSS = 0
 ! ----------------------------------------------------------------------
 
 !*    1. READ NAMELIST NALINE.
@@ -174,6 +186,14 @@
 
       IU05 =  IWAM_GET_UNIT (IU06, 'procin', 'r', 'f', 0, 'READ')
       READ (IU05, NALINE)
+
+      AMONOP = REAL(DAMONOP,JWRB)
+      AMOSOP = REAL(DAMOSOP,JWRB)
+      AMOWEP = REAL(DAMOWEP,JWRB)
+      AMOEAP = REAL(DAMOEAP,JWRB)
+      XDELLA = REAL(DXDELLA,JWRB)
+      XDELLO = REAL(DXDELLO,JWRB)
+
 
       IF (NFRE_RED > NFRE ) THEN
         WRITE (IU06,*) '**********************************************'
@@ -221,17 +241,35 @@
       FILENAME='grid_description'
       INQUIRE(FILE=FILENAME,EXIST=LLGRID)
       IF (LLGRID) THEN
-        IU=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0,'READWRITE')
-        OPEN(IU,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
-        READ (IU,*) ISPECTRUNC
-        READ (IU,*) AMONOP
-        READ (IU,*) AMOSOP
-        READ (IU,*) AMOWEP
-        READ (IU,*) AMOEAP
-        READ (IU,*) IPER
-        READ (IU,*) IRGG
-        READ (IU,*) NGY
-        WRITE(IU06,*) "grid_description read in "
+        !!! grid_description is also read in create_wam_bathymetry_ETOPO1
+
+        IUGRD=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0,'READWRITE')
+        OPEN(IUGRD,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
+        READ (IUGRD,*) ISPECTRUNC
+        READ (IUGRD,*) DAMONOP
+        READ (IUGRD,*) DAMOSOP
+        READ (IUGRD,*) DAMOWEP
+        READ (IUGRD,*) DAMOEAP
+        READ (IUGRD,*) IPER
+        READ (IUGRD,*) IRGG
+        READ (IUGRD,*) NGY
+
+        WRITE(IU06,*) " First part of grid_description read in "
+
+        WRITE(IU06,*) " DAMONOP = ",DAMONOP
+        WRITE(IU06,*) " DAMOSOP = ",DAMOSOP
+        WRITE(IU06,*) " DAMOWEP = ",DAMOWEP
+        WRITE(IU06,*) " DAMOEAP = ",DAMOEAP
+        WRITE(IU06,*) '' 
+
+        AMONOP = REAL(DAMONOP,JWRB)
+        AMOSOP = REAL(DAMOSOP,JWRB)
+        AMOWEP = REAL(DAMOWEP,JWRB)
+        AMOEAP = REAL(DAMOEAP,JWRB)
+
+        ! A spectral truncation > 0 implies a Gaussian grid
+        IF (ISPECTRUNC > 0) IQGAUSS=1 
+
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -246,7 +284,7 @@
       WRITE (IU06,'("   NUMBER OF FREQUENCIES IS NFRE = ",I6)') NFRE
       WRITE (IU06,'("   REDUCED NUMBER OF FREQ IS NFRE_RED = ",I6)') NFRE_RED
       IF (IFRE1 /= 1) THEN
-        WRITE (IU06,'("!!MINIMUM FREQUENCY WAS RESET TO",F10.6)') FR(1)
+        WRITE (IU06,'("!! MINIMUM FREQUENCY WAS RESET TO",F10.6)') FR(1)
       ELSE
         WRITE (IU06,'("  MINIMUM FREQUENCY IS  FR(1) = ",F10.6)') FR(1)
       ENDIF
@@ -276,7 +314,7 @@
 
 !*    2.2 OUTPUT GRID DEFINITIONS.
 
-      WRITE (IU06,'(/"  OUTPUT GRID"/)')
+      WRITE (IU06,'(/"   OUTPUT GRID"/)')
       IF (IRGG == 1) THEN
         WRITE(IU06,'("   USE A REDUCED GAUSSIAN GRID")')
       ELSE
@@ -303,13 +341,13 @@
 !*    SET DIMENSIONS.
 
       IF (LLGRID) THEN
-        XDELLA = (AMONOP-AMOSOP)/(NGY-1)
+        XDELLA = (DAMONOP-DAMOSOP)/REAL(NGY-1,JWRU)
         ALLOCATE(NLONRGG(NGY))
 
         NGX = 0
         DO K=1,NGY
           KSN=NGY-K+1
-          READ(IU,*,IOSTAT=IOS) NLONRGG(KSN)
+          READ(IUGRD,*,IOSTAT=IOS) NLONRGG(KSN)
           IF( IOS < 0 ) THEN
             CALL WAM_ABORT("End of file reached before finishing NLONRGG",__FILENAME__,__LINE__)
           ENDIF
@@ -320,14 +358,16 @@
         ENDDO
 
         IF (IPER == 1) THEN
-          XDELLO  = 360._JWRB/REAL(NGX)
-          AMOEAP = AMOWEP + 360._JWRB - XDELLO
+          DXDELLO = 360._JWRU/REAL(NGX,JWRU)
+          DAMOEAP = DAMOWEP + 360._JWRU - DXDELLO
+          XDELLO = REAL(DXDELLO,JWRB)
+          AMOEAP = REAL(DAMOEAP,JWRB)
         ELSE
-          XDELLO = (AMOEAP-AMOWEP)/(NGX-1)
+          DXDELLO = 360._JWRU/REAL(NGX,JWRU)
+          XDELLO = REAL(DXDELLO,JWRB)
         ENDIF
 
-
-        CLOSE(IU)
+        CLOSE(IUGRD)
 
       ELSE
 !       RESET FOR AQUA PLANET IF SELECTED
@@ -352,7 +392,7 @@
       WRITE (IU06,'("   RESOLUTION LAT-LON ",2F12.7)') XDELLA, XDELLO
       WRITE (IU06,'("    SOUTHERN LAT  NORTHERN LAT ",                  &
      &  " WESTERN LONG "," EASTERN LONG",                               &
-     &  /,2X,4F14.3)') AMOSOP, AMONOP, AMOWEP, AMOEAP
+     &  /,2X,4F14.7)') AMOSOP, AMONOP, AMOWEP, AMOEAP
       IF (IPER == 1) WRITE (IU06,*) '   THE GRID IS EAST-WEST PERIODIC'
 
       IF (CLDOMAIN == '-' ) THEN

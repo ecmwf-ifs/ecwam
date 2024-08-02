@@ -79,12 +79,15 @@ INTEGER(KIND=JWIM) FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL
      &                                       MAXUNIT," to open file '",TRIM(CDNAME),"'"
           CALL WAM_ABORT(CERRMSG,__FILENAME__,__LINE__)
         ENDIF
-        IF (KUSO >= 0 ) WRITE(KUSO,2004)        &
+        IF (KUSO >= 0 ) THEN
+            WRITE(KUSO,*) ''
+            WRITE(KUSO,2004)        &
      &   '  IWAM_GET_UNIT: U=',JUME,              &
      &   ' F=',CDNAME(1:LEN_TRIM(CDNAME)),        &
      &   ' F=',CLFORM(1:LEN_TRIM(CLFORM)),        &
      &   ' A=',CLACCESS(1:LEN_TRIM(CLACCESS)),    &
      &   ' P=',CLPOSITION(1:LEN_TRIM(CLPOSITION))
+        ENDIF
  2004   FORMAT(A,I3,A,A,A,A,A,A,A,A)
 
         IF ( CLACCESS(1:6) == "DIRECT" ) THEN

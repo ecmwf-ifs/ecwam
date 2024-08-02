@@ -48,7 +48,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LLGCBZ0
+      USE YOWCOUP  , ONLY : LLGCBZ0, LLNORMAGAM
       USE YOWPCONS , ONLY : G, EPSUS, ACDLIN, BCDLIN 
       USE YOWPHYS  , ONLY : XKAPPA, RNUM, ALPHAMIN, ALPHAMAX
       USE YOWWIND  , ONLY : WSPMIN
@@ -85,7 +85,7 @@
 
       IF (LHOOK) CALL DR_HOOK('WSIGSTAR',0,ZHOOK_HANDLE)
 
-      IF (LLGCBZ0) THEN
+      IF (LLGCBZ0 .OR. LLNORMAGAM) THEN
         ZN = RNUM
 
         DO IJ=KIJS,KIJL
@@ -108,7 +108,7 @@
 
 
 !!! for consistency I have kept the old method, even though the new method above could be used,
-!!! but until LLGCBZ0 is the default, keep the old scheme whe it is not...
+!!! but until LLGCBZ0 or LLNORMAGAM is the default, keep the old scheme whe it is not...
 !
 !       IN THE FOLLOWING U10 IS ESTIMATED ASSUMING EVERYTHING IS
 !       BASED ON U*

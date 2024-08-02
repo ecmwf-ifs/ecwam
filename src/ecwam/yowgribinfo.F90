@@ -1,0 +1,206 @@
+! (C) Copyright 1989- ECMWF.
+! 
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
+MODULE YOWGRIBINFO
+
+! Contains subroutines to handle grib data
+
+USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+USE YOWABORT , ONLY : WAM_ABORT
+USE YOWGRIB  , ONLY : IGRIB_GET_VALUE
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
+CONTAINS
+
+SUBROUTINE WVGETGRIDINFO(IU06, KGRIB_HANDLE, &
+ &                       NGX, NGY, IPER, IRGG, IQGAUSS, KLONRGG, LLSCANNS,      &
+ &                       DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO )
+
+! ----------------------------------------------------------------------
+
+!**** *WVGETGRIDINFO*  GETS GRID INFORAMTION FROM GRIB HANDLE 
+
+IMPLICIT NONE
+
+INTEGER(KIND=JWIM), INTENT(IN)  :: IU06, KGRIB_HANDLE
+INTEGER(KIND=JWIM), INTENT(OUT) :: NGX, NGY, IPER, IRGG, IQGAUSS
+INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:), INTENT(OUT) :: KLONRGG
+LOGICAL, INTENT(OUT) :: LLSCANNS
+REAL(KIND=JWRU), INTENT(OUT)    :: DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO  !!!! KIND=JWRU !!!!
+
+
+INTEGER(KIND=JWIM) :: I, K, J, L, IR, JSN, ISTART, ISTOP
+INTEGER(KIND=JWIM) :: IPLPRESENT, NB_PL, ISCAN
+
+INTEGER(KIND=JWIM), DIMENSION(:), ALLOCATABLE :: PL
+
+REAL(KIND=JWRU) :: YFRST, YLAST, OLD_DAMOWEP, OLD_DAMOEAP
+REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+
+CHARACTER(LEN=12) :: CGRIDTYPE
+
+! ----------------------------------------------------------------------
+
+IF (LHOOK) CALL DR_HOOK('WVGETGRIDINFO',0,ZHOOK_HANDLE)
+
+
+IF ( KGRIB_HANDLE > 0 ) THEN
+! GRID INFO:
+! ---------
+  CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'jScansPositively',ISCAN)
+  IF (ISCAN == 0) THEN
+    LLSCANNS=.TRUE.
+  ELSEIF (ISCAN == 1) THEN
+    LLSCANNS=.FALSE.
+  ELSE
+    WRITE(IU06,*) '***********************************'
+    WRITE(IU06,*) '*   ERROR IN SUB. WVGETGRIDINFO*'
+    WRITE(IU06,*) '*  SCANNING MODE NOT RECOGNIZED !!!'
+    WRITE(IU06,*) '*  ISCAN = ', ISCAN
+    WRITE(IU06,*) '***********************************'
+    CALL WAM_ABORT("Scanning mode not recognised ",__FILENAME__,__LINE__)
+  ENDIF
+
+  CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'gridType', CGRIDTYPE)
+  IF (CGRIDTYPE(1:10) == 'regular_gg') THEN
+    IRGG=0
+    IQGAUSS=1
+  ELSEIF (CGRIDTYPE(1:10) == 'reduced_gg') THEN
+    IRGG=1
+    IQGAUSS=1
+  ELSEIF (CGRIDTYPE(1:7) == 'regular') THEN
+    IRGG=0
+    IQGAUSS=0
+  ELSEIF (CGRIDTYPE(1:7) == 'reduced') THEN
+    IRGG=1
+    IQGAUSS=0
+  ELSE
+    WRITE(IU06,*) '*********************************'
+    WRITE(IU06,*) '*  ERROR IN SUB. WVGETGRIDINFO*'
+    WRITE(IU06,*) '*  GRID TYPE NOT RECOGNIZED !!! *'
+    WRITE(IU06,*) '   gridType = ', CGRIDTYPE 
+    WRITE(IU06,*) '*********************************'
+    CALL WAM_ABORT("Grid type not recognised ",__FILENAME__,__LINE__)
+  ENDIF
+
+  IF (IRGG == 1) THEN
+    CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'PLPresent',IPLPRESENT)
+    IF (IPLPRESENT == 1) THEN
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberOfPointsAlongAMeridian',NB_PL)
+      ALLOCATE(PL(NB_PL))
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'pl',PL)
+    ELSE
+      WRITE(IU06,*) '*  ERROR IN SUB. WVGETGRIDINFO*'
+      WRITE(IU06,*) 'NUMBER OF POINTS PER LATITUDE MISSING !!!'
+      CALL WAM_ABORT("Number of points per latitude missing ",__FILENAME__,__LINE__)
+    ENDIF
+    NGX=0
+    DO J=1,NB_PL
+      NGX = MAX(NGX,PL(J))
+    ENDDO
+    IR=0
+    DO J=1,NB_PL
+      IF (PL(J) /= 0) IR=IR+1
+    ENDDO
+    NGY=IR
+
+  ELSEIF (IRGG == 0) THEN
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Ni',NGX)
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Nj',NGY)
+  ELSE
+      WRITE(IU06,*) '  WVGETGRIDINFO: STRUCTURE OF GRIB FIELD NOT KNOWN'
+      CALL WAM_ABORT("Structure of grib field unknown ",__FILENAME__,__LINE__)
+  ENDIF
+
+  IF (ALLOCATED(KLONRGG)) DEALLOCATE(KLONRGG)
+  ALLOCATE(KLONRGG(NGY))
+
+  CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'latitudeOfFirstGridPointInDegrees',YFRST)
+  CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'latitudeOfLastGridPointInDegrees',YLAST)
+
+  IF (IRGG == 1) THEN
+    ISTART=1
+    DO WHILE(PL(ISTART) == 0 .AND. ISTART < NB_PL)
+      ISTART=ISTART+1
+    ENDDO
+    ISTART=ISTART-1
+
+    ISTOP=0
+    DO WHILE(PL(NB_PL-ISTOP) == 0 .AND. ISTOP < NB_PL)
+      ISTOP=ISTOP+1
+    ENDDO
+
+    DO J=1,NGY
+      IF (LLSCANNS) THEN
+        JSN=NGY-J+1
+      ELSE
+        JSN=J
+      ENDIF
+      KLONRGG(JSN) = PL(J+ISTART) 
+    ENDDO
+
+    IF (ISTART /= 0 .OR. ISTOP /= 0) THEN
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'jDirectionIncrementInDegrees',DXDELLA)
+      YFRST = YFRST-ISTART*DXDELLA 
+      YLAST = YLAST+ISTOP*DXDELLA 
+    ENDIF
+
+  ELSEIF (IRGG == 0) THEN
+     KLONRGG(:)=NGX
+  ELSE
+    WRITE(IU06,*) ' SUB WVGETGRIDINFO: REPRESENTATION OF THE FIELD NOT KNOWN'
+    CALL WAM_ABORT("Grib representation unknown ",__FILENAME__,__LINE__)
+  ENDIF
+
+  IF (LLSCANNS) THEN
+    DAMONOP = YFRST 
+    DAMOSOP = YLAST 
+  ELSE
+    DAMONOP = YLAST 
+    DAMOSOP = YFRST 
+  ENDIF
+
+  CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'longitudeOfFirstGridPointInDegrees',DAMOWEP)
+
+  IF ( IQGAUSS == 1) THEN
+    DXDELLO = 360.0_JWRU/REAL(MAX(1,NGX),JWRU)
+    DAMOEAP = DAMOWEP+360.0_JWRU - DXDELLO
+    IPER = 1
+  ELSE
+    CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'longitudeOfLastGridPointInDegrees',DAMOEAP)
+
+!   CHECK DAMOWEP  < DAMOEAP
+    OLD_DAMOWEP = DAMOWEP
+    OLD_DAMOEAP = DAMOEAP
+    DAMOWEP = MOD (DAMOWEP + 720._JWRU, 360._JWRU)
+    DAMOEAP = MOD (DAMOEAP + 720._JWRU, 360._JWRU)
+    IF (OLD_DAMOWEP /= OLD_DAMOEAP) THEN
+      IF (DAMOWEP >= DAMOEAP) DAMOWEP = DAMOWEP - 360._JWRU
+    ENDIF
+
+    IPER = 0
+    DXDELLO=(DAMOEAP-DAMOWEP)/REAL(MAX(1,NGX-1),JWRU)
+    IF (DAMOEAP-DAMOWEP+1.5_JWRU*DXDELLO >= 360.0_JWRU) IPER = 1
+  ENDIF
+
+  DXDELLA=(DAMONOP-DAMOSOP)/REAL(MAX(1,NGY-1),JWRU)
+
+  IF (ALLOCATED(PL)) DEALLOCATE(PL)
+
+ELSE
+
+  CALL WAM_ABORT("Grib handle not defined ",__FILENAME__,__LINE__)
+
+ENDIF
+
+IF (LHOOK) CALL DR_HOOK('WVGETGRIDINFO',1,ZHOOK_HANDLE)
+
+END SUBROUTINE WVGETGRIDINFO
+
+END MODULE YOWGRIBINFO

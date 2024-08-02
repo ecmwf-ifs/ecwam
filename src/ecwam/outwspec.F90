@@ -242,7 +242,7 @@ DO IC=1,NN,ISTEP
           IM=(((IC-1)+IRANK-1)/NANG)+1
           IK=(IC-1)+IRANK-(IM-1)*NANG
           CALL WGRIBENCODE_MODEL(IU06, ITEST, NGX, NGY, FIELD,          &
-     &                    ITABLE, IPARAM, 0, IK , IM,                   &
+     &                    ITABLE, IPARAM, 0, 0, 0, IK , IM,             &
      &                    CDATE, IFCST, MARSTYPE,                       &
      &                    IGRIB_HANDLE)
 

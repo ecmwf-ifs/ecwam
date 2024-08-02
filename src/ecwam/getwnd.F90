@@ -141,6 +141,7 @@ IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
 !     -----------------------------------
 
       IF (LWNDFILE) THEN
+
         CALL READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,  &
      &                 NXS, NXE, NYS, NYE, FIELDG)
 

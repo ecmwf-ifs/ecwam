@@ -144,7 +144,7 @@
             ENDIF
           ENDIF
         ENDDO
-111     FORMAT(5x,'HEX: ',3(Z16.16,2x),1x,i8,1x,i6)
+111     FORMAT(5x,'HEX: ',3(Z16.16,2x),1x,i9,1x,i6)
 112     FORMAT(T3,A, T19,I0, T23,A, T28,3(E23.16,' 0x',Z16,3x),T164,I0)
 
       ENDIF

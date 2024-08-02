@@ -94,9 +94,6 @@ SUBROUTINE INITMDL (NADV,                                 &
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'FBI'
 !                      (OUTPUT OF BOUINT).
 !           *IU06*   - PRINTER OUTPUT.
-!           *IU07*   - INPUT  UNIT OF PRECOMPUTED GRID PARAMETERS.
-!                      (OUTPUT OF PREPROC).
-!           *IU08*   - INPUT  UNIT OF MODULE YOWUBUF.
 !                      (OUTPUT OF PREPROC).
 !NEST
 !           *IU09*   - INPUT  UNIT MODULE YOWCPBO (OUTPUT OF PREPROC).
@@ -182,6 +179,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            NIBLO    ,NGX      ,NGY      ,                        &
      &            KMNOP    ,KMSOP    ,IPER     ,IRGG     ,IQGAUSS
+      USE YOWMESPAS, ONLY : LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
      &                      LLUNSTR
@@ -195,7 +193,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            CDTINTT  ,CDTBC    ,                                  &
      &            IFRELFMAX, DELPRO_LF, IDELPRO  ,IDELT ,               &
      &            IDELWI   ,IDELWO   ,IDELRES  ,IDELINT  ,              &
-     &            IREFRA   ,                                            &
+     &            IREFRA   ,LNSESTART,                                  &
      &            IPHYS    ,                                            &
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,    &
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
@@ -210,6 +208,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWWAMI  , ONLY : CBPLTDT
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
      &                      NXFFS    , NXFFE   ,NYFFS    , NYFFE   ,    &
+     &                      NXFFS_LOC,NXFFE_LOC,NYFFS_LOC,NYFFE_LOC,    &
      &                      LLNEWCURR,LLWSWAVE ,LLWDWAVE ,FF_NEXT
 
 #ifdef WAM_HAVE_UNWAM
@@ -275,6 +274,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       INTEGER(KIND=JWIM) :: IDELWH
       INTEGER(KIND=JWIM) :: IU05, IU09, IU10
       INTEGER(KIND=JWIM) :: ICHNK, IPRM, KIJS, KIJL
+      INTEGER(KIND=JWIM) :: NXS, NXE, NYS, NYE
       INTEGER(KIND=JWIM) :: MTHREADS
 
 
@@ -295,6 +295,9 @@ SUBROUTINE INITMDL (NADV,                                 &
       LOGICAL :: LLEXIST
       LOGICAL :: LLINIT
       LOGICAL :: LLINIT_FIELDG
+      LOGICAL, SAVE :: LLINTERPOL
+
+      DATA LLINTERPOL /.TRUE./
 
 !----------------------------------------------------------------------
 
@@ -548,7 +551,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
         CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
         CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I2, NGRIBV=2)
 !       FOR SPECTRA
-        CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
+        IF ( LGRIBOUT ) CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
       ENDIF
 
       IF (MARSTYPE == 'cf' .OR. MARSTYPE == 'pf' .OR. MARSTYPE == 'fc' ) THEN
@@ -566,14 +569,14 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 !*    3. PRINT INITIAL CONDITIONS AS READ FROM PERPROCESSING.
 !        ----------------------------------------------------
 
-      WRITE(IU06,*) '  '
       WRITE(IU06,*) ' WAVE MODEL GRID ORGANISATION:'
       WRITE(IU06,3002) ' SOUTHERNMOST LATITUDE IN GRID IS .......: ', AMOSOP, ' DEGREE'
       WRITE(IU06,3002) ' NORTHERNMOST LATITUDE IN GRID IS .......: ', AMONOP, ' DEGREE'
       WRITE(IU06,3002) ' WESTERNMOST LONGITUDE IN GRID IS .......: ', AMOWEP, ' DEGREE'
       WRITE(IU06,3002) ' EASTERNMOST LONGITUDE IN GRID IS .......: ', AMOEAP, ' DEGREE'
+      WRITE(IU06,*) '  '
       IF ( IQGAUSS == 1 ) THEN
-        WRITE(IU06,*) ' GAUSSIAN GRID ..........................: '
+        WRITE(IU06,*) '   GAUSSIAN GRID ..........................: '
         WRITE(IU06,3002) ' APPROXIMATE LATITUDE INCREMENT IS ......: ', XDELLA, ' DEGREE'
       ELSE
         IF ( IRGG == 1 ) THEN
@@ -586,7 +589,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
         ENDIF
       ENDIF
       WRITE(IU06,*) '  '
-      WRITE(IU06,3003) ' TOTAL LENGTH OF EACH BLOCK .............: ', NIBLO
+      WRITE(IU06,3003) ' TOTAL NUMBER OF WATER POINTS ...........: ', NIBLO
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' SPECTRAL RESOLUTION:'
       WRITE(IU06,3003) ' TOTAL NUMBER OF DIRECTIONS .............: ', NANG 
@@ -604,8 +607,8 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       WRITE(IU06,*) '  '
       CALL FLUSH (IU06)
 
- 3002 FORMAT(3x,a,f9.3,a)
- 3003 FORMAT(3x,a,i8,  a)
+ 3002 FORMAT(3x,a,f10.4,a)
+ 3003 FORMAT(3x,a,i9,  a)
 
 !NEST
       IF (IBOUNC == 1) THEN
@@ -676,7 +679,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       IF (IPHYS == 1) CALL INIT_SDISS_ARDH
 
       WRITE(IU06,*) '  '
-      WRITE(IU06,*) '  SUB. INITMDL: end arrays initialisation'
+      WRITE(IU06,*) ' SUB. INITMDL: end arrays initialisation'
       WRITE(IU06,*) '  '
       CALL FLUSH (IU06)
 
@@ -899,11 +902,26 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       LLINIT = .NOT.LRESTARTED
       LLINIT_FIELDG = .TRUE.
 
-      CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,            &
-     &              NXFFS, NXFFE, NYFFS, NYFFE, LLINIT_FIELDG,   &
-     &              LLINIT, IREAD,                               &
-     &              NFIELDS, NGPTOTG, NC, NR,                    &
-     &              FIELDS, LWCUR, MASK_IN,                      &
+      IF ( LLINTERPOL ) THEN
+!!      This will end up forcing going through the interpolation part in grib2wgrid
+!!      even when the input data are on the same grid as the model run
+!!      but it wil also reduce the memory usage by avoiding large global arrays
+        NXS = NXFFS_LOC
+        NXE = NXFFE_LOC
+        NYS = NYFFS_LOC
+        NYE = NYFFE_LOC
+      ELSE
+        NXS = NXFFS
+        NXE = NXFFE
+        NYS = NYFFS
+        NYE = NYFFE
+      ENDIF
+
+      CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,    &
+     &              NXS, NXE, NYS, NYE, LLINIT_FIELDG,   &
+     &              LLINIT, IREAD,                       &
+     &              NFIELDS, NGPTOTG, NC, NR,            &
+     &              FIELDS, LWCUR, MASK_IN,              &
      &              NEMO2WAM)
 
       WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'
@@ -926,7 +944,11 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
       CALL GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 
-      WRITE(IU06,*) '    SUB. INITMDL: SPECTRA READ IN'
+      IF ( LNSESTART ) THEN
+        WRITE(IU06,*) ' SUB. INITMDL: SPECTRA INITIALISED AT NOISE LEVEL'
+      ELSE
+        WRITE(IU06,*) ' SUB. INITMDL: SPECTRA READ IN'
+      ENDIF
       WRITE(IU06,*) ' '
       CALL FLUSH (IU06)
 

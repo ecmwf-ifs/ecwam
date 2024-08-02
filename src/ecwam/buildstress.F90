@@ -34,12 +34,13 @@ SUBROUTINE BUILDSTRESS(BLK2LOC, WVENVI, FF_NOW, NEMO2WAM, IREAD)
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK 
       USE YOWMPP   , ONLY : NPROC    ,IRANK    ,KTAG
       USE YOWMESPAS, ONLY : LNOCDIN  ,LWAVEWIND
-      USE YOWPCONS , ONLY : G        ,GM1      ,ROAIR    ,EPSUS    ,EPSU10
+      USE YOWPCONS , ONLY : G        ,GM1      ,EPSUS    ,EPSU10
       USE YOWPHYS  , ONLY : ALPHA    ,XKAPPA   ,XNLEV    ,RNUM
-      USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
+      USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,LNSESTART
       USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,             &
-     &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE
+     &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE,       &
+     &                      NXFFS_LOC,NXFFE_LOC,NYFFS_LOC,NYFFE_LOC
       USE MPL_MODULE, ONLY : MPL_BROADCAST
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -64,6 +65,7 @@ SUBROUTINE BUILDSTRESS(BLK2LOC, WVENVI, FF_NOW, NEMO2WAM, IREAD)
       INTEGER(KIND=JWIM) :: ICODE_WND
       INTEGER(KIND=JWIM) :: ILEN, LIU, IPARAM, KZLEVUWAVE, KZLEVCD
       INTEGER(KIND=JWIM) :: IJ, ICHNK, KIJS, KIJL
+      INTEGER(KIND=JWIM) :: NXS, NXE, NYS, NYE
       INTEGER(KIND=JWIM) :: NWAVEWIND(1)
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -81,11 +83,34 @@ SUBROUTINE BUILDSTRESS(BLK2LOC, WVENVI, FF_NOW, NEMO2WAM, IREAD)
       LOGICAL :: LCR
       LOGICAL :: LLINIALL, LLOCAL
 
+      LOGICAL, SAVE :: LLINTERPOL
+
+      DATA LLINTERPOL /.TRUE./
+
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
-      CALL FIELDG%ALLOC(NXFFS, NYFFS, NXFFE, NYFFE)
 
+      WRITE(IU06,*) ' SUB. BUILDSTRESS: '
+      CALL FLUSH(IU06)
+
+      IF ( LLINTERPOL ) THEN
+!!      This will end up forcing going through the interpolation part in grib2wgrid
+!!      even when the input data are on the same grid as the model run
+!!      but it wil also reduce the memory usage by avoiding large global arrays
+        NXS = NXFFS_LOC
+        NXE = NXFFE_LOC
+        NYS = NYFFS_LOC
+        NYE = NYFFE_LOC
+      ELSE
+        NXS = NXFFS
+        NXE = NXFFE
+        NYS = NYFFS
+        NYE = NYFFE
+      ENDIF
+
+
+      CALL FIELDG%ALLOC(NXS, NYS, UBND0=NXE, UBND1=NYE)
 
       CDATEWO = ' '
       CDAWIFL = ' '
@@ -96,8 +121,8 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
 !     GETWND AND READWGRIB REQUIRES FIELDG
       LLINIALL=.TRUE.
       LLOCAL=.TRUE.
-      CALL INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,         &
-     &                 NXFFS, NXFFE, NYFFS, NYFFE, FIELDG)
+      CALL INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,   &
+     &                 NXS, NXE, NYS, NYE, FIELDG)
 
 
 !     1.1 GET ATMOSPHERIC MODEL FORCINGS FIELDS 
@@ -107,12 +132,12 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
       LWNDFILE=.TRUE.
       LCLOSEWND=.TRUE.
 
-      CALL GETWND (BLK2LOC,                             &
-     &             NXFFS, NXFFE, NYFFS, NYFFE, FIELDG,  &
-     &             WVENVI,                              &
-     &             FF_NOW,                              &
-     &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,  &
-     &             LCR, NEMO2WAM,                       &
+      CALL GETWND (BLK2LOC,                              &
+     &             NXS, NXE, NYS, NYE, FIELDG,           &
+     &             WVENVI,                               &
+     &             FF_NOW,                               &
+     &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,   &
+     &             LCR, NEMO2WAM,                        &
      &             ICODE_WND)
 
 !     1.2 USE DATA FROM A FILE CONTAINING WIND SPEED MODIFIED BY
@@ -122,37 +147,41 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
 !     THE ATMOSPHERIC MODEL WIND SPEED ARCHIVE.
 
 
-      FILNM='uwavein'
-      LIU = LEN_TRIM(FILNM)
-      FILNM=FILNM(1:LIU)
-      IF (IREAD == IRANK) THEN
-        INQUIRE(FILE=FILNM, EXIST=LWAVEWIND)
-        IF (LWAVEWIND) THEN
-          NWAVEWIND(1)=1
-        ELSE
-          NWAVEWIND(1)=0
+      IF ( .NOT. LNSESTART ) THEN
+        FILNM='uwavein'
+        LIU = LEN_TRIM(FILNM)
+        FILNM=FILNM(1:LIU)
+        IF (IREAD == IRANK) THEN
+          INQUIRE(FILE=FILNM, EXIST=LWAVEWIND)
+          IF (LWAVEWIND) THEN
+            NWAVEWIND(1)=1
+          ELSE
+            NWAVEWIND(1)=0
+          ENDIF
         ENDIF
+
+!       USE MESSAGE PASSING TO SEND FILE STATUS TO THE OTHER PE'S
+        CALL GSTATS(696,0)
+        IF (NPROC > 1) THEN
+          CALL MPL_BROADCAST(NWAVEWIND,KROOT=IREAD,KTAG=KTAG, CDSTRING='BUILDSTRESS :') 
+          KTAG=KTAG+1
+          IF (NWAVEWIND(1) == 1) THEN
+            LWAVEWIND=.TRUE.
+          ELSE
+            LWAVEWIND=.FALSE.
+          ENDIF
+        ENDIF
+        CALL GSTATS(696,1)
+      ELSE
+        LWAVEWIND=.FALSE.
       ENDIF
 
-!     USE MESSAGE PASSING TO SEND FILE STATUS TO THE OTHER PE'S
-      CALL GSTATS(696,0)
-      IF (NPROC > 1) THEN
-        CALL MPL_BROADCAST(NWAVEWIND,KROOT=IREAD,KTAG=KTAG, CDSTRING='BUILDSTRESS :') 
-        KTAG=KTAG+1
-        IF (NWAVEWIND(1) == 1) THEN
-          LWAVEWIND=.TRUE.
-        ELSE
-          LWAVEWIND=.FALSE.
-        ENDIF
-      ENDIF
-      CALL GSTATS(696,1)
-
-      IF (LWAVEWIND) THEN
+      IF ( LWAVEWIND ) THEN
         IPARAM=245
         LLONLYPOS=.TRUE.
-        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,            &
-     &                 BLK2LOC,                                &
-     &                 NXFFS, NXFFE, NYFFS, NYFFE, FIELDG,     &
+        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,                  &
+     &                 BLK2LOC,                                      &
+     &                 NXS, NXE, NYS, NYE, FIELDG,                   &
      &                 FF_NOW%WSWAVE , KZLEVUWAVE, LLONLYPOS, IREAD)
 
         WRITE(IU06,*) ' '
@@ -161,9 +190,7 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
         WRITE(IU06,*) ' WAS USED TO UPDATE THE INPUT ATMOSPHERIC WINDS'
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' THE INPUT WINDS AND DRAG COEFFICIENT ARE FOUND'
-        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ',        &
-     &                  KZLEVUWAVE,' m'
-
+        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ', KZLEVUWAVE,' m' 
 
       ELSE
 
@@ -177,8 +204,7 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
         WRITE(IU06,*) ' WAS POSSIBLE'
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' THE INPUT WIND AND DRAG COEFFICIENT ARE ASSUMED'
-        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ',        &
-     &                  KZLEVUWAVE,' m'
+        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ', KZLEVUWAVE,' m'
 
       ENDIF
  
@@ -208,7 +234,9 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
       CALL GSTATS(1444,0)
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
       DO ICHNK = 1, NCHNK
-        CALL CDUSTARZ0 (1, NPROMA_WAM, FF_NOW%WSWAVE(:,ICHNK), TEMPXNLEV, CD(:,ICHNK), FF_NOW%UFRIC(:,ICHNK), FF_NOW%Z0M(:,ICHNK))
+        CALL CDUSTARZ0 (1, NPROMA_WAM, FF_NOW%WSWAVE(:,ICHNK), TEMPXNLEV,        &
+ &                      CD(:,ICHNK), FF_NOW%UFRIC(:,ICHNK), FF_NOW%Z0M(:,ICHNK))
+
         FF_NOW%TAUW(:,ICHNK) = 0.1_JWRB * FF_NOW%UFRIC(:,ICHNK)**2
         FF_NOW%TAUWDIR(:,ICHNK) = FF_NOW%WDWAVE(:,ICHNK)
       ENDDO
@@ -217,14 +245,14 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
 
 !     1.4  GET DRAG COEFFICIENT
 !          --------------------
-      IF (.NOT.LNOCDIN) THEN
+      IF ( .NOT.LNOCDIN .AND. .NOT. LNSESTART ) THEN
         IPARAM=233
         LLONLYPOS=.TRUE.
         FILNM='cdwavein'
 !       !!!! CD was initialised above !!!!
-        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,         &
-     &                 BLK2LOC,                             &
-     &                 NXFFS, NXFFE, NYFFS, NYFFE, FIELDG,  &
+        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,   &
+     &                 BLK2LOC,                       &
+     &                 NXS, NXE, NYS, NYE, FIELDG,    &
      &                 CD, KZLEVCD, LLONLYPOS, IREAD)
 
 !       TEST REFERENCE LEVEL FOR UWAVE AND CD
@@ -289,7 +317,11 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
         CALL GSTATS(1444,1)
       ENDIF
 
-      WRITE(IU06,*) ' SUB. BUILDSTRESS: INPUT OF RESTART FILES DONE'
+      IF ( LNSESTART ) THEN
+        WRITE(IU06,*) ' SUB. BUILDSTRESS: ATMOSPHERIC INPUT DONE'
+      ELSE
+        WRITE(IU06,*) ' SUB. BUILDSTRESS: INPUT OF RESTART FILES DONE'
+      ENDIF
 
       CALL FIELDG%DEALLOC()
 

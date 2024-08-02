@@ -7,8 +7,8 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
-     &                       ITABLE, IPARAM, KLEV, IK, IM,              &
+SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                        &
+     &                       ITABLE, IPARAM, KLEV, ITMIN, ITMAX, IK, IM,  &
      &                       CDATE, IFCST, MARSTYPE, LFDB, IU)
 
 ! ----------------------------------------------------------------------
@@ -27,7 +27,7 @@ SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
 !**    INTERFACE.
 !      ----------
 !        *CALL* *WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,
-!                          ITABLE, IPARAM, KLEV, IK, IM,
+!                          ITABLE, IPARAM, KLEV, ITMIN, ITMAX, IK, IM,
 !                          CDATE, IFCST, LFDB, IU,
 !          *IU06*    LOGFILE OUTPUT UNIT.
 !          *ITEST*   TEST OUTPUT GIVEN IF ITEST GT 2.
@@ -38,6 +38,8 @@ SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
 !          *IPARAM*  PARAMETER IDENTIFIER.
 !          *KLEV*    REFERENCE LEVEL IN full METER
 !                    (SHOULD BE 0 EXCEPT FOR 233 AND 245)
+!          *ITMIN*   MINIMUM WAVE PERIOD FOR WHICH THE PARAMETER IS DEFINED (s)
+!          *ITMAX*   MAXIMUM WAVE PERIOD FOR WHICH THE PARAMETER IS DEFINED (s)
 !          *IK*      DIRECTION INDEX,
 !                    ONLY MEANINGFUL FOR SPECTRAL PARAMETERS.
 !          *IM*      FREQUENCY INDEX,
@@ -77,7 +79,7 @@ SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
 #include "wgribout.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, I1, I2
-      INTEGER(KIND=JWIM), INTENT(IN) :: ITABLE, IPARAM, KLEV, IK, IM
+      INTEGER(KIND=JWIM), INTENT(IN) :: ITABLE, IPARAM, KLEV, ITMIN, ITMAX, IK, IM
       INTEGER(KIND=JWIM), INTENT(IN) :: IFCST
       INTEGER(KIND=JWIM), INTENT(IN) :: IU 
 
@@ -98,7 +100,7 @@ SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('WGRIBENOUT',0,ZHOOK_HANDLE)
 
-      IF(ITEST.GT.0) THEN
+      IF(ITEST > 0) THEN
         WRITE(IU06,*) '   SUB. WGRIBENOUT CALLED FOR ',IPARAM
         CALL FLUSH(IU06)
       ENDIF
@@ -108,15 +110,15 @@ SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
 !*    1. ENCODE RESULT
 !        -------------
 
-      CALL WGRIBENCODE_MODEL(IU06, ITEST, I1, I2, FIELD, &
-     &                 ITABLE, IPARAM, KLEV, IK , IM,    &
-     &                 CDATE, IFCST, MARSTYPE,           &
+      CALL WGRIBENCODE_MODEL(IU06, ITEST, I1, I2, FIELD,             &
+     &                 ITABLE, IPARAM, KLEV, ITMIN, ITMAX, IK , IM,  &
+     &                 CDATE, IFCST, MARSTYPE,                       &
      &                 IGRIB_HANDLE)
 
 
 !*    2. SAVE ENCODED RESULT
 !        -------------------
-
+ 
       CALL IGRIB_GET_MESSAGE_SIZE(IGRIB_HANDLE,KBYTES)
       ISIZE=(KBYTES+NPRECI-1)/NPRECI
       ALLOCATE(KGRIB_BUFR(ISIZE))

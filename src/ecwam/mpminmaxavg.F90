@@ -129,6 +129,7 @@ IF (LHOOK) CALL DR_HOOK('MPMINMAXAVG',0,ZHOOK_HANDLE)
             CALL MPGATHERSCFLD(IRECV, NBLKS, NBLKE, ZGLOBAL, NIBLO)
 
             IF (IRANK == IRECV) THEN
+              ICOUNT = 0
               DO IJOLD = 1, NIBLO
                 IF (LL1D .OR. LLUNSTR .OR. NPROC == 1) THEN
                   IJ=IJOLD

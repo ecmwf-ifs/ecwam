@@ -11,7 +11,7 @@ SUBROUTINE MFR(NFRE, IFRE1, FR1, FRATIO, FR)
 
 ! ----------------------------------------------------------------------
 
-!**** *MFR* - ROUTINE TO COMPUTE FREQUENCY DIRECTION CONSTANTS.
+!**** *MFR* - ROUTINE TO COMPUTE FREQUENCY DISCRETISATION 
 
 
 !*    PURPOSE.
