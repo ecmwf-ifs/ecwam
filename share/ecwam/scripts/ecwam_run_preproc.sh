@@ -22,6 +22,10 @@ source ${SCRIPTS_DIR}/ecwam_runtime.sh
 source ${SCRIPTS_DIR}/ecwam_parse_commandline.sh
 source ${SCRIPTS_DIR}/ecwam_helper_functions.sh
 
+if [[ $(uname) == "Darwin" ]]; then
+  export DR_HOOK_ASSERT_MPI_INITIALIZED=0
+fi
+
 function cleanup() {
   shopt -s nullglob
   LOG_DIR=${RUN_DIR}/logs/preproc
