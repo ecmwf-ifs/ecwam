@@ -33,7 +33,7 @@ find_preproc_files
 find_preset_files ${begofrn}
 
 lgribin=F
-lgribout=F
+lgribout=T
 lnocdin=T
 
 output_fields=$(read_config output.fields.name[:] --default="")
@@ -234,6 +234,7 @@ cat > wam_namelist << EOF
   LWAMRSETCI            = T,
   NGRIB_VERSION         = 2,
   LL_GRID_SIMPLE_MATRIX = F,
+  LLRSTGRIBPARAM        = F,
   YCLASS                = "rd",
   YEXPVER               = "wave",
   ISTREAM               = 1045,

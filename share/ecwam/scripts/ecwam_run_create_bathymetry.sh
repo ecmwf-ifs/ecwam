@@ -138,15 +138,25 @@ cat reference_levels >> for_md5
 md5=$(cat for_md5 | md5sum | awk '{print $1}')
 WAM_TOPO=v${ecwam_bathymetry_version}/bathymetry_${wamresol}_nfre${wamnfre}_${wambathy}_${md5}
 
-${SCRIPTS_DIR}/ecwam_retrieve.sh data/bathymetry/${WAM_TOPO} ${DATA_DIR}/data/bathymetry/${WAM_TOPO} || {
-  echo "Could not retrieve data/bathymetry/${WAM_TOPO}"
-}
+subgrid_files=()
+for ip in 0 1 2; do
+   subgrid_files+=(v${ecwam_bathymetry_version}/wam_grib_subgrid_${ip}_${wamnfre}_${wambathy}_${md5})
+done
 
-if [ -f ${DATA_DIR}/data/bathymetry/${WAM_TOPO} ]; then
-  echo "\n\n\t File ${WAM_TOPO} has been found\n"
+grid_files_found=true
+for file in ${WAM_TOPO} ${subgrid_files[@]}; do
+    ${SCRIPTS_DIR}/ecwam_retrieve.sh data/bathymetry/${file} ${DATA_DIR}/data/bathymetry/${file} || {
+      grid_files_found=false
+      echo "Could not retrieve data/bathymetry/${file}"
+      break
+    }
+done
+
+if [[ ${grid_files_found} == true ]]; then
+  echo "\n\n\t File ${WAM_TOPO} and subgrid files have been found\n"
 else
-  echo "\n\n\t File ${DATA_DIR}/data/bathymetry/${WAM_TOPO} was not found\n"
-  echo     "\t It needs to be computed from $wambathy data set\n"
+  echo "\n\n\t File ${DATA_DIR}/data/bathymetry/${WAM_TOPO} and/or subgrid files were not found\n"
+  echo     "\t They need to be computed from the $wambathy data set\n"
 
   if [[ $wambathy = "ETOPO1" ]] ; then
     echo "\n\n\t Getting ETOPO1 data set\n"
@@ -168,17 +178,19 @@ else
 EOF
   if [[ $wambathy = "ETOPO1" ]] ; then
     cat >> input_to_wam_bathymetry <<EOF
-#Grib input:
+#Grib input of high resolution bathymetry:
 F
-#Grib output:
-F
+#output of unresolved bathymetry obstruction coefficients:
+${llobstrout}
+#Grib output of unresolved bathymetry obstruction coefficients (if llobstrout is true} :
+${llgribout}
 EOF
   fi
 
   cat >> input_to_wam_bathymetry <<EOF
 #Grid resolution (XDELLA):
 ${xdella}
-#Domain boundaries S,N,W,E (AMOSOP AMONOP AMOWEP AMOEAP) :
+#Domain boundaries S,N,W,E (DAMOSOP DAMONOP DAMOWEP DAMOEAP) :
 ${amosop} ${amonop} ${amowep} ${amoeap}
 #PERIODIC DOMAIN (IPER=0 for NON-periodic domain, IPER=1 for periodic domain):
 ${iper}
@@ -222,9 +234,19 @@ EOF
   mkdir -p ${DATA_DIR}/data/bathymetry/$(dirname ${WAM_TOPO})
   mv wam_topo_${cwamresol} ${DATA_DIR}/data/bathymetry/${WAM_TOPO}
 
+  for ip in 0 1 2; do
+     mv wam_grib_subgrid_${ip} ${DATA_DIR}/data/bathymetry/${subgrid_files[$ip]}
+  done
+
 fi
 
-(cd ${RUN_DIR} && ln -sf ${DATA_DIR}/data/bathymetry/${WAM_TOPO} wam_topo)
+cd ${RUN_DIR}
+
+ln -sf ${DATA_DIR}/data/bathymetry/${WAM_TOPO} wam_topo
 echo "\n\t Bathymetry is available in DATA_DIR with symlink in RUN_DIR:\n\n\t   ${RUN_DIR}/wam_topo -> ${DATA_DIR}/data/bathymetry/${WAM_TOPO}"
+for ip in 0 1 2; do
+   ln -sf ${DATA_DIR}/data/bathymetry/${subgrid_files[$ip]} wam_subgrid_${ip}
+   echo "\n\t wam_grib_subgrid_${ip} is available in DATA_DIR with symlink in RUN_DIR:\n\n\t   ${RUN_DIR}/wam_subgrid_${ip} -> ${DATA_DIR}/data/bathymetry/${subgrid_files[$ip]}"
+done
 
 cleanup
