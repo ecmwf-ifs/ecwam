@@ -7,16 +7,14 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE WRITENEMORECVFLDS( NEMO2WAM )
+SUBROUTINE WRITENEMOCPLFLDS( NEMO2WAM, KFIELDS )
 
 ! ----------------------------------------------------------------------
 
-!**** *WRITENEMORECVFLDS* -
+!**** *WRITENEMOCPLFLDS* -
 !     ----------
 
-!  OUPUT THE MODEL DECOMPOSITON 
-!    MPI RANK (IRANK) IN GRIB AS EXTRA PARAMETER 80
-!    GRID POINT INDEX (IJ) AS EXTRA PARAMETER 81  
+!  OUTPUT COUPLING FIELDS EITHER SENT OR RECEIVED FROM NEMO
 
 !  THE GRIB DATA WILL BE SAVED TO FILE (see OUTFILE)
 
@@ -63,8 +61,8 @@ IMPLICIT NONE
 #include "wgribencode.intfb.h"
 #include "difdate.intfb.h"
 
-TYPE(OCEAN2WAVE), INTENT(INOUT) :: NEMO2WAM
-
+TYPE(OCEAN2WAVE), INTENT(IN) :: NEMO2WAM
+INTEGER, INTENT(IN) :: KFIELDS
 
 INTEGER(KIND=JWIM), PARAMETER :: NBITSPERVALUE = 24  !! need a higher precision to code the grid point index 
 
@@ -94,7 +92,7 @@ REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:, :, :) :: BOUT
 
 ! ----------------------------------------------------------------------
 
-IF (LHOOK) CALL DR_HOOK('WRITENEMORECVFLDS',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('WRITENEMOCPLFLDS',0,ZHOOK_HANDLE)
 
 CALL DIFDATE(CDATEF, CDTPRO, IFCST)
 CDATE = CDATEF
@@ -107,7 +105,7 @@ IF ( ICPLEN > 0 ) THEN
 ENDIF
 LFILE=LEN_TRIM(OUTFILE)
 
-WRITE(IU06,*) ' WRITENEMORECVFLDS : The coupling fields are written to ', OUTFILE(1:LFILE)
+WRITE(IU06,*) ' WRITENEMOCPLFLDS : The coupling fields are written to ', OUTFILE(1:LFILE)
 
 ! save output parameter selection (it will be overwritten and then reset)
 FFLAGBAK(:) = FFLAG(:)
@@ -172,7 +170,7 @@ DO ICHNK = 1, NCHNK
 
   IF ( IR /= NIPRMOUT ) THEN
     WRITE(IU06,*) '******************************************'
-    WRITE(IU06,*) ' WRITENEMORECVFLDS : ABORTING' 
+    WRITE(IU06,*) ' WRITENEMOCPLFLDS : ABORTING' 
     WRITE(IU06,*) ' IR /= NIPRMOUT ', IR, NIPRMOUT 
     WRITE(IU06,*) '******************************************'
     CALL ABORT1
@@ -298,6 +296,6 @@ CALL MPCRTBL
 
 WRITE(IU06,*) ' '
 
-IF (LHOOK) CALL DR_HOOK('WRITENEMORECVFLDS',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('WRITENEMOCPLFLDS',1,ZHOOK_HANDLE)
 
-END SUBROUTINE WRITENEMORECVFLDS
+END SUBROUTINE WRITENEMOCPLFLDS
