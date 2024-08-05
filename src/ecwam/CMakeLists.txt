@@ -302,7 +302,6 @@ list( APPEND ecwam_srcs
   wnfluxes.F90
   wposnam.F90
   writefl.F90
-  writenemocplflds.F90
   writestress.F90
   writsta.F90
   wsigstar.F90
