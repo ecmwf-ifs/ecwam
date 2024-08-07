@@ -249,7 +249,7 @@
                 DELAM(IJ) = (FIJ-2.0_JWRB*SAP)*DAL2*FCEN
               ENDDO
 
-              !$loki split read-write
+              !$loki split-read-write
               DO IJ=KIJS,KIJL
                 SL(IJ,K  ,MC ) = SL(IJ,K  ,MC ) - 2.0_JWRB*AD(IJ)
               ENDDO
@@ -304,7 +304,7 @@
               DO IJ=KIJS,KIJL
                 FLD(IJ,K11,MP1) = FLD(IJ,K11,MP1) + DELAP(IJ)*FKLAPB2
               ENDDO
-              !$loki end split read-write
+              !$loki end split-read-write
             ENDDO
           ENDDO
 
@@ -332,7 +332,7 @@
                 DELAM(IJ) = (FIJ-2.0_JWRB*SAP)*DAL2*FCEN
               ENDDO
 
-              !$loki split read-write
+              !$loki split-read-write
               DO IJ=KIJS,KIJL
                 SL(IJ,K2 ,MM ) = SL(IJ,K2 ,MM ) + AD(IJ)*FKLAMM1
               ENDDO
@@ -405,7 +405,7 @@
                   ENDIF
                 ENDIF
               ENDIF
-              !$loki end split read-write
+              !$loki end split-read-write
             ENDDO
           ENDDO
 
@@ -434,7 +434,7 @@
                 DELAM(IJ) = (FIJ-2.0_JWRB*SAP)*DAL2*FCEN
               ENDDO
 
-              !$loki split read-write
+              !$loki split-read-write
               IF (MM1 >= 1) THEN
                 DO IJ=KIJS,KIJL
                   SL(IJ,K2 ,MM1) = SL(IJ,K2 ,MM1) + AD(IJ)*FKLAMMA
@@ -480,7 +480,7 @@
               DO IJ=KIJS,KIJL
                 FLD(IJ,K11,MP1) = FLD(IJ,K11,MP1) + DELAP(IJ)*FKLAPB2
               ENDDO
-              !$loki end split read-write
+              !$loki end split-read-write
             ENDDO
           ENDDO
 
