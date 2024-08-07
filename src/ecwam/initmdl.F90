@@ -196,7 +196,8 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            IREFRA   ,LNSESTART,                                  &
      &            IPHYS    ,                                            &
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,    &
-     &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
+     &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST,             &
+     &            TIME_PROPAG, TIME_PHYS
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
      &                      FAK      ,FRHF     ,DFIMHF
       USE YOWTEST  , ONLY : IU06
@@ -983,6 +984,10 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
         ENDIF
       ENDIF
 !NEST
+
+      ! Initialize the time counters
+      TIME_PROPAG = 0.0_JWRB
+      TIME_PHYS = 0.0_JWRB
 
 IF (LHOOK) CALL DR_HOOK('INITMDL',1,ZHOOK_HANDLE)
 
