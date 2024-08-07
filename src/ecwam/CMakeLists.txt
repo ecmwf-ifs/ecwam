@@ -504,14 +504,27 @@ endif()
 if( HAVE_LOKI )
 
   set( LOKI_FRONTEND "fp" CACHE STRING "Frontend parser for Loki source transformations" )
-  set( SCC_ARGS "")
+  string( REPLACE "-" "_" _SANITISED_LOKI_MODE ${LOKI_MODE} )
 
   if( LOKI_MODE MATCHES "idem|idem-stack" )
      set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config )
   else()
-     set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
+     if( LOKI_MODE MATCHES "scc-stack" )
+       set( SCC_PIPELINE "SCCStackPipeline")
+       set( suffix "_SCC_STACK" )
+       set( SCC_ARGS "block_dim = \"%dimensions.block_dim%\"\n  check_bounds = false" )
+     elseif( LOKI_MODE MATCHES "scc-hoist" )
+       set( SCC_PIPELINE "SCCHoistPipeline")
+       set( suffix "_SCC_HOIST" )
+       set( SCC_ARGS "block_dim = \"%dimensions.block_dim%\"" )
+     else()
+       set( SCC_PIPELINE "SCCVectorPipeline")
+       set( suffix "_SCC" )
+     endif()
+
+     configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config ${CMAKE_CURRENT_BINARY_DIR}/ecwam_loki_gpu.config @ONLY )
+     set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/ecwam_loki_gpu.config )
      target_compile_definitions( ${ecwam} PRIVATE WAM_GPU )
-     set( SCC_ARGS "TRIM_VECTOR_SECTIONS;GLOBAL_VAR_OFFLOAD")
   endif()
 
   # Apply Loki source file transformation to lib target
@@ -521,7 +534,6 @@ if( HAVE_LOKI )
     FRONTEND ${LOKI_FRONTEND}
     CONFIG ${LOKI_CONFIG_FILE}
     PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_plan_ecwam.cmake
-    ${SCC_ARGS}
     CPP
     DEFINITIONS WAM_GPU
     INCLUDES ${ecwam_intfb_includes}
