@@ -90,7 +90,7 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG,          &
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(OUT) :: Z0, Z0B, CHRNCK
 
 
-      INTEGER(KIND=JWIM), PARAMETER :: NITER=17
+      INTEGER(KIND=JWIM), PARAMETER :: NITER=18
 
       REAL(KIND=JWRB), PARAMETER :: TWOXMP1=3.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: PMAX=0.99_JWRB
@@ -113,6 +113,7 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG,          &
       REAL(KIND=JWRB) :: US2TOTAUW, USMAX
       REAL(KIND=JWRB) :: XLOGXL, XKUTOP, XOLOGZ0
       REAL(KIND=JWRB) :: USTOLD, USTNEW, TAUOLD, TAUNEW, X, F, DELF, CDFG
+      REAL(KIND=JWRB) :: USNRF, Z0NRF, Z0BNRF, ALPOG
       REAL(KIND=JWRB) :: USTM1, Z0TOT, Z0CH, Z0VIS, HZ0VISO1MX, ZZ
       REAL(KIND=JWRB) :: CONST, TAUV, DEL
       REAL(KIND=JWRB) :: RNUEFF, RNUKAPPAM1
@@ -141,6 +142,11 @@ IF (LHOOK) CALL DR_HOOK('TAUT_Z0',0,ZHOOK_HANDLE)
       XLOGXL=LOG(XNLEV)
       US2TOTAUW=1.0_JWRB+EPS1
 
+      RNUEFF = 0.04_JWRB*RNU
+      RNUKAPPAM1 = RNUEFF/XKAPPA
+
+      PCE_GC = 0.001_JWRB * IUSFG + (1-IUSFG) * 0.005_JWRB
+
 !     ONLY take the contribution of TAUW that is in the wind direction
       DO IJ = KIJS, KIJL
         COSDIFF = COS(UDIR(IJ)-TAUWDIR(IJ))
@@ -165,12 +171,6 @@ IF (LLGCBZ0) THEN
         TAUWEFF(IJ) = MIN(TAUWACT(IJ)*US2TOTAUW, USMAX**2 )
       ENDDO
 
-      RNUEFF = 0.04_JWRB*RNU
-
-      RNUKAPPAM1 = RNUEFF/XKAPPA
-
-!      PCE_GC = 0.001_JWRB * IUSFG + (1-IUSFG) * 0.005_JWRB
-      PCE_GC = 0.005_JWRB
 
       IF (IUSFG == 0 ) THEN
         ALPHAGM1 = ALPHA*GM1
@@ -237,60 +237,60 @@ IF (LLGCBZ0) THEN
 
 !       Refine solution
 
-!        IF (X < PMAX) THEN
-!          USTOLD = USTAR(IJ)
-!          TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
-!
-!          DO ITER=1,NITER
-!            X = MIN(TAUWEFF(IJ)/TAUOLD, PMAX)
-!            USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS)
-!            !!!! Limit how small z0 could become
-!            !!!! This is a bit of a compromise to limit very low Charnock for intermediate high winds (15 -25 m/s)
-!            !!!! It is not ideal !!!
-!            Z0(IJ) = MAX(XNLEV/(EXP(MIN(XKUTOP/USTOLD, 50.0_JWRB))-1.0_JWRB), Z0MIN)
-!
-!            TAUUNR(IJ) = STRESS_GC(ANG_GC(IJ), USTOLD, Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ))
-!
-!            Z0B(IJ) = MAX( Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), ALPHAOG(IJ)*TAUOLD)
-!            Z0VIS = RNUM*USTM1
-!            HZ0VISO1MX = 0.5_JWRB*Z0VIS/(1.0_JWRB-X)
-!            Z0(IJ) = HZ0VISO1MX+SQRT(HZ0VISO1MX**2+Z0B(IJ)**2/(1.0_JWRB-X))
-!
-!            XOLOGZ0= 1.0_JWRB/(XLOGXL-LOG(Z0(IJ)))
-!            F = USTOLD-XKUTOP*XOLOGZ0
-!            ZZ = 2.0_JWRB*USTM1*(3.0_JWRB*Z0B(IJ)**2+0.5_JWRB*Z0VIS*Z0(IJ)-Z0(IJ)**2) &
-!&                / (2.0_JWRB*Z0(IJ)**2*(1.0_JWRB-X)-Z0VIS*Z0(IJ))
-!
-!            DELF= 1.0_JWRB-XKUTOP*XOLOGZ0**2*ZZ
-!            IF (DELF /= 0.0_JWRB) USTAR(IJ) = USTOLD-F/DELF
-!
-!!           CONVERGENCE ?
-!            DEL = USTAR(IJ)-USTOLD
-!
-!            IF (ABS(DEL) < PCE_GC*USTAR(IJ)) EXIT
-!            USTOLD = USTAR(IJ)
-!            TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
-!          ENDDO
-!          ! protection just in case there is no convergence
-!          IF (ITER > NITER ) THEN
-!            CDFG = CDM(UTOP(IJ))
-!            USTAR(IJ) = UTOP(IJ)*SQRT(CDFG)
-!            Z0MINRST = USTAR(IJ)**2 * ALPHA*GM1
-!            Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MINRST)
-!            Z0B(IJ) = Z0MINRST
-!            CHRNCK(IJ) = MAX(G*Z0(IJ)/USTAR(IJ)**2, ALPHAMIN)
-!
-!            IF(IRANK <= 4) PRINT *, IJ, ICHNK, ABS(DEL), PCE_GC*USTAR(IJ), IUSFG, IRANK
-!            STOP
-!          ELSE
-!            CHRNCK(IJ) = MAX( G*(Z0B(IJ)/SQRT(1.0_JWRB-X))/MAX(USTAR(IJ),EPSUS)**2, ALPHAMIN)
-!          ENDIF
-!
-!        ELSE
+        IF (X < PMAX) THEN
+
+          USNRF = USTAR(IJ)
+          Z0NRF = Z0(IJ)
+          Z0BNRF = Z0B(IJ)
+
+          USTOLD = USTAR(IJ)
+          TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
+
+          ALPOG = MAX(MIN(Z0B(IJ)/TAUOLD,ALPHAMAX), ALPHAOG(IJ))
+
+          DO ITER=1,NITER
+            X = MIN(TAUWEFF(IJ)/TAUOLD, PMAX)
+            USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS)
+            Z0VIS = RNUM*USTM1
+            HZ0VISO1MX = 0.5_JWRB*Z0VIS/(1.0_JWRB-X)
+            Z0B(IJ) = ALPOG*TAUOLD
+            Z0(IJ) = HZ0VISO1MX+SQRT(HZ0VISO1MX**2+Z0B(IJ)**2/(1.0_JWRB-X))
+
+            XOLOGZ0= 1.0_JWRB/LOG(XNLEV/Z0(IJ)+1.0_JWRB)
+            F = USTOLD-XKUTOP*XOLOGZ0
+            ZZ = 2.0_JWRB*USTM1*(3.0_JWRB*Z0B(IJ)**2+0.5_JWRB*Z0VIS*Z0(IJ)-Z0(IJ)**2) &
+&                / (2.0_JWRB*Z0(IJ)**2*(1.0_JWRB-X)-Z0VIS*Z0(IJ))
+
+            DELF= 1.0_JWRB-XKUTOP*XOLOGZ0**2*ZZ
+
+            IF (DELF /= 0.0_JWRB) USTAR(IJ) = USTOLD-F/DELF
+!           CONVERGENCE ?
+            TAUNEW = MAX(USTAR(IJ)**2,TAUWEFF(IJ))
+            USTAR(IJ) = SQRT(TAUNEW)
+            DEL = TAUNEW-TAUOLD
+            IF (ABS(DEL) < PCE_GC*TAUOLD) EXIT
+            TAUOLD = TAUNEW
+            USTOLD = USTAR(IJ)
+
+          ENDDO
+          ! protection just in case there is no convergence
+          IF (ITER > NITER ) THEN
+            USTAR(IJ) = USNRF
+            Z0(IJ) = Z0NRF
+            Z0B(IJ) = Z0BNRF
+            USTM1 = 1.0_JWRB/MAX(USTAR(IJ), EPSUS)
+            Z0VIS = RNUM*USTM1
+            CHRNCK(IJ) = MAX(G*(Z0(IJ)-Z0VIS) * USTM1**2, ALPHAMIN)
+
+          ELSE
+            CHRNCK(IJ) = MAX( G*(Z0B(IJ)/SQRT(1.0_JWRB-X))/MAX(USTAR(IJ),EPSUS)**2, ALPHAMIN)
+          ENDIF
+
+        ELSE
           USTM1 = 1.0_JWRB/MAX(USTAR(IJ), EPSUS)
           Z0VIS = RNUM*USTM1
           CHRNCK(IJ) = MAX(G*(Z0(IJ)-Z0VIS) * USTM1**2, ALPHAMIN)
-!        ENDIF
+        ENDIF
 
       ENDDO
 
