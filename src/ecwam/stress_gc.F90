@@ -61,10 +61,10 @@ REAL(KIND=JWRB) FUNCTION STRESS_GC(ANG_GC, USTAR, Z0, Z0MIN, HALP, RNFAC)
       REAL(KIND=JWRB) :: X, XLOG, ZLOG, ZLOG2X
       REAL(KIND=JWRB) :: CONST, ZN 
       REAL(KIND=JWRB) :: GAMNORMA ! RENORMALISATION FACTOR OF THE GROWTH RATE
+      REAL(KIND=JWRB) :: GAM_W
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NWAV_GC) :: GAM_W
    
-!     INCLUDE FUNCTIONS FROM GRAVITY-CAPILLARY DISPERSION REALTIONS
+!     INCLUDE FUNCTIONS FROM GRAVITY-CAPILLARY DISPERSION RELATIONS
 #include "gc_dispersion.h"
 #include "ns_gc.intfb.h"
 
@@ -89,20 +89,20 @@ IF (LHOOK) CALL DR_HOOK('STRESS_GC',0,ZHOOK_HANDLE)
         CONST = 0.0_JWRB
       ENDIF
 
-      DO I = NS, NWAV_GC
-!       GROWTHRATE BY WIND WITHOUT the multiplicative factor representing the ratio of air density to water density (eps)
-!       and BETAMAXOXKAPPA2
-        X       = USTAR*CM_GC(I)
-        XLOG    = LOG(XK_GC(I)*Z0) + XKAPPA/(X + ZALP)
-        ZLOG    = XLOG - LOG(XLAMBDA) 
-        ZLOG    = MIN(ZLOG, 0.0_JWRB)
-        ZLOG2X  = ZLOG*ZLOG*X
-        GAM_W(I)= ZLOG2X*ZLOG2X*EXP(XLOG)*OM3GMKM_GC(I)
-      ENDDO
+!     GAM_W GROWTHRATE BY WIND WITHOUT the multiplicative factor representing the ratio of air density to water density (eps)
+!     and BETAMAXOXKAPPA2
+      X       = USTAR*CM_GC(NS)
+      XLOG    = LOG(XK_GC(NS)*Z0) + XKAPPA/(X + ZALP)
+      ZLOG    = XLOG - LOG(XLAMBDA) 
+      ZLOG    = MIN(ZLOG, 0.0_JWRB)
+      ZLOG2X  = ZLOG*ZLOG*X
+      GAM_W   = ZLOG2X*ZLOG2X*EXP(XLOG)*OM3GMKM_GC(NS)
 
-      ZN = CONST*XKMSQRTVGOC2_GC(NS)*GAM_W(NS)
+      ZN = CONST*XKMSQRTVGOC2_GC(NS)*GAM_W
       GAMNORMA = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
-      TAUWCG = GAM_W(NS) * DELKCC_GC_NS(NS) * OMXKM3_GC(NS) * GAMNORMA
+
+      TAUWCG = GAM_W * DELKCC_GC_NS(NS) * OMXKM3_GC(NS) * GAMNORMA
+
       DO I = NS+1, NWAV_GC
 !       ANALYTICAL FORM INERTIAL SUB RANGE F(k) = k**(-4)*BB
 !       BB = HALP * C2OSQRTVG_GC(NS)*SQRT(VG_GC(I))/C_GC(I)**2
@@ -113,9 +113,18 @@ IF (LHOOK) CALL DR_HOOK('STRESS_GC',0,ZHOOK_HANDLE)
 !       Tauwcg : integral of omega * gammma_wam * F(k)  k dk
 !       It should be done in vector form with actual directional spreading information
 !       It simplified here by using the ANG_GC factor.
-        ZN  = CONST*XKMSQRTVGOC2_GC(I)*GAM_W(I)
+
+        X       = USTAR*CM_GC(I)
+        XLOG    = LOG(XK_GC(I)*Z0) + XKAPPA/(X + ZALP)
+        ZLOG    = XLOG - LOG(XLAMBDA) 
+        ZLOG    = MIN(ZLOG, 0.0_JWRB)
+        ZLOG2X  = ZLOG*ZLOG*X
+        GAM_W   = ZLOG2X*ZLOG2X*EXP(XLOG)*OM3GMKM_GC(I)
+
+        ZN = CONST*XKMSQRTVGOC2_GC(I)*GAM_W
         GAMNORMA = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
-        TAUWCG = TAUWCG + GAM_W(I) * DELKCC_OMXKM3_GC(I) * GAMNORMA
+
+        TAUWCG = TAUWCG + GAM_W * DELKCC_OMXKM3_GC(I) * GAMNORMA
       ENDDO
       STRESS_GC = MAX(ZABHRC * TAUWCG, TAUWCG_MIN)
 
