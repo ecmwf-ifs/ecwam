@@ -81,7 +81,7 @@
 
       LOGICAL, SAVE :: FRSTIME
       LOGICAL :: LPARAM
-      LOGICAL :: LMSS, LDEPTH, LPHIAW, LPHIOC, LTAUOC 
+      LOGICAL :: LDEPTH, LPHIAW, LPHIOC, LTAUOC 
 
       DATA FRSTIME/.TRUE./   
 !
@@ -102,59 +102,85 @@
          
       CALL DIFDATE(CDATEA,CDTPRO,ITIME)
 
-      LPARAM=.TRUE.
-
       IPHS=ITOBOUT(IRHS)
-      IF (IPHS <= 0) LPARAM = .FALSE.
+      IF(IPHS.GT.0) THEN
+        LPARAM = .TRUE.
+      ELSE
+        LPARAM = .FALSE.
+      ENDIF
 
       IPCD=ITOBOUT(IRCD)
-      IF (IPCD <= 0) LPARAM = .FALSE.
+      IF(IPCD.GT.0) THEN
+        LPARAM = .TRUE.
+      ELSE
+        LPARAM = .FALSE.
+      ENDIF
 
       IPU10=ITOBOUT(IRU10)
-      IF (IPU10 <= 0) LPARAM = .FALSE.
+      IF(IPU10.GT.0) THEN
+        LPARAM = .TRUE.
+      ELSE
+        LPARAM = .FALSE.
+      ENDIF
 
       IPTP=ITOBOUT(IRTP)
-      IF (IPTP <= 0) LPARAM = .FALSE.
+      IF(IPTP.GT.0) THEN
+        LPARAM = .TRUE.
+      ELSE
+        LPARAM = .FALSE.
+      ENDIF
 
       IPT1=ITOBOUT(IRT1)
-      IF (IPT1 <= 0) LPARAM = .FALSE.
+      IF(IPT1.GT.0) THEN
+        LPARAM = .TRUE.
+      ELSE
+        LPARAM = .FALSE.
+      ENDIF
 
       IPHSWS=ITOBOUT(IRHSWS)
-      IF (IPHSWS <= 0) LPARAM = .FALSE.
+      IF(IPHSWS.GT.0) THEN
+        LPARAM = .TRUE.
+      ELSE
+        LPARAM = .FALSE.
+      ENDIF
 
       IPT1WS=ITOBOUT(IRT1WS)
-      IF (IPT1WS <= 0) LPARAM = .FALSE.
+      IF(IPT1WS.GT.0) THEN
+        LPARAM = .TRUE.
+      ELSE
+        LPARAM = .FALSE.
+      ENDIF
 
       IPMSS=ITOBOUT(IRMSS)
-      IF (IPMSS > 0) THEN
-        LMSS = .TRUE.
+      IF(IPMSS.GT.0) THEN
+        LPARAM = .TRUE.
       ELSE
-        LMSS = .FALSE.
+        LPARAM = .FALSE.
       ENDIF
 
       IPBATHY=ITOBOUT(IRBATHY)
-      IF (IPBATHY > 0) THEN
+      IF(IPBATHY.GT.0) THEN
         LDEPTH = .TRUE.
       ELSE
         LDEPTH = .FALSE.
       ENDIF
 
       IPPHIAW=ITOBOUT(IRPHIAW)
-      IF ( IPPHIAW > 0) THEN
+      IF(IPPHIAW.GT.0) THEN
         LPHIAW = .TRUE.
       ELSE
         LPHIAW = .FALSE.
       ENDIF
 
       IPPHIOC=ITOBOUT(IRPHIOC)
-      IF (IPPHIOC > 0) THEN
+      IF(IPPHIOC.GT.0) THEN
         LPHIOC = .TRUE.
       ELSE
         LPHIOC = .FALSE.
       ENDIF
 
       IPTAUOC=ITOBOUT(IRTAUOC)
-      IF (IPTAUOC > 0) THEN
+      IF(IPTAUOC.GT.0) THEN
         LTAUOC = .TRUE.
       ELSE
         LTAUOC = .FALSE.
@@ -163,8 +189,8 @@
       IF (LPARAM .AND. (.NOT. LLUNSTR)) THEN
         I = MAX(1,NGX/2)
         DO J = 1,NGY
-          IF (GOUT(IPHS,I,J) /= ZMISS) THEN
-            IF (LDEPTH) THEN
+          IF (GOUT(IPHS,I,J).NE.ZMISS) THEN
+            IF(LDEPTH) THEN
               DEPTH=GOUT(IPBATHY,I,J)
             ELSE
               DEPTH=999.0_JWRB
@@ -175,11 +201,7 @@
             CD     = GOUT(IPCD,I,J)
             U10    = GOUT(IPU10,I,J) 
             HS     = GOUT(IPHS,I,J)
-            IF (LMSS) THEN
-              ZMSS   = GOUT(IPMSS,I,J)
-            ELSE
-              ZMSS   = 0.0_JWRB 
-            ENDIF
+            ZMSS   = GOUT(IPMSS,I,J)
             USTAR2 = MAX(CD*MAX(U10**2,EPSU10**2),EPSUS)
             USTAR  = SQRT(USTAR2)
 
@@ -228,20 +250,20 @@
             E_LIM = BETA_K**2/16.0_JWRB
             E_OBS = E_LIM/(1.+T_0/T10)**XP
  
-            IF (LPHIAW) THEN
+            IF(LPHIAW) THEN
               PHIAW=GOUT(IPPHIAW,I,J)
             ELSE
               PHIAW=3.5_JWRB
             ENDIF
 
-            IF (LPHIOC) THEN
+            IF(LPHIOC) THEN
 !             make it positive for comparison with PHIAW
               PHIOC=-GOUT(IPPHIOC,I,J)
             ELSE
               PHIOC=3.5_JWRB
             ENDIF
 
-            IF (LTAUOC) THEN
+            IF(LTAUOC) THEN
               TAUOC=GOUT(IPTAUOC,I,J)
             ELSE
               TAUOC=1.0_JWRB
