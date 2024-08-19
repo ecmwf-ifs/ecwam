@@ -9,7 +9,7 @@
 
 SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
  &                  WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,  &
- &                  WAM2NEMO, NEMO2WAM, FL1)
+ &                  WAM2NEMO, NEMO2WAM, VARS_4D)
 
 ! ----------------------------------------------------------------------
 
@@ -46,8 +46,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : WVGRIDGLO, ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
-     &                         INTGT_PARAM_FIELDS, WAVE2OCEAN, OCEAN2WAVE, FL1_TYPE, &
-                               XLLWS_TYPE, MIJ_TYPE
+     &                         INTGT_PARAM_FIELDS, WAVE2OCEAN, OCEAN2WAVE, TYPE_4D, &
+                               MIJ_TYPE
 
       USE YOWCPBO  , ONLY : IBOUNC   ,GBOUNC  , IPOGBO  , CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,                                  &
@@ -128,7 +128,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       TYPE(INTGT_PARAM_FIELDS), INTENT(INOUT)                                  :: INTFLDS
       TYPE(WAVE2OCEAN), INTENT(INOUT)                                          :: WAM2NEMO
       TYPE(OCEAN2WAVE), INTENT(IN)                                             :: NEMO2WAM
-      TYPE(FL1_TYPE), INTENT(INOUT)                                            :: FL1
+      TYPE(TYPE_4D), INTENT(INOUT)                                             :: VARS_4D
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, J, IRA, KADV, ICH
@@ -140,7 +140,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, MAX(NIPRMOUT,1), NCHNK) :: BOUT
-      TYPE(XLLWS_TYPE) :: XLLWS
 
       CHARACTER(LEN= 2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, CZERO
@@ -180,7 +179,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
         DO ICHNK = 1, NCHNK
           CALL UNSETICE(1, NPROMA_WAM, WVENVI%DEPTH(:,ICHNK), WVENVI%EMAXDPT(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK), &
- &                      FF_NOW%WSWAVE(:,ICHNK), FF_NOW%CICOVER(:,ICHNK), FL1%PTR(:,:,:,ICHNK) )
+ &                      FF_NOW%WSWAVE(:,ICHNK), FF_NOW%CICOVER(:,ICHNK), VARS_4D%FL1(:,:,:,ICHNK) )
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1236,1)
@@ -191,12 +190,11 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !         -----------------------------------------------
       IF (CDTPRO == CDATEA .OR. CDTPRO == CDATEF) THEN
          CALL OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
- &                      WAM2NEMO, NEMO2WAM, FL1%PTR)
+ &                      WAM2NEMO, NEMO2WAM, VARS_4D%FL1)
       ENDIF
 
 
       IF(.NOT. MIJ%LALLOC) CALL MIJ%ALLOC(UBOUNDS=[NPROMA_WAM, NCHNK])
-      IF(.NOT. XLLWS%LALLOC) CALL XLLWS%ALLOC(UBOUNDS=[NPROMA_WAM, NANG, NFRE, NCHNK])
 
 !*    1. ADVECTION/PHYSICS TIME LOOP.
 !        ----------------------------
@@ -259,12 +257,12 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
           CALL WAMINTGR_LOKI_GPU(CDTPRA, CDATE, CDATEWH, CDTIMP, CDTIMPNEXT, &
  &                       BLK2GLO,                                    &
  &                       WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,   &
- &                       WAM2NEMO, MIJ, FL1, XLLWS)
+ &                       WAM2NEMO, MIJ, VARS_4D)
 #else
           CALL WAMINTGR (CDTPRA, CDATE, CDATEWH, CDTIMP, CDTIMPNEXT, &
  &                       BLK2GLO,                                    &
  &                       WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,   &
- &                       WAM2NEMO, MIJ, FL1, XLLWS)
+ &                       WAM2NEMO, MIJ, VARS_4D)
 #endif
           ILOOP = ILOOP +1
         ENDDO
@@ -290,10 +288,10 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !NEST (not used at ECMWF)
 !*      1.4.1 INPUT OF BOUNDARY VALUES.
 !           -------------------------
-        IF (IBOUNF == 1) CALL BOUINPT (IU02, FL1%PTR, NBLKS, NBLKE)
+        IF (IBOUNF == 1) CALL BOUINPT (IU02, VARS_4D%FL1, NBLKS, NBLKE)
 !*      1.4.2 OUTPUT OF BOUNDARY POINTS.
 !           --------------------------
-        IF (IBOUNC == 1) CALL OUTBC (FL1%PTR, BLK2GLO, IU19)
+        IF (IBOUNC == 1) CALL OUTBC (VARS_4D%FL1, BLK2GLO, IU19)
 !NEST
 
 
@@ -301,14 +299,14 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !           ----------------------------------------
         IF ( NGOUT > 0 .AND. (CDTINTT == CDTPRO .OR. LRST) ) THEN
 !           OUTPUT POINT SPECTRA (not usually used at ECMWF)
-            CALL OUTWPSP (FL1%PTR, FF_NOW)
+            CALL OUTWPSP (VARS_4D%FL1, FF_NOW)
         ENDIF
 
 
 !       1.6 COMPUTE OUTPUT PARAMETERS FIELDS AND PRINT OUT NORMS
 !           ----------------------------------------------------
         IF ( (CDTINTT == CDTPRO .OR. LRST) .AND. NIPRMOUT > 0 ) THEN
-          CALL OUTBS (MIJ%PTR, FL1%PTR, XLLWS%PTR, &
+          CALL OUTBS (MIJ%PTR, VARS_4D%FL1, VARS_4D%XLLWS, &
      &                WVPRPT, WVENVI, FF_NOW, INTFLDS, NEMO2WAM,   &
      &                BOUT)
         ENDIF
@@ -361,7 +359,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
                 MARSTYPE='an'
               ENDIF
 
-              CALL OUTSPEC(FL1%PTR, FF_NOW)
+              CALL OUTSPEC(VARS_4D%FL1, FF_NOW)
               LLFLUSH = .TRUE.
 
               MARSTYPE=MARSTYPEBAK
@@ -380,7 +378,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
               WRITE(IU06,*) '  BINARY STRESS FILE DISPOSED AT........ CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
 
-              CALL SAVSPEC(FL1%PTR, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
+              CALL SAVSPEC(VARS_4D%FL1, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
               WRITE(IU06,*) '  BINARY WAVE SPECTRA DISPOSED AT........ CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
               CALL FLUSH(IU06)
@@ -530,7 +528,6 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !*    BRANCHING BACK TO 1.0 FOR NEXT PROPAGATION STEP.
       ENDDO ADVECTION
 
-      IF(XLLWS%LALLOC) CALL XLLWS%DEALLOC()
       IF(MIJ%LALLOC) CALL MIJ%DEALLOC()
 
 IF (LHOOK) CALL DR_HOOK('WAMODEL',1,ZHOOK_HANDLE)
