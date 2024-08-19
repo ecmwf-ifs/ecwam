@@ -20,12 +20,13 @@
       INTEGER(KIND=JWIM) :: NICT, NICH
 
       REAL(KIND=JWRB), PARAMETER   :: FLMIN=0.00001_JWRB ! MINIMUM ENERGY IN SPECTRAL BINS
+      REAL(KIND=JWRB), PARAMETER   :: HICMIN=0.2_JWRB
       REAL(KIND=JWRB)              :: CITHRSH
       REAL(KIND=JWRB)              :: CIBLOCK
       REAL(KIND=JWRB)              :: CITHRSH_SAT
       REAL(KIND=JWRB)              :: CITHRSH_TAIL
       REAL(KIND=JWRB)              :: CDICWA
-      REAL(KIND=JWRB)              :: TICMIN, HICMIN
+      REAL(KIND=JWRB)              :: TICMIN
       REAL(KIND=JWRB)              :: DTIC, DHIC
       REAL(KIND=JWRB)              :: ZALPFACX
       REAL(KIND=JWRB), ALLOCATABLE :: CIDEAC(:,:) 
