@@ -102,10 +102,10 @@ PROGRAM preset
      &            IDELPRO  ,IDELWI   ,IDELWO   ,                        &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,              &
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1      ,    &
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,VARS_4D  ,    &
      &            NBLKS    ,NBLKE
       USE YOWTABL  , ONLY :  FAC0     ,FAC1     ,FAC2     ,FAC3    ,    &
-     &            FAK      ,FRHF      ,DFIMHF    , OMEGA   ,THH     ,   &
+     &            FAK      ,FRHF      ,DFIMHF    , OMEGA   ,THH    ,    &
      &            DFDTH    ,IM_P      ,IM_M     ,TA       ,TB      ,    &
      &            TC_QL    ,TT_4M     ,TT_4P    ,TFAKH
 
@@ -562,7 +562,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       IREAD=1
 
-      IF (.NOT. FL1%LALLOC) CALL FL1%ALLOC(UBOUNDS=[NPROMA_WAM,NANG,NFRE,NCHNK])
+      IF (.NOT. VARS_4D%LALLOC) CALL VARS_4D%ALLOC(UBOUNDS=[NPROMA_WAM,NANG,NFRE,NCHNK])
 
       IF (.NOT. FF_NOW%LALLOC) CALL FF_NOW%ALLOC(UBOUNDS=[NPROMA_WAM,NCHNK]) 
 
@@ -633,7 +633,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         DO ICHNK = 1, NCHNK
           CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,                      &
      &                 FM, ALFA, GAMMA, SA, SB,                          &
-     &                 1, NPROMA_WAM, FL1%PTR(:,:,:,ICHNK),              &
+     &                 1, NPROMA_WAM, VARS_4D%FL1(:,:,:,ICHNK),              &
      &                 FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK))
         ENDDO
 !$OMP END PARALLEL DO
@@ -655,7 +655,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
         DO ICHNK = 1, NCHNK
           CALL MSWELL (1, NPROMA_WAM, BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK), NXFFS, NXFFE, NYFFS, &
-     &                 NYFFE, FIELDG, FL1%PTR(:,:,:,ICHNK) )
+     &                 NYFFE, FIELDG, VARS_4D%FL1(:,:,:,ICHNK) )
         ENDDO
 !$OMP END PARALLEL DO
 
@@ -670,7 +670,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
               DO K=1,NANG
                 DO IPRM = 1, KIJL4CHNK(ICHNK)
                   IJ = IJFROMCHNK(IPRM, ICHNK)
-                  FL1%PTR(IPRM, K, M, ICHNK) = FL1%PTR(IPRM, K, M, ICHNK) * IOBPD(K,IJ)
+                  VARS_4D%FL1(IPRM, K, M, ICHNK) = VARS_4D%FL1(IPRM, K, M, ICHNK) * IOBPD(K,IJ)
                 ENDDO
               ENDDO
             ENDDO
@@ -697,10 +697,10 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       IF (LGRIBOUT) THEN
 !       THE COLD START SPECTRA WILL BE SAVED AS GRIB FILES.
         CDTPRO  = CDATEA
-        CALL OUTSPEC(FL1%PTR, FF_NOW)
+        CALL OUTSPEC(VARS_4D%FL1, FF_NOW)
 
       ELSE
-        CALL SAVSPEC(FL1%PTR, NBLKS, NBLKE, CDATEA, CDATEA, CDUM)
+        CALL SAVSPEC(VARS_4D%FL1, NBLKS, NBLKE, CDATEA, CDATEA, CDUM)
       ENDIF
 
 ! ----------------------------------------------------------------------

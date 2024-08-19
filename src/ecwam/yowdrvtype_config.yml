@@ -49,14 +49,10 @@ objtypes:
      rank: 2
      types: [ocean]
      vars: [[nemosst, nemocicover, nemocithick, nemoucur, nemovcur]]
-  fl1_type:
+  type_4d:
      rank: 4
      types: [real]
-     vars: [[ptr]]
-  xllws_type:
-     rank: 4
-     types: [real]
-     vars: [[ptr]]
+     vars: [[fl1, xllws]]
   mij_type:
      rank: 2
      types: [int]
