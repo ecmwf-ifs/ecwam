@@ -158,13 +158,6 @@
         LPARAM = .FALSE.
       ENDIF
 
-      IPMSS=ITOBOUT(IRMSS)
-      IF(IPMSS.GT.0) THEN
-        LPARAM = .TRUE.
-      ELSE
-        LPARAM = .FALSE.
-      ENDIF
-
       IPBATHY=ITOBOUT(IRBATHY)
       IF(IPBATHY.GT.0) THEN
         LDEPTH = .TRUE.
