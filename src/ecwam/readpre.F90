@@ -346,17 +346,31 @@ SUBROUTINE READPRE (LLBATHY)
 
          ELSE
             READ(IU07,IOSTAT=ISTAT) IPER, IRGG, &
+#ifdef WAM_HAVE_SINGLE_PRECISION
+     &                              AMOWEP, AMOSOP, AMOEAP, AMONOP, &
+     &                              XDELLA, XDELLO
+#else
      &                              DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, &
      &                              DXDELLA, DXDELLO
+#endif
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
 
+#ifdef WAM_HAVE_SINGLE_PRECISION
+         DAMONOP = REAL(AMONOP,JWRU)
+         DAMOSOP = REAL(AMOSOP,JWRU)
+         DAMOWEP = REAL(AMOWEP,JWRU)
+         DAMOEAP = REAL(AMOEAP,JWRU)
+         DXDELLA = REAL(XDELLA,JWRU)
+         DXDELLO = REAL(XDELLO,JWRU)
+#else
          AMONOP = REAL(DAMONOP,JWRB)
          AMOSOP = REAL(DAMOSOP,JWRB)
          AMOWEP = REAL(DAMOWEP,JWRB)
          AMOEAP = REAL(DAMOEAP,JWRB)
          XDELLA = REAL(DXDELLA,JWRB)
          XDELLO = REAL(DXDELLO,JWRB)
+#endif
 
       CASE(5)
          IF (LLR8TOR4) THEN
