@@ -98,23 +98,23 @@ validation:
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1549675583839417E+01
+      average: 0.1549676537513733E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF8CB78A0000000']
+      hashes: ['0x3FF8CB79A0000000']
 
     # 6h into forcast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1632507562637329E+01
+      average: 0.1632507443428040E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FFA1EC040000000']
+      hashes: ['0x3FFA1EC020000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.1923941448330879E-01
+      minimum: 0.1923948153853416E-01
       relative_tolerance: 1.e-6
-      hashes: ['0x3F93B37F40000000']
+      hashes: ['0x3F93B383C0000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.6803315162658691E+01
+      maximum: 0.6803345680236816E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x401B369840000000']
+      hashes: ['0x401B36A040000000']
