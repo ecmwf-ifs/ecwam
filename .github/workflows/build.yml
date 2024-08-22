@@ -85,7 +85,7 @@ jobs:
             compiler_cxx: ~
             compiler_fc: gfortran-13
             python-version: '3.11'
-            caching: false
+            caching: true
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -115,12 +115,6 @@ jobs:
           brew install libomp
           brew install libaec
           brew install coreutils
-          brew install pyenv
-
-          pyenv install 3.11.4
-          pyenv global 3.11.4
-
-          echo "LOKI_PYTHON_ROOT_DIR=$HOME/.pyenv/versions/3.11.4/bin" >> $GITHUB_ENV
         else
           sudo apt-get update
           sudo apt-get install libaec-dev
@@ -195,7 +189,7 @@ jobs:
           ecmwf-ifs/fiat: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF"
           ecmwf/eccodes: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_MEMFS=ON -DENABLE_JPG=OFF -DENABLE_PNG=OFF"
           ecmwf-ifs/field_api: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_ACC=OFF -DENABLE_SINGLE_PRECISION=OFF"
-          ecmwf-ifs/loki: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DPython3_ROOT_DIR=${{ env.LOKI_PYTHON_ROOT_DIR }}
+          ecmwf-ifs/loki: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF"
         cmake_options: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.cmake_options }} -DENABLE_MPI=ON -DENABLE_LOKI=ON -DLOKI_MODE=idem-stack"
         ctest_options: "${{ matrix.ctest_options }}"
 
