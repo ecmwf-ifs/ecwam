@@ -33,7 +33,7 @@ jobs:
         build_type: [Release]
         name:
           - linux gnu-10
-          - linux clang-12
+          - linux gnu-14
           - linux intel-classic
           - macos
           # - linux nvhpc-21.9
@@ -46,23 +46,16 @@ jobs:
             compiler_cc: gcc-10
             compiler_cxx: g++-10
             compiler_fc: gfortran-10
+            python-version: '3.8'
             caching: true
 
-          - name: linux clang-12
-            os: ubuntu-20.04
-            compiler: clang-12
-            compiler_cc: clang-12
-            compiler_cxx: clang++-12
-            compiler_fc: gfortran-10
-            caching: true
-
-          - name: linux clang-12
-            build_type: Release
-            os: ubuntu-20.04
-            compiler: clang-12
-            compiler_cc: clang-12
-            compiler_cxx: clang++-12
-            compiler_fc: gfortran-10
+          - name: linux gnu-14
+            os: ubuntu-24.04
+            compiler: gnu-14
+            compiler_cc: gcc-14
+            compiler_cxx: g++-14
+            compiler_fc: gfortran-14
+            python-version: '3.11'
             caching: true
 
 # Disable due to problematic environment
@@ -81,6 +74,7 @@ jobs:
             compiler_cc: icc
             compiler_cxx: icpc
             compiler_fc: ifort
+            python-version: '3.8'
             caching: true
 
           - name: macos
@@ -90,10 +84,16 @@ jobs:
             compiler_cc: ~
             compiler_cxx: ~
             compiler_fc: gfortran-13
+            python-version: '3.11'
             caching: false
 
     runs-on: ${{ matrix.os }}
     steps:
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
     - name: Checkout Repository
       uses: actions/checkout@v2
 
@@ -193,7 +193,7 @@ jobs:
         dependency_cmake_options: |
           ecmwf/fckit: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_FCKIT_VENV=ON"
           ecmwf-ifs/fiat: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF"
-          ecmwf/eccodes: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_MEMFS=ON -DENABLE_JPG=OFF"
+          ecmwf/eccodes: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_MEMFS=ON -DENABLE_JPG=OFF -DENABLE_PNG=OFF"
           ecmwf-ifs/field_api: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_ACC=OFF -DENABLE_SINGLE_PRECISION=OFF"
           ecmwf-ifs/loki: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DPython3_ROOT_DIR=${{ env.LOKI_PYTHON_ROOT_DIR }}
         cmake_options: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.cmake_options }} -DENABLE_MPI=ON -DENABLE_LOKI=ON -DLOKI_MODE=idem-stack"
