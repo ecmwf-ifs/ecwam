@@ -34,9 +34,9 @@ jobs:
         name:
           - linux gnu-10
           - linux gnu-14
+          - linux nvhpc-21.9
           - linux intel-classic
           - macos
-          # - linux nvhpc-21.9
 
         include:
 
@@ -58,15 +58,15 @@ jobs:
             python-version: '3.11'
             caching: true
 
-# Disable due to problematic environment
-#          - name: linux nvhpc-21.9
-#            os: ubuntu-20.04
-#            compiler: nvhpc-21.9
-#            compiler_cc: nvc
-#            compiler_cxx: nvc++
-#            compiler_fc: nvfortran
-#            cmake_options: -DCMAKE_CXX_FLAGS=--diag_suppress177
-#            caching: true
+          - name: linux nvhpc-21.9
+            os: ubuntu-20.04
+            compiler: nvhpc-21.9
+            compiler_cc: nvc
+            compiler_cxx: nvc++
+            compiler_fc: nvfortran
+            cmake_options: -DCMAKE_CXX_FLAGS=--diag_suppress177
+            python-version: '3.8'
+            caching: false
 
           - name : linux intel-classic
             os: ubuntu-20.04
