@@ -94,7 +94,7 @@
       TYPE(ENVIRONMENT), INTENT(INOUT) :: WVENVI
 
 
-      INTEGER(KIND=JWIM) :: NBIT = 1000000
+      INTEGER(KIND=JWIM) :: NBIT = 1100000
 
       INTEGER(KIND=JWIM) :: KFILE_HANDLE1
       INTEGER(KIND=JWIM) :: LFILE, KGRIB_HANDLE
@@ -244,6 +244,8 @@
 
        CDATEIN_OLD=CDATEIN
 
+          write(*,*) 'debile current2wam iparam ', iparam
+          write(*,*) 'debile current2wam before ', NXS, NXE, NYS, NYE, NCHNK, NPROMA_WAM 
 
         IF (IPARAM == 131 .OR. IPARAM == 140) THEN
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
@@ -251,6 +253,9 @@
             DO IJ = 1, NPROMA_WAM 
               IX = BLK2LOC%IFROMIJ(IJ, ICHNK)
               JY = BLK2LOC%JFROMIJ(IJ, ICHNK)
+
+          write(*,*) 'debile current2wam ',IX,JY, ICHNK, IJ
+
               WVENVI%UCUR(IJ,ICHNK) = FIELD(IX,JY)
 !             SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
 !             OCEAN MODEL. THEY ARE SET TO 0.
