@@ -24,7 +24,7 @@ projects :
 
     - fckit :
         git     : git@github.com:awnawab/fckit.git 
-        version : feature/yaml_reader
+        version : 0.13.0
         cmake   : ENABLE_FCKIT_VENV=ON
 
     - fiat :
