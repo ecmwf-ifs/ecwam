@@ -147,6 +147,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWASSI  , ONLY : WAMASSI
       USE YOWGRIB  , ONLY : IGRIB_GET_VALUE
       USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_GATHERV
+      USE FIELD_DEFAULTS_MODULE, ONLY : INIT_PINNED_VALUE
 #ifdef WAM_HAVE_ECFLOW
       USE ECFLOW_LIGHT, ONLY : ECFLOW_LIGHT_UPDATE_METER
 #endif
@@ -305,6 +306,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !         --------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',0,ZHOOK_HANDLE)
+
+#ifdef _CUDA
+!.... Enable pinning of fields in page-locked memory
+      INIT_PINNED_VALUE=.TRUE.
+#endif
 
       NDATE_TIME_WINDOW_END=IDATE_TIME_WINDOW_END
 
