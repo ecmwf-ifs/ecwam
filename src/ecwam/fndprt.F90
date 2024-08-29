@@ -100,7 +100,7 @@
       INTEGER(KIND=JWIM) :: NANGH, KK, KKMIN, KKMAX
       INTEGER(KIND=JWIM) :: IFRL, ITHL, ITHR
       INTEGER(KIND=JWIM), DIMENSION(KIJL) :: MMIN, MMAX
-      INTEGER(KIND=JWIM), DIMENSION(1-NANG:2*NANG) :: KLOC
+      INTEGER(KIND=JWIM), DIMENSION(3*NANG) :: KLOC
 
       REAL(KIND=JWRB) :: HALF_SECTOR
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -155,7 +155,7 @@
           KKMIN=ITHC-NANGH
           KKMAX=ITHC+NANGH
           DO KK=KKMIN,KKMAX
-            KLOC(KK)=1+MOD(NANG+KK-1,NANG)
+            KLOC(KK+NANG)=1+MOD(NANG+KK-1,NANG)
           ENDDO
 
 !*        1.  SET UP THE W2 MAP
@@ -180,7 +180,7 @@
 !         FIND IF MORE HIGH FREQUENCY BINS HAVE BECOME EXCLUDED
           OUT0: DO M=MMAX(IJ),MMIN(IJ),-1
             DO KK=KKMIN,KKMAX
-              K=KLOC(KK)
+              K=KLOC(KK+NANG)
               IF (W1(IJ,K,M) < 1.0_JWRB) THEN
                 MMAX(IJ)=M
                 EXIT OUT0
@@ -205,7 +205,7 @@
 !           by definition bins beyond M=MIJ are never extremas
 !           and bins above MMAX are excluded.
             DO KK=KKMIN,KKMAX
-              K = KLOC(KK)
+              K = KLOC(KK+NANG)
 
               IF (LLW3(IJ,K,M)) THEN
                 IF (W2(K,M) == 0.5_JWRB .AND.                           &
@@ -235,7 +235,7 @@
 
           DO M=MMIN(IJ),MMAX(IJ)
             DO KK=KKMIN,KKMAX
-              K=KLOC(KK)
+              K=KLOC(KK+NANG)
 
               IF (LLW3(IJ,K,M) .AND. W1(IJ,K,M) < 1.0_JWRB) THEN
                 IF (W2(K,M) == 0.0_JWRB) THEN

@@ -107,6 +107,7 @@
 
       IF(LLPEAKF) THEN
 !     COMPUTATION IS BASED ON THE PEAK FREQUENCY
+        !$loki inline
         CALL PEAKFRI (KIJS, KIJL, F, IFRINDEX, TEMP, F1D)
         !$loki inline
         CALL SCOSFL (KIJS, KIJL, F, IFRINDEX, WDIRSPRD)
