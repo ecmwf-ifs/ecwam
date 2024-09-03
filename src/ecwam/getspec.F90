@@ -153,10 +153,14 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
       LOGICAL :: LFRSDECODE, LOUNIT, LCUNIT, LLEXIST
       LOGICAL :: LLRESIZING=.FALSE.
       LOGICAL :: LLEPSMIN=.TRUE.
+      LOGICAL :: LLCHKINT
 
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
+
+      WRITE(IU06,*)' GETSPEC :'
+      CALL FLUSH(IU06)
 
       LFRSDECODE=.TRUE.
 
@@ -242,7 +246,8 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
 
         LLINIALL = .FALSE.
         LLOCAL = .FALSE.
-        CALL FIELDG%ALLOC(NXFFS, NYFFS, NXFFE, NYFFE)
+        CALL FIELDG%ALLOC(NXFFS, NYFFS, UBND0=NXFFE, UBND1=NYFFE)
+
         CALL INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,         &
      &                   NXFFS, NXFFE, NYFFS, NYFFE, FIELDG)
 
@@ -395,9 +400,11 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
 
               IF (.NOT.ALLOCATED(FIELD)) ALLOCATE(FIELD(NXFFS:NXFFE, NYFFS:NYFFE))
 
+              LLCHKINT = .TRUE.
+
               CALL GRIB2WGRID (IU06, NPROMA_WAM,                           &
      &                         KGRIB_HANDLE, INGRIB, ISIZE,                &
-     &                         LLUNSTR,                                    &
+     &                         LLUNSTR, LLCHKINT,                          &
      &                         NGY, IRGG, NLONRGG_LOC,                     &
      &                         NXFFS, NXFFE, NYFFS, NYFFE,                 &
      &                         FIELDG%XLON, FIELDG%YLAT,                   &

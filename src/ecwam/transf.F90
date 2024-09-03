@@ -27,6 +27,7 @@ REAL(KIND=JWRB) FUNCTION TRANSF(XK,D)
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPCONS , ONLY : G     ,DKMAX
+      USE YOWSHAL  , ONLY : BATHYMAX
 
 !----------------------------------------------------------------------
  
@@ -41,7 +42,7 @@ REAL(KIND=JWRB) FUNCTION TRANSF(XK,D)
 !*    1. DETERMINE TRANSFER FUNCTION.
 !     ------------------------------
 !     
-      IF ( D < 999.0_JWRB .AND. D > 0.0_JWRB) THEN
+      IF ( D < BATHYMAX .AND. D > 0.0_JWRB ) THEN
         X   = XK*D
         IF ( X > DKMAX) THEN
           TRANSF = 1.0_JWRB 

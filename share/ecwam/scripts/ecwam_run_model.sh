@@ -234,6 +234,7 @@ cat > wam_namelist << EOF
   LWAMRSETCI            = T,
   NGRIB_VERSION         = 2,
   LL_GRID_SIMPLE_MATRIX = F,
+  LLRSTGRIBPARAM        = F,
   YCLASS                = "rd",
   YEXPVER               = "wave",
   ISTREAM               = 1045,

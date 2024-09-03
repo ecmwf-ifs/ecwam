@@ -57,14 +57,14 @@
       DO IR=1,JPPFLAG
         ITG=ITOBOUT(IR)
         IF (ITG > 0) THEN
-          IF (LICERUN .AND. LLSOURCE .AND. IPRMINFO(IR,4) == 1) THEN
+          IF (LICERUN .AND. LLSOURCE .AND. IPRMINFO(IR,6) == 1) THEN
 !         SEA ICE MASK IS APPLIED
             DO IJ = KIJS,KIJL
               IF (CICVR(IJ).GT.CITHRSH) BOUT(IJ,ITG) = ZMISS
             ENDDO
           ENDIF
 
-          IF (IPRMINFO(IR,5) == 1) THEN
+          IF (IPRMINFO(IR,7) == 1) THEN
 !           SEA MASK IS APPLIED
             DO IJ = KIJS,KIJL
               BOUT(IJ,ITG) = BOUT(IJ,ITG)*IODP(IJ) + (1-IODP(IJ))*ZMISS

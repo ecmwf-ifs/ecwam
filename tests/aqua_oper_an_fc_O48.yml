@@ -63,26 +63,26 @@ validation:
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1425982036075319E+01
+      average: 0.1425979388088682E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF6D0D28A1A0822']
+      hashes: ['0x3FF6D0CFC349C696']
 
     # 6h into forcast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1471509167964060E+01
+      average: 0.1471503498904419E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF78B4D3282B78A']
+      hashes: ['0x3FF78B4740BBE7A2']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.1756715428109141E-01
+      minimum: 0.1756714115743948E-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3F91FD1FC47BFAD2']
+      hashes: ['0x3F91FD1EE3058C55']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.6986915905172929E+01
+      maximum: 0.6986921341138695E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x401BF29A15427AD9']
+      hashes: ['0x401BF29B820FA91E']
 
   single_precision:
 
@@ -96,23 +96,23 @@ validation:
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1425068497657776E+01
+      average: 0.1425065159797668E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF6CD14A0000000']
+      hashes: ['0x3FF6CD1120000000']
 
     # 6h into forcast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1471558213233948E+01
+      average: 0.1471552491188049E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF78B80A0000000']
+      hashes: ['0x3FF78B7AA0000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.1756714656949043E-01
+      minimum: 0.1756713353097439E-01
       relative_tolerance: 1.e-6
-      hashes: ['0x3F91FD1F40000000']
+      hashes: ['0x3F91FD1E60000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.6986911773681641E+01
+      maximum: 0.6986916542053223E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x401BF29900000000']
+      hashes: ['0x401BF29A40000000']

@@ -50,5 +50,8 @@ export MPL_MBX_SIZE=${MPL_MBX_SIZE:-${MBX_SIZE}}
 
 [[ ! (-d ${ecwam_ROOT}/bin) ]] || export PATH=${ecwam_ROOT}/bin:${ecwam_ROOT}/share/${ECWAM_PROJECT_NAME}/scripts:$PATH
 
+# Allow MPI to be initialised outside of DR_HOOK
+export DR_HOOK_ASSERT_MPI_INITIALIZED=0
+
 # export python interpreter
 export ECWAM_PYTHON_INTERP=@ECWAM_PYTHON_INTERP@

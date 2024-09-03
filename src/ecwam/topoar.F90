@@ -43,7 +43,7 @@
 !       GRID ARRANGED FROM SOUTH TO NORTH, AND FROM WEST TO EAST.
 !       IT IS ASSUMED THAT NEGATIVE VALUES ARE SEA DEPTHS (WHICH
 !       ARE CONVERTED TO POSITIVE) AND THAT POSITIVE VALUES ARE
-!       LAND ELEVATIONS (WHICH ARE CONVERTED TO -999 IDENTIFIERS).
+!       LAND ELEVATIONS (WHICH ARE CONVERTED TO ZMISS=-999 IDENTIFIERS).
 
 !       THE TOPOGRAPHIC DATA IS READ IN ON THE INPUT GRID AND IT
 !       IS STORED ONLY FOR THOSE LATITUDES WITHIN THE REQUESTED
@@ -79,6 +79,7 @@
       USE YOWMAP   , ONLY : NGX      ,NGY      ,AMOWEP   ,AMOSOP   ,    &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            NLONRGG  ,LLOBSTRCT
+      USE YOWPCONS , ONLY : ZMISS
       USE YOWTEST  , ONLY : IU06, ITEST
 
 ! ----------------------------------------------------------------------
@@ -147,12 +148,12 @@
       CALL ADJUST (XLOW, XLOE)
 
       WRITE (IU06,'(1H1,'' INPUT GRID''/)')
-      WRITE (IU06,'(3X,''RESOLUTION LAT-LON '',2F8.3)') XDELA, XDELO
+      WRITE (IU06,'(3X,''RESOLUTION LAT-LON '',2F9.4)') XDELA, XDELO
       WRITE (IU06,'(3X,'' SOUTHERN LAT '','' NORTHERN LAT '',           &
      &                 '' WESTERN LONG '','' EASTERN LONG'',            &
      &                 /,2X,4F13.8)') XLAS, XLAN, XLOW, XLOE
 
-      BATHY(:,:) = 999.0_JWRB
+      BATHY(:,:) = -ZMISS 
 
       IF (LLOBSTRCT) THEN
 !     NEW TREATMENT OF BATHYMETRY INPUT
@@ -457,7 +458,7 @@
 ! ----------------------------------------------------------------------
 
 !*    4. CONVERT INPUT DEPTH TO MODEL DEPTH
-!*       POSITIVE SEA DEPTH IN METRES (-999  FOR LAND).
+!*       POSITIVE SEA DEPTH IN METRES (ZMISS=-999  FOR LAND).
 !        ----------------------------------------------
 
       DO J=1,NGY
@@ -465,7 +466,7 @@
           IF (BATHY(I,J) < 0.0_JWRB) THEN
             BATHY(I,J) = -BATHY(I,J)
           ELSE
-            BATHY(I,J) = -999.0_JWRB
+            BATHY(I,J) = ZMISS
           ENDIF
         ENDDO
       ENDDO
@@ -502,12 +503,12 @@
 !        ------------------------------------
 
       WRITE (IU06,'(''0NUMBER OF LATITUDES IS       NGY = '',I5)') NGY
-      WRITE (IU06,'('' MOST SOUTHERN LATITUDE IS AMOSOP = '',F7.3)') AMOSOP
-      WRITE (IU06,'('' MOST NORTHERN LATITUDE IS AMONOP = '',F7.3)') AMONOP 
-      WRITE (IU06,'('' LATITUDE INCREMENT IS     XDELLA = '',F7.3)') XDELLA
-      WRITE (IU06,'(''0MAX NUMBER OF LONGITUDES IS  NGX = '',I5)') NGX
-      WRITE (IU06,'('' MOST WESTERN LONGITUDE IS AMOWEP = '',F7.3)') AMOWEP
-      WRITE (IU06,'('' MOST EASTERN LONGITUDE IS AMOEAP = '',F7.3)') AMOEAP
+      WRITE (IU06,'('' MOST SOUTHERN LATITUDE IS AMOSOP = '',F12.7)') AMOSOP
+      WRITE (IU06,'('' MOST NORTHERN LATITUDE IS AMONOP = '',F12.7)') AMONOP 
+      WRITE (IU06,'('' LATITUDE INCREMENT IS     XDELLA = '',F12.7)') XDELLA
+      WRITE (IU06,'('' MAX NUMBER OF LONGITUDES IS  NGX = '',I5)') NGX
+      WRITE (IU06,'('' MOST WESTERN LONGITUDE IS AMOWEP = '',F12.7)') AMOWEP
+      WRITE (IU06,'('' MOST EASTERN LONGITUDE IS AMOEAP = '',F12.7)') AMOEAP
       WRITE (IU06,                                                      &
      &     '('' LONGITUDE INCREMENT AS FUNCTION OF LATITUDE IS'')')
       WRITE (IU06,'(10F8.3)') ZDELLO

@@ -39,6 +39,13 @@
       REAL(KIND=JWRB)                 :: XDELLO 
       REAL(KIND=JWRB), ALLOCATABLE    :: ZDELLO(:) 
 
+      REAL(KIND=JWRU)                 :: DAMOWEP 
+      REAL(KIND=JWRU)                 :: DAMOSOP 
+      REAL(KIND=JWRU)                 :: DAMOEAP 
+      REAL(KIND=JWRU)                 :: DAMONOP 
+      REAL(KIND=JWRU)                 :: DXDELLA 
+      REAL(KIND=JWRU)                 :: DXDELLO 
+
       CHARACTER(LEN=1)   :: CLDOMAIN
 
       LOGICAL              :: LLOBSTRCT

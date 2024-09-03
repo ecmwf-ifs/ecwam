@@ -44,7 +44,7 @@
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,NFLAG     ,   &
      &            IPFGTBL  ,NIPRMOUT ,ITOBOUT  ,IRCD     ,IRU10     ,   &
      &            IRHS     ,IRTP     ,IRT1     ,IRPHIAW  ,IRPHIOC   ,   &
-     &            IRTAUOC  , IRHSWS  ,IRT1WS   ,IRBATHY 
+     &            IRTAUOC  , IRHSWS  ,IRT1WS   ,IRBATHY  ,IRMSS 
       USE YOWGRID  , ONLY : DELPHI
       USE YOWINTP  , ONLY : GOUT
       USE YOWMAP   , ONLY : NGX      ,NGY
@@ -62,10 +62,10 @@
 
       INTEGER(KIND=JWIM) :: IU06, IU_INTP
       INTEGER(KIND=JWIM) :: ITIME, I, J
-      INTEGER(KIND=JWIM) :: IPHS, IPCD, IPU10, IPTP, IPT1, IPPHIAW, IPPHIOC, IPTAUOC
+      INTEGER(KIND=JWIM) :: IPHS, IPCD, IPU10, IPTP, IPT1, IPPHIAW, IPPHIOC, IPTAUOC, IPMSS
       INTEGER(KIND=JWIM) :: IPHSWS, IPT1WS, IPBATHY
 
-      REAL(KIND=JWRB) :: CD, U10, HS, HSWS, USTAR2, USTAR, TSTAR, DSTAR, WAGEP
+      REAL(KIND=JWRB) :: CD, U10, HS, HSWS, USTAR2, USTAR, TSTAR, DSTAR, WAGEP, ZMSS
       REAL(KIND=JWRB) :: E, ESTAR, FMSTAR, TSTAR_0, XP, BETA_K, ALPHA_K
       REAL(KIND=JWRB) :: E_LIM, E_STAR_OBS, FP, XNUSTAR, XNU_OBS
       REAL(KIND=JWRB) :: CDSQRTINV, Z0, BETA, DFETCH, FETCHSTAR  
@@ -151,6 +151,13 @@
         LPARAM = .FALSE.
       ENDIF
 
+      IPMSS=ITOBOUT(IRMSS)
+      IF(IPMSS.GT.0) THEN
+        LPARAM = .TRUE.
+      ELSE
+        LPARAM = .FALSE.
+      ENDIF
+
       IPBATHY=ITOBOUT(IRBATHY)
       IF(IPBATHY.GT.0) THEN
         LDEPTH = .TRUE.
@@ -194,6 +201,7 @@
             CD     = GOUT(IPCD,I,J)
             U10    = GOUT(IPU10,I,J) 
             HS     = GOUT(IPHS,I,J)
+            ZMSS   = GOUT(IPMSS,I,J)
             USTAR2 = MAX(CD*MAX(U10**2,EPSU10**2),EPSUS)
             USTAR  = SQRT(USTAR2)
 
@@ -268,7 +276,7 @@
      &                       USTAR,CD,BETA,T10,FETCH10,E10,             &
      &                       TSTAR, FMSTAR, DSTAR, ESTAR,               &
      &                       PHIAW, PHIOC, TAUOC, Tws, Fws, Ews, HSWS,  &
-     &                       WAGEP 
+     &                       WAGEP, ZMSS
 
             WRITE(IU06,61) NGY-J+1,DEPTH,ITIME/3600.0_JWRB,             &
      &                     TSTAR,FETCHSTAR,HS,FP,ESTAR,                 &
@@ -276,7 +284,7 @@
      &                     USTAR,CD,BETA,T10,FETCH10,E10,               &
      &                     TSTAR, FMSTAR, DSTAR, ESTAR,                 &
      &                     PHIAW, PHIOC, TAUOC, Tws, Fws, Ews, HSWS,    &
-     &                     WAGEP 
+     &                     WAGEP, ZMSS
 
           ENDIF
         ENDDO
@@ -292,9 +300,9 @@
         CALL ABORT1
       ENDIF
    60 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,4E12.3,F6.1,F7.3,                &
-     &       2F12.5,2E10.3,15(1x,F15.5))
+     &       2F12.5,2E10.3,16(1x,F15.5))
    61 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,2F10.3,2F8.5,F6.1,F7.3,          &
-     &       2F12.5,2E10.3,15(1x,F15.5))
+     &       2F12.5,2E10.3,16(1x,F15.5))
 !!
 !     YOUNG-VERHAGEN LIMITS
 ! 

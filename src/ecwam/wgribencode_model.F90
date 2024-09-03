@@ -7,9 +7,9 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE WGRIBENCODE_MODEL (IU06, ITEST, I1, I2, FIELD,   &
- &                            ITABLE, IPARAM, KLEV, IK, IM, &
- &                            CDATE, IFCST, MARSTYPE,       &
+SUBROUTINE WGRIBENCODE_MODEL (IU06, ITEST, I1, I2, FIELD,                 &
+ &                            ITABLE, IPARAM, KLEV, ITMIN, ITMAX, IK, IM, &
+ &                            CDATE, IFCST, MARSTYPE,                     &
  &                            IGRIB_HANDLE)
 
 ! ----------------------------------------------------------------------
@@ -39,6 +39,8 @@ SUBROUTINE WGRIBENCODE_MODEL (IU06, ITEST, I1, I2, FIELD,   &
 !          *IPARAM*  PARAMETER IDENTIFIER.
 !          *KLEV*    REFERENCE LEVEL IN full METER
 !                    (SHOULD BE 0 EXCEPT FOR 233 AND 245)
+!          *ITMIN*   MINIMUM WAVE PERIOD FOR WHICH THE PARAMETER IS DEFINED (s)
+!          *ITMAX*   MAXIMUM WAVE PERIOD FOR WHICH THE PARAMETER IS DEFINED (s)
 !          *IK*      DIRECTION INDEX,
 !                    ONLY MEANINGFUL FOR SPECTRAL PARAMETERS.
 !          *IM*      FREQUENCY INDEX,
@@ -64,7 +66,7 @@ SUBROUTINE WGRIBENCODE_MODEL (IU06, ITEST, I1, I2, FIELD,   &
  USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_I2, NGRIB_HANDLE_WAM_S         ! To clone
  USE YOWGRIBHD, ONLY : PPMISS   , PPEPS    ,PPREC    ,NTENCODE ,  &
             NGRBRESS ,PPRESOL  ,LGRHDIFS ,LNEWLVTP  ,PPMIN_RESET, &
-            LPADPOLES, NDATE_TIME_WINDOW_END,NWINOFF
+            LPADPOLES, NDATE_TIME_WINDOW_END
  USE YOWMAP   , ONLY : IRGG, AMONOP, AMOSOP, XDELLA, NLONRGG, CLDOMAIN
  USE YOWCOUP  , ONLY : KCOUSTEP
  USE YOWCOUT  , ONLY : LRSTST0
@@ -79,15 +81,19 @@ SUBROUTINE WGRIBENCODE_MODEL (IU06, ITEST, I1, I2, FIELD,   &
 #include "wgribencode.intfb.h"
 
  INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, I1, I2
- INTEGER(KIND=JWIM), INTENT(IN) :: ITABLE, IPARAM, KLEV, IK, IM, IFCST
+ INTEGER(KIND=JWIM), INTENT(IN) :: ITABLE, IPARAM, KLEV, ITMIN, ITMAX, IK, IM, IFCST
  INTEGER(KIND=JWIM), INTENT(OUT) :: IGRIB_HANDLE
  CHARACTER(LEN=2), INTENT(IN) :: MARSTYPE
  CHARACTER(LEN=14), INTENT(IN) :: CDATE
  REAL(KIND=JWRB), INTENT(INOUT) :: FIELD(I1,I2)
 
+ INTEGER(KIND=JWIM) :: ITABPAR
 
  INTEGER(KIND=JWIM) :: IPARAMID
  REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+
+ LOGICAL :: LLSPECNOT251  ! true if spectral encoding is required for a paramId other than 140251
+                          ! In that case the log10 rescaling will not be used !!!
 
 ! ----------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('WGRIBENCODE_MODEL',0,ZHOOK_HANDLE)
@@ -98,11 +104,24 @@ IF (ITEST > 0) THEN
    CALL FLUSH(IU06)
 ENDIF
 
+IF (ITABLE == 128) THEN
+!       it seems that then default table is not used when defining paramId !
+  ITABPAR=IPARAM
+ELSE
+  ITABPAR=ITABLE*1000+IPARAM
+ENDIF
+
+IF ( ITABPAR /= 140251 .AND. IK > 0 .AND. IM > 0 ) THEN
+  LLSPECNOT251 = .TRUE.
+ELSE
+  LLSPECNOT251 = .FALSE.
+ENDIF
+
 !     CLONE GRIB TEMPLATE:
 
 IPARAMID=1000*ITABLE+IPARAM
 
-IF (IPARAM == 251) THEN
+IF (ITABPAR == 140251 .OR. LLSPECNOT251 ) THEN
    IF (LGRHDIFS) THEN
      CALL PRESET_WGRIB_TEMPLATE("S",IGRIB_HANDLE)
    ELSE
@@ -133,6 +152,7 @@ CALL WGRIBENCODE( IU06, ITEST, &
  &                FIELD, &
  &                ITABLE, IPARAM, &
  &                KLEV, &
+ &                ITMIN, ITMAX, &
  &                IK, IM, &
  &                CDATE, IFCST, MARSTYPE, &
  &                PPMISS, PPEPS, PPREC, PPRESOL, PPMIN_RESET, NTENCODE, &

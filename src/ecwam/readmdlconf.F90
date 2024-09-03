@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE READMDLCONF (IU07)
+SUBROUTINE READMDLCONF (LLREADPRE, LLREADBATHY)
 
 ! ----------------------------------------------------------------------
 
@@ -22,16 +22,18 @@ SUBROUTINE READMDLCONF (IU07)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWABORT , ONLY : WAM_ABORT
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
      &            IJS      ,IJL
       USE YOWMAP   , ONLY : BLK2GLO  ,NGX      ,NGY      ,NIBLO    ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG  ,    &
      &            IQGAUSS
+      USE YOWMPP   , ONLY : IRANK
       USE YOWPCONS , ONLY : CIRC     ,RAD
       USE YOWSHAL  , ONLY : BATHY    ,LLOCEANMASK
       USE YOWTEST  , ONLY : IU06
-      USE YOWABORT , ONLY : WAM_ABORT
+      USE YOWUNIT  , ONLY : IREADG
 
       USE MPL_MODULE,ONLY : MPL_BARRIER
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -42,59 +44,82 @@ SUBROUTINE READMDLCONF (IU07)
 #include "abort1.intfb.h"
 #include "readpre.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IU07
+      LOGICAL, INTENT(IN), OPTIONAL :: LLREADPRE ! if true *READPRE* will be called 
+      LOGICAL, INTENT(IN), OPTIONAL :: LLREADBATHY  ! if true *READPRE* will read and use array BATHY 
+
       INTEGER(KIND=JWIM) :: IREAD
       INTEGER(KIND=JWIM) :: IP, I, K
 
-      REAL(KIND=JWRB), PARAMETER :: XLATMAX=87.5_JWRB
+      REAL(KIND=JWRB), PARAMETER :: XLATMAX=87.5_JWRB  !! USE REMOVE THE SINGULARITY AT THE POLES
+
       REAL(KIND=JWRB) :: XLAT, ZLONS, COSPHMIN
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
+      LOGICAL :: LLREAD, LLBATHY
+
 ! ----------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('READMDLCONF',0,ZHOOK_HANDLE)
 
-      IF (LHOOK) CALL DR_HOOK('READMDLCONF',0,ZHOOK_HANDLE)
-
-
-      CALL MPL_BARRIER(CDSTRING='READMDLCONF:')
-      CALL READPRE (IU07)
-      CALL MPL_BARRIER(CDSTRING='READMDLCONF:')
-
-
-!     DETERMINE THE TOTAL NUMBER OF OCEAN POINTS AND THE CONNECTION TO THE GRID (BLK2GLO)
-      IF (ALLOCATED(LLOCEANMASK)) DEALLOCATE(LLOCEANMASK)
-      ALLOCATE(LLOCEANMASK(NGX,NGY))
-      NIBLO = 0
-      DO K=1,NGY
-        DO I=1,NLONRGG(K)
-          IF (BATHY(I,K) > 0.0_JWRB) THEN
-            NIBLO = NIBLO + 1
-            LLOCEANMASK(I,K) = .TRUE.
-          ELSE
-            LLOCEANMASK(I,K) = .FALSE.
-          ENDIF
-        ENDDO
-      ENDDO
-
-      IF ( NIBLO <= 0 ) THEN
-         WRITE(IU06,*)'***ERROR IN READREC: NIBLO SHOULD > 0, NIBLO = ',NIBLO
-         CALL FLUSH(IU06)
-         CALL ABORT1
+      IF( PRESENT(LLREADPRE) ) THEN
+        LLREAD = LLREADPRE
+      ELSE
+        LLREAD = .TRUE.
       ENDIF
 
-      IF (ALLOCATED(BLK2GLO%IXLG)) CALL BLK2GLO%DEALLOC
-      CALL BLK2GLO%ALLOC(NIBLO)
+      IF( PRESENT(LLREADBATHY) ) THEN
+        LLBATHY = LLREADBATHY
+      ELSE
+        LLBATHY = .TRUE.
+      ENDIF
 
-      IP = 0
-      DO K=1,NGY
-        DO I=1,NLONRGG(K)
-          IF (LLOCEANMASK(I,K)) THEN
-            IP = IP+1
-            BLK2GLO%IXLG(IP) = I
-            BLK2GLO%KXLT(IP) = K
-          ENDIF
+      IREAD = IREADG
+
+      IF ( LLREAD ) THEN
+        CALL MPL_BARRIER(CDSTRING='READMDLCONF:')
+        CALL READPRE (LLBATHY)
+        CALL MPL_BARRIER(CDSTRING='READMDLCONF:')
+      ENDIF
+
+      IF ( LLREAD .AND. LLBATHY ) THEN
+!       DETERMINE THE TOTAL NUMBER OF OCEAN POINTS AND THE CONNECTION TO THE GRID (BLK2GLO)
+
+        IF (ALLOCATED(LLOCEANMASK)) DEALLOCATE(LLOCEANMASK)
+        ALLOCATE(LLOCEANMASK(NGX,NGY))
+        NIBLO = 0
+        DO K=1,NGY
+          DO I=1,NLONRGG(K)
+            IF (BATHY(I,K) > 0.0_JWRB) THEN
+              NIBLO = NIBLO + 1
+              LLOCEANMASK(I,K) = .TRUE.
+            ELSE
+              LLOCEANMASK(I,K) = .FALSE.
+            ENDIF
+          ENDDO
         ENDDO
-      ENDDO
 
+        IF ( NIBLO <= 0 ) THEN
+           WRITE(IU06,*)'***ERROR IN READREC: NIBLO SHOULD > 0, NIBLO = ',NIBLO
+           CALL FLUSH(IU06)
+           CALL ABORT1
+        ENDIF
+
+        IF (ALLOCATED(BLK2GLO%IXLG)) CALL BLK2GLO%DEALLOC
+        CALL BLK2GLO%ALLOC(NIBLO)
+
+        IP = 0
+        DO K=1,NGY
+          DO I=1,NLONRGG(K)
+            IF (LLOCEANMASK(I,K)) THEN
+              IP = IP+1
+              BLK2GLO%IXLG(IP) = I
+              BLK2GLO%KXLT(IP) = K
+            ENDIF
+          ENDDO
+        ENDDO
+
+      ELSE
+         NIBLO=NGX*NGY
+      ENDIF
 
 
 !*    GRID INCREMENTS IN RADIANS AND METRES.
@@ -142,7 +167,6 @@ SUBROUTINE READMDLCONF (IU07)
       IJS = 1
       IJL = NIBLO
 
-
-      IF (LHOOK) CALL DR_HOOK('READMDLCONF',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('READMDLCONF',1,ZHOOK_HANDLE)
 
 END SUBROUTINE READMDLCONF
