@@ -6,11 +6,16 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
+if( CMAKE_Fortran_COMPILER_ID MATCHES Intel )
+  set_source_files_properties( create_wam_bathymetry_ETOPO1.F90 PROPERTIES COMPILE_FLAGS "-check nobounds" )
+endif()
+
 foreach( program
     chief
     bouint
     preproc
     preset
+    combine_bathy_laked
     create_wam_bathymetry
     create_wam_bathymetry_ETOPO1 )
 

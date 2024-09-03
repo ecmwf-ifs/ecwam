@@ -91,7 +91,7 @@
       TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
       TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
-      TYPE(ENVIRONMENT), INTENT(OUT) :: WVENVI
+      TYPE(ENVIRONMENT), INTENT(INOUT) :: WVENVI
 
 
       INTEGER(KIND=JWIM) :: NBIT = 1000000
@@ -116,6 +116,7 @@
       CHARACTER(LEN=14) :: CDATEIN_OLD 
 
       LOGICAL :: FRSTIME
+      LOGICAL :: LLCHKINT
 
       DATA FRSTIME / .TRUE. /
       SAVE KFILE_HANDLE1
@@ -212,9 +213,10 @@
 
         KK=0
         MM=0
+        LLCHKINT = .TRUE.
         CALL GRIB2WGRID (IU06, NPROMA_WAM,                              &
      &                   KGRIB_HANDLE, INGRIB, ISIZE,                   &
-     &                   LLUNSTR,                                       &
+     &                   LLUNSTR, LLCHKINT,                             &
      &                   NGY, IRGG, NLONRGG_LOC,                        &
      &                   NXS, NXE, NYS, NYE,                            &
      &                   FIELDG%XLON, FIELDG%YLAT,                      &

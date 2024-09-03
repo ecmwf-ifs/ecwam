@@ -50,9 +50,9 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMAP   , ONLY : NGX      ,NGY      ,              &
-     &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
-     &            AMONOP   ,XDELLA   ,XDELLO   ,NLONRGG  ,    &
-     &            IQGAUSS
+     &            IPER     ,IRGG     ,IQGAUSS  ,NLONRGG  ,              &
+     &            AMOWEP ,  AMOSOP,  AMOEAP,  AMONOP,  XDELLA,  XDELLO, &
+     &            DAMOWEP,  DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI
       USE YOWSHAL  , ONLY : BATHY
 
@@ -68,12 +68,13 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
       INTEGER(KIND=JWIM), INTENT(INOUT) :: ITAG
       INTEGER(KIND=JWIM), PARAMETER :: MFIRST=2
       INTEGER(KIND=JWIM) :: I, J, IJ, K, K1, K2, M, M1, M2, IC, L, KDEPTH, NGOU 
-      INTEGER(KIND=JWIM) :: IKCOUNT, KCOUNT
-      INTEGER(KIND=JWIM) :: MIC, MZC 
+      INTEGER(KIND=JWIM) :: IKCOUNT, KCOUNT, KDCOUNT
+      INTEGER(KIND=JWIM) :: MIC, MZC, MDZC 
       INTEGER(KIND=JWIM),ALLOCATABLE :: ICOMBUF(:)
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),ALLOCATABLE :: ZCOMBUF(:)
+      REAL(KIND=JWRU),ALLOCATABLE :: ZDCOMBUF(:)
 
 !----------------------------------------------------------------------
 
@@ -130,12 +131,14 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
         MIC=3+NGY
         MZC=6+NGX*NGY
+        MDZC=6
 
 !       ENCODE MAIN MESSAGE BUFFERS (ON PE=ISEND) AND
 !       ALLOCATE ALL ARRAYS NEEDED TO KEEP THE BUFFERS ON THE OTHER PE'S
 
         ALLOCATE(ICOMBUF(MIC))
         ALLOCATE(ZCOMBUF(MZC))
+        ALLOCATE(ZDCOMBUF(MDZC))
 
         IF (IRANK /= ISEND) THEN
 
@@ -146,6 +149,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
         ELSE 
           KCOUNT=0
+          KDCOUNT=0
           IKCOUNT=0
 
           DO J=1,NGY
@@ -173,6 +177,19 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=XDELLO
 
+          KDCOUNT=KDCOUNT+1
+          ZDCOMBUF(KDCOUNT)=DAMOWEP
+          KDCOUNT=KDCOUNT+1
+          ZDCOMBUF(KDCOUNT)=DAMOSOP
+          KDCOUNT=KDCOUNT+1
+          ZDCOMBUF(KDCOUNT)=DAMOEAP
+          KDCOUNT=KDCOUNT+1
+          ZDCOMBUF(KDCOUNT)=DAMONOP
+          KDCOUNT=KDCOUNT+1
+          ZDCOMBUF(KDCOUNT)=DXDELLA
+          KDCOUNT=KDCOUNT+1
+          ZDCOMBUF(KDCOUNT)=DXDELLO
+
           DO K=1,NGY
             DO I=1,NGX
               KCOUNT=KCOUNT+1
@@ -189,7 +206,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             WRITE (IU06,*) '* MIC =',MIC
             WRITE (IU06,*) '**************************'
             CALL ABORT1
-          ENDIF 
+          ENDIF
           IF (KCOUNT /= MZC) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
@@ -199,7 +216,17 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             WRITE (IU06,*) '* MZC =',MZC
             WRITE (IU06,*) '**************************'
             CALL ABORT1
-          ENDIF 
+          ENDIF
+          IF (KDCOUNT /= MDZC) THEN
+            WRITE (IU06,*) '**************************'
+            WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
+            WRITE (IU06,*) '* KDCOUNT NE MDZC PRIOR  *'
+            WRITE (IU06,*) '* CALL TO MPL_BROADCAST  *'
+            WRITE (IU06,*) '* KDCOUNT =',KDCOUNT
+            WRITE (IU06,*) '* MDZC =',MDZC
+            WRITE (IU06,*) '**************************'
+            CALL ABORT1
+          ENDIF
         ENDIF
 
         CALL MPL_BROADCAST(ICOMBUF,KROOT=ISEND,KTAG=ITAG, CDSTRING='MPBCASTGRID 1:')
@@ -208,8 +235,12 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         CALL MPL_BROADCAST(ZCOMBUF,KROOT=ISEND,KTAG=ITAG, CDSTRING='MPBCASTGRID 2:')
         ITAG=ITAG+1
 
+        CALL MPL_BROADCAST(ZDCOMBUF,KROOT=ISEND,KTAG=ITAG, CDSTRING='MPBCASTGRID 3:')
+        ITAG=ITAG+1
+
         IF (IRANK /= ISEND) THEN
           KCOUNT=0
+          KDCOUNT=0
           IKCOUNT=0
 
           DO J=1,NGY
@@ -236,6 +267,19 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           XDELLA=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
           XDELLO=ZCOMBUF(KCOUNT)
+
+          KDCOUNT=KDCOUNT+1
+          DAMOWEP=ZDCOMBUF(KDCOUNT)
+          KDCOUNT=KDCOUNT+1
+          DAMOSOP=ZDCOMBUF(KDCOUNT)
+          KDCOUNT=KDCOUNT+1
+          DAMOEAP=ZDCOMBUF(KDCOUNT)
+          KDCOUNT=KDCOUNT+1
+          DAMONOP=ZDCOMBUF(KDCOUNT)
+          KDCOUNT=KDCOUNT+1
+          DXDELLA=ZDCOMBUF(KDCOUNT)
+          KDCOUNT=KDCOUNT+1
+          DXDELLO=ZDCOMBUF(KDCOUNT)
 
           DO K=1,NGY
             DO I=1,NGX
@@ -264,9 +308,19 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             WRITE (IU06,*) '**************************'
             CALL ABORT1
           ENDIF 
+          IF (KDCOUNT /= MDZC) THEN
+            WRITE (IU06,*) '**************************'
+            WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
+            WRITE (IU06,*) '* KDCOUNT NE MDZC AFTER  *'
+            WRITE (IU06,*) '* CALL TO MPL_BROADCAST  *'
+            WRITE (IU06,*) '* KDCOUNT =',KDCOUNT
+            WRITE (IU06,*) '* MDZC =',MDZC
+            WRITE (IU06,*) '**************************'
+            CALL ABORT1
+          ENDIF 
         ENDIF
 
-        DEALLOCATE(ICOMBUF,ZCOMBUF)
+        DEALLOCATE(ICOMBUF,ZCOMBUF,ZDCOMBUF)
 
       ENDIF
 

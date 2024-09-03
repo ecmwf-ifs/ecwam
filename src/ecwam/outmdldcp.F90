@@ -64,7 +64,7 @@ IMPLICIT NONE
 
 INTEGER(KIND=JWIM), PARAMETER :: NBITSPERVALUE = 24  !! need a higher precision to code the grid point index 
 
-INTEGER(KIND=JWIM) :: IJ, IPRM, IJGLO, IK, IM, IR, IFLAG, IDT, KSTEP, IX, JSN, I,J,K ,IK1, IK2
+INTEGER(KIND=JWIM) :: IJ, IPRM, IJGLO, ITMIN, ITMAX, IK, IM, IR, IFLAG, IDT, KSTEP, IX, JSN, I,J,K ,IK1, IK2
 INTEGER(KIND=JWIM) :: LFILE, IUOUT, ICOUNT
 INTEGER(KIND=JWIM) :: IFCST, IT, IPARAM, ITABLE, IZLEV
 INTEGER(KIND=JWIM) :: ICHNK, KIJS, KIJL, IJSB, IJLB
@@ -168,9 +168,9 @@ ENDDO
 ! Defining the ouput fields:
 ! -------------------------
 
-
 IK1 = 0
 IK2 = 0
+
 DO ICHNK = 1, NCHNK
 
    KIJS = 1
@@ -275,7 +275,7 @@ IF(IRANK == 1) THEN
   CALL PRESET_WGRIB_TEMPLATE("I", NGRIB_HANDLE_WAM_I, LLCREATE=LLCREATE, NBITSPERVALUE=NBITSPERVALUE )
 
 
-  ! keep looping over all posible output varaibles (as in outint)
+  ! keep looping over all posible output variables (as in outint)
   ITABLE=140
   ICOUNT=0
   DO IFLAG = JPPFLAG-8, JPPFLAG
@@ -314,6 +314,8 @@ IF(IRANK == 1) THEN
           IZLEV=1
       END SELECT
 
+      ITMIN = 0
+      ITMAX = 0
       IK = 0
       IM = 0
 
@@ -336,6 +338,7 @@ IF(IRANK == 1) THEN
  &                      GOUT(ICOUNT,:,:),  &
  &                      ITABLE, IPARAM, &
  &                      IZLEV, &
+ &                      ITMIN, ITMAX, &
  &                      IK, IM, &
  &                      CDATE, IFCST, MARSTYPE_DUM, &
  &                      PPMISS, PPEPS, PPREC, PPRESOL, PPMIN_RESET, NTENCODE, &

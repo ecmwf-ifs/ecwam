@@ -48,26 +48,26 @@ validation:
     # After 1h
     - name: swh
       time: 2022-01-01 01:00:00
-      average: 0.1310657039595160E+01
+      average: 0.1310657020828732E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF4F8738415558F']
+      hashes: ['0x3FF4F8737F0BB714']
 
     # After 6h
     - name: swh
       time: 2022-01-01 06:00:00
-      average: 0.1349753003628993E+01
+      average: 0.1349752345102129E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF598969B043A8B']
+      hashes: ['0x3FF59895EA3E9B72']
     - name: swh
       time: 2022-01-01 06:00:00
-      minimum: 0.8578317931901811E+00
+      minimum: 0.8578696971216837E+00
       relative_tolerance: 1.e-14
-      hashes: ['0x3FEB735BA9271150']
+      hashes: ['0x3FEB73AB26ABBEEE']
     - name: swh
       time: 2022-01-01 06:00:00
-      maximum: 0.6566539346086107E+01 
+      maximum: 0.6566551146080710E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x401A4422E3ED5925']
+      hashes: ['0x401A4425FBCFB63D']
 
   single_precision:
 
@@ -81,23 +81,23 @@ validation:
     # After 1h
     - name: swh
       time: 2022-01-01 01:00:00
-      average: 0.1310604929924011E+01
+      average: 0.1310604810714722E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF4F83CE0000000']
+      hashes: ['0x3FF4F83CC0000000']
 
     # After 6h
     - name: swh
       time: 2022-01-01 06:00:00
-      average: 0.1349661827087402E+01
+      average: 0.1349661707878113E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF5983700000000']
+      hashes: ['0x3FF59836E0000000']
     - name: swh
       time: 2022-01-01 06:00:00
-      minimum: 0.8578321337699890E+00
+      minimum: 0.8578700423240662E+00
       relative_tolerance: 1.e-6
-      hashes: ['0x3FEB735C60000000']
+      hashes: ['0x3FEB73ABE0000000']
     - name: swh
       time: 2022-01-01 06:00:00
-      maximum: 0.6566537857055664E+01
+      maximum: 0.6566550254821777E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x401A442280000000']
+      hashes: ['0x401A4425C0000000']

@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE READPRE (IU07)
+SUBROUTINE READPRE (LLBATHY)
 
 ! ----------------------------------------------------------------------
 
@@ -37,8 +37,7 @@ SUBROUTINE READPRE (IU07)
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *READPRE (IU07)*
-!          *IU07 *  - INPUT UNIT OF PREPROC GRID FILE.
+!       *CALL* *READPRE (LLBATHY)*
 
 !     METHOD.
 !     -------
@@ -59,139 +58,225 @@ SUBROUTINE READPRE (IU07)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWABORT , ONLY : WAM_ABORT
       USE YOWGRIBHD, ONLY : IMDLGRBID_G
-      USE YOWMAP   , ONLY : NGX      ,NGY      ,    &
-     &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
-     &            AMONOP   ,XDELLA   ,XDELLO   ,NLONRGG  ,    &
-     &            IQGAUSS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
+      USE YOWGRIBINFO, ONLY : WVGETGRIDINFO
+      USE YOWMAP   , ONLY : NGX      ,NGY      ,                        &
+     &            IPER     ,IRGG     ,IQGAUSS  ,NLONRGG  ,              &
+     &            AMOWEP ,  AMOSOP,  AMOEAP,  AMONOP,  XDELLA,  XDELLO, &
+     &            DAMOWEP,  DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG     ,NPRECI
       USE YOWPARAM , ONLY : LLR8TOR4 ,LLUNSTR
       USE YOWSHAL  , ONLY : BATHY
       USE YOWTEST  , ONLY : IU06
-      USE YOWABORT , ONLY : WAM_ABORT
+      USE YOWPCONS , ONLY : ZMISS
+      USE YOWUNIT  , ONLY : IREADG
 #ifdef WAM_HAVE_UNWAM
       USE YOWUNPOOL, ONLY : LPREPROC
       USE UNWAM     ,ONLY : INIT_UNWAM, UNWAM_IN, SET_UNWAM_HANDLES
 #endif
+      USE YOWGRIB  , ONLY : IGRIB_GET_VALUE, IGRIB_CLOSE_FILE, IGRIB_RELEASE, &
+                          & IGRIB_SET_VALUE
+
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
+#include "adjust.intfb.h"
 #include "mpbcastgrid.intfb.h"
+#include "wvchkmid.intfb.h"
+#include "wvopenbathy.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IU07
-      INTEGER(KIND=JWIM) :: IREAD
-      INTEGER(KIND=JWIM) :: IP, I, K
+      LOGICAL, INTENT(IN) :: LLBATHY
+
+      INTEGER(KIND=JWIM) :: IREAD, IU07, KGRIB_HANDLE
+      INTEGER(KIND=JWIM) :: IP, I, K, J, L, JSN
+      INTEGER(KIND=JWIM) :: NUMBEROFVALUES
       INTEGER(KIND=JWIM) :: KMDLGRDID
-      INTEGER(KIND=JWIM) :: NKIND !Precision of file when reading
+      INTEGER(KIND=JWIM) :: NKIND ! Numerical precision of input binary file
+      INTEGER(KIND=JWIM), DIMENSION(:), ALLOCATABLE :: KLONRGG
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), ALLOCATABLE :: VALUES(:)
+
+      LOGICAL :: LLSCANNS
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('READPRE',0,ZHOOK_HANDLE)
 
       NKIND=0
-      IREAD=1
       KTAG=1
+
+      IU07 = -1
+      KGRIB_HANDLE = -99
+
+      IREAD = IREADG
+
+!     READ INPUT BATHYMETRY:
+!     ----------------------
 
       CALL GSTATS(1771,0)
       IF (IRANK == IREAD) THEN
-!       READ MODEL IDENTIFIERS
-        CALL READREC(1)
-        IF (KMDLGRDID /= IMDLGRBID_G) THEN
-          WRITE(IU06,*) '*****************************************'
-          WRITE(IU06,*) '*                                       *'
-          WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
-          WRITE(IU06,*) '*  ==============================       *'
-          WRITE(IU06,*) '*                                       *'
-          WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
-          WRITE(IU06,*) '* MODEL GRIB IDENTIFIER.                *' 
-          WRITE(IU06,*) '* MAKE SURE YOU HAVE RUN PREPROC !!!!   *'
-          WRITE(IU06,*)    KMDLGRDID, IMDLGRBID_G 
-          WRITE(IU06,*) '*                                       *'
-          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
-          WRITE(IU06,*) '* ---------------   --------------      *'
-          WRITE(IU06,*) '*****************************************'
-          CALL ABORT1
-        ENDIF
-        IF (NKIND /= KIND(AMOSOP)) THEN
-          WRITE(IU06,*) '*****************************************'
-          WRITE(IU06,*) '*                                       *'
-          WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
-          WRITE(IU06,*) '*  ==============================       *'
-          WRITE(IU06,*) '*                                       *'
-          WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
-          WRITE(IU06,*) '* PRECISION IN FILE AND MODEL.          *' 
-          WRITE(IU06,*)    NKIND, KIND(AMOSOP)
-          WRITE(IU06,*) '*                                       *'
-          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
-          WRITE(IU06,*) '* ---------------   --------------      *'
-          WRITE(IU06,*) '*****************************************'
-          CALL ABORT1
-        ENDIF
 
-!*    0. READ YOWPARAM (BLOCK SIZES). 
-!        ----------------------------
+        CALL WVOPENBATHY (IU06, IU07, KGRIB_HANDLE)
 
-        CALL READREC(2)
+        IF ( KGRIB_HANDLE > 0 ) THEN
+        !! GRIB INPUT:
+!          ----------
 
+!         CHECK MODEL IDENTIFIERS:
+          CALL WVCHKMID(IU06, KGRIB_HANDLE,__FILENAME__)
 
-!*    2. READ MODULE YOWGRID (GENERAL GRID ORGANISATION).
-!        ------------------------------------------------
+!         GRID INFO:
+          CALL WVGETGRIDINFO(IU06, KGRIB_HANDLE, &
+ &                           NGX, NGY, IPER, IRGG, IQGAUSS, KLONRGG, LLSCANNS, &
+ &                           DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO )
 
-        IF (.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
+          AMONOP = REAL(DAMONOP,JWRB)
+          AMOSOP = REAL(DAMOSOP,JWRB)
+          AMOWEP = REAL(DAMOWEP,JWRB)
+          AMOEAP = REAL(DAMOEAP,JWRB)
+          XDELLA = REAL(DXDELLA,JWRB)
+          XDELLO = REAL(DXDELLO,JWRB)
 
-        CALL READREC(3)
-
-
-!*    3. READ MODULE YOWMAP (LONG. AND LAT. INDICES OF GRID POINTS).
-!        --------------------------------------------------------
-
-        CALL READREC(4)
-
-!     DETERMINE IF WE ARE USING A QUASI GAUSSIAN GRID OR 
-!     LAT-LONG GRID (REGULAR OR IRREGULAR).
-
-        IF (IPER ==1 .AND. AMONOP == ABS(AMOSOP) .AND.                  &
-     &     MOD(NGY,2) == 0 .AND. IRGG == 1 ) THEN
-          IQGAUSS=1
-        ELSE
-          IQGAUSS=0
-        ENDIF
-
-
-!*    8. READ MODULE YOWSHAL (DEPTH AND SHALLOW WATER TABLES).
-!        ----------------------------------------------------
-
-        IF (ALLOCATED(BATHY)) DEALLOCATE(BATHY)
-        ALLOCATE(BATHY(NGX,NGY))
-
-        CALL READREC(5)
-
-!       THE UNSTRUCTURED BITS (if pre-computed by PREPROC)
-        IF (LLUNSTR) THEN
-#ifdef WAM_HAVE_UNWAM
-          IF (LPREPROC) THEN
-            CALL SET_UNWAM_HANDLES
-            CALL UNWAM_IN(IU07)
+          IF (ALLOCATED(NLONRGG)) DEALLOCATE(NLONRGG)
+          ALLOCATE(NLONRGG(NGY))
+          IF (ALLOCATED(KLONRGG)) THEN
+            NLONRGG(1:NGY) = KLONRGG(1:NGY)
+            DEALLOCATE(KLONRGG)
+          ELSE
+            NLONRGG(1:NGY) = NGX
           ENDIF
+
+!!!       BATHYMETRY
+          IF ( LLBATHY ) THEN 
+
+!           GET THE DATA
+            CALL IGRIB_SET_VALUE(KGRIB_HANDLE,'missingValue',ZMISS)
+
+!!!            CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberOfEffectiveValues',NUMBEROFVALUES)
+            CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'getNumberOfValues',NUMBEROFVALUES)
+
+            ALLOCATE(VALUES(NUMBEROFVALUES))
+            CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'values',VALUES)
+
+            IF (ALLOCATED(BATHY)) DEALLOCATE(BATHY)
+            ALLOCATE(BATHY(NGX,NGY))
+
+            IF (LLSCANNS) THEN
+!!            THE GRIB DATA WILL UNROLL FROM NORTH TO SOUTH 
+!!            BUT ARRAY BATHY NEEDS TO UNROL FROM SOUTH TO NORTH (as it was defined that way when the binary option was used)
+!!            !! note that it is not the case for the FIELDG data structure that stays in NORTH to SOUTH until it is transferred
+!!               to the block structure (IJ) when it is unroll accordingly using the JFROMIJ pointer
+              L = 0 
+              DO K = 1, NGY
+                JSN = NGY-K+1
+                DO I = 1, NLONRGG(JSN)
+                  L = L+1
+                  BATHY(I,JSN) = VALUES(L)
+                ENDDO
+                DO I = NLONRGG(JSN)+1, NGX
+                  BATHY(I,JSN) = ZMISS
+                ENDDO
+              ENDDO
+            ELSE
+              L = 0 
+              DO K = 1, NGY
+                DO I = 1, NLONRGG(K)
+                  L = L+1
+                  BATHY(I,K) = VALUES(L)
+                ENDDO
+                DO I = NLONRGG(K)+1, NGX
+                  BATHY(I,K) = ZMISS
+                ENDDO
+              ENDDO
+            ENDIF
+
+            DEALLOCATE(VALUES)
+          ENDIF
+
+          CALL IGRIB_CLOSE_FILE(IU07)
+          CALL IGRIB_RELEASE(KGRIB_HANDLE)
+
+
+        ELSE
+        !! OLD BINARY INPUT:
+!          -----------------
+
+!         READ MODEL IDENTIFIERS
+          CALL READREC(1)
+          IF (KMDLGRDID /= IMDLGRBID_G) THEN
+            WRITE(IU06,*) '*****************************************'
+            WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
+            WRITE(IU06,*) '*  ==============================       *'
+            WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
+            WRITE(IU06,*) '* MODEL GRIB IDENTIFIER.                *' 
+            WRITE(IU06,*) '* MAKE SURE YOU HAVE RUN PREPROC !!!!   *'
+            WRITE(IU06,*)    KMDLGRDID, IMDLGRBID_G 
+            WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
+            WRITE(IU06,*) '* ---------------   --------------      *'
+            WRITE(IU06,*) '*****************************************'
+            CALL ABORT1
+          ENDIF
+          IF (NKIND /= KIND(AMOSOP)) THEN
+            WRITE(IU06,*) '*****************************************'
+            WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
+            WRITE(IU06,*) '*  ==============================       *'
+            WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
+            WRITE(IU06,*) '* PRECISION IN FILE AND MODEL.          *' 
+            WRITE(IU06,*)    NKIND, KIND(AMOSOP)
+            WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
+            WRITE(IU06,*) '* ---------------   --------------      *'
+            WRITE(IU06,*) '*****************************************'
+            CALL ABORT1
+          ENDIF
+
+          CALL READREC(2)
+
+          IF (.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
+          CALL READREC(3)
+
+          CALL READREC(4)
+
+!         DETERMINE IF WE ARE USING A QUASI GAUSSIAN GRID OR LAT-LONG GRID (REGULAR OR IRREGULAR). 
+          IF (IPER ==1 .AND. AMONOP == ABS(AMOSOP) .AND. MOD(NGY,2) == 0 .AND. IRGG == 1 ) THEN 
+            IQGAUSS=1
+          ELSE
+            IQGAUSS=0
+          ENDIF
+
+          IF ( LLBATHY ) THEN 
+            IF (ALLOCATED(BATHY)) DEALLOCATE(BATHY)
+            ALLOCATE(BATHY(NGX,NGY))
+            CALL READREC(5)
+          ENDIF
+
+!         THE UNSTRUCTURED BITS (if pre-computed by PREPROC)
+          IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
+            IF (LPREPROC) THEN
+              CALL SET_UNWAM_HANDLES
+              CALL UNWAM_IN(IU07)
+            ENDIF
 #else
-          CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+            CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
 #endif
-        END IF
+          ENDIF
 
-      ENDIF
+          CLOSE (UNIT=IU07)
+        ENDIF ! GRIB OR BINARY INPUT
 
-      CLOSE (UNIT=IU07)
+      ENDIF  ! READ ON IRANK == IREAD
 
       CALL GSTATS(1771,1)
 
 
 
 !     SEND INFORMATION FROM READPRE TO ALL PE's
+!     -----------------------------------------
       CALL GSTATS(694,0)
       CALL MPBCASTGRID(IU06,IREAD,KTAG)
       CALL GSTATS(694,1)
@@ -217,6 +302,7 @@ SUBROUTINE READPRE (IU07)
 
       SUBROUTINE READREC(KREC)
       IMPLICIT NONE
+
       INTEGER(KIND=JWIM), INTENT(IN) :: KREC
       INTEGER(KIND=JWIM) :: ISTAT
       REAL(KIND=JWRU) :: R8_AMOEAP,R8_AMONOP,R8_AMOSOP,R8_AMOWEP,R8_XDELLA,R8_XDELLO
@@ -251,19 +337,40 @@ SUBROUTINE READPRE (IU07)
      &                              R8_XDELLA, R8_XDELLO
             IF (ISTAT /= 0) GOTO 1000
 
-            AMOWEP = R8_AMOWEP
-            AMOSOP = R8_AMOSOP
-            AMOEAP = R8_AMOEAP
-            AMONOP = R8_AMONOP
-            XDELLA = R8_XDELLA
-            XDELLO = R8_XDELLO
+            DAMOWEP = R8_AMOWEP
+            DAMOSOP = R8_AMOSOP
+            DAMOEAP = R8_AMOEAP
+            DAMONOP = R8_AMONOP
+            DXDELLA = R8_XDELLA
+            DXDELLO = R8_XDELLO
 
          ELSE
             READ(IU07,IOSTAT=ISTAT) IPER, IRGG, &
+#ifdef WAM_HAVE_SINGLE_PRECISION
      &                              AMOWEP, AMOSOP, AMOEAP, AMONOP, &
      &                              XDELLA, XDELLO
+#else
+     &                              DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, &
+     &                              DXDELLA, DXDELLO
+#endif
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
+
+#ifdef WAM_HAVE_SINGLE_PRECISION
+         DAMONOP = REAL(AMONOP,JWRU)
+         DAMOSOP = REAL(AMOSOP,JWRU)
+         DAMOWEP = REAL(AMOWEP,JWRU)
+         DAMOEAP = REAL(AMOEAP,JWRU)
+         DXDELLA = REAL(XDELLA,JWRU)
+         DXDELLO = REAL(XDELLO,JWRU)
+#else
+         AMONOP = REAL(DAMONOP,JWRB)
+         AMOSOP = REAL(DAMOSOP,JWRB)
+         AMOWEP = REAL(DAMOWEP,JWRB)
+         AMOEAP = REAL(DAMOEAP,JWRB)
+         XDELLA = REAL(DXDELLA,JWRB)
+         XDELLO = REAL(DXDELLO,JWRB)
+#endif
 
       CASE(5)
          IF (LLR8TOR4) THEN
@@ -292,7 +399,7 @@ SUBROUTINE READPRE (IU07)
       WRITE(IU06,*) '*  READ ERROR IN SUB. READREC       *'
       WRITE(IU06,*) '*  ==========================       *'
       WRITE(IU06,*) '*                                   *'
-      WRITE(IU06,'(1X,A,I0)') '*  READ ERROR TO UNIT fort.',IU07
+      WRITE(IU06,'(1X,A,I0)') '*  READ ERROR TO UNIT ',IU07
       WRITE(IU06,*) '*  IS THE FILE PRESENT ????         *' 
       WRITE(IU06,*) '*                                   *'
       WRITE(IU06,*) '*************************************'

@@ -31,9 +31,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MUBUF (IU08)*
+!       *CALL* *MUBUF (IU01, IU08, NPROPAGS)*
 !          *IU01*  -  LOGICAL INPUT UNIT OF TOPOGRAPHIC DATA.
-!          *IU08*    - LOGICAL UNITS FOR OUTPUT OF GRID BLOCKING
+!          *IU08*   - LOGICAL UNITS FOR BINARY OUTPUT OF GRID BLOCKING
 !                      COMMON UBUF (UNFORMATED)
 
 !     METHOD.

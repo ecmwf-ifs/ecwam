@@ -85,6 +85,7 @@
       REAL(KIND=JWRB) :: CL1H, CL2H, FRG, FLP, FLM, FKP, FKM, DELTHA, AL11, AL12 
       REAL(KIND=JWRB), ALLOCATABLE :: FRLON(:)
 
+      LOGICAL, PARAMETER :: LLPRINTOUT=.FALSE.
 ! ----------------------------------------------------------------------
 
 !     0. ALLOCATE ARRAYS
@@ -263,12 +264,14 @@
 !*    4. PRINTER PROTOCOL.
 !        -----------------
 
+      IF ( LLPRINTOUT ) THEN
       WRITE(IU06,'(1H1,'' NON LINEAR INTERACTION PARAMETERS:'')')
       WRITE(IU06,'(1H0,'' COMMON INDNL: CONSTANTS'')')
       WRITE(IU06,*)'    ALAMD = ', ALAMD
       WRITE(IU06,*)'      CON = ', CON
       WRITE(IU06,*)'  DELPHI1 = ',DELPHI1
       WRITE(IU06,*)'  DELPHI2 = ',DELPHI2
+      WRITE(IU06,*)' '
       WRITE(IU06,'(1X,''    ACL1       ACL2   '',                       &
      &             ''    CL11       CL21   '',                          &
      &             ''    DAL1       DAL2'')')
@@ -295,6 +298,8 @@
       ENDDO
       WRITE(IU06,'(1H0,'' COMMON INDNL: TAIL ARRAY FRH'')')
       WRITE(IU06,'(1X,8F10.7)') (FRH(M),M=1,KFRH)
+
+      ENDIF
 
 !     5. DEALLOCATE LOCAL ARRAYS
 !        -----------------------

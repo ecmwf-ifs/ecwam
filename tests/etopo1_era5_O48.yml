@@ -41,33 +41,33 @@ validation:
     # initial time
     - name: swh
       time: 2022-01-01 00:00:00
-      average: 0.1328781786771234E+01
+      average: 0.1328781791396596E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF542B0B0DB3F0E']
+      hashes: ['0x3FF542B0B2191949']
 
     # After 1h
     - name: swh
       time: 2022-01-01 01:00:00
-      average: 0.1354420572094927E+01
+      average: 0.1354420762181319E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF5ABB4E7E2D651']
+      hashes: ['0x3FF5ABB51AE9797D']
 
     # After 6h
     - name: swh
       time: 2022-01-01 06:00:00
-      average: 0.1442422543052446E+01
+      average: 0.1442422522162867E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF71429A916C646']
+      hashes: ['0x3FF71429A37B40ED']
     - name: swh
       time: 2022-01-01 06:00:00
-      minimum: 0.2141108061949777E+00
+      minimum: 0.2141090245852280E+00
       relative_tolerance: 1.e-14
-      hashes: ['0x3FCB67FB9F29EF92']
+      hashes: ['0x3FCB67ECAD2F9E2A']
     - name: swh
       time: 2022-01-01 06:00:00
-      maximum: 0.6566128786128707E+01
+      maximum: 0.6566141026555313E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x401A43B743B6FCE7']
+      hashes: ['0x401A43BA7927EA6E']
 
   single_precision:
 
@@ -81,23 +81,23 @@ validation:
     # After 1h
     - name: swh
       time: 2022-01-01 01:00:00
-      average: 0.1354418277740479E+01
+      average: 0.1354418754577637E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF5ABB280000000']
+      hashes: ['0x3FF5ABB300000000']
 
     # After 6h
     - name: swh
       time: 2022-01-01 06:00:00
-      average: 0.1442407846450806E+01
+      average: 0.1442409276962280E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF7141A40000000']
+      hashes: ['0x3FF7141BC0000000']
     - name: swh
       time: 2022-01-01 06:00:00
-      minimum: 0.2141064405441284E+00
+      minimum: 0.2141046673059464E+00
       relative_tolerance: 1.e-6
-      hashes: ['0x3FCB67D700000000']
+      hashes: ['0x3FCB67C820000000']
     - name: swh
       time: 2022-01-01 06:00:00
-      maximum: 0.6566127300262451E+01
+      maximum: 0.6566139698028564E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x401A43B6E0000000']
+      hashes: ['0x401A43BA20000000']

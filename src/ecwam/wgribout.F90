@@ -88,10 +88,10 @@
         CSTREAM=C12(1:4)
         CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',ICLASS)
         WRITE(IU06,*)'  '
-        WRITE(IU06,*)'   SUB. WGRIBOUT : PARAMETER ',ITABPAR,           &
-     &                                 ' EXPVER=',CEXPVER,              &
-     &                                 ' STREAM= ', CSTREAM,            &
-     &                                 ' CLASS = ', ICLASS
+        WRITE(IU06,*)'   WGRIBOUT : PARAM= ',ITABPAR,     &
+     &                            ' EXPVER=',CEXPVER,     &
+     &                            ' STREAM=',CSTREAM,     &
+     &                            ' CLASS=', ICLASS
         CALL FLUSH(IU06)
       ENDIF
 

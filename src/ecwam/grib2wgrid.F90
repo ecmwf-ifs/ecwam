@@ -9,7 +9,7 @@
 
 SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
      &                 KGRIB_HANDLE, KGRIB, ISIZE,                  &
-     &                 LLUNSTR,                                     &
+     &                 LLUNSTR, LLCHKINT,                           &
      &                 NGY, KRGG, KLONRGG_LOC,                      &
      &                 NXS, NXE, NYS, NYE,                          &
      &                 XLON, YLAT,                                  &
@@ -46,7 +46,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
 !      *CALL GRIB2WGRID* (IU06, KPROMA,
 !    &                    KGRIB_HANDLE, KGRIB, ISIZE,
-!    &                    LLUNSTR,
+!    &                    LLUNSTR, LLCHKINT,
 !    &                    NGY, KRGG, KLONRGG_LOC,
 !    &                    NXS, NXE, NYS, NYE,
 !    &                    XLON, YLAT,
@@ -61,7 +61,8 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 !        *KGRIB*  - GRIB CODED DATA ARRAY
 !        *ISIZE*  - SIZE OF KGRIB
 !        *LLUNSTR - FLAG SPECIFYING IF THE UNSTRUCTURED GRID OPTION USED FOR THE MODEL
-
+!        *LLCHKINT- IF TRUE THE CHECK FOR THE NEED OF INTRPOLATION WILL BE DONE
+!                      OTHERWISE THE NO INTERPOLATION OPTION WILL BE SELECTED.
 !      WAVE MODEL GRID SPECIFICATION (ONLY MEANINGFUL IF STRUCTURED GRID):
 !        *NGY*    - TOTAL NUMBER OF LATITUDES
 !        *KRGG*   - GRID DEFINITION PARAMETER (O=REGULAR, 1=IRREGULAR)
@@ -76,9 +77,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
 !        *PMISS*  - VALUE FOR MISSING DATA.
 !        *PPREC*  - ONLY USED FOR WAVE SPECTRAL FIELD.
-!                   SMALL NUMBER USED IN SPECTRAL PACKING OF 251.
+!                   SMALL NUMBER USED IN SPECTRAL PACKING OF 140251.
 !        *PPEPS*  - ONLY USED FOR WAVE SPECTRAL FIELD.
-!                   REFERENCE VALUE FOR SPECTRAL PACKING OF 251.
+!                   REFERENCE VALUE FOR SPECTRAL PACKING OF 140251.
 !        OUTPUT:
 !        *CDATE*  - DATE/TIME OF THE DATA READ.         
 !        *IFORP*  - FORCAST PERIOD IN SECONDS.                          
@@ -125,12 +126,13 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       CHARACTER(LEN=14), INTENT(OUT) :: CDATE
 
       LOGICAL, INTENT(IN) :: LLUNSTR
+      LOGICAL, INTENT(IN) :: LLCHKINT
 
 
       INTEGER(KIND=JWIM) :: LL, LS, LE
-      INTEGER(KIND=JWIM) :: ITABLE
+      INTEGER(KIND=JWIM) :: ITABLE, ITABPAR, IERR
       INTEGER(KIND=JWIM) :: NC, NR, I, J, JSN, K, L, JRGG, IREPR, IR, IVAL, IDUM
-      INTEGER(KIND=JWIM) :: IRET, ILEN1, IEN
+      INTEGER(KIND=JWIM) :: IRET, ILEN1, IGRIB_VERSION 
       INTEGER(KIND=JWIM) :: ISCAN, ILOC, ISTAG, ICRLST, ICFG3, ICFG4, KSKIP, NGCOR
       INTEGER(KIND=JWIM) :: ITOP, IBOT, NDIM
       INTEGER(KIND=JWIM) :: NRFULL, ISTART, ISTOP
@@ -221,8 +223,10 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
         ENDDO
       ENDDO
 
-!*    UNPACK MARS FIELDS.                                           
+!*    UNPACK GRIB FIELDS.                                           
 !     -------------------                                           
+
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'editionNumber',IGRIB_VERSION)
 
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Nj',NRFULL)
       NR=NRFULL
@@ -241,16 +245,15 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
         CALL ABORT1
       ENDIF
 
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'paramId',IVAL)
-      ITABLE=IVAL/1000
-      IPARAM=IVAL-ITABLE*1000
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'paramId',ITABPAR)
+      ITABLE=ITABPAR/1000
+      IPARAM=ITABPAR-ITABLE*1000
 
 !     MAKE A DISTINCTION FOR OCEAN MODEL DATA AND TEST CONFIGURATION.
 !     ??? The option argument KRET does not seem to work
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'editionNumber',IEN)
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'section1Length',ILEN1)
 
-      IF ((IEN == 1 .AND. ILEN1 > 28) .OR. IEN /= 1) THEN
+      IF ((IGRIB_VERSION == 1 .AND. ILEN1 > 28) .OR. IGRIB_VERSION /= 1) THEN
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'localDefinitionNumber',ILOC,KRET=IRET)
         IF (IRET /= JPGRIB_SUCCESS) THEN
           WRITE(IU06,*) '   Data do not contain localDefinitionNumber !'
@@ -260,8 +263,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       ELSE
         ILOC=-1
       ENDIF
-      IF (ILOC == 4) THEN
-        WRITE(IU06,*) '   OCEAN MODEL DATA DECODED, PARAM= ',IPARAM
+      IF (ILOC == 4 .AND. IGRIB_VERSION == 1) THEN
+!       Ocean data before NEMO
+        WRITE(IU06,*) '   OLD OCEAN MODEL DATA DECODED, PARAM= ',IPARAM
 
         LLOCEAN=.TRUE.
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'flagForNormalOrStaggeredGrid',ISTAG)
@@ -404,10 +408,15 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
         CALL ABORT1
       ENDIF
 
-      IF (ILEVTYPE == 105 .OR. ILEVTYPE == 160) THEN
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'level',KZLEV)
+      IF ( IGRIB_VERSION == 1 ) THEN
+        IF (ILEVTYPE == 105 .OR. ILEVTYPE == 160) THEN
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'level',KZLEV)
+        ELSE
+          KZLEV=0
+        ENDIF
       ELSE
-        KZLEV=0
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'level',KZLEV,KRET=IRET)
+        IF (IRET /= JPGRIB_SUCCESS) KZLEV = 0
       ENDIF
 
 !*    DETERMINE INFORMATION ABOUT THE DECODED DATA 
@@ -511,11 +520,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
           RMONOP = RLAT(NR) 
           RMOSOP = RLAT(1) 
         ENDIF
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                              &
-     &                      'coordinate3OfFirstGridPoint',IVAL)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'coordinate3OfFirstGridPoint',IVAL)
         RMOWEP = IVAL*1.E-6_JWRB
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                              &
-     &                      'coordinate3OfLastGridPoint',IVAL)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'coordinate3OfLastGridPoint',IVAL)
         RMOEAP = IVAL*1.E-6_JWRB
       ENDIF
 
@@ -541,14 +548,11 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
         ENDDO
 
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                              &
-     &                      'latitudeOfFirstGridPointInDegrees',YFRST)
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                              &
-     &                      'latitudeOfLastGridPointInDegrees',YLAST)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'latitudeOfFirstGridPointInDegrees',YFRST)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'latitudeOfLastGridPointInDegrees',YLAST)
 
         IF (ISTART /= 0 .OR. ISTOP /= 0) THEN
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                            &
-     &                       'jDirectionIncrementInDegrees',DELLA)
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'jDirectionIncrementInDegrees',DELLA)
 
           YFRST = YFRST-ISTART*DELLA 
           YLAST = YLAST+ISTOP*DELLA 
@@ -661,17 +665,19 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       ENDIF
 
 
-      IF (LLUNSTR) THEN
+      IF ( LLCHKINT ) THEN
+
+        IF (LLUNSTR) THEN
 !!!!!! when we will start input on unstructered grid, we will need to adapt this bit
 !!!!!! for now always interpolation because the input grid is structured
-        LLINTERPOL=.TRUE.
+         LLINTERPOL=.TRUE.
 
-      ELSE
-        LLINTERPOL=.TRUE.
+        ELSE
+          LLINTERPOL=.TRUE.
 
-        IF (KPMONOP == KRMONOP .AND. KPMOSOP == KRMOSOP .AND.           &
-     &      KPMOWEP == KRMOWEP .AND. KPMOEAP == KRMOEAP       ) THEN
-           IF (JRGG == KRGG .AND. NC == NXE .AND. NR == NGY) THEN
+          IF (KPMONOP == KRMONOP .AND. KPMOSOP == KRMOSOP .AND.           &
+     &        KPMOWEP == KRMOWEP .AND. KPMOEAP == KRMOEAP       ) THEN
+            IF (JRGG == KRGG .AND. NXS == 1 .AND. NC == NXE .AND. NYS == 1 .AND. NR == NGY) THEN
 
               LLINTERPOL=.FALSE.
 
@@ -684,30 +690,67 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
                 ENDDO
               ENDIF
 
-           ENDIF
+            ENDIF
+          ENDIF
         ENDIF
-      ENDIF
 
-      IF (.NOT.LLSCANNS) LLINTERPOL=.TRUE.
+        IF (.NOT.LLSCANNS) LLINTERPOL=.TRUE.
+
+      ELSE
+         LLINTERPOL=.FALSE.
+
+         ! Very basic test that the assumption of no interpolation is correct
+         IF (JRGG /= KRGG .OR. NR /= NGY) THEN
+            LLINTERPOL=.TRUE.
+         ELSE
+           IF (KRGG == 1) THEN
+             DO J = 1, NGY 
+               IF (RLONRGG(J) /= KLONRGG_LOC(J)) THEN
+                 LLINTERPOL=.TRUE.
+                 EXIT
+               ENDIF
+             ENDDO
+           ELSE
+             IF ( NC /= KLONRGG_LOC(1) ) LLINTERPOL=.TRUE.
+           ENDIF
+         ENDIF
+
+         IF ( LLINTERPOL ) THEN
+           WRITE(IU06,*) '***********************************************'
+           WRITE(IU06,*) '*   ERROR IN SUB. GRIB2WGRID      *'
+           WRITE(IU06,*) '*  NO INTERPOLATION WAS REQUEST '
+           WRITE(IU06,*) '*  BUT IT DOES SEEM LIKE GRIDS ARE DIFFERENT !!! '
+           WRITE(IU06,*) '***********************************************'
+           CALL ABORT1
+         ENDIF
+      ENDIF
 
 !     GET THE DATA
       CALL IGRIB_SET_VALUE(KGRIB_HANDLE,'missingValue',PMISS)
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                                &
-     &                    'numberOfEffectiveValues',NUMBEROFVALUES)
-!! for reason I do not understand, I had a user who could not read grib2 wind data with
-!! numberOfEffectiveValues
-!! Instead, it worked with the following:
-!!     &                    'getNumberOfValues',NUMBEROFVALUES)
+
+      IF ( IGRIB_VERSION == 1 ) THEN
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberOfEffectiveValues',NUMBEROFVALUES)
+      ELSE
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'getNumberOfValues',NUMBEROFVALUES)
+      ENDIF
 
       ALLOCATE(VALUES(NUMBEROFVALUES))
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'values',VALUES)
 
+      IF ( IGRIB_VERSION == 1 ) THEN
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'directionNumber',KKK,IERR)
+        IF ( IERR /= 0 ) KKK=0
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'frequencyNumber',MMM,IERR)
+        IF ( IERR /= 0 ) MMM=0
+      ELSE
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'waveDirectionNumber',KKK,IERR)
+        IF ( IERR /= 0 ) KKK=0
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'waveFrequencyNumber',MMM,IERR)
+        IF ( IERR /= 0 ) MMM=0
+      ENDIF
+
 !     TRANSFORM WAVE SPECTRAL VALUE TO THEIR ACTUAL SCALE
-      KKK=0
-      MMM=0
-      IF (IPARAM == 251 .AND. CSTREAM /= '****') THEN
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'directionNumber',KKK)
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'frequencyNumber',MMM)
+      IF (ITABPAR == 140251 .AND. CSTREAM /= '****') THEN
 
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(LL, LS, LE, L)
         DO LL = 1, NUMBEROFVALUES, KPROMA
@@ -731,14 +774,47 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 !       REARRANGE DATA FIELD.
 !       --------------------
 
-        L = 0                                                          
-        DO K = NYS, NYE                                                
-          JSN = NGY-K+1
-          DO I = NXS, MIN(KLONRGG_LOC(JSN), NXE)
-            L = L+1                                                     
-            FIELD(I,K) = VALUES(L)
+!!      See above IF (.NOT.LLSCANNS) LLINTERPOL=.TRUE.
+!!      This means that we have assumed that FIELD will be organised such that
+!!      it goes from NORTH to SOUTH (It is accounted for later by using pointer JFROMIJ
+!!      when transferring to the block structure.
+
+        IF ( LLCHKINT ) THEN
+          ! Full copy
+          L = 0
+          DO K = 1, NGY
+            JSN = NGY-K+1
+            DO I = 1, KLONRGG_LOC(JSN)
+              L = L + 1
+              FIELD(I,K) = VALUES(L)
+            ENDDO
           ENDDO
-        ENDDO
+
+        ELSE
+
+          ! Copy only what is needed
+          L = 0
+
+          DO K = 1, NYS-1
+            JSN = NGY-K+1
+            L = L + KLONRGG_LOC(JSN)
+          ENDDO
+
+          DO K = NYS, NYE
+            L = L + NXS-1
+
+            JSN = NGY-K+1
+            DO I = NXS, MIN(KLONRGG_LOC(JSN), NXE)
+              L = L + 1
+              FIELD(I,K) = VALUES(L)
+            ENDDO
+
+            L = L + ( KLONRGG_LOC(JSN) - MIN(KLONRGG_LOC(JSN), NXE) )
+          ENDDO
+
+          ! skip the rest
+        ENDIF
+
         DEALLOCATE(VALUES)
 
       ELSE
@@ -868,6 +944,12 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
         ENDIF
 
 !       loop over all wave model latitudes.
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC) PRIVATE(K,JSN,I,LLSKIP,XI,RMOWEP_KK) &
+!$OMP&                                PRIVATE(XK,KK,KSN,KK1,KSN1,DK1,DK2) &
+!$OMP&                                PRIVATE(KSNLIM, XII, II, II1, DII1, DII2) &
+!$OMP&                                PRIVATE(KSN1LIM,XIIP,IIP,IIP1,DIIP1,DIIP2) &
+!$OMP&                                PRIVATE(LLNEAREST_LOC,KCL,ICL,NCOUNT,ID,WK)
+
         DO K = NYS, NYE                                                
           JSN = NGY-K+1
 !         loop over all wave model grid points on each latitude.
@@ -1031,6 +1113,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
           ENDDO
         ENDDO
+!$OMP   END PARALLEL DO
 
         DEALLOCATE(WORK)
       ENDIF

@@ -286,6 +286,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       LOGICAL, SAVE :: LFRST
       LOGICAL, SAVE :: LFRSTCHK
       LOGICAL, SAVE :: LLGRAPI
+      LOGICAL, SAVE :: LLINTERPOL
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
       LOGICAL :: LLINIT_FIELDG
@@ -300,6 +301,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       DATA LFRST /.TRUE./
       DATA LFRSTCHK /.TRUE./
       DATA LLGRAPI /.TRUE./
+      DATA LLINTERPOL /.TRUE./
 
 ! ---------------------------------------------------------------------
 
@@ -603,21 +605,35 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           ENDIF
 
         ELSE
-          NXS = NXFFS
-          NXE = NXFFE
-          NYS = NYFFS
-          NYE = NYFFE
+
+          IF ( LLINTERPOL ) THEN
+!!          This will end up forcing going through the interpolation part in grib2wgrid
+!!          even when the input data are on the same grid as the model run
+!!          but it wil also reduce the memory usage by avoiding large global arrays
+            NXS = NXFFS_LOC
+            NXE = NXFFE_LOC
+            NYS = NYFFS_LOC
+            NYE = NYFFE_LOC
+          ELSE
+            NXS = NXFFS
+            NXE = NXFFE
+            NYS = NYFFS
+            NYE = NYFFE
+          ENDIF
+
         ENDIF
 
         LLINIT = .FALSE.
         LLINIT_FIELDG = .NOT. LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
+
         CALL PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,    &
                       NXS, NXE, NYS, NYE, LLINIT_FIELDG,   &
      &                LLINIT, IREAD,                       &
      &                NFIELDS, NGPTOTG, NC, NR,            &
      &                FIELDS, LWCUR, MASK_IN,              &
      &                NEMO2WAM)
+
 
       ENDIF
 
@@ -787,14 +803,19 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL GSTATS(1443,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, KIJS, KIJL, IJSB, IJLB, IFLDOFFSET, IFLD)
         DO ICHNK = 1, NCHNK
-          CALL OUTBETA (1, NPROMA_WAM,                                                                          &
-     &                 FF_NOW%WSWAVE(:,ICHNK), FF_NOW%UFRIC(:,ICHNK), FF_NOW%Z0M(:,ICHNK), FF_NOW%Z0B(:,ICHNK), &
-     &                 FF_NOW%CHRNCK(:,ICHNK), BETAM(:,ICHNK), BETAB(:,ICHNK))
 
           KIJS = 1
           IJSB = IJFROMCHNK(KIJS,ICHNK)
           KIJL = KIJL4CHNK(ICHNK)
           IJLB = IJFROMCHNK(KIJL,ICHNK)
+
+          IF (LWCOU2W) THEN
+            CALL OUTBETA (1, NPROMA_WAM,                                                                          &
+     &                   FF_NOW%WSWAVE(:,ICHNK), FF_NOW%UFRIC(:,ICHNK), FF_NOW%Z0M(:,ICHNK), FF_NOW%Z0B(:,ICHNK), &
+     &                   FF_NOW%CHRNCK(:,ICHNK), BETAM(:,ICHNK), BETAB(:,ICHNK))
+          ELSE
+            BETAM(KIJS:KIJL,ICHNK) = PRCHAR 
+          ENDIF
 
           IFLDOFFSET=1
           WVBLOCK(IJSB:IJLB,IFLDOFFSET)=BETAM(KIJS:KIJL,ICHNK)
@@ -968,7 +989,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
             NTOT=NMASK
             DO JF=1,NWVFIELDS
               ICOUNT=ICOUNT+1
-              FAVG(JF)=NMASK*ZCOMBUFR(ICOUNT)
+              FAVG(JF)=MAX(NMASK,1)*ZCOMBUFR(ICOUNT)
               ICOUNT=ICOUNT+2
             ENDDO
             DO IP=1,NPROC
