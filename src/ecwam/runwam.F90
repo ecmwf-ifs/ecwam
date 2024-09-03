@@ -120,6 +120,7 @@
 #include "mpclose_unit.intfb.h"
 #include "wavemdl.intfb.h"
 #include "wvalloc.intfb.h"
+#include "wvdealloc.intfb.h"
 #include "wvwamdecomp.intfb.h"
 #include "wvwaminit.intfb.h"
 #include "wvwaminit1.intfb.h"
@@ -368,6 +369,8 @@
 
 !    4.  FINALIZE RUNWAM
 !        ---------------
+
+      CALL WVDEALLOC
 
       CALL GSTATS(0,1)
 
