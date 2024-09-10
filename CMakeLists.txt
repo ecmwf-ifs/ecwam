@@ -44,7 +44,7 @@ ecbuild_add_option( FEATURE MPI
 
 ecbuild_add_option( FEATURE MULTIO
                     DESCRIPTION "Support for IO to the FDB"
-                    REQUIRED_PACKAGES "multio" )
+                    REQUIRED_PACKAGES "multio VERSION 2.1" )
 
 ecbuild_add_option( FEATURE SINGLE_PRECISION
                     DEFAULT OFF
