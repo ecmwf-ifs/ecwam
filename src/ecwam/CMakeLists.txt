@@ -318,7 +318,6 @@ list( APPEND ecwam_srcs
   yowcurg.F90
   yowcurr.F90
   yowdes.F90
-  yowdrvtype.F90
   yowfpbo.F90
   yowfred.F90
   yowgrib.F90
@@ -365,13 +364,8 @@ if(HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack")
   list(REMOVE_ITEM ecwam_srcs wamintgr.F90)
 endif()
 
-list( APPEND ecwam_srcs ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90)
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/yowfield_mod.F90
-    COMMAND ${FYPP} -m io -M ${CMAKE_CURRENT_SOURCE_DIR}/../../share/ecwam/scripts -m ecwam_yaml_reader -m os
-    ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp > yowfield_mod.F90
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/yowfield_mod.fypp
-    VERBATIM)
+# expand derived-types using src/ecwam/yowdrvtype_config.yml
+ecwam_expand_drv_types()
 
 unset( MPI_Fortran_LIBRARIES )
 if( HAVE_GPU_AWARE_MPI )
@@ -403,14 +397,7 @@ endif()
 
 set(MULTIO_LIBRARIES)
 if( HAVE_MULTIO )
-  if( multio_HAVE_FDB5 )
-    # Force the linkage of multio-fdb5 for static builds
-    if( NOT BUILD_SHARED_LIBS )
-      list(APPEND MULTIO_LIBRARIES -Wl,--push-state,--no-as-needed multio-fdb5 -Wl,--pop-state)
-    else()
-     list(APPEND MULTIO_LIBRARIES multio-fdb5)
-    endif()
-  endif()
+  list(APPEND MULTIO_LIBRARIES multio-fapi)
   list(APPEND ECWAM_DEFINITIONS WAM_HAVE_MULTIO)
 endif()
 

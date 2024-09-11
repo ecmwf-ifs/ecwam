@@ -1,0 +1,59 @@
+# (C) Copyright 2022- ECMWF.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
+
+# ecWam derived-types and definitions
+
+objtypes:
+  environment:
+     rank: 2
+     types: [int, real]
+     vars: [[indep, iodp, iobnd], [dellam1, cosphm1, depth, emaxdpt, ucur, vcur]]
+  frequency:
+     rank: 3
+     types: [real]
+     vars: [[wavnum, cinv, cgroup, xk2cg, omosnh2kd, stokfac, ciwa]]
+  forcing_fields:
+     rank: 2
+     types: [real]
+     vars: [[uwnd, vwnd, aird, wstar, cicover, cithick, lkfr, ustra, vstra, ucur, vcur, wswave, wdwave,
+            ufric, tauw, tauwdir, z0m, z0b, chrnck, xlon, ylat]] 
+  wave2ocean:
+     rank: 2
+     types: [ocean]
+     vars: [[nswh, nmwp, nphieps, nemophif, ntauoc, nemotaux, nemotauy, nemoustokes, nemovstokes,
+            nemostrn, nemowswave]]
+  intgt_param_fields:
+     rank: 2
+     types: [real]
+     vars: [[wsemean, wsfmean, ustokes, vstokes, phieps, phiocd, phiaw, tauoc, tauxd, tauyd,
+            tauocxd, tauocyd, strnms, altwh, caltwh, raltcor]]
+  wvgridglo:
+     rank: 1
+     types: [int]
+     vars: [[ixlg, kxlt]]
+  wvgridloc:
+     rank: 2
+     types: [int]
+     vars: [[ifromij, kfromij, jfromij]]
+  frequency_land:
+     rank: 1
+     types: [real]
+     vars: [[wavnum, cinv, cgroup, xk2cg, omosnh2kd, stokfac, ciwa]]
+  ocean2wave:
+     rank: 2
+     types: [ocean]
+     vars: [[nemosst, nemocicover, nemocithick, nemoucur, nemovcur]]
+  type_4d:
+     rank: 4
+     types: [real]
+     vars: [[fl1, xllws]]
+  mij_type:
+     rank: 2
+     types: [int]
+     vars: [[ptr]]

@@ -136,7 +136,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWTEST  , ONLY : IU06
       USE YOWWNDG  , ONLY : ICODE_CPL
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,VARS_4D
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW   ,CDATEWO  ,CDATEFL ,     &
      &                      FF_NEXT  ,                                  &
      &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE,        &
@@ -466,7 +466,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                IREAD,                                   &
      &                BLK2GLO, BLK2LOC,                        &
      &                WVENVI, WVPRPT, FF_NOW,                  &
-     &                FL1,                                     &
+     &                VARS_4D%FL1,                             &
      &                NFIELDS, NGPTOTG, NC, NR,                &
      &                FIELDS, LWCUR, MASK_IN, PRPLRADI,        &
      &                NEMO2WAM)
@@ -635,7 +635,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       CALL WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,            &
      &              WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS, &
-     &              WAM2NEMO, NEMO2WAM, FL1)
+     &              WAM2NEMO, NEMO2WAM, VARS_4D)
 
 
 !*    2.2  DATA ASSIMILATION
@@ -660,12 +660,12 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           IF ( CDTPRO == CDTASS ) THEN
             CALL WAMASSI (LDSTOP, LDWRRE, BLK2GLO,          &
  &                        WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
- &                        WAM2NEMO, NEMO2WAM, FL1)
+ &                        WAM2NEMO, NEMO2WAM, VARS_4D%FL1)
           ENDIF
         ELSEIF ( (.NOT.LWCOU .AND. CDTPRO <= CDATEF ) .OR. (LWCOU .AND. CDTPRO == CDATEF) ) THEN
           CALL WAMASSI (LDSTOP, LDWRRE, BLK2GLO,          &
  &                      WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
- &                      WAM2NEMO, NEMO2WAM, FL1)
+ &                      WAM2NEMO, NEMO2WAM, VARS_4D%FL1)
         ENDIF
       ENDIF
 
