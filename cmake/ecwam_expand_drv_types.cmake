@@ -14,7 +14,7 @@
 
 macro( ecwam_expand_drv_types )
 
-   if( ${PNAME}_OCEANMODEL_HAVE_SINGLE_PRECISION )
+   if( ${OCEAN_PREC} STREQUAL SP )
       list(APPEND FYPP_ARGS -DPARKIND1_SINGLE_NEMO)
    endif()
 
