@@ -102,7 +102,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO                       ,    &
      &            IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO, TIME_PHYS,     &
-     &            TIME_PROPAG, MODEL_TIME, IO_TIME, MPI_TIME
+     &            TIME_PROPAG
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT
       USE YOWALTAS , ONLY : LODBRALT
       USE MPL_MODULE, ONLY : MPL_INIT, MPL_END, MPL_COMM
@@ -390,21 +390,10 @@
       WRITE (IU06,'(A)') ' ++++++++++++++++++++++++++++++'
       WRITE (IU06,'(A)') ' + TOTAL USER TIME IN SECONDS +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', time, '         +'
-      WRITE (IU06,'(A)') ' + MODEL TIME                 +'
-      WRITE (IU06,'(A,F18.2,A)') ' + ', MODEL_TIME, '         +'
-      WRITE (IU06,'(A)') ' + IO TIME                    +'
-      WRITE (IU06,'(A,F18.2,A)') ' + ', IO_TIME, '         +'
-      WRITE (IU06,'(A)') ' + MPI TIME                   +'
-      WRITE (IU06,'(A,F18.2,A)') ' + ', MPI_TIME, '         +'
       WRITE (IU06,'(A)') ' + WAVE PROPAGATION TIME      +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PROPAG, '         +'
-#if defined(WAM_GPU)
       WRITE (IU06,'(A)') ' + SOURCE TERM TIME           +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
-#else
-      WRITE (IU06,'(A)') ' + SOURCE TERM TIME           +'
-      WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
-#endif
       WRITE (IU06,'(A)') ' +                            +'
       WRITE (IU06,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
       WRITE (IU06,'(A)') ' ++++++++++++++++++++++++++++++'
@@ -412,21 +401,10 @@
         WRITE (6,'(A)') ' ++++++++++++++++++++++++++++++'
         WRITE (6,'(A)') ' + TOTAL USER TIME IN SECONDS +'
         WRITE (6,'(A,F18.2,A)') ' + ', time, '         +'
-        WRITE (6,'(A)') ' + MODEL TIME                 +'
-        WRITE (6,'(A,F18.2,A)') ' + ', MODEL_TIME, '         +'
-        WRITE (6,'(A)') ' + IO TIME                    +'
-        WRITE (6,'(A,F18.2,A)') ' + ', IO_TIME, '         +'
-        WRITE (6,'(A)') ' + MPI TIME                   +'
-        WRITE (6,'(A,F18.2,A)') ' + ', MPI_TIME, '         +'
         WRITE (6,'(A)') ' + WAVE PROPAGATION TIME      +'
         WRITE (6,'(A,F18.2,A)') ' + ', TIME_PROPAG, '         +'
-#if defined(WAM_GPU)
         WRITE (6,'(A)') ' + SOURCE TERM TIME           +'
         WRITE (6,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
-#else
-        WRITE (6,'(A)') ' + SOURCE TERM TIME           +'
-        WRITE (6,'(A,F18.2,A)') ' + ', TIME_PHYS, '         +'
-#endif
         WRITE (6,'(A)') ' +                            +'
         WRITE (6,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
         WRITE (6,'(A)') ' ++++++++++++++++++++++++++++++'
