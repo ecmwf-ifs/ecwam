@@ -243,8 +243,6 @@ Running
 -------
 No extra run-time options are needed to run the GPU enabled ecWam. Please note that this means that if ecWam is built
 using the `--with-loki` and `--with-acc` bundle arguments, it will necessarily be offloaded for GPU execution.
-For multi-GPU runs, the number of GPUs maps to the number of MPI ranks. Thus multiple GPUs can be requested by
-launching with multiple MPI ranks. The mapping of MPI ranks to GPUs assumes at most 4 GPUs per host node.
 
 Environment variables
 ---------------------
