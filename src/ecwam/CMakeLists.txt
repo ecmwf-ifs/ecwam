@@ -475,6 +475,12 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHE
       sbottom.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros "
   )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-Mnofma" )
+  if( HAVE_SINGLE_PRECISION )
+     set_source_files_properties( aki.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
+     set_source_files_properties( kurtosis.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
+     set_source_files_properties( stat_nl.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
+     set_source_files_properties( transf_bfi.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
+  endif()
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHES "Debug")
   string(REPLACE "-Ktrap=fp" "" ${PNAME}_Fortran_FLAGS_DEBUG ${${PNAME}_Fortran_FLAGS_DEBUG})
   set_source_files_properties( outbeta.F90 PROPERTIES COMPILE_OPTIONS "${${PNAME}_Fortran_FLAGS_DEBUG} -Ktrap=divz")
