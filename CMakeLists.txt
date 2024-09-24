@@ -64,7 +64,7 @@ if( NOT DEFINED OCEAN_PREC )
 endif()
 string( TOLOWER "${OCEAN_PREC}" ocean_prec )
 
-ecbuild_add_option( FEATURE OCEAN_COUPLING 
+ecbuild_add_option( FEATURE OCEAN_COUPLING
                     DEFAULT ON
                     DESCRIPTION "Support ocean coupling"
                     REQUIRED_PACKAGES "nemo_${ocean_prec}" )
@@ -113,7 +113,8 @@ ecbuild_add_option( FEATURE LOKI
 set( LOKI_MODE "scc-hoist" CACHE STRING "Transformation mode for Loki source transformations" )
 
 ### OpenACC
-if( ${CMAKE_VERSION} VERSION_LESS "3.25" AND (NOT DEFINED ENABLE_ACC OR ENABLE_ACC ) )
+if( ${CMAKE_VERSION} VERSION_LESS "3.25" AND HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" )
+  if ( ${PNAME}_ENABLE_ACC OR (NOT DEFINED ${PNAME}_ENABLE_ACC AND ENABLE_ACC) )
     # Incredibly inconvenient: FindOpenACC does _not_ set OpenACC_FOUND, only
     # the language-specific components OpenACC_Fortran_FOUND and OpenACC_C_FOUND.
     # This means, even internally CMake considers OpenACC as not found.
@@ -127,16 +128,17 @@ if( ${CMAKE_VERSION} VERSION_LESS "3.25" AND (NOT DEFINED ENABLE_ACC OR ENABLE_A
     if( OpenACC_Fortran_FOUND AND OpenACC_C_FOUND )
         set( OpenACC_FOUND ON )
     endif()
+  endif()
 endif()
 ecbuild_add_option( FEATURE ACC
                     DESCRIPTION "OpenACC" DEFAULT OFF
-                    REQUIRED_PACKAGES "OpenACC" 
+                    REQUIRED_PACKAGES "OpenACC COMPONENTS Fortran"
                     CONDITION HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" )
 
 ### CUDA-aware MPI
 ecbuild_add_option( FEATURE GPU_AWARE_MPI
                     DEFAULT OFF
-                    DESCRIPTION "Enable GPU-aware MPI" 
+                    DESCRIPTION "Enable GPU-aware MPI"
                     CONDITION HAVE_ACC AND MPI_Fortran_HAVE_F08_MODULE )
 
 ### Sources
@@ -161,4 +163,3 @@ add_subdirectory(doc)
 ecbuild_install_project( NAME ${PROJECT_NAME} )
 
 ecbuild_print_summary()
-
