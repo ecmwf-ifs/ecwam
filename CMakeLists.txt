@@ -125,7 +125,7 @@ if( ${CMAKE_VERSION} VERSION_LESS "3.25" AND HAVE_LOKI AND NOT LOKI_MODE MATCHES
     # and rectifies CMake's internal bookkeeping in the process.
     # This has been fixed in CMake 3.25
     find_package( OpenACC )
-    if( OpenACC_Fortran_FOUND AND OpenACC_C_FOUND )
+    if( OpenACC_Fortran_FOUND )
         set( OpenACC_FOUND ON )
     endif()
   endif()
