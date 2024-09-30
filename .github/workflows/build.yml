@@ -175,16 +175,15 @@ jobs:
       with:
         self_coverage: false
         force_build: true
-        cache_suffix: "${{ matrix.build_type }}-${{ matrix.prec }}-${{ env.CACHE_SUFFIX }}"
-#        recreate_cache: ${{ matrix.caching == false }}
-        recreate_cache: true
+        cache_suffix: "${{ matrix.build_type }}-${{ env.CACHE_SUFFIX }}"
+        recreate_cache: ${{ matrix.caching == false }}
         dependencies: |
           ecmwf/ecbuild
           ecmwf/eccodes
           ecmwf/fckit@refs/tags/0.13.0
           ecmwf-ifs/fiat@refs/tags/1.4.1
           ecmwf-ifs/field_api@refs/tags/v0.3.1
-          ecmwf-ifs/loki@refs/tags/v0.2.6
+          ecmwf-ifs/loki@refs/tags/v0.2.7
         dependency_branch: develop
         dependency_cmake_options: |
           ecmwf/fckit: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_FCKIT_VENV=ON"
