@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
+SUBROUTINE WAMODEL (NADV, LINIONLY, LFRSTRST, LDSTOP, LDWRRE, BLK2GLO,&
  &                  WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,  &
  &                  WAM2NEMO, NEMO2WAM, VARS_4D)
 
@@ -26,11 +26,13 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,
+!     *CALL* *WAMODEL (NADV, LINIONLY, LFRSTRST, LDSTOP, LDWRRE, BLK2GLO,
 !    &                 WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,
 !    &                 WAM2NEMO, NEMO2WAM, FL1)
 !        *NADV*      NUMBER OF ADVECTION ITERATIONS
 !                    PER CALL OF WAMODEL, OUTPUT PARAMETER.
+!        *LINIONLY*  INITIALISATION ONLY CALL (i.e. NO FOWARD TIME INTEGRATION) 
+!        *LFRSTRST*  FIRST TIME INTEGRATION AFTER RESTART
 !        *LDSTOP*    SET .TRUE. IF STOP SIGNAL RECEIVED.
 !        *LDWRRE*    SET .TRUE. IF RESTART SIGNAL RECEIVED.
 !        *BLK2GLO*   BLOCK TO GRID TRANSFORMATION
@@ -53,7 +55,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       USE YOWCOUP  , ONLY : LWCOU    ,                                  &
      &                      LWNEMOCOU,                                  &
      &                      NEMOWSTEP, NEMOFRCO     ,                   &
-     &                      NEMOCSTEP, NEMONSTEP
+     &                      NEMOCSTEP, NEMONSTEP    , KCOUSTEP
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,GFLAG20  ,    &
      &                      NGOUT    ,                                  &
      &                      NIPRMOUT ,                                  &
@@ -121,6 +123,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #endif
 
       INTEGER(KIND=JWIM), INTENT(IN)                                           :: NADV
+      LOGICAL, INTENT(IN)                                                      :: LINIONLY      
+      LOGICAL, INTENT(INOUT)                                                   :: LFRSTRST
       LOGICAL, INTENT(INOUT)                                                   :: LDSTOP, LDWRRE
       TYPE(WVGRIDGLO), INTENT(IN)                                              :: BLK2GLO
       TYPE(ENVIRONMENT), INTENT(INOUT)                                         :: WVENVI
@@ -173,7 +177,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !         --------------------------------------------------------------------
       IF (.NOT.LWCOU .AND. CDTPRO /= CDATEA .AND. CDTPRO == CDATEF) THEN
          CALL OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
- &                      WAM2NEMO, NEMO2WAM, VARS_4D%FL1)
+ &                      WAM2NEMO, NEMO2WAM, VARS_4D%FL1, LINIONLY)
       ENDIF
 
 !*    1. ADVECTION/PHYSICS TIME LOOP.
@@ -221,7 +225,15 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
             ENDIF
           ENDDO
         ELSE
-          IF ((FFLAG20.OR.GFLAG20) .AND. CDTINTT.LT.CDTPRO) CALL INCDATE (CDTINTT, IDELINT)
+          IF ((FFLAG20.OR.GFLAG20))  THEN
+            IF (LWCOU .AND. LRESTARTED .AND. LFRSTRST ) THEN
+              LFRSTRST = .FALSE.
+              CALL INCDATE (CDTINTT, KCOUSTEP)
+            ENDIF
+            IF (CDTINTT.LT.CDTPRO) THEN
+              CALL INCDATE (CDTINTT, IDELINT)
+            ENDIF
+          ENDIF
         ENDIF
 
 !       UPDATE SPECTRA OUTPUT DATE

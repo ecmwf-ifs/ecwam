@@ -286,6 +286,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
                                          !! re-initialise air density and w* (LLINIT = .FALSE.).
                                          !! Change it as soon as you can.
       LOGICAL, SAVE :: LFRSTCHK
+      LOGICAL, SAVE :: LFRSTRST          
       LOGICAL, SAVE :: LLINTERPOL
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
@@ -301,6 +302,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
       DATA LFRST /.TRUE./
       DATA LFRST_step0_hack /.TRUE./
       DATA LFRSTCHK /.TRUE./
+      DATA LFRSTRST /.TRUE./
       DATA LLINTERPOL /.TRUE./
 
 ! ---------------------------------------------------------------------
@@ -405,7 +407,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
 
         ENDIF
 
-        CALL INITMDL (NADV,                                    &
+        CALL INITMDL (NADV, LLWAVEINIT_ONLY,                   &
      &                IREAD,                                   &
      &                NLONW, NLATW,                            &
      &                BLK2GLO, BLK2LOC,                        &
@@ -592,7 +594,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
 
       CALL SETMARSTYPE
 
-      CALL WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,            &
+      CALL WAMODEL (NADV, LLWAVEINIT_ONLY, LFRSTRST, LDSTOP, LDWRRE, BLK2GLO, &
      &              WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS, &
      &              WAM2NEMO, NEMO2WAM, VARS_4D)
 

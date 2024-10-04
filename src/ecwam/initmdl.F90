@@ -8,6 +8,7 @@
 !
 
 SUBROUTINE INITMDL (NADV,                                 &
+ &                  LINIONLY,                             &
  &                  IREAD,                                &
  &                  NLONW, NLATW,                         &
  &                  BLK2GLO,  BLK2LOC,                    &
@@ -57,7 +58,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 
 !          ---- FORMAL PARAMETERS ----
 
-!    *CALL* *INITMDL (NADV,
+!    *CALL* *INITMDL (NADV, LINIONLY, 
 !    &                IREAD,
 !    &                BLK2GLO, BLK2LOC, 
 !    &                WVENVI, WVPRPT, FF_NOW, INTFLDS,
@@ -67,6 +68,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 !    &                WAM2NEMO, NEMO2WAM)*
 
 !      *NADV*      NUMBER OF ADVECTION ITERATIONS
+!      *LINIONLY*  INITIALISATION ONLY CALL (i.e. NO FOWARD TIME INTEGRATION)  
 !      *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                  (IF NEEDED).
 !      *BLK2GLO*   BLOCK TO GRID TRANSFORMATION
@@ -258,6 +260,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 #include "userin.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(OUT) :: NADV
+      LOGICAL,            INTENT(IN)  :: LINIONLY      
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       INTEGER(KIND=JWIM), INTENT(IN) :: NLONW
       INTEGER(KIND=JWIM), INTENT(IN) :: NLATW
@@ -1097,7 +1100,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 !         --------------------------------------------------
       IF (CDTPRO == CDATEA) THEN
          CALL OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
- &                      WAM2NEMO, NEMO2WAM, FL1)
+ &                      WAM2NEMO, NEMO2WAM, FL1, LINIONLY)
       ENDIF
 
 
