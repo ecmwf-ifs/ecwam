@@ -122,9 +122,6 @@
               ENDIF
             ENDDO
           ENDDO
-!!!debile
-      write(*,*) 'debile findb ',IRE,IO,BLATB(IO),BLNGB(IO),ILATS,ILATN,IOLG,IOLT,IJARB(IO)
-
         ENDIF
       ENDDO
 
