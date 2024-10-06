@@ -97,9 +97,6 @@
 !*    1.1 COMPUTE GRID MATRIX INDICES.
 !         ----------------------------
 
-!!!debile
-      write(*,*) 'debile findb ',IRE,IO,BLATB(IO),BLNGB(IO),ILATS,ILATN
-
         IOLT = NINT((BLATB(IO)-AMOSOP)/XDELLA+1.0_JWRB)
         ALONG = MOD(BLNGB(IO)-AMOWEP+720.0_JWRB,360.0_JWRB)
         IF (IOLT < ILATS .OR. IOLT > ILATN) THEN
@@ -125,6 +122,9 @@
               ENDIF
             ENDDO
           ENDDO
+!!!debile
+      write(*,*) 'debile findb ',IRE,IO,BLATB(IO),BLNGB(IO),ILATS,ILATN,IOLG,IOLT,IJARB(IO)
+
         ENDIF
       ENDDO
 
