@@ -110,7 +110,7 @@ ecbuild_add_option( FEATURE LOKI
                     REQUIRED_PACKAGES "loki" )
 
 # Set default Loki transformation mode
-set( LOKI_MODE "scc-hoist" CACHE STRING "Transformation mode for Loki source transformations" )
+set( LOKI_MODE "scc-stack" CACHE STRING "Transformation mode for Loki source transformations" )
 
 ### OpenACC
 if( ${CMAKE_VERSION} VERSION_LESS "3.25" AND HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" )
