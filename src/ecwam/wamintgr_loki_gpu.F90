@@ -155,7 +155,8 @@ IF (CDATE >= CDTIMPNEXT) THEN
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE_IMPLSCH)
       TIME0=-WAM_USER_CLOCK()
 
-!$acc parallel loop gang vector_length(NPROMA_WAM) default(present) copyin(NPROMA_WAM)
+!$acc data present(VARS_4D,WVPRPT,WVENVI,FF_NOW,WAM2NEMO,INTFLDS,MIJ) 
+
       DO ICHNK=1,NCHNK
          CALL IMPLSCH (1, NPROMA_WAM, VARS_4D%FL1(:,:,:,ICHNK),   &
  &                     WVPRPT%WAVNUM(:,:,ICHNK), WVPRPT%CGROUP(:,:,ICHNK), WVPRPT%CIWA(:,:,ICHNK), &
@@ -179,7 +180,8 @@ IF (CDATE >= CDTIMPNEXT) THEN
  &                     INTFLDS%PHIEPS(:,ICHNK), INTFLDS%PHIAW(:,ICHNK), &
  &                     MIJ%PTR(:,ICHNK), VARS_4D%XLLWS(:,:,:,ICHNK) )
       END DO
-!$acc end parallel loop
+
+!$acc end data
 
       TIME_PHYS = TIME_PHYS + (TIME0+WAM_USER_CLOCK())*1.E-06
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE_IMPLSCH)

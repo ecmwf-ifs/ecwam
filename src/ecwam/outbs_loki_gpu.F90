@@ -95,7 +95,8 @@ IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
 !$loki update_device
 
       CALL GSTATS(1502,0)
-!$acc parallel loop gang default(present) copyin(NPROMA_WAM) copyout(BOUT) vector_length(NPROMA_WAM)
+!$acc data present(MIJ,WVPRPT,WVENVI,INTFLDS,FF_NOW,NEMO2WAM) copyout(BOUT)
+
       DO ICHNK = 1, NCHNK
         CALL OUTBLOCK(1, NPROMA_WAM, MIJ(:,ICHNK),                        &
      &                FL1(:,:,:,ICHNK), XLLWS(:,:,:,ICHNK),               &
@@ -117,7 +118,8 @@ IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
      &                NEMO2WAM%NEMOVCUR(:, ICHNK), &
      &                BOUT(:,:,ICHNK))
       ENDDO
-!$acc end parallel loop
+
+!$acc end data
       CALL GSTATS(1502,1)
 
 !     PRINT OUT NORMS
