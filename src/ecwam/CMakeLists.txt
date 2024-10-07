@@ -362,6 +362,7 @@ list( APPEND ecwam_srcs
 if(HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack")
   list(APPEND ecwam_srcs wamintgr_loki_gpu.F90)
   list(REMOVE_ITEM ecwam_srcs wamintgr.F90)
+  list(APPEND ecwam_srcs cireduce_loki_gpu.F90)
 endif()
 
 # expand derived-types using src/ecwam/yowdrvtype_config.yml
@@ -404,10 +405,10 @@ endif()
 set( ${PNAME}_OCEANMODEL_LIBRARIES "" )
 if( HAVE_OCEAN_COUPLING )
   list(APPEND ECWAM_DEFINITIONS WITH_NEMO )
-  if( ${OCEAN_PREC} STREQUAL SP )
-    list(APPEND ECWAM_DEFINITIONS PARKIND1_SINGLE_NEMO )
-  endif()
   set( ${PNAME}_OCEANMODEL_LIBRARIES nemogcmcoup.${OCEAN_PREC} )
+endif()
+if( ${OCEAN_PREC} STREQUAL SP )
+  list(APPEND ECWAM_DEFINITIONS PARKIND1_SINGLE_NEMO )
 endif()
 
 if( HAVE_ECFLOW )
