@@ -135,7 +135,17 @@ ecbuild_add_option( FEATURE ACC
                     REQUIRED_PACKAGES "OpenACC COMPONENTS Fortran"
                     CONDITION HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" )
 
-### CUDA-aware MPI
+### CUDA
+include(CheckLanguage)
+check_language(CUDA)
+ecbuild_add_option( FEATURE CUDA
+    DESCRIPTION "CUDA" DEFAULT OFF
+    CONDITION CMAKE_CUDA_COMPILER AND HAVE_ACC )
+if( HAVE_CUDA )
+    enable_language( CUDA )
+endif()
+
+### GPU-aware MPI
 ecbuild_add_option( FEATURE GPU_AWARE_MPI
                     DEFAULT OFF
                     DESCRIPTION "Enable GPU-aware MPI"

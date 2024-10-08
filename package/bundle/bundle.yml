@@ -75,6 +75,11 @@ options :
         cmake : >
             ENABLE_ACC=ON
 
+    - with-cuda :
+        help  : Enable FIELD_API CUDA backend
+        cmake : >
+            ENABLE_CUDA=ON
+
     - without-loki-install :
         help  : Skip installation of Loki (Requires Loki to be on the PATH)
         cmake : >

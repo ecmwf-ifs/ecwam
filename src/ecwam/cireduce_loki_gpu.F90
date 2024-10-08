@@ -99,12 +99,14 @@ IF(LUPDATE_GPU_GLOBALS)THEN
 ENDIF
           CALL GSTATS(1493,0)
 !         DETERMINE THE WAVE ATTENUATION FACTOR
-!$acc parallel loop gang present(FF_NOW, WVPRPT) vector_length(NPROMA_WAM)
+!$acc data present(FF_NOW, WVPRPT)
+
           DO ICHNK = 1, NCHNK
             CALL CIWAF(1, NPROMA_WAM, WVPRPT%CGROUP(:,:,ICHNK), FF_NOW%CICOVER(:,ICHNK), &
 &                      FF_NOW%CITHICK(:,ICHNK), WVPRPT%CIWA(:,:,ICHNK))
           ENDDO
-!$acc end parallel loop
+
+!$acc end data
           CALL GSTATS(1493,1)
         ENDIF
 
