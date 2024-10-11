@@ -55,7 +55,6 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,WETAIL
-      USE YOWFRED  , ONLY : DELTH    ,TH       ,COSTH    ,SINTH !... needed for Loki
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
 
