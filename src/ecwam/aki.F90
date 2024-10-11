@@ -52,6 +52,7 @@ REAL(KIND=JWRB) FUNCTION AKI(OM,BETA)
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+!$loki routine seq
 
       REAL(KIND=JWRB), INTENT(IN) :: OM, BETA
 

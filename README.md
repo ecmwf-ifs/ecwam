@@ -232,7 +232,8 @@ Building
 The recommended option for building the GPU enabled ecWAM is to use the provided bundle, and pass the
 `--with-loki --with-acc` options. Different Loki transformations can also be chosen at build-time via the following 
 bundle option: `--loki-mode=<trafo>`. Direct GPU-to-GPU MPI communications can be enabled by passing the 
-`--with-gpu-aware-mpi` option.
+`--with-gpu-aware-mpi` option. CPU to GPU data transfers can be accelerated (via pinning of host-side allocations)
+by building with the `--with-cuda` option.
 
 The ecwam-bundle also provides appropriate arch files for the nvhpc suite on the ECMWF ATOS system.
 
@@ -240,8 +241,6 @@ Running
 -------
 No extra run-time options are needed to run the GPU enabled ecWam. Please note that this means that if ecWam is built
 using the `--with-loki` and `--with-acc` bundle arguments, it will necessarily be offloaded for GPU execution.
-For multi-GPU runs, the number of GPUs maps to the number of MPI ranks. Thus multiple GPUs can be requested by
-launching with multiple MPI ranks. The mapping of MPI ranks to GPUs assumes at most 4 GPUs per host node.
 
 Environment variables
 ---------------------
