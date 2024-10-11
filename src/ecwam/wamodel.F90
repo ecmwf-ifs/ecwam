@@ -112,7 +112,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #include "updnemofields.intfb.h"
 #include "updnemostress.intfb.h"
 #include "writsta.intfb.h"
-#include "wam_user_clock.intfb.h"
 
 #ifdef WAM_GPU
 #include "outbs_loki_gpu.intfb.h"
