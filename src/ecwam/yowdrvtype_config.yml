@@ -48,7 +48,7 @@ objtypes:
   ocean2wave:
      rank: 2
      types: [ocean]
-     vars: [[nemosst, nemocicover, nemocithick, nemoucur, nemovcur, nemociibr]]
+     vars: [[nemocicover, nemocithick, nemoucur, nemovcur, nemociibr]]
   type_4d:
      rank: 4
      types: [real]

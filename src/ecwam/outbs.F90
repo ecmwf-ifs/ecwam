@@ -112,7 +112,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
      &                FF_NOW%UFRIC(:,ICHNK), FF_NOW%TAUW(:,ICHNK), &
      &                FF_NOW%Z0M(:,ICHNK), FF_NOW%Z0B(:,ICHNK), FF_NOW%CHRNCK(:,ICHNK), &
      &                FF_NOW%CITHICK(:,ICHNK), &
-     &                NEMO2WAM%NEMOSST(:, ICHNK), NEMO2WAM%NEMOCICOVER(:,ICHNK), &
+     &                NEMO2WAM%NEMOCICOVER(:,ICHNK), &
      &                NEMO2WAM%NEMOCITHICK(:, ICHNK), NEMO2WAM%NEMOUCUR(:,ICHNK), &
      &                NEMO2WAM%NEMOVCUR(:, ICHNK), &
      &                BOUT(:,:,ICHNK))

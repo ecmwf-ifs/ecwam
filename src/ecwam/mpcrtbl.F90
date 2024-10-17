@@ -343,9 +343,9 @@
       IR = DEFINE_PARAMETER( 57, '057', 140207, 0, 0, 0, .True., .True., &
                            & 'SPECTRAL SKWENESS' )
 
-!     PARAMETER 058
-      IR = DEFINE_PARAMETER( 58, 'sst', 151159, 0, 0, 0, .False., .False., &
-                           & 'NEMO SST' )
+! !     PARAMETER 058
+!       IR = DEFINE_PARAMETER( 58, 'sst', 151159, 0, 0, 0, .False., .False., &
+!                            & 'NEMO SST' )
 
 !     PARAMETER 059
       IR = DEFINE_PARAMETER( 59, 'sst', 003091, 0, 0, 0, .False., .False., &
