@@ -82,7 +82,7 @@
       USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI ,            &
      &            LCIWA1, LCIWA2, LCIWA3, LCISCAL,                      &
-     &            LICETH, ZALPFACX              
+     &            LICETH, ZALPFACB, ZALPFACX              
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMAP   , ONLY : CLDOMAIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
