@@ -271,7 +271,12 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            F1(IJ,K,M)=MAX(FL1(IJ,K,M)-F1(IJ,K,M)+EPSMIN,0.0_JWRB)
+            !! add a small amount of noise in the wind direction
+            IF ( COSWDIF(IJ,K) > 0.8_JWRB .AND. M >= NFRE/2 ) THEN
+              F1(IJ,K,M)=MAX(FL1(IJ,K,M)-F1(IJ,K,M)+EPSMIN*COSWDIF(IJ,K)**4,0.0_JWRB)
+            ELSE
+              F1(IJ,K,M)=MAX(FL1(IJ,K,M)-F1(IJ,K,M),0.0_JWRB)
+            ENDIF
           ENDDO
         ENDDO
       ENDDO

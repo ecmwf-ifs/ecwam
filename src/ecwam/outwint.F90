@@ -100,7 +100,7 @@ SUBROUTINE OUTWINT(BOUT)
           IFCST=IFCST/3600
         ELSE
           WRITE(IU06,*) ' -----------------------------------------'
-          WRITE(IU06,*) ' ERROR in routine OUTINT :'
+          WRITE(IU06,*) ' ERROR in routine OUTWINT :'
           WRITE(IU06,*) ' forecast step must be  multiple of hours!'
           WRITE(IU06,*) ' IFCST =', IFCST
           WRITE(IU06,*) ' CDATEF=', CDATEF 
