@@ -343,111 +343,107 @@
       IR = DEFINE_PARAMETER( 57, '057', 140207, 0, 0, 0, .True., .True., &
                            & 'SPECTRAL SKWENESS' )
 
-! !     PARAMETER 058
-!       IR = DEFINE_PARAMETER( 58, 'sst', 151159, 0, 0, 0, .False., .False., &
-!                            & 'NEMO SST' )
-
-!     PARAMETER 059
-      IR = DEFINE_PARAMETER( 59, 'sst', 003091, 0, 0, 0, .False., .False., &
+!     PARAMETER 058
+      IR = DEFINE_PARAMETER( 58, 'sic', 003091, 0, 0, 0, .False., .False., &
                            & 'NEMO SEA ICE COVER' )
 
-!     PARAMETER 060
-      IR = DEFINE_PARAMETER( 60, '060', 003092, 0, 0, 0, .False., .False., &
+!     PARAMETER 059
+      IR = DEFINE_PARAMETER( 59, '059', 003092, 0, 0, 0, .False., .False., &
                            & 'NEMO SEA ICE THICKNESS' )
 
-!     PARAMETER 061
-      IR = DEFINE_PARAMETER( 61, 'ucurr', 003049, 0, 0, 0, .False., .False., &
+!     PARAMETER 060
+      IR = DEFINE_PARAMETER( 60, 'ucurr', 003049, 0, 0, 0, .False., .False., &
                            & 'NEMO ZONAL CURRENT' )
 
-!     PARAMETER 062
-      IR = DEFINE_PARAMETER( 62, 'vcurr', 003050, 0, 0, 0, .False., .False., &
+!     PARAMETER 061
+      IR = DEFINE_PARAMETER( 61, 'vcurr', 003050, 0, 0, 0, .False., .False., &
                            & 'NEMO MERIDIONAL CURRENT' )
 
       IR=IR+1
-!     PARAMETER 063
-      IR = DEFINE_PARAMETER( 63, '063', 140112, 0, 0, 0, .True., .True., &
+!     PARAMETER 062
+      IR = DEFINE_PARAMETER( 62, '062', 140112, 0, 0, 0, .True., .True., &
                            & 'WAVE ENERGY FLUX MAGNITUDE' )
 
-!     PARAMETER 064
-      IR = DEFINE_PARAMETER( 64, '064', 140113, 0, 0, 0, .True., .True., &
+!     PARAMETER 063
+      IR = DEFINE_PARAMETER( 63, '063', 140113, 0, 0, 0, .True., .True., &
                            & 'WAVE ENERGY FLUX DIRECTION' )
+
+!     PARAMETER 064
+      NTEWH = NTEWH + 1
+      IR = DEFINE_PARAMETER( 64, '064', 140114, 0, 10, 12, .True., .True., &
+                           & 'SIG. WAVE HEIGHT 10<=T<=12' )
 
 !     PARAMETER 065
       NTEWH = NTEWH + 1
-      IR = DEFINE_PARAMETER( 65, '065', 140114, 0, 10, 12, .True., .True., &
-                           & 'SIG. WAVE HEIGHT 10<=T<=12' )
+      IR = DEFINE_PARAMETER( 65, '065', 140115, 0, 12, 14, .True., .True., &
+                           & 'SIG. WAVE HEIGHT 12<=T<=14' )
 
 !     PARAMETER 066
       NTEWH = NTEWH + 1
-      IR = DEFINE_PARAMETER( 66, '066', 140115, 0, 12, 14, .True., .True., &
-                           & 'SIG. WAVE HEIGHT 12<=T<=14' )
+      IR = DEFINE_PARAMETER( 66, '066', 140116, 0, 14, 17, .True., .True., &
+                           & 'SIG. WAVE HEIGHT 14<=T<=17' )
 
 !     PARAMETER 067
       NTEWH = NTEWH + 1
-      IR = DEFINE_PARAMETER( 67, '067', 140116, 0, 14, 17, .True., .True., &
-                           & 'SIG. WAVE HEIGHT 14<=T<=17' )
+      IR = DEFINE_PARAMETER( 67, '067', 140117, 0, 17, 21, .True., .True., &
+                           & 'SIG. WAVE HEIGHT 17<=T<=21' )
 
 !     PARAMETER 068
       NTEWH = NTEWH + 1
-      IR = DEFINE_PARAMETER( 68, '068', 140117, 0, 17, 21, .True., .True., &
-                           & 'SIG. WAVE HEIGHT 17<=T<=21' )
+      IR = DEFINE_PARAMETER( 68, '068', 140118, 0, 21, 25, .True., .True., &
+                           & 'SIG. WAVE HEIGHT 21<=T<=25' )
 
 !     PARAMETER 069
       NTEWH = NTEWH + 1
-      IR = DEFINE_PARAMETER( 69, '069', 140118, 0, 21, 25, .True., .True., &
-                           & 'SIG. WAVE HEIGHT 21<=T<=25' )
-
-!     PARAMETER 070
-      NTEWH = NTEWH + 1
-      IR = DEFINE_PARAMETER( 70, '070', 140119, 0, 25, 30, .True., .True., &
+      IR = DEFINE_PARAMETER( 69, '069', 140119, 0, 25, 30, .True., .True., &
                            & 'SIG. WAVE HEIGHT 25<=T<=30' )
 
-!     PARAMETER 071
-      IR = DEFINE_PARAMETER( 71, '071', 140098, 0, 0, 0, .True., .True., &
+!     PARAMETER 070
+      IR = DEFINE_PARAMETER( 70, '070', 140098, 0, 0, 0, .True., .True., &
                            & 'WAVE INDUCED SEA LEVEL CORRECTION' )
 
-!     PARAMETER 072
-      IR = DEFINE_PARAMETER( 72, '072', 140099, 0, 0, 0, .True., .True., &
+!     PARAMETER 071
+      IR = DEFINE_PARAMETER( 71, '071', 140099, 0, 0, 0, .True., .True., &
                            & 'SPECTRAL WIDTH INDEX' )
 
-!     PARAMETER 073
-      IR = DEFINE_PARAMETER( 73, '073', 140100, 0, 0, 0, .True., .True., &
+!     PARAMETER 072
+      IR = DEFINE_PARAMETER( 72, '072', 140100, 0, 0, 0, .True., .True., &
                            & 'NUMBER OF FREAK WAVES EVENT' )
 
-!     PARAMETER 074
-      IR = DEFINE_PARAMETER( 74, '074', 140101, 0, 0, 0, .False., .True., &
+!     PARAMETER 073
+      IR = DEFINE_PARAMETER( 73, '073', 140101, 0, 0, 0, .False., .True., &
                            & 'U-COMP ATMOSPHERIC STRESS' )
 
-!     PARAMETER 075
-      IR = DEFINE_PARAMETER( 75, '075', 140102, 0, 0, 0, .False., .True., &
+!     PARAMETER 074
+      IR = DEFINE_PARAMETER( 74, '074', 140102, 0, 0, 0, .False., .True., &
                            & 'V-COMP ATMOSPHERIC STRESS' )
 
-!     PARAMETER 076
-      IR = DEFINE_PARAMETER( 76, '076', 140103, 0, 0, 0, .False., .True., &
+!     PARAMETER 075
+      IR = DEFINE_PARAMETER( 75, '075', 140103, 0, 0, 0, .False., .True., &
                            & 'U-COMP STRESS INTO OCEANS' )
 
-!     PARAMETER 077
-      IR = DEFINE_PARAMETER( 77, '077', 140104, 0, 0, 0, .False., .True., &
+!     PARAMETER 076
+      IR = DEFINE_PARAMETER( 76, '076', 140104, 0, 0, 0, .False., .True., &
                            & 'V-COMP STRESS INTO OCEANS' )
 
-!     PARAMETER 078
-      IR = DEFINE_PARAMETER( 78, '078', 140105, 0, 0, 0, .False., .True., &
+!     PARAMETER 077
+      IR = DEFINE_PARAMETER( 77, '077', 140105, 0, 0, 0, .False., .True., &
                            & 'TURB ENERGY FLUX INTO OCEANS' )
 
-!     PARAMETER 079
-      IR = DEFINE_PARAMETER( 79, 'tdcmax', 140131, 0, 0, 0, .True., .True., &
+!     PARAMETER 078
+      IR = DEFINE_PARAMETER( 78, 'tdcmax', 140131, 0, 0, 0, .True., .True., &
                            & 'TIME DOMAIN MAXIMUM CREST HEIGHT' )
 
-!     PARAMETER 080
-      IR = DEFINE_PARAMETER( 80, 'tdhmax', 140132, 0, 0, 0, .True., .True., &
+!     PARAMETER 079
+      IR = DEFINE_PARAMETER( 79, 'tdhmax', 140132, 0, 0, 0, .True., .True., &
                            & 'TIME DOMAIN MAXIMUM WAVE HEIGHT' )
 
-!     PARAMETER 081
-      IR = DEFINE_PARAMETER( 81, 'stcmax', 140133, 0, 0, 0, .True., .True., &
+!     PARAMETER 080
+      IR = DEFINE_PARAMETER( 80, 'stcmax', 140133, 0, 0, 0, .True., .True., &
                            & 'SPACE TIME MAXIMUM CREST HEIGHT' )
 
-!     PARAMETER 082
-      IR = DEFINE_PARAMETER( 82, 'sthmax', 140134, 0, 0, 0, .True., .True., &
+!     PARAMETER 081
+      IR = DEFINE_PARAMETER( 81, 'sthmax', 140134, 0, 0, 0, .True., .True., &
                            & 'SPACE TIME MAXIMUM WAVE HEIGHT' )
 
 
