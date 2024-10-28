@@ -107,7 +107,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUT  , ONLY : CASS     ,NASS
+      USE YOWCOUT  , ONLY : CASS     ,NASS, LWAMANOUT
       USE YOWCOUP  , ONLY : LWCOU, LWCOU2W, LWCOUHMF, LWFLUX,           &
      &         LWCOUNORMS, LLNORMWAMOUT_GLOBAL, LLNORMWAM2IFS,          &
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,             &
@@ -1036,6 +1036,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !     4. END OF RUN ?
 !        -----------
       IF (CDATEE == CDTPRO) THEN
+        IF(LWCOU) THEN
+          ! Prevent any further output until the namelist is read again.
+          LWAMANOUT = .FALSE.
+          WRITE(IU06,*) '  WAVEMDL: NORMAL END OF RUN. OUTPUT IS NOW DISABLED !'
+        ENDIF
         CALL MPL_BARRIER(CDSTRING='WAVEMDL: END')
         CALL FLUSH(IU06)
       ENDIF
