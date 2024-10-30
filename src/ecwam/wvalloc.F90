@@ -45,7 +45,7 @@
 !     1.  ALLOCATE NECESSARY ARRAYS
 !         -------------------------
 
-#ifdef _CUDA
+#ifdef WAM_HAVE_CUDA
 !.... Enable pinning of fields in page-locked memory
       INIT_PINNED_VALUE=.TRUE.
 #endif
