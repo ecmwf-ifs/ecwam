@@ -269,7 +269,6 @@ list( APPEND ecwam_srcs
   w_mode_st.F90
   w_pdf.F90
   w_pmax.F90
-  wam_init_gpu_mod.F90
   wam_multio_mod.F90
   wam_nproma.F90
   wam_sorti.F90
@@ -363,6 +362,7 @@ if(HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack")
   list(APPEND ecwam_srcs wamintgr_loki_gpu.F90)
   list(REMOVE_ITEM ecwam_srcs wamintgr.F90)
   list(APPEND ecwam_srcs cireduce_loki_gpu.F90)
+  list(APPEND ecwam_srcs outbs_loki_gpu.F90)
 endif()
 
 # expand derived-types using src/ecwam/yowdrvtype_config.yml
@@ -445,7 +445,7 @@ ecbuild_add_library(
                      $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
     PRIVATE_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
-    PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS}
+    PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS} $<${HAVE_CUDA}:WAM_HAVE_CUDA>
     PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
 )
 
@@ -458,6 +458,10 @@ ecwam_target_fortran_module_directory(
 if( HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
    target_link_options( ${ecwam} INTERFACE SHELL:${OpenACC_Fortran_FLAGS} )
    target_compile_options( ${ecwam} PRIVATE "-gpu=maxregcount:128" )
+endif()
+
+if( HAVE_CUDA )
+  target_link_options( ${ecwam} PUBLIC "-cuda;-gpu=pinned" )
 endif()
 
 ecwam_target_compile_definitions_FILENAME( ${ecwam} )

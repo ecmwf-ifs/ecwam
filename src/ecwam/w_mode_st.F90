@@ -33,6 +33,7 @@ USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 ! ----------------------------------------------------------------------
 
 IMPLICIT NONE
+!$loki routine seq
 
 !     INTERFACE VARIABLES.                                                     !
 !     --------------------                                                     !

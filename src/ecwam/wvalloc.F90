@@ -22,12 +22,13 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSHAL  , ONLY : WVPRPT
-      USE YOWSPEC  , ONLY : FF_NOW   ,VARS_4D
+      USE YOWSPEC  , ONLY : FF_NOW   ,VARS_4D, MIJ
       USE YOWWIND  , ONLY : FF_NEXT
 
       USE YOWNEMOFLDS , ONLY : WAM2NEMO, NEMO2WAM
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE FIELD_DEFAULTS_MODULE, ONLY : INIT_PINNED_VALUE
 
 ! ----------------------------------------------------------------------
 
@@ -44,6 +45,11 @@
 !     1.  ALLOCATE NECESSARY ARRAYS
 !         -------------------------
 
+#ifdef WAM_HAVE_CUDA
+!.... Enable pinning of fields in page-locked memory
+      INIT_PINNED_VALUE=.TRUE.
+#endif
+
       IF (.NOT. WVPRPT%LALLOC)THEN
          CALL WVPRPT%ALLOC(UBOUNDS=[NPROMA_WAM, NFRE, NCHNK])
       ENDIF
@@ -57,7 +63,10 @@
         VARS_4D%FL1(:,:,:,:) = 0.0_JWRB
       ENDIF
 
-
+      IF(.NOT. MIJ%LALLOC)THEN
+        CALL MIJ%ALLOC(UBOUNDS=[NPROMA_WAM, NCHNK])
+        MIJ%PTR(:,:) = 0.0_JWRB
+      ENDIF
 
       IF (.NOT. INTFLDS%LALLOC) THEN
         CALL INTFLDS%ALLOC(UBOUNDS=[NPROMA_WAM, NCHNK])
