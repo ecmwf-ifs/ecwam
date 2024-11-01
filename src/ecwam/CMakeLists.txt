@@ -457,7 +457,7 @@ ecwam_target_fortran_module_directory(
 
 if( HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
    target_link_options( ${ecwam} INTERFACE SHELL:${OpenACC_Fortran_FLAGS} )
-   target_compile_options( ${ecwam} PRIVATE "-gpu=maxregcount:128,fastmath" )
+   target_compile_options( ${ecwam} PRIVATE "-gpu=maxregcount:168,fastmath" )
 endif()
 
 if( HAVE_CUDA )
