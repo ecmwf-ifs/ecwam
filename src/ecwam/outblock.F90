@@ -531,8 +531,8 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
       ENDIF
 
 !!    alternative ways to determine wave height extremes 
-      IF (IPFGTBL(63 + 3*NTRAIN + NTEWH) /= 0 .OR. IPFGTBL(64 + 3*NTRAIN + NTEWH) /= 0  .OR. &
-&         IPFGTBL(65 + 3*NTRAIN + NTEWH) /= 0 .OR. IPFGTBL(66 + 3*NTRAIN + NTEWH) /= 0 ) THEN
+      IF (IPFGTBL(64 + 3*NTRAIN + NTEWH) /= 0 .OR. IPFGTBL(65 + 3*NTRAIN + NTEWH) /= 0  .OR. &
+&         IPFGTBL(66 + 3*NTRAIN + NTEWH) /= 0 .OR. IPFGTBL(67 + 3*NTRAIN + NTEWH) /= 0 ) THEN
         CALL W_MAXH (KIJS, KIJL, FL1, DEPTH, WAVNUM,            &
      &               CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST)
       ENDIF 
