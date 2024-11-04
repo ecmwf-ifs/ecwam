@@ -511,14 +511,12 @@ endif()
 if( HAVE_LOKI )
 
   set( LOKI_FRONTEND "fp" CACHE STRING "Frontend parser for Loki source transformations" )
-  set( SCC_ARGS "")
 
   if( LOKI_MODE MATCHES "idem|idem-stack" )
      set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config )
   else()
      set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
      target_compile_definitions( ${ecwam} PRIVATE WAM_GPU )
-     set( SCC_ARGS "TRIM_VECTOR_SECTIONS;GLOBAL_VAR_OFFLOAD")
   endif()
 
   # Apply Loki source file transformation to lib target
@@ -528,7 +526,6 @@ if( HAVE_LOKI )
     FRONTEND ${LOKI_FRONTEND}
     CONFIG ${LOKI_CONFIG_FILE}
     PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_plan_ecwam.cmake
-    ${SCC_ARGS}
     CPP
     DEFINITIONS WAM_GPU
     INCLUDES ${ecwam_intfb_includes}
