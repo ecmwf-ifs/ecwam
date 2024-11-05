@@ -19,7 +19,7 @@ on:
 env:
   ECWAM_TOOLS: ${{ github.workspace }}/.github/tools
   CTEST_PARALLEL_LEVEL: 1
-  CACHE_SUFFIX: v0         # Increase to force new cache to be created
+  CACHE_SUFFIX: v1         # Increase to force new cache to be created
 
 jobs:
   ci:
@@ -109,9 +109,11 @@ jobs:
           export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
           export HOMEBREW_NO_AUTO_UPDATE=1
           export HOMEBREW_NO_INSTALL_CLEANUP=1
+          export SDKROOT=$(xcrun --show-sdk-path)
           echo "HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1" >> $GITHUB_ENV
           echo "HOMEBREW_NO_AUTO_UPDATE=1"                >> $GITHUB_ENV
           echo "HOMEBREW_NO_INSTALL_CLEANUP=1"            >> $GITHUB_ENV
+          echo "SDKROOT=$(xcrun --show-sdk-path)"         >> $GITHUB_ENV
           brew install ninja
           brew install libomp
           brew install libaec
