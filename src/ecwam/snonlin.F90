@@ -222,6 +222,7 @@
         IF (MC > MFR1STFR .AND. MC < MFRLSTFR ) THEN
 !       the interactions for MC are all within the fully resolved spectral domain
 
+          !$loki loop-interchange
           DO KH=1,2
             DO K=1,NANG
               K1  = K1W (K,KH)
@@ -309,6 +310,7 @@
           ENDDO
 
         ELSEIF (MC >= MFRLSTFR ) THEN
+          !$loki loop-interchange
           DO KH=1,2
             DO K=1,NANG
               K1  = K1W (K,KH)
@@ -411,6 +413,7 @@
 
         ELSE
 
+          !$loki loop-interchange
           DO KH=1,2
             DO K=1,NANG
               K1  = K1W (K,KH)
