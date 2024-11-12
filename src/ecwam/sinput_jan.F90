@@ -164,8 +164,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,2) :: SIGDEV ,US, Z0, UCN, ZCN
       REAL(KIND=JWRB), DIMENSION(KIJL,2) :: USTPM1
       REAL(KIND=JWRB), DIMENSION(KIJL,2) :: XVD, UCND, CONST3_UCN2
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: UFAC1, UFAC2
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: TEMPD
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: UFAC1, UFAC2
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,2) :: GAM0
 
       LOGICAL, DIMENSION(KIJL,NANG) :: LZ
@@ -195,10 +194,8 @@
         DO IJ=KIJS,KIJL
           IF (COSWDIF(IJ,K) > 0.01_JWRB) THEN
             LZ(IJ,K) = .TRUE.
-            TEMPD(IJ,K) = XKAPPA/COSWDIF(IJ,K)
           ELSE
             LZ(IJ,K) = .FALSE.
-            TEMPD(IJ,K) = XKAPPA 
           ENDIF
         ENDDO
       ENDDO
@@ -263,14 +260,6 @@
 !*    2. LOOP OVER FREQUENCIES.
 !        ----------------------
 
-      IF ( .NOT. LLNORMAGAM) THEN
-        GAMNORMA(KIJS:KIJL,:) = 1.0_JWRB
-      ENDIF
-
-      IF ( .NOT. LLSNEG) THEN
-        UFAC2(KIJS:KIJL,:) = 0.0_JWRB
-      ENDIF
-
       DO M=1,NFRE
 
         CONST=ZPIFR(M)*CONST1
@@ -308,7 +297,7 @@
           DO IGST=1,NGST
             DO IJ=KIJS,KIJL
               IF (LZ(IJ,K)) THEN
-                ZLOG = ZCN(IJ,IGST) + TEMPD(IJ,K)*UCND(IJ,IGST)
+                ZLOG = ZCN(IJ,IGST) + XKAPPA/COSWDIF(IJ,K)*UCND(IJ,IGST)
                 IF (ZLOG < 0.0_JWRB) THEN
                   X=COSWDIF(IJ,K)*UCN(IJ,IGST)
                   ZLOG2X=ZLOG*ZLOG*X
@@ -349,46 +338,46 @@
             ENDDO
 
           ENDDO
-
+        
+        ELSE
+          GAMNORMA(KIJS:KIJL,:) = 1.0_JWRB
         ENDIF
 
 
         DO K=1,NANG
           DO IJ=KIJS,KIJL
-            UFAC1(IJ,K) = WSIN(1)*GAM0(IJ,K,1)*GAMNORMA(IJ,1)
+            UFAC1(IJ) = WSIN(1)*GAM0(IJ,K,1)*GAMNORMA(IJ,1)
           ENDDO
           DO IGST=2,NGST
             DO IJ=KIJS,KIJL
-              UFAC1(IJ,K) = UFAC1(IJ,K) + WSIN(IGST)*GAM0(IJ,K,IGST)*GAMNORMA(IJ,IGST)
+              UFAC1(IJ) = UFAC1(IJ) + WSIN(IGST)*GAM0(IJ,K,IGST)*GAMNORMA(IJ,IGST)
             ENDDO
           ENDDO
-        ENDDO
 
-        IF (LLSNEG) THEN
-!         SWELL DAMPING:
-          DO K=1,NANG
+          IF (LLSNEG) THEN
+!           SWELL DAMPING:
             DO IGST=1,1
               DO IJ=KIJS,KIJL
                 ZBETA = CONST3_UCN2(IJ,IGST)*(COSWDIF(IJ,K)-XVD(IJ,IGST))
-                UFAC2(IJ,K) = WSIN(IGST)*ZBETA
+                UFAC2(IJ) = WSIN(IGST)*ZBETA
               ENDDO
             ENDDO
             DO IGST=2,NGST
               DO IJ=KIJS,KIJL
                 ZBETA = CONST3_UCN2(IJ,IGST)*(COSWDIF(IJ,K)-XVD(IJ,IGST))
-                UFAC2(IJ,K) = UFAC2(IJ,K)+WSIN(IGST)*ZBETA
+                UFAC2(IJ) = UFAC2(IJ)+WSIN(IGST)*ZBETA
               ENDDO
             ENDDO
-          ENDDO
-        ENDIF
+          ELSE
+            UFAC2(KIJS:KIJL) = 0.0_JWRB
+          ENDIF
 
 !*    2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
 !         ------------------------------------------------
 
-        DO K=1,NANG
           DO IJ=KIJS,KIJL
-            FLD(IJ,K,M) = UFAC1(IJ,K) + UFAC2(IJ,K)*CNSN(IJ)
-            SPOS(IJ,K,M) = UFAC1(IJ,K)*FL1(IJ,K,M)
+            FLD(IJ,K,M) = UFAC1(IJ) + UFAC2(IJ)*CNSN(IJ)
+            SPOS(IJ,K,M) = UFAC1(IJ)*FL1(IJ,K,M)
             SL(IJ,K,M) = FLD(IJ,K,M)*FL1(IJ,K,M)
           ENDDO
         ENDDO
