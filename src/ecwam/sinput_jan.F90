@@ -241,18 +241,25 @@
           Z0(IJ,1) = Z0M(IJ)
         ENDDO
       ELSE
-        DO IGST=1,NGST
-          DO IJ=KIJS,KIJL
-            US(IJ,IGST) = UFRIC(IJ)*SIGDEV(IJ,IGST)
-            Z0(IJ,IGST) = Z0M(IJ)
-          ENDDO
+        !... Expressing the IGST loop in this way enables the compiler to
+        !... unroll it whilst still retaining correctness for the case
+        !... where NGST == 1. This is an important optimisation for GPUs.
+        DO IGST=1,2
+          IF(IGST <= NGST)THEN
+            DO IJ=KIJS,KIJL
+              US(IJ,IGST) = UFRIC(IJ)*SIGDEV(IJ,IGST)
+              Z0(IJ,IGST) = Z0M(IJ)
+            ENDDO
+          ENDIF
         ENDDO
       ENDIF
 
-      DO IGST=1,NGST
-        DO IJ=KIJS,KIJL
-          USTPM1(IJ,IGST) = 1.0_JWRB/MAX(US(IJ,IGST),EPSUS)
-        ENDDO
+      DO IGST=1,2
+        IF(IGST <= NGST)THEN
+          DO IJ=KIJS,KIJL
+            USTPM1(IJ,IGST) = 1.0_JWRB/MAX(US(IJ,IGST),EPSUS)
+          ENDDO
+        ENDIF
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -275,14 +282,16 @@
           CNSN(IJ) = CONST*ZTANHKD(IJ)*RAORW(IJ)
         ENDDO
 
-        DO IGST=1,NGST
-          DO IJ=KIJS,KIJL
-            UCN(IJ,IGST) = US(IJ,IGST)*CINV(IJ,M) + ZALP
-            CONST3_UCN2(IJ,IGST) = CONST3*UCN(IJ,IGST)**2
-            UCND(IJ,IGST) = 1.0_JWRB/ UCN(IJ,IGST)
-            ZCN(IJ,IGST)  = LOG(WAVNUM(IJ,M)*Z0(IJ,IGST))
-            XVD(IJ,IGST) = 1.0_JWRB/(-US(IJ,IGST)*XKAPPAD*ZCN(IJ,IGST)*CINV(IJ,M))
-          ENDDO
+        DO IGST=1,2
+          IF(IGST <= NGST)THEN
+            DO IJ=KIJS,KIJL
+              UCN(IJ,IGST) = US(IJ,IGST)*CINV(IJ,M) + ZALP
+              CONST3_UCN2(IJ,IGST) = CONST3*UCN(IJ,IGST)**2
+              UCND(IJ,IGST) = 1.0_JWRB/ UCN(IJ,IGST)
+              ZCN(IJ,IGST)  = LOG(WAVNUM(IJ,M)*Z0(IJ,IGST))
+              XVD(IJ,IGST) = 1.0_JWRB/(-US(IJ,IGST)*XKAPPAD*ZCN(IJ,IGST)*CINV(IJ,M))
+            ENDDO
+          ENDIF
         ENDDO
 
 !*    2.1 LOOP OVER DIRECTIONS.
@@ -294,22 +303,24 @@
             XLLWS(IJ,K,M)= 0.0_JWRB
           ENDDO
 
-          DO IGST=1,NGST
-            DO IJ=KIJS,KIJL
-              IF (LZ(IJ,K)) THEN
-                ZLOG = ZCN(IJ,IGST) + XKAPPA/COSWDIF(IJ,K)*UCND(IJ,IGST)
-                IF (ZLOG < 0.0_JWRB) THEN
-                  X=COSWDIF(IJ,K)*UCN(IJ,IGST)
-                  ZLOG2X=ZLOG*ZLOG*X
-                  GAM0(IJ,K,IGST) = ZLOG2X*ZLOG2X*EXP(ZLOG) * CNSN(IJ)
-                  XLLWS(IJ,K,M)= 1.0_JWRB
+          DO IGST=1,2
+            IF(IGST <= NGST)THEN
+              DO IJ=KIJS,KIJL
+                IF (LZ(IJ,K)) THEN
+                  ZLOG = ZCN(IJ,IGST) + XKAPPA/COSWDIF(IJ,K)*UCND(IJ,IGST)
+                  IF (ZLOG < 0.0_JWRB) THEN
+                    X=COSWDIF(IJ,K)*UCN(IJ,IGST)
+                    ZLOG2X=ZLOG*ZLOG*X
+                    GAM0(IJ,K,IGST) = ZLOG2X*ZLOG2X*EXP(ZLOG) * CNSN(IJ)
+                    XLLWS(IJ,K,M)= 1.0_JWRB
+                  ELSE
+                    GAM0(IJ,K,IGST) = 0.0_JWRB
+                  ENDIF
                 ELSE
                   GAM0(IJ,K,IGST) = 0.0_JWRB
                 ENDIF
-              ELSE
-                GAM0(IJ,K,IGST) = 0.0_JWRB
-              ENDIF
-            ENDDO
+              ENDDO
+            ENDIF
           ENDDO
 
         ENDDO
@@ -321,22 +332,24 @@
             XNGAMCONST(IJ) = CSTRNFAC(IJ)*XK2CG(IJ,M)
           ENDDO
 
-          DO IGST=1,NGST
+          DO IGST=1,2
+            IF(IGST <= NGST)THEN
 
-            SUMF(KIJS:KIJL) = 0.0_JWRB
-            SUMFSIN2(KIJS:KIJL) = 0.0_JWRB
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)
-                SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SINWDIF2(IJ,K)
+              SUMF(KIJS:KIJL) = 0.0_JWRB
+              SUMFSIN2(KIJS:KIJL) = 0.0_JWRB
+              DO K=1,NANG
+                DO IJ=KIJS,KIJL
+                  SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)
+                  SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SINWDIF2(IJ,K)
+                ENDDO
               ENDDO
-            ENDDO
 
-            DO IJ=KIJS,KIJL
-              ZNZ = XNGAMCONST(IJ)*USTPM1(IJ,IGST)
-              GAMNORMA(IJ,IGST) = (1.0_JWRB + ZNZ*SUMFSIN2(IJ)) / (1.0_JWRB + ZNZ*SUMF(IJ))
-            ENDDO
+              DO IJ=KIJS,KIJL
+                ZNZ = XNGAMCONST(IJ)*USTPM1(IJ,IGST)
+                GAMNORMA(IJ,IGST) = (1.0_JWRB + ZNZ*SUMFSIN2(IJ)) / (1.0_JWRB + ZNZ*SUMF(IJ))
+              ENDDO
 
+            ENDIF
           ENDDO
         
         ELSE
@@ -348,26 +361,24 @@
           DO IJ=KIJS,KIJL
             UFAC1(IJ) = WSIN(1)*GAM0(IJ,K,1)*GAMNORMA(IJ,1)
           ENDDO
-          DO IGST=2,NGST
+          IF(NGST == 2)THEN
             DO IJ=KIJS,KIJL
-              UFAC1(IJ) = UFAC1(IJ) + WSIN(IGST)*GAM0(IJ,K,IGST)*GAMNORMA(IJ,IGST)
+              UFAC1(IJ) = UFAC1(IJ) + WSIN(2)*GAM0(IJ,K,2)*GAMNORMA(IJ,2)
             ENDDO
-          ENDDO
+          ENDIF
 
           IF (LLSNEG) THEN
 !           SWELL DAMPING:
-            DO IGST=1,1
-              DO IJ=KIJS,KIJL
-                ZBETA = CONST3_UCN2(IJ,IGST)*(COSWDIF(IJ,K)-XVD(IJ,IGST))
-                UFAC2(IJ) = WSIN(IGST)*ZBETA
-              ENDDO
+            DO IJ=KIJS,KIJL
+              ZBETA = CONST3_UCN2(IJ,1)*(COSWDIF(IJ,K)-XVD(IJ,1))
+              UFAC2(IJ) = WSIN(1)*ZBETA
             ENDDO
-            DO IGST=2,NGST
+            IF(NGST == 2)THEN
               DO IJ=KIJS,KIJL
-                ZBETA = CONST3_UCN2(IJ,IGST)*(COSWDIF(IJ,K)-XVD(IJ,IGST))
-                UFAC2(IJ) = UFAC2(IJ)+WSIN(IGST)*ZBETA
+                ZBETA = CONST3_UCN2(IJ,2)*(COSWDIF(IJ,K)-XVD(IJ,2))
+                UFAC2(IJ) = UFAC2(IJ)+WSIN(2)*ZBETA
               ENDDO
-            ENDDO
+            ENDIF
           ELSE
             UFAC2(KIJS:KIJL) = 0.0_JWRB
           ENDIF
