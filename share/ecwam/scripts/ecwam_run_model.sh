@@ -212,6 +212,7 @@ cat > wam_namelist << EOF
   CBPLTDT               = "${begofrn}",
   CEPLTDT               = "${endofrn}",
   CDATEF                = "${begoffo}",
+  CDATECURA             = "${begoffo}",
   DELPRO_LF             = ${adv_fast_tstp},
   IFRELFMAX             = ${ifrelfmax},
   IDELPRO               = ${adv_base_tstp},
