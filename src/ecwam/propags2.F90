@@ -96,7 +96,8 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
 
-          !$acc kernels present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,KPM)
+          !$acc parallel loop independent collapse(3) &
+          !$acc & present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,KPM)
           DO K = 1, NANG
             DO M = ND3S, ND3E
 
@@ -117,7 +118,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
             ENDDO
           ENDDO
-          !$acc end kernels 
+          !$acc end parallel loop 
 
         ELSE
 !*      DEPTH AND CURRENT REFRACTION.
