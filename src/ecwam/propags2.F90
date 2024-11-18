@@ -96,7 +96,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
 
-          !$acc kernels loop present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
+          !$acc kernels present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,KPM)
           DO K = 1, NANG
             DO M = ND3S, ND3E
 
@@ -122,10 +122,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
         ELSE
 !*      DEPTH AND CURRENT REFRACTION.
 !       -----------------------------
-#ifdef _OPENACC
-           CALL WAM_ABORT("PROPAGS2: BRANCH NOT YET PORTED FOR GPU EXECUTION")
-#endif
 
+          !$acc kernels present(F1,F3,SUMWN,WLONN,KLON,WLATN,KLAT,WCORN,KCOR, &
+          !$acc &               LLWKPMN,WKPMN,KPM,LLWMPMN,WMPMN,MPM)
           DO M = ND3S, ND3E
             DO K = 1, NANG
 
@@ -177,6 +176,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
             ENDDO
           ENDDO
+          !$acc end kernels
 
         ENDIF
 

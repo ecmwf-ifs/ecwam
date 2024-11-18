@@ -187,4 +187,11 @@
 !$acc declare create(SUMWN)
 !$acc declare create(LLWKPMN)
 !$acc declare create(KPM)
+!$acc declare create(MPM)
+!$acc declare create(WMPMN)
+!$acc declare create(LLWLATN)
+!$acc declare create(LLWLONN)
+!$acc declare create(LLWCORN)
+!$acc declare create(LLWKPMN)
+!$acc declare create(LLWMPMN)
         END MODULE YOWUBUF

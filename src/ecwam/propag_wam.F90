@@ -117,7 +117,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 !!! the advection schemes are still written in block structure
 !!! mapping chuncks to block ONLY for actual grid points !!!!
 #ifdef _OPENACC
-        !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
+        !$acc parallel loop private(KIJS, IJSB, KIJL, IJLB)
 #else
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K)
 #endif /*_OPENACC*/
@@ -134,7 +134,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
           ENDDO
         ENDDO
 #ifdef _OPENACC
-        !$acc end kernels
+        !$acc end parallel loop
 #else
 !$OMP   END PARALLEL DO
 #endif /*_OPENACC*/
@@ -171,9 +171,6 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 !          ---------------------
 
            IF (LLUPDTTD) THEN
-#ifdef _OPENACC
-           CALL WAM_ABORT("PROPAG_WAM: BRANCH NOT YET PORTED FOR GPU EXECUTION")
-#endif
              IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJSG:IJLG, NANG))
              IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJSG:IJLG, NANG))
              IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJSG:IJLG, NANG, NFRE_RED))
@@ -187,7 +184,11 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 !            DOT THETA TERM:
 
+#ifdef _OPENACC
+             !$acc data create(THDC,THDD,SDOT) present(BUFFER_EXT,BLK2GLO)
+#else
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
+#endif
              DO JKGLO = IJSG, IJLG, NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1, IJLG)
@@ -199,7 +200,11 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
      &                      BUFFER_EXT(:,3*NFRE_RED+4), BUFFER_EXT(:,3*NFRE_RED+5),    &
      &                      THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
              ENDDO
+#ifdef _OPENACC
+             !$acc end data
+#else
 !$OMP        END PARALLEL DO
+#endif
 
              LLUPDTTD = .FALSE.
            ENDIF

@@ -107,6 +107,8 @@ IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
 !*    1. INITIALISE.
 !        -----------
 
+!$acc data present(KLAT,WLAT,DPTHEXT) copyin(DELLAM)
+
       NLAND=NSUP+1
       ONEO2DELPHI = 0.5_JWRB/DELPHI
 
@@ -116,6 +118,7 @@ IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
 !        --------------------------
 
       IF (IREFRA == 1 .OR. IREFRA == 3) THEN
+        !$acc kernels
         DO IJ=KIJS,KIJL
           IPP = KLAT(IJ,2,1)
           IPM = KLAT(IJ,1,1)
@@ -146,11 +149,14 @@ IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
             DDLAM(IJ) = 0.0_JWRB 
           ENDIF
         ENDDO
+        !$acc end kernels
       ELSE
+        !$acc kernels 
         DO IJ=KIJS,KIJL
           DDPHI(IJ) = 0.0_JWRB
           DDLAM(IJ) = 0.0_JWRB
         ENDDO
+        !$acc end kernels 
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -159,6 +165,7 @@ IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
 !        -------------------------------------
 
       IF (IREFRA == 2 .OR. IREFRA == 3) THEN
+        !$acc kernels
         DO IJ=KIJS,KIJL
           IPP = KLAT(IJ,2,1)
 !         exact 0 means that the current field was not defined, hence
@@ -206,7 +213,9 @@ IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
             DVLAM(IJ) = 0.0_JWRB
           ENDIF
         ENDDO
+        !$acc end kernels
 
+        !$acc kernels
         DO IJ=KIJS,KIJL
           KX  = BLK2GLO%KXLT(IJ)
           CGMAX = CURRENT_GRADIENT_MAX*COSPH(KX)
@@ -215,15 +224,20 @@ IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
           DULAM(IJ) = SIGN(MIN(ABS(DULAM(IJ)),CGMAX),DULAM(IJ))
           DVLAM(IJ) = SIGN(MIN(ABS(DVLAM(IJ)),CGMAX),DVLAM(IJ))
         ENDDO
+        !$acc end kernels
 
       ELSE
+        !$acc kernels
         DO IJ=KIJS,KIJL
           DUPHI(IJ) = 0.0_JWRB
           DVPHI(IJ) = 0.0_JWRB
           DULAM(IJ) = 0.0_JWRB
           DVLAM(IJ) = 0.0_JWRB
         ENDDO
+        !$acc end kernels
       ENDIF
+
+!$acc end data
 
 IF (LHOOK) CALL DR_HOOK('GRADI',1,ZHOOK_HANDLE)
 

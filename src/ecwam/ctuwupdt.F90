@@ -257,7 +257,7 @@ ENDIF
 
 IF (IREFRA == 2 .OR. IREFRA == 3) THEN
 
-  !$acc parallel loop independent collapse(4)
+  !$acc parallel loop independent collapse(4) present(WLATN,LLWLATN)
   DO ICL=1,2
     DO IC=1,2
       DO K=1,NANG
@@ -276,7 +276,7 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
   ENDDO
   !$acc end parallel
 
-  !$acc parallel loop independent collapse(3)
+  !$acc parallel loop independent collapse(3) present(WLONN,LLWLONN)
   DO IC=1,2
     DO M=1,NFRE_RED
       DO K=1,NANG
@@ -293,7 +293,7 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
   ENDDO
   !$acc end parallel
 
-  !$acc parallel loop independent collapse(4)
+  !$acc parallel loop independent collapse(4) present(WCORN,LLWCORN)
   DO ICL=1,2
     DO ICR=1,4
       DO M=1,NFRE_RED
@@ -312,7 +312,7 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
   ENDDO
   !$acc end parallel
 
-  !$acc parallel loop independent collapse(3)
+  !$acc parallel loop independent collapse(3) present(WKPMN,LLWKPMN)
   DO IC=-1,1
     DO M=1,NFRE_RED
       DO K=1,NANG
@@ -329,7 +329,7 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
   ENDDO
   !$acc end parallel
 
-  !$acc parallel loop independent collapse(3)
+  !$acc parallel loop independent collapse(3) present(WMPMN,LLWMPMN)
   DO IC=-1,1
     DO M=1,NFRE_RED
       DO K=1,NANG
