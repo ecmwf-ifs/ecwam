@@ -88,7 +88,6 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1 
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
-
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
@@ -200,12 +199,14 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
 !     REDUCE WAVE ENERGY IF LARGER THAN DEPTH LIMITED WAVE HEIGHT
       IF (LBIWBK) THEN
+         !$loki inline
          CALL SDEPTHLIM(KIJS, KIJL, EMAXDPT, FL1)
       ENDIF
 
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
+      !$loki inline
       CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                    &
      &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
@@ -218,6 +219,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !     COMPUTE DAMPING COEFFICIENT DUE TO FRICTION ON BOTTOM OF THE SEA ICE.
 !!! testing sea ice attenuation (might need to restrict usage when needed)
       IF (LCIWABR) THEN
+        !$loki inline
         CALL CIWABR(KIJS, KIJL, CICOVER, FL1, WAVNUM, CGROUP, CIREDUC)
         DO M=1,NFRE
           DO K=1,NANG
@@ -247,6 +249,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       LUPDTUS = .TRUE.
       NCALL = 2
       DO ICALL = 1, NCALL 
+        !$loki inline
         CALL SINFLX (ICALL, NCALL, KIJS, KIJL,  &
      &               LUPDTUS,                   &
      &               FL1,                       &
@@ -266,6 +269,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
 
+      !$loki inline
       CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,   &
      &              WAVNUM, CGROUP, XK2CG,      &
      &              EMEAN, F1MEAN, XKMEAN,      &
@@ -299,8 +303,10 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       ENDIF
 
 
+      !$loki inline
       CALL SDIWBK(KIJS, KIJL, FL1 ,FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)
 
+      !$loki inline
       CALL SBOTTOM (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH)
 
 ! ----------------------------------------------------------------------
@@ -357,6 +363,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       ENDIF
 
       IF (LCFLX) THEN
+        !$loki inline
         CALL WNFLUXES (KIJS, KIJL,                       &
      &                 MIJ, RHOWGDFTH,                   &
      &                 CINV,                             &
@@ -377,12 +384,15 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
 
+      !$loki inline
       CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                      &
      &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
+     !$loki inline
       CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, FMEANWS, EMEANWS)
 
+      !$loki inline
       CALL IMPHFTAIL(KIJS, KIJL, MIJ, FLM, WAVNUM, XK2CG, FL1)
 
 
@@ -405,6 +415,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !         -----------------------------
 
       IF (LICERUN .AND. LMASKICE) THEN
+        !$loki inline
         CALL SETICE(KIJS, KIJL, FL1, CICOVER, COSWDIF)
       ENDIF
 
@@ -412,6 +423,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !*    2.7 SURFACE STOKES DRIFT AND STRAIN IN SEA ICE
 !         ------------------------------------------
 
+      !$loki inline
       CALL STOKESTRN(KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, WSWAVE, WDWAVE, CICOVER, CITHICK, &
  &                   USTOKES, VSTOKES, STRNMS, NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN)
 

@@ -70,7 +70,7 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG,          &
 
       USE YOWCOUP  , ONLY : LLCAPCHNK, LLGCBZ0
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G, GM1, EPSUS, EPSMIN, ACD, BCD, CDMAX
+      USE YOWPCONS , ONLY : G, GM1, EPSUS, EPSMIN, ACD, BCD, CDMAX, ACDLIN, BCDLIN
       USE YOWPHYS  , ONLY : XKAPPA, XNLEV, RNU, RNUM, ALPHA, ALPHAMIN, ALPHAMAX, &
      &                      ANG_GC_A, ANG_GC_B, ANG_GC_C
       USE YOWTABL  , ONLY : EPS1 
@@ -100,8 +100,6 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG,          &
 
       ! Cd and Z0 from Hersbach 2010, ECMWF Tech Memo (without the viscous part)
 !     CD = ACDLIN + BCDLIN*SQRT(PCHAR) * U10
-      REAL(KIND=JWRB), PARAMETER :: ACDLIN=0.0008_JWRB
-      REAL(KIND=JWRB), PARAMETER :: BCDLIN=0.00047_JWRB
       REAL(KIND=JWRB) :: ALPHAGM1
 
       REAL(KIND=JWRB), PARAMETER :: Z0MIN = 0.000001_JWRB
@@ -127,13 +125,7 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG,          &
 
 ! ----------------------------------------------------------------------
 
-!     INLINE FUNCTION.
-!     ----------------
-
-!     Simple empirical fit to model drag coefficient
-      REAL(KIND=JWRB) :: CDM, U10
-
-      CDM(U10) = MAX(MIN(0.0006_JWRB+0.00008_JWRB*U10, 0.001_JWRB+0.0018_JWRB*EXP(-0.05_JWRB*(U10-33._JWRB))),0.001_JWRB)
+#include "cdm.func.h"
 
 ! ----------------------------------------------------------------------
 

@@ -129,6 +129,7 @@ IF(LUPDTUS) THEN
     ENDDO
 
     IF (LLGCBZ0) THEN
+      !$loki inline
       CALL HALPHAP(KIJS, KIJL, WAVNUM, COSWDIF, FL1, HALP)
     ELSE
       HALP(KIJS:KIJL) = 0.0_JWRB
@@ -136,6 +137,7 @@ IF(LUPDTUS) THEN
 
   ENDIF
 
+  !$loki inline
   CALL AIRSEA (KIJS, KIJL,                                  &
 &              HALP, WSWAVE, WDWAVE, TAUW, TAUWDIR, RNFAC,  &
 &              UFRIC, Z0M, Z0B, CHRNCK, ICODE_WND, IUSFG) 
@@ -154,6 +156,7 @@ ELSE
   LLSNEG = .TRUE.
 ENDIF
 
+!$loki inline
 CALL SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, &
 &            WAVNUM, CINV, XK2CG,           &
 &            WDWAVE, WSWAVE, UFRIC, Z0M,    &
@@ -163,12 +166,15 @@ CALL SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, &
 
 
 ! MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
+!$loki inline
 CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, FMEANWS)
 
 ! COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
+!$loki inline
 CALL FRCUTINDEX(KIJS, KIJL, FMEAN, FMEANWS, UFRIC, CICOVER, MIJ, RHOWGDFTH)
 
 ! UPDATE TAUW
+!$loki inline
 CALL STRESSO (KIJS, KIJL, MIJ, RHOWGDFTH,          &
 &             FL1, SL, SPOS,                       &
 &             CINV,                                &
