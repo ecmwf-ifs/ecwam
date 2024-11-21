@@ -11,7 +11,7 @@ SCRIPTS_DIR="$( cd $( dirname "${BASH_SOURCE[0]}" ) && pwd -P )"
 
 # Version of topography result, to be increased when results for same run would be different.
 # e.g. when a bug is fixed.
-export ecwam_bathymetry_version=1
+export ecwam_bathymetry_version=2
 
 ECWAM_CACHE_PATH_DEFAULT=${HOME}/cache/ecwam
 [[ ${HPCPERM} ]] && ECWAM_CACHE_PATH_DEFAULT=${HPCPERM}/cache/ecwam
@@ -55,3 +55,6 @@ export DR_HOOK_ASSERT_MPI_INITIALIZED=0
 
 # export python interpreter
 export ECWAM_PYTHON_INTERP=@ECWAM_PYTHON_INTERP@
+
+# export ecWAM precision
+export ecwam_prec=@prec@

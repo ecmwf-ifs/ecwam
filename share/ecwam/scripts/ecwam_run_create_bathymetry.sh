@@ -136,11 +136,13 @@ fi
 
 cat reference_levels >> for_md5
 md5=$(cat for_md5 | md5sum | awk '{print $1}')
-WAM_TOPO=v${ecwam_bathymetry_version}/bathymetry_${wamresol}_nfre${wamnfre}_${wambathy}_${md5}
+
+# Only double-precision files are cached
+WAM_TOPO=v${ecwam_bathymetry_version}/bathymetry_dp_${wamresol}_nfre${wamnfre}_${wambathy}_${md5}
 
 subgrid_files=()
 for ip in 0 1 2; do
-   subgrid_files+=(v${ecwam_bathymetry_version}/wam_grib_subgrid_${ip}_${wamnfre}_${wambathy}_${md5})
+   subgrid_files+=(v${ecwam_bathymetry_version}/wam_grib_subgrid_dp_${wamresol}_${ip}_${wamnfre}_${wambathy}_${md5})
 done
 
 grid_files_found=true
@@ -157,6 +159,15 @@ if [[ ${grid_files_found} == true ]]; then
 else
   echo "\n\n\t File ${DATA_DIR}/data/bathymetry/${WAM_TOPO} and/or subgrid files were not found\n"
   echo     "\t They need to be computed from the $wambathy data set\n"
+
+  # We update the file names with the current precision to ensure we never accidentally
+  # cache single-precision files
+  WAM_TOPO=v${ecwam_bathymetry_version}/bathymetry_${ecwam_prec}_${wamresol}_nfre${wamnfre}_${wambathy}_${md5}
+
+  subgrid_files=()
+  for ip in 0 1 2; do
+     subgrid_files+=(v${ecwam_bathymetry_version}/wam_grib_subgrid_${ecwam_prec}_${wamresol}_${ip}_${wamnfre}_${wambathy}_${md5})
+  done
 
   if [[ $wambathy = "ETOPO1" ]] ; then
     echo "\n\n\t Getting ETOPO1 data set\n"
@@ -235,6 +246,10 @@ EOF
   mv wam_topo_${cwamresol} ${DATA_DIR}/data/bathymetry/${WAM_TOPO}
 
   for ip in 0 1 2; do
+    if [[ ! -r wam_grib_subgrid_${ip} ]] ; then
+      echo "\n\n\t File wam_grib_subgrid_${ip} does not exist\n\n"
+      abort 9
+    fi
      mv wam_grib_subgrid_${ip} ${DATA_DIR}/data/bathymetry/${subgrid_files[$ip]}
   done
 
