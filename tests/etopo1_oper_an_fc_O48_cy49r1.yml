@@ -65,26 +65,26 @@ validation:
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1549635093952383E+01
+      average: 0.1549602967948428E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF8CB4E2B142663']
+      hashes: ['0x3FF8CB2C7B51F7F3']
 
-    # 6h into forcast
+    # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1632534159910402E+01
+      average: 0.1632571618407789E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FFA1EDC23A6B02A']
+      hashes: ['0x3FFA1F036AD70724']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.1923947545513470E-01
+      minimum: 0.1923947543946081E-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3F93B383577CED1D']
+      hashes: ['0x3F93B3835737FDE2']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.6803348186094509E+01
+      maximum: 0.6807117063672941E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x401B36A0E82A4EAF']
+      hashes: ['0x401B3A7CE5421349']
 
   single_precision:
 
@@ -98,16 +98,16 @@ validation:
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1549676537513733E+01
+      average: 0.1549643278121948E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF8CB79A0000000']
+      hashes: ['0x3FF8CB56C0000000']
 
-    # 6h into forcast
+    # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1632507443428040E+01
+      average: 0.1632542133331299E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FFA1EC020000000']
+      hashes: ['0x3FFA1EE480000000']
     - name: swh
       time: 2023-01-01 06:00:00
       minimum: 0.1923948153853416E-01
@@ -115,6 +115,6 @@ validation:
       hashes: ['0x3F93B383C0000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.6803345680236816E+01
+      maximum: 0.6807114124298096E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x401B36A040000000']
+      hashes: ['0x401B3A7C20000000']
