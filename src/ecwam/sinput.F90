@@ -101,6 +101,7 @@
 
       SELECT CASE (IPHYS)
       CASE(0)
+        !$loki inline
         CALL SINPUT_JAN (NGST, LLSNEG, KIJS, KIJL, FL1,  &
      &                   WAVNUM, CINV, XK2CG,            &
      &                   WSWAVE, UFRIC, Z0M,     &
@@ -108,6 +109,7 @@
      &                   RAORW, WSTAR, RNFAC,            &
      &                   FLD, SL, SPOS, XLLWS)
       CASE(1) 
+        !$loki inline
         CALL SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1,  &
      &                   WAVNUM, CINV, XK2CG,            &
      &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &

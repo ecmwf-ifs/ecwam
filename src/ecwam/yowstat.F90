@@ -86,10 +86,10 @@
       LOGICAL :: LLSOURCE
       LOGICAL :: LNSESTART
       LOGICAL :: LSMSSIG_WAM
+      LOGICAL :: LUPDATE_GPU_GLOBALS = .TRUE.
 
       REAL(KIND=JWRB) :: TIME_PROPAG = 0._JWRB
       REAL(KIND=JWRB) :: TIME_PHYS = 0._JWRB
-      REAL(KIND=JWRB) :: TIME_OFFLOAD = 0._JWRB
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------

@@ -39,7 +39,7 @@ projects :
 
     - loki :
         git     : https://github.com/ecmwf-ifs/loki
-        version : v0.2.4
+        version : v0.2.9
         optional: true
         require : ecbuild
         cmake   : >
@@ -74,6 +74,11 @@ options :
         help  : Enable GPU offload using OpenACC
         cmake : >
             ENABLE_ACC=ON
+
+    - with-cuda :
+        help  : Enable FIELD_API CUDA backend
+        cmake : >
+            ENABLE_CUDA=ON
 
     - without-loki-install :
         help  : Skip installation of Loki (Requires Loki to be on the PATH)
