@@ -63,8 +63,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
      &            NIPRMOUT, ITOBOUT  ,NTEWH    ,IPRMINFO
       USE YOWCOUP  , ONLY : LWNEMOCOUSTRN
       USE YOWFRED  , ONLY : FR, TH , DFIM, DELTH, COSTH, SINTH, XKMSS_CUTOFF
-
-
+      USE YOWICE   , ONLY : FLMIN    ,LICERUN  ,LMASKICE
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSUS    ,EPSU10, G, ZPI
       USE YOWSTAT  , ONLY : IREFRA
@@ -133,12 +132,14 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
       REAL(KIND=JWRB), DIMENSION(KIJL) :: ESEA   ,FSEA   ,THWISEA, P1SEA  , P2SEA  , SPRDSEA
       REAL(KIND=JWRB), DIMENSION(KIJL) :: CHARNOCK, BETAHQ, CDATM
       REAL(KIND=JWRB), DIMENSION(KIJL) :: HALP
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: ZTHRS, ZRDUC 
       REAL(KIND=JWRB), DIMENSION(KIJL,NTRAIN) :: EMTRAIN
       REAL(KIND=JWRB), DIMENSION(KIJL,NTRAIN) :: THTRAIN, PMTRAIN
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: COSWDIF
 
 !     *FL2ND*  SPECTRUM with second order effect added if LSECONDORDER is true .
-!            and in the absolute frame of reference if currents are used 
+!            and in the absolute frame of reference if currents are used
+!            and will have low frequency noise added if waves in sea-ice
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: FL2ND
 
       LOGICAL :: LLPEAKF
@@ -166,6 +167,26 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
       ENDIF
       IF (LSECONDORDER) CALL CAL_SECOND_ORDER_SPEC(KIJS, KIJL, FL2ND, WAVNUM, DEPTH, SIG)
 
+      ! Adapting the noise level structure to be more consistent in sea ice conditions
+      IF (LICERUN .AND. .NOT. LMASKICE) THEN
+        DO IJ=KIJS,KIJL
+          ZTHRS(IJ) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN
+        ENDDO
+
+        DO M=1,NFRE
+          DO IJ=KIJS,KIJL
+            ZRDUC(IJ) = EXP(-10.0_JWRB*FR(M)**2/SQRT(MAX(WSWAVE(IJ),1.0_JWRB)))
+          ENDDO
+
+          DO K=1,NANG
+            DO IJ=KIJS,KIJL
+              IF (FL2ND(IJ,K,M) <= ZTHRS(IJ)) THEN
+                FL2ND(IJ,K,M) = MAX(ZRDUC(IJ) * FL2ND(IJ,K,M), ZTHRS(IJ)*ZRDUC(IJ)**2)
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
 
 !     COMPUTE MEAN PARAMETERS
 
