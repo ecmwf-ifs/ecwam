@@ -140,11 +140,20 @@
       DO M = 1,NFRE
          DO K = 1,NANG
             DO IJ = KIJS,KIJL
-               FLDICE         = -CICV(IJ)*ALP(IJ,M)*CGROUP(IJ,M)   
-               GTEMP1         = MAX((1.0_JWRB-DELT5*FLDICE),1.0_JWRB)      
-               SLICE(IJ,K,M)  = (FL1(IJ,K,M) * FLDICE)/GTEMP1
-               SL(IJ,K,M)     = SL(IJ,K,M)  + SLICE(IJ,K,M)
-               FLD(IJ,K,M)    = FLD(IJ,K,M) + FLDICE
+
+!              apply the source term
+               FLDICE         = -ALP(IJ,M)   * CGROUP(IJ,M)   
+               SLICE(IJ,K,M)  =  FL1(IJ,K,M) * FLDICE
+               SL(IJ,K,M)     =  SL(IJ,K,M)  + CICV(IJ)*SLICE(IJ,K,M)
+               FLD(IJ,K,M)    =  FLD(IJ,K,M) + CICV(IJ)*FLDICE
+               
+!              to be used for wave radiative stress calculation
+               GTEMP1         =  MAX((1.0_JWRB-DELT5*FLDICE),1.0_JWRB)    
+               GTEMP1         =       1.0_JWRB-DELT5*FLDICE
+               SLICE(IJ,K,M)  =  SLICE(IJ,K,M)/GTEMP1
+               
+               WRITE (IU06, * ) '      1.0_JWRB-DELT5*FLDICE               = ',      1.0_JWRB-DELT5*FLDICE
+
             END DO
          END DO
       END DO
