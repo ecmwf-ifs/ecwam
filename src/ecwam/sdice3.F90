@@ -66,8 +66,6 @@
       USE YOWICE   , ONLY : ZALPFACB
       USE YOWSTAT  , ONLY : IDELT
 
-      USE YOWTEST  , ONLY : IU06
-
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
@@ -108,15 +106,12 @@
       DELT5 = XIMP*DELT
 
       IMODEL = 2
-!      IF (ITEST.GE.2) WRITE (IU06,*)'IMODEL =',IMODEL
       HICEMAX=4.0_JWRB
       HICEMIN=0.1_JWRB
-   
-!     WRITE (IU06,*)'Ice attenuation due to viscous friction based on: '
       
       SELECT CASE (IMODEL)
          CASE (1)
-!          WRITE (IU06,*)'  Best fit w Tempelfjorde obs from Lotfi Aouf'
+!          Best fit w Tempelfjorde obs from Lotfi Aouf
            CDICE=0.0656_JWRB
 
            DO M = 1,NFRE
@@ -126,7 +121,7 @@
            END DO
 
          CASE (2)
-!          WRITE (IU06,*)'  Jie Yu, W. Erik Rogers, David W. Wang 2022'
+!          Jie Yu, W. Erik Rogers, David W. Wang 2022
            CDICE=0.1274_JWRB*( ZPI/SQRT(G) )**(4.5_JWRB)
          
            DO M = 1,NFRE
@@ -149,10 +144,7 @@
                
 !              to be used for wave radiative stress calculation
                GTEMP1         =  MAX((1.0_JWRB-DELT5*FLDICE),1.0_JWRB)    
-               GTEMP1         =       1.0_JWRB-DELT5*FLDICE
                SLICE(IJ,K,M)  =  SLICE(IJ,K,M)/GTEMP1
-               
-               WRITE (IU06, * ) '      1.0_JWRB-DELT5*FLDICE               = ',      1.0_JWRB-DELT5*FLDICE
 
             END DO
          END DO
