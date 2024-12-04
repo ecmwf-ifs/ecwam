@@ -108,7 +108,7 @@
                ALP            = CDICWA*XK2(M)*EWH*ZALPFACB
 
 !              apply the source term
-               FLDICE         = -ALP(IJ,M)   * CGROUP(IJ,M)   
+               FLDICE         = -ALP         * CGROUP(IJ,M)   
                SLICE(IJ,K,M)  =  FL1(IJ,K,M) * FLDICE
                SL(IJ,K,M)     =  SL(IJ,K,M)  + CICV(IJ)*SLICE(IJ,K,M)
                FLD(IJ,K,M)    =  FLD(IJ,K,M) + CICV(IJ)*FLDICE
