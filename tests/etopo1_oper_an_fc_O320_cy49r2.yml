@@ -30,6 +30,9 @@ forcings:
         end:       ${forecast.end}
         timestep:  01:00
 
+currents:
+    input_step: 86400 
+
 output:
     fields:
         name:

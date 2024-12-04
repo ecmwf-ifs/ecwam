@@ -92,6 +92,7 @@ phys_tstp=$(read_config physics.timestep --format=seconds --default=900)
 adv_base_tstp=$(read_config advection.timestep --format=seconds --default=900)
 adv_fast_tstp=$(read_config advection.fast_waves.timestep --format=seconds --default=$adv_base_tstp)
 ifrelfmax=$(read_config advection.fast_waves.max_frequency --default=0)
+idelcur=$(read_config currents.input_step --default=86400)
 
 # verify timesteps
 if [ $(( $adv_base_tstp%$adv_fast_tstp )) -ne 0 ] ; then
@@ -212,12 +213,13 @@ cat > wam_namelist << EOF
   CBPLTDT               = "${begofrn}",
   CEPLTDT               = "${endofrn}",
   CDATEF                = "${begoffo}",
-  CDATECURA             = "${begoffo}",
+  CDATECURA             = "${begofrn}",
   DELPRO_LF             = ${adv_fast_tstp},
   IFRELFMAX             = ${ifrelfmax},
   IDELPRO               = ${adv_base_tstp},
   IDELT                 = ${phys_tstp},
   IDELINT               = ${ppfreq},
+  IDELCUR               = ${idelcur}
   IREST                 = 1,
   LFDBIOOUT             = F,
   LFDB                  = F,
