@@ -101,6 +101,8 @@
       IF (LHOOK) CALL DR_HOOK('PROPDOT',0,ZHOOK_HANDLE)
 
 
+      !$acc data create(DDPHI,DDLAM,DUPHI,DULAM,DVPHI,DVLAM,DCO,OMDD) &
+      !$acc & present(COSPHM1_EXT,U_EXT,V_EXT,SINTH,COSTH)
 !*    2.2 DEPTH AND CURRENT GRADIENTS.
 !         ----------------------------
 
@@ -114,6 +116,7 @@
 !*    2.3 COSINE OF LATITUDES IF SPHERICAL PROPAGATION.
 !         ---------------------------------------------
 
+        !$acc kernels
         IF (ICASE == 1) THEN
           DO IJ = KIJS,KIJL
             DCO(IJ) = COSPHM1_EXT(IJ)
@@ -136,11 +139,13 @@
             OMDD(IJ) = 0.0_JWRB
           ENDDO
         ENDIF
+        !$acc end kernels
 
 
 !*    2.5. LOOP OVER DIRECTIONS.
 !          ---------------------
 
+        !$acc parallel loop
         DO K=1,NANG
           SD = SINTH(K)
           CD = COSTH(K)
@@ -149,10 +154,12 @@
 !            ----------------------------
 
           IF (IREFRA == 1 .OR. IREFRA == 3) THEN
+            !$acc loop
             DO IJ = KIJS,KIJL
               THDD(IJ,K) = SD*DDPHI(IJ) - CD*DDLAM(IJ)*DCO(IJ)
             ENDDO
           ELSE
+            !$acc loop
             DO IJ = KIJS,KIJL
               THDD(IJ,K) = 0.0_JWRB
             ENDDO
@@ -166,6 +173,7 @@
             SS  = SD**2
             SC  = SD*CD
             CC  = CD**2
+            !$acc loop
             DO IJ = KIJS,KIJL
               SDOT(IJ,K,NFRE_RED) = -SC*DUPHI(IJ) - CC*DVPHI(IJ)      &
      &                        - (SS*DULAM(IJ) + SC*DVLAM(IJ))*DCO(IJ)
@@ -176,6 +184,7 @@
 !*    2.5.3 LOOP OVER FREQUENCIES.
 !           ----------------------
 
+            !$acc loop independent collapse(2)
             DO M=1,NFRE_RED
               DO IJ=KIJS,KIJL
                 SDOT(IJ,K,M) = (SDOT(IJ,K,NFRE_RED)*CGROUP_EXT(IJ,M)   &
@@ -187,6 +196,9 @@
 
 !*      BRANCH BACK TO 2.5 FOR NEXT DIRECTION.
         ENDDO
+        !$acc end parallel loop
+
+        !$acc end data
 
       IF (LHOOK) CALL DR_HOOK('PROPDOT',1,ZHOOK_HANDLE)
 

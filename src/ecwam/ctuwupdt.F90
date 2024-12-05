@@ -175,11 +175,13 @@ IF (.NOT. ALLOCATED(WKPMN)) ALLOCATE(WKPMN(IJS:IJL,NANG,NFRE_RED,-1:1))
 IF (IREFRA == 2 .OR. IREFRA == 3) THEN
   IF (.NOT. ALLOCATED(WMPMN)) ALLOCATE(WMPMN(IJS:IJL,NANG,NFRE_RED,-1:1))
 
+#ifndef _OPENACC
   IF (.NOT. ALLOCATED(LLWLATN)) ALLOCATE(LLWLATN(NANG,NFRE_RED,2,2))
   IF (.NOT. ALLOCATED(LLWLONN))  ALLOCATE(LLWLONN(NANG,NFRE_RED,2))
   IF (.NOT. ALLOCATED(LLWCORN)) ALLOCATE(LLWCORN(NANG,NFRE_RED,4,2))
   IF (.NOT. ALLOCATED(LLWKPMN)) ALLOCATE(LLWKPMN(NANG,NFRE_RED,-1:1))
   IF (.NOT. ALLOCATED(LLWMPMN)) ALLOCATE(LLWMPMN(NANG,NFRE_RED,-1:1))
+#endif
 ENDIF
 
 
@@ -255,15 +257,14 @@ ENDIF
 ! FIND THE LOGICAL FLAGS THAT WILL LIMIT THE EXTEND OF THE CALCULATION IN PROPAGS2
 ! IN CASE REFRACTION IS USED
 
+#ifndef _OPENACC
 IF (IREFRA == 2 .OR. IREFRA == 3) THEN
 
-  !$acc parallel loop independent collapse(4)
   DO ICL=1,2
     DO IC=1,2
       DO K=1,NANG
         DO M=1,NFRE_RED
           LLWLATN(K,M,IC,ICL)=.FALSE.
-          !$acc loop
           DO IJ=IJS,IJL
             IF (WLATN(IJ,K,M,IC,ICL) > 0.0_JWRB) THEN
               LLWLATN(K,M,IC,ICL)=.TRUE.
@@ -274,14 +275,11 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
       ENDDO
     ENDDO
   ENDDO
-  !$acc end parallel
 
-  !$acc parallel loop independent collapse(3)
   DO IC=1,2
     DO M=1,NFRE_RED
       DO K=1,NANG
         LLWLONN(K,M,IC)=.FALSE.
-        !$acc loop
         DO IJ=IJS,IJL
           IF (WLONN(IJ,K,M,IC) > 0.0_JWRB) THEN
             LLWLONN(K,M,IC)=.TRUE.
@@ -291,15 +289,12 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
       ENDDO
     ENDDO
   ENDDO
-  !$acc end parallel
 
-  !$acc parallel loop independent collapse(4)
   DO ICL=1,2
     DO ICR=1,4
       DO M=1,NFRE_RED
         DO K=1,NANG
           LLWCORN(K,M,ICR,ICL)=.FALSE.
-          !$acc loop
           DO IJ=IJS,IJL
             IF (WCORN(IJ,K,M,ICR,ICL) > 0.0_JWRB) THEN
               LLWCORN(K,M,ICR,ICL)=.TRUE.
@@ -310,14 +305,11 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
       ENDDO
     ENDDO
   ENDDO
-  !$acc end parallel
 
-  !$acc parallel loop independent collapse(3)
   DO IC=-1,1
     DO M=1,NFRE_RED
       DO K=1,NANG
         LLWKPMN(K,M,IC)=.FALSE.
-        !$acc loop
         DO IJ=IJS,IJL
           IF (WKPMN(IJ,K,M,IC) > 0.0_JWRB) THEN
             LLWKPMN(K,M,IC)=.TRUE.
@@ -327,14 +319,11 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
       ENDDO
     ENDDO
   ENDDO
-  !$acc end parallel
 
-  !$acc parallel loop independent collapse(3)
   DO IC=-1,1
     DO M=1,NFRE_RED
       DO K=1,NANG
         LLWMPMN(K,M,IC)=.FALSE.
-        !$acc loop
         DO IJ=IJS,IJL
           IF (WMPMN(IJ,K,M,IC) > 0.0_JWRB) THEN
             LLWMPMN(K,M,IC)=.TRUE.
@@ -344,9 +333,9 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
       ENDDO
     ENDDO
   ENDDO
-  !$acc end parallel
 
 ENDIF
+#endif
 
 IF (ALLOCATED(THDD)) DEALLOCATE(THDD)
 IF (ALLOCATED(THDC)) DEALLOCATE(THDC)
