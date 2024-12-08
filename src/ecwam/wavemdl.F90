@@ -954,7 +954,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           ALLOCATE(ZCOMCNT(NPROC))
           ZCOMCNT=NCOMLOC
           CALL MPL_GATHERV(PSENDBUF=ZCOMBUFS(IST:IED),KROOT=IRECV,      &
-     &                    PRECVBUF=ZCOMBUFR(:),KRECVCOUNTS=ZCOMCNT,     &
+     &                    PRECVBUF=ZCOMBUFR,KRECVCOUNTS=ZCOMCNT,     &
      &                    CDSTRING='WAVEMDL:')
           DEALLOCATE(ZCOMCNT)
 
