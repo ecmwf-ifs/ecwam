@@ -57,15 +57,11 @@
 
 ! ----------------------------------------------------------------------
 
-! TODO: sort out modules/params needed
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR      ,GOM     ,TH    ,ZPIFR
-!      USE YOWICE   , ONLY : CICOVER  ,CITHICK ! TODO: make ice info available like so
       USE YOWPARAM , ONLY : NANG    ,NFRE
-      USE YOWPCONS , ONLY : G       ,EPSMIN  ,ZPI
 
-      USE YOWTEST  , ONLY : IU06
+      USE YOWICE   , ONLY : LCIWA1   ,LCIWA2    ,LCIWA3
 
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
