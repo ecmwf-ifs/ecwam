@@ -68,7 +68,8 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE YOWWIND  , ONLY : LLNEWCURR 
 
-      USE YOMHOOK  , ONLY  : LHOOK,   DR_HOOK, JPHOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
       USE MPL_MODULE, ONLY : MPL_ALLREDUCE
 
 ! --------------------------------------------------------------------
@@ -207,16 +208,16 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
                 
 
                 IF (CDATEIN /= CDTCUR) THEN
-                WRITE (IU06,*) ' **************************************'
-                WRITE (IU06,*) ' *                                    *'
-                WRITE (IU06,*) ' * PROBLEM IN GETCURR :               *'
-                WRITE (IU06,*) ' * THE REQUESTED DATE FOR THE CURRENTS*'
-                WRITE (IU06,*) ' * DOES NOT CORRESPOND TO THE DECODED *'
-                WRITE (IU06,*) ' * DATE !!!!                          *'
-                WRITE (IU06,*) ' * CDTCUR =',CDTCUR 
-                WRITE (IU06,*) ' * CDATEIN=',CDATEIN
-                WRITE (IU06,*) ' *                                    *'
-                WRITE (IU06,*) ' **************************************'
+                WRITE (NULERR,*) ' **************************************'
+                WRITE (NULERR,*) ' *                                    *'
+                WRITE (NULERR,*) ' * PROBLEM IN GETCURR :               *'
+                WRITE (NULERR,*) ' * THE REQUESTED DATE FOR THE CURRENTS*'
+                WRITE (NULERR,*) ' * DOES NOT CORRESPOND TO THE DECODED *'
+                WRITE (NULERR,*) ' * DATE !!!!                          *'
+                WRITE (NULERR,*) ' * CDTCUR =',CDTCUR 
+                WRITE (NULERR,*) ' * CDATEIN=',CDATEIN
+                WRITE (NULERR,*) ' *                                    *'
+                WRITE (NULERR,*) ' **************************************'
                 CALL ABORT1
                 ENDIF
               ELSE

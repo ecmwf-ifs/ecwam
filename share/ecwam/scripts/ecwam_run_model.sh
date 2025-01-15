@@ -253,7 +253,7 @@ cat > wam_namelist << EOF
   LRSTPARALR            = F,
   LRSTPARALW            = F,
   LSECONDORDER          = F,
-  LWVFLX_SNL            = F,
+  LWVFLX_SNL            = T,
   LLNORMWAMOUT          = T,
   LLNORMWAMOUT_GLOBAL   = T,
   CNORMWAMOUT_FILE      = "statistics.log",

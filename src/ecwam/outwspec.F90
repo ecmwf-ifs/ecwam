@@ -170,7 +170,7 @@ IF (.NOT.LFDBIOOUT .AND. IPR(IRANK) == IRANK) THEN
    WRITE(IU06,*) '  SPECTRA WRITTEN TO FILE ',OUTFILEN(1:LFILE)
 ENDIF
 
-ALLOCATE(ZSENDBUF(NPROC*(NEND(IRANK)-NSTART(IRANK)+1)))
+ALLOCATE(ZSENDBUF(MAXOUTTASK*(NEND(IRANK)-NSTART(IRANK)+1)))
 ALLOCATE(ZRECVBUF(NEND(NPROC)))
 ZRECVBUF(:)=0._JWRB
 
@@ -207,9 +207,9 @@ DO IC=1,NN,ISTEP
         ENDDO
 
         CALL GSTATS(692,0)
-        CALL MPL_ALLTOALLV(ZSENDBUF,ISENDCOUNTS,                        &
-     &                    ZRECVBUF,IRECVCOUNTS,                         &
-     &                    CDSTRING='OUTWSPEC:')
+        CALL MPL_ALLTOALLV(ZSENDBUF, ISENDCOUNTS,                       &
+     &                     ZRECVBUF, IRECVCOUNTS,                       &
+     &                     CDSTRING='OUTWSPEC:')
         CALL GSTATS(692,1)
 
 
