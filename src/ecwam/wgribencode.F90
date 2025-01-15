@@ -1,5 +1,5 @@
 ! (C) Copyright 1989- ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -82,6 +82,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "difdate.intfb.h"
+#include "wgribencode_values.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, I1, I2
       INTEGER(KIND=JWIM), INTENT(IN) :: ITABLE, IPARAM, KLEV, ITMIN, ITMAX, IK, IM, IFCST
@@ -137,6 +138,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       INTEGER(KIND=JWIM) :: NWINOFF
       INTEGER(KIND=JWIM) :: NPROMA, MTHREADS, JC, JCS, JCL, JJ, ITHRS
 
+
       REAL(KIND=JWRB) :: TEMP
       REAL(KIND=JWRB) :: ZMINSPEC, PPMAX, PPMIN, DELTAPP, ABSPPREC
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -180,114 +182,15 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
 !*    0. PUT FIELD INTO GLOBAL MATRIX VALUES.
 !        -----------------------------------
-
-      IF (IRGG == 1 .OR. CLDOMAIN == 'm' ) THEN
-        ICOUNT=1
-      ELSEIF (CLDOMAIN == 's' ) THEN
-        ICOUNT=1
-      ELSE
-        ICOUNT = (NINT((90._JWRB - AMONOP ) / XDELLA))*I1 + 1
-        VALUES(:)=ZMISS
-      ENDIF
-
-!     PAD THE POLES IF INCLUDED IN THE GRID
-      IF (LPADPOLES) THEN
-        IF ((NINT((90._JWRB - AMONOP ) / XDELLA)) == 0) THEN
-          TEMP=0._JWRB
-          NN=0
-          J=2
-          JSN=I2-J+1
-          DO I=1,NLONRGG(JSN)
-            IF (FIELD(I,J) /= ZMISS) THEN
-              TEMP=TEMP+FIELD(I,J)
-              NN=NN+1
-            ENDIF
-          ENDDO
-          IF (NN > 0) THEN
-            TEMP=TEMP/NN
-          ELSE
-            TEMP=ZMISS
-          ENDIF
-          J=1
-          JSN=I2-J+1
-          DO I=1,NLONRGG(JSN)
-            FIELD(I,J)=TEMP
-          ENDDO
-        ENDIF
-        IF ((NINT((-90._JWRB - AMOSOP ) / XDELLA)) == 0) THEN
-          TEMP=0._JWRB
-          NN=0
-          J=I2-1
-          JSN=I2-J+1
-          DO I=1,NLONRGG(JSN)
-            IF (FIELD(I,J) /= ZMISS) THEN
-              TEMP=TEMP+FIELD(I,J)
-              NN=NN+1
-            ENDIF
-          ENDDO
-          IF (NN > 0) THEN
-            TEMP=TEMP/NN
-          ELSE
-            TEMP=ZMISS
-          ENDIF
-          J=I2
-          JSN=I2-J+1
-          DO I=1,NLONRGG(JSN)
-            FIELD(I,J)=TEMP
-          ENDDO
-        ENDIF
-      ENDIF
-
-!     FILL THE ENCODING ARRAY
-!     -----------------------
-      DO J = 1, I2
-        JSN = I2-J+1
-        VALUES(ICOUNT:ICOUNT+NLONRGG(JSN)-1)=FIELD(1:NLONRGG(JSN), J)
-        ICOUNT=ICOUNT+NLONRGG(JSN)
-      ENDDO
-
-      IF (ITABPAR == 140251 .AND. .NOT. LLSPECNOT251 ) THEN
-
-!       spectra are encoded on a log10 scale and small values below a certain threshold are set to missing
-        DELTAPP=(2**NGRBRESS-1)*PPRESOL
-        ABSPPREC=ABS(PPREC)
-        ZMINSPEC = LOG10(PPEPS)+ABSPPREC
-
-        ALLOCATE(VALM(MTHREADS))
-!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC, JCS, JCL, JJ, ITHRS)
-        DO JC= 1, NTENCODE, NPROMA
-          JCS = JC
-          JCL = MIN(JCS+NPROMA-1, NTENCODE)
-          ITHRS = JC/NPROMA + 1
-          VALM(ITHRS) = ZMINSPEC 
-          DO JJ = JCS, JCL 
-            IF(VALUES(JJ) /= ZMISS ) THEN
-              VALUES(JJ) = LOG10(VALUES(JJ)+PPEPS)+ABSPPREC
-              VALM(ITHRS) = MAX(VALM(ITHRS), VALUES(JJ))
-            ELSE
-              VALUES(JJ) = ZMINSPEC
-            ENDIF
-          ENDDO
-        ENDDO
-!$OMP END PARALLEL DO
-
-        PPMAX=MAXVAL(VALM(:))
-        DEALLOCATE(VALM)
-
-        PPMIN=MIN(PPMISS, PPMAX-DELTAPP)
-        PPMIN=MIN(PPMIN, PPMIN_RESET)
-
-!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC, JCS, JCL, JJ)
-        DO JC= 1, NTENCODE, NPROMA
-          JCS = JC
-          JCL = MIN(JCS+NPROMA-1, NTENCODE)
-          DO JJ = JCS, JCL 
-            IF ( VALUES(JJ) <= PPMIN ) VALUES(JJ)=ZMISS
-          ENDDO
-        ENDDO
-!$OMP END PARALLEL DO
-
-      ENDIF
+      CALL WGRIBENCODE_VALUES ( I1, I2, &
+&                               FIELD, &
+&                               ITABPAR, LLSPECNOT251, &
+&                               PPMISS, PPEPS, PPREC, PPRESOL, PPMIN_RESET, NTENCODE, &
+&                               NGRBRESS, LPADPOLES, &
+&                               NLONRGG_SIZE, NLONRGG, IRGG, &
+&                               AMONOP, AMOSOP, XDELLA, CLDOMAIN, &
+&                               ZMISS, &
+&                               VALUES)
 
 !*    1. FIX PARAMETERS AND PACK DATA.
 !        -----------------------------
@@ -298,8 +201,8 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
         IF ( ITMIN /= 0 .OR. ITMAX /= 0 ) THEN
 !         NEED TO CHANGE TO SPECIFIC TEMPLATE FOR ENCODING ITMIN AND ITMAX
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'numberOfForecastsInEnsemble',IDUM,KRET=IRET )
-          IF ( IRET == 0 ) THEN 
-            IF ( IDUM > 0 ) THEN 
+          IF ( IRET == 0 ) THEN
+            IF ( IDUM > 0 ) THEN
               CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'productDefinitionTemplateNumber', NTRG2TMPP)
             ELSE
               CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'productDefinitionTemplateNumber', NTRG2TMPD)
@@ -316,7 +219,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfUpperWavePeriodLimit', 0)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfUpperWavePeriodLimit', ITMAX)
           ELSEIF ( ITMIN /= 0 ) THEN
-!           [ ITMIN 
+!           [ ITMIN
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 3)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfLowerWavePeriodLimit', 0)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfLowerWavePeriodLimit', ITMIN)
@@ -350,24 +253,24 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR)
 
           WRITE(NULERR,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
-          WRITE(NULERR,*) ' PARAMETERS KNOWN BY ECCODES !!!' 
-          WRITE(NULERR,*) ' IN THE MEAN TIME, THE PROGRAM WILL CONTINUE.' 
-          WRITE(NULERR,*) ' USING EXPERIMENTAL PARAMETER TABLE 212' 
+          WRITE(NULERR,*) ' PARAMETERS KNOWN BY ECCODES !!!'
+          WRITE(NULERR,*) ' IN THE MEAN TIME, THE PROGRAM WILL CONTINUE.'
+          WRITE(NULERR,*) ' USING EXPERIMENTAL PARAMETER TABLE 212'
           WRITE(NULERR,*) ' WITH paramId= ', ITABPAR
           WRITE(NULERR,*) ' *********************************************'
           WRITE(IU06,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
-          WRITE(IU06,*) ' PARAMETERS KNOWN BY ECCODES !!!' 
-          WRITE(IU06,*) ' USING EXPERIMENTAL PARAMETER TABLE 212' 
+          WRITE(IU06,*) ' PARAMETERS KNOWN BY ECCODES !!!'
+          WRITE(IU06,*) ' USING EXPERIMENTAL PARAMETER TABLE 212'
           WRITE(IU06,*) ' WITH paramId= ', ITABPAR
           WRITE(IU06,*) ' *********************************************'
 
         ELSE
           WRITE(NULERR,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
-          WRITE(NULERR,*) ' PARAMETERS KNOWN BY ECCODES !!!' 
-          WRITE(NULERR,*) ' ' 
+          WRITE(NULERR,*) ' PARAMETERS KNOWN BY ECCODES !!!'
+          WRITE(NULERR,*) ' '
           WRITE(NULERR,*) ' IN THE MEANTIME, YOU MIGHT WANT TO USE EXPERIMENTAL PARAMETER TABLE 212' 
-          WRITE(NULERR,*) ' SET LLRSTGRIBPARAM TO TRUE IN THE INPUT NAMELIST AND RERUN' 
-          WRITE(NULERR,*) ' ADAPT THE ARCHIVING ACCORDINGLY.' 
+          WRITE(NULERR,*) ' SET LLRSTGRIBPARAM TO TRUE IN THE INPUT NAMELIST AND RERUN'
+          WRITE(NULERR,*) ' ADAPT THE ARCHIVING ACCORDINGLY.'
           WRITE(NULERR,*) ' ************************************************************************'
           CALL ABORT1
         ENDIF
@@ -387,7 +290,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'level',IDUM,KRET=IRET)
       IF ( IRET == JPGRIB_SUCCESS ) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',KLEV)
 
-      IF (.NOT. LGRHDIFS .OR. & 
+      IF (.NOT. LGRHDIFS .OR. &
      &   (MARSTYPE == 'an' .AND. IFCST == 0) .OR. &
      &   (MARSTYPE == '4v') .OR. &
          (MARSTYPE == 'fg' .AND. IFCST == 0) ) THEN
@@ -403,7 +306,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 !!!   for compatibility with previous coding, impose:
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'timeRangeIndicator',10)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'endStep',IFCST)
-        
+
         IF ( MARSTYPE == 'fg' .AND. IFCST == 0 ) THEN
           ICLASS = 1
         ELSEIF ( MARSTYPE == '4v' ) THEN
@@ -442,7 +345,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 !             this only works for 12 hour analysis windows !!!1
               IF (IH2+3 == 12 ) THEN
                 NWINOFF=0
-              ELSE 
+              ELSE
                 NWINOFF=12-MOD(IH2+3,12)
               ENDIF
               IF ( ITABPAR == 140251 .AND. IGRIB_VERSION == 1 ) THEN
@@ -452,11 +355,11 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 !           in hours
             CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'offsetToEndOf4DvarWindow',IDUM,KRET=IRET)
             IF ( IRET == 0 ) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'offsetToEndOf4DvarWindow',NWINOFF)
-          ENDIF 
+          ENDIF
         ELSEIF ( MARSTYPE == 'cf' ) THEN
-          ICLASS = 10 
+          ICLASS = 10
         ELSEIF ( MARSTYPE == 'pf' ) THEN
-          ICLASS = 11 
+          ICLASS = 11
         ELSE
           ICLASS = 9
         ENDIF
