@@ -535,7 +535,6 @@ if( HAVE_LOKI )
   # Apply Loki source file transformation to lib target
   loki_transform_target( TARGET ${ecwam}
     MODE ${LOKI_MODE}
-    DIRECTIVE openacc
     FRONTEND ${LOKI_FRONTEND}
     CONFIG ${LOKI_CONFIG_FILE}
     PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_plan_ecwam.cmake
