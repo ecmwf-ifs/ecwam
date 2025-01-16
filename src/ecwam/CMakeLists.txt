@@ -481,6 +481,7 @@ ecwam_target_compile_definitions_FILENAME( ${ecwam} )
 if( CMAKE_Fortran_COMPILER_ID MATCHES Intel )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
   set_source_files_properties( propconnect.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
+  set_source_files_properties( stresso.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
 elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-ffp-contract=off" )
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHES "Bit")
@@ -535,7 +536,6 @@ if( HAVE_LOKI )
   # Apply Loki source file transformation to lib target
   loki_transform_target( TARGET ${ecwam}
     MODE ${LOKI_MODE}
-    DIRECTIVE openacc
     FRONTEND ${LOKI_FRONTEND}
     CONFIG ${LOKI_CONFIG_FILE}
     PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_plan_ecwam.cmake
