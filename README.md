@@ -230,9 +230,9 @@ OpenACC programming model on Nvidia GPUs is supported.
 Building
 --------
 The recommended option for building the GPU enabled ecWAM is to use the provided bundle, and pass the
-`--with-loki --with-acc` options. Different Loki transformations can also be chosen at build-time via the following 
-bundle option: `--loki-mode=<trafo>`. Direct GPU-to-GPU MPI communications can be enabled by passing the 
-`--with-gpu-aware-mpi` option. CPU to GPU data transfers can be accelerated (via pinning of host-side allocations)
+`--with-loki --with-acc --with-static-linking` options. Different Loki transformations can also be chosen at
+build-time via the following bundle option: `--loki-mode=<trafo>`. Direct GPU-to-GPU MPI communications can be enabled by
+passing the `--with-gpu-aware-mpi` option. CPU to GPU data transfers can be accelerated (via pinning of host-side allocations)
 by building with the `--with-cuda` option.
 
 The ecwam-bundle also provides appropriate arch files for the nvhpc suite on the ECMWF ATOS system.

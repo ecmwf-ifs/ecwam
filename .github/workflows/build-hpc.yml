@@ -67,6 +67,7 @@ jobs:
               - -DENABLE_CUDA=ON
               - -DENABLE_GPU_AWARE_MPI=ON
               - -DENABLE_SINGLE_PRECISION=ON
+              - -DBUILD_SHARED_LIBS=OFF
             dependencies:
               ecmwf/eccodes:
                 version: develop
