@@ -291,6 +291,7 @@ list( APPEND ecwam_srcs
   wgrib_edition.F90
   wgribencode.F90
   wgribencode_model.F90
+  wgribencode_values.F90
   wgribenout.F90
   wgribout.F90
   wnfluxes.F90
