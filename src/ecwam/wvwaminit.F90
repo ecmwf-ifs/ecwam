@@ -164,7 +164,7 @@
           CALL WAM_ABORT("WAVE MODEL INPUT FILE '"//FILENAME(1:LFILE)//"' IS MISSING !!!",&
                         &__FILENAME__,__LINE__)
         ENDIF
-        IU07 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u',0,'READWRITE')
+        IU07 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u',0,'READ')
 
         IF (IPROPAGS < 0 .OR. IPROPAGS > NPROPAGS) THEN
           WRITE(IU06,*) '************************************'
@@ -195,7 +195,7 @@
           CALL WAM_ABORT("WAVE MODEL INPUT FILE '"//FILENAME(1:LFILE)//"' IS MISSING !!!",&
                         &__FILENAME__,__LINE__)
         ENDIF
-        IU08(IPROPAGS) = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE),'r','u',0,'READWRITE')
+        IU08(IPROPAGS) = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE),'r','u',0,'READ')
       ENDIF
 
       KTAG=1
