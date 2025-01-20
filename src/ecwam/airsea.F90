@@ -58,7 +58,6 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : NWAV_GC ! needed for Loki
       USE YOWPARAM, ONLY : NANG     ,NFRE
       USE YOWPHYS,  ONLY : XKAPPA, XNLEV
       USE YOWTEST,  ONLY : IU06
@@ -93,6 +92,7 @@
 
       IF (ICODE_WND == 3) THEN
 
+        !$loki inline
         CALL TAUT_Z0 (KIJS, KIJL, IUSFG,          &
      &                HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
      &                US, Z0, Z0B, CHRNCK)
@@ -102,6 +102,7 @@
 !*    3. DETERMINE ROUGHNESS LENGTH (if needed).
 !        ---------------------------
 
+        !$loki inline
         CALL Z0WAVE (KIJS, KIJL, US, TAUW, U10, Z0, Z0B, CHRNCK)
 
 !*    3. DETERMINE U10 (if needed).

@@ -135,9 +135,9 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       REAL(KIND=JWRB), DIMENSION(KIJL) :: CNSN, SUMF, SUMFSIN2
       REAL(KIND=JWRB), DIMENSION(KIJL) :: CSTRNFAC
       REAL(KIND=JWRB), DIMENSION(KIJL) :: FLP_AVG, SLP_AVG
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: ROGOROAIR, AIRD_PVISC
-      REAL(KIND=JWRB), DIMENSION(KIJL,2) :: XSTRESS, YSTRESS, FLP, SLP
-      REAL(KIND=JWRB), DIMENSION(KIJL,2) :: USG2, TAUX, TAUY, USTP, USTPM1, USDIRP, UCN
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: ROGOROAIR, AIRD_PVISC, USG2, FLP, SLP
+      REAL(KIND=JWRB), DIMENSION(KIJL,2) :: XSTRESS, YSTRESS
+      REAL(KIND=JWRB), DIMENSION(KIJL,2) :: TAUX, TAUY, USTP, USTPM1, USDIRP, UCN
       REAL(KIND=JWRB), DIMENSION(KIJL,2) :: UCNZALPD
       REAL(KIND=JWRB), DIMENSION(KIJL) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(KIJL,2) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
@@ -163,7 +163,10 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
-      IF (NGST > 1) CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N)
+      IF (NGST > 1)THEN
+        !$loki inline
+        CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N)
+      ENDIF
 
 
       IF (LLNORMAGAM) THEN
@@ -292,21 +295,28 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
          CALL ABORT1
       ENDIF
 
-      DO IGST=1,NGST
-        DO IJ=KIJS,KIJL
-          USTPM1(IJ,IGST) = 1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
-        ENDDO
+      !... Expressing the IGST loop in this way enables the compiler to
+      !... unroll it whilst still retaining correctness for the case
+      !... where NGST == 1. This is an important optimisation for GPUs.
+      DO IGST=1,2
+        IF(IGST <= NGST)THEN
+          DO IJ=KIJS,KIJL
+            USTPM1(IJ,IGST) = 1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
+          ENDDO
+        ENDIF
       ENDDO
 
       IF (LTAUWSHELTER) THEN
-        DO IGST=1,NGST
-          DO IJ=KIJS,KIJL
-            XSTRESS(IJ,IGST)=0.0_JWRB
-            YSTRESS(IJ,IGST)=0.0_JWRB
-            USG2(IJ,IGST)=USTP(IJ,IGST)**2
-            TAUX(IJ,IGST)=USG2(IJ,IGST)*SIN(WDWAVE(IJ))
-            TAUY(IJ,IGST)=USG2(IJ,IGST)*COS(WDWAVE(IJ))
-          ENDDO
+        DO IGST=1,2
+          IF(IGST <= NGST)THEN
+            DO IJ=KIJS,KIJL
+              XSTRESS(IJ,IGST)=0.0_JWRB
+              YSTRESS(IJ,IGST)=0.0_JWRB
+              USG2(IJ)=USTP(IJ,IGST)**2
+              TAUX(IJ,IGST)=USG2(IJ)*SIN(WDWAVE(IJ))
+              TAUY(IJ,IGST)=USG2(IJ)*COS(WDWAVE(IJ))
+            ENDDO
+          ENDIF
         ENDDO
 
         DO IJ=KIJS,KIJL
@@ -344,14 +354,16 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         ENDIF
 
         IF (LTAUWSHELTER) THEN
-          DO IGST=1,NGST
-            DO IJ=KIJS,KIJL
-              TAUPX=TAUX(IJ,IGST)-ABS_TAUWSHELTER*XSTRESS(IJ,IGST)
-              TAUPY=TAUY(IJ,IGST)-ABS_TAUWSHELTER*YSTRESS(IJ,IGST)
-              USDIRP(IJ,IGST)=ATAN2(TAUPX,TAUPY)
-              USTP(IJ,IGST)=(TAUPX**2+TAUPY**2)**0.25_JWRB
-              USTPM1(IJ,IGST)=1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
-            ENDDO
+          DO IGST=1,2
+            IF(IGST <= NGST)THEN
+              DO IJ=KIJS,KIJL
+                TAUPX=TAUX(IJ,IGST)-ABS_TAUWSHELTER*XSTRESS(IJ,IGST)
+                TAUPY=TAUY(IJ,IGST)-ABS_TAUWSHELTER*YSTRESS(IJ,IGST)
+                USDIRP(IJ,IGST)=ATAN2(TAUPX,TAUPY)
+                USTP(IJ,IGST)=(TAUPX**2+TAUPY**2)**0.25_JWRB
+                USTPM1(IJ,IGST)=1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
+              ENDDO
+            ENDIF
           ENDDO
 
           DO IJ=KIJS,KIJL
@@ -363,11 +375,13 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 !*      PRECALCULATE FREQUENCY DEPENDENCE.
 !       ----------------------------------
 
-        DO IGST=1,NGST
-          DO IJ=KIJS,KIJL
-            UCN(IJ,IGST) = USTP(IJ,IGST)*CINV(IJ,M)
-            UCNZALPD(IJ,IGST) = XKAPPA/(UCN(IJ,IGST) + ZALP)
-          ENDDO
+        DO IGST=1,2
+          IF(IGST <= NGST)THEN
+            DO IJ=KIJS,KIJL
+              UCN(IJ,IGST) = USTP(IJ,IGST)*CINV(IJ,M)
+              UCNZALPD(IJ,IGST) = XKAPPA/(UCN(IJ,IGST) + ZALP)
+            ENDDO
+          ENDIF
         ENDDO
         DO IJ=KIJS,KIJL
           ZCN(IJ) = LOG(WAVNUM(IJ,M)*Z0M(IJ))
@@ -397,52 +411,54 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
           ENDDO
         ENDIF
 
-        DO IGST=1,NGST
-          DO K=1,NANG
-            IF(LTAUWSHELTER)THEN
+        DO IGST=1,2
+          IF(IGST <= NGST)THEN
+            DO K=1,NANG
+              IF(LTAUWSHELTER)THEN
+                DO IJ=KIJS,KIJL
+                  COSLP(IJ,K) = COS(TH(K)-USDIRP(IJ,IGST))
+                ENDDO
+              ENDIF
               DO IJ=KIJS,KIJL
-                COSLP(IJ,K) = COS(TH(K)-USDIRP(IJ,IGST))
+                GAM0(IJ,K,IGST) = 0.0_JWRB
+                IF (COSLP(IJ,K) > 0.01_JWRB) THEN
+                  X    = COSLP(IJ,K)*UCN(IJ,IGST)
+                  ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)/COSLP(IJ,K)
+                  IF (ZLOG < 0.0_JWRB) THEN
+                    ZLOG2X=ZLOG*ZLOG*X
+                    GAM0(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X * CNSN(IJ)
+                    XLLWS(IJ,K,M) = 1.0_JWRB
+                  ENDIF
+                ENDIF
+              ENDDO
+            ENDDO
+  
+            IF (LLNORMAGAM) THEN
+  
+              SUMF(KIJS:KIJL) = 0.0_JWRB
+              SUMFSIN2(KIJS:KIJL) = 0.0_JWRB
+              DO K=1,NANG
+                DO IJ=KIJS,KIJL
+                  SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)
+                  SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SINWDIF2(IJ,K)
+                ENDDO
+              ENDDO
+  
+              DO IJ=KIJS,KIJL
+                ZNZ = XNGAMCONST(IJ)*USTPM1(IJ,IGST)
+                GAMNORMA(IJ,IGST) = (1.0_JWRB + ZNZ*SUMFSIN2(IJ)) / (1.0_JWRB + ZNZ*SUMF(IJ))
+              ENDDO
+  
+            ENDIF
+  
+            IF (LLSNEG) THEN
+              DO K=1,NANG
+                DO IJ=KIJS,KIJL
+                  DSTAB2 = TEMP1(IJ)*(TEMP2(IJ)+(FU+FUD*COSLP(IJ,K))*USTP(IJ,IGST))
+                  DSTAB(IJ,K,IGST) = DSTAB1(IJ)+PTURB(IJ)*DSTAB2
+                ENDDO
               ENDDO
             ENDIF
-            DO IJ=KIJS,KIJL
-              GAM0(IJ,K,IGST) = 0.0_JWRB
-              IF (COSLP(IJ,K) > 0.01_JWRB) THEN
-                X    = COSLP(IJ,K)*UCN(IJ,IGST)
-                ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)/COSLP(IJ,K)
-                IF (ZLOG < 0.0_JWRB) THEN
-                  ZLOG2X=ZLOG*ZLOG*X
-                  GAM0(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X * CNSN(IJ)
-                  XLLWS(IJ,K,M) = 1.0_JWRB
-                ENDIF
-              ENDIF
-            ENDDO
-          ENDDO
-
-          IF (LLNORMAGAM) THEN
-
-            SUMF(KIJS:KIJL) = 0.0_JWRB
-            SUMFSIN2(KIJS:KIJL) = 0.0_JWRB
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)
-                SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*FL1(IJ,K,M)*SINWDIF2(IJ,K)
-              ENDDO
-            ENDDO
-
-            DO IJ=KIJS,KIJL
-              ZNZ = XNGAMCONST(IJ)*USTPM1(IJ,IGST)
-              GAMNORMA(IJ,IGST) = (1.0_JWRB + ZNZ*SUMFSIN2(IJ)) / (1.0_JWRB + ZNZ*SUMF(IJ))
-            ENDDO
-
-          ENDIF
-
-          IF (LLSNEG) THEN
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                DSTAB2 = TEMP1(IJ)*(TEMP2(IJ)+(FU+FUD*COSLP(IJ,K))*USTP(IJ,IGST))
-                DSTAB(IJ,K,IGST) = DSTAB1(IJ)+PTURB(IJ)*DSTAB2
-              ENDDO
-            ENDDO
           ENDIF
         ENDDO
 
@@ -453,43 +469,41 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 
         DO K=1,NANG
 
-          DO IGST=1,NGST
-            DO IJ=KIJS,KIJL
-              ! SLP: only the positive contributions
-              SLP(IJ,IGST) =  GAM0(IJ,K,IGST) * GAMNORMA(IJ,IGST)
-              FLP(IJ,IGST) = SLP(IJ,IGST)+DSTAB(IJ,K,IGST)
-            ENDDO
-          ENDDO
-
-          DO IGST=1,NGST
-            DO IJ=KIJS,KIJL
-              SLP(IJ,IGST) = SLP(IJ,IGST)*FL1(IJ,K,M)
-            ENDDO
-          ENDDO
-
-          IF (LTAUWSHELTER) THEN
-            DO IJ=KIJS,KIJL
-              CONST11(IJ)=CONSTF(IJ)*SINTH(K)
-              CONST22(IJ)=CONSTF(IJ)*COSTH(K)
-            ENDDO
-            DO IGST=1,NGST
+          DO IGST=1,2
+            IF(IGST <= NGST)THEN
               DO IJ=KIJS,KIJL
-                XSTRESS(IJ,IGST)=XSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST11(IJ)
-                YSTRESS(IJ,IGST)=YSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST22(IJ)
+                ! SLP: only the positive contributions
+                SLP(IJ) =  GAM0(IJ,K,IGST) * GAMNORMA(IJ,IGST)
+                FLP(IJ) = SLP(IJ)+DSTAB(IJ,K,IGST)
               ENDDO
-            ENDDO
-          ENDIF
-
-          IGST=1
-            DO IJ=KIJS,KIJL
-              SLP_AVG(IJ) = SLP(IJ,IGST)
-              FLP_AVG(IJ) = FLP(IJ,IGST)
-            ENDDO
-          DO IGST=2,NGST
-            DO IJ=KIJS,KIJL
-              SLP_AVG(IJ) = SLP_AVG(IJ)+SLP(IJ,IGST)
-              FLP_AVG(IJ) = FLP_AVG(IJ)+FLP(IJ,IGST)
-            ENDDO
+  
+              DO IJ=KIJS,KIJL
+                SLP(IJ) = SLP(IJ)*FL1(IJ,K,M)
+              ENDDO
+  
+              IF (LTAUWSHELTER) THEN
+                DO IJ=KIJS,KIJL
+                  CONST11(IJ)=CONSTF(IJ)*SINTH(K)
+                  CONST22(IJ)=CONSTF(IJ)*COSTH(K)
+                ENDDO
+                DO IJ=KIJS,KIJL
+                  XSTRESS(IJ,IGST)=XSTRESS(IJ,IGST)+SLP(IJ)*CONST11(IJ)
+                  YSTRESS(IJ,IGST)=YSTRESS(IJ,IGST)+SLP(IJ)*CONST22(IJ)
+                ENDDO
+              ENDIF
+  
+              IF(IGST == 1)THEN
+                DO IJ=KIJS,KIJL
+                  SLP_AVG(IJ) = SLP(IJ)
+                  FLP_AVG(IJ) = FLP(IJ)
+                ENDDO
+              ELSE
+                DO IJ=KIJS,KIJL
+                  SLP_AVG(IJ) = SLP_AVG(IJ)+SLP(IJ)
+                  FLP_AVG(IJ) = FLP_AVG(IJ)+FLP(IJ)
+                ENDDO
+              ENDIF
+            ENDIF
           ENDDO
 
           DO IJ=KIJS,KIJL

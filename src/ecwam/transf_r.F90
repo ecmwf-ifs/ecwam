@@ -32,6 +32,7 @@ REAL(KIND=JWRB) FUNCTION TRANSF_R(XK0,D)
 !----------------------------------------------------------------------
 
       IMPLICIT NONE
+!$loki routine seq
 
       REAL(KIND=JWRB), PARAMETER :: EPS=0.0001_JWRB
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE

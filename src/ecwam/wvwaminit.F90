@@ -36,7 +36,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMAP   , ONLY : AMOSOP   ,AMONOP   ,IQGAUSS  ,NGX      ,NGY
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : KWAMVER  ,LLUNSTR
       
       USE YOWTEST  , ONLY : IU06
@@ -44,8 +44,7 @@
       USE YOWSTAT  , ONLY : IPROPAGS
 
       USE MPL_MODULE, ONLY : MPL_MYRANK, MPL_NPROC
-      USE YOMHOOK   , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE WAM_INIT_GPU_MOD, ONLY : WAM_INIT_GPU
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -82,12 +81,6 @@
 
       IRANK = MPL_MYRANK()
       NPROC = MPL_NPROC()
-
-#if defined(WAM_GPU)
-      CALL WAM_INIT_GPU(IRANK)
-#endif
-
-      KTAG = 1
 
 !     STANDARD OUTPUT UNIT
 !     --------------------

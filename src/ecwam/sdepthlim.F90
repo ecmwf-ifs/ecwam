@@ -62,6 +62,7 @@
       IF (LHOOK) CALL DR_HOOK('SDEPTHLIM',0,ZHOOK_HANDLE)
 
       LLEPSMIN=.TRUE.
+      !$loki inline
       CALL SEMEAN (FL1, KIJS, KIJL, EM, LLEPSMIN)
 
       DO IJ=KIJS,KIJL

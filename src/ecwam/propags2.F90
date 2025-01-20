@@ -96,7 +96,8 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
 
-          !$acc kernels loop present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
+          !$acc parallel loop independent collapse(3) &
+          !$acc & present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,KPM)
           DO K = 1, NANG
             DO M = ND3S, ND3E
 
@@ -117,41 +118,49 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
             ENDDO
           ENDDO
-          !$acc end kernels 
+          !$acc end parallel loop 
 
         ELSE
 !*      DEPTH AND CURRENT REFRACTION.
 !       -----------------------------
-#ifdef _OPENACC
-           CALL WAM_ABORT("PROPAGS2: BRANCH NOT YET PORTED FOR GPU EXECUTION")
-#endif
 
+          !$acc parallel loop independent collapse(3) &
+          !$acc & present(F1,F3,SUMWN,WLONN,KLON,WLATN,KLAT,WCORN,KCOR, &
+          !$acc &         WKPMN,KPM,WMPMN,MPM)
           DO M = ND3S, ND3E
             DO K = 1, NANG
 
+              !$loki loop-fusion
               DO IJ = KIJS, KIJL
                 F3(IJ,K,M) = (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ,K,M)
               ENDDO
 
+              !$loki loop-unroll
               DO IC=1,2
                 IF (LLWLONN(K,M,IC)) THEN
+                  !$loki loop-fusion
                   DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M) + WLONN(IJ,K,M,IC)*F1(KLON(IJ,IC),K,M)
                   ENDDO
                 ENDIF
               ENDDO
 
+              !$loki loop-unroll
               DO ICL=1,2
+                !$loki loop-unroll
                 DO IC=1,2
                   IF (LLWLATN(K,M,IC,ICL)) THEN
+                    !$loki loop-fusion
                     DO IJ = KIJS, KIJL
                       F3(IJ,K,M) = F3(IJ,K,M) + WLATN(IJ,K,M,IC,ICL)*F1(KLAT(IJ,IC,ICL),K,M)
                     ENDDO
                   ENDIF
                 ENDDO
 
+                !$loki loop-unroll
                 DO ICR=1,4
                   IF (LLWCORN(K,M,ICR,ICL)) THEN
+                    !$loki loop-fusion
                     DO IJ = KIJS, KIJL
                       F3(IJ,K,M) = F3(IJ,K,M) + WCORN(IJ,K,M,ICR,ICL)*F1(KCOR(IJ,KCR(K,ICR),ICL),K,M)
                     ENDDO
@@ -159,15 +168,18 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
                 ENDDO
               ENDDO
 
+              !$loki loop-unroll
               DO IC=-1,1,2
 
                 IF (LLWKPMN(K,M,IC)) THEN
+                  !$loki loop-fusion
                   DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M) + WKPMN(IJ,K,M,IC)* F1(IJ,KPM(K,IC),M)
                   ENDDO
                 ENDIF
 
                 IF (LLWMPMN(K,M,IC)) THEN
+                  !$loki loop-fusion
                   DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M) + WMPMN(IJ,K,M,IC)* F1(IJ,K,MPM(M,IC))
                   ENDDO
@@ -177,6 +189,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
             ENDDO
           ENDDO
+          !$acc end parallel loop
 
         ENDIF
 

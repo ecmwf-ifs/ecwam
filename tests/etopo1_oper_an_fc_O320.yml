@@ -16,7 +16,7 @@ forecast.end:   2023-01-01 06:00:00
 begin: ${analysis.begin}
 end:   ${forecast.end}
 
-nproma: 128
+nproma: 64
 
 forcings:
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O320.grib
@@ -83,3 +83,36 @@ validation:
       maximum: 0.7470872982664355E+01
       relative_tolerance: 1.e-14
       hashes: ['0x401DE22C86F4741A']
+
+  single_precision:
+
+    # initial analysis time
+    - name: swh
+      time: 2022-12-31 12:00:00
+      average: 0.1334386110305786E+01
+      relative_tolerance: 1.e-6
+      hashes: ['0x3FF559A540000000']
+
+    # initial forecast time
+    - name: swh
+      time: 2023-01-01 00:00:00
+      average: 0.1522688865661621E+01
+      relative_tolerance: 1.e-6
+      hashes: ['0x3FF85CEF00000000']
+
+    # 6h into forcast
+    - name: swh
+      time: 2023-01-01 06:00:00
+      average: 0.1602301239967346E+01
+      relative_tolerance: 1.e-6
+      hashes: ['0x3FF9A306A0000000']
+    - name: swh
+      time: 2023-01-01 06:00:00
+      minimum: 0.1733699254691601E-01
+      relative_tolerance: 1.e-6
+      hashes: ['0x3F91C0C9E0000000']
+    - name: swh
+      time: 2023-01-01 06:00:00
+      maximum: 0.7470870018005371E+01
+      relative_tolerance: 1.e-6
+      hashes: ['0x401DE22BC0000000']

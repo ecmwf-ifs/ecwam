@@ -117,11 +117,13 @@ SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
       REAL(KIND=JWRB), DIMENSION(KIJL) :: F1DCOS2, F1DCOS3 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: F1D, F1DSIN2 
 
+
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
 
       IF (LLGCBZ0) THEN
+        !$loki inline
         CALL OMEGAGC(KIJS, KIJL, UFRIC, NS, XKS, OMS)
       ENDIF
 

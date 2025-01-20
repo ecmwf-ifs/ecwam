@@ -85,12 +85,14 @@ nproma=$(read_config nproma --default=24)
 iphys=$(read_config iphys --default=1)
 llgcbz0=$(read_config llgcbz0 --default=F)
 llnormagam=$(read_config llnormagam --default=F)
+irefra=$(read_config irefra --default=0)
 
 # read timesteps
 phys_tstp=$(read_config physics.timestep --format=seconds --default=900)
 adv_base_tstp=$(read_config advection.timestep --format=seconds --default=900)
 adv_fast_tstp=$(read_config advection.fast_waves.timestep --format=seconds --default=$adv_base_tstp)
 ifrelfmax=$(read_config advection.fast_waves.max_frequency --default=0)
+idelcur=$(read_config currents.input_step --default=86400)
 
 # verify timesteps
 if [ $(( $adv_base_tstp%$adv_fast_tstp )) -ne 0 ] ; then
@@ -211,11 +213,13 @@ cat > wam_namelist << EOF
   CBPLTDT               = "${begofrn}",
   CEPLTDT               = "${endofrn}",
   CDATEF                = "${begoffo}",
+  CDATECURA             = "${begofrn}",
   DELPRO_LF             = ${adv_fast_tstp},
   IFRELFMAX             = ${ifrelfmax},
   IDELPRO               = ${adv_base_tstp},
   IDELT                 = ${phys_tstp},
   IDELINT               = ${ppfreq},
+  IDELCUR               = ${idelcur}
   IREST                 = 1,
   LFDBIOOUT             = F,
   LFDB                  = F,
@@ -228,7 +232,7 @@ cat > wam_namelist << EOF
   LLNORMAGAM            = ${llnormagam},
   IPROPAGS              = 2,
   LSUBGRID              = F,
-  IREFRA                = 0,
+  IREFRA                = ${irefra},
   LICERUN               = ${licerun},
   LMASKICE              = T,
   LWAMRSETCI            = T,
@@ -249,7 +253,7 @@ cat > wam_namelist << EOF
   LRSTPARALR            = F,
   LRSTPARALW            = F,
   LSECONDORDER          = F,
-  LWVFLX_SNL            = F,
+  LWVFLX_SNL            = T,
   LLNORMWAMOUT          = T,
   LLNORMWAMOUT_GLOBAL   = T,
   CNORMWAMOUT_FILE      = "statistics.log",

@@ -82,8 +82,10 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
+      !$loki inline
       CALL MEANSQS_LF(NFRE, KIJS, KIJL, FLWD, WAVNUM, XMSS)
 
+      !$loki inline
       CALL FEMEAN (KIJS, KIJL, FLWD, EM, FM)
 
       DO IJ = KIJS, KIJL

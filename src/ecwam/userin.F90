@@ -73,7 +73,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH, &
-     &            HSALTCUT, LALTGRDOUT, LALTPAS, LALTPASSIV,            &
+     &            ALTGRTHRSH,HSALTCUT, LALTGRDOUT, LALTPAS, LALTPASSIV, &
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOURNW, LWCOUAST,     &
@@ -1044,14 +1044,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
               WRITE(IU06,*) ' THE DATA WILL BE CORRECTED '
               WRITE(IU06,*) ' ACCORDING TO THE MODEL SEA STATE.'
             ENDIF
-            WRITE(IU06,*) ' THE THRESHOLD FOR BACKGROUND CHECK IS ',    &
-     &                      ALTBGTHRSH(ISAT)
+            WRITE(IU06,*) ' THE THRESHOLD FOR BACKGROUND CHECK IS ', ALTBGTHRSH(ISAT) 
+            WRITE(IU06,*) ' THE THRESHOLD FOR GROSS ERROR CHECK IS ', ALTGRTHRSH(ISAT) 
             IF (HSALTCUT(ISAT) < 999999.) THEN
-              WRITE(IU06,*) ' THE INPUT MINIMUM WAVE HEIGHT IS ',       &
-     &                        HSALTCUT(ISAT)
+              WRITE(IU06,*) ' THE INPUT MINIMUM WAVE HEIGHT IS ', HSALTCUT(ISAT)
             ELSE
-              WRITE(IU06,*) ' THE MINIMUM WAVE HEIGHT WILL BE',         &
-     &                      ' THE OBSERVATION ERROR.'
+              WRITE(IU06,*) ' THE MINIMUM WAVE HEIGHT WILL BE THE OBSERVATION ERROR.'
             ENDIF
             IF (LALTGRDOUT(ISAT)) THEN
               WRITE(IU06,*) ' GRIDDED ALTIMETER FIELDS WILL BE PRODUCED FOR THIS ALTIMETER.'
@@ -1604,6 +1602,18 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*) '+ PROGRAM WILL IGNORE THIS OUTPUT TIME +'
             WRITE(IU06,*) '+                                      +'
             WRITE(IU06,*) '++++++++++++++++++++++++++++++++++++++++'
+          ELSE IF (MOD(ISHIFT,IDELT) /= 0 .AND. LLSOURCE ) THEN
+            WRITE(IU06,*) '++++++++++++++++++++++++++++++++++++++++'
+            WRITE(IU06,*) '+                                      +'
+            WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN      +'
+            WRITE(IU06,*) '+    ============================      +'
+            WRITE(IU06,*) '+ OUTPUT DATE IS NOT AT THE END OF A   +'
+            WRITE(IU06,*) '+ SOURCE TERM TIMESTEP IDELT= ', IDELT
+            WRITE(IU06,*) '+ DATE IS : ', COUTT(J)
+            WRITE(IU06,*) '+ PROGRAM WILL ABORT '
+            WRITE(IU06,*) '+                                       +'
+            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+            LERROR = .TRUE.
           ENDIF
         ENDDO
       ELSE
@@ -1625,7 +1635,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           WRITE(IU06,*) '*                                         *'
           WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
           WRITE(IU06,*) '*    ==========================           *'
-          WRITE(IU06,*) '* OUTPUT OF INTEGRATED DATA (TOTAL SEA)   *'
+          WRITE(IU06,*) '* OUTPUT OF INTEGRATED DATA               *'
           WRITE(IU06,*) '* IS REQUESTED.                           *'
           WRITE(IU06,*) '* OUTPUT TIME STEP HAS TO BE A MULTIPLE   *'
           WRITE(IU06,*) '* OF THE PROPAGATION TIME STEP.           *'
@@ -1634,6 +1644,23 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           WRITE(IU06,*) '*                                         *'
           WRITE(IU06,*) '*******************************************'
           LERROR = .TRUE.
+        ENDIF
+        IF (LLSOURCE) THEN
+          IF ((FFLAG20 .OR. GFLAG20) .AND. MOD(IDELINT,IDELT) /= 0) THEN
+            WRITE(IU06,*) '*******************************************'
+            WRITE(IU06,*) '*                                         *'
+            WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+            WRITE(IU06,*) '*    ==========================           *'
+            WRITE(IU06,*) '* OUTPUT OF INTEGRATED DATA               *'
+            WRITE(IU06,*) '* IS REQUESTED.                           *'
+            WRITE(IU06,*) '* OUTPUT TIME STEP HAS TO BE A MULTIPLE   *'
+            WRITE(IU06,*) '* OF THE SOURCE TERM TIME STEP.           *'
+            WRITE(IU06,*) '* OUTPUT TIME STEP IS      IDELINT = ', IDELINT
+            WRITE(IU06,*) '* SOURCE TERM TIME STEP IS IDELT = ', IDELT 
+            WRITE(IU06,*) '*                                         *'
+            WRITE(IU06,*) '*******************************************'
+            LERROR = .TRUE.
+          ENDIF
         ENDIF
       ENDIF
 
@@ -1653,6 +1680,24 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
           ENDIF
         ENDDO
+        IF (LLSOURCE) THEN
+          DO J=1,NOUTS
+            CALL DIFDATE (CDATEA, COUTS(J), ISHIFT)
+            IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELT) /= 0) THEN
+              WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+              WRITE(IU06,*) '+                                       +'
+              WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN       +'
+              WRITE(IU06,*) '+    ============================       +'
+              WRITE(IU06,*) '+ SPECTRA OUTPUT DATE IS NOT AT THE END +'
+              WRITE(IU06,*) '+ OF A SOURCE TERM TIMESTEP IDELT= ', IDELT
+              WRITE(IU06,*) '+ DATE IS : ', COUTS(J)
+              WRITE(IU06,*) '+ PROGRAM WILL ABORT '
+              WRITE(IU06,*) '+                                       +'
+              WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+              LERROR = .TRUE.
+            ENDIF
+          ENDDO
+        ENDIF
       ENDIF
 
       IF (NASS > 0 .AND. IASSI == 1) THEN
@@ -1669,7 +1714,23 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*) '+ PROGRAM WILL ABORT '
             WRITE(IU06,*) '+                                       +'
             WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
-            CALL WAM_ABORT(__FILENAME__,__LINE__)
+            LERROR = .TRUE.
+          ENDIF
+        ENDDO
+        DO J=1,NASS
+          CALL DIFDATE (CDATEA, CASS(J), ISHIFT)
+          IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELT) /= 0) THEN
+            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+            WRITE(IU06,*) '+                                       +'
+            WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN       +'
+            WRITE(IU06,*) '+    ============================       +'
+            WRITE(IU06,*) '+ ASSIMILATION DATE IS NOT AT THE END   +'
+            WRITE(IU06,*) '+ OF A SOURCE TERM TIMESTEP IDELT= ', IDELT
+            WRITE(IU06,*) '+ DATE IS : ', CASS(J)
+            WRITE(IU06,*) '+ PROGRAM WILL ABORT '
+            WRITE(IU06,*) '+                                       +'
+            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+            LERROR = .TRUE.
           ENDIF
         ENDDO
       ENDIF
@@ -1691,6 +1752,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.       *'
         WRITE(IU06,*) '* ---------------   --------------        *'
         WRITE(IU06,*) '*******************************************'
+        WRITE(NULERR,*) '*******************************************'
+        WRITE(NULERR,*) '*    FATAL ERROR(S) IN SUB. USERIN        *'
+        WRITE(NULERR,*) '*    SEE LOGFILE        *'
+        WRITE(NULERR,*) '*******************************************'
         CALL WAM_ABORT(__FILENAME__,__LINE__)
       ELSE
 

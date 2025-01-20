@@ -151,11 +151,13 @@
         DO IJ=KIJS,KIJL
           SUMX(IJ) = SPOS(IJ,K,M)*SINTH(K)
           SUMY(IJ) = SPOS(IJ,K,M)*COSTH(K)
+          SUMT(IJ) = SPOS(IJ,K,M)
         ENDDO
         DO K=2,NANG
           DO IJ=KIJS,KIJL
             SUMX(IJ) = SUMX(IJ) + SPOS(IJ,K,M)*SINTH(K)
             SUMY(IJ) = SUMY(IJ) + SPOS(IJ,K,M)*COSTH(K)
+            SUMT(IJ) = SUMT(IJ) + SPOS(IJ,K,M)
           ENDDO
         ENDDO
         DO IJ=KIJS,KIJL
@@ -163,6 +165,12 @@
           XSTRESS(IJ) = XSTRESS(IJ) + CMRHOWGDFTH(IJ)*SUMX(IJ)
           YSTRESS(IJ) = YSTRESS(IJ) + CMRHOWGDFTH(IJ)*SUMY(IJ)
         ENDDO
+
+        IF ( LLPHIWA ) THEN
+          DO IJ=KIJS,KIJL
+            PHIWA(IJ) = PHIWA(IJ) + RHOWGDFTH(IJ,M)*SUMT(IJ)
+          ENDDO
+        ENDIF
       ENDDO
 
 !     TAUW is the kinematic wave stress !
@@ -171,23 +179,6 @@
         YSTRESS(IJ) = YSTRESS(IJ)/MAX(AIRD(IJ), 1.0_JWRB)
       ENDDO
 
-      IF ( LLPHIWA ) THEN
-        DO M=1,NFRE
-!       THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
-          K=1
-          DO IJ=KIJS,KIJL
-            SUMT(IJ) = SPOS(IJ,K,M)
-          ENDDO
-          DO K=2,NANG
-            DO IJ=KIJS,KIJL
-              SUMT(IJ) = SUMT(IJ) + SPOS(IJ,K,M)
-            ENDDO
-          ENDDO
-          DO IJ=KIJS,KIJL
-            PHIWA(IJ) = PHIWA(IJ) + RHOWGDFTH(IJ,M)*SUMT(IJ)
-          ENDDO
-        ENDDO
-      ENDIF
 
 !*    CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
 !     ----------------------------------------------------------------------------------
@@ -210,6 +201,7 @@
         ENDDO
       ENDIF
 
+      !$loki inline
       CALL TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
      &                FL1, AIRD, RNFAC,                          &
      &                COSWDIF, SINWDIF2,                         &

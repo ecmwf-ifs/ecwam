@@ -107,7 +107,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUT  , ONLY : CASS     ,NASS
+      USE YOWCOUT  , ONLY : CASS     ,NASS, LWAMANOUT
       USE YOWCOUP  , ONLY : LWCOU, LWCOU2W, LWCOUHMF, LWFLUX,           &
      &         LWCOUNORMS, LLNORMWAMOUT_GLOBAL, LLNORMWAM2IFS,          &
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,             &
@@ -136,7 +136,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWTEST  , ONLY : IU06
       USE YOWWNDG  , ONLY : ICODE_CPL
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,FL1
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,VARS_4D
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW   ,CDATEWO  ,CDATEFL ,     &
      &                      FF_NEXT  ,                                  &
      &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE,        &
@@ -468,7 +468,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                IREAD,                                   &
      &                BLK2GLO, BLK2LOC,                        &
      &                WVENVI, WVPRPT, FF_NOW,                  &
-     &                FL1,                                     &
+     &                VARS_4D%FL1,                             &
      &                NFIELDS, NGPTOTG, NC, NR,                &
      &                FIELDS, LWCUR, MASK_IN, PRPLRADI,        &
      &                NEMO2WAM)
@@ -651,7 +651,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       CALL WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,            &
      &              WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS, &
-     &              WAM2NEMO, NEMO2WAM, FL1)
+     &              WAM2NEMO, NEMO2WAM, VARS_4D)
 
 
 !*    2.2  DATA ASSIMILATION
@@ -676,12 +676,12 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           IF ( CDTPRO == CDTASS ) THEN
             CALL WAMASSI (LDSTOP, LDWRRE, BLK2GLO,          &
  &                        WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
- &                        WAM2NEMO, NEMO2WAM, FL1)
+ &                        WAM2NEMO, NEMO2WAM, VARS_4D%FL1)
           ENDIF
         ELSEIF ( (.NOT.LWCOU .AND. CDTPRO <= CDATEF ) .OR. (LWCOU .AND. CDTPRO == CDATEF) ) THEN
           CALL WAMASSI (LDSTOP, LDWRRE, BLK2GLO,          &
  &                      WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
- &                      WAM2NEMO, NEMO2WAM, FL1)
+ &                      WAM2NEMO, NEMO2WAM, VARS_4D%FL1)
         ENDIF
       ENDIF
 
@@ -975,7 +975,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           ALLOCATE(ZCOMCNT(NPROC))
           ZCOMCNT=NCOMLOC
           CALL MPL_GATHERV(PSENDBUF=ZCOMBUFS(IST:IED),KROOT=IRECV,      &
-     &                    PRECVBUF=ZCOMBUFR(:),KRECVCOUNTS=ZCOMCNT,     &
+     &                    PRECVBUF=ZCOMBUFR,KRECVCOUNTS=ZCOMCNT,     &
      &                    CDSTRING='WAVEMDL:')
           DEALLOCATE(ZCOMCNT)
 
@@ -1036,6 +1036,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !     4. END OF RUN ?
 !        -----------
       IF (CDATEE == CDTPRO) THEN
+        IF(LWCOU) THEN
+          ! Prevent any further output until the namelist is read again.
+          LWAMANOUT = .FALSE.
+          WRITE(IU06,*) '  WAVEMDL: NORMAL END OF RUN. OUTPUT IS NOW DISABLED !'
+        ENDIF
         CALL MPL_BARRIER(CDSTRING='WAVEMDL: END')
         CALL FLUSH(IU06)
       ENDIF
