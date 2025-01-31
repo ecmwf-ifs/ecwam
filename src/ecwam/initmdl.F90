@@ -8,13 +8,15 @@
 !
 
 SUBROUTINE INITMDL (NADV,                                 &
+ &                  LINIONLY,                             &
  &                  IREAD,                                &
+ &                  NLONW, NLATW,                         &
  &                  BLK2GLO,  BLK2LOC,                    &
- &                  WVENVI, WVPRPT, FF_NOW,               &
+ &                  WVENVI, WVPRPT, FF_NOW, INTFLDS,      &
  &                  FL1,                                  &
  &                  NFIELDS, NGPTOTG, NC, NR,             &
  &                  FIELDS, LWCUR, MASK_IN, PRPLRADI,     &
- &                  NEMO2WAM)
+ &                  WAM2NEMO, NEMO2WAM)
 
 ! ----------------------------------------------------------------------
 
@@ -56,16 +58,17 @@ SUBROUTINE INITMDL (NADV,                                 &
 
 !          ---- FORMAL PARAMETERS ----
 
-!    *CALL* *INITMDL (NADV,
+!    *CALL* *INITMDL (NADV, LINIONLY, 
 !    &                IREAD,
 !    &                BLK2GLO, BLK2LOC, 
-!    &                WVENVI, WVPRPT, FF_NOW,
+!    &                WVENVI, WVPRPT, FF_NOW, INTFLDS,
 !    &                FL1,                  
 !    &                NFIELDS, NGPTOTG, NC, NR,
 !    &                FIELDS, LWCUR, MASK_IN,
-!    &                NEMO2WAM)*
+!    &                WAM2NEMO, NEMO2WAM)*
 
 !      *NADV*      NUMBER OF ADVECTION ITERATIONS
+!      *LINIONLY*  INITIALISATION ONLY CALL (i.e. NO FOWARD TIME INTEGRATION)  
 !      *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                  (IF NEEDED).
 !      *BLK2GLO*   BLOCK TO GRID TRANSFORMATION
@@ -73,6 +76,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 !      *WVENVI*    WAVE ENVIRONMENT FIELDS
 !      *WVPRPT*    WAVE PROPERTIES FIELDS
 !      *FF_NOW*    FORCING FIELDS AT CURRENT TIME.
+!      *INTFLDS*   INTEGRATED/DERIVED PARAMETERS
 !      *FL1*       SPECTRUM
 !      *NFIELDS*   NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
 !      *NGPTOTG*   NUMBER OF ATMOSPHERIC GRID POINTS
@@ -82,6 +86,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 !      *LWCUR*     INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 !      *MASK_IN*   MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
 !      *PRPLRADI*  EARTH RADIUS REDUCTION FACTOR FOR SMALL PLANET
+!      *WAM2NEMO*  WAVE FIELDS PASSED TO NEMO
 !      *NEMO2WAM*  FIELDS FRON OCEAN MODEL to WAM
 
 !          ---- INPUT/OUTPUT UNITS ---
@@ -154,11 +159,12 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : WVGRIDGLO, WVGRIDLOC,                    &
      &                         ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
-     &                         INTGT_PARAM_FIELDS, OCEAN2WAVE
+     &                         INTGT_PARAM_FIELDS, WAVE2OCEAN, OCEAN2WAVE
 
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,                        &
      &                      GBOUNC  , IPOGBO   ,CBCPREF
-      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,LWNEMOCOU
+      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,LWNEMOCOU,    &
+     &                      LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,GFLAG20  ,    &
      &                      NGOUT    ,NOUTT    ,LOUTINT  ,LSECONDORDER
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA
@@ -189,11 +195,12 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWREFD  , ONLY : LLUPDTTD
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,TOOSHALLOW
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT
+      USE YOWICE   , ONLY : LCIWA1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDTINTT  ,CDTBC    ,                                  &
      &            IFRELFMAX, DELPRO_LF, IDELPRO  ,IDELT ,               &
      &            IDELWI   ,IDELWO   ,IDELRES  ,IDELINT  ,              &
-     &            IREFRA   ,LNSESTART,                                  &
+     &            IREFRA   ,LNSESTART, LLSOURCE,                        &
      &            IPHYS    ,                                            &
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,    &
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
@@ -207,6 +214,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      IU14     ,IU15     ,IU19     ,IU20
       USE YOWWAMI  , ONLY : CBPLTDT
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
+     &                      IUNITW   ,                                  &
      &                      NXFFS    , NXFFE   ,NYFFS    , NYFFE   ,    &
      &                      NXFFS_LOC,NXFFE_LOC,NYFFS_LOC,NYFFE_LOC,    &
      &                      LLNEWCURR,LLWSWAVE ,LLWDWAVE ,FF_NEXT
@@ -217,6 +225,8 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE UNSTRUCT_BOUND , ONLY : IOBP
 #endif
       USE YOWABORT , ONLY : WAM_ABORT
+      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
+      USE YOWGRIB  , ONLY : IGRIB_GET_VALUE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE EC_LUN   , ONLY : NULERR
       USE OML_MOD  , ONLY : OML_GET_MAX_THREADS
@@ -227,7 +237,6 @@ SUBROUTINE INITMDL (NADV,                                 &
 
 #include "abort1.intfb.h"
 #include "cigetdeac.intfb.h"
-#include "cireduce.intfb.h"
 #include "getspec.intfb.h"
 #include "getstress.intfb.h"
 #include "headbc.intfb.h"
@@ -240,21 +249,27 @@ SUBROUTINE INITMDL (NADV,                                 &
 #include "iniwcst.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "mcout.intfb.h"
-#include "secondhh_gen.intfb.h"
+#include "outstep0.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 #include "prewind.intfb.h"
 #include "readbou.intfb.h"
+#include "secondhh_gen.intfb.h"
 #include "setmarstype.intfb.h"
 #include "tabu_swellft.intfb.h"
+#include "unsetice.intfb.h"
 #include "userin.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(OUT) :: NADV
+      LOGICAL,            INTENT(IN)  :: LINIONLY      
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
+      INTEGER(KIND=JWIM), INTENT(IN) :: NLONW
+      INTEGER(KIND=JWIM), INTENT(IN) :: NLATW
       TYPE(WVGRIDGLO), INTENT(IN) :: BLK2GLO
       TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
       TYPE(ENVIRONMENT), INTENT(INOUT) :: WVENVI
       TYPE(FREQUENCY), INTENT(INOUT) :: WVPRPT
       TYPE(FORCING_FIELDS), INTENT(INOUT) :: FF_NOW
+      TYPE(INTGT_PARAM_FIELDS), INTENT(INOUT) :: INTFLDS
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
       INTEGER(KIND=JWIM), INTENT(IN) :: NFIELDS
       INTEGER(KIND=JWIM), INTENT(IN) :: NGPTOTG
@@ -264,9 +279,11 @@ SUBROUTINE INITMDL (NADV,                                 &
       LOGICAL, INTENT(IN) :: LWCUR
       INTEGER(KIND=JWIM),DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
       REAL(KIND=JWRB), INTENT(IN) :: PRPLRADI
+      TYPE(WAVE2OCEAN), INTENT(INOUT) :: WAM2NEMO
       TYPE(OCEAN2WAVE), INTENT(INOUT) :: NEMO2WAM
 
 
+      INTEGER(KIND=JWIM) :: IYYYYMMDD, IHHMM, ISTEP, IRET, KRET
       INTEGER(KIND=JWIM) :: IFORCA
       INTEGER(KIND=JWIM) :: IJ, I, II, K, M, IP, LFILE, IX, IY, KX, ID
       INTEGER(KIND=JWIM) :: IC, ICR
@@ -278,6 +295,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       INTEGER(KIND=JWIM) :: MTHREADS
 
 
+      REAL(KIND=JWRB) :: STEP
       REAL(KIND=JWRB) :: FCRANGE, XD
       REAL(KIND=JWRB) :: GVE, DPH, CFLP, CFLL, DLH, DLH_KX
       REAL(KIND=JWRB) :: FAC, SCDF_L, SCDF_U
@@ -288,6 +306,9 @@ SUBROUTINE INITMDL (NADV,                                 &
 
       REAL(KIND=JWRB) :: XLA, XLO
 
+      CHARACTER(LEN=2) :: CCLASS, CTYPE
+      CHARACTER(LEN=4) :: CSTREAM, CEXPVER
+      CHARACTER(LEN=12) :: C12
       CHARACTER(LEN=14) :: ZERO, CDUM
       CHARACTER(LEN=24) :: FILNM
       CHARACTER(LEN=80) :: FILENAME
@@ -302,6 +323,56 @@ SUBROUTINE INITMDL (NADV,                                 &
 !----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
+
+!*    0.  SOME INITIAL TESTS
+!        -------------------
+
+      IF (LWCOU) THEN
+        IF ( IQGAUSS /= 1 ) THEN
+          IF ( AMONOP < 90._JWRB ) THEN
+              WRITE (IU06,*) ' *********************************'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' * PROBLEM IN WAVEMDL..........  *'
+              WRITE (IU06,*) ' *   *'
+              WRITE (IU06,*) ' * AMONOP SHOULD NOT BE < 90 IF  *'
+              WRITE (IU06,*) ' * COUPLED AND ON LAT LON GRID   *'
+              WRITE (IU06,*) ' * ============================= *'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' * AMONOP=', AMONOP
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' *********************************'
+              CALL FLUSH(IU06)
+              CALL ABORT1
+          ENDIF
+        ENDIF
+
+        WRITE(IU06,*)'  '
+        WRITE (IU06,*) ' INITMDL: GRIB HANDLE FROM IFS'
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'dataDate',IYYYYMMDD)
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'time',IHHMM)
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'step',STEP)
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'endStep',ISTEP)
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'expver',C12,KRET=IRET)
+        IF (IRET /= 0) THEN
+             CEXPVER='****'
+        ELSE
+             CEXPVER=C12(1:4)
+        ENDIF
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'class',C12)
+        CCLASS=C12(1:2)
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'stream',C12)
+        CSTREAM=C12(1:4)
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'type',C12)
+        CTYPE=C12(1:2)
+        WRITE(IU06,*)' EXPVER=', CEXPVER,   &
+     &               ' CLASS=', CCLASS,     &
+     &               ' STREAM=', CSTREAM,   &
+     &               ' TYPE=', CTYPE
+      ENDIF
+
+!     INQUIRE IF IUNITW IS ALREADY OPEN THEN CLOSE IT
+      IF (IUNITW /= 0) CLOSE(IUNITW)
 
 
       CALL INIWCST(PRPLRADI)
@@ -635,6 +706,10 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
           ENDIF
         ENDDO
 
+!       ALWAYS INITIALISE IBRMEM 
+!       TODO: initialize from restart file when coupled 
+        WVENVI%IBRMEM(KIJS:KIJL,ICHNK)  = 1.0_JWRB ! 1=SOLID,0=BROKEN
+
         IF (.NOT. LLUNSTR) THEN
           WVENVI%IOBND(KIJS:KIJL,ICHNK) = 1
         ELSE
@@ -927,15 +1002,9 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'
       CALL FLUSH (IU06)
 
-
 !    GET SEA ICE DIMENSIONLESS ENERGY ATTENUATION COEFFICIENT
 !!!! might need to restrict call when needed !!!
-      CALL CIGETDEAC
-
-!     DETERMINE THE SEA ICE REDUCTION FACTOR
-      CALL CIREDUCE (WVPRPT, FF_NOW)
-
-      WRITE(IU06,*) ' SUB. INITMDL: CIREDUCE DONE'                   
+      IF(LCIWA1) CALL CIGETDEAC
 
 ! ----------------------------------------------------------------------
 
@@ -946,11 +1015,29 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
       IF ( LNSESTART ) THEN
         WRITE(IU06,*) ' SUB. INITMDL: SPECTRA INITIALISED AT NOISE LEVEL'
+        WRITE(IU06,*) ' '
+        CALL FLUSH (IU06)
       ELSE
         WRITE(IU06,*) ' SUB. INITMDL: SPECTRA READ IN'
+        WRITE(IU06,*) ' '
+        CALL FLUSH (IU06)
+
+        IF (CDTPRO == CDATEA .AND. LLSOURCE ) THEN
+!         INSURE THERE IS SOME WAVE ENERGY FOR GRID POINTS THAT HAVE BEEN
+!         FREED FROM SEA ICE (ONLY DONE INITIALLY AND IF THE MODEL IS NOT RESTARTED
+!         IT ALSO RESETS THE MIMIMUM ENERGY LEVEL THAT MIGHT HAVE BEEN LOST
+!         WHEN GETTING THE DATA FROM GRIB.
+          CALL GSTATS(1236,0)
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
+          DO ICHNK = 1, NCHNK
+            CALL UNSETICE(1, NPROMA_WAM, WVENVI%DEPTH(:,ICHNK), WVENVI%EMAXDPT(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK), &
+ &                        FF_NOW%WSWAVE(:,ICHNK), FF_NOW%CICOVER(:,ICHNK), FL1(:,:,:,ICHNK) )
+          ENDDO
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1236,1)
+        ENDIF
+
       ENDIF
-      WRITE(IU06,*) ' '
-      CALL FLUSH (IU06)
 
 
 !     9.2 COMPUTE FREQUENCY DEPENDENT INDICES AND COEFFICIENTS FOR SNONLIN
@@ -983,6 +1070,39 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
         ENDIF
       ENDIF
 !NEST
+
+
+!     11. SOME MORE TESTS
+!         ---------------
+
+        IF (LWCOU) THEN
+          IF (NLONW /= NGX .OR. NLATW /= NGY) THEN
+            WRITE (IU06,*) ' *********************************'
+            WRITE (IU06,*) ' *                               *'
+            WRITE (IU06,*) ' * PROBLEM IN INITMDL..........  *'
+            WRITE (IU06,*) ' * PROBLEM WITH NLONW AND NLATW  *'
+            WRITE (IU06,*) ' * NOT EQUAL TO NGX   AND NGY  : *'
+            WRITE (IU06,*) ' * ============================= *'
+            WRITE (IU06,*) ' *                               *'
+            WRITE (IU06,*) ' * NLONW=',NLONW
+            WRITE (IU06,*) ' * NLATW=',NLATW
+            WRITE (IU06,*) ' * NGX=',NGX
+            WRITE (IU06,*) ' * NGY=',NGY
+            WRITE (IU06,*) ' *                               *'
+            WRITE (IU06,*) ' *                               *'
+            WRITE (IU06,*) ' *********************************'
+            CALL ABORT1
+          ENDIF
+        ENDIF
+
+
+!     12. OUTPUT INITIAL CONDITIONS (IF IT IS NOT A RESTART)
+!         --------------------------------------------------
+      IF (CDTPRO == CDATEA) THEN
+         CALL OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
+ &                      WAM2NEMO, NEMO2WAM, FL1, LINIONLY)
+      ENDIF
+
 
 IF (LHOOK) CALL DR_HOOK('INITMDL',1,ZHOOK_HANDLE)
 

@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
+SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
      &              NFIELDS, NGPTOTG, NC, NR,                     &
      &              IGRIB_HANDLE, IGRIB_HANDLE2,                  &
      &              RMISS, ZRCHAR, FIELDS,                        &
@@ -137,7 +137,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWWNDG  , ONLY : ICODE_CPL
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,VARS_4D
-      USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW   ,CDATEWO  ,CDATEFL ,     &
+      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,              &
      &                      FF_NEXT  ,                                  &
      &                      NXFFS    ,NXFFE    ,NYFFS    ,NYFFE,        &
      &                      NXFFS_LOC,NXFFE_LOC,NYFFS_LOC,NYFFE_LOC
@@ -146,7 +146,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS, NGRIB_HANDLE_IFS2
       USE YOWASSI  , ONLY : WAMASSI
-      USE YOWGRIB  , ONLY : IGRIB_GET_VALUE
       USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_GATHERV
 #ifdef WAM_HAVE_ECFLOW
       USE ECFLOW_LIGHT, ONLY : ECFLOW_LIGHT_UPDATE_METER
@@ -174,6 +173,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       INTEGER(KIND=JWIM), INTENT(IN) :: KSTOP
 !     NUMBER OF ATMOSPHERIC TIME STEP(S) FOR EACH WAVE MODEL CALL
       INTEGER(KIND=JWIM), INTENT(IN) :: KSTPW
+!     INITIALISATION ONLY CALL (i.e. NO FOWARD TIME INTEGRATION) 
+      LOGICAL, INTENT(IN) :: LLWAVEINIT_ONLY
 !     NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
       INTEGER(KIND=JWIM), INTENT(IN) :: NFIELDS
 !     NUMBER OF ATMOSPHERIC GRID POINTS IN THOSE FIELDS
@@ -259,7 +260,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       INTEGER(KIND=JWIM), ALLOCATABLE :: ZCOMCNT(:)
 
       REAL(KIND=JWRB) :: VAL
-      REAL(KIND=JWRB) :: STEP
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB) :: DURATION, DURATION_MAX, PSTEP8
@@ -273,10 +273,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       CHARACTER(LEN=7), PARAMETER :: CL_CPENV="SMSNAME"
       CHARACTER(LEN=8), PARAMETER :: CL_CPENV_ECF="ECF_NAME"
 
-      CHARACTER(LEN=2) :: CCLASS, CTYPE
-      CHARACTER(LEN=4) :: CSTREAM
-      CHARACTER(LEN=4) :: CEXPVER
-      CHARACTER(LEN=12) :: C12
       CHARACTER(LEN=12) :: FLABEL(NWVFIELDS)
       CHARACTER(LEN=14) :: CDUM
       CHARACTER(LEN=14) :: CDTASS
@@ -284,8 +280,13 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       CHARACTER(LEN=256) :: CLSMSNAME,CLECFNAME
 
       LOGICAL, SAVE :: LFRST
+      LOGICAL, SAVE :: LFRST_step0_hack  !! this is only here to insure that results are bit identical
+                                         !! following the change to split the output of step 0 in coupled model
+                                         !! from the time integration loop. It would be more correct to not
+                                         !! re-initialise air density and w* (LLINIT = .FALSE.).
+                                         !! Change it as soon as you can.
       LOGICAL, SAVE :: LFRSTCHK
-      LOGICAL, SAVE :: LLGRAPI
+      LOGICAL, SAVE :: LFRSTRST          
       LOGICAL, SAVE :: LLINTERPOL
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
@@ -299,8 +300,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 #endif
 
       DATA LFRST /.TRUE./
+      DATA LFRST_step0_hack /.TRUE./
       DATA LFRSTCHK /.TRUE./
-      DATA LLGRAPI /.TRUE./
+      DATA LFRSTRST /.TRUE./
       DATA LLINTERPOL /.TRUE./
 
 ! ---------------------------------------------------------------------
@@ -316,8 +318,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       IFSNSTEP = NSTEP
       LIFS_IO_SERV_ENABLED = LDIFS_IO_SERV_ENABLED
       ZMISS=RMISS
-      G=G*PRPLRG ! modified for small planet
-      GM1 = 1.0_JWRB/G
+      IF (FRSTIME) THEN
+        G=G*PRPLRG ! modified for small planet
+        GM1 = 1.0_JWRB/G
+      ENDIF
 
       RNU=RNU_ATM
       RNUM=RNUM_ATM
@@ -328,25 +332,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       ICODE_CPL=NATMFLX
 
       IF (LWCOU) THEN
-        IF ( IQGAUSS /= 1 ) THEN
-          IF ( AMONOP < 90._JWRB ) THEN
-              WRITE (IU06,*) ' *********************************'
-              WRITE (IU06,*) ' *                               *'
-              WRITE (IU06,*) ' * PROBLEM IN WAVEMDL..........  *'
-              WRITE (IU06,*) ' *   *'
-              WRITE (IU06,*) ' * AMONOP SHOULD NOT BE < 90 IF  *'
-              WRITE (IU06,*) ' * COUPLED AND ON LAT LON GRID   *'
-              WRITE (IU06,*) ' * ============================= *'
-              WRITE (IU06,*) ' *                               *'
-              WRITE (IU06,*) ' * AMONOP=', AMONOP
-              WRITE (IU06,*) ' *                               *'
-              WRITE (IU06,*) ' *                               *'
-              WRITE (IU06,*) ' *********************************'
-              CALL FLUSH(IU06)
-              CALL ABORT1
-          ENDIF
-        ENDIF
-
         NGRIB_HANDLE_IFS=IGRIB_HANDLE
         IF (NGRIB_HANDLE_IFS < 0 ) THEN
           WRITE(IU06,*)' SUB: WAVEMDL:  NGRIB_HANDLE_IFS < 0 !'
@@ -363,34 +348,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           CALL ABORT1
         ENDIF
 
-        IF (LLGRAPI) THEN
-           WRITE(IU06,*)'  '
-           WRITE (IU06,*) ' WAVEMDL: GRIB HANDLE FROM IFS'
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'dataDate',IYYYYMMDD)
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'time',IHHMM)
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'step',STEP)
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'endStep',ISTEP)
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'expver',C12,KRET=IRET)
-           IF (IRET /= 0) THEN
-             CEXPVER='****'
-           ELSE
-             CEXPVER=C12(1:4)
-           ENDIF
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'class',C12)
-           CCLASS=C12(1:2)
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'stream',C12)
-           CSTREAM=C12(1:4)
-           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'type',C12)
-           CTYPE=C12(1:2)
-           WRITE(IU06,*)' EXPVER=', CEXPVER,   &
-     &                  ' CLASS=', CCLASS,     &
-     &                  ' STREAM=', CSTREAM,   &
-     &                  ' TYPE=', CTYPE
-           LLGRAPI=.FALSE.
-        ENDIF
-
         LLNORMWAMOUT_GLOBAL = LLNORMWAMOUT_GLOBAL .OR. LDNORMWAMOUT_GLOBAL
-
       ENDIF
 
       KCOUSTEP=KDELWI
@@ -399,7 +357,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       IF (NPROC == 1) IREAD=1
 
 
-      IF (FRSTIME) THEN
+      IF (FRSTIME .OR. LLWAVEINIT_ONLY) THEN
 
 !     !!!! FIRST TIME AROUND !!!!
 
@@ -429,49 +387,35 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
            CALL INCDATE (CDATEE,IDURAT)
           ENDDO
 
-          WRITE (IU06,1011)
-          WRITE (IU06,1012)
-          WRITE (IU06,1013)
+          WRITE (IU06,*) '  *                                                *'
+          WRITE (IU06,*) '  *    WAVEMDL: INITMDL STARTS FOR (RE-)START.     *' 
+          WRITE (IU06,*) '  *    ========================================    *'
           IF (LWCOU2W) THEN
-            WRITE (IU06,1014)
+            WRITE (IU06,*) '  *    TWO-WAY INTERACTION WIND AND WAVES          *'
           ELSE
-            WRITE (IU06,1015)
+            WRITE (IU06,*) '  *    ONE-WAY INTERACTION WIND AND WAVES          *'
           ENDIF
-          WRITE (IU06,1011)
-          WRITE (IU06,1016) CDATEA
-          WRITE (IU06,1018) CDATEE
-          WRITE (IU06,1019) NINT(PSTEP)
-          WRITE (IU06,1020) KSTOP
-          WRITE (IU06,1021) KDELWI
-          WRITE (IU06,1011)
-          WRITE (IU06,1010)
+          WRITE (IU06,*) '  *                                                *'
+          WRITE (IU06,*) '  * START DATE OF RUN CDATEA = ',CDATEA
+          WRITE (IU06,*) '  * END DATE OF RUN   CDATEE = ',CDATEE
+          WRITE (IU06,*) '  * IFS MODEL TIME STEP PSTEP = ',NINT(PSTEP)
+          WRITE (IU06,*) '  * TOTAL NUMBER OF PSTEP  KSTOP = ', KSTOP
+          WRITE (IU06,*) '  * INTERACTION TIME STEP  KDELWI = ', KDELWI
+          WRITE (IU06,*) '  *                                                *'
+          WRITE (IU06,*) '  **************************************************'
           CALL FLUSH(IU06)
-
- 1010 FORMAT ('  **************************************************')
- 1011 FORMAT ('  *                                                *')
- 1012 FORMAT ('  *    WAVEMDL: INITMDL STARTS FOR (RE-)START.     *')
- 1013 FORMAT ('  *    ========================================    *')
- 1014 FORMAT ('  *    TWO-WAY INTERACTION WIND AND WAVES          *')
- 1015 FORMAT ('  *    ONE-WAY INTERACTION WIND AND WAVES          *')
- 1016 FORMAT ('  * START DATE OF RUN      ', A14,  ' (CDATEA) *')
- 1018 FORMAT ('  * END DATE OF RUN        ', A14,  ' (CDATEE) *')
- 1019 FORMAT ('  * IFS MODEL TIME STEP    ', I10,  ' (PSTEP)     *')
- 1020 FORMAT ('  * TOTAL NUMBER OF PSTEP  ', I10,  ' (KSTOP)     *')
- 1021 FORMAT ('  * INTERACTION TIME STEP  ', I10,  ' (KDELWI)    *')
 
         ENDIF
 
-!       INQUIRE IF IUNITW IS ALREADY OPEN THEN CLOSE IT
-        IF (IUNITW /= 0) CLOSE(IUNITW)
-
-        CALL INITMDL (NADV,                                    &
+        CALL INITMDL (NADV, LLWAVEINIT_ONLY,                   &
      &                IREAD,                                   &
+     &                NLONW, NLATW,                            &
      &                BLK2GLO, BLK2LOC,                        &
-     &                WVENVI, WVPRPT, FF_NOW,                  &
+     &                WVENVI, WVPRPT, FF_NOW, INTFLDS,         &
      &                VARS_4D%FL1,                             &
      &                NFIELDS, NGPTOTG, NC, NR,                &
      &                FIELDS, LWCUR, MASK_IN, PRPLRADI,        &
-     &                NEMO2WAM)
+     &                WAM2NEMO, NEMO2WAM)
 
 
         LLCHKCFL=.FALSE.
@@ -479,30 +423,25 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         FRSTIME = .FALSE.
 
         IF (LWCOU) THEN
-          IF (NLONW /= NGX .OR. NLATW /= NGY) THEN
-            WRITE (IU06,*) ' *********************************'
-            WRITE (IU06,*) ' *                               *'
-            WRITE (IU06,*) ' * PROBLEM IN WAVEMDL..........  *'
-            WRITE (IU06,*) ' * PROBLEM WITH NLONW AND NLATW  *'
-            WRITE (IU06,*) ' * NOT EQUAL TO NGX   AND NGY  : *'
-            WRITE (IU06,*) ' * ============================= *'
-            WRITE (IU06,*) ' *                               *'
-            WRITE (IU06,*) ' * NLONW=',NLONW
-            WRITE (IU06,*) ' * NLATW=',NLATW
-            WRITE (IU06,*) ' * NGX=',NGX
-            WRITE (IU06,*) ' * NGY=',NGY
-            WRITE (IU06,*) ' *                               *'
-            WRITE (IU06,*) ' *                               *'
-            WRITE (IU06,*) ' *********************************'
-            CALL ABORT1
-          ENDIF
           IF (LRESTARTED)  THEN
             LDRESTARTED = .TRUE.
-!            RETURN
           ELSE
             LDRESTARTED = .FALSE.
           ENDIF
         ENDIF
+
+!!      INITIALISATION ONLY
+!       +++++++++++++++++++
+        IF (LLWAVEINIT_ONLY) THEN
+!         RESET OF THE LAST WIND READ
+          CALL MPL_BARRIER(CDSTRING='WAVEMDL INITIALISATION: END')
+!         TELL ATMOS MODEL THE WAM REQUIREMENT FOR GLOBAL NORMS
+          LDWCOUNORMS=LWCOUNORMS
+          CALL FLUSH(IU06)
+          IF (LHOOK) CALL DR_HOOK('WAVEMDL',1,ZHOOK_HANDLE)
+          RETURN
+        ENDIF
+
 
       ELSE  ! .NOT. FRSTIME
 
@@ -575,7 +514,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
 
 !*      REFORMAT FORCING FIELDS FROM INPUT GRID TO BLOCKED.
-!       ---------------------------------------------------
         IF (LWCOU) THEN
           NXS = NXFFS_LOC
           NXE = NXFFE_LOC
@@ -623,7 +561,14 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
         ENDIF
 
-        LLINIT = .FALSE.
+        IF (LFRST_step0_hack .AND. LWCOU .AND. .NOT.LRESTARTED) THEN
+!!        see comment above regarding LFRST_step0_hack
+          LLINIT = .TRUE.
+          LFRST_step0_hack = .FALSE.
+        ELSE
+          LLINIT = .FALSE.
+        ENDIF
+
         LLINIT_FIELDG = .NOT. LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
 
@@ -649,7 +594,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       CALL SETMARSTYPE
 
-      CALL WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,            &
+      CALL WAMODEL (NADV, LLWAVEINIT_ONLY, LFRSTRST, LDSTOP, LDWRRE, BLK2GLO, &
      &              WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS, &
      &              WAM2NEMO, NEMO2WAM, VARS_4D)
 
@@ -843,6 +788,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
             IFLDOFFSET=IFLDOFFSET+1
             WVBLOCK(IJSB:IJLB,IFLDOFFSET)=INTFLDS%TAUOCYD(KIJS:KIJL,ICHNK)
             IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(IJSB:IJLB,IFLDOFFSET)=INTFLDS%TAUICX(KIJS:KIJL,ICHNK)
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(IJSB:IJLB,IFLDOFFSET)=INTFLDS%TAUICY(KIJS:KIJL,ICHNK)
+            IFLDOFFSET=IFLDOFFSET+1
             WVBLOCK(IJSB:IJLB,IFLDOFFSET)=INTFLDS%WSEMEAN(KIJS:KIJL,ICHNK)
             IFLDOFFSET=IFLDOFFSET+1
             WVBLOCK(IJSB:IJLB,IFLDOFFSET)=INTFLDS%WSFMEAN(KIJS:KIJL,ICHNK)
@@ -857,8 +806,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL GSTATS(1443,1)
 
 
-!       GRIDDED FIELDS ARE NEEDED FOR IFS, GATHERING OF THE NECESSARY
-!       INFORMATION
+!       GRIDDED FIELDS ARE NEEDED FOR IFS, GATHERING OF THE NECESSARY INFORMATION
         CALL MPFLDTOIFS(IJS, IJL, BLK2GLO, LLINIT_WVFLDG, NWVFIELDS, WVBLOCK, &
      &                  WVFLDG, DEFVAL, MASK_OUT, LLGLOBAL_WVFLDG)
 

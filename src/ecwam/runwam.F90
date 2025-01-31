@@ -164,6 +164,7 @@
       CHARACTER(LEN=3) :: DBNAME
       CHARACTER(LEN=14) :: ZERO,CBEGDAT
 
+      LOGICAL :: LLWAVEINIT_ONLY = .FALSE.
       LOGICAL :: LLSTOP, LLWRRE, LLRESTARTED, LLIRANK, LLNORMWAMOUT_GLOBAL
       LOGICAL :: LLINIT_WVFLDG
       LOGICAL :: LDWCOUNORMS
@@ -332,7 +333,7 @@
       timestep0_start = - wam_user_clock()
       DO WHILE (CDTPRO < CDATEE .OR. CDTPRO == ZERO)
         timestep_start = - wam_user_clock()
-        CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW,                      &
+        CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,     &
      &             NFIELDS, NGPTOTG, NC, NR,                            &
      &             IGRIB_HANDLE_DUM, IGRIB_HANDLE_DUM2,                 &
      &             RMISS, ZRCHAR, FIELDS,                               &

@@ -86,6 +86,10 @@ iphys=$(read_config iphys --default=1)
 llgcbz0=$(read_config llgcbz0 --default=F)
 llnormagam=$(read_config llnormagam --default=F)
 irefra=$(read_config irefra --default=0)
+lciwa1=$(read_config lciwa1 --default=F)
+lciwa2=$(read_config lciwa2 --default=F)
+lciwa3=$(read_config lciwa3 --default=F)
+lciscal=$(read_config lciscal --default=F)
 
 # read timesteps
 phys_tstp=$(read_config physics.timestep --format=seconds --default=900)
@@ -257,6 +261,10 @@ cat > wam_namelist << EOF
   LLNORMWAMOUT          = T,
   LLNORMWAMOUT_GLOBAL   = T,
   CNORMWAMOUT_FILE      = "statistics.log",
+  LCIWA1                = ${lciwa1},
+  LCIWA2                = ${lciwa2},
+  LCIWA3                = ${lciwa3},
+  LCISCAL               = ${lciscal},
   ${OUTPUT_FLAGS}
 /
 ${NAWI}

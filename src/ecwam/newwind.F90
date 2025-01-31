@@ -76,11 +76,6 @@ SUBROUTINE NEWWIND (CDATE, CDATEWH, LLNEWFILE,           &
       IMPLICIT NONE
 
 #include "abort1.intfb.h"
-#ifdef WAM_GPU
-#include "cireduce_loki_gpu.intfb.h"
-#else
-#include "cireduce.intfb.h"
-#endif
 #include "incdate.intfb.h"
 
       CHARACTER(LEN=14), INTENT(IN)    :: CDATE
@@ -175,13 +170,6 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
 
 
         CALL INCDATE(CDATEWH, IDELWO)
-
-!       UPDATE THE SEA ICE REDUCTION FACTOR
-#ifdef WAM_GPU
-        CALL CIREDUCE_LOKI_GPU (WVPRPT, FF_NOW)
-#else
-        CALL CIREDUCE (WVPRPT, FF_NOW)
-#endif
 
       ENDIF
 

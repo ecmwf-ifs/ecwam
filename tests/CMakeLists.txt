@@ -29,3 +29,7 @@ ecwam_add_test( ${PROJECT_NAME}_test_etopo1_oper_an_fc_O48_iphys_0 CONFIG etopo1
 ecwam_add_test( ${PROJECT_NAME}_test_etopo1_oper_an_fc_O48_cy49r1 CONFIG etopo1_oper_an_fc_O48_cy49r1.yml )
 ecwam_add_test( ${PROJECT_NAME}_test_etopo1_oper_an_fc_O48_cy49r1 CONFIG etopo1_oper_an_fc_O48_cy49r1.yml MPI 4 OMP 1 )
 ecwam_add_test( ${PROJECT_NAME}_test_etopo1_oper_an_fc_O48_cy49r1 CONFIG etopo1_oper_an_fc_O48_cy49r1.yml MPI 1 OMP 4 )
+
+ecwam_add_test( ${PROJECT_NAME}_test_etopo1_oper_an_fc_O48_cy50r1 CONFIG etopo1_oper_an_fc_O48_cy50r1.yml )
+ecwam_add_test( ${PROJECT_NAME}_test_etopo1_oper_an_fc_O48_cy50r1 CONFIG etopo1_oper_an_fc_O48_cy50r1.yml MPI 4 OMP 1 )
+ecwam_add_test( ${PROJECT_NAME}_test_etopo1_oper_an_fc_O48_cy50r1 CONFIG etopo1_oper_an_fc_O48_cy50r1.yml MPI 1 OMP 4 )

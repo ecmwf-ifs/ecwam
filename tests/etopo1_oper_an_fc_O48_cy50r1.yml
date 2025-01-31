@@ -19,6 +19,8 @@ end:   ${forecast.end}
 nproma: 32
 llgcbz0: T
 llnormagam: T
+lciwa3: T
+lciscal: T
 
 forcings:
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O48.grib
@@ -65,26 +67,26 @@ validation:
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1549601083318924E+01
+      average: 0.1549542256416082E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF8CB2A816B3716']
+      hashes: ['0x3FF8CAECD2313BDF']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1632568966056613E+01
+      average: 0.1632449648145021E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FFA1F00A2DAD7D0']
+      hashes: ['0x3FFA1E8385B264A5']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.1901901685126460E-01
+      minimum: 0.1905182728883706E-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3F9379B89D83551B']
+      hashes: ['0x3F9382527C89D368']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.6807117063672430E+01
+      maximum: 0.6807117063618366E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x401B3A7CE5421109']
+      hashes: ['0x401B3A7CE5412342']
 
   single_precision:
 
@@ -98,21 +100,21 @@ validation:
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1549641370773315E+01
+      average: 0.1549576163291931E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF8CB54C0000000']
+      hashes: ['0x3FF8CB1060000000']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1632539391517639E+01
+      average: 0.1632413744926453E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FFA1EE1A0000000']
+      hashes: ['0x3FFA1E5DE0000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.1901897042989731E-01
+      minimum: 0.1905178464949131E-01
       relative_tolerance: 1.e-6
-      hashes: ['0x3F9379B580000000']
+      hashes: ['0x3F93824FA0000000']
     - name: swh
       time: 2023-01-01 06:00:00
       maximum: 0.6807114124298096E+01

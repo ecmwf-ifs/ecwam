@@ -227,7 +227,7 @@ translation toolchain Loki. Currently, three Loki transformations are supported:
 The scc-hoist and scc-stack transformations offer superior performance to the scc transformation. Currently, only the
 OpenACC programming model on Nvidia GPUs is supported.
 
-NB: GPU offload is not supported for ecWAM 1.4.0.
+NB: GPU offload is not supported for ecWAM 1.4.0 and 1.5.0.
 
 Building
 --------

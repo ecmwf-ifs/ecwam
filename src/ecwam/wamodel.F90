@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
+SUBROUTINE WAMODEL (NADV, LINIONLY, LFRSTRST, LDSTOP, LDWRRE, BLK2GLO,&
  &                  WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,  &
  &                  WAM2NEMO, NEMO2WAM, VARS_4D)
 
@@ -26,11 +26,13 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,
+!     *CALL* *WAMODEL (NADV, LINIONLY, LFRSTRST, LDSTOP, LDWRRE, BLK2GLO,
 !    &                 WVENVI, WVPRPT, FF_NOW, FF_NEXT, INTFLDS,
 !    &                 WAM2NEMO, NEMO2WAM, FL1)
 !        *NADV*      NUMBER OF ADVECTION ITERATIONS
 !                    PER CALL OF WAMODEL, OUTPUT PARAMETER.
+!        *LINIONLY*  INITIALISATION ONLY CALL (i.e. NO FOWARD TIME INTEGRATION) 
+!        *LFRSTRST*  FIRST TIME INTEGRATION AFTER RESTART
 !        *LDSTOP*    SET .TRUE. IF STOP SIGNAL RECEIVED.
 !        *LDWRRE*    SET .TRUE. IF RESTART SIGNAL RECEIVED.
 !        *BLK2GLO*   BLOCK TO GRID TRANSFORMATION
@@ -53,7 +55,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       USE YOWCOUP  , ONLY : LWCOU    ,                                  &
      &                      LWNEMOCOU,                                  &
      &                      NEMOWSTEP, NEMOFRCO     ,                   &
-     &                      NEMOCSTEP, NEMONSTEP
+     &                      NEMOCSTEP, NEMONSTEP    , KCOUSTEP
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,GFLAG20  ,    &
      &                      NGOUT    ,                                  &
      &                      NIPRMOUT ,                                  &
@@ -108,7 +110,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #include "outstep0.intfb.h"
 #include "savspec.intfb.h"
 #include "savstress.intfb.h"
-#include "unsetice.intfb.h"
 #include "updnemofields.intfb.h"
 #include "updnemostress.intfb.h"
 #include "writsta.intfb.h"
@@ -122,6 +123,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #endif
 
       INTEGER(KIND=JWIM), INTENT(IN)                                           :: NADV
+      LOGICAL, INTENT(IN)                                                      :: LINIONLY      
+      LOGICAL, INTENT(INOUT)                                                   :: LFRSTRST
       LOGICAL, INTENT(INOUT)                                                   :: LDSTOP, LDWRRE
       TYPE(WVGRIDGLO), INTENT(IN)                                              :: BLK2GLO
       TYPE(ENVIRONMENT), INTENT(INOUT)                                         :: WVENVI
@@ -170,33 +173,12 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !     TIME FOR WIND INPUT UPDATE (SEE NEWWIND)
       CDTIMP = CDTPRO
 
-!     0.1 MINIMUM ENERGY
-!         --------------
-      IF (CDTPRO == CDATEA .AND. LLSOURCE ) THEN
-!       INSURE THERE IS SOME WAVE ENERGY FOR GRID POINTS THAT HAVE BEEN
-!       FREED FROM SEA ICE (ONLY DONE INITIALLY AND IF THE MODEL IS NOT
-!       RESTARTED).
-!       IT ALSO RESETS THE MIMIMUM ENERGY LEVEL THAT MIGHT HAVE BEEN LOST
-!       WHEN GETTING THE DATA FROM GRIB.
-        CALL GSTATS(1236,0)
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
-        DO ICHNK = 1, NCHNK
-          CALL UNSETICE(1, NPROMA_WAM, WVENVI%DEPTH(:,ICHNK), WVENVI%EMAXDPT(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK), &
- &                      FF_NOW%WSWAVE(:,ICHNK), FF_NOW%CICOVER(:,ICHNK), VARS_4D%FL1(:,:,:,ICHNK) )
-        ENDDO
-!$OMP   END PARALLEL DO
-        CALL GSTATS(1236,1)
-      ENDIF
-
-
-!     0.2 OUTPUT INITIAL CONDITION AND/OR FORECAST STEP 0
-!         -----------------------------------------------
-      IF (CDTPRO == CDATEA .OR. CDTPRO == CDATEF) THEN
+!     0.2 FORECAST STEP 0 IF ANALYSIS IS FOLLOWED BY FORECAST (uncoupled only)
+!         --------------------------------------------------------------------
+      IF (.NOT.LWCOU .AND. CDTPRO /= CDATEA .AND. CDTPRO == CDATEF) THEN
          CALL OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
- &                      WAM2NEMO, NEMO2WAM, VARS_4D%FL1)
+ &                      WAM2NEMO, NEMO2WAM, VARS_4D%FL1, LINIONLY)
       ENDIF
-
-
 
 !*    1. ADVECTION/PHYSICS TIME LOOP.
 !        ----------------------------
@@ -243,7 +225,15 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
             ENDIF
           ENDDO
         ELSE
-          IF ((FFLAG20.OR.GFLAG20) .AND. CDTINTT.LT.CDTPRO) CALL INCDATE (CDTINTT, IDELINT)
+          IF ((FFLAG20.OR.GFLAG20))  THEN
+            IF (LWCOU .AND. LRESTARTED .AND. LFRSTRST ) THEN
+              LFRSTRST = .FALSE.
+              CALL INCDATE (CDTINTT, KCOUSTEP)
+            ENDIF
+            IF (CDTINTT.LT.CDTPRO) THEN
+              CALL INCDATE (CDTINTT, IDELINT)
+            ENDIF
+          ENDIF
         ENDIF
 
 !       UPDATE SPECTRA OUTPUT DATE
