@@ -56,28 +56,28 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 0.1334550051820419E+01
+      average: 0.1334550046812762E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF55A5127B719D3']
+      hashes: ['0x3FF55A51265EFA31']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1522689527709060E+01
+      average: 0.1522689283126691E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF85CEFB1B78DB5']
+      hashes: ['0x3FF85CEF700FFB2D']
 
     # 6h into forcast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1602300605861385E+01
+      average: 0.1602300108466806E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF9A305F5C891F5']
+      hashes: ['0x3FF9A3057043DFFE']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.1739549921167826E-01
+      minimum: 0.1582178271632631E-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3F91D02030D8D57F']
+      hashes: ['0x3F903395DD52FC09']
     - name: swh
       time: 2023-01-01 06:00:00
       maximum: 0.7470872982664355E+01
@@ -96,23 +96,23 @@ validation:
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1522688865661621E+01
+      average: 0.1522688508033752E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF85CEF00000000']
+      hashes: ['0x3FF85CEEA0000000']
 
     # 6h into forcast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1602301239967346E+01
+      average: 0.1602300763130188E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF9A306A0000000']
+      hashes: ['0x3FF9A30620000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.1733699254691601E-01
+      minimum: 0.1582174561917782E-01
       relative_tolerance: 1.e-6
-      hashes: ['0x3F91C0C9E0000000']
+      hashes: ['0x3F90339360000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.7470870018005371E+01
+      maximum: 0.7470870494842529E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x401DE22BC0000000']
+      hashes: ['0x401DE22BE0000000']
