@@ -236,12 +236,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
 !     GRIB TABLE AND PARAMETER NUMBER
 
-      SELECT CASE (ITABPAR)
-      CASE(140254)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramIdECMF',ITABPAR,IERR)
-      CASE DEFAULT
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR,IERR)
-      END SELECT
+      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR,IERR)
       IF (IERR /= 0) THEN
         WRITE(NULERR,*) ' ************************************************************************'
         WRITE(IU06,*) ' *********************************************'
@@ -279,8 +274,12 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       ENDIF
 
 !     LEVEL DEFINITION
-      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'level',IDUM,KRET=IRET)
-      IF ( IRET == JPGRIB_SUCCESS ) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',KLEV)
+
+      SELECT CASE(ITABPAR)
+      CASE(140233,140245,140249)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfLevel','heightAboveSea')
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',KLEV)
+      END SELECT
 
       IF (.NOT. LGRHDIFS .OR. &
      &   (MARSTYPE == 'an' .AND. IFCST == 0) .OR. &

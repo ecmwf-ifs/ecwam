@@ -155,6 +155,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
       ENDIF
 
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',0)
+      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfLevel','surface')
 
 !     DEFINE YOUR OWN LOCAL HEADER
 !     -----------------------------
