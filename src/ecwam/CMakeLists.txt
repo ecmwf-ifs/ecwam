@@ -507,6 +507,9 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHE
       w_maxh.F90 sbottom.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros "
   )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-Mnofma" )
+  set_source_files_properties( initgc.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
+  set_source_files_properties( iniwcst.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
+  set_source_files_properties( depthprpt.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
   if( HAVE_SINGLE_PRECISION )
      set_source_files_properties( aki.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
      set_source_files_properties( kurtosis.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
