@@ -130,7 +130,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
 
       INTEGER(KIND=JWIM) :: ICLASS, ISTEP, ISTEP_HRS 
-      INTEGER(KIND=JWIM) :: IC, ITABPAR, IDATE, ITIME, IGRIB_VERSION, ILEVTYPE
+      INTEGER(KIND=JWIM) :: IC, ITABPAR, IDATE, ITIME, ILEVTYPE
       INTEGER(KIND=JWIM) :: ICOUNT, NN, I, J, JSN, KK, MM
       INTEGER(KIND=JWIM) :: IY1,IM1,ID1,IH1,IMN1,ISS1,IDATERES
       INTEGER(KIND=JWIM) :: IY2,IM2,ID2,IH2,IMN2,ISS2
@@ -195,41 +195,36 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 !*    1. FIX PARAMETERS AND PACK DATA.
 !        -----------------------------
 
-      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'editionNumber',IGRIB_VERSION )
-
-      IF ( IGRIB_VERSION == 2 ) THEN
-        IF ( ITMIN /= 0 .OR. ITMAX /= 0 ) THEN
-!         NEED TO CHANGE TO SPECIFIC TEMPLATE FOR ENCODING ITMIN AND ITMAX
-          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'numberOfForecastsInEnsemble',IDUM,KRET=IRET )
-          IF ( IRET == 0 ) THEN
-            IF ( IDUM > 0 ) THEN
-              CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'productDefinitionTemplateNumber', NTRG2TMPP)
-            ELSE
-              CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'productDefinitionTemplateNumber', NTRG2TMPD)
-            ENDIF
+      IF ( ITMIN /= 0 .OR. ITMAX /= 0 ) THEN
+!       NEED TO CHANGE TO SPECIFIC TEMPLATE FOR ENCODING ITMIN AND ITMAX
+        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'numberOfForecastsInEnsemble',IDUM,KRET=IRET )
+        IF ( IRET == 0 ) THEN
+          IF ( IDUM > 0 ) THEN
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'productDefinitionTemplateNumber', NTRG2TMPP)
           ELSE
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'productDefinitionTemplateNumber', NTRG2TMPD)
           ENDIF
+        ELSE
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'productDefinitionTemplateNumber', NTRG2TMPD)
+        ENDIF
 
-          IF ( ITMIN /= 0 .AND. ITMAX /= 0 ) THEN
-!           [ ITMIN , ITMAX ]
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 7)
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfLowerWavePeriodLimit', 0)
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfLowerWavePeriodLimit', ITMIN)
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfUpperWavePeriodLimit', 0)
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfUpperWavePeriodLimit', ITMAX)
-          ELSEIF ( ITMIN /= 0 ) THEN
-!           [ ITMIN
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 3)
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfLowerWavePeriodLimit', 0)
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfLowerWavePeriodLimit', ITMIN)
-          ELSEIF ( ITMAX /= 0 ) THEN
-!           ITMAX ]
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 4)
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfUpperWavePeriodLimit', 0)
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfUpperWavePeriodLimit', ITMAX)
-          ENDIF
-
+        IF ( ITMIN /= 0 .AND. ITMAX /= 0 ) THEN
+!         [ ITMIN , ITMAX ]
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 7)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfLowerWavePeriodLimit', 0)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfLowerWavePeriodLimit', ITMIN)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfUpperWavePeriodLimit', 0)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfUpperWavePeriodLimit', ITMAX)
+        ELSEIF ( ITMIN /= 0 ) THEN
+!         [ ITMIN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 3)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfLowerWavePeriodLimit', 0)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfLowerWavePeriodLimit', ITMIN)
+        ELSEIF ( ITMAX /= 0 ) THEN
+!         ITMAX ]
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 4)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfUpperWavePeriodLimit', 0)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfUpperWavePeriodLimit', ITMAX)
         ENDIF
       ENDIF
 
@@ -283,16 +278,6 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       ENDIF
 
 !     LEVEL DEFINITION
-      IF (.NOT.LNEWLVTP) THEN
-        IF ( IGRIB_VERSION == 1) THEN
-          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'levtype',ILEVTYPE)
-          IF (KLEV /= 0) THEN
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',105)
-          ELSE
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',102)
-          ENDIF
-        ENDIF
-      ENDIF
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'level',IDUM,KRET=IRET)
       IF ( IRET == JPGRIB_SUCCESS ) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',KLEV)
 
@@ -354,9 +339,6 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
               ELSE
                 NWINOFF=12-MOD(IH2+3,12)
               ENDIF
-              IF ( ITABPAR == 140251 .AND. IGRIB_VERSION == 1 ) THEN
-                CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',4)
-              ENDIF
             ENDIF
 !           in hours
             CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'offsetToEndOf4DvarWindow',IDUM,KRET=IRET)
@@ -407,13 +389,8 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       ENDIF
 
       IF (ITABPAR == 140251 .OR. LLSPECNOT251) THEN
-        IF ( IGRIB_VERSION == 1 ) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'directionNumber',IK)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'frequencyNumber',IM)
-        ELSE
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveDirectionNumber',IK,IERR)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveFrequencyNumber',IM,IERR)
-        ENDIF
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveDirectionNumber',IK,IERR)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveFrequencyNumber',IM,IERR)
       ENDIF
 
 !     ENCODE DATA:
