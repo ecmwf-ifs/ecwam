@@ -8,7 +8,7 @@
 !
 
 SUBROUTINE OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
- &                   WAM2NEMO, NEMO2WAM, FL1)
+ &                   WAM2NEMO, NEMO2WAM, FL1, LINIONLY)
 
 ! ----------------------------------------------------------------------
 
@@ -18,14 +18,14 @@ SUBROUTINE OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
 !     ----------
 
 !     *CALL* *OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,
-!    &                  WAM2NEMO, NEMO2WAM, FL1)
+!    &                  WAM2NEMO, NEMO2WAM, FL1, LINIONLY)
 !        *WVENVI*    WAVE ENVIRONMENT FIELDS
 !        *WVPRPT*    WAVE PROPERTIES FIELDS
 !        *FF_NOW*    FORCING FIELDS AT CURRENT TIME.
 !        *INTFLDS*   INTEGRATED/DERIVED PARAMETERS
 !        *WAM2NEMO*  WAVE FIELDS PASSED TO NEMO
 !        *NEMO2WAM*  FIELDS FRON OCEAN MODEL to WAM
-
+!        *LINIONLY*  INITIALISATION ONLY CALL (i.e. NO FOWARD TIME INTEGRATION) 
 ! -------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
@@ -74,6 +74,7 @@ SUBROUTINE OUTSTEP0 (WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
       TYPE(WAVE2OCEAN), INTENT(INOUT)                                          :: WAM2NEMO
       TYPE(OCEAN2WAVE), INTENT(IN)                                             :: NEMO2WAM
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
+      LOGICAL, INTENT(IN)                                                      :: LINIONLY            
 
 
       INTEGER(KIND=JWIM) :: IJ, K, ICHNK, KIJS, KIJL
@@ -113,7 +114,7 @@ IF (LHOOK) CALL DR_HOOK('OUTSTEP0',0,ZHOOK_HANDLE)
      &                   FL1(:,:,:,ICHNK), XLLWS(:,:,:,ICHNK),   &
      &                   WVPRPT%WAVNUM(:,:,ICHNK), WVPRPT%CINV(:,:,ICHNK),  WVPRPT%CGROUP(:,:,ICHNK), &
      &                   WVPRPT%XK2CG(:,:,ICHNK), WVPRPT%STOKFAC(:,:,ICHNK), &
-     &                   WVENVI%DEPTH(:,ICHNK), &
+     &                   WVENVI%DEPTH(:,ICHNK), WVENVI%IBRMEM(:,ICHNK),&
      &                   FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK), &
      &                   FF_NOW%AIRD(:,ICHNK), FF_NOW%WSTAR(:,ICHNK), &
      &                   FF_NOW%USTRA(:,ICHNK), FF_NOW%VSTRA(:,ICHNK), &
@@ -123,11 +124,13 @@ IF (LHOOK) CALL DR_HOOK('OUTSTEP0',0,ZHOOK_HANDLE)
      &                   INTFLDS%WSEMEAN(:,ICHNK), INTFLDS%WSFMEAN(:,ICHNK), &
      &                   INTFLDS%USTOKES(:,ICHNK), INTFLDS%VSTOKES(:,ICHNK), INTFLDS%STRNMS(:,ICHNK), &
      &                   INTFLDS%TAUXD(:,ICHNK), INTFLDS%TAUYD(:,ICHNK), INTFLDS%TAUOCXD(:,ICHNK), &
-     &                   INTFLDS%TAUOCYD(:,ICHNK), INTFLDS%TAUOC(:,ICHNK), INTFLDS%PHIOCD(:,ICHNK), &
+     &                   INTFLDS%TAUOCYD(:,ICHNK), INTFLDS%TAUOC(:,ICHNK), &
+     &                   INTFLDS%TAUICX(:,ICHNK), INTFLDS%TAUICY(:,ICHNK), INTFLDS%PHIOCD(:,ICHNK), &
      &                   INTFLDS%PHIEPS(:,ICHNK), INTFLDS%PHIAW(:,ICHNK), &
      &                   WAM2NEMO%NEMOUSTOKES(:,ICHNK), WAM2NEMO%NEMOVSTOKES(:,ICHNK), WAM2NEMO%NEMOSTRN(:,ICHNK), &
      &                   WAM2NEMO%NPHIEPS(:,ICHNK), WAM2NEMO%NTAUOC(:,ICHNK), WAM2NEMO%NSWH(:,ICHNK), &
      &                   WAM2NEMO%NMWP(:,ICHNK), WAM2NEMO%NEMOTAUX(:,ICHNK), WAM2NEMO%NEMOTAUY(:,ICHNK), &
+     &                   WAM2NEMO%NEMOTAUICX(:,ICHNK), WAM2NEMO%NEMOTAUICY(:,ICHNK), &
      &                   WAM2NEMO%NEMOWSWAVE(:,ICHNK), WAM2NEMO%NEMOPHIF(:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
@@ -207,7 +210,7 @@ IF (LHOOK) CALL DR_HOOK('OUTSTEP0',0,ZHOOK_HANDLE)
 !       NEED TO TEMPORARLY RESET THE IFS FORECAST STEP
 !       IF THE IFS GRIB HEADER IS USED SUCH THAT IT POINTS TO
 !       THE START OF THE RUN.
-        IF (LGRHDIFS) LRSTST0=.TRUE.
+        IF (LGRHDIFS .AND. (.NOT. LINIONLY)) LRSTST0=.TRUE.
 
 !       COMPUTE OUTPUT PARAMETERS AND PRINT OUT NORMS
         IF (NIPRMOUT > 0) THEN
@@ -254,7 +257,7 @@ IF (LHOOK) CALL DR_HOOK('OUTSTEP0',0,ZHOOK_HANDLE)
 
         CDTINTT=CDTINTTBAK
 
-        IF (LGRHDIFS) LRSTST0=.FALSE.
+        IF (LGRHDIFS .AND. (.NOT. LINIONLY)) LRSTST0=.FALSE.
 
       ENDIF
 
