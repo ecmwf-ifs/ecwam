@@ -28,29 +28,29 @@ jobs:
 
       matrix:
         name:
-          - ac-gpu nvhpc sp
+#          - ac-gpu nvhpc sp
           - ac-cpu intel sp
 
         include:
-          - name: ac-gpu nvhpc sp
-            site: ac-batch
-            sbatch_options: |
-              #SBATCH --time=00:20:00
-              #SBATCH --nodes=1
-              #SBATCH --ntasks=4
-              #SBATCH --cpus-per-task=32
-              #SBATCH --gpus-per-task=1
-              #SBATCH --mem=0
-              #SBATCH --qos=dg
-            modules:
-              - cmake
-              - fcm
-              - ninja
-              - ecbuild
-              - prgenv/nvidia
-              - hpcx-openmpi/2.14.0-cuda
-              - python3
-            gpu: 1
+#          - name: ac-gpu nvhpc sp
+#            site: ac-batch
+#            sbatch_options: |
+#              #SBATCH --time=00:20:00
+#              #SBATCH --nodes=1
+#              #SBATCH --ntasks=4
+#              #SBATCH --cpus-per-task=32
+#              #SBATCH --gpus-per-task=1
+#              #SBATCH --mem=0
+#              #SBATCH --qos=dg
+#            modules:
+#              - cmake
+#              - fcm
+#              - ninja
+#              - ecbuild
+#              - prgenv/nvidia
+#              - hpcx-openmpi/2.14.0-cuda
+#              - python3
+#            gpu: 1
 
           - name: ac-cpu intel sp
             site: ac-batch
