@@ -100,4 +100,4 @@ options :
 
     - with-static-linking :
         help  : Build static libraries by default
-        cmake : ECWAM_BUILD_SHARED_LIBS=OFF
+        cmake : BUILD_SHARED_LIBS=OFF
