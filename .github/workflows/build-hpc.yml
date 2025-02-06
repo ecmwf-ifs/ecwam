@@ -9,6 +9,10 @@ on:
   # Allow workflow to be dispatched on demand
   workflow_dispatch: ~
 
+  # Trigger after public PR approved for CI
+  pull_request_target:
+    types: [labeled]
+
 env:
   ECWAM_TOOLS: ${{ github.workspace }}/.github/tools
   CTEST_PARALLEL_LEVEL: 1
@@ -17,6 +21,7 @@ env:
 jobs:
   ci-hpc:
     name: ci-hpc
+    if: ${{ !github.event.pull_request.head.repo.fork && github.event.action != 'labeled' || github.event.label.name == 'approved-for-ci' }}
 
     strategy:
       fail-fast: false    # false: try to complete all jobs
@@ -119,15 +124,17 @@ jobs:
                 popd
             {% endfor %}
 
-            mkdir -p ${{ github.repository }}
-            pushd ${{ github.repository }}
+            REPO=${{ github.event.pull_request.head.repo.full_name || github.repository }}
+            SHA=${{ github.event.pull_request.head.sha || github.sha }}
+            mkdir -p $REPO
+            pushd $REPO
             git init
-            git remote add origin ${{ github.server_url }}/${{ github.repository }}
-            git fetch origin ${{ github.sha }}
+            git remote add origin ${{ github.server_url }}/$REPO
+            git fetch origin $SHA
             git reset --hard FETCH_HEAD
             popd
 
-            cmake -G Ninja -S ${{ github.repository }} -B build \
+            cmake -G Ninja -S $REPO -B build \
               {% for name in dependencies %}
                 {% set org, proj = name.split('/') %}
                 -D{{proj}}_ROOT=$BASEDIR/{{name}}/installation \
