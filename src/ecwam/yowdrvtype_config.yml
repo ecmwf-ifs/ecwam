@@ -13,7 +13,7 @@ objtypes:
   environment:
      rank: 2
      types: [int, real]
-     vars: [[indep, iodp, iobnd], [dellam1, cosphm1, depth, emaxdpt, ucur, vcur]]
+     vars: [[indep, iodp, iobnd], [ibrmem, dellam1, cosphm1, depth, emaxdpt, ucur, vcur]]
   frequency:
      rank: 3
      types: [real]
@@ -27,12 +27,12 @@ objtypes:
      rank: 2
      types: [ocean]
      vars: [[nswh, nmwp, nphieps, nemophif, ntauoc, nemotaux, nemotauy, nemoustokes, nemovstokes,
-            nemostrn, nemowswave]]
+            nemostrn, nemowswave, nemotauicx, nemotauicy]]
   intgt_param_fields:
      rank: 2
      types: [real]
      vars: [[wsemean, wsfmean, ustokes, vstokes, phieps, phiocd, phiaw, tauoc, tauxd, tauyd,
-            tauocxd, tauocyd, strnms, altwh, caltwh, raltcor]]
+            tauocxd, tauocyd, tauicx, tauicy, strnms, altwh, caltwh, raltcor]]
   wvgridglo:
      rank: 1
      types: [int]
@@ -48,7 +48,7 @@ objtypes:
   ocean2wave:
      rank: 2
      types: [ocean]
-     vars: [[nemosst, nemocicover, nemocithick, nemoucur, nemovcur]]
+     vars: [[nemocicover, nemocithick, nemoucur, nemovcur, nemociibr]]
   type_4d:
      rank: 4
      types: [real]
