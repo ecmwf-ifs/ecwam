@@ -97,3 +97,7 @@ options :
     - with-fckit :
         help  : Build fckit with Python virtual environment containing fypp and yaml parser
         cmake : BUILD_fckit=ON
+
+    - with-static-linking :
+        help  : Build static libraries by default
+        cmake : BUILD_SHARED_LIBS=OFF
