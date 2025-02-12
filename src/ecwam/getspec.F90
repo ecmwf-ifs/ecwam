@@ -290,52 +290,43 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
                 GOTO 1021
               ELSEIF (LLRESIZING .AND. IRET == JPGRIB_END_OF_FILE) THEN
 !               WE SHOULD HAVE THE MAXIMUM SIZE NECESSARY, START ALL OVER.
+                WRITE(IU06,*) ''
+                WRITE(IU06,*) '* GETSPEC: WE SHOULD HAVE THE MAXIMUM SIZE NECESSARY, START ALL OVER.'
+                WRITE(IU06,*) ''
+                CALL FLUSH(IU06)
                 DEALLOCATE(INGRIB)
                 LLRESIZING=.FALSE.
                 CALL IGRIB_CLOSE_FILE(KFILE_HANDLE)
                 CALL IGRIB_OPEN_FILE(KFILE_HANDLE,FILENAME(1:LFILE),'r')
                 ISIZE=NBIT
                 IF (.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
+!               READ AGAIN UNTIL THE FIRST TIME WE ENCOUNTERED JPGRIB_BUFFER_TOO_SMALL 
+                DO IBREAD=1,NBREAD_AGAIN
+                  KBYTES=ISIZE*NPRECI
+                  CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,KBYTES,IRET)
+                  IF (IRET == JPGRIB_BUFFER_TOO_SMALL) THEN
+                    WRITE(IU06,*) '****************************************************'
+                    WRITE(IU06,*) '* GETSPEC: JPGRIB_BUFFER_TOO_SMALL SHOULD NOT HAPPEN'
+                    WRITE(NULERR,*) '* GETSPEC: JPGRIB_BUFFER_TOO_SMALL SHOULD NOT HAPPEN'
+                    WRITE(IU06,*) '****************************************************'
+                    CALL ABORT1
+                  ELSEIF (IRET == JPGRIB_END_OF_FILE) THEN
+                    WRITE(IU06,*) '**********************************'
+                    WRITE(IU06,*) '* GETSPEC: END OF FILE ENCOUNTED'
+                    WRITE(NULERR,*) '* GETSPEC: END OF FILE ENCOUNTED'
+                    WRITE(IU06,*) '**********************************'
+                    CALL ABORT1
+                  ELSEIF (IRET /= JPGRIB_SUCCESS) THEN
+                    WRITE(IU06,*) '**********************************'
+                    WRITE(IU06,*) '* GETSPEC: FILE HANDLING ERROR'
+                    WRITE(NULERR,*) '* GETSPEC: FILE HANDLING ERROR'
+                    WRITE(IU06,*) '**********************************'
+                    CALL ABORT1
+                  ENDIF
+                ENDDO
+                NBREAD=IBREAD-1
+                NBREAD_AGAIN=0
 
-                NBREAD=NBREAD+1
-
-                CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,KBYTES,IRET)
-                IF (IRET == JPGRIB_BUFFER_TOO_SMALL) THEN
-                  IF (.NOT.LLRESIZING) NBREAD_AGAIN=NBREAD
-                  CALL KGRIBSIZE(IU06, KBYTES, NBIT, 'GETSPEC')
-                  DEALLOCATE(INGRIB)
-                  LLRESIZING=.TRUE.
-                  GOTO 1021
-                ELSEIF (LLRESIZING .AND. IRET /= JPGRIB_END_OF_FILE) THEN
-!                 LOOP UNTIL YOU HAVE EXPLORE THE SIZE FOR THE WHOLE FILE.
-                  DEALLOCATE(INGRIB)
-                  GOTO 1021
-                ELSEIF (LLRESIZING .AND. IRET == JPGRIB_END_OF_FILE) THEN
-!                 WE SHOULD HAVE THE MAXIMUM SIZE NECESSARY, START ALL OVER.
-                  DEALLOCATE(INGRIB)
-                  LLRESIZING=.FALSE.
-                  CALL IGRIB_CLOSE_FILE(KFILE_HANDLE)
-                  CALL IGRIB_OPEN_FILE(KFILE_HANDLE,FILENAME(1:LFILE),'r')
-                  ISIZE=NBIT
-                  IF (.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
-                  DO IBREAD=1,NBREAD_AGAIN
-                    KBYTES=ISIZE*NPRECI
-                    CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,KBYTES,IRET)
-                  ENDDO
-                  NBREAD=IBREAD-1
-                  NBREAD_AGAIN=0
-
-                ELSEIF (IRET == JPGRIB_END_OF_FILE) THEN
-                  WRITE(IU06,*) '**********************************'
-                  WRITE(IU06,*) '* GETSPEC: END OF FILE ENCOUNTED'
-                  WRITE(IU06,*) '**********************************'
-                  CALL ABORT1
-                ELSEIF (IRET /= JPGRIB_SUCCESS) THEN
-                  WRITE(IU06,*) '**********************************'
-                  WRITE(IU06,*) '* GETSPEC: FILE HANDLING ERROR'
-                  WRITE(IU06,*) '**********************************'
-                  CALL ABORT1
-                ENDIF
               ENDIF
 
             ENDIF
@@ -414,40 +405,40 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
               CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
               IF (CDATE /= CDTPRO) THEN
-                WRITE(IU06,*)'**********************************'
-                WRITE(IU06,*)'*                                *'
-                WRITE(IU06,*)'* FATAL ERROR IN SUB GETSPEC     *'
-                WRITE(IU06,*)'* ===========================    *'
-                WRITE(IU06,*)'*                                *'
-                WRITE(IU06,*)'* REQUESTED DATE IS NOT EQUAL TO *'
-                WRITE(IU06,*)'* RETRIEVED DATE.                *'
-                WRITE(IU06,*)'* IN FILE: ',FILENAME
-                WRITE(IU06,*)'* CDATE = ',CDATE
-                WRITE(IU06,*)'* CDTPRO = ',CDTPRO
-                WRITE(IU06,*)'*                                *'
-                WRITE(IU06,*)'**********************************'
+                WRITE(NULERR,*)'**********************************'
+                WRITE(NULERR,*)'*                                *'
+                WRITE(NULERR,*)'* FATAL ERROR IN SUB GETSPEC     *'
+                WRITE(NULERR,*)'* ===========================    *'
+                WRITE(NULERR,*)'*                                *'
+                WRITE(NULERR,*)'* REQUESTED DATE IS NOT EQUAL TO *'
+                WRITE(NULERR,*)'* RETRIEVED DATE.                *'
+                WRITE(NULERR,*)'* IN FILE: ',FILENAME
+                WRITE(NULERR,*)'* CDATE = ',CDATE
+                WRITE(NULERR,*)'* CDTPRO = ',CDTPRO
+                WRITE(NULERR,*)'*                                *'
+                WRITE(NULERR,*)'**********************************'
                 CALL ABORT1
               ENDIF
               IF (K /= KK) THEN
-                WRITE(IU06,*) '************************************'
-                WRITE(IU06,*) '* FATAL ERROR IN SUB. GETSPEC      *'
-                WRITE(IU06,*) '* REQUESTED AND DECODED DIRECTIONAL*'
-                WRITE(IU06,*) '* INDEX ARE DIFFERENT :            *'
-                WRITE(IU06,*) '* REQUESTED : ',K 
-                WRITE(IU06,*) '* DECODED   : ',KK
-                WRITE(IU06,*) '*                                  *'
-                WRITE(IU06,*) '************************************'
+                WRITE(NULERR,*) '************************************'
+                WRITE(NULERR,*) '* FATAL ERROR IN SUB. GETSPEC      *'
+                WRITE(NULERR,*) '* REQUESTED AND DECODED DIRECTIONAL*'
+                WRITE(NULERR,*) '* INDEX ARE DIFFERENT :            *'
+                WRITE(NULERR,*) '* REQUESTED : ',K 
+                WRITE(NULERR,*) '* DECODED   : ',KK
+                WRITE(NULERR,*) '*                                  *'
+                WRITE(NULERR,*) '************************************'
                 CALL ABORT1
               ENDIF
               IF (M /= MM) THEN
-                WRITE(IU06,*) '************************************'
-                WRITE(IU06,*) '* FATAL ERROR IN SUB. GETSPEC      *'
-                WRITE(IU06,*) '* REQUESTED AND DECODED FREQUENCY  *'
-                WRITE(IU06,*) '* INDEX ARE DIFFERENT :            *'
-                WRITE(IU06,*) '* REQUESTED : ',M 
-                WRITE(IU06,*) '* DECODED   : ',MM
-                WRITE(IU06,*) '*                                  *'
-                WRITE(IU06,*) '************************************'
+                WRITE(NULERR,*) '************************************'
+                WRITE(NULERR,*) '* FATAL ERROR IN SUB. GETSPEC      *'
+                WRITE(NULERR,*) '* REQUESTED AND DECODED FREQUENCY  *'
+                WRITE(NULERR,*) '* INDEX ARE DIFFERENT :            *'
+                WRITE(NULERR,*) '* REQUESTED : ',M 
+                WRITE(NULERR,*) '* DECODED   : ',MM
+                WRITE(NULERR,*) '*                                  *'
+                WRITE(NULERR,*) '************************************'
                 CALL ABORT1
               ENDIF
 
