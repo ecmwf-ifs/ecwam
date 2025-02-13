@@ -1767,4 +1767,4 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
 ! ----------------------------------------------------------------------
 
-
+END SUBROUTINE USERIN
