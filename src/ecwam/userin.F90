@@ -112,7 +112,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            CITHRSH_SAT, CITHRSH_TAIL    ,CDICWA
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMAP   , ONLY : CLDOMAIN 
-      USE YOWMPP   , ONLY : NPROC    ,NPRECI   ,NPRECR
+      USE YOWMPP   , ONLY : IRANK, NPROC    ,NPRECI   ,NPRECR
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS   ,LL1D     ,LLUNSTR
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
@@ -1578,7 +1578,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !*    2.5 OUTPUT OPTION.
 !         --------------
 
-      IF (NOUTT > 0) THEN
+      IF (NOUTT > 0 .AND. .NOT.LRESTARTED) THEN
         DO J=1,NOUTT
           CALL DIFDATE (CDATEA, COUTT(J), ISHIFT)
           IF (ISHIFT < 0) THEN
@@ -1616,7 +1616,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             LERROR = .TRUE.
           ENDIF
         ENDDO
-      ELSE
+      ELSE IF (.NOT.LRESTARTED) THEN
         IF ((FFLAG20.OR.GFLAG20) .AND. IDELINT == 0) THEN
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) '*                                         *'
@@ -1664,7 +1664,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         ENDIF
       ENDIF
 
-      IF (NOUTS > 0) THEN
+      IF (NOUTS > 0 .AND. .NOT.LRESTARTED) THEN
         DO J=1,NOUTS
           CALL DIFDATE (CDATEA, COUTS(J), ISHIFT)
           IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELPRO) /= 0) THEN
@@ -1752,10 +1752,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.       *'
         WRITE(IU06,*) '* ---------------   --------------        *'
         WRITE(IU06,*) '*******************************************'
-        WRITE(NULERR,*) '*******************************************'
-        WRITE(NULERR,*) '*    FATAL ERROR(S) IN SUB. USERIN        *'
-        WRITE(NULERR,*) '*    SEE LOGFILE        *'
-        WRITE(NULERR,*) '*******************************************'
+        IF (IRANK == 1) THEN
+          WRITE(NULERR,*) '*******************************************'
+          WRITE(NULERR,*) '*    FATAL ERROR(S) IN SUB. USERIN        *'
+          WRITE(NULERR,*) '*    SEE LOGFILE        *'
+          WRITE(NULERR,*) '*******************************************'
+        ENDIF
         CALL WAM_ABORT(__FILENAME__,__LINE__)
       ELSE
 
@@ -1765,4 +1767,4 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
 ! ----------------------------------------------------------------------
 
-END SUBROUTINE USERIN
+
