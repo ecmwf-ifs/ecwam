@@ -83,15 +83,14 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                             INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU,           &
-                            LWNEMOCOUSTRN, LWNEMOCOUWRS, LWNEMOCOUIBR,   &
- &                          LWFLUX_IMPCOR
+                            LWNEMOCOUSTRN, LWNEMOCOUWRS, LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LICERUN   ,LMASKICE ,              &
                             LCIWA1   ,LCIWA2    ,LCIWA3   ,LCISCAL   ,   &
  &                          ZALPFACX
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LLUNSTR
-      USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1, EPSMIN
+      USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -348,27 +347,14 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
 !        Save source term contributions relevant for the calculation of ice fluxes
          IF (LWNEMOCOUWRS) THEN
-          IF (.NOT. LWFLUX_IMPCOR) THEN
-            DO M=1,NFRE
-              DO K=1,NANG
-                DO IJ=KIJS,KIJL
-!                   SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
-                  SLICE(IJ,K,M) = MAX( SL(IJ,K,M) - SLTEMP(IJ,K,M) , EPSMIN)
-                ENDDO
-              ENDDO
-            ENDDO
-          ELSEIF (LWFLUX_IMPCOR) THEN
-            DO M=1,NFRE
-              DO K=1,NANG
-                DO IJ=KIJS,KIJL
-                  GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
-!                   SLICE(IJ,K,M) = (SL(IJ,K,M) - SLTEMP(IJ,K,M))/GTEMP1
-                  SLICE(IJ,K,M) = (MAX( SL(IJ,K,M) - SLTEMP(IJ,K,M) , EPSMIN))/GTEMP1
-                ENDDO
-              ENDDO
-            ENDDO
-          ENDIF
-       ENDIF
+           DO M=1,NFRE
+             DO K=1,NANG
+               DO IJ=KIJS,KIJL
+                 SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
+               ENDDO
+             ENDDO
+           ENDDO
+         ENDIF
 
       ENDIF
 

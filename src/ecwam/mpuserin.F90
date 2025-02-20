@@ -56,7 +56,7 @@
      &            LWNEMOCOUCUR,  LWNEMOCOUIBR,                          &
      &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOCOUWRS,           &
      &            LWNEMOTAUOC, NEMOFRCO,                                &
-     &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM, LWFLUX_IMPCOR
+     &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,GFLAG    ,                                  &
      &            GFLAG20  ,NFLAG    ,                                  &
@@ -232,7 +232,7 @@
      &   LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE,                         &
      &   LICERUN, LCIWA1, LCIWA2, LCIWA3, LCISCAL,                      &
      &   LICETH, ZALPFACB, ZALPFACX, ZIBRW_THRSH,                       &
-     &   LWVFLX_SNL, LWFLUX_IMPCOR,                                     &
+     &   LWVFLX_SNL,                                                    &
      &   LWNEMOCOU, NEMOFRCO,                                           &
      &   LWNEMOCOUSEND, LWNEMOCOUSTK, LWNEMOCOUSTRN, LWNEMOCOUWRS,      &
      &   LWNEMOTAUOC, LWNEMOCOURECV,                                    &
@@ -694,8 +694,6 @@
       LWCOUAST = .TRUE.
 
       LWVFLX_SNL = .TRUE.
-      
-      LWFLUX_IMPCOR = .TRUE.
 
       LWNEMOCOU = .FALSE.
 
