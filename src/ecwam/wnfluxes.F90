@@ -76,7 +76,7 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : TAUOCMIN ,TAUOCMAX ,PHIEPSMIN,PHIEPSMAX,    &
-     &               EPSUS ,EPSU10   ,G        ,ZPI      ,ROWATER
+     &               EPSUS ,EPSU10   ,G        ,ZPI      ,ROWATER, EPSMIN
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -170,13 +170,13 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
         DO M=1,NFRE
           K=1
           DO IJ=KIJS,KIJL
-            SUMXICE(IJ) = SINTH(K)*SLICE(IJ,K,M)
-            SUMYICE(IJ) = COSTH(K)*SLICE(IJ,K,M)
+            SUMXICE(IJ) = SINTH(K)*MIN(SLICE(IJ,K,M),-EPSMIN)
+            SUMYICE(IJ) = COSTH(K)*MIN(SLICE(IJ,K,M),-EPSMIN)
           ENDDO
           DO K=2,NANG
             DO IJ=KIJS,KIJL
-              SUMXICE(IJ) = SUMXICE(IJ) + SINTH(K)*SLICE(IJ,K,M)
-              SUMYICE(IJ) = SUMYICE(IJ) + COSTH(K)*SLICE(IJ,K,M)
+              SUMXICE(IJ) = SUMXICE(IJ) + SINTH(K)*MIN(SLICE(IJ,K,M),-EPSMIN)
+              SUMYICE(IJ) = SUMYICE(IJ) + COSTH(K)*MIN(SLICE(IJ,K,M),-EPSMIN)
             ENDDO
           ENDDO
           XSTRESSICE(IJ) = XSTRESSICE(IJ) + SUMXICE(IJ)*CINV(IJ,M)*RHOWG_DFIM(M)
