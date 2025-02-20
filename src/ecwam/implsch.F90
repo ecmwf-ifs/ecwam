@@ -91,7 +91,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
                             LCIWA1   ,LCIWA2    ,LCIWA3   ,LCISCAL   ,   &
  &                          ZALPFACX
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LLUNSTR
-      USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1 
+      USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1, EPSMIN
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -352,7 +352,8 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
             DO M=1,NFRE
               DO K=1,NANG
                 DO IJ=KIJS,KIJL
-                  SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
+!                   SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
+                  SLICE(IJ,K,M) = MAX( SL(IJ,K,M) - SLTEMP(IJ,K,M) , EPSMIN)
                 ENDDO
               ENDDO
             ENDDO
@@ -361,7 +362,8 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
               DO K=1,NANG
                 DO IJ=KIJS,KIJL
                   GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
-                  SLICE(IJ,K,M) = (SL(IJ,K,M) - SLTEMP(IJ,K,M))/GTEMP1
+!                   SLICE(IJ,K,M) = (SL(IJ,K,M) - SLTEMP(IJ,K,M))/GTEMP1
+                  SLICE(IJ,K,M) = (MAX( SL(IJ,K,M) - SLTEMP(IJ,K,M) , EPSMIN))/GTEMP1
                 ENDDO
               ENDDO
             ENDDO
