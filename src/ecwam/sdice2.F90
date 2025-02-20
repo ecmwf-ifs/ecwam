@@ -63,8 +63,7 @@
       USE YOWICE   , ONLY : CDICWA  ,ZALPFACB
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPCONS , ONLY : EPSMIN  
-
-      USE YOWTEST  , ONLY : IU06
+      USE YOWSTAT  , ONLY : IDELT
 
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
@@ -85,7 +84,8 @@
       INTEGER(KIND=JWIM) :: IJ, K, M
       REAL(KIND=JWRB)    :: EWH
       REAL(KIND=JWRB)    :: ALP              !! ALP=SPATIAL ATTENUATION RATE OF ENERGY
-      REAL(KIND=JWRB)    :: TEMP
+      REAL(KIND=JWRB)    :: FLDICE
+      REAL(KIND=JWRB)    :: DELT, DELTM, XIMP, DELT5, GTEMP1
       
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -94,19 +94,29 @@
 
       IF (LHOOK) CALL DR_HOOK('SDICE2',0,ZHOOK_HANDLE)
 
-!      WRITE (IU06,*)'Ice attenuation due to bottom friction based on: '
-!      WRITE (IU06,*)'  KOHOUT A., M. MEYLAN, D PLEW, 2011'
+      DELT = IDELT
+      DELTM = 1.0_JWRB/DELT
+      XIMP = 1.0_JWRB
+      DELT5 = XIMP*DELT
 
       DO M = 1,NFRE
          DO K = 1,NANG
             DO IJ = KIJS,KIJL
+
                EWH            = 4.0_JWRB*SQRT(MAX(EPSMIN,FL1(IJ,K,M)*DFIM(M)))
                XK2(M)         = WAVNUM(IJ,M)**2
                ALP            = CDICWA*XK2(M)*EWH*ZALPFACB
-               TEMP           = -CICV(IJ)*ALP*CGROUP(IJ,M)  
-               SLICE(IJ,K,M)  = FL1(IJ,K,M)*TEMP
-               SL(IJ,K,M)     = SL(IJ,K,M)  + SLICE(IJ,K,M)
-               FLD(IJ,K,M)    = FLD(IJ,K,M) + TEMP
+
+!              apply the source term
+               FLDICE         = -ALP(IJ,M)   * CGROUP(IJ,M)   
+               SLICE(IJ,K,M)  =  FL1(IJ,K,M) * FLDICE
+               SL(IJ,K,M)     =  SL(IJ,K,M)  + CICV(IJ)*SLICE(IJ,K,M)
+               FLD(IJ,K,M)    =  FLD(IJ,K,M) + CICV(IJ)*FLDICE
+               
+!              to be used for wave radiative stress calculation
+               GTEMP1         =  MAX((1.0_JWRB-DELT5*FLDICE),1.0_JWRB)    
+               SLICE(IJ,K,M)  =  SLICE(IJ,K,M)/GTEMP1
+
             END DO
          END DO
       END DO
