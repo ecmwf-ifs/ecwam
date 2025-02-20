@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE SDICE (KIJS, KIJL, FL1, FLD, SL,             &
+      SUBROUTINE SDICE  (KIJS, KIJL, FL1, FLD, SL, SLICE,     &
      &                  WAVNUM, CGROUP,                       &
      &                  CICV,CITH, ALPFAC)
 ! ----------------------------------------------------------------------

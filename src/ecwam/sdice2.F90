@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE SDICE2 (KIJS, KIJL, FL1, FLD, SL,            &
+      SUBROUTINE SDICE2 (KIJS, KIJL, FL1, FLD, SL, SLICE,     &
      &                   WAVNUM, CGROUP,                      &
      &                   CICV)
 ! ----------------------------------------------------------------------
@@ -34,6 +34,7 @@
 !          *FL1*    - SPECTRUM.
 !          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY
+!          *SLICE*  - TOTAL SOURCE FUNCTION ARRAY, ICE
 !          *WAVNUM* - WAVE NUMBER
 !          *CGROUP* - GROUP SPEED
 !          *CICV*   - SEA ICE COVER
@@ -98,12 +99,13 @@
       DO M = 1,NFRE
          DO K = 1,NANG
             DO IJ = KIJS,KIJL
-               EWH         = 4.0_JWRB*SQRT(MAX(EPSMIN,FL1(IJ,K,M)*DFIM(M)))
-               XK2(M)      = WAVNUM(IJ,M)**2
-               ALP         = CDICWA*XK2(M)*EWH*ZALPFACB
-               TEMP        = -CICV(IJ)*ALP*CGROUP(IJ,M)  
-               SL(IJ,K,M)  = SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
-               FLD(IJ,K,M) = FLD(IJ,K,M) + TEMP
+               EWH            = 4.0_JWRB*SQRT(MAX(EPSMIN,FL1(IJ,K,M)*DFIM(M)))
+               XK2(M)         = WAVNUM(IJ,M)**2
+               ALP            = CDICWA*XK2(M)*EWH*ZALPFACB
+               TEMP           = -CICV(IJ)*ALP*CGROUP(IJ,M)  
+               SLICE(IJ,K,M)  = FL1(IJ,K,M)*TEMP
+               SL(IJ,K,M)     = SL(IJ,K,M)  + SLICE(IJ,K,M)
+               FLD(IJ,K,M)    = FLD(IJ,K,M) + TEMP
             END DO
          END DO
       END DO

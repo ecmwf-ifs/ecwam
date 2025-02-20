@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE SDICE1 (KIJS, KIJL, FL1, FLD, SL,            &
+      SUBROUTINE SDICE1 (KIJS, KIJL, FL1, FLD, SL, SLICE,     &
      &                   WAVNUM, CGROUP,                      &
      &                   CICV,CITH)
 ! ----------------------------------------------------------------------
@@ -32,6 +32,7 @@
 !          *FL1*    - SPECTRUM.
 !          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY
+!          *SLICE*  - TOTAL SOURCE FUNCTION ARRAY, ICE
 !          *WAVNUM* - WAVE NUMBER
 !          *CGROUP* - GROUP SPEED
 !          *CICV*   - SEA ICE COVER
@@ -157,9 +158,7 @@
             WH=1.0_JWRB-WH1
             CIDEAC_INT=WT*(WH*CIDEAC(IT,IH)+ WH1*CIDEAC(IT,IH1)) +      &
      &                WT1*(WH*CIDEAC(IT1,IH)+WH1*CIDEAC(IT1,IH1))
-!!!            ALP(IJ,M)=CICV(IJ)*CIDEAC_INT*DINV(IJ)
-!            ALP(IJ,M)=CICV(IJ)*EXP(CIDEAC_INT)*DINV(IJ)
-            ALP(IJ,M)=          EXP(CIDEAC_INT)*DINV(IJ) * ZALPFACB ! CICV accounted for in TEMP
+            ALP(IJ,M)=EXP(CIDEAC_INT)*DINV(IJ) * ZALPFACB ! CICV accounted for below
             
           ELSE
             ALP(IJ,M)=0.0_JWRB
@@ -171,9 +170,10 @@
          DO K = 1,NANG
             DO IJ = KIJS,KIJL
 
-               TEMP        = -CICV(IJ)*ALP(IJ,M)*CGROUP(IJ,M)         
-               SL(IJ,K,M)  = SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
-               FLD(IJ,K,M) = FLD(IJ,K,M) + TEMP
+               TEMP           = -CICV(IJ)*ALP(IJ,M)*CGROUP(IJ,M)
+               SLICE(IJ,K,M)  = FL1(IJ,K,M)*TEMP
+               SL(IJ,K,M)     = SL(IJ,K,M)  + SLICE(IJ,K,M)
+               FLD(IJ,K,M)    = FLD(IJ,K,M) + TEMP
 
             END DO
          END DO

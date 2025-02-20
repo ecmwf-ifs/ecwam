@@ -67,7 +67,7 @@
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN,        &
-                            LWNEMOCOUWRS, LWNEMOCOUIBR
+                            LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWICE   , ONLY : LICERUN  ,              &
@@ -137,7 +137,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: FLD, SL, SPOS
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: SLICE, SLTEMP
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: SLICE
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ALPFAC
 
@@ -186,15 +186,6 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
-      DO M=1,NFRE
-        DO K=1,NANG
-          DO IJ=KIJS,KIJL
-            SLICE(IJ,K,M)  = 0.0_JWRB
-            SLTEMP(IJ,K,M) = 0.0_JWRB
-          ENDDO
-        ENDDO
-      ENDDO
-
       NCALL = 1
       ICALL = 1
       CALL SINFLX (ICALL, NCALL, KIJS, KIJL,        &
@@ -238,35 +229,11 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
             CALL ICEBREAK_MODIFY_ATTENUATION (KIJS,KIJL,IBRMEM,ALPFAC)           
           ENDIF
 
-
-!        Save source term contributions relevant for the calculation of ice fluxes
-          IF(LWNEMOCOUWRS) THEN 
-            DO M=1,NFRE
-              DO K=1,NANG
-                DO IJ=KIJS,KIJL
-                  SLTEMP(IJ,K,M) = SL(IJ,K,M)
-                ENDDO
-              ENDDO
-            ENDDO
-         ENDIF
-
 !        Attenuation of waves in ice
           IF(LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
-            CALL SDICE (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
+            CALL SDICE (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
          ENDIF
-         
 
-!        Save source term contributions relevant for the calculation of ice fluxes
-         IF (LWNEMOCOUWRS) THEN
-           DO M=1,NFRE
-             DO K=1,NANG
-               DO IJ=KIJS,KIJL
-                 SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
-               ENDDO
-             ENDDO
-           ENDDO
-         ENDIF
-        
         ENDIF
             
         IF (.NOT. LWVFLX_SNL) THEN

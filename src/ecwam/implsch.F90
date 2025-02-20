@@ -83,7 +83,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                             INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU,           &
-                            LWNEMOCOUSTRN, LWNEMOCOUWRS, LWNEMOCOUIBR
+                            LWNEMOCOUSTRN, LWNEMOCOUWRS
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LICERUN   ,LMASKICE ,              &
@@ -165,7 +165,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 !     *SPOS* : POSITIVE SINPUT ONLY
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: FLD, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SSOURCE 
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SLICE, SLTEMP
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SLICE
 
       REAL(KIND=JWRB),    DIMENSION(KIJL) :: ALPFAC
 
@@ -200,15 +200,6 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
         DO IJ=KIJS,KIJL
           COSWDIF(IJ,K) = COS(TH(K)-WDWAVE(IJ))
           SINWDIF2(IJ,K) = SIN(TH(K)-WDWAVE(IJ))**2
-        ENDDO
-      ENDDO
-
-      DO M=1,NFRE
-        DO K=1,NANG
-          DO IJ=KIJS,KIJL
-            SLICE(IJ,K,M)  = 0.0_JWRB
-            SLTEMP(IJ,K,M) = 0.0_JWRB
-          ENDDO
         ENDDO
       ENDDO
 
@@ -329,31 +320,9 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
           CALL ICEBREAK_MODIFY_ATTENUATION (KIJS,KIJL,IBRMEM,ALPFAC)           
          ENDIF
 
-!        Save source term contributions relevant for the calculation of ice fluxes
-         IF(LWNEMOCOUWRS) THEN 
-           DO M=1,NFRE
-             DO K=1,NANG
-               DO IJ=KIJS,KIJL
-                 SLTEMP(IJ,K,M) = SL(IJ,K,M)
-               ENDDO
-             ENDDO
-           ENDDO
-        ENDIF
-
 !        Attenuation of waves in ice
          IF(LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
-            CALL SDICE (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
-         ENDIF
-
-!        Save source term contributions relevant for the calculation of ice fluxes
-         IF (LWNEMOCOUWRS) THEN
-           DO M=1,NFRE
-             DO K=1,NANG
-               DO IJ=KIJS,KIJL
-                 SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
-               ENDDO
-             ENDDO
-           ENDDO
+            CALL SDICE (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
          ENDIF
 
       ENDIF
