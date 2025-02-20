@@ -59,7 +59,7 @@
 
       USE YOWFRED  , ONLY : FR      
       USE YOWICE   , ONLY : NICT   ,NICH     ,TICMIN   ,HICMIN   ,      &
-     &              DTIC   ,DHIC   ,CIDEAC  
+     &              DTIC   ,DHIC   ,CIDEAC   ,ZALPFACB
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPCONS , ONLY : G       ,ZPI
 
@@ -159,7 +159,7 @@
      &                WT1*(WH*CIDEAC(IT1,IH)+WH1*CIDEAC(IT1,IH1))
 !!!            ALP(IJ,M)=CICV(IJ)*CIDEAC_INT*DINV(IJ)
 !            ALP(IJ,M)=CICV(IJ)*EXP(CIDEAC_INT)*DINV(IJ)
-            ALP(IJ,M)=          EXP(CIDEAC_INT)*DINV(IJ) ! CICV accounted for in TEMP
+            ALP(IJ,M)=          EXP(CIDEAC_INT)*DINV(IJ) * ZALPFACB ! CICV accounted for in TEMP
             
           ELSE
             ALP(IJ,M)=0.0_JWRB

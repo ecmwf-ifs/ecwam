@@ -62,6 +62,7 @@
       USE YOWFRED  , ONLY : FR      
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPCONS , ONLY : G       ,ZPI
+      USE YOWICE   , ONLY : ZALPFACB
 
       USE YOWTEST  , ONLY : IU06
 
@@ -119,7 +120,7 @@
          
            DO M = 1,NFRE
               DO IJ = KIJS,KIJL
-                 ALP(IJ,M) = (2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))) * ALPFAC(IJ)
+                 ALP(IJ,M) = (2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))) * ALPFAC(IJ) * ZALPFACB
               END DO
            END DO
          

@@ -59,7 +59,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : DFIM
-      USE YOWICE   , ONLY : CDICWA
+      USE YOWICE   , ONLY : CDICWA  ,ZALPFACB
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPCONS , ONLY : EPSMIN  
 
@@ -100,7 +100,7 @@
             DO IJ = KIJS,KIJL
                EWH         = 4.0_JWRB*SQRT(MAX(EPSMIN,FL1(IJ,K,M)*DFIM(M)))
                XK2(M)      = WAVNUM(IJ,M)**2
-               ALP         = CDICWA*XK2(M)*EWH
+               ALP         = CDICWA*XK2(M)*EWH*ZALPFACB
                TEMP        = -CICV(IJ)*ALP*CGROUP(IJ,M)  
                SL(IJ,K,M)  = SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
                FLD(IJ,K,M) = FLD(IJ,K,M) + TEMP
