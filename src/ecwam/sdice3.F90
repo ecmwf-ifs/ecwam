@@ -64,6 +64,7 @@
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPCONS , ONLY : G       ,ZPI
       USE YOWICE   , ONLY : ZALPFACB
+      USE YOWSTAT  , ONLY : IDELT
 
       USE YOWTEST  , ONLY : IU06
 
@@ -87,7 +88,10 @@
       
       INTEGER(KIND=JWIM) :: IMODEL                              !! DAMPING MODEL: 1=FIT TO TEMPELFJORD DATA, 2=Jie Yu 2022
       INTEGER(KIND=JWIM) :: IJ, K, M
-      REAL(KIND=JWRB)    :: TEMP
+      REAL(KIND=JWRB)    :: FLDICE
+
+      REAL(KIND=JWRB) :: DELT, DELTM, XIMP, DELT5, GTEMP1
+      
       REAL(KIND=JWRB)    :: CDICE
       REAL(KIND=JWRB)    :: HICEMAX, HICEMIN
       
@@ -97,6 +101,11 @@
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('SDICE3',0,ZHOOK_HANDLE)
+
+      DELT = IDELT
+      DELTM = 1.0_JWRB/DELT
+      XIMP = 1.0_JWRB
+      DELT5 = XIMP*DELT
 
       IMODEL = 2
 !      IF (ITEST.GE.2) WRITE (IU06,*)'IMODEL =',IMODEL
@@ -131,10 +140,11 @@
       DO M = 1,NFRE
          DO K = 1,NANG
             DO IJ = KIJS,KIJL
-               TEMP           = -CICV(IJ)*ALP(IJ,M)*CGROUP(IJ,M)         
-               SLICE(IJ,K,M)  = FL1(IJ,K,M)*TEMP
+               FLDICE         = -CICV(IJ)*ALP(IJ,M)*CGROUP(IJ,M)   
+               GTEMP1         = MAX((1.0_JWRB-DELT5*FLDICE),1.0_JWRB)      
+               SLICE(IJ,K,M)  = (FL1(IJ,K,M) * FLDICE)/GTEMP1
                SL(IJ,K,M)     = SL(IJ,K,M)  + SLICE(IJ,K,M)
-               FLD(IJ,K,M)    = FLD(IJ,K,M) + TEMP
+               FLD(IJ,K,M)    = FLD(IJ,K,M) + FLDICE
             END DO
          END DO
       END DO
