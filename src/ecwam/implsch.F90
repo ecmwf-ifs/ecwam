@@ -83,7 +83,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                             INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU,           &
-                            LWNEMOCOUSTRN, LWNEMOCOUWRS
+                            LWNEMOCOUSTRN, LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LICERUN   ,LMASKICE ,              &
