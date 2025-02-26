@@ -395,6 +395,19 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
       ENDIF
 
+      IF (LCIWA3 .AND. (LCIWA1 .OR. LCIWA2) ) THEN
+        WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
+        WRITE(IU06,*)'+   SELECTING ATTENUATION BY SEA ICE METHOD               +'
+        WRITE(IU06,*)'+    - LCIWA3 designed as a standalone option, i.e.       +'
+        WRITE(IU06,*)'+      not to be used in conjunction with other options   +'
+        WRITE(IU06,*)'+   LCIWA1 = ', LCIWA1
+        WRITE(IU06,*)'+   LCIWA2 = ', LCIWA2
+        WRITE(IU06,*)'+   LCIWA3 = ', LCIWA3
+        WRITE(IU06,*)'+   ABORT SERVICE ROUTINE CALLED BY USERIN  +'
+        WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
+        CALL ABORT1
+      ENDIF
+
 !* CHECK FLAG FOR GRIBING AS SOME OPTIONS ARE NOT IMPLEMENTED
 !* IN OUTINT
       IF (IREST > 0 .AND. LGRIBOUT .AND. .NOT.GFLAG(IRWDIR)) THEN
