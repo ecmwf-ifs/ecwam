@@ -129,7 +129,7 @@
            DO M = 1,NFRE
               DO IJ = KIJS,KIJL
 !                  ALP(IJ,M) = (2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))) * ALPFAC(IJ) * ZALPFACB
-                 ALP(IJ,M) = (2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))) * ALPFAC(IJ)
+                 ALP(IJ,M) = (2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))) * ALPFAC(IJ) ! (old way to ensure bit-identicality)
               END DO
            END DO
          
@@ -139,21 +139,22 @@
          DO K = 1,NANG
             DO IJ = KIJS,KIJL
 
-!              old way to ensure bit-identicality
+!              calculate source term increments
+               FLDICE         = -ALP(IJ,M)   * CGROUP(IJ,M)   
+               SLICE(IJ,K,M)  =  FL1(IJ,K,M) * FLDICE
+
+!              apply the source term (old way to ensure bit-identicality)
                TEMP           = -CICV(IJ)*ALP(IJ,M)*CGROUP(IJ,M)         
                SL(IJ,K,M)     = SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
                FLD(IJ,K,M)    = FLD(IJ,K,M) + TEMP
-               SLICE(IJ,K,M)  =  1.0_JWRB
 
-! !              apply the source term
-!                FLDICE         = -ALP(IJ,M)   * CGROUP(IJ,M)   
-!                SLICE(IJ,K,M)  =  FL1(IJ,K,M) * FLDICE
+!              apply the source term (new way)
 !                SL(IJ,K,M)     =  SL(IJ,K,M)  + CICV(IJ)*SLICE(IJ,K,M)
 !                FLD(IJ,K,M)    =  FLD(IJ,K,M) + CICV(IJ)*FLDICE
 !                
-! !              to be used for wave radiative stress calculation
-!                GTEMP1         =  MAX((1.0_JWRB-DELT5*FLDICE),1.0_JWRB)    
-!                SLICE(IJ,K,M)  =  SLICE(IJ,K,M)/GTEMP1
+!              to be used for wave radiative stress calculation
+               GTEMP1         =  MAX((1.0_JWRB-DELT5*FLDICE),1.0_JWRB)    
+               SLICE(IJ,K,M)  =  SLICE(IJ,K,M)/GTEMP1
 
             END DO
          END DO
