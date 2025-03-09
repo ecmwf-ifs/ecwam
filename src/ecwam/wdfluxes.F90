@@ -186,6 +186,14 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=KIJS,KIJL
+            SLICE(IJ,K,M) = 0.0_JWRB
+          ENDDO
+        ENDDO
+      ENDDO
+
       NCALL = 1
       ICALL = 1
       CALL SINFLX (ICALL, NCALL, KIJS, KIJL,        &
