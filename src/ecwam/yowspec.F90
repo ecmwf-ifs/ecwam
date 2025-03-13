@@ -69,6 +69,10 @@
 !     *FL1*       FREQUENCY SPECTRUM.
 ! ----------------------------------------------------------------------
 
+#ifdef OMPGPU
+      !$omp declare target (NTOPELST,NTOPE,IJTOPE,NFROMPELST,NFROMPE,NIJSTART)
+#else
       !$acc declare create (NTOPELST,NTOPE,IJTOPE,NFROMPELST,NFROMPE,NIJSTART)
+#endif
 
       END MODULE YOWSPEC 

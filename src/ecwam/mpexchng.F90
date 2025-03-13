@@ -115,16 +115,29 @@
       NBUFMAX=MAX(NTOPEMAX,NFROMPEMAX)*NDIM2*NDIM3
       ALLOCATE(ZCOMBUFS(NBUFMAX,NGBTOPE))
       ALLOCATE(ZCOMBUFR(NBUFMAX,NGBFROMPE))
+#ifdef OMPGPU
+!$omp target enter data map(alloc:ZCOMBUFS,ZCOMBUFR)
+#else
 !$acc enter data create(ZCOMBUFS,ZCOMBUFR)
+#endif
 
 !     PACK SEND BUFFERS FOR NGBTOPE NEIGHBOURING PE's
 !     -------------------------------------------------
       CALL GSTATS(1892,0)
-#ifdef _OPENACC
+#ifdef WAM_GPU
+#ifdef OMPGPU
+!$omp target teams distribute &
+!$omp & map(to:ZCOMBUFS,FLD,NTOPELST,NTOPE,IJTOPE)
+#else
 !$acc parallel loop gang present(ZCOMBUFS,FLD,NTOPELST,NTOPE,IJTOPE)
+#endif
       DO INGB=1,NGBTOPE !Total number of PE's to which information will be sent
         IPROC=NTOPELST(INGB)  !To which PE to send informations
+#ifdef OMPGPU
+          !$omp parallel do collapse(3)
+#else
           !$acc loop vector collapse(3) private(IJ,KCOUNT,M,K,IH)
+#endif
           DO M = ND3S, ND3E
             DO K = 1, NDIM2
               DO IH = 1, NTOPE(IPROC) !How many halo points to be sent
@@ -135,7 +148,11 @@
           ENDDO
         ENDDO
       ENDDO
+#ifdef OMPGPU
+!$omp end target teams distribute
+#else
 !$acc end parallel loop
+#endif
 #else
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(INGB,IPROC,KCOUNT,M,K,IH,IJ)
        DO INGB=1,NGBTOPE
@@ -152,7 +169,7 @@
          ENDDO
        ENDDO
 !$OMP END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
       CALL GSTATS(1892,1)
 
@@ -167,11 +184,19 @@
         KCOUNT=NDIM3*NDIM2*NFROMPE(IPROC)
 #ifdef WITH_GPU_AWARE_MPI
         ICOMM%MPI_VAL=MPL_COMM_OML(OML_MY_THREAD())
+#ifdef OMPGPU
+!$omp target data has_device_addr(ZCOMBUFR)
+#else
 !$acc host_data use_device(ZCOMBUFR)
+#endif
         CALL MPI_IRECV(ZCOMBUFR(1:KCOUNT,INGB),KCOUNT,                 &
      &     ECWAM_MPI_DATATYPE,IPROC-1, KTAG,                           &
      &     ICOMM,IREQUEST_LOCAL, IERROR)
+#ifdef OMPGPU
+!$omp end target data
+#else
 !$acc end host_data
+#endif
         IREQ(IR) = IREQUEST_LOCAL%MPI_VAL
 #else
         CALL MPL_RECV(ZCOMBUFR(1:KCOUNT,INGB),KSOURCE=IPROC,KTAG=KTAG,  &
@@ -187,14 +212,26 @@
 
 #ifdef WITH_GPU_AWARE_MPI
         ICOMM%MPI_VAL=MPL_COMM_OML(OML_MY_THREAD())
+#ifdef OMPGPU
+!$omp target data has_device_addr(ZCOMBUFS)
+#else
 !$acc host_data use_device(ZCOMBUFS)
+#endif
         CALL MPI_ISEND(ZCOMBUFS(1:KCOUNT,INGB),KCOUNT,                 &
      &     ECWAM_MPI_DATATYPE,IPROC-1, KTAG,                           &
      &     ICOMM,IREQUEST_LOCAL, IERROR)
+#ifdef OMPGPU
+!$omp end target data
+#else
 !$acc end host_data
+#endif
         IREQ(IR) = IREQUEST_LOCAL%MPI_VAL
 #else              
+#ifdef OMPGPU
+!$omp target update from(ZCOMBUFS)
+#else
 !$acc update self(ZCOMBUFS)
+#endif
         CALL MPL_SEND(ZCOMBUFS(1:KCOUNT,INGB),KDEST=IPROC,KTAG=KTAG,    &
      &     KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),         &
      &     CDSTRING='MPEXCHNG:')
@@ -205,7 +242,11 @@
 
       CALL MPL_WAIT(KREQUEST=IREQ(1:IR),CDSTRING='MPEXCHNG:')
 #ifndef WITH_GPU_AWARE_MPI
+#ifdef OMPGPU
+!$omp target update to(ZCOMBUFR)
+#else
 !$acc update device(ZCOMBUFR)
+#endif
 #endif
 
       CALL GSTATS(676,1)
@@ -213,11 +254,20 @@
 !     DECODE THE RECEIVED BUFFERS
 
       CALL GSTATS(1893,0)
-#ifdef _OPENACC
+#ifdef WAM_GPU
+#ifdef OMPGPU
+      !$omp target teams distribute &
+      !$omp & map(to:ZCOMBUFR,FLD,NFROMPELST,NFROMPE,NIJSTART)
+#else
       !$acc parallel loop gang present(ZCOMBUFR,FLD,NFROMPELST,NFROMPE,NIJSTART)
+#endif
       DO INGB=1,NGBFROMPE
         IPROC=NFROMPELST(INGB)
+#ifdef OMPGPU
+        !$omp parallel do collapse(3)
+#else
         !$acc loop vector collapse(3) private(IJ,KCOUNT,M,K,IH)
+#endif
         DO M = ND3S, ND3E
           DO K = 1, NDIM2
             DO IH = 1, NFROMPE(IPROC)
@@ -228,7 +278,11 @@
           ENDDO
         ENDDO
       ENDDO
+#ifdef OMPGPU
+      !$omp end target teams distribute
+#else
       !$acc end parallel loop
+#endif
 #else
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(INGB,IPROC,KCOUNT,M,K,IH,IJ)
       DO INGB=1,NGBFROMPE
@@ -245,12 +299,16 @@
         ENDDO
       ENDDO
 !$OMP END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
       CALL GSTATS(1893,1)
 
       KTAG=KTAG+1
 
+#ifdef OMPGPU
+!$omp target exit data map(delete:ZCOMBUFS,ZCOMBUFR)
+#else
 !$acc exit data delete(ZCOMBUFS,ZCOMBUFR) finalize
+#endif
       DEALLOCATE(ZCOMBUFS)
       DEALLOCATE(ZCOMBUFR)
 

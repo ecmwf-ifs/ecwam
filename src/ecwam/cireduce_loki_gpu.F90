@@ -84,11 +84,19 @@ IF (LHOOK) CALL DR_HOOK('CIREDUCE',0,ZHOOK_HANDLE)
 !           NO REDUCTION, EITHER THERE IS NO SEA ICE INFORMATION OR
 !           ALL SEA ICE COVER POINTS WILL BE MASKED
             CALL GSTATS(1493,0)
+#ifdef OMPGPU
+!$omp target teams distribute parallel do map(to:WVPRPT)
+#else
 !$acc kernels present(WVPRPT)
+#endif
             DO ICHNK = 1, NCHNK
                WVPRPT%CIWA(:,:,ICHNK) = 1.0_JWRB
             ENDDO
+#ifdef OMPGPU
+!$omp end target teams distribute parallel do
+#else
 !$acc end kernels
+#endif
             CALL GSTATS(1493,1)
           ENDIF
 

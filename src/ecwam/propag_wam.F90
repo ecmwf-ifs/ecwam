@@ -100,15 +100,20 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WAVNUM, CGROUP, OMOSNH2KD, FL1, &
 IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 
-!$acc data present(FL1, WAVNUM, CGROUP, OMOSNH2KD, DEPTH, DELLAM1,COSPHM1,UCUR,VCUR,BLK2GLO) CREATE(FL1_EXT,FL3_EXT) &
-!$acc & create(BUFFER_EXT)
+#ifdef OMPGPU
+!$omp target data map(to:FL1,WAVNUM,CGROUP,OMOSNH2KD,DEPTH,DELLAM1,COSPHM1,UCUR,VCUR,BLK2GLO) &
+!$omp & map(alloc:FL1_EXT,FL3_EXT,BUFFER_EXT)
+#else
+!$acc data present(FL1, WAVNUM, CGROUP, OMOSNH2KD, DEPTH, DELLAM1,COSPHM1,UCUR,VCUR,BLK2GLO) &
+!$acc & create(FL1_EXT,FL3_EXT,BUFFER_EXT)
+#endif
       IF (NIBLO > 1) THEN
 
         IJSG = IJFROMCHNK(1,1)
         IJLG = IJSG + SUM(KIJL4CHNK) - 1
 
         MTHREADS=1
-#ifndef _OPENACC
+#ifndef WAM_GPU
         MTHREADS=OML_GET_MAX_THREADS()
 #endif
         NPROMA=(IJLG-IJSG+1)/MTHREADS + 1
@@ -116,11 +121,15 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 !!! the advection schemes are still written in block structure
 !!! mapping chuncks to block ONLY for actual grid points !!!!
-#ifdef _OPENACC
+#ifdef WAM_GPU
+#ifdef OMPGPU
+        !$omp target teams distribute
+#else
         !$acc parallel loop gang private(KIJS, IJSB, KIJL, IJLB) vector_length(NPROMA_WAM)
+#endif
 #else
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K, IJ)
-#endif /*_OPENACC*/
+#endif
         DO ICHNK = 1, NCHNK
           KIJS = 1
           IJSB = IJFROMCHNK(KIJS, ICHNK)
@@ -128,25 +137,44 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
           IJLB = IJFROMCHNK(KIJL, ICHNK)
           DO M = 1, NFRE_RED
             DO K = 1, NANG
+#ifdef OMPGPU
+              !$omp parallel do
+#else
               !$acc loop vector
+#endif
               DO IJ = KIJS,KIJL
                 FL1_EXT(IJ-KIJS+IJSB, K, M) = FL1(IJ, K, M, ICHNK)
               ENDDO
             ENDDO
           ENDDO
         ENDDO
-#ifdef _OPENACC
+#ifdef WAM_GPU
+#ifdef OMPGPU
+        !$omp end target teams distribute
+#else
         !$acc end parallel loop
+#endif
 #else
 !$OMP   END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
 !       SET THE DUMMY LAND POINT TO 0.
+#ifdef OMPGPU
+        !$omp target teams distribute parallel do collapse(2)
+#else
         !$acc kernels
-        FL1_EXT(NSUP+1,:,:) = 0.0_JWRB 
+#endif
+        DO M = 1, NFRE_RED
+          DO K = 1, NANG
+            FL1_EXT(NSUP+1,K,M) = 0.0_JWRB 
+          ENDDO
+        ENDDO
+#ifdef OMPGPU
+        !$omp end target teams distribute parallel do
+#else
         !$acc end kernels
-
-
+#endif
+        
         IF (LLUNSTR) THEN 
 
         WRITE(NULERR,*) '!!! ********************************* !!'
@@ -186,8 +214,12 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 !            DOT THETA TERM:
 
-#ifdef _OPENACC
+#ifdef WAM_GPU
+#ifdef OMPGPU
+             !$omp target data map(alloc:THDC,THDD,SDOT) map(to:BUFFER_EXT,BLK2GLO)
+#else
              !$acc data create(THDC,THDD,SDOT) present(BUFFER_EXT,BLK2GLO)
+#endif
 #else
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
 #endif
@@ -202,8 +234,12 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
      &                      BUFFER_EXT(:,3*NFRE_RED+4), BUFFER_EXT(:,3*NFRE_RED+5),    &
      &                      THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
              ENDDO
-#ifdef _OPENACC
+#ifdef WAM_GPU
+#ifdef OMPGPU
+             !$omp end target data
+#else
              !$acc end data
+#endif
 #else
 !$OMP        END PARALLEL DO
 #endif
@@ -241,17 +277,17 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
              ND3S=1
              ND3E=NFRE_RED
 
-#ifndef _OPENACC
+#ifndef WAM_GPU
 !$OMP        PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
-#endif /*_OPENACC*/
+#endif
              DO JKGLO = IJSG, IJLG, NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1, IJLG)
                CALL PROPAGS2(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)
              ENDDO
-#ifndef _OPENACC             
+#ifndef WAM_GPU
 !$OMP        END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
 !            SUB TIME STEPPING FOR FAST WAVES (only if IFRELFMAX > 0)
              IF (IFRELFMAX > 0 .AND. IFRELFMAX < NFRE_RED) THEN
@@ -265,46 +301,58 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
                DO WHILE (ISUBST <= NSTEP_LF)
 
-#ifdef _OPENACC
+#ifdef WAM_GPU
+#ifdef OMPGPU
+!$omp target teams distribute
+#else
 !$acc parallel loop gang private(KIJS, KIJL) vector_length(NPROMA)
+#endif
 #else
 !$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, M, K, IJ)
-#endif /*_OPENACC*/
+#endif
                  DO JKGLO = IJSG, IJLG, NPROMA
                    KIJS=JKGLO
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
                    DO M = ND3S, ND3E
                      DO K = 1, NANG
+#ifdef OMPGPU
+                       !$omp parallel do
+#else
                        !$acc loop vector
+#endif
                        DO IJ = KIJS, KIJL
                          FL1_EXT(IJ, K, M) = FL3_EXT(IJ, K, M)
                        ENDDO
                      ENDDO
                    ENDDO
                  ENDDO
-#ifdef _OPENACC
+#ifdef WAM_GPU
+#ifdef OMPGPU
+!$omp end target teams distribute
+#else
 !$acc end parallel loop
+#endif
 #else
 !$OMP            END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
 !                OBTAIN INFORMATION AT NEIGHBORING GRID POINTS (HALO)
                  IF (LHOOK) CALL DR_HOOK('MPI_TIME',0,ZHOOK_HANDLE_MPI)
                  CALL MPEXCHNG(FL1_EXT(:,:,ND3S:ND3E), NANG, ND3S, ND3E)
                  IF (LHOOK) CALL DR_HOOK('MPI_TIME',1,ZHOOK_HANDLE_MPI)
 
-#ifndef _OPENACC
+#ifndef WAM_GPU
 !$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
-#endif /*_OPENACC*/
+#endif
                  DO JKGLO = IJSG, IJLG, NPROMA
                    KIJS=JKGLO
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
                    CALL PROPAGS2(FL1_EXT(:,:,ND3SF1:ND3EF1), FL3_EXT(:,:,ND3S:ND3E), &
                   &              NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S, ND3E)
                  ENDDO
-#ifndef _OPENACC
+#ifndef WAM_GPU
 !$OMP            END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
                  ISUBST = ISUBST + 1
 
@@ -313,7 +361,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 ENDIF  ! end sub time steps (if needed)
 
            CASE(1)
-#ifdef _OPENACC
+#ifdef WAM_GPU
            CALL WAM_ABORT("PROPAG_WAM: BRANCH NOT YET PORTED FOR GPU EXECUTION")
 #endif
              IF (L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
@@ -365,17 +413,25 @@ ENDIF  ! end sub time steps (if needed)
 
 !!! the advection schemes are still written in block structure
 !!!  So need to convert back to the nproma_wam chuncks
-#ifdef _OPENACC
+#ifdef WAM_GPU
+#ifdef OMPGPU
+        !$omp target teams distribute
+#else
         !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
+#endif
 #else
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K, II, J)
-#endif /*_OPENACC*/
+#endif
           DO ICHNK = 1, NCHNK
             KIJS = 1
             IJSB = IJFROMCHNK(KIJS, ICHNK)
             KIJL = KIJL4CHNK(ICHNK)
             IJLB = IJFROMCHNK(KIJL, ICHNK)
+#ifdef OMPGPU
+            !$omp parallel do collapse(3)
+#else
             !$acc loop independent collapse(3)
+#endif
             DO M = 1, NFRE_RED
               DO K = 1, NANG
                  DO J = KIJS, KIJL
@@ -387,7 +443,11 @@ ENDIF  ! end sub time steps (if needed)
 
             IF (KIJL < NPROMA_WAM) THEN
               !!! make sure fictious points keep values of the first point in the chunk
+#ifdef OMPGPU
+              !$omp parallel do collapse(3)
+#else
               !$acc loop independent collapse(3)
+#endif
               DO M = 1, NFRE_RED
                 DO K = 1, NANG
                   DO J = KIJL+1,NPROMA_WAM
@@ -398,18 +458,26 @@ ENDIF  ! end sub time steps (if needed)
             ENDIF
 
           ENDDO
-#ifdef _OPENACC
+#ifdef WAM_GPU
+#ifdef OMPGPU
+        !$omp end target teams distribute
+#else
         !$acc end kernels
+#endif
 #else
 !$OMP     END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
            CALL GSTATS(1430,1)
 
         ENDIF  ! end propagation
 
       ENDIF ! more than one grid point
+#ifdef OMPGPU
+!$omp end target data
+#else
 !$acc end data
+#endif
 
       L1STCALL=.FALSE.
       LLCHKCFL=.FALSE.

@@ -118,8 +118,12 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
         CDATEWL = CDTNEXT
 
         CALL GSTATS(1492,0)
-#ifdef _OPENACC
+#ifdef WAM_GPU
+#ifdef OMPGPU
+!$omp target teams distribute thread_limit( NPROMA_WAM ) private(KIJS,KIJL)
+#else
 !$acc parallel loop gang present(FF_NEXT,FF_NOW) private(KIJS,KIJL) vector_length(NPROMA_WAM)
+#endif
 #else
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, KIJL, IJ, TLWMAX)
 #endif
@@ -127,7 +131,11 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
           KIJS = 1
           KIJL = NPROMA_WAM
           IF (ICODE_WND == 3 ) THEN
+#ifdef OMPGPU
+            !$omp parallel do
+#else
             !$acc loop vector
+#endif
             DO IJ = KIJS, KIJL
               FF_NOW%WSWAVE(IJ,ICHNK) = FF_NEXT%WSWAVE(IJ,ICHNK)
 ! adapt first estimate of wave induced stress for low winds
@@ -139,7 +147,11 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
               ENDIF
             ENDDO
           ELSE
+#ifdef OMPGPU
+            !$omp parallel do
+#else
             !$acc loop vector
+#endif
             DO IJ = KIJS, KIJL
               FF_NOW%UFRIC(IJ,ICHNK) = FF_NEXT%UFRIC(IJ,ICHNK)
 ! update the estimate of TAUW
@@ -149,7 +161,11 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
             ENDDO
           ENDIF
 
+#ifdef OMPGPU
+          !$omp parallel do
+#else
           !$acc loop vector
+#endif
           DO IJ = KIJS, KIJL
             FF_NOW%WDWAVE(IJ,ICHNK)  = FF_NEXT%WDWAVE(IJ,ICHNK)
             FF_NOW%AIRD(IJ,ICHNK)    = FF_NEXT%AIRD(IJ,ICHNK)
@@ -161,8 +177,12 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
           ENDDO
 
         ENDDO
-#ifdef _OPENACC
+#ifdef WAM_GPU
+#ifdef OMPGPU
+!$omp end target teams distribute
+#else
 !$acc end parallel loop
+#endif
 #else
 !$OMP   END PARALLEL DO
 #endif

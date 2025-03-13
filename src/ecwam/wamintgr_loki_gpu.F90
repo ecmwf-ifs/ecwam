@@ -105,7 +105,11 @@ CALL WVENVI%GET_DEVICE_DATA_RDONLY(DEPTH=.TRUE., DELLAM1=.TRUE., COSPHM1=.TRUE.,
 CALL BLK2GLO%GET_DEVICE_DATA_RDONLY()
 IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',1,ZHOOK_HANDLE_DATA_OFFLOAD)
 
+#ifdef OMPGPU
+!$omp target data map(to:VARS_4D, WVPRPT, WVENVI, BLK2GLO)
+#else
 !$acc data present(VARS_4D, WVPRPT, WVENVI, BLK2GLO)
+#endif
 
 IF (CDATE == CDTPRA) THEN
   TIME0=-WAM_USER_CLOCK()
@@ -114,7 +118,11 @@ IF (CDATE == CDTPRA) THEN
   TIME_PROPAG = TIME_PROPAG + (TIME0+WAM_USER_CLOCK())*1.E-06
   CDATE = CDTPRO
 ENDIF
+#ifdef OMPGPU
+!$omp end target data
+#else
 !$acc end data
+#endif
 
 !* RETRIEVING NEW FORCING FIELDS IF NEEDED.
 !  ----------------------------------------
@@ -204,15 +212,29 @@ IF (CDATE >= CDTIMPNEXT) THEN
 
   ELSE
 !   NO SOURCE TERM CONTRIBUTION
-
-!$acc kernels present(VARS_4D,MIJ)
+#ifdef WAM_GPU
+#ifdef OMPGPU
+!$omp target teams distribute parallel do map(to:MIJ,VARS_4D)
+#else
+!$acc kernels present(MIJ,VARS_4D)
+#endif
+#else
+!$OMP      PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK)  
+#endif
     DO ICHNK = 1, NCHNK
       MIJ%PTR(:,ICHNK) = NFRE
       VARS_4D%FL1(:,:,:,ICHNK) = MAX(VARS_4D%FL1(:,:,:,ICHNK), EPSMIN)
       VARS_4D%XLLWS(:,:,:,ICHNK) = 0.0_JWRB
     ENDDO
+#ifdef WAM_GPU
+#ifdef OMPGPU
+!$omp end target teams distribute parallel do
+#else
 !$acc end kernels
-
+#endif
+#else
+!$OMP      END PARALLEL DO
+#endif
   ENDIF
   CALL GSTATS(1431,1)
 

@@ -87,8 +87,15 @@
 
 
 ! ----------------------------------------------------------------------
+#ifdef OMPGPU
+      !$omp declare target( COSPH )
+      !$omp declare target( SINPH )
+      !$omp declare target( IJFROMCHNK )
+      !$omp declare target( KIJL4CHNK )
+#else
       !$acc declare create( COSPH )
       !$acc declare create( SINPH )
       !$acc declare create( IJFROMCHNK )
       !$acc declare create( KIJL4CHNK )
+#endif
       END MODULE YOWGRID

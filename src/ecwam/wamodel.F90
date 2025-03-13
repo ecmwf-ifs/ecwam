@@ -332,7 +332,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !NEST (not used at ECMWF)
 !*      1.4.1 INPUT OF BOUNDARY VALUES.
 !           -------------------------
-#ifdef _OPENACC
+#ifdef WAM_GPU
         IF(IBOUNF == 1)THEN
             CALL WAM_ABORT("WAMODEL: IBOUNF==1 NOT SUPPORTED FOR GPU OFFLOAD")
         ENDIF

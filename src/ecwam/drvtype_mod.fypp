@@ -91,7 +91,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
       #:endfor
 
       SELF%LALLOC = .TRUE.
+#ifdef OMPGPU
+      !$omp target enter data map(to:SELF)
+#else
       !$acc enter data copyin(SELF)
+#endif
 
    END SUBROUTINE ${obj.upper()}$_ALLOC
 
@@ -101,14 +105,22 @@ MODULE ${obj.upper()}$_TYPE_MOD
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
       NULLIFY(SELF%${var.upper()}$)
+#ifdef OMPGPU
+      !$omp target exit data map(release:SELF%${var.upper()}$)
+#else
       !$acc exit data detach(SELF%${var.upper()}$)
+#endif
       CALL FIELD_DELETE(SELF%F_${var.upper()}$)
       NULLIFY(SELF%F_${var.upper()}$)
           #:endfor
       #:endfor
 
       SELF%LALLOC = .FALSE.
+#ifdef OMPGPU
+      !$omp target exit data map(delete:SELF)
+#else
       !$acc exit data delete(SELF)
+#endif
 
    END SUBROUTINE ${obj.upper()}$_DEALLOC
 
@@ -137,7 +149,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
              #:for var in vars
          IF(${f'L_{var.upper()}'}$)THEN
              CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDWR(SELF%${var.upper()}$)
+#ifdef OMPGPU
+             !$omp target enter data map(to:SELF%${var.upper()}$)
+#else
              !$acc enter data attach(SELF%${var.upper()}$)
+#endif
          ENDIF
              #:endfor
          #:endfor
@@ -146,7 +162,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
          #:for _, vars in zip(_def['types'], _def['vars'])
              #:for var in vars
          CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDWR(SELF%${var.upper()}$)
+#ifdef OMPGPU
+         !$omp target enter data map(to:SELF%${var.upper()}$)
+#else
          !$acc enter data attach(SELF%${var.upper()}$)
+#endif
              #:endfor
          #:endfor
       ENDIF
@@ -177,7 +197,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
              #:for var in vars
          IF(${f'L_{var.upper()}'}$)THEN
              CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_WRONLY(SELF%${var.upper()}$)
+#ifdef OMPGPU
+             !$omp target enter data map(to:SELF%${var.upper()}$)
+#else
              !$acc enter data attach(SELF%${var.upper()}$)
+#endif
          ENDIF
              #:endfor
          #:endfor
@@ -186,7 +210,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
          #:for _, vars in zip(_def['types'], _def['vars'])
              #:for var in vars
          CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_WRONLY(SELF%${var.upper()}$)
+#ifdef OMPGPU
+         !$omp target enter data map(to:SELF%${var.upper()}$)
+#else
          !$acc enter data attach(SELF%${var.upper()}$)
+#endif
              #:endfor
          #:endfor
       ENDIF
@@ -217,7 +245,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
              #:for var in vars
          IF(${f'L_{var.upper()}'}$)THEN
              CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDONLY(SELF%${var.upper()}$)
+#ifdef OMPGPU
+             !$omp target enter data map(to:SELF%${var.upper()}$)
+#else
              !$acc enter data attach(SELF%${var.upper()}$)
+#endif
          ENDIF
              #:endfor
          #:endfor
@@ -226,7 +258,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
          #:for _, vars in zip(_def['types'], _def['vars'])
              #:for var in vars
          CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDONLY(SELF%${var.upper()}$)
+#ifdef OMPGPU
+         !$omp target enter data map(to:SELF%${var.upper()}$)
+#else
          !$acc enter data attach(SELF%${var.upper()}$)
+#endif
              #:endfor
          #:endfor
       ENDIF
@@ -334,7 +370,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
          #:for _, vars in zip(_def['types'], _def['vars'])
              #:for var in vars
          IF(${f'L_{var.upper()}'}$)THEN
+#ifdef OMPGPU
+             !$omp target exit data map(release:SELF%${var.upper()}$)
+#else
              !$acc exit data detach(SELF%${var.upper()}$)
+#endif
              CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDONLY(SELF%${var.upper()}$)
          ENDIF
              #:endfor
@@ -343,7 +383,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
          !... copy entire struct
          #:for _, vars in zip(_def['types'], _def['vars'])
              #:for var in vars
+#ifdef OMPGPU
+         !$omp target exit data map(release:SELF%${var.upper()}$)
+#else
          !$acc exit data detach(SELF%${var.upper()}$)
+#endif
          CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDONLY(SELF%${var.upper()}$)
              #:endfor
          #:endfor
@@ -373,7 +417,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
          #:for _, vars in zip(_def['types'], _def['vars'])
              #:for var in vars
          IF(${f'L_{var.upper()}'}$)THEN
+#ifdef OMPGPU
+             !$omp target exit data map(release:SELF%${var.upper()}$)
+#else
              !$acc exit data detach(SELF%${var.upper()}$)
+#endif
              CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDWR(SELF%${var.upper()}$)
          ENDIF
              #:endfor
@@ -382,7 +430,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
          !... copy entire struct
          #:for _, vars in zip(_def['types'], _def['vars'])
              #:for var in vars
+#ifdef OMPGPU
+         !$omp target exit data map(release:SELF%${var.upper()}$)
+#else
          !$acc exit data detach(SELF%${var.upper()}$)
+#endif
          CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDWR(SELF%${var.upper()}$)
              #:endfor
          #:endfor

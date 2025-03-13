@@ -87,27 +87,46 @@ DATA LFRSTCTU /.TRUE./
 
 IF (LHOOK) CALL DR_HOOK('CTUWUPDT',0,ZHOOK_HANDLE)
 
+#ifdef OMPGPU
+!$omp target data map(alloc:WLATM1,WCORM1,DP)
+#else
 !$acc data create(WLATM1,WCORM1,DP)
+#endif
 
 ! DEFINE JXO, JYO, KCR
 IF (LFRSTCTU) THEN
 
   IF (.NOT. ALLOCATED(MPM)) ALLOCATE(MPM(NFRE_RED,-1:1))
+#ifdef OMPGPU
+  !$omp target teams distribute parallel do
+#else
   !$acc kernels
+#endif
   DO M=1,NFRE_RED
     MPM(M,-1)= MAX(1,M-1)
     MPM(M,0) = M
     MPM(M,1) = MIN(NFRE_RED,M+1)
   ENDDO
+#ifdef OMPGPU
+  !$omp end target teams distribute parallel do
+#else
   !$acc end kernels
+#endif
 
   IF (.NOT. ALLOCATED(KPM)) ALLOCATE(KPM(NANG,-1:1))
   IF (.NOT. ALLOCATED(JXO)) ALLOCATE(JXO(NANG,2))
   IF (.NOT. ALLOCATED(JYO)) ALLOCATE(JYO(NANG,2))
   IF (.NOT. ALLOCATED(KCR)) ALLOCATE(KCR(NANG,4))
 
-!$acc update device(JXO, JYO, KCR, KPM)
- !$acc kernels
+#ifdef OMPGPU
+!$omp target enter data map(to:JXO, JYO, KCR, KPM)
+#endif
+
+#ifdef OMPGPU
+ !$omp target teams distribute parallel do map(to:COSTH,SINTH)
+#else
+ !$acc kernels copyin(COSTH,SINTH)
+#endif
   DO K=1,NANG
 
     KM1 = K-1
@@ -159,8 +178,11 @@ IF (LFRSTCTU) THEN
       ENDIF
     ENDIF
   ENDDO
+#ifdef OMPGPU
+  !$omp end target teams distribute parallel do
+#else
   !$acc end kernels
-
+#endif
   LFRSTCTU = .FALSE.
 
 ENDIF
@@ -173,6 +195,10 @@ IF (.NOT. ALLOCATED(WLATN)) ALLOCATE(WLATN(IJS:IJL,NANG,NFRE_RED,2,2))
 IF (.NOT. ALLOCATED(WLONN)) ALLOCATE(WLONN(IJS:IJL,NANG,NFRE_RED,2))
 IF (.NOT. ALLOCATED(WCORN)) ALLOCATE(WCORN(IJS:IJL,NANG,NFRE_RED,4,2))
 IF (.NOT. ALLOCATED(WKPMN)) ALLOCATE(WKPMN(IJS:IJL,NANG,NFRE_RED,-1:1))
+
+#ifdef OMPGPU
+!$omp target enter data map(to:SUMWN,WLATN,WLONN,WCORN,WKPMN)
+#endif
 
 IF (IREFRA == 2 .OR. IREFRA == 3) THEN
   IF (.NOT. ALLOCATED(WMPMN)) ALLOCATE(WMPMN(IJS:IJL,NANG,NFRE_RED,-1:1))
@@ -191,27 +217,35 @@ ENDIF
 ! SOME INITIALISATION FOR *CTUW*
 !! NPROMA=NPROMA_WAM
    MTHREADS=1
-#ifndef _OPENACC
+#ifndef WAM_GPU
    MTHREADS=OML_GET_MAX_THREADS()
-#endif /*_OPENACC*/
+#endif
    NPROMA=(IJL-IJS+1)/MTHREADS + 1
 
-#ifdef _OPENACC
+#ifdef WAM_GPU
+#ifdef OMPGPU
+!$omp target data map(to:KLAT,WLAT,KCOR,WCOR,WLATN,WLONN,WCORN)
+#else
 !$acc data present(KLAT,WLAT,KCOR,WCOR,WLATN,WLONN,WCORN)
+#endif
 #else
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
-#endif /*_OPENACC*/
+#endif
 DO JKGLO = IJS, IJL, NPROMA
   KIJS=JKGLO
   KIJL=MIN(KIJS+NPROMA-1,IJL)
   CALL CTUWINI (KIJS, KIJL, NINF, NSUP, BLK2GLO, COSPHM1_EXT,   &
  &                  WLATM1, WCORM1, DP)
 ENDDO
-#ifdef _OPENACC
+#ifdef WAM_GPU
+#ifdef OMPGPU
+!$omp end target data
+#else
 !$acc end data
+#endif
 #else
 !$OMP  END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
 
 ! COMPUTES THE WEIGHTS
@@ -259,7 +293,7 @@ ENDIF
 ! FIND THE LOGICAL FLAGS THAT WILL LIMIT THE EXTEND OF THE CALCULATION IN PROPAGS2
 ! IN CASE REFRACTION IS USED
 
-#ifndef _OPENACC
+#ifndef WAM_GPU
 IF (IREFRA == 2 .OR. IREFRA == 3) THEN
 
   DO ICL=1,2
@@ -343,7 +377,11 @@ IF (ALLOCATED(THDD)) DEALLOCATE(THDD)
 IF (ALLOCATED(THDC)) DEALLOCATE(THDC)
 IF (ALLOCATED(SDOT)) DEALLOCATE(SDOT)
 
+#ifdef OMPGPU
+!$omp end target data
+#else
 !$acc end data
+#endif
 
 IF (LHOOK) CALL DR_HOOK('CTUWUPDT',1,ZHOOK_HANDLE)
 

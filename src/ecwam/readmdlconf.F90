@@ -166,7 +166,11 @@ IF (LHOOK) CALL DR_HOOK('READMDLCONF',0,ZHOOK_HANDLE)
       IJS = 1
       IJL = NIBLO
 
+#ifdef OMPGPU
+!$omp target enter data map(to:SINPH,COSPH)
+#else
 !$acc update device(SINPH,COSPH)
+#endif
 IF (LHOOK) CALL DR_HOOK('READMDLCONF',1,ZHOOK_HANDLE)
 
 END SUBROUTINE READMDLCONF

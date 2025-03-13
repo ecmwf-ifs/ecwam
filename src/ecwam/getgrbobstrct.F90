@@ -335,7 +335,11 @@ ELSE
 
 ENDIF
 
+#ifdef OMPGPU
+!$omp target enter data map(to: OBSLAT, OBSCOR, OBSLON)
+#else
 !$acc update device(OBSLAT, OBSCOR, OBSLON)
+#endif
 
 IF (LHOOK) CALL DR_HOOK('GETGRBOBSTRCT',1,ZHOOK_HANDLE)
 
