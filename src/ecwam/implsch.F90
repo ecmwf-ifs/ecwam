@@ -83,7 +83,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                             INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU,           &
-                            LWNEMOCOUSTRN, LWNEMOCOUIBR
+                            LWNEMOCOUSTRN, LWNEMOCOUIBR, LWNEMOCOUWRS
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LICERUN   ,LMASKICE ,              &
@@ -202,6 +202,18 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
           SINWDIF2(IJ,K) = SIN(TH(K)-WDWAVE(IJ))**2
         ENDDO
       ENDDO
+
+      IF (LWNEMOCOUWRS .AND. (.NOT. (LCIWA1 .OR. LCIWA2 .OR. LCIWA3)))  THEN
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=KIJS,KIJL
+              SLICE(IJ,K,M) = 0.0_JWRB
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+
 
 ! ----------------------------------------------------------------------
 

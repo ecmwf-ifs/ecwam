@@ -67,7 +67,7 @@
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN,        &
-                            LWNEMOCOUIBR
+                            LWNEMOCOUIBR, LWNEMOCOUWRS
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWICE   , ONLY : LICERUN  ,              &
@@ -186,6 +186,16 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
+      IF (LWNEMOCOUWRS .AND. (.NOT. (LCIWA1 .OR. LCIWA2 .OR. LCIWA3)))  THEN
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=KIJS,KIJL
+              SLICE(IJ,K,M) = 0.0_JWRB
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+      
       NCALL = 1
       ICALL = 1
       CALL SINFLX (ICALL, NCALL, KIJS, KIJL,        &
