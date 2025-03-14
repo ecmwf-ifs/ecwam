@@ -203,14 +203,6 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
-      DO M=1,NFRE
-        DO K=1,NANG
-          DO IJ=KIJS,KIJL
-            SLICE(IJ,K,M) = 0.0_JWRB
-          ENDDO
-        ENDDO
-      ENDDO
-
 ! ----------------------------------------------------------------------
 
 !*    2. COMPUTATION OF IMPLICIT INTEGRATION.
