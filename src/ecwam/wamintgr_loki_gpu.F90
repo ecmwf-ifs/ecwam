@@ -153,7 +153,7 @@ IF (CDATE >= CDTIMPNEXT) THEN
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE_IMPLSCH)
       TIME0=-WAM_USER_CLOCK()
 
-!$acc data present(VARS_4D,WVPRPT,WVENVI,FF_NOW,WAM2NEMO,INTFLDS,MIJ) 
+!$loki structured-data present(VARS_4D,WVPRPT,WVENVI,FF_NOW,WAM2NEMO,INTFLDS,MIJ)
 
       DO ICHNK=1,NCHNK
          CALL IMPLSCH (1, NPROMA_WAM, VARS_4D%FL1(:,:,:,ICHNK),   &
@@ -179,7 +179,7 @@ IF (CDATE >= CDTIMPNEXT) THEN
  &                     MIJ%PTR(:,ICHNK), VARS_4D%XLLWS(:,:,:,ICHNK) )
       END DO
 
-!$acc end data
+!$loki end structured-data
 
       TIME_PHYS = TIME_PHYS + (TIME0+WAM_USER_CLOCK())*1.E-06
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE_IMPLSCH)
@@ -196,7 +196,7 @@ IF (CDATE >= CDTIMPNEXT) THEN
   ELSE
 !   NO SOURCE TERM CONTRIBUTION
 #ifdef _OPENACC
-!$acc kernels present(MIJ,VARS_4D)
+!$loki loop gang vector present(MIJ,VARS_4D)
 #else
 !$OMP      PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK)  
 #endif
@@ -206,7 +206,7 @@ IF (CDATE >= CDTIMPNEXT) THEN
       VARS_4D%XLLWS(:,:,:,ICHNK) = 0.0_JWRB
     ENDDO
 #ifdef _OPENACC
-!$acc end kernels
+!$loki end loop gang vector
 #else
 !$OMP      END PARALLEL DO
 #endif
