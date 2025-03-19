@@ -95,7 +95,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
 !$loki update_device
 
       CALL GSTATS(1502,0)
-!$acc data present(MIJ,WVPRPT,WVENVI,INTFLDS,FF_NOW,NEMO2WAM) copyout(BOUT)
+!$loki structured-data present(MIJ,WVPRPT,WVENVI,INTFLDS,FF_NOW,NEMO2WAM) out(BOUT)
 
       DO ICHNK = 1, NCHNK
         CALL OUTBLOCK(1, NPROMA_WAM, MIJ(:,ICHNK),                        &
@@ -119,7 +119,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
      &                BOUT(:,:,ICHNK))
       ENDDO
 
-!$acc end data
+!$loki end structured-data
       CALL GSTATS(1502,1)
 
 !     PRINT OUT NORMS
