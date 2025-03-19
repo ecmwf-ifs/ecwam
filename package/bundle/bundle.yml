@@ -76,6 +76,11 @@ options :
         cmake : >
             ENABLE_ACC=ON
 
+    - with-omp-offload :
+        help  : Enable GPU offload using OpenMP
+        cmake : >
+            ENABLE_OMP_OFFLOAD=ON
+
     - with-cuda :
         help  : Enable FIELD_API CUDA backend
         cmake : >

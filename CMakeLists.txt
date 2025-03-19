@@ -127,12 +127,19 @@ ecbuild_add_option( FEATURE ACC
                     REQUIRED_PACKAGES "OpenACC COMPONENTS Fortran"
                     CONDITION HAVE_LOKI )
 
+## check for OpenMP offload
+include(features/OMP)
+ecbuild_add_option( FEATURE OMP_OFFLOAD 
+                    DEFAULT OFF
+                    DESCRIPTION "Enable GPU offload via OpenMP"
+                    CONDITION HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" AND ${_HAVE_OMP_OFFLOAD})
+
 ### CUDA
 include(CheckLanguage)
 check_language(CUDA)
 ecbuild_add_option( FEATURE CUDA
     DESCRIPTION "CUDA" DEFAULT OFF
-    CONDITION CMAKE_CUDA_COMPILER AND HAVE_ACC )
+    CONDITION CMAKE_CUDA_COMPILER AND (HAVE_ACC OR HAVE_OMP_OFFLOAD) )
 if( HAVE_CUDA )
     enable_language( CUDA )
 endif()
@@ -141,7 +148,7 @@ endif()
 ecbuild_add_option( FEATURE GPU_AWARE_MPI
                     DEFAULT OFF
                     DESCRIPTION "Enable GPU-aware MPI"
-                    CONDITION HAVE_ACC AND MPI_Fortran_HAVE_F08_MODULE )
+                    CONDITION (HAVE_ACC OR HAVE_OMP_OFFLOAD) AND MPI_Fortran_HAVE_F08_MODULE )
 
 ### Sources
 

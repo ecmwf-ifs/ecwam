@@ -56,10 +56,15 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
   set(checkbounds_flags   "-Mbounds")
   set(fpmodel_flags       "-Kieee")
 
-elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
+elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Flang")
   set(autopromote_flags   "-fdefault-real-8")
   set(fpe_flags           "-ffp-exception-behavior=strict")
 
+elseif(CMAKE_Fortran_COMPILER_ID MATCHES "LLVMFlang")
+  set(autopromote_flags   "-fdefault-real-8")
+
+  string(REPLACE "-g -O2" "" ${PNAME}_Fortran_FLAGS_BIT ${${PNAME}_Fortran_FLAGS_BIT})
+  set(optimization_flags  "-g -O2")
 endif()
 
 ecbuild_add_fortran_flags( "-g -O0"   NAME base_debug BUILD DEBUG)
@@ -110,7 +115,7 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   endif()
 endif()
 
-if(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
+if(CMAKE_Fortran_COMPILER_ID STREQUAL "Flang")
   # Linker complains of unknown arguments:
   #    warning: argument unused during compilation: '-fdefault-real-8' [-Wunused-command-line-argument]
   foreach( LINKER_FLAGS CMAKE_EXE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS CMAKE_STATIC_LINKER_FLAGS )
