@@ -101,9 +101,6 @@ ecbuild_add_option( FEATURE LOKI
                     DESCRIPTION "Apply Loki transformations to ecWam physics"
                     REQUIRED_PACKAGES "loki" )
 
-# Set default Loki transformation mode
-set( LOKI_MODE "scc-stack" CACHE STRING "Transformation mode for Loki source transformations" )
-
 ### OpenACC
 if( ${CMAKE_VERSION} VERSION_LESS "3.25" AND HAVE_LOKI )
   if ( ${PNAME}_ENABLE_ACC OR (NOT DEFINED ${PNAME}_ENABLE_ACC AND ENABLE_ACC) )
@@ -133,6 +130,13 @@ ecbuild_add_option( FEATURE OMP_OFFLOAD
                     DEFAULT OFF
                     DESCRIPTION "Enable GPU offload via OpenMP"
                     CONDITION HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" AND ${_HAVE_OMP_OFFLOAD})
+
+# Set default Loki transformation mode
+if( HAVE_OMP_OFFLOAD )
+  set( LOKI_MODE "sccs-hoist" CACHE STRING "Transformation mode for Loki source transformations" )
+else()
+  set( LOKI_MODE "scc-stack" CACHE STRING "Transformation mode for Loki source transformations" )
+endif()
 
 ### CUDA
 include(CheckLanguage)

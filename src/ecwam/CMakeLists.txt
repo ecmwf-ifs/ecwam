@@ -512,6 +512,10 @@ if( HAVE_LOKI )
 
   set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
 
+  if( HAVE_OMP_OFFLOAD )
+     string( APPEND LOKI_MODE "-omp" )
+  endif()
+
   foreach(prec sp dp )
      if( HAVE_${prec} )
 
