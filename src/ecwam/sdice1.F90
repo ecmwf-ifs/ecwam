@@ -83,7 +83,7 @@
       INTEGER(KIND=JWIM) :: IJ, K, M
       
       REAL(KIND=JWRB)    :: FLDICE
-      REAL(KIND=JWRB)    :: DELTM, DELT5
+      REAL(KIND=JWRB)    :: DELTM, DELT5, DELT, GTEMP1
 
       INTEGER(KIND=JWIM) :: ICM, I, MAXICM
       INTEGER(KIND=JWIM) :: IT, IT1, IH, IH1
@@ -103,8 +103,9 @@
 
       IF (LHOOK) CALL DR_HOOK('SDICE1',0,ZHOOK_HANDLE)
 
-      DELTM = 1.0_JWRB/IDELT
-      DELT5 = XIMP*IDELT
+      DELT  = IDELT
+      DELTM = 1.0_JWRB/DELT
+      DELT5 = XIMP*DELT
       
 !     following  Dumont et al. (2011), eqn (13):
       ! sea ice fragility

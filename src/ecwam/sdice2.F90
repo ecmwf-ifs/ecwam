@@ -85,7 +85,7 @@
       REAL(KIND=JWRB)    :: EWH
       REAL(KIND=JWRB)    :: ALP              !! ALP=SPATIAL ATTENUATION RATE OF ENERGY
       REAL(KIND=JWRB)    :: FLDICE
-      REAL(KIND=JWRB)    :: DELTM, DELT5
+      REAL(KIND=JWRB)    :: DELTM, DELT5, DELT, GTEMP1
       
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -94,8 +94,9 @@
 
       IF (LHOOK) CALL DR_HOOK('SDICE2',0,ZHOOK_HANDLE)
 
-      DELTM = 1.0_JWRB/IDELT
-      DELT5 = XIMP*IDELT
+      DELT  = IDELT
+      DELTM = 1.0_JWRB/DELT
+      DELT5 = XIMP*DELT
 
       DO M = 1,NFRE
          DO K = 1,NANG
