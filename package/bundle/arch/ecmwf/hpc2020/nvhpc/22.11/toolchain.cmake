@@ -18,7 +18,7 @@ set( OpenMP_Fortran_FLAGS "-mp=bind,allcores,numa" CACHE STRING "" FORCE)
 # OpenAcc FLAGS
 ####################################################################
 
-set( OpenACC_Fortran_FLAGS "-acc=gpu -gpu=gvmode,cc80,lineinfo,fastmath" CACHE STRING "" )
+set( OpenACC_Fortran_FLAGS "-acc=gpu -gpu=cc80,lineinfo,fastmath" CACHE STRING "" )
 
 ####################################################################
 # CUDA FLAGS
