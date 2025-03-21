@@ -106,7 +106,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NTRAIN), INTENT(OUT) :: EMTRAIN, THTRAIN, PMTRAIN
 
 
-      INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IJ, K, M, NT
 
       REAL(KIND=JWRB) :: COEF
       REAL(KIND=JWRB) :: CHECKTA
@@ -245,9 +245,13 @@
      &               F1, SWM,                                       &
      &               EMTRAIN  ,THTRAIN  ,PMTRAIN)
       ELSE
-        EMTRAIN(:,:) = 0.0_JWRB
-        THTRAIN(:,:) = 0.0_JWRB
-        PMTRAIN(:,:) = 0.0_JWRB
+        DO NT=1,NTRAIN
+          DO IJ=KIJS,KIJL
+            EMTRAIN(IJ,NT) = 0.0_JWRB
+            THTRAIN(IJ,NT) = 0.0_JWRB
+            PMTRAIN(IJ,NT) = 0.0_JWRB
+          ENDDO
+        ENDDO
       ENDIF
 
 !*    2.2 COMPUTATION OF TOTAL SWELL OUTPUT PARAMETERS

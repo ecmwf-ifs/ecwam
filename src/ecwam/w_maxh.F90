@@ -104,7 +104,6 @@ IF (LHOOK) CALL DR_HOOK('W_MAXH',0,ZHOOK_HANDLE)
 !        -----------------------------------------------------
 
 ZEPSILON = 10._JWRB*EPSILON(ZEPSILON)
-OMEGA(:) = ZPI*FR(:)
 TMIN = 1._JWRB/FR(NFRE)
 TMAX = 1._JWRB/FR(1)
 WVLMIN = G / (ZPI*FR(NFRE)**2)
@@ -135,6 +134,7 @@ EMEAN(KIJS:KIJL) = 0._JWRB
 K_THMAX(KIJS:KIJL)=1
 FMAX(KIJS:KIJL)=0._JWRB
 DO M = 1,NFRE
+  OMEGA(M) = ZPI*FR(M)
   DO K = 1,NANG
     DO IJ = KIJS, KIJL 
       IF (F(IJ,K,M) > FMAX(IJ) ) THEN

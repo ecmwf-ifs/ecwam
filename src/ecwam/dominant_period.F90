@@ -72,10 +72,17 @@
 
       IF (LHOOK) CALL DR_HOOK('DOMINANT_PERIOD',0,ZHOOK_HANDLE)
 
-      F1D4(:,:) = 0.0_JWRB
-      EM(:) = 0.0_JWRB
-      DP(:) = 0.0_JWRB
-      FCROP(:) = 0.0_JWRB
+      DO M=1,NFRE
+        DO IJ=KIJS,KIJL
+          F1D4(IJ,M) = 0.0_JWRB
+        ENDDO
+      ENDDO
+
+      DO IJ=KIJS,KIJL
+        EM(IJ) = 0.0_JWRB
+        DP(IJ) = 0.0_JWRB
+        FCROP(IJ) = 0.0_JWRB
+      ENDDO
 
       DO M=1,NFRE
         DO K=1,NANG

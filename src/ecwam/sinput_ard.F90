@@ -336,11 +336,15 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 !        ---------------------------
 
       IF ( .NOT. LLNORMAGAM) THEN
-        GAMNORMA(KIJS:KIJL,:) = 1.0_JWRB
+        GAMNORMA(KIJS:KIJL,1) = 1.0_JWRB
+        GAMNORMA(KIJS:KIJL,2) = 1.0_JWRB
       ENDIF
 
       IF ( .NOT. LLSNEG) THEN
-        DSTAB(KIJS:KIJL,:,:) = 0.0_JWRB
+        DO K=1,NANG
+          DSTAB(KIJS:KIJL,K,1) = 0.0_JWRB
+          DSTAB(KIJS:KIJL,K,2) = 0.0_JWRB
+        ENDDO
       ENDIF
 
       DO M=1,NFRE

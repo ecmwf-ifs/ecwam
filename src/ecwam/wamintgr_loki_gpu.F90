@@ -214,7 +214,7 @@ IF (CDATE >= CDTIMPNEXT) THEN
 !   NO SOURCE TERM CONTRIBUTION
 #ifdef WAM_GPU
 #ifdef OMPGPU
-!$omp target teams distribute parallel do map(to:MIJ,VARS_4D)
+!$omp target teams distribute map(to:MIJ,VARS_4D)
 #else
 !$acc kernels present(MIJ,VARS_4D)
 #endif
@@ -222,13 +222,28 @@ IF (CDATE >= CDTIMPNEXT) THEN
 !$OMP      PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK)  
 #endif
     DO ICHNK = 1, NCHNK
-      MIJ%PTR(:,ICHNK) = NFRE
-      VARS_4D%FL1(:,:,:,ICHNK) = MAX(VARS_4D%FL1(:,:,:,ICHNK), EPSMIN)
-      VARS_4D%XLLWS(:,:,:,ICHNK) = 0.0_JWRB
+#ifdef OMPGPU
+      !$omp parallel do 
+#endif
+      DO IJ = 1, NPROMA_WAM
+        MIJ%PTR(IJ,ICHNK) = NFRE
+      ENDDO
+
+#ifdef OMPGPU
+      !$omp parallel do collapse(3)
+#endif
+      DO M = 1, NFRE
+        DO K = 1, NANG
+          DO IJ = 1, NPROMA_WAM
+            VARS_4D%FL1(IJ,K,M,ICHNK) = MAX(VARS_4D%FL1(IJ,K,M,ICHNK), EPSMIN)
+            VARS_4D%XLLWS(IJ,K,M,ICHNK) = 0.0_JWRB
+          ENDDO
+        ENDDO
+      ENDDO
     ENDDO
 #ifdef WAM_GPU
 #ifdef OMPGPU
-!$omp end target teams distribute parallel do
+!$omp end target teams distribute
 #else
 !$acc end kernels
 #endif
