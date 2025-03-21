@@ -63,7 +63,7 @@
      &              DTIC   ,DHIC   ,CIDEAC   ,ZALPFACB
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPCONS , ONLY : G       ,ZPI
-      USE YOWSTAT  , ONLY : IDELT
+      USE YOWSTAT  , ONLY : IDELT   ,XIMP
 
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
@@ -83,7 +83,7 @@
       INTEGER(KIND=JWIM) :: IJ, K, M
       
       REAL(KIND=JWRB)    :: FLDICE
-      REAL(KIND=JWRB)    :: DELT, DELTM, XIMP, DELT5, GTEMP1
+      REAL(KIND=JWRB)    :: DELTM, DELT5
 
       INTEGER(KIND=JWIM) :: ICM, I, MAXICM
       INTEGER(KIND=JWIM) :: IT, IT1, IH, IH1
@@ -103,10 +103,8 @@
 
       IF (LHOOK) CALL DR_HOOK('SDICE1',0,ZHOOK_HANDLE)
 
-      DELT = IDELT
-      DELTM = 1.0_JWRB/DELT
-      XIMP = 1.0_JWRB
-      DELT5 = XIMP*DELT
+      DELTM = 1.0_JWRB/IDELT
+      DELT5 = XIMP*IDELT
       
 !     following  Dumont et al. (2011), eqn (13):
       ! sea ice fragility

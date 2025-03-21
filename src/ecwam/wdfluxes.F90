@@ -75,7 +75,6 @@
  &                          ZALPFACX
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
-      USE YOWSTAT  , ONLY : IDELT    
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -122,7 +121,6 @@
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: ICALL, NCALL
 
-      REAL(KIND=JWRB) :: DELT, GTEMP1, XIMP, DELT5
       REAL(KIND=JWRB) :: TAU, XN, PHIDIAG, TAUO, BETA
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -150,10 +148,6 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 
 !*    1. INITIALISATION.
 !        ---------------
-
-      DELT = IDELT
-      XIMP = 1.0_JWRB
-      DELT5 = XIMP*DELT
 
       LCFLX=LWFLUX.OR.LWFLUXOUT
 ! ----------------------------------------------------------------------
