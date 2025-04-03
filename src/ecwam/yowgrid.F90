@@ -88,4 +88,5 @@
 
 ! ----------------------------------------------------------------------
       !$acc declare create( COSPH )
+      !$acc declare create( SINPH )
       END MODULE YOWGRID
