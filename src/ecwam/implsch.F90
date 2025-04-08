@@ -219,7 +219,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !     COMPUTE DAMPING COEFFICIENT DUE TO FRICTION ON BOTTOM OF THE SEA ICE.
 !!! testing sea ice attenuation (might need to restrict usage when needed)
       IF (LCIWABR) THEN
-        !$loki inline
+!$loki remove
         CALL CIWABR(KIJS, KIJL, CICOVER, FL1, WAVNUM, CGROUP, CIREDUC)
         DO M=1,NFRE
           DO K=1,NANG
@@ -228,6 +228,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
             ENDDO
           ENDDO
         ENDDO
+!$loki end remove
       ELSE
         DO M=1,NFRE
           DO K=1,NANG
