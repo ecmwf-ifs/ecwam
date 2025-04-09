@@ -148,6 +148,13 @@ if( HAVE_CUDA )
     enable_language( CUDA )
 endif()
 
+### check for HIP
+find_package(hipfort COMPONENTS hip)
+ecbuild_add_option( FEATURE HIPFORT
+                    DEFAULT OFF
+                    DESCRIPTION "Support for the HIP Fortran runtime API"
+                    CONDITION hipfort_FOUND AND HAVE_OMP_OFFLOAD )
+
 ### GPU-aware MPI
 ecbuild_add_option( FEATURE GPU_AWARE_MPI
                     DEFAULT OFF

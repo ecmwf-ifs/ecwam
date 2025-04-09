@@ -86,6 +86,11 @@ options :
         cmake : >
             ENABLE_CUDA=ON
 
+    - with-hipfort :
+        help  : Enable FIELD_API HIPFORT backend
+        cmake : >
+            ENABLE_HIPFORT=ON
+
     - without-loki-install :
         help  : Skip installation of Loki (Requires Loki to be on the PATH)
         cmake : >
