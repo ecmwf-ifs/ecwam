@@ -103,6 +103,7 @@ if( HAVE_OMP )
   set( OpenMP_Fortran_LIBRARIES OpenMP::OpenMP_Fortran )
 endif()
 
+
 ### Apply Loki source-to-source transformations to the ecWam physics
 ecbuild_add_option( FEATURE LOKI
                     DEFAULT OFF
