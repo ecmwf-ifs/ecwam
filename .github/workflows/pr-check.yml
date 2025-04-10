@@ -3,7 +3,7 @@ name: check-pr
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
-    branches: [ main, staging ]
+    branches: [ main, develop ]
 
 permissions:
   contents: read
