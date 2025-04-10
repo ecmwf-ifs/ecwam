@@ -104,6 +104,7 @@ if( HAVE_OMP )
 endif()
 
 
+
 ### Apply Loki source-to-source transformations to the ecWam physics
 ecbuild_add_option( FEATURE LOKI
                     DEFAULT OFF
