@@ -2,7 +2,7 @@ name: check-pr
 
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened]
+    types: [labeled]
     branches: [ main, develop ]
 
 permissions:
