@@ -1,6 +1,9 @@
 name: check-pr
 
 on:
+  # Trigger the workflow on all pull requests
+  pull_request: ~
+
   pull_request_target:
     types: [opened, synchronize, reopened]
     branches: [ main, develop ]
