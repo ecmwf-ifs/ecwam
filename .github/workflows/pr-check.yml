@@ -33,6 +33,7 @@ jobs:
 
       - name: Install prtk
         run: |
+          echo ${PRTK_READ_ACCESS_TOKEN}
           uv tool install git+https://${PRTK_READ_ACCESS_TOKEN}@github.com/ecmwf-ifs/prtk
 
       - name: Assign reviewers
