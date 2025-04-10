@@ -1,7 +1,7 @@
-name: Check Pull Request
+name: check-pr
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened]
     branches: [ main, staging ]
 
@@ -16,6 +16,8 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
@@ -31,6 +33,6 @@ jobs:
 
       - name: Assign reviewers
         env:
-          GITHUB_TOKEN: ${{ secrets.MODIFY_PR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           prtk assign-reviewers --pr-number ${{ github.event.pull_request.number }}
