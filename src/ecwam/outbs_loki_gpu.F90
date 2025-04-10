@@ -87,7 +87,6 @@ SUBROUTINE OUTBS_LOKI_GPU (MIJ, FL1, XLLWS,                            &
 
 ! ----------------------------------------------------------------------
 
-IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
 
 !*    1. COMPUTE MEAN PARAMETERS.
 !        ------------------------
@@ -99,6 +98,7 @@ IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',0,ZHOOK_HANDLE_DATA_OFFLOAD)
 IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',1,ZHOOK_HANDLE_DATA_OFFLOAD)
 ENDIF
 
+IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
       CALL GSTATS(1502,0)
 !$loki structured-data present(MIJ,WVPRPT,WVENVI,INTFLDS,FF_NOW,NEMO2WAM) out(BOUT)
 
