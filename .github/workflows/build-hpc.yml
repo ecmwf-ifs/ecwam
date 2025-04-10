@@ -75,6 +75,7 @@ jobs:
 
     runs-on: [self-hosted, linux, hpc]
     env:
+      HPC_CI_SSH_TOKEN: ${{ secrets.HPC_CI_SSH_USER }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: ecmwf-actions/reusable-workflows/ci-hpc-generic@v2
