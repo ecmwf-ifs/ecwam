@@ -264,7 +264,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                DO WHILE (ISUBST <= NSTEP_LF)
 
 #ifdef _OPENACC
-!$acc kernels loop private(KIJS, KIJL, FL1_EXT)
+!$acc kernels loop private(KIJS, KIJL)
 #else
 !$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, M, K, IJ)
 #endif /*_OPENACC*/
