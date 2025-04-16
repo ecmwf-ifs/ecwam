@@ -31,7 +31,7 @@ list( APPEND unwam_srcs
 )
 
 ecbuild_generate_fortran_interfaces(
-    TARGET ${ecwam}_intfb
+    TARGET ecwam_intfb
     DIRECTORIES ecwam
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..
     DESTINATION intfb
@@ -39,7 +39,7 @@ ecbuild_generate_fortran_interfaces(
     PARALLEL ${FCM_PARALLEL}
 )
 install( DIRECTORY ${ecwam_intfb_includes}/
-         DESTINATION include/${ecwam}
+         DESTINATION include/ecwam
          COMPONENT interfaces )
 
 list( APPEND ecwam_srcs
@@ -219,8 +219,8 @@ list( APPEND ecwam_srcs
   sdice.F90
   sdice1.F90
   sdice2.F90
-  sdice3.F90  
-  icebreak_modify_attenuation.F90  
+  sdice3.F90
+  icebreak_modify_attenuation.F90
   ibrmemout.F90
   se10mean.F90
   sebtmean.F90
@@ -434,40 +434,52 @@ if( HAVE_SINGLE_PRECISION )
   list(APPEND ECWAM_DEFINITIONS WAM_HAVE_SINGLE_PRECISION )
 endif()
 
-ecbuild_add_library(
-    TARGET           ${ecwam}
-    SOURCES          ${ecwam_srcs}
-    PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
-                     ${MPI_Fortran_LIBRARIES}
-                     ${${PNAME}_OCEANMODEL_LIBRARIES}
-                     field_api_${prec}
-    PRIVATE_LIBS     eccodes_f90
-                     ${MULTIO_LIBRARIES}
-                     ${OpenMP_Fortran_LIBRARIES}
-                     $<${HAVE_ECFLOW}:ecflow_lightf>
-                     $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
-    PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
-    PRIVATE_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
-    PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS} $<${HAVE_CUDA}:WAM_HAVE_CUDA>
-    PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
-)
+foreach( prec sp dp )
+  if( HAVE_${prec} )
 
-ecwam_target_fortran_module_directory(
-    TARGET ${ecwam}
-    MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/${ecwam}
-    INSTALL_DIRECTORY module/${ecwam}
-)
+    ecbuild_add_library(
+        TARGET           ecwam_${prec}
+        SOURCES          ${ecwam_srcs}
+        PUBLIC_LIBS      fiat parkind_${prec} ecwam_intfb
+                         ${MPI_Fortran_LIBRARIES}
+                         ${${PNAME}_OCEANMODEL_LIBRARIES}
+                         field_api_${prec}
+        PRIVATE_LIBS     eccodes_f90
+                         ${MULTIO_LIBRARIES}
+                         ${OpenMP_Fortran_LIBRARIES}
+                         $<${HAVE_ECFLOW}:ecflow_lightf>
+                         $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
+        PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
+        PRIVATE_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
+        PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS} $<${HAVE_CUDA}:WAM_HAVE_CUDA>
+        PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
+    )
 
-if( HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
-   target_link_options( ${ecwam} INTERFACE SHELL:${OpenACC_Fortran_FLAGS} )
-   target_compile_options( ${ecwam} PRIVATE "-gpu=maxregcount:168,fastmath" )
-endif()
+    ecwam_target_fortran_module_directory(
+        TARGET ecwam_${prec}
+        MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/ecwam_${prec}
+        INSTALL_DIRECTORY module/ecwam_${prec}
+    )
 
-if( HAVE_CUDA )
-  target_link_options( ${ecwam} PUBLIC "-cuda;-gpu=pinned" )
-endif()
+    if( HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
+       target_link_options( ecwam_${prec} INTERFACE SHELL:${OpenACC_Fortran_FLAGS} )
+       target_compile_options( ecwam_${prec} PRIVATE "-gpu=maxregcount:168,fastmath" )
+    endif()
 
-ecwam_target_compile_definitions_FILENAME( ${ecwam} )
+    # add autopromotion of reals if we are compiling in double precision
+    if( prec MATCHES "dp" )
+      target_compile_options( ecwam_${prec} PUBLIC ${autopromote_flags} )
+    endif()
+
+    if( HAVE_CUDA )
+      target_link_options( ecwam_${prec} PUBLIC "-cuda;-gpu=pinned" )
+    endif()
+
+    ecwam_target_compile_definitions_FILENAME( ecwam_${prec} )
+
+  endif()
+
+endforeach()
 
 ### The file mubuf.F90, which is only used for "preproc" is sensitive to optimisations
 #   possibly leading to different wam_grid_<1,2,3> files.
@@ -513,12 +525,12 @@ if( HAVE_LOKI )
      set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config )
   else()
      set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
-     target_compile_definitions( ${ecwam} PRIVATE WAM_GPU )
+     target_compile_definitions( ecwam_${prec} PRIVATE WAM_GPU )
   endif()
 
   if( NOT LOKI_MODE MATCHES "idem|idem-stack")
     # Preprocess propags2.F90 for GPU enabled runs using Loki
-    loki_transform_target( TARGET ${ecwam}
+    loki_transform_target( TARGET ecwam_${prec}
       MODE "idem"
       DIRECTIVE openacc
       FRONTEND ${LOKI_FRONTEND}
@@ -530,7 +542,7 @@ if( HAVE_LOKI )
   endif()
 
   # Apply Loki source file transformation to lib target
-  loki_transform_target( TARGET ${ecwam}
+  loki_transform_target( TARGET ecwam_${prec}
     MODE ${LOKI_MODE}
     FRONTEND ${LOKI_FRONTEND}
     CONFIG ${LOKI_CONFIG_FILE}
