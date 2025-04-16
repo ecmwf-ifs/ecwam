@@ -279,7 +279,10 @@ echo "**************************************************************************
 log cat wam_namelist
 echo
 
-precision=$(${ECWAM_PROJECT_NAME} --precision)
+precision="double"
+if [ "${MODEL: -3}" = "-sp" ]; then
+    precision="single"
+fi;
 if ${dryrun}; then
   echo "*******************************************************************************"
   echo "WAVE MODEL DRYRUN"

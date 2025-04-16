@@ -92,10 +92,21 @@ ecwam_find_python_mods()
 
 ### Set third party libraries
 
-if( HAVE_SINGLE_PRECISION )
-  set( prec sp )
-else()
-  set( prec dp )
+ecbuild_add_option( FEATURE DOUBLE_PRECISION
+                    DEFAULT ON
+                    DESCRIPTION "Support for Double Precision" )
+
+ecbuild_add_option( FEATURE SINGLE_PRECISION
+                    DEFAULT ON
+                    DESCRIPTION "Support for Single Precision" )
+set( HAVE_dp ${HAVE_DOUBLE_PRECISION} )
+set( HAVE_sp ${HAVE_SINGLE_PRECISION} )
+
+# if built as part of ifs-bundle, build only precision requested via directory name
+if ( ${PROJECT_NAME} STREQUAL "ecwam_dp" )
+  unset( HAVE_sp )
+elseif( ${PROJECT_NAME} STREQUAL "ecwam_sp" )
+  unset( HAVE_dp )
 endif()
 
 unset( OpenMP_Fortran_LIBRARIES )
