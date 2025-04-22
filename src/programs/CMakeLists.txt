@@ -31,7 +31,7 @@ foreach( prec sp dp )
 
       # add autopromotion of reals if we are compiling in double precision
       if( prec MATCHES "dp" )
-        target_compile_options( ecwam-${program}-${prec} PUBLIC -real-size 64 )
+        target_compile_options( ecwam-${program}-${prec} PUBLIC ${autopromote_flags} )
       endif()
 
     endforeach()
