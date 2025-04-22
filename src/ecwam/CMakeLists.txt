@@ -528,30 +528,35 @@ if( HAVE_LOKI )
      target_compile_definitions( ecwam_${prec} PRIVATE WAM_GPU )
   endif()
 
-  if( NOT LOKI_MODE MATCHES "idem|idem-stack")
-    # Preprocess propags2.F90 for GPU enabled runs using Loki
-    loki_transform_target( TARGET ecwam_${prec}
-      MODE "idem"
-      DIRECTIVE openacc
-      FRONTEND ${LOKI_FRONTEND}
-      CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_propags2_loki.config
-      PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_propags2_plan_ecwam.cmake
-      SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/
-    )
-  endif()
+  foreach(prec sp dp )
+     if( HAVE_${prec} )
 
-  # Apply Loki source file transformation to lib target
-  loki_transform_target( TARGET ecwam_${prec}
-    MODE ${LOKI_MODE}
-    FRONTEND ${LOKI_FRONTEND}
-    CONFIG ${LOKI_CONFIG_FILE}
-    PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_plan_ecwam.cmake
-    CPP
-    DEFINITIONS WAM_GPU
-    INCLUDES ${ecwam_intfb_includes}
-    SOURCES
-      ${CMAKE_CURRENT_SOURCE_DIR}/
-  )
+        if( NOT LOKI_MODE MATCHES "idem|idem-stack")
+          # Preprocess propags2.F90 for GPU enabled runs using Loki
+          loki_transform_target( TARGET ecwam_${prec}
+            MODE "idem"
+            DIRECTIVE openacc
+            FRONTEND ${LOKI_FRONTEND}
+            CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_propags2_loki.config
+            PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_propags2_plan_ecwam.cmake
+            SOURCES
+              ${CMAKE_CURRENT_SOURCE_DIR}/
+          )
+        endif()
+
+        # Apply Loki source file transformation to lib target
+        loki_transform_target( TARGET ecwam_${prec}
+          MODE ${LOKI_MODE}
+          FRONTEND ${LOKI_FRONTEND}
+          CONFIG ${LOKI_CONFIG_FILE}
+          PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_plan_ecwam.cmake
+          CPP
+          DEFINITIONS WAM_GPU
+          INCLUDES ${ecwam_intfb_includes}
+          SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/
+        )
+     endif()
+  endforeach()
 
 endif()
