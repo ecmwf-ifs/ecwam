@@ -50,6 +50,10 @@ ecbuild_add_option( FEATURE SINGLE_PRECISION
                     DEFAULT OFF
                     DESCRIPTION "Support for Single Precision" )
 
+ecbuild_add_option( FEATURE DOUBLE_PRECISION
+                    DEFAULT ON
+                    DESCRIPTION "Support for Double Precision" )
+
 ecbuild_add_option( FEATURE UNWAM
                     DEFAULT OFF
                     DESCRIPTION "Support for UNWAM" )
@@ -92,13 +96,6 @@ ecwam_find_python_mods()
 
 ### Set third party libraries
 
-ecbuild_add_option( FEATURE DOUBLE_PRECISION
-                    DEFAULT ON
-                    DESCRIPTION "Support for Double Precision" )
-
-ecbuild_add_option( FEATURE SINGLE_PRECISION
-                    DEFAULT ON
-                    DESCRIPTION "Support for Single Precision" )
 set( HAVE_dp ${HAVE_DOUBLE_PRECISION} )
 set( HAVE_sp ${HAVE_SINGLE_PRECISION} )
 
