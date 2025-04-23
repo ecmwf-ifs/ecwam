@@ -54,7 +54,7 @@ options :
 
     - with-single-precision :
         help  : Enable single precision build of the dwarf
-        cmake : ENABLE_SINGLE_PRECISION=ON
+        cmake : ENABLE_SINGLE_PRECISION=ON ENABLE_DOUBLE_PRECISION=OFF
 
     - without-mpi :
         help  : Disable MPI
