@@ -42,7 +42,7 @@ jobs:
         include:
 
           - name: linux gnu-10
-            os: ubuntu-20.04
+            os: ubuntu-22.04
             compiler: gnu-10
             compiler_cc: gcc-10
             compiler_cxx: g++-10
@@ -60,7 +60,7 @@ jobs:
             caching: true
 
           - name: linux nvhpc-23.5
-            os: ubuntu-20.04
+            os: ubuntu-22.04
             compiler: nvhpc-23.5
             compiler_cc: nvc
             compiler_cxx: nvc++
@@ -70,7 +70,7 @@ jobs:
             caching: true
 
           - name : linux intel-classic
-            os: ubuntu-20.04
+            os: ubuntu-22.04
             compiler: intel-classic
             compiler_cc: icc
             compiler_cxx: icpc
