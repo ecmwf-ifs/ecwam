@@ -9,6 +9,10 @@ on:
   # Allow workflow to be dispatched on demand
   workflow_dispatch: ~
 
+  # Trigger after public PR approved for CI
+  pull_request_target:
+    types: [labeled]
+
 env:
   ECWAM_TOOLS: ${{ github.workspace }}/.github/tools
   CTEST_PARALLEL_LEVEL: 1
@@ -17,25 +21,57 @@ env:
 jobs:
   ci-hpc:
     name: ci-hpc
+    if: ${{ !github.event.pull_request.head.repo.fork && github.event.action != 'labeled' || github.event.label.name == 'approved-for-ci' }}
 
     strategy:
       fail-fast: false    # false: try to complete all jobs
 
       matrix:
         name:
-          - ac-gpu nvhpc sp
+#          - ac-gpu nvhpc sp
+          - ac-cpu intel sp
 
         include:
-          - name: ac-gpu nvhpc sp
+#          - name: ac-gpu nvhpc sp
+#            site: ac-batch
+#            sbatch_options: |
+#              #SBATCH --time=00:20:00
+#              #SBATCH --nodes=1
+#              #SBATCH --ntasks=4
+#              #SBATCH --cpus-per-task=32
+#              #SBATCH --gpus-per-task=1
+#              #SBATCH --mem=0
+#              #SBATCH --qos=dg
+#            modules:
+#              - cmake
+#              - fcm
+#              - ninja
+#              - ecbuild
+#              - prgenv/nvidia
+#              - hpcx-openmpi/2.14.0-cuda
+#              - python3
+#            gpu: 1
+
+          - name: ac-cpu intel sp
             site: ac-batch
             sbatch_options: |
               #SBATCH --time=00:20:00
               #SBATCH --nodes=1
               #SBATCH --ntasks=4
               #SBATCH --cpus-per-task=32
-              #SBATCH --gpus-per-task=1
-              #SBATCH --mem=0
-              #SBATCH --qos=dg
+              #SBATCH --hint=nomultithread
+              #SBATCH --mem=60GB
+              #SBATCH --qos=np
+            modules:
+              - cmake
+              - fcm
+              - ninja
+              - ecbuild
+              - prgenv/intel
+              - intel/2021.4.0
+              - hpcx-openmpi/2.9.0
+              - python3
+            gpu: 0
 
     runs-on: [self-hosted, linux, hpc]
     env:
@@ -47,21 +83,14 @@ jobs:
           troika_user: ${{ secrets.HPC_CI_SSH_USER }}
           sbatch_options: ${{ matrix.sbatch_options }}
           template_data: |
-            modules:
-              - cmake
-              - fcm
-              - ninja
-              - ecbuild
-              - prgenv/nvidia
-              - hpcx-openmpi/2.14.0-cuda
-              - python3
             cmake_options:
               - -DENABLE_MPI=ON
-              - -DENABLE_LOKI=ON
-              - -DENABLE_ACC=ON
-              - -DENABLE_CUDA=ON
-              - -DENABLE_GPU_AWARE_MPI=ON
+              - -DENABLE_LOKI=${{ matrix.gpu }}
+              - -DENABLE_ACC=${{ matrix.gpu }}
+              - -DENABLE_CUDA=${{ matrix.gpu }}
+              - -DENABLE_GPU_AWARE_MPI=${{ matrix.gpu }}
               - -DENABLE_SINGLE_PRECISION=ON
+              - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
             dependencies:
               ecmwf/eccodes:
                 version: develop
@@ -69,31 +98,36 @@ jobs:
                   - -DENABLE_MEMFS=ON
                   - -DENABLE_JPG=OFF
                   - -DENABLE_PNG=OFF
+                  - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
               ecmwf/fckit:
                 version: 0.13.0
                 cmake_options:
                   - -DENABLE_TESTS=OFF
                   - -DENABLE_FCKIT_VENV=ON
+                  - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
               ecmwf-ifs/fiat:
                 version: 1.4.1
                 cmake_options:
                   - -DENABLE_MPI=ON
                   - -DENABLE_SINGLE_PRECISION=ON
                   - -DENABLE_DOUBLE_PRECISION=OFF
+                  - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
               ecmwf-ifs/field_api:
                 version: v0.3.1
                 cmake_options:
                   - -DENABLE_TESTS=OFF
-                  - -DENABLE_ACC=ON
-                  - -DENABLE_CUDA=ON
+                  - -DENABLE_ACC=${{ matrix.gpu }}
+                  - -DENABLE_CUDA=${{ matrix.gpu }}
                   - -DENABLE_SINGLE_PRECISION=ON
                   - -DENABLE_DOUBLE_PRECISION=OFF
+                  - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
               ecmwf-ifs/loki:
                 version: v0.2.9
                 cmake_options:
+                  - -DENABLE_NO_INSTALL=${{ !matrix.gpu }}
                   - -DENABLE_TESTS=OFF
           template: |
-            {% for module in modules %}
+            {% for module in "${{ join(matrix.modules, ',') }}".split(',') %}
               module load {{module}}
             {% endfor %}
 
@@ -119,15 +153,17 @@ jobs:
                 popd
             {% endfor %}
 
-            mkdir -p ${{ github.repository }}
-            pushd ${{ github.repository }}
+            REPO=${{ github.event.pull_request.head.repo.full_name || github.repository }}
+            SHA=${{ github.event.pull_request.head.sha || github.sha }}
+            mkdir -p $REPO
+            pushd $REPO
             git init
-            git remote add origin ${{ github.server_url }}/${{ github.repository }}
-            git fetch origin ${{ github.sha }}
+            git remote add origin ${{ github.server_url }}/$REPO
+            git fetch origin $SHA
             git reset --hard FETCH_HEAD
             popd
 
-            cmake -G Ninja -S ${{ github.repository }} -B build \
+            cmake -G Ninja -S $REPO -B build \
               {% for name in dependencies %}
                 {% set org, proj = name.split('/') %}
                 -D{{proj}}_ROOT=$BASEDIR/{{name}}/installation \

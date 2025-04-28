@@ -56,7 +56,7 @@
      &            LWNEMOCOUCUR,  LWNEMOCOUIBR,                          &
      &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOCOUWRS,           &
      &            LWNEMOTAUOC, NEMOFRCO,                                &
-     &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM, LWFLUX_IMPCOR
+     &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,GFLAG    ,                                  &
      &            GFLAG20  ,NFLAG    ,                                  &
@@ -82,7 +82,7 @@
       USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI ,            &
      &            LCIWA1, LCIWA2, LCIWA3, LCISCAL,                      &
-     &            LICETH, ZALPFACX              
+     &            LICETH, ZALPFACB, ZALPFACX, ZALPWRS, ZIBRW_THRSH              
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMAP   , ONLY : CLDOMAIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
@@ -231,8 +231,8 @@
      &   LWCOUNORMS, LLNORMIFS2WAM, LLNORMWAM2IFS, LLNORMWAMOUT,        &
      &   LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE,                         &
      &   LICERUN, LCIWA1, LCIWA2, LCIWA3, LCISCAL,                      &
-     &   LICETH, ZALPFACX,                                               &
-     &   LWVFLX_SNL, LWFLUX_IMPCOR,                                     &
+     &   LICETH, ZALPFACB, ZALPFACX, ZALPWRS, ZIBRW_THRSH,              &
+     &   LWVFLX_SNL,                                                    &
      &   LWNEMOCOU, NEMOFRCO,                                           &
      &   LWNEMOCOUSEND, LWNEMOCOUSTK, LWNEMOCOUSTRN, LWNEMOCOUWRS,      &
      &   LWNEMOTAUOC, LWNEMOCOURECV,                                    &
@@ -481,7 +481,10 @@
 !     LCIWA2  : FLAG CONTROLLING SEA ICE BOTTOM FRICTION ATTENUATION
 !     LCIWA3  : FLAG CONTROLLING SEA ICE VISCOUS FRICTION ATTENUATION
 !     LCISCAL : FLAG CONTROLLING LINEAR SCALING OF INPUT AND DISSIPATION SOURCE TERMS BY SEA ICE CONCENTRATION
+!     ZALPFACB: FACTOR TO SCALE ATTENUATION FOR ALL SEA ICE
 !     ZALPFACX: FACTOR TO SCALE ATTENUATION UP/DOWN FOR SOLID/BROKEN ICE
+!     ZALPWRS : PROPORTION OF ENERGY LOST FROM SLICE THAT GOES INTO WAVE RADIATIVE STRESS
+!     ZIBRW_THRSH:  THRESHOLD AT WHICH SEA ICE IS CONSIDERED BROKEN
 !     LMASKICE  SET TO TRUE IF ICE MASK IS APPLIED
 !     LWAMRSETCI SET TO TRUE IF FIELDS THAT ARE EXCHANGED WITH THE ATMOSPHERE AND THE OCEAN
 !                ARE RESET TO WHAT WOULD BE USED IF THERE WERE NO WAVE MODELS.
@@ -692,8 +695,6 @@
       LWCOUAST = .TRUE.
 
       LWVFLX_SNL = .TRUE.
-      
-      LWFLUX_IMPCOR = .TRUE.
 
       LWNEMOCOU = .FALSE.
 
@@ -758,7 +759,13 @@
 
       LCISCAL = .FALSE.      
 
+      ZALPFACB = 1.0_JWRB
+      
       ZALPFACX = 1.0_JWRB
+
+      ZALPWRS = 1.0_JWRB
+
+      ZIBRW_THRSH = 0.5_JWRB
 
       LMASKICE = .FALSE.
 

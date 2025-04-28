@@ -78,7 +78,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOURNW, LWCOUAST,     &
      &             LWCOUHMF, KCOUSTEP , LWFLUX, LWVFLX_SNL,             &
-     &             LWNEMOCOUIBR,                                        &
+     &             LWNEMOCOUIBR,LWNEMOCOUWRS,                           &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
      &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                       &
      &            IFSCONTEXT
@@ -109,12 +109,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G,IMDLGRBID_M
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS2
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI ,            &
-     &            LCIWA1   ,LCIWA2   ,LCIWA3   ,LCISCAL    ,            &
-     &            CITHRSH  ,CIBLOCK  ,LICETH   ,ZALPFACX   ,            &
-     &            CITHRSH_SAT, CITHRSH_TAIL    ,CDICWA
+     &            LCIWA1   ,LCIWA2   ,LCIWA3   ,LCISCAL    ,ZIBRW_THRSH,&
+     &            CITHRSH  ,CIBLOCK  ,LICETH   ,ZALPFACX   ,ZALPFACB   ,&
+     &            CITHRSH_SAT, CITHRSH_TAIL    ,CDICWA     ,ZALPWRS
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMAP   , ONLY : CLDOMAIN 
-      USE YOWMPP   , ONLY : NPROC    ,NPRECI   ,NPRECR
+      USE YOWMPP   , ONLY : IRANK, NPROC    ,NPRECI   ,NPRECR
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS   ,LL1D     ,LLUNSTR
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
@@ -393,6 +393,19 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           ENDDO
           DELPRO_LF = DELPRO_LF_NEW
 
+      ENDIF
+
+      IF (LCIWA3 .AND. (LCIWA1 .OR. LCIWA2) ) THEN
+        WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
+        WRITE(IU06,*)'+   SELECTING ATTENUATION BY SEA ICE METHOD               +'
+        WRITE(IU06,*)'+    - LCIWA3 designed as a standalone option, i.e.       +'
+        WRITE(IU06,*)'+      not to be used in conjunction with other options   +'
+        WRITE(IU06,*)'+   LCIWA1 = ', LCIWA1
+        WRITE(IU06,*)'+   LCIWA2 = ', LCIWA2
+        WRITE(IU06,*)'+   LCIWA3 = ', LCIWA3
+        WRITE(IU06,*)'+   ABORT SERVICE ROUTINE CALLED BY USERIN  +'
+        WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
+        CALL ABORT1
       ENDIF
 
 !* CHECK FLAG FOR GRIBING AS SOME OPTIONS ARE NOT IMPLEMENTED
@@ -980,7 +993,14 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         IF (LCISCAL)   WRITE (IU06,*) ' LINEAR SCALING OF INPUT AND DISSIPATION SOURCE TERMS BY SEA ICE CONCENTRATION ACTIVATED'
         IF (LWNEMOCOUIBR) THEN
           WRITE (IU06,*) ' COUPLING THROUGH ICE BREAK UP AND ATTENUATION ACTIVATED'
-          WRITE (IU06,*) ' ATTENUATION SCALED UP/DOWN BY FACTOR ZALPFACX FOR SOLID/BROKEN ICE, ZALPFACX= ', ZALPFACX
+          WRITE (IU06,*) '    THRESHOLD AT WHICH SEA ICE IS CONSIDERED BROKEN, ZIBRW_THRSH= ', ZIBRW_THRSH
+          WRITE (IU06,*) '    ATTENUATION SCALED UP/DOWN BY FACTOR ZALPFACX FOR SOLID/BROKEN ICE, ZALPFACX= ', ZALPFACX
+        ENDIF
+        WRITE (IU06,*) ' ATTENUATION SCALED BY FACTOR ZALPFACB FOR ALL SEA ICE,              ZALPFACB= ', ZALPFACB
+        IF (LWNEMOCOUWRS) THEN
+          WRITE (IU06,*) ' COUPLING THROUGH WAVE RADIATIVE STRESS ACTIVATED'
+          WRITE (IU06,*) '    PROPORTION OF ENERGY LOST DUE TO WAVE-SEA ICE INTERACTIONS ',&
+          &                  'THAT GOES INTO WAVE RADIATIVE STRESS,  ZALPWRS= ', ZALPWRS
         ENDIF
       ENDIF
 
@@ -1597,7 +1617,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !*    2.5 OUTPUT OPTION.
 !         --------------
 
-      IF (NOUTT > 0) THEN
+      IF (NOUTT > 0 .AND. .NOT.LRESTARTED) THEN
         DO J=1,NOUTT
           CALL DIFDATE (CDATEA, COUTT(J), ISHIFT)
           IF (ISHIFT < 0) THEN
@@ -1635,7 +1655,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             LERROR = .TRUE.
           ENDIF
         ENDDO
-      ELSE
+      ELSE IF (.NOT.LRESTARTED) THEN
         IF ((FFLAG20.OR.GFLAG20) .AND. IDELINT == 0) THEN
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) '*                                         *'
@@ -1683,7 +1703,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         ENDIF
       ENDIF
 
-      IF (NOUTS > 0) THEN
+      IF (NOUTS > 0 .AND. .NOT.LRESTARTED) THEN
         DO J=1,NOUTS
           CALL DIFDATE (CDATEA, COUTS(J), ISHIFT)
           IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELPRO) /= 0) THEN
@@ -1719,7 +1739,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         ENDIF
       ENDIF
 
-      IF (NASS > 0 .AND. IASSI == 1) THEN
+      IF (NASS > 0 .AND. IASSI == 1 .AND. .NOT.LRESTARTED ) THEN
         DO J=1,NASS
           CALL DIFDATE (CDATEA, CASS(J), ISHIFT)
           IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELPRO) /= 0) THEN
@@ -1771,10 +1791,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.       *'
         WRITE(IU06,*) '* ---------------   --------------        *'
         WRITE(IU06,*) '*******************************************'
-        WRITE(NULERR,*) '*******************************************'
-        WRITE(NULERR,*) '*    FATAL ERROR(S) IN SUB. USERIN        *'
-        WRITE(NULERR,*) '*    SEE LOGFILE        *'
-        WRITE(NULERR,*) '*******************************************'
+        IF (IRANK == 1) THEN
+          WRITE(NULERR,*) '*******************************************'
+          WRITE(NULERR,*) '*    FATAL ERROR(S) IN SUB. USERIN        *'
+          WRITE(NULERR,*) '*    SEE LOGFILE        *'
+          WRITE(NULERR,*) '*******************************************'
+        ENDIF
         CALL WAM_ABORT(__FILENAME__,__LINE__)
       ELSE
 

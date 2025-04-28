@@ -83,16 +83,15 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                             INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU,           &
-                            LWNEMOCOUSTRN, LWNEMOCOUWRS, LWNEMOCOUIBR,   &
- &                          LWFLUX_IMPCOR
+                            LWNEMOCOUSTRN, LWNEMOCOUIBR, LWNEMOCOUWRS
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LICERUN   ,LMASKICE ,              &
                             LCIWA1   ,LCIWA2    ,LCIWA3   ,LCISCAL   ,   &
  &                          ZALPFACX
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LLUNSTR
-      USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1 
-      USE YOWSTAT  , ONLY : IDELT    ,LBIWBK
+      USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
+      USE YOWSTAT  , ONLY : IDELT    ,LBIWBK   ,XIMP
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -147,7 +146,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: ICALL, NCALL
       
-      REAL(KIND=JWRB) :: DELT, DELTM, XIMP, DELT5
+      REAL(KIND=JWRB) :: DELTM, DELT5, DELT
       REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB, BETA
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELFL(NFRE)
@@ -166,7 +165,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 !     *SPOS* : POSITIVE SINPUT ONLY
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: FLD, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SSOURCE 
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SLICE, SLTEMP
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SLICE
 
       REAL(KIND=JWRB),    DIMENSION(KIJL) :: ALPFAC
 
@@ -181,9 +180,8 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !*    1. INITIALISATION.
 !        ---------------
 
-      DELT = IDELT
+      DELT  = IDELT
       DELTM = 1.0_JWRB/DELT
-      XIMP = 1.0_JWRB
       DELT5 = XIMP*DELT
 
       LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU
@@ -204,14 +202,15 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
-      DO M=1,NFRE
-        DO K=1,NANG
-          DO IJ=KIJS,KIJL
-            SLICE(IJ,K,M)  = 0.0_JWRB
-            SLTEMP(IJ,K,M) = 0.0_JWRB
+      IF (LWNEMOCOUWRS .AND. (.NOT. (LCIWA1 .OR. LCIWA2 .OR. LCIWA3)))  THEN
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=KIJS,KIJL
+              SLICE(IJ,K,M) = 0.0_JWRB
+            ENDDO
           ENDDO
         ENDDO
-      ENDDO
+      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -330,43 +329,10 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
           CALL ICEBREAK_MODIFY_ATTENUATION (KIJS,KIJL,IBRMEM,ALPFAC)           
          ENDIF
 
-!        Save source term contributions relevant for the calculation of ice fluxes
-         IF(LWNEMOCOUWRS) THEN 
-           DO M=1,NFRE
-             DO K=1,NANG
-               DO IJ=KIJS,KIJL
-                 SLTEMP(IJ,K,M) = SL(IJ,K,M)
-               ENDDO
-             ENDDO
-           ENDDO
-        ENDIF
-
 !        Attenuation of waves in ice
          IF(LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
-            CALL SDICE (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
+            CALL SDICE (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
          ENDIF
-
-!        Save source term contributions relevant for the calculation of ice fluxes
-         IF (LWNEMOCOUWRS) THEN
-          IF (.NOT. LWFLUX_IMPCOR) THEN
-            DO M=1,NFRE
-              DO K=1,NANG
-                DO IJ=KIJS,KIJL
-                  SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
-                ENDDO
-              ENDDO
-            ENDDO
-          ELSEIF (LWFLUX_IMPCOR) THEN
-            DO M=1,NFRE
-              DO K=1,NANG
-                DO IJ=KIJS,KIJL
-                  GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
-                  SLICE(IJ,K,M) = (SL(IJ,K,M) - SLTEMP(IJ,K,M))/GTEMP1
-                ENDDO
-              ENDDO
-            ENDDO
-          ENDIF
-       ENDIF
 
       ENDIF
 

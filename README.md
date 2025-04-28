@@ -232,9 +232,9 @@ NB: GPU offload is not supported for ecWAM 1.4.0 and 1.5.0.
 Building
 --------
 The recommended option for building the GPU enabled ecWAM is to use the provided bundle, and pass the
-`--with-loki --with-acc` options. Different Loki transformations can also be chosen at build-time via the following 
-bundle option: `--loki-mode=<trafo>`. Direct GPU-to-GPU MPI communications can be enabled by passing the 
-`--with-gpu-aware-mpi` option. CPU to GPU data transfers can be accelerated (via pinning of host-side allocations)
+`--with-loki --with-acc --with-static-linking` options. Different Loki transformations can also be chosen at
+build-time via the following bundle option: `--loki-mode=<trafo>`. Direct GPU-to-GPU MPI communications can be enabled by
+passing the `--with-gpu-aware-mpi` option. CPU to GPU data transfers can be accelerated (via pinning of host-side allocations)
 by building with the `--with-cuda` option.
 
 The ecwam-bundle also provides appropriate arch files for the nvhpc suite on the ECMWF ATOS system.
@@ -277,4 +277,4 @@ In order to do so, please open a [GitHub issue](https://github.com/ecmwf-ifs/ecw
 a feature request or bug can be discussed.
 Then create a [pull request](https://github.com/ecmwf-ifs/ecwam/pulls) with your contribution.
 All contributors to the pull request need to sign the
-[contributors license agreement (CLA)](http://claassistant.ecmwf.int/ecmwf-ifs/ecwam).
+[contributors license agreement (CLA)](https://bol-claassistant.ecmwf.int/ecmwf-ifs/ecwam).

@@ -434,16 +434,8 @@ if( HAVE_SINGLE_PRECISION )
   list(APPEND ECWAM_DEFINITIONS WAM_HAVE_SINGLE_PRECISION )
 endif()
 
-# Using dynamic linking creates undefined references to the device
-# copies of module global variables
-set( LIBRARY_TYPE SHARED )
-if( HAVE_ACC )
-  set( LIBRARY_TYPE STATIC )
-endif()
-
 ecbuild_add_library(
     TARGET           ${ecwam}
-    TYPE             ${LIBRARY_TYPE}
     SOURCES          ${ecwam_srcs}
     PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                      ${MPI_Fortran_LIBRARIES}

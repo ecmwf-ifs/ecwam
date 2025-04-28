@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE SDICE1 (KIJS, KIJL, FL1, FLD, SL,            &
+      SUBROUTINE SDICE1 (KIJS, KIJL, FL1, FLD, SL, SLICE,     &
      &                   WAVNUM, CGROUP,                      &
      &                   CICV,CITH)
 ! ----------------------------------------------------------------------
@@ -32,6 +32,7 @@
 !          *FL1*    - SPECTRUM.
 !          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY
+!          *SLICE*  - TOTAL SOURCE FUNCTION ARRAY, ICE
 !          *WAVNUM* - WAVE NUMBER
 !          *CGROUP* - GROUP SPEED
 !          *CICV*   - SEA ICE COVER
@@ -59,11 +60,10 @@
 
       USE YOWFRED  , ONLY : FR      
       USE YOWICE   , ONLY : NICT   ,NICH     ,TICMIN   ,HICMIN   ,      &
-     &              DTIC   ,DHIC   ,CIDEAC  
+     &              DTIC   ,DHIC   ,CIDEAC   ,ZALPFACB
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPCONS , ONLY : G       ,ZPI
-
-      USE YOWTEST  , ONLY : IU06
+      USE YOWSTAT  , ONLY : IDELT   ,XIMP
 
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
@@ -75,13 +75,15 @@
 
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) ::        SLICE
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CICV
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CITH
 
       INTEGER(KIND=JWIM) :: IJ, K, M
-      REAL(KIND=JWRB)    :: TEMP
-
+      
+      REAL(KIND=JWRB)    :: FLDICE
+      REAL(KIND=JWRB)    :: DELTM, DELT5, DELT, GTEMP1
 
       INTEGER(KIND=JWIM) :: ICM, I, MAXICM
       INTEGER(KIND=JWIM) :: IT, IT1, IH, IH1
@@ -101,8 +103,9 @@
 
       IF (LHOOK) CALL DR_HOOK('SDICE1',0,ZHOOK_HANDLE)
 
-!      WRITE (IU06,*)'Ice attenuation due to scattering based on: '
-!      WRITE (IU06,*)'  KOHOUT AND MEYLAN, 2008'
+      DELT  = IDELT
+      DELTM = 1.0_JWRB/DELT
+      DELT5 = XIMP*DELT
       
 !     following  Dumont et al. (2011), eqn (13):
       ! sea ice fragility
@@ -157,9 +160,7 @@
             WH=1.0_JWRB-WH1
             CIDEAC_INT=WT*(WH*CIDEAC(IT,IH)+ WH1*CIDEAC(IT,IH1)) +      &
      &                WT1*(WH*CIDEAC(IT1,IH)+WH1*CIDEAC(IT1,IH1))
-!!!            ALP(IJ,M)=CICV(IJ)*CIDEAC_INT*DINV(IJ)
-!            ALP(IJ,M)=CICV(IJ)*EXP(CIDEAC_INT)*DINV(IJ)
-            ALP(IJ,M)=          EXP(CIDEAC_INT)*DINV(IJ) ! CICV accounted for in TEMP
+            ALP(IJ,M)=EXP(CIDEAC_INT)*DINV(IJ) * ZALPFACB ! CICV accounted for below
             
           ELSE
             ALP(IJ,M)=0.0_JWRB
@@ -171,9 +172,15 @@
          DO K = 1,NANG
             DO IJ = KIJS,KIJL
 
-               TEMP        = -CICV(IJ)*ALP(IJ,M)*CGROUP(IJ,M)         
-               SL(IJ,K,M)  = SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
-               FLD(IJ,K,M) = FLD(IJ,K,M) + TEMP
+!              apply the source term
+              FLDICE         = -ALP(IJ,M)   * CGROUP(IJ,M)   
+              SLICE(IJ,K,M)  =  FL1(IJ,K,M) * FLDICE
+              SL(IJ,K,M)     =  SL(IJ,K,M)  + CICV(IJ)*SLICE(IJ,K,M)
+              FLD(IJ,K,M)    =  FLD(IJ,K,M) + CICV(IJ)*FLDICE
+              
+!              to be used for wave radiative stress calculation
+              GTEMP1         =  MAX((1.0_JWRB-DELT5*FLDICE),1.0_JWRB)    
+              SLICE(IJ,K,M)  =  SLICE(IJ,K,M)/GTEMP1
 
             END DO
          END DO

@@ -18,7 +18,7 @@ macro( ecwam_find_python_mods )
    set( pyyaml_FOUND OFF )
    # Look for pyyaml
    execute_process(
-       COMMAND python3 -c "import yaml"
+       COMMAND ${ECWAM_PYTHON_INTERP} -c "import yaml"
        RESULT_VARIABLE EXIT_CODE
        OUTPUT_QUIET ERROR_QUIET
    )
@@ -30,12 +30,18 @@ macro( ecwam_find_python_mods )
 
    set( fypp_FOUND OFF )
    ecbuild_find_package( fckit )
+
    # Look for (non-fckit) fypp pre-processor
-   find_program( FYPP fypp )
-   if( NOT fckit_HAVE_FCKIT_VENV AND NOT FYPP MATCHES FYPP-NOTFOUND )
-     ecbuild_info( "${ECWAM_PROJECT_NAME} FOUND fypp" )
+   execute_process(
+       COMMAND ${ECWAM_PYTHON_INTERP} -c "import fypp"
+       RESULT_VARIABLE EXIT_CODE
+       OUTPUT_QUIET ERROR_QUIET
+   )
+   if( EXIT_CODE EQUAL 0 )
+     ecbuild_info("${ECWAM_PROJECT_NAME} FOUND fypp")
 
      set( fypp_FOUND ON )
+     set( FYPP ${ECWAM_PYTHON_INTERP} -m fypp )
    endif()
 
    if( NOT pyyaml_FOUND OR NOT fypp_FOUND )
