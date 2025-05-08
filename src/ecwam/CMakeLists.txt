@@ -473,7 +473,11 @@ foreach( prec sp dp )
 
     if( HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
        target_link_options( ecwam_${prec} INTERFACE SHELL:${OpenACC_Fortran_FLAGS} )
-       target_compile_options( ecwam_${prec} PRIVATE "-gpu=maxregcount:168,fastmath" )
+       if( CMAKE_CUDA_ARCHITECTURES MATCHES 80 )
+         target_compile_options( ecwam_${prec} PRIVATE "-gpu=maxregcount:168,fastmath" )
+       else()
+         target_compile_options( ecwam_${prec} PRIVATE "-gpu=fastmath" )
+       endif()
     endif()
 
     # add autopromotion of reals if we are compiling in double precision
