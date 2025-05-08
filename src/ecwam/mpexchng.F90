@@ -121,8 +121,7 @@
 !     -------------------------------------------------
       CALL GSTATS(1892,0)
 #ifdef _OPENACC
-!$acc kernels loop independent private(IPROC) present(ZCOMBUFS,FLD) &
-!$acc copyin(NTOPELST,NTOPE,IJTOPE)
+!$acc kernels loop independent present(ZCOMBUFS,FLD,NTOPELST,NTOPE,IJTOPE)
       DO INGB=1,NGBTOPE !Total number of PE's to which information will be sent
         IPROC=NTOPELST(INGB)  !To which PE to send informations
           !$acc loop independent collapse(3) private(IJ,KCOUNT,M,K,IH)
@@ -215,8 +214,7 @@
 
       CALL GSTATS(1893,0)
 #ifdef _OPENACC
-      !$acc kernels loop independent private(IPROC) present(ZCOMBUFR,FLD) &
-      !$acc copyin(NFROMPELST,NFROMPE,NIJSTART)
+      !$acc kernels loop independent present(ZCOMBUFR,FLD,NFROMPELST,NFROMPE,NIJSTART)
       DO INGB=1,NGBFROMPE
         IPROC=NFROMPELST(INGB)
         !$acc loop vector independent collapse(3) private(IJ,KCOUNT,M,K,IH)
