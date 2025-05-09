@@ -195,21 +195,15 @@ IF (CDATE >= CDTIMPNEXT) THEN
 
   ELSE
 !   NO SOURCE TERM CONTRIBUTION
-#ifdef _OPENACC
-!$loki loop gang vector present(MIJ,VARS_4D)
-#else
-!$OMP      PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK)  
-#endif
+
+!$acc kernels present(VARS_4D,MIJ)
     DO ICHNK = 1, NCHNK
       MIJ%PTR(:,ICHNK) = NFRE
       VARS_4D%FL1(:,:,:,ICHNK) = MAX(VARS_4D%FL1(:,:,:,ICHNK), EPSMIN)
       VARS_4D%XLLWS(:,:,:,ICHNK) = 0.0_JWRB
     ENDDO
-#ifdef _OPENACC
-!$loki end loop gang vector
-#else
-!$OMP      END PARALLEL DO
-#endif
+!$acc end kernels
+
   ENDIF
   CALL GSTATS(1431,1)
 
