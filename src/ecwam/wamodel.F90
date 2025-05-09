@@ -53,7 +53,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       USE YOWCOUP  , ONLY : LWCOU    ,                                  &
      &                      LWNEMOCOU,                                  &
      &                      NEMOWSTEP, NEMOFRCO     ,                   &
-     &                      NEMOCSTEP, NEMONSTEP
+     &                      NEMOCSTEP, NEMONSTEP, LLNORMWAMOUT
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,GFLAG20  ,    &
      &                      NGOUT    ,                                  &
      &                      NIPRMOUT ,                                  &
@@ -88,6 +88,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWABORT , ONLY : WAM_ABORT
       USE FIELD_ASYNC_MODULE, ONLY : WAIT_FOR_ASYNC_QUEUE
+      USE FIELD_MODULE, ONLY : FIELD_3RB
+      USE FIELD_FACTORY_MODULE, ONLY : FIELD_NEW, FIELD_DELETE
 
 
 ! ----------------------------------------------------------------------
@@ -96,6 +98,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 
 #include "outwint.intfb.h"
 #include "outwpsp.intfb.h"
+#include "outwnorm.intfb.h"
 #include "abort1.intfb.h"
 #include "bouinpt.intfb.h"
 #include "difdate.intfb.h"
@@ -142,7 +145,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE, ZHOOK_HANDLE_DATA_OFFLOAD, &
       &                    ZHOOK_HANDLE_ADVECTION_LOOP, ZHOOK_HANDLE_IO
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK) :: BOUT
+      REAL(KIND=JWRB), POINTER, CONTIGUOUS :: BOUT(:,:,:) => NULL()
+      CLASS(FIELD_3RB), POINTER :: F_BOUT => NULL()
 
       CHARACTER(LEN= 2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, CZERO
@@ -151,6 +155,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       LOGICAL :: LLFLUSH
       LOGICAL :: LSV, LRST, LOUT
       LOGICAL :: LLNONASSI
+      LOGICAL :: LPOOL, LPIN
 
 ! ----------------------------------------------------------------------
 
@@ -202,6 +207,15 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !        ----------------------------
 
       IF (LHOOK) CALL DR_HOOK('ADVECTION_LOOP',0,ZHOOK_HANDLE_ADVECTION_LOOP)
+
+      LPIN = .FALSE.
+      LPOOL = .FALSE.
+#ifdef WAM_HAVE_CUDA
+      LPIN = .TRUE.
+      LPOOL = .TRUE.
+#endif
+      CALL FIELD_NEW(F_BOUT, UBOUNDS=[NPROMA_WAM, NIPRMOUT, NCHNK], POOLED=LPIN, PINNED=LPIN, PERSISTENT=.TRUE.)
+
 #ifdef WAM_GPU
       IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',0,ZHOOK_HANDLE_DATA_OFFLOAD)
       CALL WVPRPT_LAND%SYNC_DEVICE_RDONLY(QUEUE=1)
@@ -331,10 +345,18 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
         IF ( (CDTINTT == CDTPRO .OR. LRST) .AND. NIPRMOUT > 0 ) THEN
 
 #ifdef WAM_GPU
+          IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',0,ZHOOK_HANDLE_DATA_OFFLOAD)
+          CALL F_BOUT%GET_DEVICE_DATA_WRONLY(BOUT)
+          IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',1,ZHOOK_HANDLE_DATA_OFFLOAD)
           CALL OUTBS_LOKI_GPU (MIJ%PTR, VARS_4D%FL1, VARS_4D%XLLWS, &
      &                WVPRPT, WVENVI, FF_NOW, INTFLDS, NEMO2WAM,   &
      &                BOUT)
+          IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',0,ZHOOK_HANDLE_DATA_OFFLOAD)
+          CALL F_BOUT%GET_HOST_DATA_RDONLY(BOUT)
+          IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',1,ZHOOK_HANDLE_DATA_OFFLOAD)
+          IF (LLNORMWAMOUT) CALL OUTWNORM(.TRUE., BOUT)
 #else
+          CALL F_BOUT%GET_HOST_DATA_RDWR(BOUT)
           CALL OUTBS (MIJ%PTR, VARS_4D%FL1, VARS_4D%XLLWS, &
      &                WVPRPT, WVENVI, FF_NOW, INTFLDS, NEMO2WAM,   &
      &                BOUT)
@@ -658,6 +680,8 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
       CALL BLK2GLO%DELETE_DEVICE_DATA()
       IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',1,ZHOOK_HANDLE_DATA_OFFLOAD)
 #endif
+      NULLIFY(BOUT)
+      CALL FIELD_DELETE(F_BOUT)
       IF (LHOOK) CALL DR_HOOK('ADVECTION_LOOP',1,ZHOOK_HANDLE_ADVECTION_LOOP)
 
 IF (LHOOK) CALL DR_HOOK('WAMODEL',1,ZHOOK_HANDLE)
