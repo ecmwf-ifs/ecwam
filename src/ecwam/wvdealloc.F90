@@ -24,7 +24,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LWNEMOCOU
+      USE YOWCOUP  , ONLY : LWNEMOCOU, LWCOU
       USE YOWMEAN  , ONLY : INTFLDS
       USE YOWWIND  , ONLY : FF_NEXT
       USE YOWGRID  , ONLY : NCHNK
@@ -36,6 +36,7 @@
       USE YOWNEMOFLDS , ONLY : WAM2NEMO, NEMO2WAM
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE FIELD_FACTORY_MODULE, ONLY : FIELD_HOST_POOL_DELETE
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -96,6 +97,11 @@
       IF (BLK2LOC%LALLOC)THEN
          CALL BLK2LOC%DEALLOC()
       ENDIF
+
+#ifdef WAM_HAVE_CUDA
+      !... Memory pool should be freed by IFS in coupled runs!
+      IF(.NOT. LWCOU) CALL FIELD_HOST_POOL_DELETE()
+#endif
 
       IF (LHOOK) CALL DR_HOOK('WVDEALLOC',1,ZHOOK_HANDLE)
 
