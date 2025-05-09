@@ -551,8 +551,7 @@ if( HAVE_LOKI )
         if( NOT LOKI_MODE MATCHES "idem|idem-stack")
           # Preprocess propags2.F90 for GPU enabled runs using Loki
           loki_transform_target( TARGET ecwam_${prec}
-            MODE "idem"
-            DIRECTIVE openacc
+            MODE "loop-unroll-fuse"
             FRONTEND ${LOKI_FRONTEND}
             CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_propags2_loki.config
             PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_propags2_plan_ecwam.cmake
