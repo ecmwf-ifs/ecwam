@@ -66,7 +66,6 @@ SUBROUTINE OUTBS_LOKI_GPU (MIJ, FL1, XLLWS,                            &
       IMPLICIT NONE
 
 #include "outblock.intfb.h"
-#include "outwnorm.intfb.h"
 
       INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)          :: MIJ
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL1
@@ -76,12 +75,12 @@ SUBROUTINE OUTBS_LOKI_GPU (MIJ, FL1, XLLWS,                            &
       TYPE(FORCING_FIELDS), INTENT(IN)                                      :: FF_NOW
       TYPE(INTGT_PARAM_FIELDS), INTENT(IN)                                  :: INTFLDS
       TYPE(OCEAN2WAVE), INTENT(IN)                                          :: NEMO2WAM
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK), INTENT(OUT)  :: BOUT
+      REAL(KIND=JWRB), POINTER, CONTIGUOUS, INTENT(INOUT)                   :: BOUT(:,:,:)
 
 
       INTEGER(KIND=JWIM) :: ICHNK
 
-      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE, ZHOOK_HANDLE_DATA_OFFLOAD
 
       LOGICAL :: LDREPROD
 
@@ -100,7 +99,7 @@ ENDIF
 
 IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
       CALL GSTATS(1502,0)
-!$loki structured-data present(MIJ,WVPRPT,WVENVI,INTFLDS,FF_NOW,NEMO2WAM) out(BOUT)
+!$loki structured-data present(MIJ,WVPRPT,WVENVI,INTFLDS,FF_NOW,NEMO2WAM,BOUT)
 
       DO ICHNK = 1, NCHNK
         CALL OUTBLOCK(1, NPROMA_WAM, MIJ(:,ICHNK),                        &
@@ -126,11 +125,6 @@ IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
 
 !$loki end structured-data
       CALL GSTATS(1502,1)
-
-!     PRINT OUT NORMS
-!!!1 to do: decide if there are cases where we might want LDREPROD false
-      LDREPROD=.TRUE.
-      IF (LLNORMWAMOUT) CALL OUTWNORM(LDREPROD, BOUT)
 
       LUPDATE_GPU_GLOBALS_OUTBS = .FALSE.
 
