@@ -11,7 +11,7 @@ function usage() {
   echo "USAGE:"
   echo "    $(basename ${0}) --help"
   echo "    $(basename ${0}) --completed [--run-dir RUN_DIR]"
-  echo "    $(basename ${0}) [--run-dir RUN_DIR] [--config CONFIG] [--launch LAUNCH_CMD] [--cache CACHE_PATH] [--halt]"
+  echo "    $(basename ${0}) [--run-dir RUN_DIR] [--config CONFIG] [--launch LAUNCH_CMD] [--cache CACHE_PATH] [--halt] [--prec PRECISION]"
 if [[ ${ECWAM_CONTEXT:-unset} == "model" ]]; then
   echo "                     [--np NTASKS] [--nt NTHREADS]"
 fi
@@ -28,6 +28,7 @@ function help() {
   echo "    -c, --config CONFIG        YAML configuration file. If not provided,"
   echo "                               use ${RUN_DIR}/config.yml"
   echo "    -r, --run-dir RUN_DIR      Run directory. Overrides \${ECWAM_RUN_DIR}, see below."
+  echo "    -p, --prec PRECISION       Specify the precision of ecWAM to be used, defaults to dp."
   echo "    -l, --launch LAUNCH        Used as prefix to launch execution, e.g. \"mpirun -np <NTASKS>\", or \"ddt\""
   echo "                               This overrides defaults set by 'LAUNCH' environment variable"
   echo "    --cache CACHE_PATH         Path where downloaded and computed data will be stored"
@@ -64,6 +65,7 @@ cache=""
 nthreads=0
 ntasks=0
 launch_cmd=""
+prec=""
 
 while test $# -gt 0; do
 
@@ -118,6 +120,16 @@ while test $# -gt 0; do
          echo; usage; exit 1
         fi
         run_dir=${val}
+        [[ $without_equal_sign == true ]] && shift
+        ;;
+      --prec|-p)
+        if [[ ${val::1} == "-" || ${val} == "" ]] ; then
+         prec="dp"
+        else
+         prec=$val
+        fi
+        # convert to lower case
+        echo "$prec" | tr '[:upper:]' '[:lower:]'
         [[ $without_equal_sign == true ]] && shift
         ;;
       --launch)
@@ -226,6 +238,9 @@ if [[ ${config} == "" ]]; then
   fi
 fi
 
+if [[ ${prec} == "" ]]; then
+  prec="dp"
+fi
 
 if [[ ! -r ${config} ]]; then
   echo "Configuration file [${config}] was not found"
