@@ -77,7 +77,7 @@ wamresol=$(read_config grid)
 wamnfre=$(read_config frequencies)
 wambathy=$(read_config bathymetry)
 
-assert_executable_is_available ${PREPROC} || abort 33
+assert_executable_is_available ${PREPROC}-${prec} || abort 33
 
 # Directory where the output from this job will be saved
 ########################################################
@@ -158,7 +158,7 @@ if ${dryrun}; then
   echo "  cd ${RUN_DIR}/workdir"
   echo
   echo "#2 Execute preset model\n"
-  echo "  $(abs_path ${PREPROC})"
+  echo "  $(abs_path ${PREPROC}-${prec})"
   echo 
   echo "#3 Mark as complete for downstream scripts"
   echo "  touch ${RUN_DIR}/preproc.completed"
@@ -168,19 +168,19 @@ if ${dryrun}; then
   exit 0
 fi
 
-echo "\n\n\t Starting ${LAUNCH_SERIAL} $(which ${PREPROC}) with namelist input:\n\n"
+echo "\n\n\t Starting ${LAUNCH_SERIAL} $(which ${PREPROC}-${prec}) with namelist input:\n\n"
 log cat procin
 echo
-echo "\n+ ${LAUNCH_SERIAL} $(which ${PREPROC})\n"
+echo "\n+ ${LAUNCH_SERIAL} $(which ${PREPROC}-${prec})\n"
 START=$(date +%s)
-log ${LAUNCH_SERIAL} $(which ${PREPROC}) || {
-   echo "\n\n\t ${PREPROC} FAILED\n\n"
+log ${LAUNCH_SERIAL} $(which ${PREPROC}-${prec}) || {
+   echo "\n\n\t ${PREPROC}-${prec} FAILED\n\n"
    sleep 1
    abort 14
   }
 END=$(date +%s)
 DIFF=$(( $END - $START ))
-echo "\n\n\t Running ${LAUNCH_SERIAL} $(which ${PREPROC}) took $DIFF seconds\n"
+echo "\n\n\t Running ${LAUNCH_SERIAL} $(which ${PREPROC}-${prec}) took $DIFF seconds\n"
 
 trace_ls $(pwd)
 
