@@ -162,11 +162,11 @@ else
 
   # We update the file names with the current precision to ensure we never accidentally
   # cache single-precision files
-  WAM_TOPO=v${ecwam_bathymetry_version}/bathymetry_${ecwam_prec}_${wamresol}_nfre${wamnfre}_${wambathy}_${md5}
+  WAM_TOPO=v${ecwam_bathymetry_version}/bathymetry_${prec}_${wamresol}_nfre${wamnfre}_${wambathy}_${md5}
 
   subgrid_files=()
   for ip in 0 1 2; do
-     subgrid_files+=(v${ecwam_bathymetry_version}/wam_grib_subgrid_${ecwam_prec}_${wamresol}_${ip}_${wamnfre}_${wambathy}_${md5})
+     subgrid_files+=(v${ecwam_bathymetry_version}/wam_grib_subgrid_${prec}_${wamresol}_${ip}_${wamnfre}_${wambathy}_${md5})
   done
 
   if [[ $wambathy = "ETOPO1" ]] ; then

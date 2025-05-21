@@ -156,7 +156,7 @@ fmax=0.2000000
 llunstr=F
 lgribout=F
 
-assert_executable_is_available ${PRESET} || abort 4
+assert_executable_is_available ${PRESET}-${prec} || abort 4
 
 # Directory where the output from this job will be saved
 ########################################################
@@ -226,7 +226,7 @@ if ${dryrun}; then
   echo "  cd ${RUN_DIR}/workdir"
   echo
   echo "#2 Execute preset model\n"
-  echo "  $(abs_path ${PRESET}) < PREINFO"
+  echo "  $(abs_path ${PRESET}-${prec}) < PREINFO"
   echo 
   echo "#3 Mark as complete for downstream scripts"
   echo "  touch ${RUN_DIR}/preset.completed"
@@ -238,7 +238,7 @@ fi
 
 echo "*******************************************************************************"
 echo "PRESET START"
-echo "\n+ ${LAUNCH_SERIAL} $(abs_path ${PRESET}) < PREINFO\n"
+echo "\n+ ${LAUNCH_SERIAL} $(abs_path ${PRESET}-${prec}) < PREINFO\n"
 echo "*******************************************************************************"
 echo "PREINFO:"
 echo "*******************************************************************************"
@@ -246,7 +246,7 @@ log cat PREINFO
 echo "*******************************************************************************"
 
 START=$(date +%s)
-log ${LAUNCH_SERIAL} ${PRESET} < PREINFO || {
+log ${LAUNCH_SERIAL} ${PRESET}-${prec} < PREINFO || {
   sleep 1
   echo
   echo "*******************************************************************************"
@@ -258,7 +258,7 @@ log ${LAUNCH_SERIAL} ${PRESET} < PREINFO || {
 }
 END=$(date +%s)
 DIFF=$(( $END - $START ))
-echo "\n\n\t Running ${LAUNCH_SERIAL} $(which ${PRESET}) took $DIFF seconds\n"
+echo "\n\n\t Running ${LAUNCH_SERIAL} $(which ${PRESET}-${prec}) took $DIFF seconds\n"
 
 trace_ls ${WORK_DIR}
 
