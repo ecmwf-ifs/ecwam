@@ -202,7 +202,7 @@ jobs:
           ecmwf/ecbuild
           ecmwf/eccodes
           ecmwf/fckit@refs/tags/0.13.0
-          ecmwf-ifs/fiat@refs/tags/1.4.1
+          ecmwf-ifs/fiat@refs/tags/1.5.1
           ecmwf-ifs/field_api@refs/tags/v0.3.1
           ecmwf-ifs/loki@refs/tags/v0.2.9
         dependency_branch: develop

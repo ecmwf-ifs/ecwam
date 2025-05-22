@@ -106,7 +106,7 @@ jobs:
                   - -DENABLE_FCKIT_VENV=ON
                   - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
               ecmwf-ifs/fiat:
-                version: 1.4.1
+                version: 1.5.1
                 cmake_options:
                   - -DENABLE_MPI=ON
                   - -DENABLE_SINGLE_PRECISION=ON
