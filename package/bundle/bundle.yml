@@ -30,6 +30,7 @@ projects :
     - fiat :
         git     : https://github.com/ecmwf-ifs/fiat 
         version : 1.5.1
+        cmake   : ENABLE_DR_HOOK_NVTX=OFF
 
     - field_api :
         git     : https://github.com/ecmwf-ifs/field_api.git

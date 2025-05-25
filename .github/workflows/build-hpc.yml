@@ -113,6 +113,7 @@ jobs:
                   - -DENABLE_SINGLE_PRECISION=ON
                   - -DENABLE_DOUBLE_PRECISION=OFF
                   - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
+                  - -DENABLE_DR_HOOK_NVTX=OFF
               ecmwf-ifs/field_api:
                 version: v0.3.4
                 cmake_options:
