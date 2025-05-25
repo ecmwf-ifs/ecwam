@@ -6,7 +6,9 @@ doc/latex
 *.sublime-workspace
 *.swp
 .nfs*
-build/*
+build*
+wamrun*
+slurm*
 install/*
 source/*
 ecbundle
@@ -15,3 +17,4 @@ ecbundle
 .vscode
 *.mod
 __pycache__/
+
