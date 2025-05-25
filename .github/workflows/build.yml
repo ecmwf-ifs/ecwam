@@ -208,7 +208,7 @@ jobs:
         dependency_branch: develop
         dependency_cmake_options: |
           ecmwf/fckit: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_FCKIT_VENV=ON"
-          ecmwf-ifs/fiat: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_SINGLE_PRECISION=${{ matrix.prec == 'SP' }} -DENABLE_DOUBLE_PRECISION=${{ matrix.prec == 'DP' }}"
+          ecmwf-ifs/fiat: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_SINGLE_PRECISION=${{ matrix.prec == 'SP' }} -DENABLE_DOUBLE_PRECISION=${{ matrix.prec == 'DP' }} -DENABLE_DR_HOOK_NVTX=OFF"
           ecmwf/eccodes: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_MEMFS=ON -DENABLE_JPG=OFF -DENABLE_PNG=OFF"
           ecmwf-ifs/field_api: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_ACC=OFF -DENABLE_SINGLE_PRECISION=${{ matrix.prec == 'SP' }} -DENABLE_DOUBLE_PRECISION=${{ matrix.prec == 'DP' }}"
           ecmwf-ifs/loki: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF"
