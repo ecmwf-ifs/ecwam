@@ -124,7 +124,7 @@ jobs:
                   - -DENABLE_DOUBLE_PRECISION=OFF
                   - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
               ecmwf-ifs/loki:
-                version: v0.2.9
+                version: 0.3.2
                 cmake_options:
                   - -DENABLE_NO_INSTALL=${{ !matrix.gpu }}
                   - -DENABLE_TESTS=OFF
