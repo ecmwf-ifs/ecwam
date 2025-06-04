@@ -121,7 +121,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            CHNKMIN_U, CDIS ,DELTA_SDIS, CDISVIS,                 &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,               &
      &            DELTA_THETA_RN, DTHRN_A, DTHRN_U,                     &
-     &            SWELLF4,  SWELLF7, SSDSC5
+     &            SWELLF4,  SWELLF7, SSDSC5, CDFAC
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,BATHYMAX
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IFRELFMAX, DELPRO_LF, IDELPRO, IDELT   ,IDELWI   ,    &
@@ -783,6 +783,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '                SWELLF4 = ...... ', SWELLF4
       WRITE(IU06,*) '                SWELLF7 = ...... ', SWELLF7
       WRITE(IU06,*) '                SSDSC5 = ....... ', SSDSC5 
+      ELSEIF (IPHYS == 2) THEN
+        WRITE(IU06,*) '                CDFAC = ...... ', CDFAC
       ENDIF
       WRITE(IU06,*) '' 
       WRITE(IU06,*) ' THIS IS ALWAYS A SHALLOW WATER RUN '

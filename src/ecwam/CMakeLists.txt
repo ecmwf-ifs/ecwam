@@ -48,6 +48,8 @@ list( APPEND ecwam_srcs
   abort1.F90
   adjust.F90
   airsea.F90
+  airsea_jan.F90
+  airsea_iter.F90
   aki.F90
   aki_ice.F90
   alphap_tail.F90
@@ -112,6 +114,7 @@ list( APPEND ecwam_srcs
   intrpolchk.F90
   intspec.F90
   inwgrib.F90
+  irange.F90
   iwam_get_unit.F90
   jafu.F90
   jonswap.F90
@@ -120,6 +123,7 @@ list( APPEND ecwam_srcs
   ktoobs.F90
   kurtosis.F90
   kzeone.F90
+  lfactor.F90
   makegrid.F90
   mblock.F90
   mbounc.F90
@@ -217,6 +221,7 @@ list( APPEND ecwam_srcs
   sdissip.F90
   sdissip_ard.F90
   sdissip_jan.F90
+  sdissip_bydbr.F90
   sdiwbk.F90
   sdice.F90
   sdice1.F90
@@ -241,6 +246,7 @@ list( APPEND ecwam_srcs
   sinput.F90
   sinput_ard.F90
   sinput_jan.F90
+  sinput_bydbr.F90
   skewness.F90
   snonlin.F90
   spectra.F90
@@ -252,10 +258,12 @@ list( APPEND ecwam_srcs
   stress_gc.F90
   stresso.F90
   strspec.F90
+  swldissip_bydbr.F90
   tables_2nd.F90
   tabu_swellft.F90
   tau_phi_hf.F90
   taut_z0.F90
+  tauwinds.F90
   topoar.F90
   transf.F90
   transf_bfi.F90

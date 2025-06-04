@@ -12,7 +12,7 @@
      &                   WDWAVE, WSWAVE, UFRIC, Z0M,    &
      &                   COSWDIF, SINWDIF2,             & 
      &                   RAORW, WSTAR, RNFAC,           &
-     &                   FLD, SL, SPOS, XLLWS)
+     &                   CHRNCK, FLD, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -45,6 +45,7 @@
 !        *RAORW* - RATIO AIR DENSITY TO WATER DENSITY.
 !        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
 !        *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
+!        *CHRNCK*- CHARNOCK COEFFICIENT
 !          *FLD* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !           *SL* - TOTAL SOURCE FUNCTION ARRAY.
 !         *SPOS* - POSITIVE SOURCE FUNCTION ARRAY.
@@ -86,10 +87,12 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, XK2CG
 
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: WDWAVE, WSWAVE
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: Z0M, UFRIC
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: RAORW, WSTAR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJL, NANG), INTENT(IN) :: COSWDIF, SINWDIF2
 
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: CHRNCK
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
@@ -117,7 +120,15 @@
      &                   COSWDIF, SINWDIF2,              & 
      &                   RAORW, WSTAR, RNFAC,            &
      &                   FLD, SL, SPOS, XLLWS)
-      END SELECT 
+      CASE(2) 
+        !$loki inline
+        CALL SINPUT_BYDBR(NGST, LLSNEG, KIJS, KIJL, FL1,  &
+     &                   WAVNUM, CINV, XK2CG,            &
+     &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
+     &                   COSWDIF, SINWDIF2,              & 
+     &                   RAORW, WSTAR, RNFAC,            &
+     &                   CHRNCK, FLD, SL, SPOS, XLLWS)
+    END SELECT 
 
       IF (LHOOK) CALL DR_HOOK('SINPUT',1,ZHOOK_HANDLE)
 

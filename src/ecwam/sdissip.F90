@@ -58,6 +58,8 @@
 
 #include "sdissip_ard.intfb.h"
 #include "sdissip_jan.intfb.h"
+#include "sdissip_bydbr.intfb.h"
+#include "swldissip_bydbr.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
@@ -85,7 +87,15 @@
          CALL SDISSIP_ARD (KIJS, KIJL, FL1 ,FLD, SL,   &
      &                     WAVNUM, CGROUP, XK2CG,      &
      &                     UFRIC, COSWDIF, RAORW)
-      END SELECT 
+      CASE(2) 
+         !$loki inline
+         CALL SDISSIP_BYDBR (KIJS, KIJL, FL1 ,FLD, SL,   &
+     &                     WAVNUM, CGROUP, XK2CG,      &
+     &                     UFRIC, COSWDIF, RAORW)
+         CALL SWLDISSIP_BYDBR(KIJS, KIJL, FL1 ,FLD, SL,   &
+     &                     WAVNUM, CGROUP, XK2CG,      &
+     &                     UFRIC, COSWDIF, RAORW)
+   END SELECT 
 
       IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)
 

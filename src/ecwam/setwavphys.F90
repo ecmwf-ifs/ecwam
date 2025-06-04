@@ -26,7 +26,7 @@ USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C,                     &
      &                SWELLF4,  SWELLF7, SWELLF7M1, Z0TUBMAX, Z0RAT,    &
-     &                SSDSC5
+     &                SSDSC5, CDFAC
 USE YOWSTAT  , ONLY : IPHYS
 USE YOWTEST  , ONLY : IU06
 
@@ -201,6 +201,33 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ASWKM = 0.0981_JWRB
         BSWKM = 0.425_JWRB
 
+      ELSE IF (IPHYS.EQ.2) THEN
+
+!!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
+!       TODO: THESE WILL REQUIRE RECALIBRATION IF USING W. DATA ASSIMILATION
+        EGRCRV = 1065.0_JWRB
+        AGRCRV = 0.0655E+6_JWRB
+        BGRCRV =  10.906_JWRB
+        AFCRV = 2.453E-4_JWRB
+        BFCRV = -3.1236_JWRB
+        ESH = 1711.0_JWRB
+        ASH = 8.0E-4_JWRB
+        BSH = 0.96_JWRB
+        ASWKM=0.0981_JWRB
+        BSWKM=0.425_JWRB
+
+
+        ! Not ALL necessarily used in BYDB physics (TODO: change any others?)
+        ALPHA   = 0.0065_JWRB
+        BETAMAX = 1.40_JWRB
+        ZALP    = 0.008_JWRB
+        ALPHAPMAX = 0.031_JWRB ! cap on spectral steepness as in ARD
+!        ALPHAPMAX = 1.0_JWRB ! i.e. no cap on max spectral steepness
+        TAUWSHELTER=0.25_JWRB
+        TAILFACTOR=2.5_JWRB
+        TAILFACTOR_PM=3.0_JWRB
+        CDFAC=1.0_JWRB
+        
       ELSE
         WRITE (IU06,*) '*************************************'
         WRITE (IU06,*) '*                                   *'

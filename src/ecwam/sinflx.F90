@@ -162,7 +162,7 @@ CALL SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, &
 &            WDWAVE, WSWAVE, UFRIC, Z0M,    &
 &            COSWDIF, SINWDIF2,             &
 &            RAORW, WSTAR, RNFAC,           &
-&            FLD, SL, SPOS, XLLWS) 
+&            CHRNCK, FLD, SL, SPOS, XLLWS) 
 
 
 ! MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
@@ -181,7 +181,6 @@ CALL STRESSO (KIJS, KIJL, MIJ, RHOWGDFTH,          &
 &             WDWAVE, UFRIC, Z0M, AIRD, RNFAC,     &
 &             COSWDIF, SINWDIF2,                   &
 &             TAUW, TAUWDIR, PHIWA, LLPHIWA) 
-
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('SINFLX',1,ZHOOK_HANDLE)
