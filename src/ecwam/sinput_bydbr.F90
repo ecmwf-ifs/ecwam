@@ -123,7 +123,8 @@ SUBROUTINE SINPUT_BYDBR (NGST, LLSNEG, KIJS, KIJL, FL1, &
       INTEGER(KIND=JWIM) :: NSPEC !num. of freqs, dirs, spec. bins
       INTEGER(KIND=JWIM), DIMENSION(NANG) :: ITHN
       INTEGER(KIND=JWIM), DIMENSION(NFRE) :: IKN
-
+      
+      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: CGROUP
       REAL(KIND=JWRB), DIMENSION(NANG*NFRE) :: CG2, ECOS2, ESIN2, DSII2
       REAL(KIND=JWRB), DIMENSION(NANG*NFRE) :: WN2, SIG2
       REAL(KIND=JWRB), DIMENSION(NANG*NFRE) :: SQRTBN2, CINV2, A
@@ -226,7 +227,8 @@ NSPEC = NANG * NFRE   ! NUMBER OF SPECTRAL BINS
 
       DO M=1,NFRE
         DO IJ=KIJS,KIJL
-          CM(IJ,M) = WAVNUM(IJ,M)*SIGM1(M)
+          CM(IJ,M)     = WAVNUM(IJ,M)*SIGM1(M)
+          CGROUP(IJ,M) = XK2CG(IJ,M)/(WAVNUM(IJ,M)**2) ! TODO: alternatively pass this in from implsch level
         ENDDO
       ENDDO
 
@@ -315,8 +317,8 @@ NSPEC = NANG * NFRE   ! NUMBER OF SPECTRAL BINS
       DO IJ = KIJS,KIJL
 
         DO K = 1, NANG                    ! Apply to all directions 
-            WN2   (IKN+(K-1)) = XK(IJ,:)  ! using WAM native WN,CG
-            CG2   (IKN+(K-1)) = CGG_WAM(IJ,:)
+            WN2   (IKN+(K-1)) = WAVNUM(IJ,:)  ! using WAM native WN,CG
+            CG2   (IKN+(K-1)) = CGROUP(IJ,:)
         END DO
 
         CINV2  = WN2 / SIG2            ! inverse phase speed
@@ -377,7 +379,7 @@ NSPEC = NANG * NFRE   ! NUMBER OF SPECTRAL BINS
         ANAR    = 1.0_JWRB/( SUM(KK,1) * DELTH )          ! directional narrowness
 !
 !        SQRTBN  = SQRT( ANAR * ADENSIG * WN(IJ,:)**3 )
-        SQRTBN  = SQRT( ANAR * ADENSIG * XK(IJ,:)**3 )
+        SQRTBN  = SQRT( ANAR * ADENSIG * WAVNUM(IJ,:)**3 )
 
         DO K  = 1, NANG
            SQRTBN2(IKN+(K-1)) = SQRTBN          ! Calculate SQRTBN for

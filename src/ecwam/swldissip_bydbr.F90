@@ -193,7 +193,7 @@
         END DO
         ANAR  = 1.0_JWRB/( SUM(KK,1) * DELTH )
 !        BN    = ANAR * ( ABAND * SIG * DELTH ) * WN(IJ,:)**3
-        BN    = ANAR * ( ABAND * SIG * DELTH ) * XK(IJ,:)**3
+        BN    = ANAR * ( ABAND * SIG * DELTH ) * WAVNUM(IJ,:)**3
 
 !
         IF (.NOT.SWL6CSTB1) THEN
@@ -207,8 +207,8 @@
 !           EMEAN = SUM(ABAND * DDEN / CG)  ! Total sea surface variance
 !            B1    = SWL6B1*(2.0_JWRB*SQRT(SUM(ABAND*DDEN/CGG(IJ,:)))*&
 !            &       WN(IJ,M))
-            B1    = SWL6B1*(2.0_JWRB*SQRT(SUM(ABAND*DDEN/CGG_WAM(IJ,:)))*&
-            &       XK(IJ,M))
+            B1    = SWL6B1*(2.0_JWRB*SQRT(SUM(ABAND*DDEN/CGROUP(IJ,:)))*&
+            &       WAVNUM(IJ,M))
 
 !
         END IF

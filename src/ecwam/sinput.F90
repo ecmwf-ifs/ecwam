@@ -79,6 +79,7 @@
       IMPLICIT NONE
 #include "sinput_ard.intfb.h"
 #include "sinput_jan.intfb.h"
+#include "sinput_bydbr.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NGST
       LOGICAL, INTENT(IN) :: LLSNEG
