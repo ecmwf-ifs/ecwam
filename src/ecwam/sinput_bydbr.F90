@@ -201,34 +201,15 @@ NSPEC = NANG * NFRE   ! NUMBER OF SPECTRAL BINS
         SIGP2(M) = SIG(M)**2
       END DO
 
-      !TODO: clean up stuff in/out of IJ loops (sdissip_bydb + swldissip +sinput_bydb)
-
-
-! !     INVERSE OF PHASE VELOCITIES AND WAVE NUMBER.
-!       IF (ISHALLO.EQ.1) THEN ! -> DEEP WATER
-!         DO M=1,NFRE
-!           DO IJ=IJS,IJL
-!             XK(IJ,M) = SIGP2(M)/G  ! INVERSE PHASE VEL.
-!             CGG_WAM(IJ,M)=G/(2.0_JWRB*SIG(M))  ! GROUP VEL.
-!           ENDDO
-!         ENDDO
-!       ELSE                   ! -> SHALLOW WATER
-!         DO M=1,NFRE
-!           DO IJ=IJS,IJL
-!             XK(IJ,M) = TFAK(INDEP(IJ),M) ! WAVENUMBER
-!             CGG_WAM(IJ,M)= TCGOND(INDEP(IJ),M) ! GROUP VEL.
-!           ENDDO
-!         ENDDO
-!       ENDIF
-
-! TODO: confirm that I'm using exactly the same things here (I've now adopted them throughout the BYDBR code)
-!        - confirm CGG_WAM=CGROUP      
-!        - confirm      XK=WAVNUM      
+      ! TODO: clean up stuff in/out of IJ loops (sdissip_bydb + swldissip +sinput_bydb)
+      ! TODO: confirm that I'm using exactly the same things here (I've now adopted them throughout the BYDBR code)
+      !        - confirm CGG_WAM=CGROUP      
+      !        - confirm      XK=WAVNUM      
 
       DO M=1,NFRE
         DO IJ=KIJS,KIJL
           CM(IJ,M)     = WAVNUM(IJ,M)*SIGM1(M)
-          CGROUP(IJ,M) = XK2CG(IJ,M)/(WAVNUM(IJ,M)**2) ! TODO: alternatively pass this in from implsch level
+          CGROUP(IJ,M) = XK2CG(IJ,M)/(WAVNUM(IJ,M)**2) ! TODO: better to pass this in from implsch level?
         ENDDO
       ENDDO
 

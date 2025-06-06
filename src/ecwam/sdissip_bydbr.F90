@@ -147,28 +147,6 @@
         SIGP2(M) = SIG(M)**2
       END DO
 
-! !     INVERSE OF PHASE VELOCITIES AND WAVE NUMBER.
-!       IF (ISHALLO.EQ.1) THEN ! -> DEEP WATER
-!         DO M=1,NFRE
-!           DO IJ=IJS,IJL
-!             XK(IJ,M) = SIGP2(M)/G  ! INVERSE PHASE VEL.
-!             CGG_WAM(IJ,M)=G/(2.0_JWRB*SIG(M))  ! GROUP VEL.
-!           ENDDO
-!         ENDDO
-!       ELSE                   ! -> SHALLOW WATER
-!         DO M=1,NFRE
-!           DO IJ=IJS,IJL
-!             XK(IJ,M) = TFAK(INDEP(IJ),M) ! WAVENUMBER
-!             CGG_WAM(IJ,M)= TCGOND(INDEP(IJ),M) ! GROUP VEL.
-!           ENDDO
-!         ENDDO
-!       ENDIF
-
-! TODO: confirm that I'm using exactly the same things here (I've now adopted them throughout the BYDBR code)
-!        - confirm CGG_WAM=CGROUP      
-!        - confirm      XK=WAVNUM      
-
-
 !     COMPUTE FREQUENCY INTERVALLS (borrowed from Wam_others/f4spec.F)
       DO M = 1,NFRE
         DF(M) = FR(M)*( FRATIO - 1.0_JWRB )
