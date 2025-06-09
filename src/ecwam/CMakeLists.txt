@@ -30,17 +30,19 @@ list( APPEND unwam_srcs
   unwam/yowunpool.F90
 )
 
-ecbuild_generate_fortran_interfaces(
-    TARGET ecwam_intfb
-    DIRECTORIES ecwam
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..
-    DESTINATION intfb
-    INCLUDE_DIRS ecwam_intfb_includes
-    PARALLEL ${FCM_PARALLEL}
-)
-install( DIRECTORY ${ecwam_intfb_includes}/
-         DESTINATION include/ecwam
-         COMPONENT interfaces )
+if( NOT TARGET ecwam_intfb )
+   ecbuild_generate_fortran_interfaces(
+       TARGET ecwam_intfb
+       DIRECTORIES ecwam
+       SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..
+       DESTINATION intfb
+       INCLUDE_DIRS ecwam_intfb_includes
+       PARALLEL ${FCM_PARALLEL}
+   )
+   install( DIRECTORY ${ecwam_intfb_includes}/
+            DESTINATION include/ecwam
+            COMPONENT interfaces )
+endif()
 
 list( APPEND ecwam_srcs
   abort1.F90
