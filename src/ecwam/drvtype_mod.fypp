@@ -12,11 +12,8 @@
 #:set ymlstring = f.read()
 #:set input = ecwam_yaml_reader.yaml.safe_load(ymlstring)
 #:set objtypes = input['objtypes']
-#:if defined('PARKIND1_SINGLE_NEMO')
-#:set type2field = {'real': 'RB', 'int': 'IM', 'ocean': 'RM'}
-#:else
-#:set type2field = {'real': 'RB', 'int': 'IM', 'ocean': 'RD'}
-#:endif
+#:set type2field_sp = {'real': 'RB', 'int': 'IM', 'ocean': 'RM'}
+#:set type2field_dp = {'real': 'RB', 'int': 'IM', 'ocean': 'RD'}
 #:set type2dtype = {'real': 'REAL(KIND=JWRB)', 'int': 'INTEGER(KIND=JWIM)', 'ocean': 'REAL(KIND=JWRO)'}
 $:f.close()
 #:endmute
@@ -38,10 +35,18 @@ MODULE ${obj.upper()}$_TYPE_MOD
    #:set rank = _def['rank']
    #:for type, vars in zip(_def['types'], _def['vars'])
        #:for var in vars
-            #:set field = '      CLASS(FIELD_' + str(rank) + type2field[type] + '), POINTER :: F_' + var.upper() +  ' => NULL()'
+            #:set field = '      CLASS(FIELD_' + str(rank) + type2field_dp[type] + '), POINTER :: F_' + var.upper() +  ' => NULL()'
             #:set ptr = f'      {type2dtype[type]}, POINTER, CONTIGUOUS :: ' + var.upper() + '(' + ','.join(':' * rank) + ') => NULL()'
+#ifndef PARKIND1_SINGLE_NEMO
             $:field
             $:ptr
+#endif
+            #:set field = '      CLASS(FIELD_' + str(rank) + type2field_sp[type] + '), POINTER :: F_' + var.upper() +  ' => NULL()'
+            #:set ptr = f'      {type2dtype[type]}, POINTER, CONTIGUOUS :: ' + var.upper() + '(' + ','.join(':' * rank) + ') => NULL()'
+#ifdef PARKIND1_SINGLE_NEMO
+            $:field
+            $:ptr
+#endif
        #:endfor
    #:endfor
       LOGICAL :: LALLOC = .FALSE.
