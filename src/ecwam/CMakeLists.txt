@@ -413,13 +413,8 @@ if( HAVE_MULTIO )
   list(APPEND ECWAM_DEFINITIONS WAM_HAVE_MULTIO)
 endif()
 
-set( ${PNAME}_OCEANMODEL_LIBRARIES "" )
 if( HAVE_OCEAN_COUPLING )
   list(APPEND ECWAM_DEFINITIONS WITH_NEMO )
-  set( ${PNAME}_OCEANMODEL_LIBRARIES nemogcmcoup.${OCEAN_PREC} )
-endif()
-if( ${OCEAN_PREC} STREQUAL SP )
-  list(APPEND ECWAM_DEFINITIONS PARKIND1_SINGLE_NEMO )
 endif()
 
 if( HAVE_ECFLOW )
@@ -436,6 +431,16 @@ endif()
 
 foreach( prec sp dp )
   if( HAVE_${prec} )
+    set( ${PNAME}_OCEANMODEL_LIBRARIES "" )
+    if( HAVE_OCEAN_COUPLING )
+       set( _OCEAN_PREC "")
+       if( DEFINED OCEAN_PREC )
+          set( _OCEAN_PREC "${OCEAN_PREC}" )
+       else()
+          string( TOUPPER "${prec}" _OCEAN_PREC )
+       endif()
+       set( ${PNAME}_OCEANMODEL_LIBRARIES nemogcmcoup.${_OCEAN_PREC} )
+    endif()
 
     ecbuild_add_library(
         TARGET           ecwam_${prec}
@@ -452,7 +457,7 @@ foreach( prec sp dp )
         PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
         PRIVATE_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
         PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS} $<${HAVE_CUDA}:WAM_HAVE_CUDA>
-        PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
+        PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS} $<$<STREQUAL:${_OCEAN_PREC},SP>:PARKIND1_SINGLE_NEMO>
     )
 
     ecwam_target_fortran_module_directory(
