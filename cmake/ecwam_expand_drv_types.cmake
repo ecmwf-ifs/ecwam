@@ -14,10 +14,6 @@
 
 macro( ecwam_expand_drv_types )
 
-   if( ${OCEAN_PREC} STREQUAL SP )
-      list(APPEND FYPP_ARGS -DPARKIND1_SINGLE_NEMO)
-   endif()
-
    if( HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" )
       list(APPEND FYPP_ARGS -DWAM_GPU)
    endif()
