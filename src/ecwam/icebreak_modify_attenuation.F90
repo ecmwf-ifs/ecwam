@@ -73,7 +73,7 @@
 
       INTEGER(KIND=JWIM) :: IJ
       REAL(KIND=JWRB)    :: ZALPFACXINV
-      
+
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------

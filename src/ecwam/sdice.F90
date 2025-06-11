@@ -83,7 +83,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CICV
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CITH
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: ALPFAC
-      
+
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 
@@ -92,14 +92,23 @@
       IF (LHOOK) CALL DR_HOOK('SDICE',0,ZHOOK_HANDLE)
 
 !     Attenuation of waves in ice (type 1): scattering
-      IF(LCIWA1) CALL SDICE1 (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICV, CITH)
+      IF (LCIWA1) THEN
+        !$loki inline
+        CALL SDICE1 (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICV, CITH)
+      ENDIF
 
 !     Attenuation of waves in ice (type 2): bottom friction
-      IF(LCIWA2) CALL SDICE2 (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICV      ) 
+      IF (LCIWA2) THEN
+        !$loki inline
+        CALL SDICE2 (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICV      ) 
+      ENDIF
 
 !     Attenuation of waves in ice (type 3): viscous friction
-      IF(LCIWA3) CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICV, CITH, ALPFAC)
-      
+      IF (LCIWA3) THEN
+        !$loki inline
+        CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICV, CITH, ALPFAC)
+      ENDIF
+
       IF (LHOOK) CALL DR_HOOK('SDICE',1,ZHOOK_HANDLE)
 
       END SUBROUTINE SDICE

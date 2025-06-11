@@ -86,7 +86,7 @@
       REAL(KIND=JWRB)    :: ALP              !! ALP=SPATIAL ATTENUATION RATE OF ENERGY
       REAL(KIND=JWRB)    :: FLDICE
       REAL(KIND=JWRB)    :: DELTM, DELT5, DELT, GTEMP1
-      
+
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 
@@ -111,7 +111,7 @@
                SLICE(IJ,K,M)  =  FL1(IJ,K,M) * FLDICE
                SL(IJ,K,M)     =  SL(IJ,K,M)  + CICV(IJ)*SLICE(IJ,K,M)
                FLD(IJ,K,M)    =  FLD(IJ,K,M) + CICV(IJ)*FLDICE
-               
+
 !              to be used for wave radiative stress calculation
                GTEMP1         =  MAX((1.0_JWRB-DELT5*FLDICE),1.0_JWRB)    
                SLICE(IJ,K,M)  =  SLICE(IJ,K,M)/GTEMP1
@@ -119,7 +119,7 @@
             END DO
          END DO
       END DO
-      
+
       IF (LHOOK) CALL DR_HOOK('SDICE2',1,ZHOOK_HANDLE)
 
       END SUBROUTINE SDICE2
