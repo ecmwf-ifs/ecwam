@@ -427,10 +427,6 @@ if( HAVE_GPU_AWARE_MPI )
   list(APPEND ECWAM_DEFINITIONS WITH_GPU_AWARE_MPI )
 endif()
 
-if( HAVE_SINGLE_PRECISION )
-  list(APPEND ECWAM_DEFINITIONS WAM_HAVE_SINGLE_PRECISION )
-endif()
-
 foreach( prec sp dp )
   if( HAVE_${prec} )
     set( ${PNAME}_OCEANMODEL_LIBRARIES "" )
@@ -462,6 +458,7 @@ foreach( prec sp dp )
            ${ECWAM_PRIVATE_DEFINITIONS}
            $<${HAVE_CUDA}:WAM_HAVE_CUDA>
            $<$<STREQUAL:${_OCEAN_PREC},SP>:PARKIND1_SINGLE_NEMO>
+           $<$<STREQUAL:${prec},sp>:WAM_HAVE_SINGLE_PRECISION>
         PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
     )
 
