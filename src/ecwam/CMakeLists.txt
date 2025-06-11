@@ -542,11 +542,14 @@ if( HAVE_LOKI )
      set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config )
   else()
      set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
-     target_compile_definitions( ecwam_${prec} PRIVATE WAM_GPU )
   endif()
 
   foreach(prec sp dp )
      if( HAVE_${prec} )
+
+        if( NOT LOKI_MODE MATCHES "idem|idem-stack" )
+           target_compile_definitions( ecwam_${prec} PRIVATE WAM_GPU )
+        endif()
 
         if( NOT LOKI_MODE MATCHES "idem|idem-stack")
           # Preprocess propags2.F90 for GPU enabled runs using Loki
