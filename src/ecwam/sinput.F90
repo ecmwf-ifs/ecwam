@@ -8,7 +8,7 @@
 !
 
       SUBROUTINE SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, & 
-     &                   WAVNUM, CINV, XK2CG,           &
+     &                   WAVNUM, CGROUP, CINV, XK2CG,   &
      &                   WDWAVE, WSWAVE, UFRIC, Z0M,    &
      &                   COSWDIF, SINWDIF2,             & 
      &                   RAORW, WSTAR, RNFAC,           &
@@ -22,7 +22,7 @@
 !     ----------
 
 !     *CALL* *SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1,
-!    &                WAVNUM, CINV, XK2CG,
+!    &                WAVNUM, CGROUP, CINV, XK2CG,
 !    &                WDWAVE, UFRIC, Z0M,
 !    &                COSWDIF, SINWDIF2,
 !    &                RAORW, WSTAR, FLD, SL, SPOS, XLLWS)
@@ -32,6 +32,7 @@
 !         *KIJS* - INDEX OF FIRST GRIDPOINT.
 !         *KIJL* - INDEX OF LAST GRIDPOINT.
 !          *FL1* - SPECTRUM.
+!       *CGROUP* - GROUP SPEED
 !       *WAVNUM* - WAVE NUMBER.
 !         *CINV* - INVERSE PHASE VELOCITY.
 !       *XK2CG*  - (WAVE NUMBER)**2 * GROUP SPPED.
@@ -86,7 +87,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
-      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, XK2CG
+      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP, CINV, XK2CG
 
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: WDWAVE, WSWAVE
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: Z0M, UFRIC
@@ -124,7 +125,7 @@
       CASE(2) 
         !$loki inline
         CALL SINPUT_BYDBR(NGST, LLSNEG, KIJS, KIJL, FL1,  &
-     &                   WAVNUM, CINV, XK2CG,            &
+     &                   WAVNUM,  CGROUP, CINV, XK2CG,    &
      &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
      &                   COSWDIF, SINWDIF2,              & 
      &                   RAORW, WSTAR, RNFAC,            &

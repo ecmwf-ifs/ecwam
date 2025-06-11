@@ -10,7 +10,7 @@
 SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
  &                 LUPDTUS,                   &
  &                 FL1,                       &
- &                 WAVNUM, CINV, XK2CG,       &
+ &                 WAVNUM,CGROUP, CINV, XK2CG,&
  &                 WSWAVE, WDWAVE, AIRD,      &
  &                 RAORW,  WSTAR, CICOVER,    &
  &                 COSWDIF, SINWDIF2,         &
@@ -158,7 +158,7 @@ ENDIF
 
 !$loki inline
 CALL SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, &
-&            WAVNUM, CINV, XK2CG,           &
+&            WAVNUM, CGROUP, CINV, XK2CG,   &
 &            WDWAVE, WSWAVE, UFRIC, Z0M,    &
 &            COSWDIF, SINWDIF2,             &
 &            RAORW, WSTAR, RNFAC,           &

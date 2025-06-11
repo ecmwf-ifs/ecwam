@@ -8,7 +8,7 @@
 !
 
 SUBROUTINE SINPUT_BYDBR (NGST, LLSNEG, KIJS, KIJL, FL1, &
- &                     WAVNUM, CINV, XK2CG,           &
+ &                     WAVNUM, CGROUP, CINV, XK2CG,           &
  &                     WDWAVE, WSWAVE, UFRIC, Z0M,    &
  &                     COSWDIF, SINWDIF2,             &
  &                     RAORW, WSTAR, RNFAC,           &
@@ -29,7 +29,7 @@ SUBROUTINE SINPUT_BYDBR (NGST, LLSNEG, KIJS, KIJL, FL1, &
 !     ----------
 
 !     *CALL* *SINPUT_BYDBR (NGST, LLSNEG, KIJS, KIJL, FL1,
-!    &                    WAVNUM, CINV, XK2CG,
+!    &                    WAVNUM, CGROUP, CINV, XK2CG,
 !    &                    WSWAVE, WDWAVE, UFRIC, Z0M,
 !    &                    COSWDIF, SINWDIF2,
 !    &                    RAORW, WSTAR, RNFAC,
@@ -41,6 +41,7 @@ SUBROUTINE SINPUT_BYDBR (NGST, LLSNEG, KIJS, KIJL, FL1, &
 !         *KIJL* - INDEX OF LAST GRIDPOINT.
 !          *FL1* - SPECTRUM.
 !       *WAVNUM* - WAVE NUMBER.
+!       *CGROUP* - GROUP SPEED
 !         *CINV* - INVERSE PHASE VELOCITY.
 !       *XK2CG*  - (WAVNUM)**2 * GROUP SPPED.
 !       *WDWAVE* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
@@ -110,7 +111,7 @@ SUBROUTINE SINPUT_BYDBR (NGST, LLSNEG, KIJS, KIJL, FL1, &
       LOGICAL, INTENT(IN) :: LLSNEG
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
-      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, XK2CG
+      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP, CINV, XK2CG
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: WDWAVE, WSWAVE
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: Z0M, UFRIC
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: RAORW, WSTAR, RNFAC
@@ -119,12 +120,12 @@ SUBROUTINE SINPUT_BYDBR (NGST, LLSNEG, KIJS, KIJL, FL1, &
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
+      LOGICAL            :: LLFACT
       INTEGER(KIND=JWIM) :: IJ, K, M, IND, IGST
       INTEGER(KIND=JWIM) :: NSPEC !num. of freqs, dirs, spec. bins
       INTEGER(KIND=JWIM), DIMENSION(NANG) :: ITHN
       INTEGER(KIND=JWIM), DIMENSION(NFRE) :: IKN
       
-      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: CGROUP
       REAL(KIND=JWRB), DIMENSION(NANG*NFRE) :: CG2, ECOS2, ESIN2, DSII2
       REAL(KIND=JWRB), DIMENSION(NANG*NFRE) :: WN2, SIG2
       REAL(KIND=JWRB), DIMENSION(NANG*NFRE) :: SQRTBN2, CINV2, A
@@ -209,7 +210,6 @@ NSPEC = NANG * NFRE   ! NUMBER OF SPECTRAL BINS
       DO M=1,NFRE
         DO IJ=KIJS,KIJL
           CM(IJ,M)     = WAVNUM(IJ,M)*SIGM1(M)
-          CGROUP(IJ,M) = XK2CG(IJ,M)/(WAVNUM(IJ,M)**2) ! TODO: better to pass this in from implsch level?
         ENDDO
       ENDDO
 
@@ -326,11 +326,13 @@ NSPEC = NANG * NFRE   ! NUMBER OF SPECTRAL BINS
 !/    conversion:
 !/                    UPROXY = SIN6WS * UST
 !/
-!/    SIN6WS = FRIC = 28.0 following Komen et al. (1984)
-!/    SIN6WS        = 32.0 suggested by E. Rogers (2014)
+!/    SIN6WS = FRIC = 28.0 following Komen et al. (1984) (developed seas)
+!/    SIN6WS        = 32.0 suggested by E. Rogers (2014) (young seas)
 !
         DO IGST=1,NGST
           UPROXY(IGST) = FRIC * CDFAC * USTARGST(IJ,IGST) ! Scale wind speed by FRIC and CDFAC
+        ! UPROXY(IGST) = WAVEAGE * CDFAC * USTARGST(IJ,IGST) ! TODO: Add in dependency on wave-induced stress
+          ! (note that this line is also used in LFACTOR, and would also need to be adjusted there)
         ENDDO
 !
         ! To reshape from 1D to 2D: 
@@ -394,15 +396,21 @@ NSPEC = NANG * NFRE   ! NUMBER OF SPECTRAL BINS
 
 !
 !/ 6) --- apply reduction (LFACT) to the entire spectrum ------------- /
-        DO IGST=1,NGST
-          IF (SUM(LFACT(:,IGST)) .LT. NFRE) THEN
-             DO K = 1, NANG
-                D(IKN+K-1,IGST) = D(IKN+K-1,IGST) * LFACT(:,IGST)
-             END DO
-             S(:,IGST) = D(:,IGST) * A
-          END IF
-          DINPOS(:,:,IGST)  = RESHAPE(D(:,IGST),(/ NANG, NFRE /))
-        ENDDO
+
+        LLFACT = .TRUE.
+        ! TODO: if this shows to make a big difference, then I can make this logical more rigorous
+        !       (and also implement it to save costs in LFACTOR)
+        IF (LLFACT) THEN
+          DO IGST=1,NGST
+            IF (SUM(LFACT(:,IGST)) .LT. NFRE) THEN
+              DO K = 1, NANG
+                  D(IKN+K-1,IGST) = D(IKN+K-1,IGST) * LFACT(:,IGST)
+              END DO
+              S(:,IGST) = D(:,IGST) * A
+            END IF
+            DINPOS(:,:,IGST)  = RESHAPE(D(:,IGST),(/ NANG, NFRE /))
+          ENDDO
+        END IF
 
 !
 !/ 7) --- compute negative wind input for adverse winds. negative

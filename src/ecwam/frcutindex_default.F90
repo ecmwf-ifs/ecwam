@@ -7,18 +7,18 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE FRCUTINDEX (KIJS, KIJL, FM, FMWS, UFRIC, CICOVER,     &
-     &                       MIJ, RHOWGDFTH)
+      SUBROUTINE FRCUTINDEX_DEFAULT (KIJS, KIJL, FM, FMWS, UFRIC, CICOVER,     &
+     &                       MIJ)
 
 ! ----------------------------------------------------------------------
 
-!**** *FRCUTINDEX* - RETURNS THE LAST FREQUENCY INDEX OF
+!**** *FRCUTINDEX_DEFAULT* - RETURNS THE LAST FREQUENCY INDEX OF
 !                    PROGNOSTIC PART OF SPECTRUM.
 
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FRCUTINDEX (KIJS, KIJL, FM, FMWS, CICOVER, MIJ, RHOWGDFTH)
+!       *CALL* *FRCUTINDEX_DEFAULT (KIJS, KIJL, FM, FMWS, CICOVER, MIJ)
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FM*     - MEAN FREQUENCY
@@ -26,9 +26,6 @@
 !          *UFRIC*  - FRICTION VELOCITY IN M/S
 !          *CICOVER*- CICOVER 
 !          *MIJ*    - LAST FREQUENCY INDEX for imposing high frequency tail
-!          *RHOWGDFTH - WATER DENSITY * G * DF * DTHETA
-!                       FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ) 
-!                       !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)
 
 
 !     METHOD.
@@ -53,20 +50,16 @@
       USE YOWPARAM , ONLY : NFRE
       USE YOWPCONS , ONLY : G        ,EPSMIN
       USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM
-      USE YOWSTAT  , ONLY : IPHYS
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "frcutindex_default.intfb.h"
-#include "frcutindex_bydb.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(KIJL)
       REAL(KIND=JWRB),DIMENSION(KIJL), INTENT(IN) :: FM, FMWS, UFRIC, CICOVER
-      REAL(KIND=JWRB),DIMENSION(KIJL,NFRE), INTENT(OUT) :: RHOWGDFTH 
 
 
       INTEGER(KIND=JWIM) :: IJ, M
@@ -76,28 +69,29 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('FRCUTINDEX',0,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('FRCUTINDEX_DEFAULT',0,ZHOOK_HANDLE)
 
-      SELECT CASE (IPHYS)
-      CASE(0,1)
-         CALL FRCUTINDEX_DEFAULT(KIJS, KIJL, FM, FMWS, UFRIC, CICOVER,     &
-         &                       MIJ)
-      CASE(2)
-         CALL FRCUTINDEX_BYDB (KIJS, KIJL, FM, UFRIC, CICOVER,     &
-         &                       MIJ)
-      END SELECT
+!*    COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
+!*    FREQUENCIES LE MAX(TAILFACTOR*MAX(FMNWS,FM),TAILFACTOR_PM*FPM),
+!*    WHERE FPM IS THE PIERSON-MOSKOWITZ FREQUENCY BASED ON FRICTION
+!*    VELOCITY. (FPM=G/(FRIC*ZPI*USTAR))
+!     ------------------------------------------------------------
 
-!     SET RHOWGDFTH
+      FPMH = TAILFACTOR/FR(1)
+      FPPM = TAILFACTOR_PM*G/(FRIC*ZPIFR(1))
+
       DO IJ=KIJS,KIJL
-        DO M=1,MIJ(IJ)
-          RHOWGDFTH(IJ,M) = RHOWG_DFIM(M)
-        ENDDO
-        IF (MIJ(IJ) /= NFRE) RHOWGDFTH(IJ,MIJ(IJ))=0.5_JWRB*RHOWGDFTH(IJ,MIJ(IJ))
-        DO M=MIJ(IJ)+1,NFRE
-          RHOWGDFTH(IJ,M) = 0.0_JWRB
-        ENDDO
+        IF (CICOVER(IJ) <= CITHRSH_TAIL) THEN
+          FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
+          FPM = FPPM/MAX(UFRIC(IJ),EPSMIN)
+          FPM4 = MAX(FM2,FPM)
+          MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
+          MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
+        ELSE
+          MIJ(IJ) = NFRE
+        ENDIF
       ENDDO
-      
-      IF (LHOOK) CALL DR_HOOK('FRCUTINDEX',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE FRCUTINDEX
+      IF (LHOOK) CALL DR_HOOK('FRCUTINDEX_DEFAULT',1,ZHOOK_HANDLE)
+
+      END SUBROUTINE FRCUTINDEX_DEFAULT

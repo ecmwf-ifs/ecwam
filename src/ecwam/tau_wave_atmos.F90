@@ -123,10 +123,8 @@
 !         grid per se. Limit the constraint to the positive part of the
 !         wind input only. ---------------------------------------------- /
         IF (NK .LT. NK10Hz) THEN
-                SDENSX10Hz(1:NK)        = SUM(ABS(MIN(0.0_JWRB,S))*&
-                                        &     RESHAPE(ECOS2,(/NTH,NK/)),1) * DELTH
-                SDENSY10Hz(1:NK)        = SUM(ABS(MIN(0.0_JWRB,S))*&
-                                        &     RESHAPE(ESIN2,(/NTH,NK/)),1) * DELTH
+                SDENSX10Hz(1:NK)        = SUM(ABS(MIN(0.0_JWRB,S))*RESHAPE(ECOS2,(/NTH,NK/)),1) * DELTH
+                SDENSY10Hz(1:NK)        = SUM(ABS(MIN(0.0_JWRB,S))*RESHAPE(ESIN2,(/NTH,NK/)),1) * DELTH
                 SIG10Hz                 = SIG(1)*FRATIO**(IK10Hz-1.0_JWRB)
                 CINV10Hz(1:NK)          = CINV
                 CINV10Hz(NK+1:NK10Hz)   = SIG10Hz(NK+1:NK10Hz)*0.101978_JWRB
@@ -137,18 +135,14 @@
                                         &            (FRATIO-1.0_JWRB) / FRATIO
 !
 !        --- Spectral slope for S_IN(F) is proportional to F**(-2) ------ /
-                SDENSX10Hz(NK+1:NK10Hz) = SDENSX10Hz(NK) * & 
-                                        & (SIG10Hz(NK)/SIG10Hz(NK+1:NK10Hz))**2
-                SDENSY10hz(NK+1:NK10Hz) = SDENSY10Hz(NK) * &
-                                        & (SIG10Hz(NK)/SIG10Hz(NK+1:NK10Hz))**2
+                SDENSX10Hz(NK+1:NK10Hz) = SDENSX10Hz(NK) * (SIG10Hz(NK)/SIG10Hz(NK+1:NK10Hz))**2
+                SDENSY10hz(NK+1:NK10Hz) = SDENSY10Hz(NK) * (SIG10Hz(NK)/SIG10Hz(NK+1:NK10Hz))**2
         ELSE
                 SIG10Hz          = SIG
                 CINV10Hz         = CINV
                 DSII10Hz         = DSII
-                SDENSX10Hz(1:NK) = SUM(ABS(MIN(0.0_JWRB,S))*&
-                                & RESHAPE(ECOS2,(/NTH,NK/)),1) * DELTH
-                SDENSY10Hz(1:NK) = SUM(ABS(MIN(0.0_JWRB,S))*&
-                                & RESHAPE(ESIN2,(/NTH,NK/)),1) * DELTH
+                SDENSX10Hz(1:NK) = SUM(ABS(MIN(0.0_JWRB,S))*RESHAPE(ECOS2,(/NTH,NK/)),1) * DELTH
+                SDENSY10Hz(1:NK) = SUM(ABS(MIN(0.0_JWRB,S))*RESHAPE(ESIN2,(/NTH,NK/)),1) * DELTH
         END IF
 !
 !/ 2) --- Stress calculation ----------------------------------------- /
