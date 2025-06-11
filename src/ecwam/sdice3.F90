@@ -83,18 +83,18 @@
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: ALPFAC
 
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE)        :: ALP  !! ALP=SPATIAL ATTENUATION RATE OF ENERGY
-      
+
       INTEGER(KIND=JWIM) :: IMODEL                              !! DAMPING MODEL: 1=FIT TO TEMPELFJORD DATA, 2=Jie Yu 2022
       INTEGER(KIND=JWIM) :: IJ, K, M
       REAL(KIND=JWRB)    :: FLDICE
 
       REAL(KIND=JWRB)    :: DELTM, DELT5, DELT, GTEMP1
-      
+
       REAL(KIND=JWRB)    :: CDICE
       REAL(KIND=JWRB)    :: HICEMAX, HICEMIN
 
       REAL(KIND=JWRB)    :: TEMP
-      
+
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 
@@ -109,7 +109,7 @@
       IMODEL = 2
       HICEMAX=4.0_JWRB
       HICEMIN=0.1_JWRB
-      
+
       SELECT CASE (IMODEL)
          CASE (1)
 !          Best fit w Tempelfjorde obs from Lotfi Aouf
@@ -124,14 +124,14 @@
          CASE (2)
 !          Jie Yu, W. Erik Rogers, David W. Wang 2022
            CDICE=0.1274_JWRB*( ZPI/SQRT(G) )**(4.5_JWRB)
-         
+
            DO M = 1,NFRE
               DO IJ = KIJS,KIJL
 !                  ALP(IJ,M) = (2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))) * ALPFAC(IJ) * ZALPFACB
                  ALP(IJ,M) = (2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))) * ALPFAC(IJ) ! (old way to ensure bit-identicality)
               END DO
            END DO
-         
+
       END SELECT
 
       DO M = 1,NFRE
@@ -150,7 +150,7 @@
 !              apply the source term (new way)
 !                SL(IJ,K,M)     =  SL(IJ,K,M)  + CICV(IJ)*SLICE(IJ,K,M)
 !                FLD(IJ,K,M)    =  FLD(IJ,K,M) + CICV(IJ)*FLDICE
-!                
+!
 !              to be used for wave radiative stress calculation
                GTEMP1         =  MAX((1.0_JWRB-DELT5*FLDICE),1.0_JWRB)    
                SLICE(IJ,K,M)  =  SLICE(IJ,K,M)/GTEMP1
@@ -158,7 +158,7 @@
             END DO
          END DO
       END DO
-      
+
       IF (LHOOK) CALL DR_HOOK('SDICE3',1,ZHOOK_HANDLE)
 
       END SUBROUTINE SDICE3

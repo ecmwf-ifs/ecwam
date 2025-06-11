@@ -81,7 +81,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CITH
 
       INTEGER(KIND=JWIM) :: IJ, K, M
-      
+
       REAL(KIND=JWRB)    :: FLDICE
       REAL(KIND=JWRB)    :: DELTM, DELT5, DELT, GTEMP1
 
@@ -106,7 +106,7 @@
       DELT  = IDELT
       DELTM = 1.0_JWRB/DELT
       DELT5 = XIMP*DELT
-      
+
 !     following  Dumont et al. (2011), eqn (13):
       ! sea ice fragility
       CIFRGL=0.955_JWRB
@@ -161,7 +161,7 @@
             CIDEAC_INT=WT*(WH*CIDEAC(IT,IH)+ WH1*CIDEAC(IT,IH1)) +      &
      &                WT1*(WH*CIDEAC(IT1,IH)+WH1*CIDEAC(IT1,IH1))
             ALP(IJ,M)=EXP(CIDEAC_INT)*DINV(IJ) * ZALPFACB ! CICV accounted for below
-            
+
           ELSE
             ALP(IJ,M)=0.0_JWRB
           ENDIF
@@ -177,7 +177,7 @@
               SLICE(IJ,K,M)  =  FL1(IJ,K,M) * FLDICE
               SL(IJ,K,M)     =  SL(IJ,K,M)  + CICV(IJ)*SLICE(IJ,K,M)
               FLD(IJ,K,M)    =  FLD(IJ,K,M) + CICV(IJ)*FLDICE
-              
+
 !              to be used for wave radiative stress calculation
               GTEMP1         =  MAX((1.0_JWRB-DELT5*FLDICE),1.0_JWRB)    
               SLICE(IJ,K,M)  =  SLICE(IJ,K,M)/GTEMP1
@@ -185,7 +185,7 @@
             END DO
          END DO
       END DO
-      
+
       IF (LHOOK) CALL DR_HOOK('SDICE1',1,ZHOOK_HANDLE)
 
       END SUBROUTINE SDICE1
