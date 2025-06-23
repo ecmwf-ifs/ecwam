@@ -55,6 +55,3 @@ export DR_HOOK_ASSERT_MPI_INITIALIZED=0
 
 # export python interpreter
 export ECWAM_PYTHON_INTERP=@ECWAM_PYTHON_INTERP@
-
-# export ecWAM precision
-export ecwam_prec=@prec@

@@ -58,6 +58,7 @@ SUBROUTINE OUTBS_LOKI_GPU (MIJ, FL1, XLLWS,                            &
       USE YOWCOUP  , ONLY : LLNORMWAMOUT
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWSTAT  , ONLY : LUPDATE_GPU_GLOBALS_OUTBS
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -65,7 +66,6 @@ SUBROUTINE OUTBS_LOKI_GPU (MIJ, FL1, XLLWS,                            &
       IMPLICIT NONE
 
 #include "outblock.intfb.h"
-#include "outwnorm.intfb.h"
 
       INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN)          :: MIJ
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL1
@@ -75,57 +75,59 @@ SUBROUTINE OUTBS_LOKI_GPU (MIJ, FL1, XLLWS,                            &
       TYPE(FORCING_FIELDS), INTENT(IN)                                      :: FF_NOW
       TYPE(INTGT_PARAM_FIELDS), INTENT(IN)                                  :: INTFLDS
       TYPE(OCEAN2WAVE), INTENT(IN)                                          :: NEMO2WAM
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK), INTENT(OUT)  :: BOUT
+      REAL(KIND=JWRB), POINTER, CONTIGUOUS, INTENT(INOUT)                   :: BOUT(:,:,:)
 
 
       INTEGER(KIND=JWIM) :: ICHNK
 
-      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE, ZHOOK_HANDLE_DATA_OFFLOAD
 
       LOGICAL :: LDREPROD
 
 ! ----------------------------------------------------------------------
 
-IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
 
 !*    1. COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
 !     COMPUTE MEAN PARAMETERS
+IF (LUPDATE_GPU_GLOBALS_OUTBS) THEN
+IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',0,ZHOOK_HANDLE_DATA_OFFLOAD)
 !$loki update_device
+IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',1,ZHOOK_HANDLE_DATA_OFFLOAD)
+ENDIF
 
+IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
       CALL GSTATS(1502,0)
-!$acc data present(MIJ,WVPRPT,WVENVI,INTFLDS,FF_NOW,NEMO2WAM) copyout(BOUT)
+!$loki structured-data present(MIJ,WVPRPT,WVENVI,INTFLDS,FF_NOW,NEMO2WAM,BOUT)
 
       DO ICHNK = 1, NCHNK
         CALL OUTBLOCK(1, NPROMA_WAM, MIJ(:,ICHNK),                        &
      &                FL1(:,:,:,ICHNK), XLLWS(:,:,:,ICHNK),               &
      &                WVPRPT%WAVNUM(:,:,ICHNK), WVPRPT%CINV(:,:,ICHNK), WVPRPT%CGROUP(:,:,ICHNK), &
      &                WVENVI%DEPTH(:,ICHNK), WVENVI%UCUR(:,ICHNK), WVENVI%VCUR(:,ICHNK), &
-     &                WVENVI%IODP(:,ICHNK),                               &
+     &                WVENVI%IODP(:,ICHNK),WVENVI%IBRMEM(:,ICHNK),                               &
      &                INTFLDS%ALTWH(:,ICHNK), INTFLDS%CALTWH(:,ICHNK), INTFLDS%RALTCOR(:,ICHNK), &
      &                INTFLDS%USTOKES(:,ICHNK), INTFLDS%VSTOKES(:,ICHNK), INTFLDS%STRNMS(:,ICHNK), &
      &                INTFLDS%TAUXD(:,ICHNK), INTFLDS%TAUYD(:,ICHNK), INTFLDS%TAUOCXD(:,ICHNK), &
-     &                INTFLDS%TAUOCYD(:,ICHNK), INTFLDS%TAUOC(:,ICHNK), INTFLDS%PHIOCD(:,ICHNK), &
+     &                INTFLDS%TAUOCYD(:,ICHNK), INTFLDS%TAUOC(:,ICHNK), &
+     &                INTFLDS%TAUICX(:,ICHNK), INTFLDS%TAUICY(:,ICHNK), INTFLDS%PHIOCD(:,ICHNK), &
      &                INTFLDS%PHIEPS(:,ICHNK), INTFLDS%PHIAW(:,ICHNK), &
      &                FF_NOW%AIRD(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK), FF_NOW%CICOVER(:,ICHNK), &
      &                FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WSTAR(:,ICHNK), &
      &                FF_NOW%UFRIC(:,ICHNK), FF_NOW%TAUW(:,ICHNK), &
      &                FF_NOW%Z0M(:,ICHNK), FF_NOW%Z0B(:,ICHNK), FF_NOW%CHRNCK(:,ICHNK), &
      &                FF_NOW%CITHICK(:,ICHNK), &
-     &                NEMO2WAM%NEMOSST(:, ICHNK), NEMO2WAM%NEMOCICOVER(:,ICHNK), &
+     &                NEMO2WAM%NEMOCICOVER(:,ICHNK), &
      &                NEMO2WAM%NEMOCITHICK(:, ICHNK), NEMO2WAM%NEMOUCUR(:,ICHNK), &
      &                NEMO2WAM%NEMOVCUR(:, ICHNK), &
      &                BOUT(:,:,ICHNK))
       ENDDO
 
-!$acc end data
+!$loki end structured-data
       CALL GSTATS(1502,1)
 
-!     PRINT OUT NORMS
-!!!1 to do: decide if there are cases where we might want LDREPROD false
-      LDREPROD=.TRUE.
-      IF (LLNORMWAMOUT) CALL OUTWNORM(LDREPROD, BOUT)
+      LUPDATE_GPU_GLOBALS_OUTBS = .FALSE.
 
 
 IF (LHOOK) CALL DR_HOOK('OUTBS',1,ZHOOK_HANDLE)

@@ -69,4 +69,6 @@
 !     *FL1*       FREQUENCY SPECTRUM.
 ! ----------------------------------------------------------------------
 
+      !$acc declare create (NTOPELST,NTOPE,IJTOPE,NFROMPELST,NFROMPE,NIJSTART)
+
       END MODULE YOWSPEC 

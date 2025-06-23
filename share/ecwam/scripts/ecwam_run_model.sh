@@ -23,7 +23,7 @@ source ${SCRIPTS_DIR}/ecwam_runtime.sh
 source ${SCRIPTS_DIR}/ecwam_parse_commandline.sh
 source ${SCRIPTS_DIR}/ecwam_helper_functions.sh
 
-assert_executable_is_available ${MODEL} || abort 4
+assert_executable_is_available ${MODEL}-${prec} || abort 4
 
 begofrn=$(read_config begin               --format="%Y%m%d%H%M%S")
 endofrn=$(read_config end                 --format="%Y%m%d%H%M%S")
@@ -279,7 +279,10 @@ echo "**************************************************************************
 log cat wam_namelist
 echo
 
-precision=$(${ECWAM_PROJECT_NAME} --precision)
+precision="double"
+if [ "${prec}" = "sp" ]; then
+    precision="single"
+fi;
 if ${dryrun}; then
   echo "*******************************************************************************"
   echo "WAVE MODEL DRYRUN"
@@ -288,7 +291,7 @@ if ${dryrun}; then
   echo "  cd ${RUN_DIR}/workdir"
   echo
   echo "#2 Execute wave model\n"
-  echo "  $(abs_path ${MODEL})"
+  echo "  $(abs_path ${MODEL}-${prec})"
   echo 
   echo "#3 Validate results\n"
   echo "  ${SCRIPTS_DIR}/ecwam_validation.py config.yml statistics.log --section=validation.${precision}_precision"
@@ -300,12 +303,12 @@ fi
 
 echo "*******************************************************************************"
 echo "WAVE MODEL START"
-echo "\n+ ${LAUNCH_PARALLEL} $(which ${MODEL})\n"
+echo "\n+ ${LAUNCH_PARALLEL} $(which ${MODEL}-${prec})\n"
 echo "*******************************************************************************"
 
 
 START=$(date +%s)
-log ${LAUNCH_PARALLEL} $(which ${MODEL}) || {
+log ${LAUNCH_PARALLEL} $(which ${MODEL}-${prec}) || {
   sleep 1
   echo
   echo "*******************************************************************************"
@@ -318,7 +321,7 @@ log ${LAUNCH_PARALLEL} $(which ${MODEL}) || {
 
 END=$(date +%s)
 DIFF=$(( $END - $START ))
-echo "\n\n\t Running ${LAUNCH_PARALLEL} $(which ${MODEL}) took $DIFF seconds\n"
+echo "\n\n\t Running ${LAUNCH_PARALLEL} $(which ${MODEL}-${prec}) took $DIFF seconds\n"
 
 trace_ls $(pwd)
 

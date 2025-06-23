@@ -50,24 +50,42 @@ ecbuild_add_option( FEATURE SINGLE_PRECISION
                     DEFAULT OFF
                     DESCRIPTION "Support for Single Precision" )
 
+ecbuild_add_option( FEATURE DOUBLE_PRECISION
+                    DEFAULT ON
+                    DESCRIPTION "Support for Double Precision" )
+
 ecbuild_add_option( FEATURE UNWAM
                     DEFAULT OFF
                     DESCRIPTION "Support for UNWAM" )
 
+set( HAVE_dp ${HAVE_DOUBLE_PRECISION} )
+set( HAVE_sp ${HAVE_SINGLE_PRECISION} )
+
+# if built as part of ifs-bundle, build only precision requested via directory name
+if ( ${PROJECT_NAME} STREQUAL "ecwam_dp" )
+  unset( HAVE_sp )
+elseif( ${PROJECT_NAME} STREQUAL "ecwam_sp" )
+  unset( HAVE_dp )
+endif()
+
 ### Determine ocean model precision
-if( NOT DEFINED OCEAN_PREC )
+if( DEFINED OCEAN_PREC )
+  string( TOLOWER "${OCEAN_PREC}" ocean_prec )
+  set(nemo_prec "nemo_${ocean_prec}")
+else()
+  set(nemo_prec "")
   if( HAVE_SINGLE_PRECISION )
-     set(OCEAN_PREC SP)
-  else()
-     set(OCEAN_PREC DP)
+     set(nemo_prec "${nemo_prec};nemo_sp")
+  endif()
+  if( HAVE_DOUBLE_PRECISION )
+     set(nemo_prec "${nemo_prec};nemo_dp")
   endif()
 endif()
-string( TOLOWER "${OCEAN_PREC}" ocean_prec )
 
 ecbuild_add_option( FEATURE OCEAN_COUPLING
                     DEFAULT ON
                     DESCRIPTION "Support ocean coupling"
-                    REQUIRED_PACKAGES "nemo_${ocean_prec}" )
+                    REQUIRED_PACKAGES ${nemo_prec} )
 
 ecbuild_add_option( FEATURE ECWAM_LAUNCH
                     DEFAULT ON
@@ -91,12 +109,6 @@ endif()
 ecwam_find_python_mods()
 
 ### Set third party libraries
-
-if( HAVE_SINGLE_PRECISION )
-  set( prec sp )
-else()
-  set( prec dp )
-endif()
 
 unset( OpenMP_Fortran_LIBRARIES )
 if( HAVE_OMP )

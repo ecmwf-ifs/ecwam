@@ -68,6 +68,11 @@ Environment variables
     $ export FC=<path-to-Fortran-compiler>
     $ export CXX=<path-to-C++-compiler>
 
+Precision
+    An ecwam build will generate binaries and libraries in double precision (default), single precision, or both single and double precision if requested.
+    Precisions are requested by passing appropriate options (ENABLE_SINGLE_PRECISION, ENABLE_DOUBLE_PRECISION) to the `cmake` command, as described below. 
+    Note that fiat and field_api dependencies must contain the necessary single and/or double libraries.
+
 If you want to pre-download or install extra data files, run in the source-directory before CMake (re)configuration:
 
     $ share/ecwam/data/populate.sh
@@ -87,6 +92,8 @@ Extra options can be added to the `cmake` command to control the build:
  - `-DENABLE_MPI=<ON|OFF>`
  - `-DENABLE_OMP=<ON|OFF>`
  - `-DCMAKE_INSTALL_PREFIX=<install-prefix>`
+ - `-DENABLE_SINGLE_PRECISION=<ON|OFF>`
+ - `-DENABLE_DOUBLE_PRECISION=<ON|OFF>`
 
 More options to control compilation flags, only when defaults are not sufficient
 
@@ -124,7 +131,7 @@ The following options can also be configured during the bundle build step:
 
  Finally, additional `CMake` options can also be set during the bundle build step:
 
-`--cmake-"OPTION=<arg>"`
+`--cmake="OPTION=<arg>"`
 
 Running ecWAM
 =============
@@ -227,7 +234,7 @@ translation toolchain Loki. Currently, three Loki transformations are supported:
 The scc-hoist and scc-stack transformations offer superior performance to the scc transformation. Currently, only the
 OpenACC programming model on Nvidia GPUs is supported.
 
-NB: GPU offload is not supported for ecWAM 1.4.0 and 1.5.0.
+NB: GPU offload is not supported for ecWAM 1.4.0, 1.5.0 and 1.5.1.
 
 Building
 --------

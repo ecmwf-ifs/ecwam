@@ -10,23 +10,32 @@ if( CMAKE_Fortran_COMPILER_ID MATCHES Intel )
   set_source_files_properties( create_wam_bathymetry_ETOPO1.F90 PROPERTIES COMPILE_FLAGS "-check nobounds" )
 endif()
 
-foreach( program
-    chief
-    bouint
-    preproc
-    preset
-    combine_bathy_laked
-    create_wam_bathymetry
-    create_wam_bathymetry_ETOPO1 )
+foreach( prec sp dp )
+  if ( HAVE_${prec} )
+    foreach( program
+      chief
+      bouint
+      preproc
+      preset
+      combine_bathy_laked
+      create_wam_bathymetry
+      create_wam_bathymetry_ETOPO1 )
 
-    ecbuild_add_executable(
-        TARGET          ${PROJECT_NAME}-${program}
-        SOURCES         ${program}.F90
-        LIBS            ${PROJECT_NAME} ${OpenMP_Fortran_LIBRARIES}
-        LINKER_LANGUAGE Fortran
-    )
-    ecwam_target_compile_definitions_FILENAME(${PROJECT_NAME}-${program})
+      ecbuild_add_executable(
+          TARGET          ecwam-${program}-${prec}
+          SOURCES         ${program}.F90
+          LIBS            ecwam_${prec} ${OpenMP_Fortran_LIBRARIES}
+          LINKER_LANGUAGE Fortran
+      )
+      ecwam_target_compile_definitions_FILENAME( ecwam-${program}-${prec} )
 
+      # add autopromotion of reals if we are compiling in double precision
+      if( prec MATCHES "dp" )
+        target_compile_options( ecwam-${program}-${prec} PRIVATE ${autopromote_flags} )
+      endif()
+
+    endforeach()
+  endif()
 endforeach()
 
 string( TOUPPER ${PROJECT_NAME} PNAME )
@@ -38,7 +47,9 @@ endforeach()
 set( PROJECT_VERSION     ${${PROJECT_NAME}_VERSION} )
 set( PROJECT_VERSION_STR ${${PROJECT_NAME}_VERSION_STR} )
 set( PROJECT_GIT_SHA1    ${${PROJECT_NAME}_GIT_SHA1} )
-if( HAVE_SINGLE_PRECISION )
+if( HAVE_SINGLE_PRECISION AND HAVE_DOUBLE_PRECISION )
+  set( PROJECT_PRECISION "single and double")
+elseif ( HAVE_SINGLE_PRECISION )
   set( PROJECT_PRECISION single )
 else()
   set( PROJECT_PRECISION double )

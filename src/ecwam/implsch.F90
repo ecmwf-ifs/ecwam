@@ -326,11 +326,13 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
 !        Coupling of waves and sea ice (type 1): wave-induced sea ice break up + reduced attenuation
          IF(LWNEMOCOUIBR) THEN 
+          !$loki inline
           CALL ICEBREAK_MODIFY_ATTENUATION (KIJS,KIJL,IBRMEM,ALPFAC)           
          ENDIF
 
 !        Attenuation of waves in ice
          IF(LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
+            !$loki inline
             CALL SDICE (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
          ENDIF
 

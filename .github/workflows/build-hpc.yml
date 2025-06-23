@@ -28,29 +28,30 @@ jobs:
 
       matrix:
         name:
-#          - ac-gpu nvhpc sp
+          - ac-gpu nvhpc sp
           - ac-cpu intel sp
 
         include:
-#          - name: ac-gpu nvhpc sp
-#            site: ac-batch
-#            sbatch_options: |
-#              #SBATCH --time=00:20:00
-#              #SBATCH --nodes=1
-#              #SBATCH --ntasks=4
-#              #SBATCH --cpus-per-task=32
-#              #SBATCH --gpus-per-task=1
-#              #SBATCH --mem=0
-#              #SBATCH --qos=dg
-#            modules:
-#              - cmake
-#              - fcm
-#              - ninja
-#              - ecbuild
-#              - prgenv/nvidia
-#              - hpcx-openmpi/2.14.0-cuda
-#              - python3
-#            gpu: 1
+          - name: ac-gpu nvhpc sp
+            site: ac-batch
+            sbatch_options: |
+              #SBATCH --time=00:20:00
+              #SBATCH --nodes=1
+              #SBATCH --ntasks=4
+              #SBATCH --cpus-per-task=32
+              #SBATCH --gpus-per-task=1
+              #SBATCH --mem=0
+              #SBATCH --qos=dg
+            modules:
+              - cmake
+              - fcm
+              - ninja
+              - ecbuild
+              - prgenv/nvidia
+              - nvidia/22.11
+              - hpcx-openmpi/2.14.0-cuda
+              - python3/3.11.10-01
+            gpu: 1
 
           - name: ac-cpu intel sp
             site: ac-batch
@@ -90,6 +91,7 @@ jobs:
               - -DENABLE_CUDA=${{ matrix.gpu }}
               - -DENABLE_GPU_AWARE_MPI=${{ matrix.gpu }}
               - -DENABLE_SINGLE_PRECISION=ON
+              - -DENABLE_DOUBLE_PRECISION=OFF
               - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
             dependencies:
               ecmwf/eccodes:
@@ -106,14 +108,15 @@ jobs:
                   - -DENABLE_FCKIT_VENV=ON
                   - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
               ecmwf-ifs/fiat:
-                version: 1.4.1
+                version: 1.5.1
                 cmake_options:
                   - -DENABLE_MPI=ON
                   - -DENABLE_SINGLE_PRECISION=ON
                   - -DENABLE_DOUBLE_PRECISION=OFF
                   - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
+                  - -DENABLE_DR_HOOK_NVTX=OFF
               ecmwf-ifs/field_api:
-                version: v0.3.1
+                version: v0.3.4
                 cmake_options:
                   - -DENABLE_TESTS=OFF
                   - -DENABLE_ACC=${{ matrix.gpu }}
@@ -122,7 +125,7 @@ jobs:
                   - -DENABLE_DOUBLE_PRECISION=OFF
                   - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
               ecmwf-ifs/loki:
-                version: v0.2.9
+                version: 0.3.2
                 cmake_options:
                   - -DENABLE_NO_INSTALL=${{ !matrix.gpu }}
                   - -DENABLE_TESTS=OFF
