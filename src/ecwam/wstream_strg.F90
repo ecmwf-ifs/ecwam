@@ -528,6 +528,12 @@
         MARSFCTYPE = 'fc'
         KSTREAM = 1248
         LASTREAM=.TRUE.
+      ELSE IF(ISTREAM.EQ.1098) THEN
+!       WAVE DESTINE FORECAST
+        CSTREAM = 'clte'
+        MARSFCTYPE = 'fc'
+        KSTREAM = 1098
+        LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1091) THEN
 !       WAVE SEASONAL MONTHLY MEANS
         CSTREAM = 'sfmm'
