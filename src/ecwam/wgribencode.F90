@@ -305,7 +305,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
         ELSEIF ( MARSTYPE == 'an' .AND. IFCST == 0 ) THEN
           ICLASS = 2
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',C12)
-          IF (C12(1:4) == 'ewla' .OR. C12(1:4) == 'lwwv') THEN
+          IF (C12(1:4) == 'elda' .OR. C12(1:4) == 'lwda') THEN
             IDATERES=IDATE*100+ITIME/100
             IY2=IDATERES/1000000
             IDATERES=IDATERES-IY2*1000000

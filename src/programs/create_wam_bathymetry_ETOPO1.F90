@@ -392,7 +392,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       YEXPVER = CEXPVERCLIM
       NENSFNB = 0  
       NTOTENS = 0
-      ISTREAM = 1045 !! if changed to an ifs stream also change LNEWLVTP
+      ISTREAM = 1025 !! if changed to an ifs stream also change LNEWLVTP
       NLOCGRB = 1
       NSYSNB  = -1
       NMETNB  = -1
