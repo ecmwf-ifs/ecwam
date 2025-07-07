@@ -219,7 +219,7 @@
         LASTREAM=.FALSE.
       ELSE IF(ISTREAM.EQ.1248) THEN
 !       WAVE LONG CUT-OFF FORECAST
-        CSTREAM = 'lwwv'
+        CSTREAM = 'lwda'
         MARSFCTYPE = 'fc'
         KSTREAM = 1247
         LASTREAM=.FALSE.
@@ -526,7 +526,7 @@
 !       WAVE LONG CUT-OFF FORECAST
         CSTREAM = 'lwda'
         MARSFCTYPE = 'fc'
-        KSTREAM = 1248
+        KSTREAM = 1247
         LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1091) THEN
 !       WAVE SEASONAL MONTHLY MEANS
@@ -684,7 +684,7 @@
 !       ENSEMBLE DATA ASSIMILATION 
         CSTREAM = 'elda'
         MARSFCTYPE = 'fc'
-        KSTREAM = 1250
+        KSTREAM = 1249
         LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1088) THEN
 !       ENSEMBLE WAVE DATA ASSIMILATION 
@@ -694,7 +694,7 @@
         LASTREAM=.FALSE.
       ELSE IF(ISTREAM.EQ.1250) THEN
 !       ENSEMBLE WAVE DATA ASSIMILATION 
-        CSTREAM = 'ewla'
+        CSTREAM = 'elda'
         MARSFCTYPE = 'fc'
         KSTREAM = 1249
         LASTREAM=.FALSE.
