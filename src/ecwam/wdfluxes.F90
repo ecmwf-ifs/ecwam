@@ -135,7 +135,8 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: FLD, SL, SPOS
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: SLICE
+      REAL(KIND=JWRB), DIMENSION(KIJL:KIJL,NANG,NFRE) :: SSOURCE
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: SLICE, SLTEMP
 
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ALPFAC
 
@@ -213,6 +214,18 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
      &                EMEAN, F1MEAN, XKMEAN,        &
      &                UFRIC, COSWDIF, RAORW) 
 
+        IF (.NOT.LWVFLX_SNL) THEN
+!         Save source term contributions relevant for the calculation of ocean fluxes
+          SSOURCE(:,:,:) = SL(:,:,:)
+        ENDIF
+
+        CALL SNONLIN (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH, AKMEAN)
+
+        IF (LWVFLX_SNL) THEN
+!         Save source term contributions relevant for the calculation of ocean fluxes
+          SSOURCE(:,:,:) = SL(:,:,:)
+        ENDIF
+
         IF ( LICERUN ) THEN      
 
 !         Use linear scaling of ALL proceeding source terms under sea ice (this is a complete unknown)
@@ -240,45 +253,22 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 
         ENDIF
             
-        IF (.NOT. LWVFLX_SNL) THEN
-          CALL WNFLUXES (KIJS, KIJL,                        &
-     &                   MIJ, RHOWGDFTH,                    &
-     &                   CINV,                              &
-     &                   SL, SLICE, CICOVER,                &
-     &                   PHIWA,                             &
-     &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
-     &                   USTRA, VSTRA,                      &
-     &                   UFRIC, AIRD,                       &
-     &                   NPHIEPS, NTAUOC, NSWH, NMWP,       &
-     &                   NEMOTAUX, NEMOTAUY,                &
-     &                   NEMOTAUICX, NEMOTAUICY,            &
-     &                   NEMOWSWAVE, NEMOPHIF,              &
-     &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD,    &
-     &                   TAUOC, TAUICX, TAUICY,             &
-     &                   PHIOCD, PHIEPS, PHIAW,             &
-     &                  .FALSE.)
-        ENDIF
-
-        CALL SNONLIN (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH, AKMEAN)
-
-        IF (LWVFLX_SNL) THEN
-          CALL WNFLUXES (KIJS, KIJL,                        &
-     &                   MIJ, RHOWGDFTH,                    &
-     &                   CINV,                              &
-     &                   SL, SLICE, CICOVER,                &
-     &                   PHIWA,                             &
-     &                   EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
-     &                   USTRA, VSTRA,                      &
-     &                   UFRIC, AIRD,                       &
-     &                   NPHIEPS, NTAUOC, NSWH, NMWP,       &
-     &                   NEMOTAUX, NEMOTAUY,                &
-     &                   NEMOTAUICX, NEMOTAUICY,            &
-     &                   NEMOWSWAVE, NEMOPHIF,              &
-     &                   TAUXD, TAUYD, TAUOCXD, TAUOCYD,    &
-     &                   TAUOC, TAUICX, TAUICY,             &
-     &                   PHIOCD, PHIEPS, PHIAW,             &
-     &                  .FALSE.)
-        ENDIF
+        CALL WNFLUXES (KIJS, KIJL,                        &
+     &                 MIJ, RHOWGDFTH,                    &
+     &                 CINV,                              &
+     &                 SSOURCE, SLICE, CICOVER,           &
+     &                 PHIWA,                             &
+     &                 EMEAN, F1MEAN, WSWAVE, WDWAVE,     &
+     &                 USTRA, VSTRA,                      &
+     &                 UFRIC, AIRD,                       &
+     &                 NPHIEPS, NTAUOC, NSWH, NMWP,       &
+     &                 NEMOTAUX, NEMOTAUY,                &
+     &                 NEMOTAUICX, NEMOTAUICY,            &
+     &                 NEMOWSWAVE, NEMOPHIF,              &
+     &                 TAUXD, TAUYD, TAUOCXD, TAUOCYD,    &
+     &                 TAUOC, TAUICX, TAUICY,             &
+     &                 PHIOCD, PHIEPS, PHIAW,             &
+     &                .FALSE.)
 
         IF (LWFLUX) THEN
          CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, FMEANWS, EMEANWS)
