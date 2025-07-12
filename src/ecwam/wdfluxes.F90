@@ -223,7 +223,16 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 
         IF (LWVFLX_SNL) THEN
 !         Save source term contributions relevant for the calculation of ocean fluxes
-          SSOURCE(:,:,:) = SL(:,:,:)
+!!!!!!    SL must only contain contributions contributed to fluxes into the oceans
+!         MODULATE SL BY IMPLICIT FACTOR
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IJ=KIJS,KIJL
+                GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
+                SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
+              ENDDO
+            ENDDO
+          ENDDO
         ENDIF
 
         IF ( LICERUN ) THEN      
