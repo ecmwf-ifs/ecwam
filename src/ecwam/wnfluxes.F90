@@ -71,13 +71,8 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
 
       USE YOWALTAS , ONLY : EGRCRV   ,AFCRV       ,BFCRV
       USE YOWCOUP  , ONLY : LWCOUAST, LWNEMOCOU, LWNEMOTAUOC, LWNEMOCOUWRS
-<<<<<<< HEAD
       USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH    , RHOWG_DFIM
       USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH, CIBLOCK, ZALPWRS,&
-=======
-      USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH
-      USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH, CIBLOCK, &
->>>>>>> 516748d4 (small changes to insure that we are fully bit identical for the pld option of not having waves in sea ice)
      &                      LCIWA1   ,LCIWA2    ,LCIWA3
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : TAUOCMIN ,TAUOCMAX ,PHIEPSMIN,PHIEPSMAX,    &
