@@ -327,7 +327,16 @@ PROGRAM CREATE_BATHY_ETOPO1
         NGX=NINT((DAMOEAP-DAMOWEP)/DXDELLO)+1
         NGY=NINT((DAMONOP-DAMOSOP)/DXDELLA)+1
 
+        WRITE(IU06,*) "NGX = ",NGX
+        WRITE(IU06,*) "NGY = ",NGY
+
         ALLOCATE(NLONRGG(NGY))
+
+        IF (IPER == 1) THEN
+          CLDOMAIN = 'g'
+        ELSE
+          CLDOMAIN = 'm'
+        ENDIF
       ENDIF
 
       AMONOP = REAL(DAMONOP,JWRB)
@@ -1064,7 +1073,7 @@ IF ( LLOBSTROUT ) THEN
 !       -----------------------
 !       IS=1 is for the west-east advection
 !       IS=2 is for the east-west advection
-        WRITE(IU06,*) 'CREATE EAST-WEST  OBSTRUCTIONS '
+        WRITE(IU06,*) 'CREATE EAST-WEST OBSTRUCTIONS '
         DO IS=1,2
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
 !$OMP& PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX) &
@@ -2509,6 +2518,8 @@ IF ( LLOBSTROUT ) THEN
           CALL IGRIB_CLOSE_FILE(IU08(IP))
         ENDDO
       ENDIF
+
+      CALL FLUSH(IU06)
 
 ENDIF  !!! LLOBSTROUT
 
