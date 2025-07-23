@@ -75,6 +75,7 @@
  &                          ZALPFACX
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
+      USE YOWSTAT  , ONLY : IDELT    ,XIMP
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -122,6 +123,8 @@
       INTEGER(KIND=JWIM) :: ICALL, NCALL
 
       REAL(KIND=JWRB) :: TAU, XN, PHIDIAG, TAUO, BETA
+      REAL(KIND=JWRB) :: DELTM, DELT5, DELT
+      REAL(KIND=JWRB) :: GTEMP1
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
@@ -151,6 +154,10 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 !        ---------------
 
       LCFLX=LWFLUX.OR.LWFLUXOUT
+
+      DELT  = IDELT
+      DELTM = 1.0_JWRB/DELT
+      DELT5 = XIMP*DELT
 ! ----------------------------------------------------------------------
 
 !*    1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
