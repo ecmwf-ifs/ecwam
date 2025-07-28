@@ -132,7 +132,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       INTEGER(KIND=JWIM) :: LL, LS, LE
       INTEGER(KIND=JWIM) :: ITABLE, ITABPAR, IERR
       INTEGER(KIND=JWIM) :: NC, NR, I, J, JSN, K, L, JRGG, IREPR, IR, IVAL, IDUM
-      INTEGER(KIND=JWIM) :: IRET, ILEN1, IGRIB_VERSION 
+      INTEGER(KIND=JWIM) :: IRET, ILEN1
       INTEGER(KIND=JWIM) :: ISCAN, ILOC, ISTAG, ICRLST, ICFG3, ICFG4, KSKIP, NGCOR
       INTEGER(KIND=JWIM) :: ITOP, IBOT, NDIM
       INTEGER(KIND=JWIM) :: NRFULL, ISTART, ISTOP
@@ -173,7 +173,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       CHARACTER(LEN=8)  :: CSTEPTYPE
       CHARACTER(LEN=12) :: CGRIDTYPE
 
-      LOGICAL :: LLINTERPOL, LLNEAREST, LLNONWAVE, LLOCEAN, LASTREAM
+      LOGICAL :: LLINTERPOL, LLNEAREST, LLNONWAVE, LASTREAM
       LOGICAL :: LLNEAREST_LOC
       LOGICAL :: LLSCANNS
       LOGICAL :: LLDIRFLD
@@ -226,8 +226,6 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 !*    UNPACK GRIB FIELDS.                                           
 !     -------------------                                           
 
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'editionNumber',IGRIB_VERSION)
-
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Nj',NRFULL)
       NR=NRFULL
 
@@ -253,75 +251,11 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 !     ??? The option argument KRET does not seem to work
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'section1Length',ILEN1)
 
-      IF ((IGRIB_VERSION == 1 .AND. ILEN1 > 28) .OR. IGRIB_VERSION /= 1) THEN
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'localDefinitionNumber',ILOC,KRET=IRET)
-        IF (IRET /= JPGRIB_SUCCESS) THEN
-          WRITE(IU06,*) '   Data do not contain localDefinitionNumber !'
-          WRITE(IU06,*) '   The program will continue wihtout it.'
-          ILOC=-1
-        ENDIF
-      ELSE
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'localDefinitionNumber',ILOC,KRET=IRET)
+      IF (IRET /= JPGRIB_SUCCESS) THEN
+        WRITE(IU06,*) '   Data do not contain localDefinitionNumber !'
+        WRITE(IU06,*) '   The program will continue wihtout it.'
         ILOC=-1
-      ENDIF
-      IF (ILOC == 4 .AND. IGRIB_VERSION == 1) THEN
-!       Ocean data before NEMO
-        WRITE(IU06,*) '   OLD OCEAN MODEL DATA DECODED, PARAM= ',IPARAM
-
-        LLOCEAN=.TRUE.
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'flagForNormalOrStaggeredGrid',ISTAG)
-        IF (ISTAG /= 1 .AND. ISTAG /= 0) THEN 
-          WRITE(IU06,*) '***************************************'
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*  FATAL ERROR IN SUB. GRIB2WGRID     *'
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*  IT WAS ASSUMED THAT THE OCEAN GRID *' 
-          WRITE(IU06,*) '*  IS NORMAL OR STAGGERED             *' 
-          WRITE(IU06,*) '*  THIS IS NOT THE CASE !!!           *'
-          WRITE(IU06,*) '*  ISTAG SHOULD BE 1 or 2             * '
-          WRITE(IU06,*) '*  BUT IT IS ',ISTAG
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*     THE PROGRAM ABORTS              *'
-          WRITE(IU06,*) '***************************************'
-          CALL ABORT1
-        ENDIF
-
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'flagForIrregularGridCoordinateList',ICRLST)
-        IF (ICRLST /= 2) THEN
-          WRITE(IU06,*) '***************************************'
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*  FATAL ERROR IN SUB. GRIB2WGRID     *'
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*  IT WAS ASSUMED THAT THE OCEAN GRID *' 
-          WRITE(IU06,*) '*  COULD ONLY BE IRREGULAR IN THE Y-  *' 
-          WRITE(IU06,*) '*  DIRECTION.                         *'
-          WRITE(IU06,*) '*  ICRLST = ',ICRLST
-          WRITE(IU06,*) '*  IT SHOULD BE = 2                   *'
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*     THE PROGRAM ABORTS              *'
-          WRITE(IU06,*) '***************************************'
-          CALL ABORT1
-        ENDIF
-
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'coordinate3Flag',ICFG3)
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'coordinate4Flag',ICFG4)
-        IF (ICFG3 /= 3 .OR. ICFG4 /= 4) THEN
-          WRITE(IU06,*) '***************************************'
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*  FATAL ERROR IN SUB. GRIB2WGRID     *'
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*  IT WAS ASSUMED THAT THE OCEAN GRID *' 
-          WRITE(IU06,*) '*  WAS FOR AN HORIZONTAL SECTION ONLY *' 
-          WRITE(IU06,*) '*  THIS IS NOT THE CASE !!!           *' 
-          WRITE(IU06,*) '*  ICFG3 SHOULD BE 3 BUT IS ',ICFG3
-          WRITE(IU06,*) '*  ICFG4 SHOULD BE 4 BUT IS ',ICFG4
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*     THE PROGRAM ABORTS              *'
-          WRITE(IU06,*) '***************************************'
-          CALL ABORT1
-        ENDIF
-
-      ELSE
-        LLOCEAN=.FALSE.
       ENDIF
 
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'gridType', CGRIDTYPE)
@@ -386,8 +320,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       CALL WSTREAM_STRG(ISTREAM,CSTREAM,IDUM,IDUM,CDUM,IDUM,LASTREAM)
 
       IF (CSTREAM == '****' .OR.                                        &
-     &   (LASTREAM .AND. ILEVTYPE /= 209 .AND. ILEVTYPE /= 212 .AND.    &
-     &    .NOT.LLOCEAN) ) THEN 
+     &   (LASTREAM .AND. ILEVTYPE /= 209 .AND. ILEVTYPE /= 212) ) THEN
         LLNONWAVE=.TRUE.
       ELSE
         LLNONWAVE=.FALSE.
@@ -408,16 +341,8 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
         CALL ABORT1
       ENDIF
 
-      IF ( IGRIB_VERSION == 1 ) THEN
-        IF (ILEVTYPE == 105 .OR. ILEVTYPE == 160) THEN
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'level',KZLEV)
-        ELSE
-          KZLEV=0
-        ENDIF
-      ELSE
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'level',KZLEV,KRET=IRET)
-        IF (IRET /= JPGRIB_SUCCESS) KZLEV = 0
-      ENDIF
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'level',KZLEV,KRET=IRET)
+      IF (IRET /= JPGRIB_SUCCESS) KZLEV = 0
 
 !*    DETERMINE INFORMATION ABOUT THE DECODED DATA 
 !     --------------------------------------------
@@ -477,64 +402,35 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       ALLOCATE(RDELLO(NR))
       ALLOCATE(RLAT(NR))
 
-      IF (.NOT.LLOCEAN) THEN
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'latitudeOfFirstGridPointInDegrees',YFRST)
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'latitudeOfLastGridPointInDegrees',YLAST)
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'latitudeOfFirstGridPointInDegrees',YFRST)
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'latitudeOfLastGridPointInDegrees',YLAST)
 
-        IF (LLSCANNS) THEN
-          RMONOP = YFRST 
-          RMOSOP = YLAST 
-        ELSE
-          RMONOP = YLAST 
-          RMOSOP = YFRST 
-        ENDIF
+      IF (LLSCANNS) THEN
+        RMONOP = YFRST
+        RMOSOP = YLAST
+      ELSE
+        RMONOP = YLAST
+        RMOSOP = YFRST
+      ENDIF
 
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'longitudeOfFirstGridPointInDegrees',RMOWEP)
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'longitudeOfFirstGridPointInDegrees',RMOWEP)
 
 
 !!!   THERE IS A DANGER THAT THE DEFINITON FOR RMOEAP MIGHT VARY DUE TO
 !!!   THE AMBIGOUS DEFINITION FOR IRREGULAR GRIDS. FOR NON WAVE FIELDS,
 !!!   A GAUSSIAN GRID IMPLIES THAT THE GRID IS GLOBAL, THEREFORE
 !!!   RMOEAP IS IMPLICITLY KNOWN.
-        IF (IREPR == 4 .AND. LLNONWAVE) THEN
-          DELLO = 360.0_JWRB/MAX(1,NC)
-          RMOEAP = RMOWEP+360.0_JWRB - DELLO
-          IPERIODIC = 1
-        ELSE
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'longitudeOfLastGridPointInDegrees',RMOEAP)
-
-          CALL ADJUST (RMOWEP, RMOEAP)
-          IPERIODIC = 0
-          DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
-          IF (RMOEAP-RMOWEP+1.5_JWRB*DELLO >= 360.0_JWRB) IPERIODIC = 1
-        ENDIF
-
-      ELSE
-!       the ocean data are implicitly global 
+      IF (IREPR == 4 .AND. LLNONWAVE) THEN
+        DELLO = 360.0_JWRB/MAX(1,NC)
+        RMOEAP = RMOWEP+360.0_JWRB - DELLO
         IPERIODIC = 1
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'iIncrement',IVAL)
-        DELLO = IVAL*1.E-6_JWRB
+      ELSE
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'longitudeOfLastGridPointInDegrees',RMOEAP)
 
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberInTheGridCoordinateList',NGCOR)
-        ALLOCATE(IGRIDCOORDINATE(NGCOR))
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'gridCoordinate',IGRIDCOORDINATE)
-
-        KSKIP=ISTAG
-        DO KK=1,NR
-          RLAT(KK)=IGRIDCOORDINATE(KK+KSKIP)*1.E-6_JWRB
-        ENDDO
-        DEALLOCATE(IGRIDCOORDINATE)
-        IF (LLSCANNS) THEN
-          RMONOP = RLAT(1) 
-          RMOSOP = RLAT(NR) 
-        ELSE
-          RMONOP = RLAT(NR) 
-          RMOSOP = RLAT(1) 
-        ENDIF
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'coordinate3OfFirstGridPoint',IVAL)
-        RMOWEP = IVAL*1.E-6_JWRB
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'coordinate3OfLastGridPoint',IVAL)
-        RMOEAP = IVAL*1.E-6_JWRB
+        CALL ADJUST (RMOWEP, RMOEAP)
+        IPERIODIC = 0
+        DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
+        IF (RMOEAP-RMOWEP+1.5_JWRB*DELLO >= 360.0_JWRB) IPERIODIC = 1
       ENDIF
 
       IF (JRGG == 1) THEN
@@ -739,26 +635,15 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 !     GET THE DATA
       CALL IGRIB_SET_VALUE(KGRIB_HANDLE,'missingValue',PMISS)
 
-      IF ( IGRIB_VERSION == 1 ) THEN
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberOfEffectiveValues',NUMBEROFVALUES)
-      ELSE
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'getNumberOfValues',NUMBEROFVALUES)
-      ENDIF
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'getNumberOfValues',NUMBEROFVALUES)
 
       ALLOCATE(VALUES(NUMBEROFVALUES))
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'values',VALUES)
 
-      IF ( IGRIB_VERSION == 1 ) THEN
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'directionNumber',KKK,IERR)
-        IF ( IERR /= 0 ) KKK=0
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'frequencyNumber',MMM,IERR)
-        IF ( IERR /= 0 ) MMM=0
-      ELSE
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'waveDirectionNumber',KKK,IERR)
-        IF ( IERR /= 0 ) KKK=0
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'waveFrequencyNumber',MMM,IERR)
-        IF ( IERR /= 0 ) MMM=0
-      ENDIF
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'waveDirectionNumber',KKK,IERR)
+      IF ( IERR /= 0 ) KKK=0
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'waveFrequencyNumber',MMM,IERR)
+      IF ( IERR /= 0 ) MMM=0
 
 !     TRANSFORM WAVE SPECTRAL VALUE TO THEIR ACTUAL SCALE
       IF (ITABPAR == 140251 .AND. CSTREAM /= '****') THEN
@@ -967,41 +852,21 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
           DO I = NXS, MIN(KLONRGG_LOC(JSN), NXE)
 
 !           *** skip all missing points !
-            IF (YLAT(I,K) == PMISS .OR. XLON(I,K) == PMISS) CYCLE 
+            IF (YLAT(I,K) == PMISS .OR. XLON(I,K) == PMISS) CYCLE
 
             LLSKIP=.FALSE.
-            IF (.NOT.LLOCEAN) THEN
-              XK = RMONOP - YLAT(I,K) 
-              XK = (XK/DELLA)+0.5_JWRB*(1.0_JWRB+SIGN(1.0_JWRB,XK))
-              KK = MAX(KKMIN,INT(XK))
 
-              KSN= NR-KK+1
-              KK1=MIN(KK+1,KKMAX)
-              KSN1=NR-KK1+1
-              DK1=ABS(XK-REAL(KK))
-              DK2=1.0_JWRB-DK1
+            XK = RMONOP - YLAT(I,K)
+            XK = (XK/DELLA)+0.5_JWRB*(1.0_JWRB+SIGN(1.0_JWRB,XK))
+            KK = MAX(KKMIN,INT(XK))
 
-              XI = XLON(I,K) - RMOWEP
+            KSN= NR-KK+1
+            KK1=MIN(KK+1,KKMAX)
+            KSN1=NR-KK1+1
+            DK1=ABS(XK-REAL(KK))
+            DK2=1.0_JWRB-DK1
 
-            ELSE
-              KK=1
-              XK = YLAT(I,K)
-              DO WHILE (RLAT(KK) > XK .AND. KK <= NR) 
-                KK=KK+1
-              ENDDO
-              KK=MAX(KK-1,1)
-
-              KSN= NR-KK+1
-              KK1=MIN(KK+1,NR)
-              KSN1=NR-KK1+1
-              DK1=RLAT(KK)-XK
-              DK2=1.0_JWRB-DK1
-
-              RMOWEP_KK=RMOWEP-0.5_JWRB*DELLO*ISTAG*MOD(KK,2)
-              XI = XLON(I,K) - RMOWEP_KK 
-
-            ENDIF
-
+            XI = XLON(I,K) - RMOWEP
             XI = MOD(XI+720.0_JWRB,360.0_JWRB)
 
             KSNLIM=MIN(MAX(KSN,1),NR)
@@ -1016,12 +881,6 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
             II1= MIN(II1,RLONRGG(KSNLIM)+IPERIODIC)
             DII1=XII-REAL(II)
             DII2=1.0_JWRB-DII1
-
-            IF (LLOCEAN) THEN
-!             when the grid is staggered RMOWEP_KK varies
-              RMOWEP_KK=RMOWEP-0.5_JWRB*DELLO*ISTAG*MOD(KK1,2)
-              XI = XLON(I,K) - RMOWEP_KK 
-            ENDIF
 
             KSN1LIM=MIN(MAX(KSN1,1),NR)
             XIIP = XI/RDELLO(KSN1LIM)+1.0_JWRB
