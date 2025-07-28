@@ -9,7 +9,7 @@
 
 SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &              NFIELDS, NGPTOTG, NC, NR,                     &
-     &              IGRIB_HANDLE, IGRIB_HANDLE2,                  &
+     &              IGRIB_HANDLE,                                 &
      &              RMISS, ZRCHAR, FIELDS,                        &
      &              NATMFLX,                                      &
      &              LWCUR, LWSTOKES,                              &
@@ -184,7 +184,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       INTEGER(KIND=JWIM), INTENT(IN) :: NR
 !     IFS GRIB HANDLES
       INTEGER(KIND=JWIM), INTENT(IN) :: IGRIB_HANDLE
-      INTEGER(KIND=JWIM), INTENT(IN) :: IGRIB_HANDLE2
 !     GRIB MISSING DATA INDICATOR
       REAL(KIND=JWRB), INTENT(IN) :: RMISS
 !     DEFAULT VALUE FOR CHARNOCK
@@ -350,14 +349,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         NGRIB_HANDLE_IFS=IGRIB_HANDLE
         IF (NGRIB_HANDLE_IFS < 0 ) THEN
           WRITE(IU06,*)' SUB: WAVEMDL:  NGRIB_HANDLE_IFS < 0 !'
-          WRITE(IU06,*)' CALL ABORT1 '
-          WRITE(IU06,*)'  '
-          CALL ABORT1
-        ENDIF
-
-        NGRIB_HANDLE_IFS2 = IGRIB_HANDLE2
-        IF (NGRIB_HANDLE_IFS2 < 0 ) THEN
-          WRITE(IU06,*)' SUB: WAVEMDL:  NGRIB_HANDLE_IFS2 < 0 !'
           WRITE(IU06,*)' CALL ABORT1 '
           WRITE(IU06,*)'  '
           CALL ABORT1
