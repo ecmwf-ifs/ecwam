@@ -288,7 +288,6 @@ list( APPEND ecwam_srcs
   wdirspread.F90
   weflux.F90
   wgrib2fdb.F90
-  wgrib_edition.F90
   wgribencode.F90
   wgribencode_model.F90
   wgribencode_values.F90
