@@ -236,7 +236,6 @@ cat > wam_namelist << EOF
   LICERUN               = ${licerun},
   LMASKICE              = T,
   LWAMRSETCI            = T,
-  NGRIB_VERSION         = 2,
   LL_GRID_SIMPLE_MATRIX = F,
   LLRSTGRIBPARAM        = F,
   YCLASS                = "rd",
