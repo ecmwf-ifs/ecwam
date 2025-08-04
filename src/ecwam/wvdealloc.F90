@@ -32,11 +32,12 @@
       USE YOWSHAL  , ONLY : WVPRPT, WVENVI
       USE YOWFRED  , ONLY : WVPRPT_LAND
       USE YOWMAP   , ONLY : BLK2GLO, BLK2LOC
+      USE YOWCOUT  , ONLY : F_BOUT
 
       USE YOWNEMOFLDS , ONLY : WAM2NEMO, NEMO2WAM
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE FIELD_FACTORY_MODULE, ONLY : FIELD_HOST_POOL_DELETE
+      USE FIELD_FACTORY_MODULE, ONLY : FIELD_DELETE
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -98,10 +99,10 @@
          CALL BLK2LOC%DEALLOC()
       ENDIF
 
-#ifdef WAM_HAVE_CUDA
-      !... Memory pool should be freed by IFS in coupled runs!
-      IF(.NOT. LWCOU) CALL FIELD_HOST_POOL_DELETE()
-#endif
+      IF (ASSOCIATED(F_BOUT)) THEN
+         CALL FIELD_DELETE(F_BOUT)
+         NULLIFY(F_BOUT)
+      ENDIF
 
       IF (LHOOK) CALL DR_HOOK('WVDEALLOC',1,ZHOOK_HANDLE)
 
