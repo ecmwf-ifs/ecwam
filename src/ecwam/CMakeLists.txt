@@ -55,6 +55,7 @@ list( APPEND ecwam_srcs
   alphap_tail.F90
   bouinpt.F90
   buildstress.F90
+  calcphiwa.F90
   cal_second_order_spec.F90
   cdustarz0.F90
   check.F90
@@ -245,6 +246,8 @@ list( APPEND ecwam_srcs
   setmarstype.F90
   setwavphys.F90
   sinflx.F90
+  sinflx_bydbr.F90
+  sinflx_ard_jan.F90
   sinput.F90
   sinput_ard.F90
   sinput_jan.F90
@@ -264,6 +267,7 @@ list( APPEND ecwam_srcs
   tables_2nd.F90
   tabu_swellft.F90
   tau_phi_hf.F90
+  tau_wave_atmos.F90
   taut_z0.F90
   tauwinds.F90
   topoar.F90

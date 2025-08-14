@@ -54,16 +54,12 @@
 ! ----------------------------------------------------------------------
         USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-        USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,TAUWSHELTER, XKAPPA, RNU      ,RNUM
         USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH,&
         &                      FRATIO   ,DELTH
         USE YOWMPP   , ONLY : NINF     ,NSUP
-        USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
+        USE YOWPARAM , ONLY : NANG     ,NFRE
         USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,EPSMIN
-        USE YOWSHAL  , ONLY : TFAK     ,INDEP
-        USE YOWSTAT  , ONLY : ISHALLO
-        USE YOWTABL  , ONLY : IAB      ,SWELLFT
-        USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+        USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -99,7 +95,7 @@
 
 !/ 0) --- Find the number of frequencies required to extend arrays
 !/        up to f=10Hz and allocate arrays --------------------------- /
-        NK10Hz = CEILING(ALOG(FRQMAX/(SIG(1)/ZPI))/ALOG(FRATIO))+1
+        NK10Hz = CEILING(LOG(FRQMAX/(SIG(1)/ZPI))/LOG(FRATIO))+1
         NK10Hz = MAX(NK,NK10Hz)
 !
         ALLOCATE(IK10Hz(NK10Hz))

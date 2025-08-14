@@ -130,8 +130,7 @@
 
 !/ 0) --- Find the number of frequencies required to extend arrays
 !/        up to f=10Hz and allocate arrays --------------------------- /
-!/        ALOG is the same as LOG
-      NK10Hz = CEILING(ALOG(FRQMAX/(SIG(1)/ZPI))/ALOG(FRATIO))+1
+      NK10Hz = CEILING(LOG(FRQMAX/(SIG(1)/ZPI))/LOG(FRATIO))+1
       NK10Hz = MAX(NK,NK10Hz)
 !
       ALLOCATE(IK10Hz(NK10Hz))

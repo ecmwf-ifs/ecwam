@@ -27,7 +27,7 @@ FUNCTION CALCPHIWA(SPOS,SNEG,DSII) RESULT(PHIWA)
         USE YOWPCONS , ONLY : G        ,ROWATER
         USE YOWFRED  , ONLY : DELTH
         USE YOWPARAM , ONLY : NANG     ,NFRE    
-        USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+        USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
   
   !----------------------------------------------------------------------
   
