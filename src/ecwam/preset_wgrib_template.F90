@@ -55,8 +55,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : LL_GRID_SIMPLE_MATRIX,                      &
      &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESI ,    &
-     &            NGRBRESS, LGRHDIFS ,LNEWLVTP,                         &
-     &            NSPEC2TAB, NSPEC2TMPD, NSPEC2TMPP 
+     &            NGRBRESS, LGRHDIFS ,LNEWLVTP, NSPEC2TMPD, NSPEC2TMPP
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWMAP   , ONLY : IRGG     ,IQGAUSS  ,DAMOWEP   ,DAMOSOP   ,  &
      &            DAMOEAP  ,DAMONOP  ,DXDELLA  ,DXDELLO   ,NLONRGG   ,  &
@@ -163,7 +162,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ! LOCAL MARS TABLE USED.
 
         IF (CT == "S") THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'tablesVersion', NSPEC2TAB)
+          ! Use latest tables version for the GRIB-2 samples
+          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'tablesVersionLatest', ISPEC2TAB)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'tablesVersion', ISPEC2TAB)
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'setLocalDefinition', 1)
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber', 1)
           IF ( NTOTENS > 0 ) THEN
@@ -304,8 +305,6 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 !     --------------------------------------------------
 
         IF (CT == "S") THEN
-!         SPECTRA USE THEIR OWN GRIB TABLE !!!
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'tablesVersion', NSPEC2TAB)
           IF ( NTOTENS > 0 ) THEN
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'productDefinitionTemplateNumber', NSPEC2TMPP)
           ELSE
