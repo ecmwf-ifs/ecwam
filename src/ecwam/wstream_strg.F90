@@ -219,7 +219,7 @@
         LASTREAM=.FALSE.
       ELSE IF(ISTREAM.EQ.1248) THEN
 !       WAVE LONG CUT-OFF FORECAST
-        CSTREAM = 'lwda'
+        CSTREAM = 'lwwv'
         MARSFCTYPE = 'fc'
         KSTREAM = 1247
         LASTREAM=.FALSE.

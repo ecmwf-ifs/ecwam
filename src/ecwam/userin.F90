@@ -167,7 +167,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 #include "mpcrtbl.intfb.h"
 #include "readsta.intfb.h"
 #include "set_wflags.intfb.h"
-#include "wstream_strg.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(OUT) :: IFORCA
       LOGICAL, INTENT(IN) :: LWCUR
@@ -175,7 +174,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
       INTEGER(KIND=JWIM) :: ITG, IC, I, J, ISAT
       INTEGER(KIND=JWIM) :: LEN
-      INTEGER(KIND=JWIM) :: IFS_STREAM, KSTREAM
       INTEGER(KIND=JWIM) :: IDELT_NEW
       INTEGER(KIND=JWIM) :: ISHIFT
       INTEGER(KIND=JWIM) :: IDELPRO_NEW
@@ -190,12 +188,11 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       REAL(KIND=JWRB) :: WSPEED, WTHETA
       REAL(KIND=JWRB) :: DEPTHMAX
 
-      CHARACTER(LEN=2) :: MARSFCTYPE
       CHARACTER(LEN=3) :: CITG
       CHARACTER(LEN=4) :: CSTREAM
       CHARACTER(LEN=256) :: CLFORM
 
-      LOGICAL :: LERROR, LASTREAM
+      LOGICAL :: LERROR
       LOGICAL :: LLNALTGO
       LOGICAL :: LRSTPARAL
 
@@ -243,21 +240,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
       IF (LGRHDIFS) THEN
 !       GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
-        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'stream',IFS_STREAM)
-        ISTREAM=IFS_STREAM
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'stream',ISTREAM)
       ELSEIF (ISTREAM <= 0) THEN
-        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
-        WRITE(IU06,*)'+                                          +'
-        WRITE(IU06,*)'+ SUBROUTINE USERIN :                      +'
-        WRITE(IU06,*)'+ READ NAMELIST FAILED                     +'
-        WRITE(IU06,*)'+ ISTREAM MUST BE SPECIFIED > 0 !!!!       +'
-        WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
-        WRITE(IU06,*)'+                                          +'
-        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
-        CALL WAM_ABORT("Expected positive value for ISTREAM",__FILENAME__,__LINE__)
-      ENDIF
-
-      IF (ISTREAM <= 0) THEN
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'+ SUBROUTINE USERIN :                      +'
@@ -1248,9 +1232,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ENDIF
       WRITE(IU06,*) '  '
       CALL FLUSH(IU06)
-
-      CALL WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,MARSFCTYPE,     &
-     &                  KSTREAM, LASTREAM)
 
       WRITE(IU06,'("  HARD DRIVE PATH NAME : ",/,5X,A70)') CPATH
       WRITE(IU06,*) '  '
