@@ -80,7 +80,6 @@
       IMPLICIT NONE
 #include "sinput_ard.intfb.h"
 #include "sinput_jan.intfb.h"
-#include "sinput_bydbr.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NGST
       LOGICAL, INTENT(IN) :: LLSNEG
@@ -122,14 +121,8 @@
      &                   COSWDIF, SINWDIF2,              & 
      &                   RAORW, WSTAR, RNFAC,            &
      &                   FLD, SL, SPOS, XLLWS)
-      CASE(2) 
-        !$loki inline
-        CALL SINPUT_BYDBR(NGST, LLSNEG, KIJS, KIJL, FL1,  &
-     &                   WAVNUM,  CGROUP, CINV, XK2CG,    &
-     &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
-     &                   COSWDIF, SINWDIF2,              & 
-     &                   RAORW, WSTAR, RNFAC,            &
-     &                   CHRNCK, FLD, SL, SPOS, XLLWS)
+      ! CASE(2)
+      ! - not called from SINPUT
     END SELECT 
 
       IF (LHOOK) CALL DR_HOOK('SINPUT',1,ZHOOK_HANDLE)

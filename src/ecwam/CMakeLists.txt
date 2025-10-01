@@ -251,7 +251,6 @@ list( APPEND ecwam_srcs
   sinput.F90
   sinput_ard.F90
   sinput_jan.F90
-  sinput_bydbr.F90
   skewness.F90
   snonlin.F90
   spectra.F90

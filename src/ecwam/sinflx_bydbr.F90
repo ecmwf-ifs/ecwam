@@ -303,7 +303,7 @@ DO M = 1,NFRE
   SIGP2(M) = SIG(M)**2
 END DO
 
-! TODO: clean up stuff in/out of IJ loops (sdissip_bydb + swldissip +sinput_bydb)
+! TODO: clean up stuff in/out of IJ loops (sdissip_bydb + swldissip )
 ! TODO: confirm that I'm using exactly the same things here (I've now adopted them throughout the BYDBR code)
 !        - confirm CGG_WAM=CGROUP      
 !        - confirm      XK=WAVNUM      
