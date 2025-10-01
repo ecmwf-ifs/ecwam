@@ -170,67 +170,76 @@ parameters:
         '057':
                 index: 57
                 description: Spectral skewness
-        sst:
+        '058':
                 index: 58
-                description: Specified sea surface temperature (NEMO)
+                description: Sea ice cover (NEMO)
         '059':
                 index: 59
-                description: Sea ice cover (NEMO)
-        '060':
-                index: 60
                 description: Sea ice thickness (NEMO)
         ucurr:
-                index: 61
+                index: 60
                 description: U-component of current (NEMO)
         vcurr:
-                index: 62
+                index: 61
                 description: V-component of current (NEMO)
+        '062':
+                index: 62
+                description: Wave energy flux magnitude
         '063':
                 index: 63
-                description: Wave energy flux magnitude
+                description: Wave energy flux direction
         '064':
                 index: 64
-                description: Wave energy flux direction
+                description: Significant wave height 10<=T<=12
         '065':
                 index: 65
-                description: Significant wave height 10<=T<=12
+                description: Significant wave height 12<=T<=14
         '066':
                 index: 66
-                description: Significant wave height 12<=T<=14
+                description: Significant wave height 14<=T<=17
         '067':
                 index: 67
-                description: Significant wave height 14<=T<=17
+                description: Significant wave height 17<=T<=21
         '068':
                 index: 68
-                description: Significant wave height 17<=T<=21
+                description: Significant wave height 21<=T<=25
         '069':
                 index: 69
-                description: Significant wave height 21<=T<=25
+                description: Significant wave height 25<=T<=30
         '070':
                 index: 70
-                description: Significant wave height 25<=T<=30
+                description: Wave induced sea level correction
         '071':
                 index: 71
-                description: Wave induced sea level correction
+                description: Spectral width index
         '072':
                 index: 72
-                description: Spectral width index
+                description: Number of freak waves events
         '073':
                 index: 73
-                description: Number of freak waves events
+                description: U-component atmospheric stress
         '074':
                 index: 74
-                description: U-component atmospheric stress
+                description: V-component atmospheric stress
         '075':
                 index: 75
-                description: V-component atmospheric stress
+                description: U-component stress into oceans
         '076':
                 index: 76
-                description: U-component stress into oceans
+                description: V-component stress into oceans
         '077':
                 index: 77
-                description: V-component stress into oceans
+                description: Turbulence energy flux into oceans
         '078':
                 index: 78
-                description: Turbulence energy flux into oceans
+                description: Time domain maximum crest height
+        '079':
+                index: 79
+                description: Time domain maximum wave height
+        '080':
+                index: 80
+                description: Space time maximum crest type
+        '081':
+                index: 81
+                description: Space time maximum wave height
 
