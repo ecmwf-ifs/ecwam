@@ -95,7 +95,7 @@ jobs:
               - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
             dependencies:
               ecmwf/eccodes:
-                version: develop
+                version: 2.44.0
                 cmake_options:
                   - -DENABLE_MEMFS=ON
                   - -DENABLE_JPG=OFF

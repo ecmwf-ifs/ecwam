@@ -200,7 +200,7 @@ jobs:
         recreate_cache: ${{ matrix.caching == false }}
         dependencies: |
           ecmwf/ecbuild
-          ecmwf/eccodes
+          ecmwf/eccodes@refs/tags/2.44.0
           ecmwf/fckit@refs/tags/0.13.0
           ecmwf-ifs/fiat@refs/tags/1.5.1
           ecmwf-ifs/field_api@refs/tags/v0.3.4
