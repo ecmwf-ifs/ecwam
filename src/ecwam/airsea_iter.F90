@@ -128,7 +128,7 @@
                   XKUTOP  = RKAP*U10(IJ)
 
                   ! Start with old charnock (and protect the scheme)
-                  PCHAROG = MIN(CHRNCK(IJ),PCHARMAX/G)
+                  PCHAROG = MIN(CHRNCK(IJ),PCHARMAX)/G
 
                   ! Cd as a linear relation with slope function of Charnock
                   CDLIN= ACDLIN + BCDLIN*SQRT(PCHAROG*G) * U10(IJ)

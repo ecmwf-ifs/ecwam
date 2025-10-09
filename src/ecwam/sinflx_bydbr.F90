@@ -398,7 +398,8 @@ DO IJ = KIJS,KIJL
 !/    SIN6WS        = 32.0 suggested by E. Rogers (2014) (young seas)
 !
   DO IGST=1,NGST
-    UPROXY(IGST) = FRIC * CDFAC * USTARGST(IJ,IGST) ! Scale wind speed by FRIC and CDFAC
+!    UPROXY(IGST) = FRIC * CDFAC * USTARGST(IJ,IGST) ! Scale wind speed by FRIC and CDFAC
+    UPROXY(IGST) = 32.0_JWRB * CDFAC * USTARGST(IJ,IGST) ! Scale wind speed by FRIC and CDFAC
   ! UPROXY(IGST) = WAVEAGE * CDFAC * USTARGST(IJ,IGST) ! TODO: Add in dependency on wave-induced stress
     ! (note that this line is also used in LFACTOR, and would also need to be adjusted there)
   ENDDO
