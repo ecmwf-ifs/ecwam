@@ -19,7 +19,7 @@ projects :
 
     - eccodes :
         git     : https://github.com/ecmwf/eccodes
-        version : master
+        version : 2.44.0
         cmake   : ENABLE_MEMFS=ON
 
     - fckit :
