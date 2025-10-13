@@ -106,6 +106,7 @@ SUBROUTINE SINFLX_BYDBR (ICALL, NCALL, KIJS, KIJL,  &
      &                      ABMIN  ,ABMAX, CDFAC, DTHRN_A  ,DTHRN_U 
       USE YOWTEST  , ONLY : IU06
       USE YOWTABL  , ONLY : IAB      ,SWELLFT
+      USE YOWSTAT  , ONLY : IPHYS2_AIRSEA
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -221,10 +222,12 @@ REAL(KIND=JWRB), DIMENSION(KIJL)      :: ROAIRN, CHNKOG, TAUNW
 
 ! For GUSTINESS
 REAL(KIND=JWRB)                          :: AVG_GST
-REAL(KIND=JWRB), DIMENSION(KIJL)      :: SIG_N, TAUWGST_AVG, TAUWDIRGST_AVG, TAUNWGST_AVG, USTARGST_AVG
+REAL(KIND=JWRB), DIMENSION(KIJL)      :: SIG_N, SIG_U10, TAUWGST_AVG, TAUWDIRGST_AVG, TAUNWGST_AVG, USTARGST_AVG
 REAL(KIND=JWRB), DIMENSION(KIJL,NGST) :: TAUWGST, TAUWDIRGST, TAUNWGST, UABSGST, USTARGST, Z0GST
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SLGST_AVG, SPOSGST_AVG, FLGST_AVG
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE,NGST) :: SLGST, SPOSGST, FLGST
+
+INTEGER(KIND=JWIM), PARAMETER :: SINFLX_BYDBR_PHYS=0 !0=~ST6, 1=iterative, 2=based only on wind!
 
 ! For PHIWA calculation
 ! REAL(KIND=JWRB),DIMENSION(KIJL,NFRE) :: RHOWGDFTH
@@ -330,17 +333,19 @@ DO K = 1, NANG                    ! Apply to all directions
 END DO
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
-CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N)
+CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N, SIG_U10)
 AVG_GST = 1.0_JWRB/NGST
 
 DO IJ=KIJS,KIJL
   USTARGST(IJ,1)= UFRIC(IJ)*(1.0_JWRB+SIG_N(IJ))
   USTARGST(IJ,2)= UFRIC(IJ)*(1.0_JWRB-SIG_N(IJ))
+  UABSGST(IJ,1)= WSWAVE(IJ)*(1.0_JWRB+SIG_U10(IJ))
+  UABSGST(IJ,2)= WSWAVE(IJ)*(1.0_JWRB-SIG_U10(IJ))
   CHNKOG(IJ)    = CHRNCK(IJ)*GM1
   ROAIRN(IJ)    = RAORW(IJ)*ROWATER        
 END DO
 
-! Define Z0GST associated with USTARGST (as in airsea_iter)
+! Define Z0GST associated with USTARGST (as in airsea_zbry)
 DO IGST=1,NGST
   DO IJ=KIJS,KIJL
     UST            = USTARGST(IJ,IGST)
@@ -353,11 +358,11 @@ ENDDO    ! NGST loop ENDDO
 
 ! Define UABSGST associated with USTARGST and Z0GST
 !     U10 =  (u*/kappa) log (1 + Z/Z0), z=10
-DO IGST=1,NGST
-  DO IJ=KIJS,KIJL
-    UABSGST(IJ,IGST) = USTARGST(IJ,IGST)*LOG(1.0_JWRB + ZNLEV/Z0GST(IJ,IGST))/XKAPPA
-  END DO
-END DO
+! DO IGST=1,NGST
+!   DO IJ=KIJS,KIJL
+!     UABSGST(IJ,IGST) = USTARGST(IJ,IGST)*LOG(1.0_JWRB + ZNLEV/Z0GST(IJ,IGST))/XKAPPA
+!   END DO
+! END DO
 
 !/  --- Main loop over LOC ----------------------------------- /
 
@@ -398,10 +403,14 @@ DO IJ = KIJS,KIJL
 !/    SIN6WS        = 32.0 suggested by E. Rogers (2014) (young seas)
 !
   DO IGST=1,NGST
-!    UPROXY(IGST) = FRIC * CDFAC * USTARGST(IJ,IGST) ! Scale wind speed by FRIC and CDFAC
-    UPROXY(IGST) = 32.0_JWRB * CDFAC * USTARGST(IJ,IGST) ! Scale wind speed by FRIC and CDFAC
-  ! UPROXY(IGST) = WAVEAGE * CDFAC * USTARGST(IJ,IGST) ! TODO: Add in dependency on wave-induced stress
-    ! (note that this line is also used in LFACTOR, and would also need to be adjusted there)
+    SELECT CASE (IPHYS2_AIRSEA)
+    CASE(0)
+      UPROXY(IGST) = 32.0_JWRB * CDFAC * USTARGST(IJ,IGST) ! original, suggested by E. Rogers (2014) (young seas)
+    CASE(1)
+      UPROXY(IGST) = FRIC * CDFAC * USTARGST(IJ,IGST) ! following Komen et al. (1984) (developed seas) (FRIC=28)
+    CASE(2)
+      UPROXY(IGST) = UABSGST(IJ,IGST) * CDFAC ! because FRIC=1/sqrt(CD), then this turns to purely a wind dependence (USTARGST cancels out)
+    END SELECT
   ENDDO
 !
   ! To reshape from 1D to 2D: 
@@ -560,7 +569,7 @@ DO IJ = KIJS,KIJL
   Z0        = ZNLEV / ( EXP(KUOUST) - 1.0_JWRB )
   Z0        = MAX(Z0, 0.0000001_JWRB)
   Z0M(IJ)   = Z0                                 ! Update z0 
-  CHNKOG(IJ)    = ( Z0 - ZRN*USTM1 ) * USTM2     ! Update charnock (where Z0=Z0CH+Z0VIS from airsea_iter)
+  CHNKOG(IJ)    = ( Z0 - ZRN*USTM1 ) * USTM2     ! Update charnock (where Z0=Z0CH+Z0VIS from airsea_zbry)
   ALPHAOGMAXU10 = MIN(ALPHAMAX,AMAX+BMAX*WSWAVE(IJ))*GM1 ! protective code taken from outbeta (incl /G)
   CHNKOG(IJ)    = MIN(CHNKOG(IJ),ALPHAOGMAXU10)        ! protective code taken from outbeta (incl /G)
 

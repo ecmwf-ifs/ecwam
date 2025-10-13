@@ -98,7 +98,7 @@
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
      &            IDELBC   ,                                            &
      &            ICASE    ,ISHALLO  ,                                  &
-     &            IPHYS    ,                                            &
+     &            IPHYS    ,IPHYS2_AIRSEA,                              &
      &            ISNONLIN ,                                            &
      &            IDAMPING ,                                            &
      &            LBIWBK   ,                                            &
@@ -605,6 +605,7 @@
       ICASE     = 1 
       ISHALLO   = 0   !! depricated 
       IPHYS     = 1
+      IPHYS2_AIRSEA = 2 !0=~ST6, 1=iterative, 2=based only on wind!
       ISNONLIN  = 1 
       IDAMPING  = 1 
       IPROPAGS  = 0 

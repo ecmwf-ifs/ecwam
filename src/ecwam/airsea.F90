@@ -71,7 +71,7 @@
 
 #include "abort1.intfb.h"
 #include "airsea_jan.intfb.h"
-#include "airsea_iter.intfb.h"
+#include "airsea_zbry.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (IN) :: HALP, U10DIR, TAUW, TAUWDIR, RNFAC
@@ -94,7 +94,7 @@
 &                              HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,  &
 &                              US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
       CASE(2) 
-            CALL AIRSEA_ITER(KIJS, KIJL, &
+            CALL AIRSEA_ZBRY(KIJS, KIJL, &
             &                HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,  &
             &                US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
             

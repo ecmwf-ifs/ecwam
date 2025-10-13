@@ -49,7 +49,7 @@ list( APPEND ecwam_srcs
   adjust.F90
   airsea.F90
   airsea_jan.F90
-  airsea_iter.F90
+  airsea_zbry.F90
   aki.F90
   aki_ice.F90
   alphap_tail.F90

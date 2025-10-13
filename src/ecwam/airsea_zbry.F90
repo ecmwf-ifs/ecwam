@@ -7,13 +7,13 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE AIRSEA_ITER (KIJS, KIJL, &
+      SUBROUTINE AIRSEA_ZBRY (KIJS, KIJL, &
 &                        HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,  &
 &                        US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
 
-!**** *AIRSEA_ITER* - DETERMINE TOTAL STRESS IN SURFACE LAYER.
+!**** *AIRSEA_ZBRY* - DETERMINE TOTAL STRESS IN SURFACE LAYER.
 
 !     P.A.E.M. JANSSEN    KNMI      AUGUST    1990
 !     JEAN BIDLOT         ECMWF     FEBRUARY 1999 : TAUT is already
@@ -110,7 +110,7 @@
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-      IF (LHOOK) CALL DR_HOOK ('AIRSEA_ITER', 0, ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK ('AIRSEA_ZBRY', 0, ZHOOK_HANDLE)
 
 !*    2. DETERMINE TOTAL STRESS AND ROUGHNESS (if needed)
 !        ----------------------------------
@@ -209,12 +209,12 @@
 
       ELSE
         WRITE (IU06, * ) ' ++++++++++++++++++++++++++++++++++++++++++'
-        WRITE (IU06, * ) ' + AIRSEA_ITER : INVALID VALUE OF ICODE_WND    +'
+        WRITE (IU06, * ) ' + AIRSEA_ZBRY : INVALID VALUE OF ICODE_WND    +'
         WRITE (IU06, * ) ' ICODE_WND = ', ICODE_WND
         WRITE (IU06, * ) ' ++++++++++++++++++++++++++++++++++++++++++'
         CALL ABORT1
       ENDIF
 
-      IF (LHOOK) CALL DR_HOOK ('AIRSEA_ITER', 1, ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK ('AIRSEA_ZBRY', 1, ZHOOK_HANDLE)
 
-      END SUBROUTINE AIRSEA_ITER
+      END SUBROUTINE AIRSEA_ZBRY
