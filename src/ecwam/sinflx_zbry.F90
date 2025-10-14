@@ -168,7 +168,7 @@ REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(OUT) :: RHOWGDFTH  !! WATER DENSIT
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS  !! TOTAL WINDSEA MASK FROM INPUT SOURCE TERM.
 
 INTEGER(KIND=JWIM) :: IUSFG, ICODE_WND
-INTEGER(KIND=JWIM), PARAMETER :: NGST=1
+INTEGER(KIND=JWIM), PARAMETER :: NGST=2
 
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 REAL(KIND=JWRB), DIMENSION(KIJL) :: RNFAC
@@ -306,9 +306,6 @@ DO M = 1,NFRE
 END DO
 
 ! TODO: clean up stuff in/out of IJ loops (sdissip_zbry + swldissip )
-! TODO: confirm that I'm using exactly the same things here (I've now adopted them throughout the ZBRY code)
-!        - confirm CGG_WAM=CGROUP      
-!        - confirm      XK=WAVNUM      
 
 DO M=1,NFRE
   DO IJ=KIJS,KIJL
@@ -351,7 +348,7 @@ ELSE
       WRITE (IU06,*) '**************************************'
       WRITE (IU06,*) '*    FATAL ERROR                     *'
       WRITE (IU06,*) '*    ===========                     *'
-      WRITE (IU06,*) '* IN SINPUT_ARD: NGST > 2            *'
+      WRITE (IU06,*) '* IN SINFLX_ZBRY: NGST > 2            *'
       WRITE (IU06,*) '* NGST = ', NGST
       WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.  *'
       WRITE (IU06,*) '*                                    *'
@@ -374,14 +371,6 @@ DO IGST=1,NGST
     Z0GST(IJ,IGST) = Z0CH+Z0VIS
   ENDDO  ! IJ   loop ENDDO
 ENDDO    ! NGST loop ENDDO
-
-! Define UABSGST associated with USTARGST and Z0GST
-!     U10 =  (u*/kappa) log (1 + Z/Z0), z=10
-! DO IGST=1,NGST
-!   DO IJ=KIJS,KIJL
-!     UABSGST(IJ,IGST) = USTARGST(IJ,IGST)*LOG(1.0_JWRB + ZNLEV/Z0GST(IJ,IGST))/XKAPPA
-!   END DO
-! END DO
 
 !/  --- Main loop over LOC ----------------------------------- /
 
@@ -541,7 +530,7 @@ DO IJ = KIJS,KIJL
     TAUNWGST(IJ,IGST)    = SQRT(TAUNWX(IGST)**2+TAUNWY(IGST)**2) / ROAIRN(IJ) ! KINEMATIC TAUNW
     SELECT CASE (IPHYS2_AIRSEA)
     ! CASE(0)
-      ! USTARGST(IJ,IGST)    = USTARGST(IJ,IGST) ! i.e. do nothing here, don't update, inherent but not explicitly done in ST6
+      ! USTARGST(IJ,IGST)    = USTARGST(IJ,IGST) ! i.e. do nothing here, don't update USTAR because it is not true to WW3_ST6
     CASE(1,2)
       USTARGST(IJ,IGST)    = SQRT(TAU(IJ,IGST) / ROAIRN(IJ) ) 
     END SELECT

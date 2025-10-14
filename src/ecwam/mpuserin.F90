@@ -605,7 +605,7 @@
       ICASE     = 1 
       ISHALLO   = 0   !! depricated 
       IPHYS     = 1
-      IPHYS2_AIRSEA = 0 !0=~ST6, 1=iterative, 2=based only on wind!
+      IPHYS2_AIRSEA = 2 !0=~ST6, 1=iterative, 2=based only on wind!
       ISNONLIN  = 1 
       IDAMPING  = 1 
       IPROPAGS  = 0 
