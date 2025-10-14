@@ -336,7 +336,8 @@ AVG_GST = 1.0_JWRB/NGST
 
 IF (NGST == 1) THEN
   DO IJ=KIJS,KIJL
-    USTP(IJ,1) = UFRIC(IJ)
+    USTARGST(IJ,1) = UFRIC(IJ)
+    UABSGST(IJ,1)  = WSWAVE(IJ)
   ENDDO
 ELSE IF (NGST == 2) THEN
     DO IJ=KIJS,KIJL
@@ -344,8 +345,6 @@ ELSE IF (NGST == 2) THEN
       USTARGST(IJ,2)= UFRIC(IJ)*(1.0_JWRB-SIG_N(IJ))
       UABSGST(IJ,1)= WSWAVE(IJ)*(1.0_JWRB+SIG_U10(IJ))
       UABSGST(IJ,2)= WSWAVE(IJ)*(1.0_JWRB-SIG_U10(IJ))
-      CHNKOG(IJ)    = CHRNCK(IJ)*GM1
-      ROAIRN(IJ)    = RAORW(IJ)*ROWATER        
     END DO
 ELSE
       WRITE (IU06,*) '**************************************'
@@ -359,6 +358,10 @@ ELSE
       CALL ABORT1
 ENDIF
 
+DO IJ=KIJS,KIJL
+  CHNKOG(IJ)    = CHRNCK(IJ)*GM1
+  ROAIRN(IJ)    = RAORW(IJ)*ROWATER        
+END DO
 
 ! Define Z0GST associated with USTARGST (as in airsea_zbry)
 DO IGST=1,NGST

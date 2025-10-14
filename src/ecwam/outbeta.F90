@@ -134,7 +134,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
               CD(IJ)     = (USPROXY/U10(IJ))**2
             ELSE
               CD(IJ)     = FLX4A0 * ( 8.058_JWRB + 0.967_JWRB*U10(IJ) - 0.016_JWRB*U10(IJ)**2 ) * 1E-4_JWRB
-              ! USPROXY = U10(IJ) * SQRT(CD)
+              ! USPROXY = U10(IJ) * SQRT(CD) ! not needed, not updating USTAR here
             END IF
           ENDDO
         ELSE
