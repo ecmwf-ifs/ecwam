@@ -255,7 +255,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       CASE(0,1)
          NCALL = 2
       CASE(2)
-        ! test without iterating for BYDBR on physics
+        ! test without iterating for ZBRY on physics
          NCALL = 1
       END SELECT
 

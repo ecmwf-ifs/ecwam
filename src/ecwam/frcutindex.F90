@@ -61,7 +61,7 @@
 
       IMPLICIT NONE
 #include "frcutindex_default.intfb.h"
-#include "frcutindex_bydb.intfb.h"
+#include "frcutindex_zbry.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(KIJL)
@@ -83,7 +83,7 @@
          CALL FRCUTINDEX_DEFAULT(KIJS, KIJL, FM, FMWS, UFRIC, CICOVER,     &
          &                       MIJ)
       CASE(2)
-         CALL FRCUTINDEX_BYDB (KIJS, KIJL, FM, UFRIC, CICOVER,     &
+         CALL FRCUTINDEX_ZBRY (KIJS, KIJL, FM, UFRIC, CICOVER,     &
          &                       MIJ)
       END SELECT
 

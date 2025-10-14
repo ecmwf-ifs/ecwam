@@ -58,8 +58,8 @@
 
 #include "sdissip_ard.intfb.h"
 #include "sdissip_jan.intfb.h"
-#include "sdissip_bydbr.intfb.h"
-#include "swldissip_bydbr.intfb.h"
+#include "sdissip_zbry.intfb.h"
+#include "swldissip_zbry.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
@@ -89,10 +89,10 @@
      &                     UFRIC, COSWDIF, RAORW)
       CASE(2) 
          !$loki inline
-         CALL SDISSIP_BYDBR (KIJS, KIJL, FL1 ,FLD, SL,   &
+         CALL SDISSIP_ZBRY (KIJS, KIJL, FL1 ,FLD, SL,   &
      &                     WAVNUM, CGROUP, XK2CG,      &
      &                     UFRIC, COSWDIF, RAORW)
-         CALL SWLDISSIP_BYDBR(KIJS, KIJL, FL1 ,FLD, SL,   &
+         CALL SWLDISSIP_ZBRY(KIJS, KIJL, FL1 ,FLD, SL,   &
      &                     WAVNUM, CGROUP, XK2CG,      &
      &                     UFRIC, COSWDIF, RAORW)
    END SELECT 

@@ -217,7 +217,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         BSWKM=0.425_JWRB
 
 
-        ! Not ALL necessarily used in BYDB physics (TODO: change any others?)
+        ! Not ALL necessarily used in ZBRY physics (TODO: change any others?)
         ALPHA   = 0.0065_JWRB
         BETAMAX = 1.40_JWRB
         ZALP    = 0.008_JWRB
