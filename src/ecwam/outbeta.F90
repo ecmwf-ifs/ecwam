@@ -127,15 +127,8 @@ IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
 
       IF( PRESENT(CD) ) THEN
         IF (IPHYS==2 .AND. IPHYS2_AIRSEA==0) THEN ! TODO: implement module for Hwang instead of duplicating it here
-          FLX4A0 = CDFAC
           DO IJ = KIJS,KIJL
-            IF (U10(IJ) .GE. 50.33_JWRB) THEN
-              USPROXY    = 2.026_JWRB * SQRT(FLX4A0)
-              CD(IJ)     = (USPROXY/U10(IJ))**2
-            ELSE
-              CD(IJ)     = FLX4A0 * ( 8.058_JWRB + 0.967_JWRB*U10(IJ) - 0.016_JWRB*U10(IJ)**2 ) * 1E-4_JWRB
-              ! USPROXY = U10(IJ) * SQRT(CD) ! not needed, not updating USTAR here
-            END IF
+            CD(IJ)     = (USTAR(IJ)/U10(IJ))**2
           ENDDO
         ELSE
           DO IJ = KIJS,KIJL

@@ -16,7 +16,7 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
  &                 COSWDIF, SINWDIF2,         &
  &                 FMEAN, HALP, FMEANWS,      &
  &                 FLM,                       &
- &                 UFRIC, TAUW, TAUWDIR,      & 
+ &                 UFRIC, UPROXY, TAUW, TAUWDIR, & 
  &                 Z0M, Z0B, CHRNCK, PHIWA,   &
  &                 FLD, SL, SPOS,             &
  &                 MIJ, RHOWGDFTH, XLLWS)
@@ -68,6 +68,7 @@ REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: HALP   !! 1/2 PHILLIPS PARAME
 REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(OUT) :: FMEANWS  !! MEAN FREQUENCY OF THE WINDSEA.
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG), INTENT(IN) :: FLM  !! SPECTAL DENSITY MINIMUM VALUE
 REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: UFRIC !! FRICTION VELOCITY IN M/S.
+REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: UPROXY !! FRICTION VELOCITY IN M/S.
 REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUW  !! WAVE STRESS IN (M/S)**2
 REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUWDIR  !! WAVE STRESS DIRECTION.
 REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: Z0M  !! ROUGHNESS LENGTH IN M.
@@ -124,7 +125,7 @@ CASE(2)
      &               COSWDIF, SINWDIF2,         &
      &               FMEAN, HALP, FMEANWS,      &
      &               FLM,                       &
-     &               UFRIC, TAUW, TAUWDIR,      &
+     &               UFRIC, UPROXY, TAUW, TAUWDIR, &
      &               Z0M, Z0B, CHRNCK, PHIWA,   &
      &               FLD, SL, SPOS,             &
      &               MIJ, RHOWGDFTH, XLLWS)

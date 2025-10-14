@@ -184,7 +184,7 @@ IF (CDATE >= CDTIMPNEXT) THEN
  &                     INTFLDS%TAUXD(:,ICHNK), INTFLDS%TAUYD(:,ICHNK), INTFLDS%TAUOCXD(:,ICHNK), &
  &                     INTFLDS%TAUOCYD(:,ICHNK), INTFLDS%TAUOC(:,ICHNK), &
  &                     INTFLDS%TAUICX(:,ICHNK), INTFLDS%TAUICY(:,ICHNK), INTFLDS%PHIOCD(:,ICHNK), &
- &                     INTFLDS%PHIEPS(:,ICHNK), INTFLDS%PHIAW(:,ICHNK), &
+ &                     INTFLDS%PHIEPS(:,ICHNK), INTFLDS%PHIAW(:,ICHNK), INTFLDS%UPROXY(:,ICHNK), &
  &                     MIJ%PTR(:,ICHNK), VARS_4D%XLLWS(:,:,:,ICHNK) )
       END DO
 
