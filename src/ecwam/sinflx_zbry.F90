@@ -103,10 +103,10 @@ SUBROUTINE SINFLX_ZBRY (ICALL, NCALL, KIJS, KIJL,  &
      &                      RNU      ,RNUM, &
      &                      SWELLF   ,SWELLF2  ,SWELLF3  ,SWELLF4  , SWELLF5, &
      &                      SWELLF6  ,SWELLF7  ,SWELLF7M1, Z0RAT   ,Z0TUBMAX , &
-     &                      ABMIN  ,ABMAX, CDFAC, DTHRN_A  ,DTHRN_U 
+     &                      ABMIN  ,ABMAX, CDFAC, DTHRN_A  ,DTHRN_U, RNU_WATER
       USE YOWTEST  , ONLY : IU06
       USE YOWTABL  , ONLY : IAB      ,SWELLFT
-      USE YOWSTAT  , ONLY : IPHYS2_AIRSEA
+      USE YOWSTAT  , ONLY : IPHYS2_AIRSEA, IPHYS2_LOWWINDS
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -466,7 +466,14 @@ DO IJ = KIJS,KIJL
                 (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN2*W1(:,IGST)-11.0_JWRB)))*&
   &             SQRTBN2*W1(:,IGST)
 !
-    S(:,IGST) = D(:,IGST) * A
+    IF (IPHYS2_LOWWINDS .AND. UABSGST(IJ,IGST)<=1.5_JWRB) THEN
+      ! Reduce growth rates for low winds (following Muhammad Yasrab's work)
+      D(:,IGST) = D(:,IGST) - (4._JWRB*(RNU_WATER)*(WAVNUM(IJ,:)**2))
+      S(:,IGST) = D(:,IGST) * A
+    ELSE
+      S(:,IGST) = D(:,IGST) * A
+    END IF     
+
   ENDDO
 !
 !/ 5) --- calculate reduction factor LFACT using non-directional

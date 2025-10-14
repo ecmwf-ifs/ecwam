@@ -8,7 +8,7 @@
 !
 
       SUBROUTINE SDISSIP_ZBRY (KIJS, KIJL, FL1, FLD, SL,          &
-     &                        WAVNUM, CGROUP, XK2CG,             &
+     &                        WSWAVE, WAVNUM, CGROUP, XK2CG,             &
      &                        UFRIC, COSWDIF, RAORW)
 ! ----------------------------------------------------------------------
 
@@ -82,6 +82,7 @@
 &                  SSDSC2  , SSDSC4, SSDSC6,  MICHE, SSDSC3, SSDSBRF1, &
 &                  BRKPBCOEF ,SSDSC5, NSDSNTH,                         &
 &                  INDICESSAT, SATWEIGHTS
+      USE YOWSTAT , ONLY : IPHYS2_LOWWINDS
 
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
@@ -95,7 +96,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP, XK2CG 
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: UFRIC, RAORW 
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: WSWAVE, UFRIC, RAORW 
       REAL(KIND=JWRB), DIMENSION(KIJL, NANG), INTENT(IN) :: COSWDIF 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, I, J, M2, K2, NANGD
@@ -233,13 +234,17 @@
 !/T6     270 FORMAT (' TEST W3SDS6 : ',A,'(',A,')',':',70E11.3)
 !/T6     271 FORMAT (' TEST W3SDS6 : Total SDS  =',E13.5)
 
-        DDS = RESHAPE(D,(/NANG,NFRE/))
-        DO M = 1,NFRE
-         DO K = 1, NANG
-            SL(IJ,K,M)  = SL(IJ,K,M)  + DDS(K,M)*FL1(IJ,K,M)
-            FLD(IJ,K,M) = FLD(IJ,K,M) + DDS(K,M)
-          END DO
-        END DO
+        IF (.NOT. (IPHYS2_LOWWINDS .AND. WSWAVE(IJ)<=5._JWRB)) THEN
+         ! no dissipation for U10<5m/s (following Muhammad Yasrab's work)
+         ! i.e. don't update SL and FLD for low winds
+         DDS = RESHAPE(D,(/NANG,NFRE/))
+         DO M = 1,NFRE
+            DO K = 1, NANG
+               SL(IJ,K,M)  = SL(IJ,K,M)  + DDS(K,M)*FL1(IJ,K,M)
+               FLD(IJ,K,M) = FLD(IJ,K,M) + DDS(K,M)
+            END DO
+         END DO
+        END IF
 
       END DO
       ! END LOOP OVER LOC

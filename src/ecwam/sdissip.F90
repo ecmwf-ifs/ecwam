@@ -8,7 +8,7 @@
 !
 
       SUBROUTINE SDISSIP (KIJS, KIJL, FL1, FLD, SL,  &
-     &                    WAVNUM, CGROUP, XK2CG,     &
+     &                    WSWAVE, WAVNUM, CGROUP, XK2CG,     &
      &                    EMEAN, F1MEAN, XKMEAN,     &
      &                    UFRIC, COSWDIF, RAORW)
 ! ----------------------------------------------------------------------
@@ -65,7 +65,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP, XK2CG
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: EMEAN, F1MEAN, XKMEAN
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: WSWAVE, EMEAN, F1MEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: UFRIC, RAORW
       REAL(KIND=JWRB), DIMENSION(KIJL, NANG), INTENT(IN) :: COSWDIF
 
@@ -90,7 +90,7 @@
       CASE(2) 
          !$loki inline
          CALL SDISSIP_ZBRY (KIJS, KIJL, FL1 ,FLD, SL,   &
-     &                     WAVNUM, CGROUP, XK2CG,      &
+     &                     WSWAVE, WAVNUM, CGROUP, XK2CG,      &
      &                     UFRIC, COSWDIF, RAORW)
          CALL SWLDISSIP_ZBRY(KIJS, KIJL, FL1 ,FLD, SL,   &
      &                     WAVNUM, CGROUP, XK2CG,      &
