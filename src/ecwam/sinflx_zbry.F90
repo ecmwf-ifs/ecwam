@@ -334,14 +334,31 @@ END DO
 CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N, SIG_U10)
 AVG_GST = 1.0_JWRB/NGST
 
-DO IJ=KIJS,KIJL
-  USTARGST(IJ,1)= UFRIC(IJ)*(1.0_JWRB+SIG_N(IJ))
-  USTARGST(IJ,2)= UFRIC(IJ)*(1.0_JWRB-SIG_N(IJ))
-  UABSGST(IJ,1)= WSWAVE(IJ)*(1.0_JWRB+SIG_U10(IJ))
-  UABSGST(IJ,2)= WSWAVE(IJ)*(1.0_JWRB-SIG_U10(IJ))
-  CHNKOG(IJ)    = CHRNCK(IJ)*GM1
-  ROAIRN(IJ)    = RAORW(IJ)*ROWATER        
-END DO
+IF (NGST == 1) THEN
+  DO IJ=KIJS,KIJL
+    USTP(IJ,1) = UFRIC(IJ)
+  ENDDO
+ELSE IF (NGST == 2) THEN
+    DO IJ=KIJS,KIJL
+      USTARGST(IJ,1)= UFRIC(IJ)*(1.0_JWRB+SIG_N(IJ))
+      USTARGST(IJ,2)= UFRIC(IJ)*(1.0_JWRB-SIG_N(IJ))
+      UABSGST(IJ,1)= WSWAVE(IJ)*(1.0_JWRB+SIG_U10(IJ))
+      UABSGST(IJ,2)= WSWAVE(IJ)*(1.0_JWRB-SIG_U10(IJ))
+      CHNKOG(IJ)    = CHRNCK(IJ)*GM1
+      ROAIRN(IJ)    = RAORW(IJ)*ROWATER        
+    END DO
+ELSE
+      WRITE (IU06,*) '**************************************'
+      WRITE (IU06,*) '*    FATAL ERROR                     *'
+      WRITE (IU06,*) '*    ===========                     *'
+      WRITE (IU06,*) '* IN SINPUT_ARD: NGST > 2            *'
+      WRITE (IU06,*) '* NGST = ', NGST
+      WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.  *'
+      WRITE (IU06,*) '*                                    *'
+      WRITE (IU06,*) '**************************************'
+      CALL ABORT1
+ENDIF
+
 
 ! Define Z0GST associated with USTARGST (as in airsea_zbry)
 DO IGST=1,NGST
