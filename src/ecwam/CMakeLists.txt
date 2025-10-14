@@ -83,7 +83,7 @@ list( APPEND ecwam_srcs
   fndprt.F90
   frcutindex.F90
   frcutindex_default.F90
-  frcutindex_bydb.F90
+  frcutindex_zbry.F90
   gc_dispersion.h
   get_preset_wgrib_template.F90
   getbobstrct.F90
@@ -224,7 +224,7 @@ list( APPEND ecwam_srcs
   sdissip.F90
   sdissip_ard.F90
   sdissip_jan.F90
-  sdissip_bydbr.F90
+  sdissip_zbry.F90
   sdiwbk.F90
   sdice.F90
   sdice1.F90
@@ -246,7 +246,7 @@ list( APPEND ecwam_srcs
   setmarstype.F90
   setwavphys.F90
   sinflx.F90
-  sinflx_bydbr.F90
+  sinflx_zbry.F90
   sinflx_ard_jan.F90
   sinput.F90
   sinput_ard.F90
@@ -262,7 +262,7 @@ list( APPEND ecwam_srcs
   stress_gc.F90
   stresso.F90
   strspec.F90
-  swldissip_bydbr.F90
+  swldissip_zbry.F90
   tables_2nd.F90
   tabu_swellft.F90
   tau_phi_hf.F90
