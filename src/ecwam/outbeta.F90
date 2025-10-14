@@ -68,7 +68,8 @@ SUBROUTINE OUTBETA (KIJS, KIJL,                   &
 
       USE YOWCOUP  , ONLY : LLGCBZ0
       USE YOWPCONS , ONLY : G , GM1, EPSUS
-      USE YOWPHYS  , ONLY : XKAPPA, XNLEV, RNUM , PRCHAR, ALPHAMIN, ALPHAMAX, ALPHA
+      USE YOWPHYS  , ONLY : XKAPPA, XNLEV, RNUM , PRCHAR, ALPHAMIN, ALPHAMAX, ALPHA, CDFAC
+      USE YOWSTAT  , ONLY : IPHYS, IPHYS2_AIRSEA
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -97,7 +98,7 @@ SUBROUTINE OUTBETA (KIJS, KIJL,                   &
 
       INTEGER(KIND=JWIM) :: IJ
 
-      REAL(KIND=JWRB) :: GUSM2, Z0ATM
+      REAL(KIND=JWRB) :: GUSM2, Z0ATM, FLX4A0, USPROXY
       REAL(KIND=JWRB), DIMENSION(KIJL) :: USM 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: ALPHAMAXU10
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -125,12 +126,25 @@ IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
       ENDDO
 
       IF( PRESENT(CD) ) THEN
-        DO IJ = KIJS,KIJL
-!!!     we are assuming here that z0 = RNUM/USTAR + Charnock USTAR**2/g
-!!!     in order to fit with what is used in the IFS.
-          Z0ATM = RNUM*USM(IJ) + GM1 * BETAM(IJ) * USTAR(IJ)**2
-          CD(IJ) = ( XKAPPA / LOG( 1.0_JWRB + XNLEV/Z0ATM) )**2
-        ENDDO
+        IF (IPHYS==2 .AND. IPHYS2_AIRSEA==0) THEN ! TODO: implement module for Hwang instead of duplicating it here
+          FLX4A0 = CDFAC
+          DO IJ = KIJS,KIJL
+            IF (U10(IJ) .GE. 50.33_JWRB) THEN
+              USPROXY    = 2.026_JWRB * SQRT(FLX4A0)
+              CD(IJ)     = (USPROXY/U10(IJ))**2
+            ELSE
+              CD(IJ)     = FLX4A0 * ( 8.058_JWRB + 0.967_JWRB*U10(IJ) - 0.016_JWRB*U10(IJ)**2 ) * 1E-4_JWRB
+              ! USPROXY = U10(IJ) * SQRT(CD)
+            END IF
+          ENDDO
+        ELSE
+          DO IJ = KIJS,KIJL
+  !!!     we are assuming here that z0 = RNUM/USTAR + Charnock USTAR**2/g
+  !!!     in order to fit with what is used in the IFS.
+            Z0ATM = RNUM*USM(IJ) + GM1 * BETAM(IJ) * USTAR(IJ)**2
+            CD(IJ) = ( XKAPPA / LOG( 1.0_JWRB + XNLEV/Z0ATM) )**2
+          ENDDO
+        ENDIF
       ENDIF
 
 IF (LHOOK) CALL DR_HOOK('OUTBETA',1,ZHOOK_HANDLE)
