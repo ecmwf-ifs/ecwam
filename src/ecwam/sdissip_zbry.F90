@@ -13,11 +13,9 @@
 ! ----------------------------------------------------------------------
 
 !**** *SDISSIP_ZBRY* - COMPUTATION OF DISSIPATION SOURCE FUNCTION.
-
-!     LOTFI AOUF       METEO FRANCE 2013
-!     FABRICE ARDHUIN  IFREMER  2013
-
-
+!
+!     JOSH KOUSAL & JEAN BIDLOT    ECMWF 2023
+!
 !*    PURPOSE.
 !     --------
 !      Observation-based source term for dissipation after Babanin et al.

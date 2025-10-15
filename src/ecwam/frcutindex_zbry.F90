@@ -5,7 +5,9 @@
 
 !**** *FRCUTINDEX_ZBRY* - RETURNS THE LAST FREQUENCY INDEX OF
 !                        PROGNOSTIC PART OF SPECTRUM.
-
+!
+!     JOSH KOUSAL & JEAN BIDLOT    ECMWF 2023
+!
 !**   INTERFACE.
 !     ----------
 
@@ -78,7 +80,7 @@
       FXFM   = SIN6FC
       FXFM   = FXFM * ZPI
       FXPM   = 4.0_JWRB             !TODO: 4.0_JWRB is the factor for the tail (is this right)
-      FXPM   = FXPM * G / 28.0_JWRB !TODO: should this be FRIC?
+      FXPM   = FXPM * G / FRIC
       SIGNK  = ZPI*FR(NFRE)
 
       DO IJ=KIJS,KIJL

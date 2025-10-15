@@ -27,7 +27,7 @@ USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C,                     &
      &                SWELLF4,  SWELLF7, SWELLF7M1, Z0TUBMAX, Z0RAT,    &
      &                SSDSC5, CDFAC
-USE YOWSTAT  , ONLY : IPHYS
+USE YOWSTAT  , ONLY : IPHYS, IPHYS2_AIRSEA
 USE YOWTEST  , ONLY : IU06
 
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -217,16 +217,22 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         BSWKM=0.425_JWRB
 
 
+        IF (IPHYS2_AIRSEA==0) THEN
+          ! NGST=1 (handled in SINFLX)
+          ALPHAPMAX = 1.0_JWRB ! i.e. no cap on max spectral steepness
+        ELSE IF (IPHYS2_AIRSEA==1 .OR. IPHYS2_AIRSEA==2) THEN
+          ! NGST=2 (handled in SINFLX)
+          ALPHAPMAX = 0.031_JWRB ! cap on spectral steepness as in ARD
+        END IF
+
         ! Not ALL necessarily used in ZBRY physics (TODO: change any others?)
         ALPHA   = 0.0065_JWRB
-        BETAMAX = 1.40_JWRB
-        ZALP    = 0.008_JWRB
-        ALPHAPMAX = 0.031_JWRB ! cap on spectral steepness as in ARD
-!        ALPHAPMAX = 1.0_JWRB ! i.e. no cap on max spectral steepness
-        TAUWSHELTER=0.25_JWRB
-        TAILFACTOR=2.5_JWRB
-        TAILFACTOR_PM=3.0_JWRB
-        CDFAC=1.0_JWRB
+        CDFAC   = 1.0_JWRB
+        ! BETAMAX = 1.40_JWRB
+        ! ZALP    = 0.008_JWRB
+        ! TAUWSHELTER=0.25_JWRB
+        TAILFACTOR=6.0_JWRB    ! SIN6FC = 6.0 from WW3-ST6
+        TAILFACTOR_PM=4.0_JWRB ! FXPM = 4.0 from WW3-ST6
         
       ELSE
         WRITE (IU06,*) '*************************************'

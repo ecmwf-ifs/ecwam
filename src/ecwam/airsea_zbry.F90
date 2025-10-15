@@ -14,13 +14,9 @@
 ! ----------------------------------------------------------------------
 
 !**** *AIRSEA_ZBRY* - DETERMINE TOTAL STRESS IN SURFACE LAYER.
-
-!     P.A.E.M. JANSSEN    KNMI      AUGUST    1990
-!     JEAN BIDLOT         ECMWF     FEBRUARY 1999 : TAUT is already
-!                                                   SQRT(TAUT)
-!     JEAN BIDLOT         ECMWF     OCTOBER 2004: QUADRATIC STEP FOR
-!                                                 TAUW
-
+!
+!     JOSH KOUSAL & JEAN BIDLOT    ECMWF 2023
+!
 !*    PURPOSE.
 !     --------
 

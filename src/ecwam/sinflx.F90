@@ -33,7 +33,7 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPHYS  , ONLY : DTHRN_A  ,DTHRN_U 
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
-      USE YOWSTAT  , ONLY : IPHYS
+      USE YOWSTAT  , ONLY : IPHYS    ,IPHYS2_AIRSEA
 
       USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK, JPHOOK
 
@@ -116,7 +116,12 @@ CASE(0,1)
      &               FLD, SL, SPOS,             &
      &               MIJ, RHOWGDFTH, XLLWS)
 CASE(2)
-  CALL SINFLX_ZBRY (ICALL, NCALL, KIJS, KIJL,  &
+  IF (IPHYS2_AIRSEA==0) THEN
+    NGST=1
+  ELSE IF (IPHYS2_AIRSEA==1 .OR. IPHYS2_AIRSEA==2) THEN
+    NGST=2
+  END IF
+  CALL SINFLX_ZBRY (ICALL, NCALL, NGST, KIJS, KIJL,  &
      &               LUPDTUS,                   &
      &               FL1,                       &
      &               WAVNUM,CGROUP, CINV, XK2CG,&

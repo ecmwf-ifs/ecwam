@@ -13,11 +13,9 @@
 ! ----------------------------------------------------------------------
 
 !**** *SWLDISSIP_ZBRY* - COMPUTATION OF DISSIPATION SOURCE FUNCTION.
-
-!     LOTFI AOUF       METEO FRANCE 2013
-!     FABRICE ARDHUIN  IFREMER  2013
-
-
+!
+!     JOSH KOUSAL & JEAN BIDLOT    ECMWF 2023
+!
 !*    PURPOSE.
 !     --------
 !     Turbulent dissipation of narrow-banded swell as described in

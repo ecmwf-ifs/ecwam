@@ -126,7 +126,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
       ENDDO
 
       IF( PRESENT(CD) ) THEN
-        IF (IPHYS==2 .AND. IPHYS2_AIRSEA==0) THEN ! TODO: implement module for Hwang instead of duplicating it here
+        IF (IPHYS==2 .AND. IPHYS2_AIRSEA==0) THEN
           DO IJ = KIJS,KIJL
             CD(IJ)     = (USTAR(IJ)/U10(IJ))**2
           ENDDO
