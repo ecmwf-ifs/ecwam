@@ -82,7 +82,7 @@
 &                  SSDSC2  , SSDSC4, SSDSC6,  MICHE, SSDSC3, SSDSBRF1, &
 &                  BRKPBCOEF ,SSDSC5, NSDSNTH,                         &
 &                  INDICESSAT, SATWEIGHTS
-      USE YOWSTAT , ONLY : IPHYS2_LOWWINDS
+      USE YOWSTAT , ONLY : LLLOWWINDS
 
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
@@ -234,7 +234,7 @@
 !/T6     270 FORMAT (' TEST W3SDS6 : ',A,'(',A,')',':',70E11.3)
 !/T6     271 FORMAT (' TEST W3SDS6 : Total SDS  =',E13.5)
 
-        IF (.NOT. (IPHYS2_LOWWINDS .AND. WSWAVE(IJ)<=5._JWRB)) THEN
+        IF (.NOT. (LLLOWWINDS .AND. WSWAVE(IJ)<=5._JWRB)) THEN
          ! no dissipation for U10<5m/s (following Muhammad Yasrab's work)
          ! i.e. don't update SL and FLD for low winds
          DDS = RESHAPE(D,(/NANG,NFRE/))

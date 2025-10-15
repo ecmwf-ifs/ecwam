@@ -106,7 +106,7 @@ SUBROUTINE SINFLX_ZBRY (ICALL, NCALL, KIJS, KIJL,  &
      &                      ABMIN  ,ABMAX, CDFAC, DTHRN_A  ,DTHRN_U, RNU_WATER
       USE YOWTEST  , ONLY : IU06
       USE YOWTABL  , ONLY : IAB      ,SWELLFT
-      USE YOWSTAT  , ONLY : IPHYS2_AIRSEA, IPHYS2_LOWWINDS
+      USE YOWSTAT  , ONLY : IPHYS2_AIRSEA, LLLOWWINDS
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -466,7 +466,7 @@ DO IJ = KIJS,KIJL
                 (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN2*W1(:,IGST)-11.0_JWRB)))*&
   &             SQRTBN2*W1(:,IGST)
 !
-    IF (IPHYS2_LOWWINDS .AND. UABSGST(IJ,IGST)<=1.5_JWRB) THEN
+    IF (LLLOWWINDS .AND. UABSGST(IJ,IGST)<=1.5_JWRB) THEN
       ! Reduce growth rates for low winds (following Muhammad Yasrab's work)
       D(:,IGST) = D(:,IGST) - (4._JWRB*(RNU_WATER)*(WAVNUM(IJ,:)**2))
       S(:,IGST) = D(:,IGST) * A
