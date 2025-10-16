@@ -112,7 +112,8 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: ADF ! temporary variable
       REAL(KIND=JWRB), DIMENSION(NFRE) :: DF  ! FREQUENCY INTERVALS
       REAL(KIND=JWRB) :: BNT ! empirical constant for wave breaking probability
-      REAL(KIND=JWRB) :: XFAC, EDENSMAX ! temporary variableis
+      REAL(KIND=JWRB) :: XFAC ! temporary variableis
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: EDENSMAX ! temporary variable
 
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG*NFRE) :: S, D, A
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG*NFRE) :: CG2
@@ -149,7 +150,7 @@
       END DO
       
       DO IJ = KIJS,KIJL
-        A(IJ,:) = RESHAPE( FL1(IJ,:,:) , (/NSPEC/)) * CG2(IJ,:) / ( ZPI * SIG2(:) )! ACTION DENSITY SPECTRUM
+        A(IJ,:) = RESHAPE( FL1(IJ,:,:) , (/NSPEC/)) * CG2(IJ,:) / ( ZPI * SIG2 )! ACTION DENSITY SPECTRUM
         ! WAM E(f,theta) to WW3 A(k,theta) conversion factor: CG2 / ( ZPI *SIG2 ) 
       END DO
 
@@ -179,23 +180,27 @@
         IF (LLSDS6ET) THEN                ! ww3_grid.inp: &SDS6 SDSET = T or F
            NEXDENS(IJ,:) = EXDENS(IJ,:) / ETDENS(IJ,:)    ! normalise by threshold spectral density
         ELSE                            ! normalise by spectral density
-           EDENSMAX = MAXVAL(EDENS(IJ,:))*1.0E-5_JWRB
-           IF (ALL(EDENS(IJ,:) .GT. EDENSMAX)) THEN
+           EDENSMAX(IJ) = MAXVAL(EDENS(IJ,:))*1.0E-5_JWRB
+           IF (ALL(EDENS(IJ,:) .GT. EDENSMAX(IJ))) THEN
               NEXDENS(IJ,:) = EXDENS(IJ,:) / EDENS(IJ,:)
            ELSE
               DO M = 1,NFRE
-                 IF (EDENS(IJ,M) .GT. EDENSMAX) THEN
+                 IF (EDENS(IJ,M) .GT. EDENSMAX(IJ)) THEN
                    NEXDENS(IJ,M) = EXDENS(IJ,M) / EDENS(IJ,M)
                  END IF
               END DO
            END IF
         END IF
+      END DO
 !
 !/ 2) --- Calculate inherent breaking component T1 ------------------- /
+      DO IJ = KIJS,KIJL  
         T1(IJ,:) = ZSDS6A1 * ANAR(IJ,:) * FREQ * (NEXDENS(IJ,:)**ISDS6P1)
+      END DO
 !
 !/ 3) --- Calculate T2, the dissipation of waves induced by
 !/        the breaking of longer waves T2 ---------------------------- /
+      DO IJ = KIJS,KIJL
         ADF(IJ,:)    = ANAR(IJ,:) * (NEXDENS(IJ,:)**ISDS6P2)
       END DO
 
@@ -211,10 +216,8 @@
       END DO
 
 !/ 4) --- Sum up dissipation terms and apply to all directions ------- /
-      DO M = 1,NFRE
-         DO IJ = KIJS,KIJL
-            T12(IJ,M) = -1.0_JWRB * ( MAX(0.0_JWRB,T1(IJ,M))+MAX(0.0_JWRB,T2(IJ,M)) )
-         END DO
+      DO IJ = KIJS,KIJL
+         T12(IJ,:) = -1.0_JWRB * ( MAX(0.0_JWRB,T1(IJ,:))+MAX(0.0_JWRB,T2(IJ,:)) )
       END DO
 
       DO K = 1, NANG
@@ -237,17 +240,28 @@
          DDS(IJ,:,:) = RESHAPE(D(IJ,:),(/NANG,NFRE/))
       END DO
 
-      DO M = 1,NFRE
-         DO K = 1, NANG
-            DO IJ = KIJS,KIJL
-               IF (.NOT. (LLLOWWINDS .AND. WSWAVE(IJ)<=5._JWRB)) THEN
-                  ! "no dissipation" option for low winds (following Muhammad Yasrab's work)
-                  SL(IJ,K,M)  = SL(IJ,K,M)  + DDS(IJ,K,M)*FL1(IJ,K,M)
-                  FLD(IJ,K,M) = FLD(IJ,K,M) + DDS(IJ,K,M)
-               END IF
+      IF (LLLOWWINDS) THEN
+         DO M = 1,NFRE
+            DO K = 1, NANG
+               DO IJ = KIJS,KIJL
+                  IF ( WSWAVE(IJ)>=5._JWRB) THEN
+                     ! no dissipation for winds<5m/s (following Muhammad Yasrab's work)
+                     SL(IJ,K,M)  = SL(IJ,K,M)  + DDS(IJ,K,M)*FL1(IJ,K,M)
+                     FLD(IJ,K,M) = FLD(IJ,K,M) + DDS(IJ,K,M)
+                  END IF
+               END DO
             END DO
          END DO
-      END DO
+      ELSE
+         DO M = 1,NFRE
+            DO K = 1, NANG
+               DO IJ = KIJS,KIJL
+                  SL(IJ,K,M)  = SL(IJ,K,M)  + DDS(IJ,K,M)*FL1(IJ,K,M)
+                  FLD(IJ,K,M) = FLD(IJ,K,M) + DDS(IJ,K,M)
+               END DO
+            END DO
+         END DO
+      END IF
       
       IF (LHOOK) CALL DR_HOOK('SDISSIP_ZBRY',1,ZHOOK_HANDLE)
 

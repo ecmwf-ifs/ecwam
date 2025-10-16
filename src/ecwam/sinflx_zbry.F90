@@ -381,7 +381,7 @@ DO K = 1, NANG
 END DO
 
 DO IJ = KIJS,KIJL
-  CINV2(IJ,:)  = WN2(IJ,:) / SIG2(:)            ! inverse phase speed
+  CINV2(IJ,:)  = WN2(IJ,:) / SIG2            ! inverse phase speed
   CINV1(IJ,:)  = CINV2(IJ,IKN)
 END DO
 
@@ -435,14 +435,14 @@ END DO
   ! To reshape from 2D to 1D:
   !    A = RESHAPE( F(IJ,:,:)  , (/NSPEC/)    )
 DO IJ = KIJS,KIJL
-  A(IJ,:) = RESHAPE( FL1(IJ,:,:) , (/NSPEC/)) * CG2(IJ,:) / ( ZPI * SIG2(:) )! ACTION DENSITY SPECTRUM
+  A(IJ,:) = RESHAPE( FL1(IJ,:,:) , (/NSPEC/)) * CG2(IJ,:) / ( ZPI * SIG2 )! ACTION DENSITY SPECTRUM
 !
 !/ 1) --- calculate 1d action density spectrum (A(sigma)) and
 !/        zero-out values less than 1.0E-32 to avoid NaNs when
 !/        computing directional narrowness in step 4). --------------- /
   KK(IJ,:,:)      = RESHAPE(A,(/ NANG, NFRE /))
   
-  ADENSIG(IJ,:) = SUM(KK(IJ,:,:),1) * SIG(:) * DELTH ! Integrate over directions.
+  ADENSIG(IJ,:) = SUM(KK(IJ,:,:),1) * SIG * DELTH ! Integrate over directions.
   
   KMAX(IJ,:) = MAXVAL(KK(IJ,:,:),1)
 END DO
@@ -479,9 +479,9 @@ END DO                                    ! the entire spectrum.
 DO IGST=1,NGST
   DO IJ = KIJS,KIJL
     W1(IJ,:,IGST)= MAX(0.0_JWRB,                   &
-  &                 UPROXYGST(IJ,IGST)*CINV2(IJ,:)*(ECOS2(:)*COSU(IJ) + ESIN2(:)*SINU(IJ)) - 1.0_JWRB)**2
+  &                 UPROXYGST(IJ,IGST)*CINV2(IJ,:)*(ECOS2*COSU(IJ) + ESIN2*SINU(IJ)) - 1.0_JWRB)**2
 !
-    D(IJ,:,IGST) = (RAORW(IJ) ) * SIG2(:) * &
+    D(IJ,:,IGST) = (RAORW(IJ) ) * SIG2 * &
                 (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN2(IJ,:)*W1(IJ,:,IGST)-11.0_JWRB)))*&
   &             SQRTBN2(IJ,:)*W1(IJ,:,IGST)
 !
@@ -490,6 +490,7 @@ DO IGST=1,NGST
       D(IJ,:,IGST) = D(IJ,:,IGST) - (4._JWRB*(RNU_WATER)*(WAVNUM(IJ,:)**2))
       S(IJ,:,IGST) = D(IJ,:,IGST) * A(IJ,:)
     ELSE
+      ! Update spectrum as per normal
       S(IJ,:,IGST) = D(IJ,:,IGST) * A(IJ,:)
     END IF
 
@@ -501,7 +502,7 @@ ENDDO
 
 DO IGST=1,NGST
   DO IJ = KIJS,KIJL
-    SDENSIG(IJ,:,:,IGST) = RESHAPE(S(IJ,:,IGST)*SIG2(:)/CG2(IJ,:),(/ NANG, NFRE /))
+    SDENSIG(IJ,:,:,IGST) = RESHAPE(S(IJ,:,IGST)*SIG2/CG2(IJ,:),(/ NANG, NFRE /))
 
     CALL LFACTOR(SDENSIG(IJ,:,:,IGST), CINV1(IJ,:), UABSGST(IJ,IGST), USTARGST(IJ,IGST), WDWAVE(IJ),    &
 &                      ROAIRN(IJ), SIG, DSII, LFACT(IJ,:,IGST), TAUWX(IJ,IGST), TAUWY(IJ,IGST), TAU(IJ,IGST))
@@ -511,20 +512,20 @@ ENDDO
 !
 !/ 6) --- apply reduction (LFACT) to the entire spectrum ------------- /
 
-  LLFACT = .TRUE.
-  IF (LLFACT) THEN
-    DO IGST=1,NGST
-      DO IJ = KIJS,KIJL ! TODO: how to make more efficient? is difficult...
-        IF (SUM(LFACT(IJ,:,IGST)) .LT. NFRE) THEN
-          DO K = 1, NANG
-              D(IJ,IKN+K-1,IGST) = D(IJ,IKN+K-1,IGST) * LFACT(IJ,:,IGST)
-          END DO
-          S(IJ,:,IGST) = D(IJ,:,IGST) * A(IJ,:)
-        END IF
-        DINPOS(IJ,:,:,IGST)  = RESHAPE(D(IJ,:,IGST),(/ NANG, NFRE /))
-      ENDDO
+LLFACT = .TRUE.
+IF (LLFACT) THEN
+  DO IGST=1,NGST
+    DO IJ = KIJS,KIJL ! TODO: how to make more efficient? is difficult...
+      IF (SUM(LFACT(IJ,:,IGST)) .LT. NFRE) THEN
+        DO K = 1, NANG
+            D(IJ,IKN+K-1,IGST) = D(IJ,IKN+K-1,IGST) * LFACT(IJ,:,IGST)
+        END DO
+        S(IJ,:,IGST) = D(IJ,:,IGST) * A(IJ,:)
+      END IF
+      DINPOS(IJ,:,:,IGST)  = RESHAPE(D(IJ,:,IGST),(/ NANG, NFRE /))
     ENDDO
-  END IF
+  ENDDO
+END IF
 
 !
 !/ 7) --- compute negative wind input for adverse winds. negative
@@ -536,8 +537,8 @@ DO IGST=1,NGST
   IF (ZSIN6A0.GT.0.0_JWRB) THEN
     DO IJ = KIJS,KIJL
       W2(IJ,:,IGST)  = MIN( 0.0_JWRB,UPROXYGST(IJ,IGST) * CINV2(IJ,:) * &
-  &                               (ECOS2(:)*COSU(IJ) + ESIN2(:)*SINU(IJ)) - 1.0_JWRB )**2
-      D(IJ,:,IGST)   = D(IJ,:,IGST) - ( RAORW(IJ) * SIG2(:) * ZSIN6A0 * &
+  &                               (ECOS2*COSU(IJ) + ESIN2*SINU(IJ)) - 1.0_JWRB )**2
+      D(IJ,:,IGST)   = D(IJ,:,IGST) - ( RAORW(IJ) * SIG2 * ZSIN6A0 * &
                     (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN2(IJ,:)*W2(IJ,:,IGST) - 11.0_JWRB)))&
   &                 *SQRTBN2(IJ,:)*W2(IJ,:,IGST) )
 

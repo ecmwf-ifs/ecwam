@@ -125,7 +125,7 @@
       END DO
 
       DO IJ = KIJS,KIJL
-        A(IJ,:) = RESHAPE( FL1(IJ,:,:) , (/NSPEC/)) * CG2(IJ,:) / ( ZPI * SIG2(:) )! ACTION DENSITY SPECTRUM
+        A(IJ,:) = RESHAPE( FL1(IJ,:,:) , (/NSPEC/)) * CG2(IJ,:) / ( ZPI * SIG2 )! ACTION DENSITY SPECTRUM
         ! WAM E(f,theta) to WW3 A(k,theta) conversion factor: CG2 / ( ZPI *SIG2 ) 
       END DO
       
@@ -188,7 +188,7 @@
 !/ 3) --- Apply dissipation term of derivative to all directions ----- /
       DO K = 1, NANG
         DO IJ = KIJS,KIJL
-          D(IJ,IKN+(K-1)) = DDIS(IJ,M)
+          D(IJ,IKN+(K-1)) = DDIS(IJ,:)
         END DO
       END DO
 !

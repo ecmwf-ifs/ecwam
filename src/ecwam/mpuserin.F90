@@ -609,7 +609,7 @@
       ISHALLO   = 0   !! depricated 
       IPHYS     = 1
       IPHYS2_AIRSEA = 2
-      LLLOWWINDS = .TRUE. ! .TRUE. if low winds are treated differently
+      LLLOWWINDS = .FALSE. ! .TRUE. if low winds are treated differently
       ISNONLIN  = 1 
       IDAMPING  = 1 
       IPROPAGS  = 0 
