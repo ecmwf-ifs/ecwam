@@ -156,6 +156,27 @@
 !     Wave-turbulence interaction coefficient 
       REAL(KIND=JWRB) :: SSDSC5  !! See *SETWAVPHYS*
 
+!     Swell attenuation logical for ZBRY physics
+      LOGICAL :: LLSWL6CSTB1
+      
+!     Swell attenuation coefficient for ZBRY physics
+      REAL(KIND=JWRB) :: ZSWL6B1
+      
+!     Dissipation coefficient for inherent breaking term for ZBRY physics (T1,a1)
+      REAL(KIND=JWRB) :: ZSDS6A1
+
+!     Dissipation coefficient for forced dissipation term for ZBRY physics (T1,a2)
+      REAL(KIND=JWRB) :: ZSDS6A2
+
+!     Dissipation exponent for inherent breaking term for ZBRY physics (T1,p1)      
+      INTEGER(KIND=JWIM) :: ISDS6P1
+
+!     Dissipation exponent for forced dissipation term for ZBRY physics (T2,p2)      
+      INTEGER(KIND=JWIM) :: ISDS6P2
+
+!     Dissipation, logical to normalise by **threshold** spectral density
+      LOGICAL :: LLSDS6ET
+
 !     NSDSNTH is the number of directions on both used to compute the spectral saturation  
       INTEGER(KIND=JWIM) :: NSDSNTH
 

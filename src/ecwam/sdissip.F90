@@ -89,12 +89,12 @@
      &                     UFRIC, COSWDIF, RAORW)
       CASE(2) 
          !$loki inline
-         CALL SDISSIP_ZBRY (KIJS, KIJL, FL1 ,FLD, SL,   &
-     &                     WSWAVE, WAVNUM, CGROUP, XK2CG,      &
-     &                     UFRIC, COSWDIF, RAORW)
-         CALL SWLDISSIP_ZBRY(KIJS, KIJL, FL1 ,FLD, SL,   &
-     &                     WAVNUM, CGROUP, XK2CG,      &
-     &                     UFRIC, COSWDIF, RAORW)
+         CALL SDISSIP_ZBRY (KIJS, KIJL, FL1 ,FLD, SL,  &
+     &                      WSWAVE, WAVNUM, CGROUP,    &
+     &                      UFRIC, COSWDIF, RAORW)
+         CALL SWLDISSIP_ZBRY(KIJS, KIJL, FL1 ,FLD, SL, &
+     &                       WAVNUM, CGROUP,           &
+     &                       UFRIC, COSWDIF, RAORW)
    END SELECT 
 
       IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)

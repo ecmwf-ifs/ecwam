@@ -124,7 +124,7 @@ CASE(2)
   CALL SINFLX_ZBRY (ICALL, NCALL, NGST, KIJS, KIJL,  &
      &               LUPDTUS,                   &
      &               FL1,                       &
-     &               WAVNUM,CGROUP, CINV, XK2CG,&
+     &               WAVNUM,CGROUP, CINV,       &
      &               WSWAVE, WDWAVE, AIRD,      &
      &               RAORW, WSTAR, CICOVER,     &
      &               COSWDIF, SINWDIF2,         &
