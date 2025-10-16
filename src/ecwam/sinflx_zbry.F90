@@ -440,7 +440,7 @@ DO IJ = KIJS,KIJL
 !/ 1) --- calculate 1d action density spectrum (A(sigma)) and
 !/        zero-out values less than 1.0E-32 to avoid NaNs when
 !/        computing directional narrowness in step 4). --------------- /
-  KK(IJ,:,:)      = RESHAPE(A,(/ NANG, NFRE /))
+  KK(IJ,:,:)      = RESHAPE(A(IJ,:),(/ NANG, NFRE /))
   
   ADENSIG(IJ,:) = SUM(KK(IJ,:,:),1) * SIG * DELTH ! Integrate over directions.
   
