@@ -421,7 +421,8 @@ DO IGST=1,NGST
     END DO
   CASE(1)
     DO IJ = KIJS,KIJL
-        UPROXYGST(IJ,IGST) = FRIC * CDFAC * USTARGST(IJ,IGST) ! following Komen et al. (1984) (developed seas) (FRIC=28)
+        ! UPROXYGST(IJ,IGST) = FRIC * CDFAC * USTARGST(IJ,IGST) ! following Komen et al. (1984) (developed seas) (FRIC=28)
+        UPROXYGST(IJ,IGST) = 32.0_JWRB * CDFAC * USTARGST(IJ,IGST) ! following Komen et al. (1984) (developed seas) (FRIC=28)
     END DO
   CASE(2)
     DO IJ = KIJS,KIJL  
