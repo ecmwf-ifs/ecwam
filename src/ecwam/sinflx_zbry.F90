@@ -294,7 +294,7 @@ NSPEC = NANG * NFRE   ! NUMBER OF SPECTRAL BINS
 !     Wind height
 ZNLEV    = 10._JWRB
 
-!     COMPUTE FREQUENCY INTERVALLS (borrowed from Wam_others/f4spec.F)
+!     COMPUTE FREQUENCY INTERVALLS
 DO M = 1,NFRE
   DF(M) = FR(M)*( FRATIO - 1.0_JWRB )
 ENDDO
@@ -319,7 +319,7 @@ DO M = 1, NFRE
 END DO
 !
 IKN    = IRANGE(1,NSPEC,NANG)   ! Index vector for elements of 1 ... NFRE
-!                                    ! such that e.g. SIG(1:NFRE) = SIG2(IKN).
+!                               ! such that e.g. SIG(1:NFRE) = SIG2(IKN).
 
 DO K = 1, NANG                    ! Apply to all directions 
   SIG2  (IKN+(K-1)) = SIG
@@ -366,13 +366,11 @@ DO IGST=1,NGST
     Z0CH           = PCHAROG*UST**2
     Z0VIS          = ZRN/UST
     Z0GST(IJ,IGST) = Z0CH+Z0VIS
-  ENDDO  ! IJ   loop ENDDO
-ENDDO    ! NGST loop ENDDO
+  ENDDO
+ENDDO
 
 !/  --- Main loop over LOC ----------------------------------- /
 
-
-! LOOP OVER LOCATIONS
 DO K = 1, NANG
   DO IJ = KIJS,KIJL
       WN2   (IJ,IKN+(K-1)) = WAVNUM(IJ,:)  ! using WAM native WN,CG
@@ -659,8 +657,6 @@ DO IJ = KIJS,KIJL
   SNEGDENSIG = SL(IJ,:,:) - SPOS(IJ,:,:)
   PHIWA(IJ)  = CALCPHIWA(SPOSDENSIG,SNEGDENSIG,DSII)
 END DO
-! END LOOP OVER LOC
-! ---------------------
 
 ! XLLWS based on SL (mask for neg. input)
 DO M = 1,NFRE

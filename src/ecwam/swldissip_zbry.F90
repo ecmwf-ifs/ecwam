@@ -113,7 +113,7 @@
       END DO
 
       IKN    = IRANGE(1,NSPEC,NANG)   ! Index vector for elements of 1 ... NFRE
-!                                    ! such that e.g. SIG(1:NFRE) = SIG2(IKN).
+!                                     ! such that e.g. SIG(1:NFRE) = SIG2(IKN).
       DO K = 1, NANG                    ! Apply to all directions 
          SIG2   (IKN+(K-1)) = SIG
       END DO
@@ -192,12 +192,6 @@
         END DO
       END DO
 !
-!       WRITE(*,*) ' B1       =',B1
-!       WRITE(*,*) ' DDIS_tot =',SUM(DDIS*ABAND*DDEN/CG)
-!       WRITE(*,*) ' EDENS_tot=',sum(aband*dden/cg)
-!       WRITE(*,*) ' EDENS_tot=',sum(aband*sig*dth*dsii/cg)
-!       WRITE(*,*) ' '
-!       WRITE(*,*) ' SWL6_tot =',sum(SUM(RESHAPE(S,(/ NANG,NFRE /)),1)*DDEN/CG)
       DO IJ = KIJS,KIJL
         DSWL(IJ,:,:) = RESHAPE(D(IJ,:),(/NANG,NFRE/))
       END DO   

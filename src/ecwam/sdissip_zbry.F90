@@ -132,13 +132,14 @@
         SIG(M)   = ZPI*FR(M)
       END DO
 
-!     COMPUTE FREQUENCY INTERVALLS (borrowed from Wam_others/f4spec.F)
+!     COMPUTE FREQUENCY INTERVALLS
       DO M = 1,NFRE
         DF(M) = FR(M)*( FRATIO - 1.0_JWRB )
       ENDDO
 
       IKN    = IRANGE(1,NSPEC,NANG)   ! Index vector for elements of 1 ... NFRE
-!                                    ! such that e.g. SIG(1:NFRE) = SIG2(IKN).
+!                                     ! such that e.g. SIG(1:NFRE) = SIG2(IKN).
+
       DO K = 1, NANG                    ! Apply to all directions 
          SIG2   (IKN+(K-1)) = SIG
       END DO
@@ -156,8 +157,8 @@
 
 !/ 0) --- Initialize essential parameters ---------------------------- /
       IKN     = IRANGE(1,NSPEC,NANG)    ! Index vector for elements of 1,
-!                                      ! 2,..., NFRE such that for example
-!                                      ! SIG(1:NFRE) = SIG2(IKN).
+!                                       ! 2,..., NFRE such that for example
+!                                       ! SIG(1:NFRE) = SIG2(IKN).
       FREQ    = FR(1:NFRE)
       BNT     = 0.035_JWRB**2
       DO IJ = KIJS,KIJL
@@ -227,15 +228,6 @@
       END DO
 !
 !
-!/ 5) --- Diagnostic output (switch !/T6) ---------------------------- /
-!/T6     CALL STME21 ( TIME , IDTIME )
-!/T6     WRITE (NDST,270) 'T1*E',IDTIME(1:19),(T1*EDENS)
-!/T6     WRITE (NDST,270) 'T2*E',IDTIME(1:19),(T2*EDENS)
-!/T6     WRITE (NDST,271) SUM(SUM(RESHAPE(S,(/ NANG,NFRE /)),1)*DDEN/CG)
-!
-!/T6     270 FORMAT (' TEST W3SDS6 : ',A,'(',A,')',':',70E11.3)
-!/T6     271 FORMAT (' TEST W3SDS6 : Total SDS  =',E13.5)
-
       DO IJ = KIJS,KIJL
          DDS(IJ,:,:) = RESHAPE(D(IJ,:),(/NANG,NFRE/))
       END DO
