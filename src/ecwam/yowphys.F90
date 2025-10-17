@@ -35,12 +35,6 @@
 !     *BETAMAX*  PARAMETER FOR WIND INPUT.
       REAL(KIND=JWRB) :: BETAMAX
 
-!     *CDFAC*  PARAMETER FOR WIND INPUT FOR ZBRY PHYS.
-      REAL(KIND=JWRB) :: CDFAC
-      
-!     *SIN6A0*    PARAMETER FOR NEGATIVE WIND INPUT (a0) FOR ZBRY PHYS
-      REAL(KIND=JWRB) :: ZSIN6A0 
-
 !     *BETAMAXOXKAPPA2*  BETAMAX/XKAPPA**2 
       REAL(KIND=JWRB) :: BETAMAXOXKAPPA2
 
@@ -155,6 +149,15 @@
 
 !     Wave-turbulence interaction coefficient 
       REAL(KIND=JWRB) :: SSDSC5  !! See *SETWAVPHYS*
+
+!     ZBRY PHYS ::
+!     ==========
+
+!     *CDFAC*  PARAMETER FOR WIND INPUT FOR ZBRY PHYS.
+      REAL(KIND=JWRB) :: CDFAC
+      
+!     *SIN6A0*    PARAMETER FOR NEGATIVE WIND INPUT (a0) FOR ZBRY PHYS
+      REAL(KIND=JWRB) :: ZSIN6A0 
 
 !     Swell attenuation logical for ZBRY physics
       LOGICAL :: LLSWL6CSTB1
