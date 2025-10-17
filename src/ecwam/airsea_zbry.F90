@@ -136,6 +136,7 @@
 
         ! implementation of iterative scheme
         CASE(1,2)
+            !TODO: is this really needed for IPHYS2_AIRSEA=2? It drives from wind directly
 
             DO IJ=KIJS,KIJL
                   ! --------------------------------------------

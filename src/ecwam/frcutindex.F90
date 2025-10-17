@@ -53,15 +53,12 @@
       USE YOWPARAM , ONLY : NFRE
       USE YOWPCONS , ONLY : G        ,EPSMIN
       USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM
-      USE YOWSTAT  , ONLY : IPHYS
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "frcutindex_default.intfb.h"
-#include "frcutindex_zbry.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(KIJL)
@@ -78,14 +75,26 @@
 
       IF (LHOOK) CALL DR_HOOK('FRCUTINDEX',0,ZHOOK_HANDLE)
 
-      SELECT CASE (IPHYS)
-      CASE(0,1)
-         CALL FRCUTINDEX_DEFAULT(KIJS, KIJL, FM, FMWS, UFRIC, CICOVER,     &
-         &                       MIJ)
-      CASE(2)
-         CALL FRCUTINDEX_ZBRY (KIJS, KIJL, FM, UFRIC, CICOVER,     &
-         &                       MIJ)
-      END SELECT
+!*    COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
+!*    FREQUENCIES LE MAX(TAILFACTOR*MAX(FMNWS,FM),TAILFACTOR_PM*FPM),
+!*    WHERE FPM IS THE PIERSON-MOSKOWITZ FREQUENCY BASED ON FRICTION
+!*    VELOCITY. (FPM=G/(FRIC*ZPI*USTAR))
+!     ------------------------------------------------------------
+
+      FPMH = TAILFACTOR/FR(1)
+      FPPM = TAILFACTOR_PM*G/(FRIC*ZPIFR(1))
+
+      DO IJ=KIJS,KIJL
+        IF (CICOVER(IJ) <= CITHRSH_TAIL) THEN
+          FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
+          FPM = FPPM/MAX(UFRIC(IJ),EPSMIN)
+          FPM4 = MAX(FM2,FPM)
+          MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
+          MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
+        ELSE
+          MIJ(IJ) = NFRE
+        ENDIF
+      ENDDO
 
 !     SET RHOWGDFTH
       DO IJ=KIJS,KIJL

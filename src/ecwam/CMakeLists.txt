@@ -82,8 +82,6 @@ list( APPEND ecwam_srcs
   fldinter.F90
   fndprt.F90
   frcutindex.F90
-  frcutindex_default.F90
-  frcutindex_zbry.F90
   gc_dispersion.h
   get_preset_wgrib_template.F90
   getbobstrct.F90
