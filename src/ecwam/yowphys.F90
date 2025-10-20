@@ -180,6 +180,9 @@
 !     Dissipation, logical to normalise by **threshold** spectral density
       LOGICAL :: LLSDS6ET
 
+!     Number of standard deviations to used for wind dustiness
+      INTEGER(KIND=JWIM) :: NGST
+
 !     NSDSNTH is the number of directions on both used to compute the spectral saturation  
       INTEGER(KIND=JWIM) :: NSDSNTH
 

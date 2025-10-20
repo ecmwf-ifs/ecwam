@@ -27,7 +27,7 @@ USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C,                     &
      &                SWELLF4,  SWELLF7, SWELLF7M1, Z0TUBMAX, Z0RAT,    &
      &                SSDSC5, CDFAC, ZSIN6A0, LLSWL6CSTB1, ZSWL6B1,     &
-     &                ZSDS6A1, ZSDS6A2, ISDS6P1, ISDS6P2, LLSDS6ET
+     &                ZSDS6A1, ZSDS6A2, ISDS6P1, ISDS6P2, LLSDS6ET, NGST
 
 USE YOWSTAT  , ONLY : IPHYS, IPHYS2_AIRSEA
 USE YOWTEST  , ONLY : IU06
@@ -218,18 +218,30 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ASWKM=0.0981_JWRB
         BSWKM=0.425_JWRB
 
-        IF (IPHYS2_AIRSEA==0) THEN
-          ! NGST=1 (handled in SINFLX)
+        SELECT CASE (IPHYS2_AIRSEA)
+        CASE(0)  
+          NGST=1
           ALPHAPMAX = 1.0_JWRB ! i.e. no cap on max spectral steepness
-        ELSE IF (IPHYS2_AIRSEA==1 .OR. IPHYS2_AIRSEA==2) THEN
-          ! NGST=2 (handled in SINFLX)
+          TAILFACTOR=6.0_JWRB    ! SIN6FC = 6.0 from WW3-ST6
+          TAILFACTOR_PM=4.0_JWRB ! FXPM = 4.0 from WW3 (all)
+        CASE(1,2)
+          NGST=2
           ALPHAPMAX = 0.031_JWRB ! cap on spectral steepness as in ARD
-        END IF
+          TAILFACTOR=2.5_JWRB
+          TAILFACTOR_PM=3.0_JWRB ! as in ARD
+        CASE DEFAULT
+          WRITE (IU06,*) '*************************************'
+          WRITE (IU06,*) '*                                   *'
+          WRITE (IU06,*) '*  ERROR IN SETWAVPHYS              *'
+          WRITE (IU06,*) '*  UKNOWN PHYSICS SELECTION :       *'
+          WRITE (IU06,*) '*  IPHYS2_AIRSEA =' , IPHYS2_AIRSEA
+          WRITE (IU06,*) '*                                   *'
+          WRITE (IU06,*) '*************************************'
+          CALL ABORT1
+        END SELECT
 
         ALPHA   = 0.0065_JWRB
-        CDFAC   = 1.0_JWRB
-        TAILFACTOR=6.0_JWRB    ! SIN6FC = 6.0 from WW3-ST6
-        TAILFACTOR_PM=4.0_JWRB ! FXPM = 4.0 from WW3 (all)
+        CDFAC   = 1.143_JWRB ! differing FRIC values used between WW3-ST6 and ecWAM (32/28=1.143)
 
         ZSIN6A0 = 9.0E-2_JWRB 
         ZSWL6B1    = 0.0041_JWRB
