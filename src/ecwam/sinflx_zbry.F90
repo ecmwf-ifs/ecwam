@@ -408,11 +408,11 @@ DO IGST=1,NGST
   SELECT CASE (IPHYS2_AIRSEA)
   CASE(0)
     DO IJ = KIJS,KIJL
-        UPROXYGST(IJ,IGST) = FRIC * CDFAC * USTARGST(IJ,IGST) ! original, suggested by E. Rogers (2014) (young seas)
+        UPROXYGST(IJ,IGST) = 32.0_JWRB * CDFAC * USTARGST(IJ,IGST) ! original, suggested by E. Rogers (2014) (young seas)
     END DO
   CASE(1)
     DO IJ = KIJS,KIJL
-        UPROXYGST(IJ,IGST) = FRIC * CDFAC * USTARGST(IJ,IGST) ! following Komen et al. (1984) (developed seas) (FRIC=28)
+        UPROXYGST(IJ,IGST) = 32.0_JWRB * CDFAC * USTARGST(IJ,IGST) ! following Komen et al. (1984) (developed seas) (FRIC=28)
     END DO
   CASE(2)
     DO IJ = KIJS,KIJL  

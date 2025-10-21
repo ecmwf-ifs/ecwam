@@ -241,7 +241,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         END SELECT
 
         ALPHA   = 0.0065_JWRB
-        CDFAC   = 1.143_JWRB ! differing FRIC values used between WW3-ST6 and ecWAM (32/28=1.143)
+        CDFAC   = 1.0_JWRB
 
         ZSIN6A0 = 9.0E-2_JWRB 
         ZSWL6B1    = 0.0041_JWRB
