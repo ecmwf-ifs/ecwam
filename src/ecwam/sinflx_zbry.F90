@@ -406,15 +406,13 @@ END DO
 !
 DO IGST=1,NGST
   SELECT CASE (IPHYS2_AIRSEA)
-  CASE(0)
+  CASE(0,1,2)
+    ! IPHYS2_AIRSEA=0,1,2 use USTAR
     DO IJ = KIJS,KIJL
-        UPROXYGST(IJ,IGST) = 32.0_JWRB * CDFAC * USTARGST(IJ,IGST) ! original, suggested by E. Rogers (2014) (young seas)
+        UPROXYGST(IJ,IGST) = 32.0_JWRB * CDFAC * USTARGST(IJ,IGST)
     END DO
-  CASE(1)
-    DO IJ = KIJS,KIJL
-        UPROXYGST(IJ,IGST) = 32.0_JWRB * CDFAC * USTARGST(IJ,IGST) ! following Komen et al. (1984) (developed seas) (FRIC=28)
-    END DO
-  CASE(2)
+  CASE(3)
+    ! IPHYS2_AIRSEA=3 is based on wind directly
     DO IJ = KIJS,KIJL  
         UPROXYGST(IJ,IGST) = UABSGST(IJ,IGST) * CDFAC ! because FRIC=1/sqrt(CD), then this turns to purely a wind dependence (USTARGST cancels out)
     ENDDO
@@ -557,9 +555,9 @@ DO IGST=1,NGST
   ENDDO
 
 SELECT CASE (IPHYS2_AIRSEA)
-  ! CASE(0)
-  !   USTARGST(IJ,IGST)    = USTARGST(IJ,IGST) ! i.e. do nothing here, don't update USTAR because it is not true to WW3_ST6
-  CASE(1,2)
+  ! IPHYS2_AIRSEA=0      DO NOT USE STRESS BALANCE (LFAC) TO UPDATE USTAR
+  ! IPHYS2_AIRSEA=1,2,3         USE STRESS BALANCE (LFAC) TO UPDATE USTAR
+  CASE(1,2,3)
   DO IGST=1,NGST
     DO IJ = KIJS,KIJL
         USTARGST(IJ,IGST)    = SQRT(TAU(IJ,IGST) / ROAIRN(IJ) ) 

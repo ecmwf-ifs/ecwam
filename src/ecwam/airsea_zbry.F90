@@ -120,7 +120,8 @@
         SELECT CASE (IPHYS2_AIRSEA)
             
         ! implementation of Hwang (2011) as in ST6
-        CASE(0)
+        CASE(0,1)
+          ! IPHYS2_AIRSEA=0,1 use Hwang (2011) as in ST6
           FLX4A0 = CDFAC
           DO IJ=KIJS,KIJL
             IF (U10(IJ) .GE. 50.33_JWRB) THEN
@@ -135,7 +136,8 @@
           ENDDO
 
         ! implementation of iterative scheme
-        CASE(1,2)      
+        CASE(2,3)  
+            ! (IPHYS2_AIRSEA=3 only needs this iteration to get USTARGST -> UABSGST , but there is probably a smarter way to do this)
             DO IJ=KIJS,KIJL
                   ! --------------------------------------------
                   ! Iterative method

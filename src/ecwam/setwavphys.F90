@@ -219,12 +219,12 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         BSWKM=0.425_JWRB
 
         SELECT CASE (IPHYS2_AIRSEA)
-        CASE(0)  
+        CASE(0,1)  
           NGST=1
           ALPHAPMAX = 1.0_JWRB ! i.e. no cap on max spectral steepness
           TAILFACTOR=6.0_JWRB    ! SIN6FC = 6.0 from WW3-ST6
           TAILFACTOR_PM=4.0_JWRB ! FXPM = 4.0 from WW3 (all)
-        CASE(1,2)
+        CASE(2,3)
           NGST=2
           ALPHAPMAX = 0.031_JWRB ! cap on spectral steepness as in ARD
           TAILFACTOR=2.5_JWRB
