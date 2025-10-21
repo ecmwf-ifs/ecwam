@@ -126,18 +126,12 @@ IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
       ENDDO
 
       IF( PRESENT(CD) ) THEN
-        IF (IPHYS==2) THEN ! Don't use this for coupled, only for diagnosing
-          DO IJ = KIJS,KIJL
-            CD(IJ)     = (USTAR(IJ)/U10(IJ))**2
-          ENDDO
-        ELSE
-          DO IJ = KIJS,KIJL
-  !!!     we are assuming here that z0 = RNUM/USTAR + Charnock USTAR**2/g
-  !!!     in order to fit with what is used in the IFS.
-            Z0ATM = RNUM*USM(IJ) + GM1 * BETAM(IJ) * USTAR(IJ)**2
-            CD(IJ) = ( XKAPPA / LOG( 1.0_JWRB + XNLEV/Z0ATM) )**2
-          ENDDO
-        ENDIF
+        DO IJ = KIJS,KIJL
+!!!     we are assuming here that z0 = RNUM/USTAR + Charnock USTAR**2/g
+!!!     in order to fit with what is used in the IFS.
+          Z0ATM = RNUM*USM(IJ) + GM1 * BETAM(IJ) * USTAR(IJ)**2
+          CD(IJ) = ( XKAPPA / LOG( 1.0_JWRB + XNLEV/Z0ATM) )**2
+        ENDDO
       ENDIF
 
 IF (LHOOK) CALL DR_HOOK('OUTBETA',1,ZHOOK_HANDLE)
