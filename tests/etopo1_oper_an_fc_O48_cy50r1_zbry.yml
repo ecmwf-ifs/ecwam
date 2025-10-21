@@ -48,6 +48,7 @@ output:
           - vst         # V-component stokes stress
           - '075'       # utauo
           - '076'       # vtauo
+          - '039'       # phioc
           - '077'       # wphio
           - '081'       # uproxy
         format: grib    # (default : grib) or binary

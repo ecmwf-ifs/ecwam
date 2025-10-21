@@ -48,6 +48,7 @@ output:
           - '075'       # utauo
           - '076'       # vtauo
           - '077'       # wphio
+          - '039'       # phioc
         format: grib    # (default : grib) or binary
         at:
           - timestep: 01:00
