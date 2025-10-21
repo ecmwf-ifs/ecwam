@@ -83,8 +83,10 @@ wamnfre=$(read_config frequencies)
 
 nproma=$(read_config nproma --default=24)
 iphys=$(read_config iphys --default=1)
+iphys2_airsea=$(read_config iphys2_airsea --default=0)
 llgcbz0=$(read_config llgcbz0 --default=F)
 llnormagam=$(read_config llnormagam --default=F)
+lllowwinds=$(read_config lllowwinds --default=F)
 irefra=$(read_config irefra --default=0)
 lciwa1=$(read_config lciwa1 --default=F)
 lciwa2=$(read_config lciwa2 --default=F)
@@ -228,12 +230,14 @@ cat > wam_namelist << EOF
   LFDBIOOUT             = F,
   LFDB                  = F,
   IPHYS                 = ${iphys},
+  IPHYS2_AIRSEA         = ${iphys2_airsea},
   ISHALLO               = 0,
   ISNONLIN              = 0,
   LBIWBK                = T,
   LLCAPCHNK             = T,
   LLGCBZ0               = ${llgcbz0},
   LLNORMAGAM            = ${llnormagam},
+  LLLOWWINDS            = ${lllowwinds},
   IPROPAGS              = 2,
   LSUBGRID              = F,
   IREFRA                = ${irefra},

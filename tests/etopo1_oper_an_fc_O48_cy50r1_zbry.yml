@@ -3,6 +3,7 @@ directions:  12
 frequencies: 25
 bathymetry:  ETOPO1
 iphys:       2
+iphys2_airsea: 0
 
 advection:
     timestep: 900
@@ -20,6 +21,7 @@ end:   ${forecast.end}
 nproma: 32
 llgcbz0: T
 llnormagam: T
+lllowwinds: F
 lciwa3: T
 lciscal: T
 

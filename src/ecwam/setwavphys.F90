@@ -239,21 +239,16 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           WRITE (IU06,*) '*************************************'
           CALL ABORT1
         END SELECT
-
         ALPHA   = 0.0065_JWRB
         CDFAC   = 1.0_JWRB
-
-        ZSIN6A0 = 9.0E-2_JWRB 
-        ZSWL6B1    = 0.0041_JWRB
-        LLSWL6CSTB1 = .FALSE.
-        
-        ZSDS6A1  = 4.75E-6_JWRB
-        ZSDS6A2  = 7.00E-5_JWRB
-        ISDS6P1  = 4
-        ISDS6P2  = 4
         LLSDS6ET  = .TRUE.
-        
-        
+        ZSDS6A1  = 4.75E-6_JWRB
+        ISDS6P1  = 4
+        ZSDS6A2  = 7.00E-5_JWRB
+        ISDS6P2  = 4
+        LLSWL6CSTB1 = .FALSE.
+        ZSWL6B1 = 0.0041_JWRB
+        ZSIN6A0 = 9.0E-2_JWRB 
       ELSE
         WRITE (IU06,*) '*************************************'
         WRITE (IU06,*) '*                                   *'
