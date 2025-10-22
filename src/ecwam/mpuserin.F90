@@ -194,7 +194,7 @@
      &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI,                   &
      &   IPROPAGS,                                                      &
      &   IREFRA,                                                        &
-     &   IPHYS,                                                         &
+     &   IPHYS, IPHYS2_AIRSEA,                                          &
      &   ISNONLIN,                                                      &
      &   IDAMPING,                                                      &
      &   LBIWBK  ,                                                      &
@@ -238,7 +238,7 @@
      &   LWNEMOTAUOC, LWNEMOCOURECV,                                    &
      &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR, LWNEMOCOUIBR,        &
      &   LWNEMOCOUDEBUG,                                                &
-     &   LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                                &
+     &   LLCAPCHNK, LLGCBZ0, LLNORMAGAM, LLLOWWINDS,                    &
      &   LWAM_USE_IO_SERV,                                              &
      &   LOUTMDLDCP,                                                    &
      &   ROAIR, ROWATER, GAM_SURF,                                      &
