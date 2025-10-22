@@ -640,7 +640,8 @@ DO IJ = KIJS,KIJL
 ! 11) --- PHIWA calculation using non-directional
 !         spectral density of the wind input  ---------------------- /
 !              CALCPHIWA(SPOS        ,SNEG                     ,DSII,SIG)               
-  PHIWA(IJ)  = CALCPHIWA(SPOS(IJ,:,:),SL(IJ,:,:) - SPOS(IJ,:,:),DSII,SIG)
+! PHIWA(IJ)  = CALCPHIWA(SPOS(IJ,:,:),SL(IJ,:,:) - SPOS(IJ,:,:),DSII,SIG)
+  PHIWA(IJ)  = CALCPHIWA(SPOS(IJ,:,:),SL(IJ,:,:) - SPOS(IJ,:,:),DF)
 END DO
 
 ! XLLWS based on SL (mask for pos. input)

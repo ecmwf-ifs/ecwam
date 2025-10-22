@@ -1,4 +1,4 @@
-FUNCTION CALCPHIWA(SPOS,SNEG,DSII,SIG) RESULT(PHIWA)
+FUNCTION CALCPHIWA(SPOS,SNEG,DF) RESULT(PHIWA)
 
 ! ----------------------------------------------------------------------------
 !
@@ -25,27 +25,21 @@ FUNCTION CALCPHIWA(SPOS,SNEG,DSII,SIG) RESULT(PHIWA)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWPCONS , ONLY : G        ,ROWATER, ZPI
-      USE YOWFRED  , ONLY : DELTH, FRATIO
+      USE YOWFRED  , ONLY : FR       ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE    
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 !----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "irange.intfb.h"
 
-      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: SPOS ! POS Sin(sigma) in [m2/rad-Hz]
-      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: SNEG ! NEG Sin(sigma) in [m2/rad-Hz]
-      REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: DSII ! freq. bandwidths in [radians]
-      REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: SIG  
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: SPOS ! POS Sin(sigma) in [m2/Hz]
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: SNEG ! NEG Sin(sigma) in [m2/Hz]
+      REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: DF   ! freq. bandwidths in [Hz]
       
-      REAL(KIND=JWRB), PARAMETER :: FRQMAX  = 10.0_JWRB ! Upper freq. limit to extrap. to 
-      REAL, ALLOCATABLE :: IK10Hz(:), SIG10Hz(:)
-      REAL, ALLOCATABLE :: SPOSDENS10Hz(:), SNEGDENS10Hz(:), DSII10Hz(:)
-
-      INTEGER(KIND=JWIM) :: NK10Hz
-      INTEGER(KIND=JWIM) :: NK, NTH
-      INTEGER(KIND=JWIM), DIMENSION(NANG) :: ITHN
+      REAL(KIND=JWRB), DIMENSION(NANG)      :: ZA_SPOS, ZA_SNEG
+      REAL(KIND=JWRB), DIMENSION(NANG)      :: SPOS_HF, SNEG_HF, SPOS_LF, SNEG_LF
+      REAL(KIND=JWRB), DIMENSION(NANG)      :: SPOS_TOTAL, SNEG_TOTAL
 
       REAL(KIND=JWRB) :: PHIWA
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -55,49 +49,51 @@ FUNCTION CALCPHIWA(SPOS,SNEG,DSII,SIG) RESULT(PHIWA)
 
       IF (LHOOK) CALL DR_HOOK('CALCPHIWA',0,ZHOOK_HANDLE)
 
+      !/ 0) --- split integral into low/high frequency contributions ------------- /
+      !
+      !
+      !     Th=2pi,f=inf              Th=2pi,f=FR(NFRE)    Th=2pi,f=inf  
+      !          / /                    / /                 / /
+      !          | | S(f) df dTh  =     | | S(f) df dTh +   | | S(f) df dTh
+      !         / /                    / /                 / /
+      !     Th=0,f=0                Th=0,f=0            Th=0,f=FR(NFRE)
+      !
+      !
+      !                           =     LF_contribution +  HF_contribution
+      !
+      !
+      !/ 1) --- low frequency contributions to the integral ---------------------- /
+      !         -- Direct summation over available freq. bins up to FR(NFRE)
+      !
+      SPOS_LF    = SUM(SPOS,1) * DELTH * FR
+      SNEG_LF    = SUM(SNEG,1) * DELTH * FR
 
-      NTH   = NANG  ! NUMBER OF DIRS , SAME AS KL
-      NK    = NFRE  ! NUMBER OF FREQS, SAME AS ML
+      !/ 2) --- high frequency contributions to the integral --------------------- /
+      !         -- Assume spectral slope for S_IN(F) is proportional to F**(-2), then 
+      !            integral collapses into easy analytic solution
+      !
+      !          
+      !   Th=2pi,f=inf  
+      !     / /
+      !     | | S(f) df dTh = ZPI * S(NFRE) / FR(NFRE)
+      !    / /
+      !  Th=0,f=FR(NFRE)
+      !
+      !
+      ! Determine value of spectrum at NFRE (i.e. at highest frequency). 
+      !  - Note, direction dimension must remain
+      ZA_SPOS = SPOS(:,NFRE)
+      ZA_SNEG = SNEG(:,NFRE)
 
-!/ 0) --- Find the number of frequencies required to extend arrays
-!/        up to f=10Hz and allocate arrays --------------------------- /
-      NK10Hz = CEILING(LOG(FRQMAX/(SIG(1)/ZPI))/LOG(FRATIO))+1
-      NK10Hz = MAX(NK,NK10Hz)
-!
-      ALLOCATE(IK10Hz(NK10Hz))
-      IK10Hz = REAL( IRANGE(1,NK10Hz,1) )
-!
-      ALLOCATE(SPOSDENS10Hz(NK10Hz))
-      ALLOCATE(SNEGDENS10Hz(NK10Hz))
-      ALLOCATE(DSII10Hz(NK10Hz))
-      ALLOCATE(SIG10Hz(NK10Hz))
-!
-      ITHN   = IRANGE(1,NTH,1)    ! Index vector 1:NTH
-!
-!/ 1) --- Either extrapolate arrays up to 10Hz or use discrete spectral
-!         grid per se. Limit the constraint to the positive part of the
-!         wind input only. ---------------------------------------------- /
-      IF (NK .LT. NK10Hz) THEN
-            SPOSDENS10Hz(1:NK)      = SUM(SPOS,1) * DELTH
-            SNEGDENS10Hz(1:NK)      = SUM(SNEG,1) * DELTH
-            SIG10Hz                 = SIG(1)*FRATIO**(IK10Hz-1.0_JWRB)
-            DSII10Hz                = 0.5_JWRB * SIG10Hz * (FRATIO-1.0_JWRB/FRATIO)
-!        The first and last frequency bin:
-            DSII10Hz(1)             = 0.5_JWRB * SIG10Hz(1) * (FRATIO-1.0_JWRB)
-            DSII10Hz(NK10Hz)        = 0.5_JWRB * SIG10Hz(NK10Hz) * (FRATIO-1.0_JWRB) / FRATIO
-!
-!        --- Spectral slope for S_IN(F) is proportional to F**(-2) ------ /
-            SPOSDENS10Hz(NK+1:NK10Hz)  = SPOSDENS10Hz(NK)  * (SIG10Hz(NK)/SIG10Hz(NK+1:NK10Hz))**2
-            SNEGDENS10Hz(NK+1:NK10Hz)  = SNEGDENS10Hz(NK)  * (SIG10Hz(NK)/SIG10Hz(NK+1:NK10Hz))**2
-      ELSE
-            SIG10Hz          = SIG
-            DSII10Hz         = DSII
-            SPOSDENS10Hz(1:NK)  = SUM(SPOS,1) * DELTH
-            SNEGDENS10Hz(1:NK)  = SUM(SNEG,1) * DELTH
-      END IF
+      SPOS_HF    = (ZPI*ZA_SPOS)/FR(NFRE)
+      SNEG_HF    = (ZPI*ZA_SNEG)/FR(NFRE)
 
-!/ 2) --- Calculate PHIWA from the extended arrays ------------------- /
-      PHIWA      = G * ROWATER * ( SUM(SPOSDENS10Hz*DSII10Hz) + SUM(SNEGDENS10Hz*DSII10Hz) ) / ZPI ! divide by 2*pi to convert from rad/s to Hz
+      !/ 3) --- summate low + high frequency contributions to the integral ------- /
+      SPOS_TOTAL = SPOS_LF + SPOS_HF
+      SNEG_TOTAL = SNEG_LF + SNEG_HF
+
+      !/ 4) --- compute the flux ------------------------------------------------- /      
+      PHIWA      = G * ROWATER * ( SUM(SPOS_TOTAL) +  SUM(SNEG_TOTAL) )
 
       IF (LHOOK) CALL DR_HOOK('CALCPHIWA',1,ZHOOK_HANDLE)
 
