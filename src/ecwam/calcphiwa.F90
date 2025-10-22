@@ -25,7 +25,7 @@ FUNCTION CALCPHIWA(SPOS,SNEG,DF) RESULT(PHIWA)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWPCONS , ONLY : G        ,ROWATER, ZPI
-      USE YOWFRED  , ONLY : FR       ,DELTH
+      USE YOWFRED  , ONLY : FR       ,DELTH  , DFIM
       USE YOWPARAM , ONLY : NANG     ,NFRE    
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -37,9 +37,12 @@ FUNCTION CALCPHIWA(SPOS,SNEG,DF) RESULT(PHIWA)
       REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: SNEG ! NEG Sin(sigma) in [m2/Hz]
       REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: DF   ! freq. bandwidths in [Hz]
       
+      
       REAL(KIND=JWRB), DIMENSION(NANG)      :: ZA_SPOS, ZA_SNEG
-      REAL(KIND=JWRB), DIMENSION(NANG)      :: SPOS_HF, SNEG_HF, SPOS_LF, SNEG_LF
-      REAL(KIND=JWRB), DIMENSION(NANG)      :: SPOS_TOTAL, SNEG_TOTAL
+      
+      REAL(KIND=JWRB)      :: SPOS_LF, SNEG_LF
+      REAL(KIND=JWRB)      :: SPOS_HF, SNEG_HF
+      REAL(KIND=JWRB)      :: SPOS_TOTAL, SNEG_TOTAL
 
       REAL(KIND=JWRB) :: PHIWA
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -65,8 +68,10 @@ FUNCTION CALCPHIWA(SPOS,SNEG,DF) RESULT(PHIWA)
       !/ 1) --- low frequency contributions to the integral ---------------------- /
       !         -- Direct summation over available freq. bins up to FR(NFRE)
       !
-      SPOS_LF    = SUM(SPOS,1) * DELTH * FR
-      SNEG_LF    = SUM(SNEG,1) * DELTH * FR
+      ! DFIM = DELTH * DF
+      !
+      SPOS_LF    = SUM(SUM(SPOS,1) * DFIM)
+      SNEG_LF    = SUM(SUM(SNEG,1) * DFIM)
 
       !/ 2) --- high frequency contributions to the integral --------------------- /
       !         -- Assume spectral slope for S_IN(F) is proportional to F**(-2), then 
@@ -85,15 +90,15 @@ FUNCTION CALCPHIWA(SPOS,SNEG,DF) RESULT(PHIWA)
       ZA_SPOS = SPOS(:,NFRE)
       ZA_SNEG = SNEG(:,NFRE)
 
-      SPOS_HF    = (ZPI*ZA_SPOS)/FR(NFRE)
-      SNEG_HF    = (ZPI*ZA_SNEG)/FR(NFRE)
+      SPOS_HF    = SUM((ZPI*ZA_SPOS)/FR(NFRE))
+      SNEG_HF    = SUM((ZPI*ZA_SNEG)/FR(NFRE))
 
       !/ 3) --- summate low + high frequency contributions to the integral ------- /
       SPOS_TOTAL = SPOS_LF + SPOS_HF
       SNEG_TOTAL = SNEG_LF + SNEG_HF
 
-      !/ 4) --- compute the flux ------------------------------------------------- /      
-      PHIWA      = G * ROWATER * ( SUM(SPOS_TOTAL) +  SUM(SNEG_TOTAL) )
+      !/ 4) --- compute the flux ------------------------------------------------- /
+      PHIWA      = G * ROWATER * ( SPOS_TOTAL +  SNEG_TOTAL )
 
       IF (LHOOK) CALL DR_HOOK('CALCPHIWA',1,ZHOOK_HANDLE)
 
