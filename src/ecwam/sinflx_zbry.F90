@@ -251,21 +251,10 @@ ELSE
   ICODE_WND = 3
 ENDIF
 
-IF(LLCAPCHNK) THEN
-  RNFAC(KIJS:KIJL) = 1.0_JWRB+DTHRN_A*(1.0_JWRB+TANH(WSWAVE(KIJS:KIJL)-DTHRN_U))
-ELSE
-  RNFAC(KIJS:KIJL) = 1.0_JWRB
-ENDIF
-
-
 IF(LUPDTUS) THEN
-  ! increase noise level in the tail
-  IF (ICALL == 1 ) THEN
-    DO K=1,NANG
-      FL1(KIJS:KIJL,K,NFRE) = MAX(FL1(KIJS:KIJL,K,NFRE),FLM(KIJS:KIJL,K))
-    ENDDO
-    HALP(KIJS:KIJL) = 0.0_JWRB
-  ENDIF
+  ! Dummy values for AIRSEA !TODO: implement these as optional arguments in AIRSEA 
+  RNFAC(KIJS:KIJL) = 1.0_JWRB
+  HALP(KIJS:KIJL)  = 0.0_JWRB
 
   !$loki inline
   CALL AIRSEA (KIJS, KIJL,                                  &
@@ -418,6 +407,10 @@ DO IGST=1,NGST
     ENDDO
   END SELECT
 END DO    
+
+! ------------------------------------------------------------------- /
+! START: using intrinsic frequency spectra
+
 !
   ! To reshape from 1D to 2D: 
   !    K = RESHAPE( A          , (/ NANG, NFRE /))
@@ -565,6 +558,10 @@ SELECT CASE (IPHYS2_AIRSEA)
   ENDDO
 END SELECT
 
+! END: using intrinsic frequency spectra
+! ------------------------------------------------------------------- /
+! NOTE: below this line is using frequency (i.e. not intrinsic frequency)
+
 ! 8) --- Calculate SL, FL and SPOS needed for ecWAM ------------- /
 
 DO IGST=1,NGST
@@ -642,13 +639,11 @@ DO IJ = KIJS,KIJL
 
 ! 11) --- PHIWA calculation using non-directional
 !         spectral density of the wind input  ---------------------- /
-
-  SPOSDENSIG = SPOS(IJ,:,:)
-  SNEGDENSIG = SL(IJ,:,:) - SPOS(IJ,:,:)
-  PHIWA(IJ)  = CALCPHIWA(SPOSDENSIG,SNEGDENSIG,DSII,SIG)
+!              CALCPHIWA(SPOS        ,SNEG                     ,DSII,SIG)               
+  PHIWA(IJ)  = CALCPHIWA(SPOS(IJ,:,:),SL(IJ,:,:) - SPOS(IJ,:,:),DSII,SIG)
 END DO
 
-! XLLWS based on SL (mask for neg. input)
+! XLLWS based on SL (mask for pos. input)
 DO M = 1,NFRE
   DO K = 1, NANG
     DO IJ=KIJS,KIJL

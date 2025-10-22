@@ -97,7 +97,7 @@ FUNCTION CALCPHIWA(SPOS,SNEG,DSII,SIG) RESULT(PHIWA)
       END IF
 
 !/ 2) --- Calculate PHIWA from the extended arrays ------------------- /
-      PHIWA      = G * ROWATER * ( SUM(SPOSDENS10Hz*DSII10Hz) + SUM(SNEGDENS10Hz*DSII10Hz) ) / ZPI
+      PHIWA      = G * ROWATER * ( SUM(SPOSDENS10Hz*DSII10Hz) + SUM(SNEGDENS10Hz*DSII10Hz) ) / ZPI ! divide by 2*pi to convert from rad/s to Hz
 
       IF (LHOOK) CALL DR_HOOK('CALCPHIWA',1,ZHOOK_HANDLE)
 

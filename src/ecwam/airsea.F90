@@ -95,7 +95,7 @@
 &                              US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
       CASE(2) 
             CALL AIRSEA_ZBRY(KIJS, KIJL, &
-            &                HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,  &
+            &                U10, U10DIR, TAUW, TAUWDIR,  &
             &                US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
             
       END SELECT

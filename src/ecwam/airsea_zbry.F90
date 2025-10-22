@@ -8,7 +8,7 @@
 !
 
       SUBROUTINE AIRSEA_ZBRY (KIJS, KIJL, &
-&                        HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,  &
+&                        U10, U10DIR, TAUW, TAUWDIR,  &
 &                        US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
@@ -26,19 +26,17 @@
 !     ----------
 
 !       *CALL* *AIRSEA_ZBRY (KIJS, KIJL, FL1, WAVNUM,
-!                       HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,
+!                       U10, U10DIR, TAUW, TAUWDIR,
 !                       US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)*
 
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*    - INDEX OF LAST GRIDPOINT.
 !          *FL1*     - SPECTRA
 !          *WAVNUM*  - WAVE NUMBER
-!          *HALP*    - 1/2 PHILLIPS PARAMETER
 !          *U10*     - WINDSPEED U10.
 !          *U10DIR*  - WINDSPEED DIRECTION.
 !          *TAUW*    - WAVE STRESS.
 !          *TAUWDIR* - WAVE STRESS DIRECTION.
-!          *RNFAC*   - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !          *US*      - OUTPUT OR OUTPUT BLOCK OF FRICTION VELOCITY.
 !          *Z0*      - OUTPUT BLOCK OF ROUGHNESS LENGTH.
 !          *Z0B*     - BACKGROUND ROUGHNESS LENGTH.
@@ -71,7 +69,7 @@
 #include "z0wave.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (IN) :: HALP, U10DIR, TAUW, TAUWDIR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (IN) :: U10DIR, TAUW, TAUWDIR
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (INOUT) :: U10, US, CHRNCK
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (OUT) :: Z0, Z0B
 
