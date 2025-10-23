@@ -631,8 +631,10 @@ module yowpdlibMain
     allocate(vtxdist(nTasks+1),stat=stat)
     if(stat/=0) call parallel_abort('partition: vtxdist allocation failure')
 
+#ifdef WAM_HAVE_MPI_F08
     call mpi_allgather(np_perProcSum(myrank)+1, 1, itype, vtxdist, 1, itype, comm, ierr)
     if(ierr/=MPI_SUCCESS) call parallel_abort('partition: mpi_allgather',ierr)
+#endif
     vtxdist(nTasks+1)=np_global+1
 
     ! check vtxdist
@@ -695,8 +697,10 @@ module yowpdlibMain
       ABORT(errstr)
     endif
   !
+#ifdef WAM_HAVE_MPI_F08
     call mpi_allgatherv(part, np, itype, node2rank, np_perProc, np_perProcSum, itype, comm, ierr)
     if(ierr/=MPI_SUCCESS) call parallel_abort('mpi_allgatherv ',ierr)
+#endif
   !
     do i = 1, np_global
         node => nodes_global(i)
@@ -993,7 +997,10 @@ module yowpdlibMain
   subroutine  exchangeGhostIds
     use yowNodepool,       only: np, t_node, nodes
     use yowDatapool,       only: myrank, comm
-    use yowExchangeModule, only: neighborDomains, nConnDomains, createMPITypes
+    use yowExchangeModule, only: neighborDomains, nConnDomains
+#ifdef WAM_HAVE_MPI_F08
+    use yowExchangeModule, only: createMPITypes
+#endif
     use yowMpiModule
     implicit none
 
@@ -1125,7 +1132,9 @@ module yowpdlibMain
       end do outerloop
     end do
 
+#ifdef WAM_HAVE_MPI_F08
     call createMPITypes()
+#endif
   !   do i=1, nConnDomains
   !     write(*,*)  myrank, "send to ", neighborDomains(i)%domainID-1,"this ", neighborDomains(i)%nodesToSend
   !   end do
