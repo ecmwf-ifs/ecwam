@@ -55,14 +55,14 @@ FUNCTION CALCPHIWA(SPOS,SNEG,DF) RESULT(PHIWA)
       !/ 0) --- split integral into low/high frequency contributions ------------- /
       !
       !
-      !     Th=2pi,f=inf              Th=2pi,f=FR(NFRE)    Th=2pi,f=inf  
-      !          / /                    / /                 / /
-      !          | | S(f) df dTh  =     | | S(f) df dTh +   | | S(f) df dTh
-      !         / /                    / /                 / /
-      !     Th=0,f=0                Th=0,f=0            Th=0,f=FR(NFRE)
+      !     Th=2pi,f=inf                 Th=2pi,f=FR(NFRE)       Th=2pi,f=inf  
+      !          / /                       / /                    / /
+      !          | | S(f,Th) df dTh  =     | | S(f,Th) df dTh +   | | S(f,Th) df dTh
+      !         / /                       / /                    / /
+      !     Th=0,f=0                   Th=0,f=0               Th=0,f=FR(NFRE)
       !
       !
-      !                           =     LF_contribution +  HF_contribution
+      !                              =     LF_contribution    +  HF_contribution
       !
       !
       !/ 1) --- low frequency contributions to the integral ---------------------- /
@@ -80,7 +80,7 @@ FUNCTION CALCPHIWA(SPOS,SNEG,DF) RESULT(PHIWA)
       !          
       !   Th=2pi,f=inf  
       !     / /
-      !     | | S(f) df dTh = ZPI * S(NFRE) / FR(NFRE)
+      !     | | S(f,Th) df dTh = FR(NFRE) * DELTH * SUM(S(:,NFRE))
       !    / /
       !  Th=0,f=FR(NFRE)
       !
@@ -90,8 +90,8 @@ FUNCTION CALCPHIWA(SPOS,SNEG,DF) RESULT(PHIWA)
       ZA_SPOS = SPOS(:,NFRE)
       ZA_SNEG = SNEG(:,NFRE)
 
-      SPOS_HF    = SUM((ZPI*ZA_SPOS)/FR(NFRE))
-      SNEG_HF    = SUM((ZPI*ZA_SNEG)/FR(NFRE))
+      SPOS_HF    = FR(NFRE) * DELTH * SUM(ZA_SPOS)
+      SNEG_HF    = FR(NFRE) * DELTH * SUM(ZA_SNEG)
 
       !/ 3) --- summate low + high frequency contributions to the integral ------- /
       SPOS_TOTAL = SPOS_LF + SPOS_HF
