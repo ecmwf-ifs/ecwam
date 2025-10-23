@@ -67,18 +67,22 @@
 #include "irange.intfb.h"
 #include "tauwinds.intfb.h"
 
-        REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: S
+        REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: S ! Sin(sigma) in [m2/rad-Hz]
         REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: CINV, SIG, DSII
         REAL(KIND=JWRB),                       INTENT(OUT) :: TAUNWX, TAUNWY 
 
-        REAL(KIND=JWRB), PARAMETER :: FRQMAX  = 10.0_JWRB ! Upper freq. limit to extrapolate to.
 
         REAL(KIND=JWRB), DIMENSION(NANG*NFRE) :: ECOS2, ESIN2
-        REAL, ALLOCATABLE :: IK10Hz(:), SIG10Hz(:), CINV10Hz(:)
-        REAL, ALLOCATABLE :: SDENSX10Hz(:), SDENSY10Hz(:)
-        REAL, ALLOCATABLE :: DSII10Hz(:), UCINV10Hz(:)
+        REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: SX, SY
 
-        INTEGER(KIND=JWIM) :: IK, ITH, NK10Hz
+        REAL(KIND=JWRB), DIMENSION(NFRE)  :: SDENSX_LF, SDENSY_LF
+        REAL(KIND=JWRB), DIMENSION(NFRE)  :: ZA_SX, ZA_SY
+
+        REAL(KIND=JWRB)               :: SDENSX_HF, SDENSY_HF
+        REAL(KIND=JWRB)               :: TAUNWX_LF, TAUNWY_LF
+        REAL(KIND=JWRB)               :: TAUNWX_HF, TAUNWY_HF
+        
+        INTEGER(KIND=JWIM) :: IK, ITH
         INTEGER(KIND=JWIM) :: NK, NTH, NSPEC !num. of freqs, dirs, spec. bins
         INTEGER(KIND=JWIM), DIMENSION(NANG) :: ITHN
         INTEGER(KIND=JWIM), DIMENSION(NFRE) :: IKN
@@ -87,66 +91,72 @@
 
 ! ----------------------------------------------------------------------
 
-        IF (LHOOK) CALL DR_HOOK('TAU_WAVE_ATMOS',0,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('TAU_WAVE_ATMOS',0,ZHOOK_HANDLE)
 
-        NTH   = NANG  ! NUMBER OF DIRS , SAME AS KL
-        NK    = NFRE  ! NUMBER OF FREQS, SAME AS ML
-        NSPEC = NK * NTH   ! NUMBER OF SPECTRAL BINS
+      NTH   = NANG  ! NUMBER OF DIRS , SAME AS KL
+      NK    = NFRE  ! NUMBER OF FREQS, SAME AS ML
+      NSPEC = NK * NTH   ! NUMBER OF SPECTRAL BINS
 
-!/ 0) --- Find the number of frequencies required to extend arrays
-!/        up to f=10Hz and allocate arrays --------------------------- /
-        NK10Hz = CEILING(LOG(FRQMAX/(SIG(1)/ZPI))/LOG(FRATIO))+1
-        NK10Hz = MAX(NK,NK10Hz)
-!
-        ALLOCATE(IK10Hz(NK10Hz))
-        IK10Hz = REAL( IRANGE(1,NK10Hz,1) )
-!
-        ALLOCATE(SIG10Hz(NK10Hz))
-        ALLOCATE(CINV10Hz(NK10Hz))
-        ALLOCATE(DSII10Hz(NK10Hz))
-        ALLOCATE(SDENSX10Hz(NK10Hz))
-        ALLOCATE(SDENSY10Hz(NK10Hz))
-        ALLOCATE(UCINV10Hz(NK10Hz))
-!
-        ITHN   = IRANGE(1,NTH,1)    ! Index vector 1:NTH
-        DO IK = 1, NK
-                ECOS2 (ITHN+(IK-1)*NTH) = COSTH
-                ESIN2 (ITHN+(IK-1)*NTH) = SINTH
-        END DO
+      ITHN   = IRANGE(1,NTH,1)    ! Index vector 1:NTH
+      DO IK = 1, NK
+        ECOS2 (ITHN+(IK-1)*NTH) = COSTH
+        ESIN2 (ITHN+(IK-1)*NTH) = SINTH
+      END DO
 
-!
-!/ 1) --- Either extrapolate arrays up to 10Hz or use discrete spectral
-!         grid per se. Limit the constraint to the positive part of the
-!         wind input only. ---------------------------------------------- /
-        IF (NK .LT. NK10Hz) THEN
-                SDENSX10Hz(1:NK)        = SUM(ABS(MIN(0.0_JWRB,S))*RESHAPE(ECOS2,(/NTH,NK/)),1) * DELTH
-                SDENSY10Hz(1:NK)        = SUM(ABS(MIN(0.0_JWRB,S))*RESHAPE(ESIN2,(/NTH,NK/)),1) * DELTH
-                SIG10Hz                 = SIG(1)*FRATIO**(IK10Hz-1.0_JWRB)
-                CINV10Hz(1:NK)          = CINV
-                CINV10Hz(NK+1:NK10Hz)   = SIG10Hz(NK+1:NK10Hz)*0.101978_JWRB
-                DSII10Hz                = 0.5_JWRB * SIG10Hz * (FRATIO-1.0_JWRB/FRATIO)
-!        The first and last frequency bin:
-                DSII10Hz(1)             = 0.5_JWRB * SIG10Hz(1) * (FRATIO-1.0_JWRB)
-                DSII10Hz(NK10Hz)        = 0.5_JWRB * SIG10Hz(NK10Hz) * &
-                                        &            (FRATIO-1.0_JWRB) / FRATIO
-!
-!        --- Spectral slope for S_IN(F) is proportional to F**(-2) ------ /
-                SDENSX10Hz(NK+1:NK10Hz) = SDENSX10Hz(NK) * (SIG10Hz(NK)/SIG10Hz(NK+1:NK10Hz))**2
-                SDENSY10hz(NK+1:NK10Hz) = SDENSY10Hz(NK) * (SIG10Hz(NK)/SIG10Hz(NK+1:NK10Hz))**2
-        ELSE
-                SIG10Hz          = SIG
-                CINV10Hz         = CINV
-                DSII10Hz         = DSII
-                SDENSX10Hz(1:NK) = SUM(ABS(MIN(0.0_JWRB,S))*RESHAPE(ECOS2,(/NTH,NK/)),1) * DELTH
-                SDENSY10Hz(1:NK) = SUM(ABS(MIN(0.0_JWRB,S))*RESHAPE(ESIN2,(/NTH,NK/)),1) * DELTH
-        END IF
-!
-!/ 2) --- Stress calculation ----------------------------------------- /
-!     --- The wave supported stress (waves to atmosphere) ------------ /
-        TAUNWX = TAUWINDS(SDENSX10Hz,CINV10Hz,DSII10Hz)   ! x-component
-        TAUNWY = TAUWINDS(SDENSY10Hz,CINV10Hz,DSII10Hz)   ! y-component
+      SX = ABS(MIN(0.0_JWRB,S))*RESHAPE(ECOS2,(/NTH,NK/))  
+      SY = ABS(MIN(0.0_JWRB,S))*RESHAPE(ESIN2,(/NTH,NK/))  
 
+      !/ 0) --- split integral into low/high frequency contributions ------------- /
+      !
+      !
+      !     Th=2pi,f=inf                 Th=2pi,f=FR(NFRE)       Th=2pi,f=inf  
+      !          / /                       / /                    / /
+      !          | | S(f,Th) df dTh  =     | | S(f,Th) df dTh +   | | S(f,Th) df dTh
+      !         / /                       / /                    / /
+      !     Th=0,f=0                   Th=0,f=0               Th=0,f=FR(NFRE)
+      !
+      !
+      !                              =     LF_contribution    +  HF_contribution
+      !
+      !
+      !/ 1) --- low frequency contributions to the integral ---------------------- /
+      !         -- Direct summation over available freq. bins up to FR(NFRE)
+      
+      SDENSX_LF = SUM(SX,1) * DELTH
+      SDENSY_LF = SUM(SY,1) * DELTH
+      
+      TAUNWX_LF = TAUWINDS(SDENSX_LF,CINV,DSII)   ! x-component
+      TAUNWY_LF = TAUWINDS(SDENSY_LF,CINV,DSII)   ! y-component
 
-        IF (LHOOK) CALL DR_HOOK('TAU_WAVE_ATMOS',1,ZHOOK_HANDLE)
+      !/ 2) --- high frequency contributions to the integral --------------------- /
+      !         -- Assume spectral slope for S_IN(F) is proportional to F**(-2), then 
+      !            integral collapses into easy analytic solution
+      !
+      !          
+      !   Th=2pi,f=inf  
+      !     / /
+      !     | | S(f,Th) df dTh = FR(NFRE) * DELTH * SUM(S(:,NFRE))
+      !    / /
+      !  Th=0,f=FR(NFRE)
+      !
+      !
+      ! Determine value of spectrum at NFRE (i.e. at highest frequency). 
+      !  - Note, direction dimension must remain
 
-        END SUBROUTINE TAU_WAVE_ATMOS
+      ZA_SX       = SX(:,NFRE)
+      ZA_SY       = SY(:,NFRE)
+
+      SDENSX_HF   = SIG(NFRE) * DELTH * SUM(ZA_SX)
+      SDENSY_HF   = SIG(NFRE) * DELTH * SUM(ZA_SY)
+
+      TAUNWX_HF   = G * ROWATER * ( SDENSX_HF )
+      TAUNWY_HF   = G * ROWATER * ( SDENSY_HF )
+
+      !/ 3) --- summate low + high frequency contributions to the integral ------- /
+      
+      TAUNWX = TAUNWX_LF + TAUNWX_HF
+      TAUNWY = TAUNWY_LF + TAUNWY_HF
+
+      IF (LHOOK) CALL DR_HOOK('TAU_WAVE_ATMOS',1,ZHOOK_HANDLE)
+
+      END SUBROUTINE TAU_WAVE_ATMOS

@@ -1,4 +1,4 @@
-FUNCTION CALCPHIWA(SPOS,SNEG,DF) RESULT(PHIWA)
+FUNCTION CALCPHIWA(SPOS,SNEG) RESULT(PHIWA)
 
 ! ----------------------------------------------------------------------------
 !
@@ -35,14 +35,13 @@ FUNCTION CALCPHIWA(SPOS,SNEG,DF) RESULT(PHIWA)
 
       REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: SPOS ! POS Sin(sigma) in [m2/Hz]
       REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: SNEG ! NEG Sin(sigma) in [m2/Hz]
-      REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: DF   ! freq. bandwidths in [Hz]
       
       
       REAL(KIND=JWRB), DIMENSION(NANG)      :: ZA_SPOS, ZA_SNEG
       
       REAL(KIND=JWRB)      :: SPOS_LF, SNEG_LF
       REAL(KIND=JWRB)      :: SPOS_HF, SNEG_HF
-      REAL(KIND=JWRB)      :: SPOS_TOTAL, SNEG_TOTAL
+      REAL(KIND=JWRB)      :: PHIWA_HF, PHIWA_LF
 
       REAL(KIND=JWRB) :: PHIWA
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -73,6 +72,8 @@ FUNCTION CALCPHIWA(SPOS,SNEG,DF) RESULT(PHIWA)
       SPOS_LF    = SUM(SUM(SPOS,1) * DFIM)
       SNEG_LF    = SUM(SUM(SNEG,1) * DFIM)
 
+      PHIWA_LF   = G * ROWATER * ( SPOS_LF +  SNEG_LF )
+
       !/ 2) --- high frequency contributions to the integral --------------------- /
       !         -- Assume spectral slope for S_IN(F) is proportional to F**(-2), then 
       !            integral collapses into easy analytic solution
@@ -87,18 +88,16 @@ FUNCTION CALCPHIWA(SPOS,SNEG,DF) RESULT(PHIWA)
       !
       ! Determine value of spectrum at NFRE (i.e. at highest frequency). 
       !  - Note, direction dimension must remain
-      ZA_SPOS = SPOS(:,NFRE)
-      ZA_SNEG = SNEG(:,NFRE)
+      ZA_SPOS  = SPOS(:,NFRE)
+      ZA_SNEG  = SNEG(:,NFRE)
 
-      SPOS_HF    = FR(NFRE) * DELTH * SUM(ZA_SPOS)
-      SNEG_HF    = FR(NFRE) * DELTH * SUM(ZA_SNEG)
+      SPOS_HF  = FR(NFRE) * DELTH * SUM(ZA_SPOS)
+      SNEG_HF  = FR(NFRE) * DELTH * SUM(ZA_SNEG)
+
+      PHIWA_HF = G * ROWATER * ( SPOS_HF +  SNEG_HF )
 
       !/ 3) --- summate low + high frequency contributions to the integral ------- /
-      SPOS_TOTAL = SPOS_LF + SPOS_HF
-      SNEG_TOTAL = SNEG_LF + SNEG_HF
-
-      !/ 4) --- compute the flux ------------------------------------------------- /
-      PHIWA      = G * ROWATER * ( SPOS_TOTAL +  SNEG_TOTAL )
+      PHIWA = PHIWA_LF + PHIWA_HF
 
       IF (LHOOK) CALL DR_HOOK('CALCPHIWA',1,ZHOOK_HANDLE)
 

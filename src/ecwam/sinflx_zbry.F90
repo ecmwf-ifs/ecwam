@@ -229,11 +229,6 @@ REAL(KIND=JWRB), DIMENSION(KIJL,NGST) :: TAUWGST, TAUWDIRGST, TAUNWGST, UABSGST,
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SLGST_AVG, SPOSGST_AVG, FLGST_AVG
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE,NGST) :: SLGST, SPOSGST, FLGST
 
-! For PHIWA calculation
-! REAL(KIND=JWRB),DIMENSION(KIJL,NFRE) :: RHOWGDFTH
-! REAL(KIND=JWRB), DIMENSION(KIJL) :: SUMT
-
-
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('SINFLX',0,ZHOOK_HANDLE)
@@ -639,8 +634,8 @@ DO IJ = KIJS,KIJL
 
 ! 11) --- PHIWA calculation using non-directional
 !         spectral density of the wind input  ---------------------- /
-!              CALCPHIWA(SPOS        ,SNEG                     ,DF)               
-  PHIWA(IJ)  = CALCPHIWA(SPOS(IJ,:,:),SL(IJ,:,:) - SPOS(IJ,:,:),DF)
+!              CALCPHIWA(SPOS        ,SNEG                     )               
+  PHIWA(IJ)  = CALCPHIWA(SPOS(IJ,:,:),SL(IJ,:,:) - SPOS(IJ,:,:))
 END DO
 
 ! XLLWS based on SL (mask for pos. input)
