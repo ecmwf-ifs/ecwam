@@ -58,7 +58,7 @@
         &                      FRATIO   ,DELTH
         USE YOWMPP   , ONLY : NINF     ,NSUP
         USE YOWPARAM , ONLY : NANG     ,NFRE
-        USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,EPSMIN
+        USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,EPSMIN, GM1
         USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
@@ -109,14 +109,14 @@
       !/ 0) --- split integral into low/high frequency contributions ------------- /
       !
       !
-      !     Th=2pi,f=inf                 Th=2pi,f=FR(NFRE)       Th=2pi,f=inf  
-      !          / /                       / /                    / /
-      !          | | S(f,Th) df dTh  =     | | S(f,Th) df dTh +   | | S(f,Th) df dTh
-      !         / /                       / /                    / /
-      !     Th=0,f=0                   Th=0,f=0               Th=0,f=FR(NFRE)
+      !     Th=2pi,f=inf                   Th=2pi,f=FR(NFRE)         Th=2pi,f=inf  
+      !          / /                         / /                      / /
+      !          | | S(f,Th)/c df dTh  =     | | S(f,Th)/c df dTh +   | | S(f,Th)/c df dTh
+      !         / /                         / /                      / /
+      !     Th=0,f=0                     Th=0,f=0                 Th=0,f=FR(NFRE)
       !
       !
-      !                              =     LF_contribution    +  HF_contribution
+      !                                =     LF_contribution      +  HF_contribution
       !
       !
       !/ 1) --- low frequency contributions to the integral ---------------------- /
@@ -135,7 +135,7 @@
       !          
       !   Th=2pi,f=inf  
       !     / /
-      !     | | S(f,Th) df dTh = FR(NFRE) * DELTH * SUM(S(:,NFRE))
+      !     | | S(f,Th)/c df dTh = FR(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1 / LOG(SIG(NFRE))
       !    / /
       !  Th=0,f=FR(NFRE)
       !
@@ -146,8 +146,8 @@
       ZA_SX       = SX(:,NFRE)
       ZA_SY       = SY(:,NFRE)
 
-      SDENSX_HF   = SIG(NFRE) * DELTH * SUM(ZA_SX)
-      SDENSY_HF   = SIG(NFRE) * DELTH * SUM(ZA_SY)
+      SDENSX_HF   = SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * ZPI * GM1 / LOG(SIG(NFRE))
+      SDENSY_HF   = SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * ZPI * GM1 / LOG(SIG(NFRE))
 
       TAUNWX_HF   = G * ROWATER * ( SDENSX_HF )
       TAUNWY_HF   = G * ROWATER * ( SDENSY_HF )
