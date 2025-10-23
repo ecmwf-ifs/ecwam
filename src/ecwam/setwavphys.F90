@@ -27,7 +27,8 @@ USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C,                     &
      &                SWELLF4,  SWELLF7, SWELLF7M1, Z0TUBMAX, Z0RAT,    &
      &                SSDSC5, CDFAC, ZSIN6A0, LLSWL6CSTB1, ZSWL6B1,     &
-     &                ZSDS6A1, ZSDS6A2, ISDS6P1, ISDS6P2, LLSDS6ET, NGST
+     &                ZSDS6A1, ZSDS6A2, ISDS6P1, ISDS6P2, LLSDS6ET,     & 
+     &                NGST, FRQMAX, LLFACT
 
 USE YOWSTAT  , ONLY : IPHYS, IPHYS2_AIRSEA
 USE YOWTEST  , ONLY : IU06
@@ -224,11 +225,13 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHAPMAX = 1.0_JWRB ! i.e. no cap on max spectral steepness
           TAILFACTOR=6.0_JWRB    ! SIN6FC = 6.0 from WW3-ST6
           TAILFACTOR_PM=4.0_JWRB ! FXPM = 4.0 from WW3 (all)
+          FRQMAX  = 10.0_JWRB ! extend to 10Hz for LFACTOR
         CASE(2,3)
           NGST=2
           ALPHAPMAX = 0.031_JWRB ! cap on spectral steepness as in ARD
           TAILFACTOR=2.5_JWRB
           TAILFACTOR_PM=3.0_JWRB ! as in ARD
+          FRQMAX  = 5.0_JWRB ! 5Hz also works well (TODO: could do with further testing)
         CASE DEFAULT
           WRITE (IU06,*) '*************************************'
           WRITE (IU06,*) '*                                   *'
@@ -249,6 +252,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         LLSWL6CSTB1 = .FALSE.
         ZSWL6B1 = 0.0041_JWRB
         ZSIN6A0 = 9.0E-2_JWRB 
+        LLFACT = .TRUE.
       ELSE
         WRITE (IU06,*) '*************************************'
         WRITE (IU06,*) '*                                   *'

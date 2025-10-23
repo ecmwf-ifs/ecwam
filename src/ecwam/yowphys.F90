@@ -183,6 +183,12 @@
 !     Integer defining whether or not wind gustiness parametrization is used (1=no, 2=yes)
       INTEGER(KIND=JWIM) :: NGST
 
+!     Logical to determine whether to use LFACTOR
+      LOGICAL :: LLFACT
+
+!     Upper freq. limit to extrap. to in LFACTOR
+      REAL(KIND=JWRB) :: FRQMAX   
+
 !     NSDSNTH is the number of directions on both used to compute the spectral saturation  
       INTEGER(KIND=JWIM) :: NSDSNTH
 
