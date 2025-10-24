@@ -66,7 +66,7 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR      , TH     ,ZPIFR   ,FRATIO    ,DELTH, DFIM,
+      USE YOWFRED  , ONLY : FR      , TH     ,ZPIFR   ,FRATIO    ,DELTH, DFIM,&
       &                     SIG     , DDEN
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWPARAM , ONLY : NANG    ,NFRE

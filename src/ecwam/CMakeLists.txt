@@ -73,6 +73,7 @@ list( APPEND ecwam_srcs
   depthprpt.F90
   difdate.F90
   dominant_period.F90
+  ei.F90
   expand_string.F90
   femean.F90
   femeanws.F90
