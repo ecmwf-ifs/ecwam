@@ -6,7 +6,7 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 
-      SUBROUTINE LFACTOR(S, CINV, U10, USTAR, USDIR, ROAIRN, &
+      SUBROUTINE LFACTORXY(S, CINV, U10, USTAR, USDIR, ROAIRN, &
      &                   LFACT, TAUWX, TAUWY, TAU)
  
 ! ----------------------------------------------------------------------------
@@ -77,7 +77,7 @@
 &                           DF       ,NFRE_EXT ,DSII_EXT ,SIG_EXT
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,EPSMIN, GM1
-      USE YOWPHYS  , ONLY : CDFAC
+      USE YOWPHYS  , ONLY : CDFAC    ,FRQMAX
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
@@ -85,6 +85,7 @@
       IMPLICIT NONE
 #include "irange.intfb.h"
 #include "tauwinds.intfb.h"
+#include "ei.intfb.h"
  
       REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: S ! Sin(sigma) in [m2/rad-Hz]
       REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: CINV
@@ -97,16 +98,24 @@
                                                     ! to find numerical LFACT soln
 
       REAL(KIND=JWRB), DIMENSION(NANG*NFRE) :: ECOS2, ESIN2
-      REAL(KIND=JWRB), DIMENSION(NFRE_EXT) :: LF_EXT, CINV_EXT
-      REAL(KIND=JWRB), DIMENSION(NFRE_EXT) :: SDENS_EXT, SDENSX_EXT, SDENSY_EXT
-      REAL(KIND=JWRB), DIMENSION(NFRE_EXT) :: UCINV_EXT
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: SX, SY
+      REAL(KIND=JWRB), DIMENSION(NFRE)  :: SDENSX_LF, SDENSY_LF
+      REAL(KIND=JWRB), DIMENSION(NFRE)  :: ZA_SX, ZA_SY
+      REAL(KIND=JWRB), DIMENSION(NFRE)  :: UCINV
+      REAL(KIND=JWRB), DIMENSION(NFRE)  :: LF
+
+      REAL(KIND=JWRB)               :: SDENSX_HF, SDENSY_HF, SDENSX_HF_UB, SDENSY_HF_UB
+      REAL(KIND=JWRB)               :: TAUWX_LF, TAUWY_LF
+      REAL(KIND=JWRB)               :: TAUWX_HF, TAUWY_HF  
+      REAL(KIND=JWRB)               :: ZA_EXP
 
       REAL(KIND=JWRB)      :: TAU_TOT, TAU_VIS, TAU_WAV
-      REAL(KIND=JWRB)      :: TAUVX, TAUVY, TAUX, TAUY   
+      REAL(KIND=JWRB)      :: TAUVX, TAUVY, TAUX, TAUY
+
       REAL(KIND=JWRB)      :: TAU_NND, TAU_INIT(2)
-      REAL(KIND=JWRB)      :: UPROXY, RTAU, DRTAU, ERR   
+
+      REAL(KIND=JWRB)      :: UPROXY, RTAU, DRTAU, ERR
       LOGICAL              :: OVERSHOT
-      CHARACTER(LEN=23)    :: IDTIME
 
       INTEGER(KIND=JWIM) :: IK, ITH, M, SIGN_NEW, SIGN_OLD
       INTEGER(KIND=JWIM) :: NK, NTH, NSPEC !num. of freqs, dirs, spec. bins
@@ -129,78 +138,151 @@
          ESIN2 (ITHN+(IK-1)*NTH) = SINTH
       END DO
 
-!/ 1) --- Either extrapolate arrays up to 10Hz or use discrete spectral
-!         grid per se. Limit the constraint to the positive part of the
-!         wind input only. ---------------------------------------------- /
-      IF (NFRE .LT. NFRE_EXT) THEN
-            CINV_EXT(1:NK)          = CINV
-            SDENS_EXT(1:NK)         = SUM(S,1) * DELTH
-            SDENSX_EXT(1:NK)        = SUM(MAX(0.0_JWRB,S)*RESHAPE(ECOS2,(/NTH,NK/)),1) * DELTH
-            SDENSY_EXT(1:NK)        = SUM(MAX(0.0_JWRB,S)*RESHAPE(ESIN2,(/NTH,NK/)),1) * DELTH
-            !        --- Spectral slope for S_IN(F) is proportional to F**(-2) ------ /
-            CINV_EXT(NK+1:NFRE_EXT)   = SIG_EXT(NK+1:NFRE_EXT)*GM1 ! 1/c=σ/g
-            SDENS_EXT(NK+1:NFRE_EXT)  = SDENS_EXT(NK)  * (SIG_EXT(NK)/SIG_EXT(NK+1:NFRE_EXT))**2
-            SDENSX_EXT(NK+1:NFRE_EXT) = SDENSX_EXT(NK) * (SIG_EXT(NK)/SIG_EXT(NK+1:NFRE_EXT))**2
-            SDENSY_EXT(NK+1:NFRE_EXT) = SDENSY_EXT(NK) * (SIG_EXT(NK)/SIG_EXT(NK+1:NFRE_EXT))**2
-      ELSE
-            CINV_EXT         = CINV
-            SDENS_EXT(1:NK)  = SUM(S,1) * DELTH
-            SDENSX_EXT(1:NK) = SUM(MAX(0.0_JWRB,S)*RESHAPE(ECOS2,(/NTH,NK/)),1) * DELTH
-            SDENSY_EXT(1:NK) = SUM(MAX(0.0_JWRB,S)*RESHAPE(ESIN2,(/NTH,NK/)),1) * DELTH
-      END IF
+      SX = ABS(MIN(0.0_JWRB,S))*RESHAPE(ECOS2,(/NTH,NK/))  
+      SY = ABS(MIN(0.0_JWRB,S))*RESHAPE(ESIN2,(/NTH,NK/))  
+      
+!/ ----------------------------------------------------------------- /
+!/ ----------------------------------------------------------------- /
+!/ Part I) --- low/high frequency contributions of TAU ------------- /
+
+      !/ 0) --- split integral into low/high frequency contributions ------------- /
+      !
+      !
+      !     Th=2pi,f=inf                   Th=2pi,f=FR(NFRE)         Th=2pi,f=inf  
+      !          / /                         / /                      / /
+      !          | | S(f,Th)/c df dTh  =     | | S(f,Th)/c df dTh +   | | S(f,Th)/c df dTh
+      !         / /                         / /                      / /
+      !     Th=0,f=0                     Th=0,f=0                 Th=0,f=FR(NFRE)
+      !
+      !
+      !                                =     LF_contribution      +  HF_contribution
+      !
+      !
+      !/ 1) --- low frequency contributions to the integral ---------------------- /
+      !         -- Direct summation over available freq. bins up to FR(NFRE)  
+
+      SDENSX_LF = SUM(SX,1) * DELTH
+      SDENSY_LF = SUM(SY,1) * DELTH  
+
+      TAUWX_LF = TAUWINDS(SDENSX_LF,CINV,DSII)   ! x-component
+      TAUWY_LF = TAUWINDS(SDENSY_LF,CINV,DSII)   ! y-component
+
+      !/ 2) --- high frequency contributions to the integral --------------------- /
+      !         -- Assume spectral slope for S_IN(F) is proportional to F**(-2), then 
+      !            integral collapses into easy analytic solution
+      !
+      !          
+      !   Th=2pi,ω=ZPI*FRQMAX  
+      !     / /
+      !     | | S(f,Th)/c df dTh = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
+      !    / /
+      !  Th=0,ω=SIG(NFRE)
+      !
+      !
+      ! Determine value of spectrum at NFRE (i.e. at highest frequency). 
+      !  - Note, direction dimension must remain
+
+      ZA_SX       = SX(:,NFRE)
+      ZA_SY       = SY(:,NFRE)
+
+      SDENSX_HF   = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * ZPI * GM1
+      SDENSY_HF   = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * ZPI * GM1
+      
+      ! save these to be used later as upper bounds when LFACT applied (i.e. cap LFACT at 1)
+      SDENSX_HF_UB   = SDENSX_HF
+      SDENSY_HF_UB   = SDENSY_HF
+
+      TAUWX_HF   = G * ROWATER * ( SDENSX_HF )
+      TAUWY_HF   = G * ROWATER * ( SDENSY_HF )
+
+      !/ 3) --- summate low + high frequency contributions to the integral ------- /
+
+      TAUWX = TAUWX_LF + TAUWX_HF
+      TAUWY = TAUWY_LF + TAUWY_HF
+
+!/ ----------------------------------------------------------------- /
+!/ ----------------------------------------------------------------- /
+!/ Part II) --- USTAR based TAU calculation ------------- /      
 !
 !/ 2) --- Stress calculation ----------------------------------------- /
 !     --- The total stress ------------------------------------------- /
+
       TAU_TOT  = USTAR**2 * ROAIRN
-!
+
 !     --- The viscous stress and check that it does not exceed
 !         the total stress. ------------------------------------------ /
+
       TAU_VIS  = MAX(0.0_JWRB, -5.0E-5_JWRB*U10 + 1.1E-3_JWRB) * U10**2 * ROAIRN
 !       TAU_VIS  = MIN(0.9 * TAU_TOT, TAU_VIS)
       TAU_VIS  = MIN(0.95_JWRB * TAU_TOT, TAU_VIS)
-!
+
       TAUVX    = TAU_VIS * COS(USDIR)
       TAUVY    = TAU_VIS * SIN(USDIR)
+
+!     --- The wave supported stress (using elements calculated in Part I). -- /
 !
-!     --- The wave supported stress. --------------------------------- /
-      TAUWX    = TAUWINDS(SDENSX_EXT,CINV_EXT,DSII_EXT)   ! normal stress (x-component)
-      TAUWY    = TAUWINDS(SDENSY_EXT,CINV_EXT,DSII_EXT)   ! normal stress (y-component)
-      TAU_NND  = TAUWINDS(SDENS_EXT, CINV_EXT,DSII_EXT)   ! normal stress (non-directional)
       TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)        ! normal stress (magnitude)
       TAU_INIT = (/TAUWX,TAUWY/)                  ! unadjusted normal stress components
-!
+
       TAUX     = TAUVX + TAUWX                        ! total stress (x-component)
       TAUY     = TAUVY + TAUWY                        ! total stress (y-component)
       TAU      = SQRT(TAUX**2  + TAUY**2)                 ! total stress (magnitude)
       ERR      = (TAU-TAU_TOT)/TAU_TOT                    ! initial error
-!
+
 !/ 3) --- Find reduced Sin(f) = L(f)*Sin(f) to satisfy our constraint
 !/        TAU <= TAU_TOT --------------------------------------------- /
-      !CALL STME21 ( TIME , IDTIME )
-      LF_EXT = 1.0_JWRB
-      IK = 0
-!
-      IF (TAU .GT. TAU_TOT) THEN
 
+      LF = 1.0_JWRB
+      IK = 0
+      IF (TAU .GT. TAU_TOT) THEN
          OVERSHOT    = .FALSE.
          RTAU        = ERR / 90.0_JWRB
          DRTAU       = 2.0_JWRB
-
-         SIGN_NEW    = INT(SIGN(1.0_JWRB,ERR))
+         SIGN_NEW    = INT(SIGN(1.0_JWRB,ERR)) 
 
          UPROXY      = FRIC * CDFAC * USTAR
-         UCINV_EXT   = 1.0_JWRB - (UPROXY * CINV_EXT)
-
+         UCINV       = 1.0_JWRB - (UPROXY * CINV)
          DO IK=1,ITERMAX
+            
+            ! LFAC capped at 1 (i.e. always a reduction of Sin)
+            LF       = MIN(1.0_JWRB, EXP(UCINV * RTAU) )
 
-            LF_EXT   = MIN(1.0_JWRB, EXP(UCINV_EXT * RTAU) )
-            TAU_NND  = TAUWINDS(SDENS_EXT *LF_EXT,CINV_EXT,DSII_EXT)
-            TAUWX    = TAUWINDS(SDENSX_EXT*LF_EXT,CINV_EXT,DSII_EXT)
-            TAUWY    = TAUWINDS(SDENSY_EXT*LF_EXT,CINV_EXT,DSII_EXT)
+            !/ 1) --- low frequency contributions as above ---------------------- /
+            TAUWX_LF = TAUWINDS(SDENSX_LF * LF,CINV,DSII)   ! x-component
+            TAUWY_LF = TAUWINDS(SDENSY_LF * LF,CINV,DSII)   ! y-component
+
+            !/ 2) --- high frequency contributions as above, but modification to include LFAC ------ /
+            !
+            !          
+            !   Th=2pi,ω=ZPI*FRQMAX  
+            !     / /
+            !     | | LFAC*S(f,Th)/c df dTh = (-EXP(RTAU)*EI(ZA_EXP*SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
+            !    / /
+            !  Th=0,ω=SIG(NFRE)
+            !
+            !       where,  LFAC       =  EXP(RTAU*( 1 - (U * 1/c)))
+            !               ZA_EXP     = -ZPI*RTAU*U/GRAV
+            !
+            !       then , use EI for exponential integral solution
+            !
+
+            ZA_EXP     = -ZPI*RTAU*UPROXY*GM1
+
+            SDENSX_HF  = (-EXP(RTAU)*EI(ZA_EXP*SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * ZPI * GM1
+            SDENSY_HF  = (-EXP(RTAU)*EI(ZA_EXP*SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * ZPI * GM1
+            SDENSX_HF  = MIN(SDENSX_HF, SDENSX_HF_UB) ! cap at unmodified HF contribution (LFAC capped at 1)
+            SDENSY_HF  = MIN(SDENSY_HF, SDENSY_HF_UB) ! cap at unmodified HF contribution (LFAC capped at 1)
+            TAUWX_HF   = G * ROWATER * ( SDENSX_HF )
+            TAUWY_HF   = G * ROWATER * ( SDENSY_HF )
+            
+            TAUWX    = TAUWX_LF + TAUWX_HF
+            TAUWY    = TAUWY_LF + TAUWY_HF
             TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)
+
             TAUX     = TAUVX + TAUWX
             TAUY     = TAUVY + TAUWY
             TAU      = SQRT(TAUX**2 + TAUY**2)
+
             ERR      = (TAU-TAU_TOT) / TAU_TOT
             SIGN_OLD = SIGN_NEW
             SIGN_NEW = INT(SIGN(1.0_JWRB, ERR))
@@ -213,13 +295,13 @@
             RTAU = RTAU * (DRTAU**SIGN_NEW)
 
             IF (ABS(ERR) .LT. 1.54E-4_JWRB) EXIT
-            
+
          END DO
 
       END IF
 
-      LFACT(1:NK) = LF_EXT(1:NK)
+      LFACT = LF
 
       IF (LHOOK) CALL DR_HOOK('LFACTOR',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE LFACTOR
+      END SUBROUTINE LFACTORXY
