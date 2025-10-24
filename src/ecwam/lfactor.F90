@@ -6,7 +6,7 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 
-      SUBROUTINE LFACTOR(S, CINV, U10, USTAR, USDIR, ROAIRN, SIG, DSII, NK10Hz, &
+      SUBROUTINE LFACTOR(S, CINV, U10, USTAR, USDIR, ROAIRN, &
      &                   LFACT, TAUWX, TAUWY, TAU)
  
 ! ----------------------------------------------------------------------------
@@ -53,8 +53,6 @@
 !        *USTAR*   - NEW FRICTION VELOCITY IN M/S.
 !        *USDIR*   - WIND DIRECTION
 !       *ROAIRN*   - AIR DENSITY IN KG/M3
-!          *SIG*   - FREQ (RAD)
-!          *DSII*  - ZPI*DF
 !          *LFACT* - CORRECTION FACTOR
 !          *TAUNWX, TAUNWY* - NEGATIVE WAVE NORMAL STRESS COMPONENTS
 
@@ -75,10 +73,11 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH,&
-&                      FRATIO   ,DELTH    ,FRIC
+&                      FRATIO   ,DELTH    ,FRIC, SIG, DSII, SIGM1, DF, &
+&                      NFRE_EXT ,DSII_EXT ,SIG_EXT
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,EPSMIN
+      USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,EPSMIN, GM1
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,TAUWSHELTER, XKAPPA, RNU ,RNUM, CDFAC
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOWTABL  , ONLY : IAB      ,SWELLFT
@@ -91,21 +90,19 @@
 #include "tauwinds.intfb.h"
  
       REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: S
-      REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: CINV, SIG, DSII
+      REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: CINV
       REAL(KIND=JWRB),                       INTENT(IN)  :: U10, USTAR, USDIR, ROAIRN
-      INTEGER(KIND=JWIM),                    INTENT(IN)  :: NK10Hz
 
       REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(OUT) :: LFACT
       REAL(KIND=JWRB),                       INTENT(OUT) :: TAUWX, TAUWY, TAU
 
-      REAL(KIND=JWRB), PARAMETER :: FRQMAX  = 10.0_JWRB ! Upper freq. limit to extrap. to 
       INTEGER(KIND=JWIM), PARAMETER :: ITERMAX = 80 ! Max. no. iterations
-                                                ! to find numerical LFACT soln
+                                                    ! to find numerical LFACT soln
 
       REAL(KIND=JWRB), DIMENSION(NANG*NFRE) :: ECOS2, ESIN2
-      REAL(KIND=JWRB), DIMENSION(NK10Hz) :: IK10Hz, LF10Hz, SIG10Hz, CINV10Hz
-      REAL(KIND=JWRB), DIMENSION(NK10Hz) :: SDENS10Hz, SDENSX10Hz, SDENSY10Hz
-      REAL(KIND=JWRB), DIMENSION(NK10Hz) :: DSII10Hz, UCINV10Hz
+      REAL(KIND=JWRB), DIMENSION(NFRE_EXT) :: LF_EXT, CINV_EXT
+      REAL(KIND=JWRB), DIMENSION(NFRE_EXT) :: SDENS_EXT, SDENSX_EXT, SDENSY_EXT
+      REAL(KIND=JWRB), DIMENSION(NFRE_EXT) :: UCINV_EXT
 
       REAL(KIND=JWRB)      :: TAU_TOT, TAU_VIS, TAU_WAV
       REAL(KIND=JWRB)      :: TAUVX, TAUVY, TAUX, TAUY   
@@ -129,41 +126,30 @@
       NK    = NFRE  ! NUMBER OF FREQS, SAME AS ML
       NSPEC = NK * NTH   ! NUMBER OF SPECTRAL BINS
 
-      IK10Hz = REAL( IRANGE(1,NK10Hz,1) )
-
       ITHN   = IRANGE(1,NTH,1)    ! Index vector 1:NTH
       DO IK = 1, NK
          ECOS2 (ITHN+(IK-1)*NTH) = COSTH
          ESIN2 (ITHN+(IK-1)*NTH) = SINTH
       END DO
 
-!
 !/ 1) --- Either extrapolate arrays up to 10Hz or use discrete spectral
 !         grid per se. Limit the constraint to the positive part of the
 !         wind input only. ---------------------------------------------- /
-      IF (NK .LT. NK10Hz) THEN
-            SDENS10Hz(1:NK)         = SUM(S,1) * DELTH
-            SDENSX10Hz(1:NK)        = SUM(MAX(0.0_JWRB,S)*RESHAPE(ECOS2,(/NTH,NK/)),1) * DELTH
-            SDENSY10Hz(1:NK)        = SUM(MAX(0.0_JWRB,S)*RESHAPE(ESIN2,(/NTH,NK/)),1) * DELTH
-            SIG10Hz                 = SIG(1)*FRATIO**(IK10Hz-1.0_JWRB)
-            CINV10Hz(1:NK)          = CINV
-            CINV10Hz(NK+1:NK10Hz)   = SIG10Hz(NK+1:NK10Hz)*0.101978_JWRB ! 1/c=σ/g
-            DSII10Hz                = 0.5_JWRB * SIG10Hz * (FRATIO-1.0_JWRB/FRATIO)
-!        The first and last frequency bin:
-            DSII10Hz(1)             = 0.5_JWRB * SIG10Hz(1) * (FRATIO-1.0_JWRB)
-            DSII10Hz(NK10Hz)        = 0.5_JWRB * SIG10Hz(NK10Hz) * (FRATIO-1.0_JWRB) / FRATIO
-!
-!        --- Spectral slope for S_IN(F) is proportional to F**(-2) ------ /
-            SDENS10Hz(NK+1:NK10Hz)  = SDENS10Hz(NK)  * (SIG10Hz(NK)/SIG10Hz(NK+1:NK10Hz))**2
-            SDENSX10Hz(NK+1:NK10Hz) = SDENSX10Hz(NK) * (SIG10Hz(NK)/SIG10Hz(NK+1:NK10Hz))**2
-            SDENSY10hz(NK+1:NK10Hz) = SDENSY10Hz(NK) * (SIG10Hz(NK)/SIG10Hz(NK+1:NK10Hz))**2
+      IF (NFRE .LT. NFRE_EXT) THEN
+            CINV_EXT(1:NK)          = CINV
+            SDENS_EXT(1:NK)         = SUM(S,1) * DELTH
+            SDENSX_EXT(1:NK)        = SUM(MAX(0.0_JWRB,S)*RESHAPE(ECOS2,(/NTH,NK/)),1) * DELTH
+            SDENSY_EXT(1:NK)        = SUM(MAX(0.0_JWRB,S)*RESHAPE(ESIN2,(/NTH,NK/)),1) * DELTH
+            !        --- Spectral slope for S_IN(F) is proportional to F**(-2) ------ /
+            CINV_EXT(NK+1:NFRE_EXT)   = SIG_EXT(NK+1:NFRE_EXT)*GM1 ! 1/c=σ/g
+            SDENS_EXT(NK+1:NFRE_EXT)  = SDENS_EXT(NK)  * (SIG_EXT(NK)/SIG_EXT(NK+1:NFRE_EXT))**2
+            SDENSX_EXT(NK+1:NFRE_EXT) = SDENSX_EXT(NK) * (SIG_EXT(NK)/SIG_EXT(NK+1:NFRE_EXT))**2
+            SDENSY_EXT(NK+1:NFRE_EXT) = SDENSY_EXT(NK) * (SIG_EXT(NK)/SIG_EXT(NK+1:NFRE_EXT))**2
       ELSE
-            SIG10Hz          = SIG
-            CINV10Hz         = CINV
-            DSII10Hz         = DSII
-            SDENS10Hz(1:NK)  = SUM(S,1) * DELTH
-            SDENSX10Hz(1:NK) = SUM(MAX(0.0_JWRB,S)*RESHAPE(ECOS2,(/NTH,NK/)),1) * DELTH
-            SDENSY10Hz(1:NK) = SUM(MAX(0.0_JWRB,S)*RESHAPE(ESIN2,(/NTH,NK/)),1) * DELTH
+            CINV_EXT         = CINV
+            SDENS_EXT(1:NK)  = SUM(S,1) * DELTH
+            SDENSX_EXT(1:NK) = SUM(MAX(0.0_JWRB,S)*RESHAPE(ECOS2,(/NTH,NK/)),1) * DELTH
+            SDENSY_EXT(1:NK) = SUM(MAX(0.0_JWRB,S)*RESHAPE(ESIN2,(/NTH,NK/)),1) * DELTH
       END IF
 !
 !/ 2) --- Stress calculation ----------------------------------------- /
@@ -180,9 +166,9 @@
       TAUVY    = TAU_VIS * SIN(USDIR)
 !
 !     --- The wave supported stress. --------------------------------- /
-      TAUWX    = TAUWINDS(SDENSX10Hz,CINV10Hz,DSII10Hz)   ! normal stress (x-component)
-      TAUWY    = TAUWINDS(SDENSY10Hz,CINV10Hz,DSII10Hz)   ! normal stress (y-component)
-      TAU_NND  = TAUWINDS(SDENS10Hz, CINV10Hz,DSII10Hz)   ! normal stress (non-directional)
+      TAUWX    = TAUWINDS(SDENSX_EXT,CINV_EXT,DSII_EXT)   ! normal stress (x-component)
+      TAUWY    = TAUWINDS(SDENSY_EXT,CINV_EXT,DSII_EXT)   ! normal stress (y-component)
+      TAU_NND  = TAUWINDS(SDENS_EXT, CINV_EXT,DSII_EXT)   ! normal stress (non-directional)
       TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)        ! normal stress (magnitude)
       TAU_INIT = (/TAUWX,TAUWY/)                  ! unadjusted normal stress components
 !
@@ -194,7 +180,7 @@
 !/ 3) --- Find reduced Sin(f) = L(f)*Sin(f) to satisfy our constraint
 !/        TAU <= TAU_TOT --------------------------------------------- /
       !CALL STME21 ( TIME , IDTIME )
-      LF10Hz = 1.0_JWRB
+      LF_EXT = 1.0_JWRB
       IK = 0
 !
       IF (TAU .GT. TAU_TOT) THEN
@@ -206,14 +192,14 @@
          SIGN_NEW    = INT(SIGN(1.0_JWRB,ERR))
 
          UPROXY      = FRIC * CDFAC * USTAR
-         UCINV10Hz   = 1.0_JWRB - (UPROXY * CINV10Hz)
+         UCINV_EXT   = 1.0_JWRB - (UPROXY * CINV_EXT)
 
          DO IK=1,ITERMAX
 
-            LF10Hz   = MIN(1.0_JWRB, EXP(UCINV10Hz * RTAU) )
-            TAU_NND  = TAUWINDS(SDENS10Hz *LF10Hz,CINV10Hz,DSII10Hz)
-            TAUWX    = TAUWINDS(SDENSX10Hz*LF10Hz,CINV10Hz,DSII10Hz)
-            TAUWY    = TAUWINDS(SDENSY10Hz*LF10Hz,CINV10Hz,DSII10Hz)
+            LF_EXT   = MIN(1.0_JWRB, EXP(UCINV_EXT * RTAU) )
+            TAU_NND  = TAUWINDS(SDENS_EXT *LF_EXT,CINV_EXT,DSII_EXT)
+            TAUWX    = TAUWINDS(SDENSX_EXT*LF_EXT,CINV_EXT,DSII_EXT)
+            TAUWY    = TAUWINDS(SDENSY_EXT*LF_EXT,CINV_EXT,DSII_EXT)
             TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)
             TAUX     = TAUVX + TAUWX
             TAUY     = TAUVY + TAUWY
@@ -235,7 +221,7 @@
 
       END IF
 
-      LFACT(1:NK) = LF10Hz(1:NK)
+      LFACT(1:NK) = LF_EXT(1:NK)
 
       IF (LHOOK) CALL DR_HOOK('LFACTOR',1,ZHOOK_HANDLE)
 
