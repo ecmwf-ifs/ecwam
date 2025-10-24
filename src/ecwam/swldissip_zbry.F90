@@ -66,7 +66,8 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR      , TH     ,ZPIFR   ,FRATIO    ,DELTH, DFIM
+      USE YOWFRED  , ONLY : FR      , TH     ,ZPIFR   ,FRATIO    ,DELTH, DFIM,
+      &                     SIG     , DDEN
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPHYS  , ONLY : LLSWL6CSTB1, ZSWL6B1
@@ -95,7 +96,6 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: KK
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG*NFRE) :: S, D, A, CG2
       REAL(KIND=JWRB), DIMENSION(KIJL)      :: B1
-      REAL(KIND=JWRB), DIMENSION(NFRE) :: SIG, DDEN
       REAL(KIND=JWRB), DIMENSION(NANG*NFRE) :: SIG2 
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: DSWL
 
@@ -106,11 +106,6 @@
       IF (LHOOK) CALL DR_HOOK('SWLDISSIP_ZBRY',0,ZHOOK_HANDLE)
 
       NSPEC = NANG * NFRE   ! NUMBER OF SPECTRAL BINS
-
-      DO M = 1,NFRE
-        SIG(M)   = ZPI*FR(M)
-        DDEN(M) = ZPI*DFIM(M)*SIG(M)
-      END DO
 
       IKN    = IRANGE(1,NSPEC,NANG)   ! Index vector for elements of 1 ... NFRE
 !                                     ! such that e.g. SIG(1:NFRE) = SIG2(IKN).

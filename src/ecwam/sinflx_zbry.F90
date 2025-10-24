@@ -512,7 +512,7 @@ DO IGST=1,NGST
 ! !     --- compute negative component of the wave supported stresses
 ! !         from negative part of the wind input  ---------------------- /
       SDENSIG(IJ,:,:,IGST) = RESHAPE(S(IJ,:,IGST)*SIG2/CG2(IJ,:),(/ NANG, NFRE /))
-      ! CALL TAU_WAVE_ATMOS(SDENSIG(IJ,:,:,IGST), CINV1(IJ,:), SIG, DSII, TAUNWX(IJ,IGST), TAUNWY(IJ,IGST) )
+      ! CALL TAU_WAVE_ATMOS(SDENSIG(IJ,:,:,IGST), CINV1(IJ,:), TAUNWX(IJ,IGST), TAUNWY(IJ,IGST) )
     ENDDO
   ELSE
     DO IJ = KIJS,KIJL

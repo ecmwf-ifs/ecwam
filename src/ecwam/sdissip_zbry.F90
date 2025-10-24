@@ -72,7 +72,8 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR      , TH     ,ZPIFR   ,FRATIO    ,DELTH, DFIM
+      USE YOWFRED  , ONLY : FR      , TH     ,ZPIFR   ,FRATIO    ,DELTH, DFIM,&
+      &                     SIG     , DF
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWSTAT  , ONLY : LLLOWWINDS
@@ -99,7 +100,6 @@
       INTEGER(KIND=JWIM), DIMENSION(NFRE) :: IKN
 
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FREQ ! frequencies [Hz]
-      REAL(KIND=JWRB), DIMENSION(NFRE) :: SIG  ! frequencies [RAD]
       REAL(KIND=JWRB), DIMENSION(NFRE) :: DFII ! frequency bandwiths [Hz]
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: ANAR ! directional narrowness
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: EDENS    ! spectral density E(f)
@@ -110,7 +110,6 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: T2  ! forced dissipation term
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: T12 ! =T1+T2 or combined dissipation
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: ADF ! temporary variable
-      REAL(KIND=JWRB), DIMENSION(NFRE) :: DF  ! FREQUENCY INTERVALS
       REAL(KIND=JWRB) :: BNT ! empirical constant for wave breaking probability
       REAL(KIND=JWRB) :: XFAC ! temporary variableis
       REAL(KIND=JWRB), DIMENSION(KIJL) :: EDENSMAX ! temporary variable
@@ -127,15 +126,6 @@
       IF (LHOOK) CALL DR_HOOK('SDISSIP_ZBRY',0,ZHOOK_HANDLE)
 
       NSPEC = NANG * NFRE   ! NUMBER OF SPECTRAL BINS
-
-      DO M = 1,NFRE
-        SIG(M)   = ZPI*FR(M)
-      END DO
-
-!     COMPUTE FREQUENCY INTERVALLS
-      DO M = 1,NFRE
-        DF(M) = FR(M)*( FRATIO - 1.0_JWRB )
-      ENDDO
 
       IKN    = IRANGE(1,NSPEC,NANG)   ! Index vector for elements of 1 ... NFRE
 !                                     ! such that e.g. SIG(1:NFRE) = SIG2(IKN).

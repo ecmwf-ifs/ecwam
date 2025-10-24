@@ -178,7 +178,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            DFIM_SIM ,DFIMOFR_SIM ,DFIMFR_SIM ,DFIMFR2_SIM ,      &
      &            DFIM_END_L, DFIM_END_U,                               &
      &            WVPRPT_LAND, SIG      ,DSII       ,SIGM1       ,DF,   &
-     &            SIG_EXT    , DSII_EXT ,IFRE_EXT   ,NFRE_EXT
+     &            SIG_EXT    , DSII_EXT ,IFRE_EXT   ,NFRE_EXT    ,DDEN
       USE YOWGRIBHD, ONLY : LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI, DELLAM, COSPH,                      &
      &                      NPROMA_WAM, NCHNK, IJFROMCHNK  
@@ -508,12 +508,14 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       ! TODO: ZBRY switch to not slow down runtime for IPHYS=0,1?
       IF (.NOT.ALLOCATED(DF))    ALLOCATE(DF(NFRE))
       IF (.NOT.ALLOCATED(SIG))   ALLOCATE(SIG(NFRE))
+      IF (.NOT.ALLOCATED(DDEN))  ALLOCATE(DDEN(NFRE))
       IF (.NOT.ALLOCATED(DSII))  ALLOCATE(DSII(NFRE))
       IF (.NOT.ALLOCATED(SIGM1)) ALLOCATE(SIGM1(NFRE))
       DO M=1,NFRE
         DF(M)    = FR(M)*( FRATIO - 1.0_JWRB )
         SIG(M)   = ZPI*FR(M)
         DSII(M)  = ZPI*DF(M)
+        DDEN(M)  = ZPI*DFIM(M)*SIG(M)
         SIGM1(M) = 1.0_JWRB/SIG(M)
       ENDDO
 

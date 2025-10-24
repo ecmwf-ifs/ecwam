@@ -6,7 +6,7 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 
-        SUBROUTINE TAU_WAVE_ATMOS(S, CINV, SIG, DSII, TAUNWX, TAUNWY )
+        SUBROUTINE TAU_WAVE_ATMOS(S, CINV, TAUNWX, TAUNWY )
 
 ! ----------------------------------------------------------------------
 !
@@ -30,12 +30,10 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *TAU_WAVE_ATMOS(S, CINV, SIG, DSII, TAUNWX, TAUNWY )
+!     *CALL* *TAU_WAVE_ATMOS(S, CINV, TAUNWX, TAUNWY )
 
 !            *S*  - NEG. WIND INPUT ENERGY DENSITY SPECTRUM.
 !          *CINV* - INVERSE PHASE SPEED CALC. IN INPUT ROUTINE
-!          *SIG*  - FREQ (RAD)
-!          *DSII* - ZPI*DF
 !          *TAUNWX, TAUNWY* - NEGATIVE WAVE NORMAL STRESS COMPONENTS
 
 !     EXTERNALS.
@@ -55,10 +53,11 @@
         USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
         USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH,&
-        &                      FRATIO   ,DELTH
+        &                      FRATIO  ,DELTH    ,SIG      , DSII
         USE YOWMPP   , ONLY : NINF     ,NSUP
         USE YOWPARAM , ONLY : NANG     ,NFRE
         USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,EPSMIN, GM1
+        USE YOWPHYS  , ONLY : FRQMAX
         USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
@@ -68,7 +67,7 @@
 #include "tauwinds.intfb.h"
 
         REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: S ! Sin(sigma) in [m2/rad-Hz]
-        REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: CINV, SIG, DSII
+        REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: CINV
         REAL(KIND=JWRB),                       INTENT(OUT) :: TAUNWX, TAUNWY 
 
 
@@ -133,11 +132,19 @@
       !            integral collapses into easy analytic solution
       !
       !          
-      !   Th=2pi,f=inf  
+      !   Th=2pi,ω=inf  
       !     / /
-      !     | | S(f,Th)/c df dTh = FR(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1 / LOG(SIG(NFRE))
+      !     | | S(f,Th)/c df dTh = (LOG(inf) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
       !    / /
-      !  Th=0,f=FR(NFRE)
+      !  Th=0,ω=SIG(NFRE)
+      !
+      !  Instead, use FRQMAX extension (e.g. 10Hz)          
+      !
+      !   Th=2pi,ω=ZPI*FRQMAX  
+      !     / /
+      !     | | S(f,Th)/c df dTh = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
+      !    / /
+      !  Th=0,ω=SIG(NFRE)
       !
       !
       ! Determine value of spectrum at NFRE (i.e. at highest frequency). 
@@ -146,8 +153,8 @@
       ZA_SX       = SX(:,NFRE)
       ZA_SY       = SY(:,NFRE)
 
-      SDENSX_HF   = SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * ZPI * GM1 / LOG(SIG(NFRE))
-      SDENSY_HF   = SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * ZPI * GM1 / LOG(SIG(NFRE))
+      SDENSX_HF   = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * ZPI * GM1
+      SDENSY_HF   = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * ZPI * GM1
 
       TAUNWX_HF   = G * ROWATER * ( SDENSX_HF )
       TAUNWY_HF   = G * ROWATER * ( SDENSY_HF )
