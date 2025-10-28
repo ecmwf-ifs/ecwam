@@ -23,7 +23,7 @@
      &                     USTOKES, VSTOKES, STRNMS,           &
      &                     TAUXD, TAUYD, TAUOCXD,              &
      &                     TAUOCYD, TAUOC, TAUICX, TAUICY,     & 
-     &                     PHIOCD, PHIEPS, PHIAW, UPROXY,      &
+     &                     PHIOCD, PHIEPS, PHIAW,              &
      &                     NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN, &
      &                     NPHIEPS, NTAUOC, NSWH,              &
      &                     NMWP,NEMOTAUX, NEMOTAUY,            &
@@ -107,7 +107,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: AIRD, WSTAR
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: USTRA, VSTRA
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: CICOVER
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: UFRIC, UPROXY, Z0M, Z0B, CHRNCK, CITHICK
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: UFRIC, Z0M, Z0B, CHRNCK, CITHICK
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUICX, TAUICY
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: PHIOCD, PHIEPS, PHIAW, USTOKES, VSTOKES
@@ -209,7 +209,7 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
      &             COSWDIF, SINWDIF2,               &
      &             FMEAN, HALP, FMEANWS,            &
      &             FLM,                             &
-     &             UFRIC, UPROXY, TAUW_LOC, TAUWDIR_LOC,    &
+     &             UFRIC, TAUW_LOC, TAUWDIR_LOC,    &
      &             Z0M, Z0B, CHRNCK, PHIWA,         &
      &             FLD, SL, SPOS,                   &
      &             MIJ, RHOWGDFTH, XLLWS)

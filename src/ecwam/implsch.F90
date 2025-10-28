@@ -19,7 +19,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                  WSEMEAN, WSFMEAN, USTOKES, VSTOKES, STRNMS, &
  &                  TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, &
  &                  TAUICX, TAUICY, &
- &                  PHIOCD, PHIEPS, PHIAW, UPROXY, &
+ &                  PHIOCD, PHIEPS, PHIAW, &
  &                  MIJ, XLLWS)
 
 ! ----------------------------------------------------------------------
@@ -130,7 +130,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       INTEGER(KIND=JWIM), DIMENSION(KIJL), INTENT(IN) :: IOBND
 
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR, USTRA, VSTRA
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: UFRIC, UPROXY, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, CITHICK
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: UFRIC, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, CITHICK
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: WSEMEAN, WSFMEAN, USTOKES, VSTOKES, STRNMS
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, PHIOCD
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUICX, TAUICY
@@ -270,7 +270,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
      &               COSWDIF, SINWDIF2,         &
      &               FMEAN, HALP, FMEANWS,      &
      &               FLM,                       &
-     &               UFRIC, UPROXY, TAUW, TAUWDIR, &
+     &               UFRIC, TAUW, TAUWDIR, &
      &               Z0M, Z0B, CHRNCK, PHIWA,   &
      &               FLD, SL, SPOS,             &
      &               MIJ, RHOWGDFTH, XLLWS)

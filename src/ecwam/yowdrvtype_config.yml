@@ -31,7 +31,7 @@ objtypes:
   intgt_param_fields:
      rank: 2
      types: [real]
-     vars: [[wsemean, wsfmean, ustokes, vstokes, phieps, phiocd, phiaw, uproxy, tauoc, tauxd, tauyd,
+     vars: [[wsemean, wsfmean, ustokes, vstokes, phieps, phiocd, phiaw, tauoc, tauxd, tauyd,
             tauocxd, tauocyd, tauicx, tauicy, strnms, altwh, caltwh, raltcor]]
   wvgridglo:
      rank: 1
