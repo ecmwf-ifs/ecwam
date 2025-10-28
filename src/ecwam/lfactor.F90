@@ -6,7 +6,7 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 
-      SUBROUTINE LFACTOR(S, CINV, U10, USTAR, USDIR, ROAIRN, &
+      SUBROUTINE LFACTOR(S, CINV, U10, USTAR, UPROXY, USDIR, ROAIRN, &
      &                   LFACT, TAUWX, TAUWY, TAU)
  
 ! ----------------------------------------------------------------------------
@@ -85,10 +85,11 @@
       IMPLICIT NONE
 #include "irange.intfb.h"
 #include "tauwinds.intfb.h"
+#include "abort1.intfb.h"
  
       REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: S ! Sin(sigma) in [m2/rad-Hz]
       REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: CINV
-      REAL(KIND=JWRB),                       INTENT(IN)  :: U10, USTAR, USDIR, ROAIRN
+      REAL(KIND=JWRB),                       INTENT(IN)  :: U10, USTAR, UPROXY, USDIR, ROAIRN
 
       REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(OUT) :: LFACT
       REAL(KIND=JWRB),                       INTENT(OUT) :: TAUWX, TAUWY, TAU
@@ -104,7 +105,7 @@
       REAL(KIND=JWRB)      :: TAU_TOT, TAU_VIS, TAU_WAV
       REAL(KIND=JWRB)      :: TAUVX, TAUVY, TAUX, TAUY   
       REAL(KIND=JWRB)      :: TAU_NND, TAU_INIT(2)
-      REAL(KIND=JWRB)      :: UPROXY, RTAU, DRTAU, ERR   
+      REAL(KIND=JWRB)      :: RTAU, DRTAU, ERR   
       LOGICAL              :: OVERSHOT
       CHARACTER(LEN=23)    :: IDTIME
 
@@ -165,6 +166,9 @@
 !     --- The wave supported stress. --------------------------------- /
       TAUWX    = TAUWINDS(SDENSX_EXT,CINV_EXT,DSII_EXT)   ! normal stress (x-component)
       TAUWY    = TAUWINDS(SDENSY_EXT,CINV_EXT,DSII_EXT)   ! normal stress (y-component)
+      ! WRITE (*,*) '   '
+      ! WRITE (*,*) '  TAUWX_LF    ',TAUWINDS(SDENSX_EXT(1:NK),CINV_EXT(1:NK),DSII_EXT(1:NK))
+      ! WRITE (*,*) '  TAUWX_MF_HF ',TAUWINDS(SDENSX_EXT(NK+1:NFRE_EXT),CINV_EXT(1:NK),DSII_EXT(NK+1:NFRE_EXT))
       TAU_NND  = TAUWINDS(SDENS_EXT, CINV_EXT,DSII_EXT)   ! normal stress (non-directional)
       TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)        ! normal stress (magnitude)
       TAU_INIT = (/TAUWX,TAUWY/)                  ! unadjusted normal stress components
@@ -188,7 +192,6 @@
 
          SIGN_NEW    = INT(SIGN(1.0_JWRB,ERR))
 
-         UPROXY      = FRIC * CDFAC * USTAR
          UCINV_EXT   = 1.0_JWRB - (UPROXY * CINV_EXT)
 
          DO IK=1,ITERMAX
@@ -197,6 +200,9 @@
             TAU_NND  = TAUWINDS(SDENS_EXT *LF_EXT,CINV_EXT,DSII_EXT)
             TAUWX    = TAUWINDS(SDENSX_EXT*LF_EXT,CINV_EXT,DSII_EXT)
             TAUWY    = TAUWINDS(SDENSY_EXT*LF_EXT,CINV_EXT,DSII_EXT)
+            ! WRITE (*,*) '   '
+            ! WRITE (*,*) '  TAUWX_LF    ',TAUWINDS(SDENSX_EXT(1:NK)*LF_EXT(1:NK),CINV_EXT(1:NK),DSII_EXT(1:NK))
+            ! WRITE (*,*) '  TAUWX_MF_HF ',TAUWINDS(SDENSX_EXT(NK+1:NFRE_EXT)*LF_EXT(NK+1:NFRE_EXT),CINV_EXT(1:NK),DSII_EXT(NK+1:NFRE_EXT))
             TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)
             TAUX     = TAUVX + TAUWX
             TAUY     = TAUVY + TAUWY
@@ -211,6 +217,9 @@
             IF (OVERSHOT) DRTAU = MAX(0.5_JWRB*(1.0_JWRB+DRTAU),1.00010_JWRB)
 
             RTAU = RTAU * (DRTAU**SIGN_NEW)
+
+            ! CALL ABORT1
+            
 
             IF (ABS(ERR) .LT. 1.54E-4_JWRB) EXIT
             

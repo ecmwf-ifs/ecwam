@@ -6,7 +6,7 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 
-      SUBROUTINE LFACTORXY(S, CINV, U10, USTAR, USDIR, ROAIRN, &
+      SUBROUTINE LFACTORXY(S, CINV, U10, USTAR, UPROXY, USDIR, ROAIRN, &
      &                   LFACT, TAUWX, TAUWY, TAU)
  
 ! ----------------------------------------------------------------------------
@@ -85,11 +85,12 @@
       IMPLICIT NONE
 #include "irange.intfb.h"
 #include "tauwinds.intfb.h"
-#include "ei.intfb.h"
+#include "wvei.intfb.h"
+#include "abort1.intfb.h"
  
-      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: S ! Sin(sigma) in [m2/rad-Hz]
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: S ! Sin(sigma) in omega
       REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: CINV
-      REAL(KIND=JWRB),                       INTENT(IN)  :: U10, USTAR, USDIR, ROAIRN
+      REAL(KIND=JWRB),                       INTENT(IN)  :: U10, USTAR, UPROXY, USDIR, ROAIRN
 
       REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(OUT) :: LFACT
       REAL(KIND=JWRB),                       INTENT(OUT) :: TAUWX, TAUWY, TAU
@@ -104,18 +105,20 @@
       REAL(KIND=JWRB), DIMENSION(NFRE)  :: UCINV
       REAL(KIND=JWRB), DIMENSION(NFRE)  :: LF
 
-      REAL(KIND=JWRB)               :: SDENSX_HF, SDENSY_HF, SDENSX_HF_UB, SDENSY_HF_UB
-      REAL(KIND=JWRB)               :: TAUWX_LF, TAUWY_LF
+      REAL(KIND=JWRB)               :: SDENSX_HF, SDENSY_HF, SDENSX_MF_HF, SDENSY_MF_HF
+      REAL(KIND=JWRB)               :: SDENSX_MF, SDENSY_MF
+      REAL(KIND=JWRB)               :: TAUWX_LF, TAUWY_LF, TAUWX_MF_HF, TAUWY_MF_HF
       REAL(KIND=JWRB)               :: TAUWX_HF, TAUWY_HF  
-      REAL(KIND=JWRB)               :: ZA_EXP
+      REAL(KIND=JWRB)               :: ZA_EXP, ZWVEI, FRQMID
 
       REAL(KIND=JWRB)      :: TAU_TOT, TAU_VIS, TAU_WAV
       REAL(KIND=JWRB)      :: TAUVX, TAUVY, TAUX, TAUY
 
       REAL(KIND=JWRB)      :: TAU_NND, TAU_INIT(2)
 
-      REAL(KIND=JWRB)      :: UPROXY, RTAU, DRTAU, ERR
+      REAL(KIND=JWRB)      :: RTAU, DRTAU, ERR
       LOGICAL              :: OVERSHOT
+      LOGICAL              :: LLFRQHF
 
       INTEGER(KIND=JWIM) :: IK, ITH, M, SIGN_NEW, SIGN_OLD
       INTEGER(KIND=JWIM) :: NK, NTH, NSPEC !num. of freqs, dirs, spec. bins
@@ -132,15 +135,24 @@
       NK    = NFRE  ! NUMBER OF FREQS, SAME AS ML
       NSPEC = NK * NTH   ! NUMBER OF SPECTRAL BINS
 
+      FRQMID = MIN(FRQMAX,G/(ZPI*UPROXY))  ! dynamic cutoff frequency, capped at FRQMAX
+      
+      ! Determines if we need special treatment for some of the high frequencies to account for LFAC
+      IF (FRQMID>FR(NFRE)) THEN
+         LLFRQHF = .TRUE.
+      ELSE
+         LLFRQHF = .FALSE.
+      END IF
+
       ITHN   = IRANGE(1,NTH,1)    ! Index vector 1:NTH
       DO IK = 1, NK
          ECOS2 (ITHN+(IK-1)*NTH) = COSTH
          ESIN2 (ITHN+(IK-1)*NTH) = SINTH
       END DO
 
-      SX = ABS(MIN(0.0_JWRB,S))*RESHAPE(ECOS2,(/NTH,NK/))  
-      SY = ABS(MIN(0.0_JWRB,S))*RESHAPE(ESIN2,(/NTH,NK/))  
-      
+      SX = MAX(0.0_JWRB,S)*RESHAPE(ECOS2,(/NTH,NK/))  
+      SY = MAX(0.0_JWRB,S)*RESHAPE(ESIN2,(/NTH,NK/))  
+
 !/ ----------------------------------------------------------------- /
 !/ ----------------------------------------------------------------- /
 !/ Part I) --- low/high frequency contributions of TAU ------------- /
@@ -172,9 +184,9 @@
       !            integral collapses into easy analytic solution
       !
       !          
-      !   Th=2pi,ω=ZPI*FRQMAX  
+      !   Th=2pi,ω=ZPI*FRQMID  
       !     / /
-      !     | | S(f,Th)/c df dTh = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
+      !     | | S(f,Th)/c df dTh = (LOG(ZPI*FRQMID) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
       !    / /
       !  Th=0,ω=SIG(NFRE)
       !
@@ -185,20 +197,20 @@
       ZA_SX       = SX(:,NFRE)
       ZA_SY       = SY(:,NFRE)
 
-      SDENSX_HF   = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * ZPI * GM1
-      SDENSY_HF   = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * ZPI * GM1
-      
-      ! save these to be used later as upper bounds when LFACT applied (i.e. cap LFACT at 1)
-      SDENSX_HF_UB   = SDENSX_HF
-      SDENSY_HF_UB   = SDENSY_HF
+      ! mid + high frequency contributions
+      SDENSX_MF_HF   = ZPI * GM1 * SIG(NFRE)**2 * (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * DELTH * SUM(ZA_SX)
+      SDENSY_MF_HF   = ZPI * GM1 * SIG(NFRE)**2 * (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * DELTH * SUM(ZA_SY)
 
-      TAUWX_HF   = G * ROWATER * ( SDENSX_HF )
-      TAUWY_HF   = G * ROWATER * ( SDENSY_HF )
+      TAUWX_MF_HF   = G * ROWATER * ( SDENSX_MF_HF )
+      TAUWY_MF_HF   = G * ROWATER * ( SDENSY_MF_HF )
 
-      !/ 3) --- summate low + high frequency contributions to the integral ------- /
+      !/ 3) --- summate low + mid + high frequency contributions to the integral ------- /
 
-      TAUWX = TAUWX_LF + TAUWX_HF
-      TAUWY = TAUWY_LF + TAUWY_HF
+      TAUWX = TAUWX_LF + TAUWX_MF_HF
+      TAUWY = TAUWY_LF + TAUWY_MF_HF
+      ! WRITE (*,*) '   '
+      ! WRITE (*,*) '  TAUWX_LF    ',TAUWX_LF
+      ! WRITE (*,*) '  TAUWX_MF_HF ',TAUWX_MF_HF
 
 !/ ----------------------------------------------------------------- /
 !/ ----------------------------------------------------------------- /
@@ -234,13 +246,24 @@
 
       LF = 1.0_JWRB
       IK = 0
+
+      IF (LLFRQHF) THEN
+         ! mid frequency contributions (from FR(NFRE) to FRQMID)
+         SDENSX_MF   = (LOG(ZPI*FRQMID) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * ZPI * GM1
+         SDENSY_MF   = (LOG(ZPI*FRQMID) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * ZPI * GM1
+      ELSE
+         ! mid + high frequency contributions (from FR(NFRE) to FRQMAX)
+         SDENSX_MF_HF   = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * ZPI * GM1
+         SDENSY_MF_HF   = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * ZPI * GM1
+      END IF
+      
+
       IF (TAU .GT. TAU_TOT) THEN
          OVERSHOT    = .FALSE.
          RTAU        = ERR / 90.0_JWRB
          DRTAU       = 2.0_JWRB
          SIGN_NEW    = INT(SIGN(1.0_JWRB,ERR)) 
 
-         UPROXY      = FRIC * CDFAC * USTAR
          UCINV       = 1.0_JWRB - (UPROXY * CINV)
          DO IK=1,ITERMAX
             
@@ -258,7 +281,7 @@
             !     / /
             !     | | LFAC*S(f,Th)/c df dTh = (-EXP(RTAU)*EI(ZA_EXP*SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
             !    / /
-            !  Th=0,ω=SIG(NFRE)
+            !  Th=0,ω=ZPI*FRQMID
             !
             !       where,  LFAC       =  EXP(RTAU*( 1 - (U * 1/c)))
             !               ZA_EXP     = -ZPI*RTAU*U/GRAV
@@ -266,23 +289,28 @@
             !       then , use EI for exponential integral solution
             !
 
-            ZA_EXP     = -ZPI*RTAU*UPROXY*GM1
+            IF (LLFRQHF) THEN
+                  ZA_EXP      = -ZPI*RTAU*UPROXY*GM1
+                  ZWVEI       = -EXP(RTAU)*WVEI(ZA_EXP*(ZPI*FRQMID))
+                  SDENSX_HF   = ZWVEI * (ZPI*FRQMID)**2 * ZPI * GM1 * DELTH * SUM(ZA_SX) 
+                  SDENSY_HF   = ZWVEI * (ZPI*FRQMID)**2 * ZPI * GM1 * DELTH * SUM(ZA_SY)
+                  TAUWX_MF_HF = G * ROWATER * ( SDENSX_MF + SDENSX_HF)
+                  TAUWY_MF_HF = G * ROWATER * ( SDENSY_MF + SDENSY_HF)
+            ELSE
+                  TAUWX_MF_HF = G * ROWATER * ( SDENSX_MF_HF )
+                  TAUWY_MF_HF = G * ROWATER * ( SDENSY_MF_HF )
+            END IF
 
-            SDENSX_HF  = (-EXP(RTAU)*EI(ZA_EXP*SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * ZPI * GM1
-            SDENSY_HF  = (-EXP(RTAU)*EI(ZA_EXP*SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * ZPI * GM1
-            SDENSX_HF  = MIN(SDENSX_HF, SDENSX_HF_UB) ! cap at unmodified HF contribution (LFAC capped at 1)
-            SDENSY_HF  = MIN(SDENSY_HF, SDENSY_HF_UB) ! cap at unmodified HF contribution (LFAC capped at 1)
-            TAUWX_HF   = G * ROWATER * ( SDENSX_HF )
-            TAUWY_HF   = G * ROWATER * ( SDENSY_HF )
-            
-            TAUWX    = TAUWX_LF + TAUWX_HF
-            TAUWY    = TAUWY_LF + TAUWY_HF
+            TAUWX    = TAUWX_LF + TAUWX_MF_HF
+            TAUWY    = TAUWY_LF + TAUWY_MF_HF
+            ! WRITE (*,*) '   '
+            ! WRITE (*,*) '  TAUWX_LF    ',TAUWX_LF
+            ! WRITE (*,*) '  TAUWX_MF_HF ',TAUWX_MF_HF
+
             TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)
-
             TAUX     = TAUVX + TAUWX
             TAUY     = TAUVY + TAUWY
             TAU      = SQRT(TAUX**2 + TAUY**2)
-
             ERR      = (TAU-TAU_TOT) / TAU_TOT
             SIGN_OLD = SIGN_NEW
             SIGN_NEW = INT(SIGN(1.0_JWRB, ERR))
@@ -293,6 +321,8 @@
             IF (OVERSHOT) DRTAU = MAX(0.5_JWRB*(1.0_JWRB+DRTAU),1.00010_JWRB)
 
             RTAU = RTAU * (DRTAU**SIGN_NEW)
+
+            ! CALL ABORT1
 
             IF (ABS(ERR) .LT. 1.54E-4_JWRB) EXIT
 

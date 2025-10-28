@@ -6,7 +6,7 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 
-      FUNCTION EI(x) RESULT(res)
+      FUNCTION WVEI(x) RESULT(res)
 
 ! ----------------------------------------------------------------------------
 !
@@ -23,24 +23,19 @@
 
 !     ORIGIN.
 !     ----------
-!     Adapted from Babanin Young Donelan & Banner (ZBRY) physics 
-!     as implemented as ST6 in WAVEWATCH-III 
-!     WW3 module:       W3SRC6MD    
-!     WW3 subroutine:   TAUWINDS
-!     Implementation into ECWAM DECEMBER 2021 by J. Kousal 
+!     Implementation into ECWAM DECEMBER 2025 by J. Kousal based on available online solvers
 
 ! ----------------------------------------------------------------------------
 !
 
         USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+        USE YOWPCONS    , ONLY : GAMMA_E
         USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
 !----------------------------------------------------------------------
 
         IMPLICIT NONE
-
         REAL(KIND=JWRB), INTENT(IN)  :: x
-        REAL(KIND=JWRB), PARAMETER :: EULER = 0.57721566490153286060651209_JWRB
         REAL(KIND=JWRB) :: term, sum, res
         INTEGER(KIND=JWIM) :: k, kmax
         REAL(KIND=JWRB) :: eps
@@ -50,7 +45,7 @@
 ! ----------------------------------------------------------------------------
 !
 
-      IF (LHOOK) CALL DR_HOOK('EI',0,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('WVEI',0,ZHOOK_HANDLE)
 
             
       eps = 1.0E-12_JWRB
@@ -70,7 +65,7 @@
                   if (abs(term/real(k+1,kind=JWRB)) < abs(sum)*eps) exit
                   k = k + 1
             end do
-            res = EULER + log(abs(x)) + sum
+            res = GAMMA_E + log(abs(x)) + sum
       else
             ! asymptotic for large positive x: Ei(x) ~ exp(x)/x * (1 + 1/x + 2!/x^2 + 6/x^3 + ...)
             kmax = 50
@@ -84,6 +79,6 @@
             res = exp(x) / x * sum
       end if
 
-      IF (LHOOK) CALL DR_HOOK('EI',1,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('WVEI',1,ZHOOK_HANDLE)
 
-      END FUNCTION EI            
+      END FUNCTION WVEI            
