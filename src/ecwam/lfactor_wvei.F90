@@ -109,7 +109,7 @@
       REAL(KIND=JWRB)               :: SDENSX_MF, SDENSY_MF
       REAL(KIND=JWRB)               :: TAUWX_LF, TAUWY_LF, TAUWX_MF_HF, TAUWY_MF_HF
       REAL(KIND=JWRB)               :: TAUWX_HF, TAUWY_HF  
-      REAL(KIND=JWRB)               :: ZA_EXP, ZWVEI, FRQMID, FRQMAXOM
+      REAL(KIND=JWRB)               :: ZA_EXP, ZWVEI, FRQMIDOM, FRQMAXOM
 
       REAL(KIND=JWRB)      :: TAU_TOT, TAU_VIS, TAU_WAV
       REAL(KIND=JWRB)      :: TAUVX, TAUVY, TAUX, TAUY
@@ -329,7 +329,7 @@
 
             RTAU = RTAU * (DRTAU**SIGN_NEW)
 
-            CALL ABORT1
+            ! CALL ABORT1
 
             IF (ABS(ERR) .LT. 1.54E-4_JWRB) EXIT
 
