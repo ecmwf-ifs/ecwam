@@ -109,7 +109,7 @@
       REAL(KIND=JWRB)               :: SDENSX_MF, SDENSY_MF
       REAL(KIND=JWRB)               :: TAUWX_LF, TAUWY_LF, TAUWX_MF_HF, TAUWY_MF_HF
       REAL(KIND=JWRB)               :: TAUWX_HF, TAUWY_HF  
-      REAL(KIND=JWRB)               :: ZA_EXP, ZWVEI, FRQMID
+      REAL(KIND=JWRB)               :: ZA_EXP, ZWVEI, FRQMID, FRQMAXOM
 
       REAL(KIND=JWRB)      :: TAU_TOT, TAU_VIS, TAU_WAV
       REAL(KIND=JWRB)      :: TAUVX, TAUVY, TAUX, TAUY
@@ -135,7 +135,8 @@
       NK    = NFRE  ! NUMBER OF FREQS, SAME AS ML
       NSPEC = NK * NTH   ! NUMBER OF SPECTRAL BINS
 
-      FRQMID = MIN(FRQMAX,G/(ZPI*UPROXY))  ! dynamic cutoff frequency, capped at FRQMAX
+      FRQMAXOM = ZPI * FRQMAX            ! max angular frequency corresponding to FRQMAX in Hz
+      FRQMIDOM = MIN(FRQMAXOM,G/UPROXY)  ! dynamic cutoff frequency, capped at FRQMAX
 
       ITHN   = IRANGE(1,NTH,1)    ! Index vector 1:NTH
       DO IK = 1, NK
@@ -153,11 +154,11 @@
       !/ 0) --- split integral into low/high frequency contributions ------------- /
       !
       !
-      !     Th=2pi,f=inf                   Th=2pi,f=FR(NFRE)         Th=2pi,f=inf  
+      !     Th=2pi,ω=inf                   Th=2pi,ω=SIG(NFRE)         Th=2pi,ω=inf  
       !          / /                         / /                      / /
       !          | | S(f,Th)/c df dTh  =     | | S(f,Th)/c df dTh +   | | S(f,Th)/c df dTh
       !         / /                         / /                      / /
-      !     Th=0,f=0                     Th=0,f=0                 Th=0,f=FR(NFRE)
+      !     Th=0,ω=0                     Th=0,ω=0                 Th=0,ω=SIG(NFRE)
       !
       !
       !                                =     LF_contribution      +  HF_contribution
@@ -179,7 +180,7 @@
       !          
       !   Th=2pi,ω=ZPI*FRQMAX  
       !     / /
-      !     | | S(f,Th)/c df dTh = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
+      !     | | S(f,Th)/c df dTh = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * GM1
       !    / /
       !  Th=0,ω=SIG(NFRE)
       !
@@ -191,8 +192,8 @@
       ZA_SY       = SY(:,NFRE)
 
       ! mid + high frequency contributions
-      SDENSX_MF_HF   = ZPI * GM1 * SIG(NFRE)**2 * (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * DELTH * SUM(ZA_SX)
-      SDENSY_MF_HF   = ZPI * GM1 * SIG(NFRE)**2 * (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * DELTH * SUM(ZA_SY)
+      SDENSX_MF_HF   = GM1 * SIG(NFRE)**2 * (LOG(FRQMAXOM) - LOG(SIG(NFRE))) * DELTH * SUM(ZA_SX)
+      SDENSY_MF_HF   = GM1 * SIG(NFRE)**2 * (LOG(FRQMAXOM) - LOG(SIG(NFRE))) * DELTH * SUM(ZA_SY)
 
       TAUWX_MF_HF   = G * ROWATER * ( SDENSX_MF_HF )
       TAUWY_MF_HF   = G * ROWATER * ( SDENSY_MF_HF )
@@ -201,9 +202,9 @@
 
       TAUWX = TAUWX_LF + TAUWX_MF_HF
       TAUWY = TAUWY_LF + TAUWY_MF_HF
-      WRITE (*,*) '!/ ----- PRE LFAC ----- /   '
-      WRITE (*,*) '  TAUWX_LF    ',TAUWX_LF
-      WRITE (*,*) '  TAUWX_MF_HF ',TAUWX_MF_HF
+      ! WRITE (*,*) '!/ ----- PRE LFAC ----- /   '
+      ! WRITE (*,*) '  TAUWX_LF    ',TAUWX_LF
+      ! WRITE (*,*) '  TAUWX_MF_HF ',TAUWX_MF_HF
 
 !/ ----------------------------------------------------------------- /
 !/ ----------------------------------------------------------------- /
@@ -241,18 +242,18 @@
       IK = 0
 
       ! Determines if we need special treatment for some of the high frequencies to account for LFAC
-      IF (FRQMID>FR(NFRE)) THEN
-         ! cut off falls between FR(NFRE) and FRQMAX, therefore have to use 3 solution branches (LF + MF + HF)    
+      IF (FRQMIDOM>SIG(NFRE)) THEN
+         ! cut off falls between SIG(NFRE) and FRQMAXOM, therefore have to use 3 solution branches (LF + MF + HF)    
          LLFRQMF = .TRUE.
 
-         ! mid frequency (MF) contributions, FR(NFRE)<f<FRQMID
-         SDENSX_MF   = (LOG(ZPI*FRQMID) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * ZPI * GM1
-         SDENSY_MF   = (LOG(ZPI*FRQMID) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * ZPI * GM1
+         ! mid frequency (MF) contributions, SIG(NFRE)<ω<FRQMIDOM
+         SDENSX_MF   = (LOG(FRQMIDOM) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * GM1
+         SDENSY_MF   = (LOG(FRQMIDOM) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * GM1
       ELSE
          ! cut off falls below FR(NFRE)        , therefore have to use only 2 solution branches (LF + HF)  
          LLFRQMF = .FALSE.
 
-         ! mid frequency (MF) contributions,= 0 because FRQMID<FR(NFRE)
+         ! mid frequency (MF) contributions,= 0 because FRQMIDOM<SIG(NFRE)
          SDENSX_MF   = 0.0_JWRB
          SDENSY_MF   = 0.0_JWRB
       END IF
@@ -278,30 +279,30 @@
             !          
             !   Th=2pi,ω=inf
             !     / /
-            !     | | LFAC*S(f,Th)/c df dTh = (-EXP(RTAU)*WVEI(ZA_EXP * ω_c )) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
+            !     | | LFAC*S(f,Th)/c df dTh = (-EXP(RTAU)*WVEI(ZA_EXP * ω_c )) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * GM1
             !    / /
-            !  Th=0,ω_c
+            !  Th=0,ω=ω_c
             !
             !       where,  LFAC       =  EXP(RTAU*( 1 - (U * 1/c)))
-            !               ZA_EXP     = -ZPI*RTAU*U/GRAV
+            !               ZA_EXP     = -RTAU*U/GRAV
             !
             !       then , use WVEI for exponential integral solution
             !
             
-            ZA_EXP      = -ZPI*RTAU*UPROXY*GM1
+            ZA_EXP      = -RTAU*UPROXY*GM1
 
             IF (LLFRQMF) THEN
-               ! mid  frequency contributions accounted for up to ω_c=FRQMID
-               ! high frequency contributions,     ω_c=FRQMID,   FRQMID  <f<inf
-               ZWVEI     = -EXP(RTAU)*WVEI(ZA_EXP*(ZPI*FRQMID))
+               ! mid  frequency contributions accounted for up to ω_c=FRQMIDOM
+               ! high frequency contributions,     ω_c=FRQMIDOM, FRQMIDOM<ω<inf
+               ZWVEI     = -EXP(RTAU)*WVEI(ZA_EXP*FRQMIDOM)
             ELSE
                ! mid  frequency contributions =0
-               ! high frequency contributions,     ω_c=FR(NFRE), FR(NFRE)<f<inf
-               ZWVEI     = -EXP(RTAU)*WVEI(ZA_EXP*(SIG(NFRE)))
+               ! high frequency contributions,     ω_c=SIG(NFRE), SIG(NFRE)<ω<inf
+               ZWVEI     = -EXP(RTAU)*WVEI(ZA_EXP*SIG(NFRE))
             END IF
             
-            SDENSX_HF   = ZWVEI * SIG(NFRE)**2 * ZPI * GM1 * DELTH * SUM(ZA_SX) 
-            SDENSY_HF   = ZWVEI * SIG(NFRE)**2 * ZPI * GM1 * DELTH * SUM(ZA_SY)
+            SDENSX_HF   = ZWVEI * SIG(NFRE)**2 * GM1 * DELTH * SUM(ZA_SX) 
+            SDENSY_HF   = ZWVEI * SIG(NFRE)**2 * GM1 * DELTH * SUM(ZA_SY)
 
             TAUWX_MF_HF = G * ROWATER * ( SDENSX_MF + SDENSX_HF)
             TAUWY_MF_HF = G * ROWATER * ( SDENSY_MF + SDENSY_HF)
@@ -309,9 +310,9 @@
             TAUWX    = TAUWX_LF + TAUWX_MF_HF
             TAUWY    = TAUWY_LF + TAUWY_MF_HF
 
-            WRITE (*,*) '!/ ----- IN LFAC DO LOOP ----- /   '
-            WRITE (*,*) '  TAUWX_LF    ',TAUWX_LF
-            WRITE (*,*) '  TAUWX_MF_HF ',TAUWX_MF_HF
+            ! WRITE (*,*) '!/ ----- IN LFAC DO LOOP ----- /   '
+            ! WRITE (*,*) '  TAUWX_LF    ',TAUWX_LF
+            ! WRITE (*,*) '  TAUWX_MF_HF ',TAUWX_MF_HF
 
             TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)
             TAUX     = TAUVX + TAUWX
