@@ -118,7 +118,7 @@
 
       REAL(KIND=JWRB)      :: RTAU, DRTAU, ERR
       LOGICAL              :: OVERSHOT
-      LOGICAL              :: LLFRQHF
+      LOGICAL              :: LLFRQMF
 
       INTEGER(KIND=JWIM) :: IK, ITH, M, SIGN_NEW, SIGN_OLD
       INTEGER(KIND=JWIM) :: NK, NTH, NSPEC !num. of freqs, dirs, spec. bins
@@ -136,13 +136,6 @@
       NSPEC = NK * NTH   ! NUMBER OF SPECTRAL BINS
 
       FRQMID = MIN(FRQMAX,G/(ZPI*UPROXY))  ! dynamic cutoff frequency, capped at FRQMAX
-      
-      ! Determines if we need special treatment for some of the high frequencies to account for LFAC
-      IF (FRQMID>FR(NFRE)) THEN
-         LLFRQHF = .TRUE.
-      ELSE
-         LLFRQHF = .FALSE.
-      END IF
 
       ITHN   = IRANGE(1,NTH,1)    ! Index vector 1:NTH
       DO IK = 1, NK
@@ -184,9 +177,9 @@
       !            integral collapses into easy analytic solution
       !
       !          
-      !   Th=2pi,ω=ZPI*FRQMID  
+      !   Th=2pi,ω=ZPI*FRQMAX  
       !     / /
-      !     | | S(f,Th)/c df dTh = (LOG(ZPI*FRQMID) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
+      !     | | S(f,Th)/c df dTh = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
       !    / /
       !  Th=0,ω=SIG(NFRE)
       !
@@ -208,9 +201,9 @@
 
       TAUWX = TAUWX_LF + TAUWX_MF_HF
       TAUWY = TAUWY_LF + TAUWY_MF_HF
-      ! WRITE (*,*) '   '
-      ! WRITE (*,*) '  TAUWX_LF    ',TAUWX_LF
-      ! WRITE (*,*) '  TAUWX_MF_HF ',TAUWX_MF_HF
+      WRITE (*,*) '!/ ----- PRE LFAC ----- /   '
+      WRITE (*,*) '  TAUWX_LF    ',TAUWX_LF
+      WRITE (*,*) '  TAUWX_MF_HF ',TAUWX_MF_HF
 
 !/ ----------------------------------------------------------------- /
 !/ ----------------------------------------------------------------- /
@@ -247,16 +240,22 @@
       LF = 1.0_JWRB
       IK = 0
 
-      IF (LLFRQHF) THEN
-         ! mid frequency contributions (from FR(NFRE) to FRQMID)
+      ! Determines if we need special treatment for some of the high frequencies to account for LFAC
+      IF (FRQMID>FR(NFRE)) THEN
+         ! cut off falls between FR(NFRE) and FRQMAX, therefore have to use 3 solution branches (LF + MF + HF)    
+         LLFRQMF = .TRUE.
+
+         ! mid frequency (MF) contributions, FR(NFRE)<f<FRQMID
          SDENSX_MF   = (LOG(ZPI*FRQMID) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * ZPI * GM1
          SDENSY_MF   = (LOG(ZPI*FRQMID) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * ZPI * GM1
       ELSE
-         ! mid + high frequency contributions (from FR(NFRE) to FRQMAX)
-         SDENSX_MF_HF   = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * ZPI * GM1
-         SDENSY_MF_HF   = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * ZPI * GM1
+         ! cut off falls below FR(NFRE)        , therefore have to use only 2 solution branches (LF + HF)  
+         LLFRQMF = .FALSE.
+
+         ! mid frequency (MF) contributions,= 0 because FRQMID<FR(NFRE)
+         SDENSX_MF   = 0.0_JWRB
+         SDENSY_MF   = 0.0_JWRB
       END IF
-      
 
       IF (TAU .GT. TAU_TOT) THEN
          OVERSHOT    = .FALSE.
@@ -277,35 +276,42 @@
             !/ 2) --- high frequency contributions as above, but modification to include LFAC ------ /
             !
             !          
-            !   Th=2pi,ω=ZPI*FRQMAX  
+            !   Th=2pi,ω=inf
             !     / /
-            !     | | LFAC*S(f,Th)/c df dTh = (-EXP(RTAU)*EI(ZA_EXP*SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
+            !     | | LFAC*S(f,Th)/c df dTh = (-EXP(RTAU)*WVEI(ZA_EXP * ω_c )) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
             !    / /
-            !  Th=0,ω=ZPI*FRQMID
+            !  Th=0,ω_c
             !
             !       where,  LFAC       =  EXP(RTAU*( 1 - (U * 1/c)))
             !               ZA_EXP     = -ZPI*RTAU*U/GRAV
             !
-            !       then , use EI for exponential integral solution
+            !       then , use WVEI for exponential integral solution
             !
+            
+            ZA_EXP      = -ZPI*RTAU*UPROXY*GM1
 
-            IF (LLFRQHF) THEN
-                  ZA_EXP      = -ZPI*RTAU*UPROXY*GM1
-                  ZWVEI       = -EXP(RTAU)*WVEI(ZA_EXP*(ZPI*FRQMID))
-                  SDENSX_HF   = ZWVEI * (ZPI*FRQMID)**2 * ZPI * GM1 * DELTH * SUM(ZA_SX) 
-                  SDENSY_HF   = ZWVEI * (ZPI*FRQMID)**2 * ZPI * GM1 * DELTH * SUM(ZA_SY)
-                  TAUWX_MF_HF = G * ROWATER * ( SDENSX_MF + SDENSX_HF)
-                  TAUWY_MF_HF = G * ROWATER * ( SDENSY_MF + SDENSY_HF)
+            IF (LLFRQMF) THEN
+               ! mid  frequency contributions accounted for up to ω_c=FRQMID
+               ! high frequency contributions,     ω_c=FRQMID,   FRQMID  <f<inf
+               ZWVEI     = -EXP(RTAU)*WVEI(ZA_EXP*(ZPI*FRQMID))
             ELSE
-                  TAUWX_MF_HF = G * ROWATER * ( SDENSX_MF_HF )
-                  TAUWY_MF_HF = G * ROWATER * ( SDENSY_MF_HF )
+               ! mid  frequency contributions =0
+               ! high frequency contributions,     ω_c=FR(NFRE), FR(NFRE)<f<inf
+               ZWVEI     = -EXP(RTAU)*WVEI(ZA_EXP*(SIG(NFRE)))
             END IF
+            
+            SDENSX_HF   = ZWVEI * SIG(NFRE)**2 * ZPI * GM1 * DELTH * SUM(ZA_SX) 
+            SDENSY_HF   = ZWVEI * SIG(NFRE)**2 * ZPI * GM1 * DELTH * SUM(ZA_SY)
+
+            TAUWX_MF_HF = G * ROWATER * ( SDENSX_MF + SDENSX_HF)
+            TAUWY_MF_HF = G * ROWATER * ( SDENSY_MF + SDENSY_HF)
 
             TAUWX    = TAUWX_LF + TAUWX_MF_HF
             TAUWY    = TAUWY_LF + TAUWY_MF_HF
-            ! WRITE (*,*) '   '
-            ! WRITE (*,*) '  TAUWX_LF    ',TAUWX_LF
-            ! WRITE (*,*) '  TAUWX_MF_HF ',TAUWX_MF_HF
+
+            WRITE (*,*) '!/ ----- IN LFAC DO LOOP ----- /   '
+            WRITE (*,*) '  TAUWX_LF    ',TAUWX_LF
+            WRITE (*,*) '  TAUWX_MF_HF ',TAUWX_MF_HF
 
             TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)
             TAUX     = TAUVX + TAUWX
@@ -322,7 +328,7 @@
 
             RTAU = RTAU * (DRTAU**SIGN_NEW)
 
-            ! CALL ABORT1
+            CALL ABORT1
 
             IF (ABS(ERR) .LT. 1.54E-4_JWRB) EXIT
 
