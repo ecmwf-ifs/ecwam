@@ -260,7 +260,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           TAILFACTOR=6.0_JWRB    ! SIN6FC = 6.0 from WW3-ST6
           TAILFACTOR_PM=4.0_JWRB ! FXPM = 4.0 from WW3 (all)
         CASE(2,3)
-          NGST=2
+          ! NGST=2 ! intend to use this later
+          NGST=1 ! keep NGST=1 for clean comparison
           ALPHAPMAX = 0.031_JWRB ! cap on spectral steepness as in ARD
           TAILFACTOR=2.5_JWRB
           TAILFACTOR_PM=3.0_JWRB ! as in ARD
