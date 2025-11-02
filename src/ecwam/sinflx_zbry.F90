@@ -451,7 +451,7 @@ DO IGST=1,NGST
 !
     IF (LLLOWWINDS .AND. UABSGST(IJ,IGST)<=1.5_JWRB) THEN
       ! Reduce growth rates for low winds (following Muhammad Yasrab's work)
-      D(IJ,:,IGST) = D(IJ,:,IGST) - (4._JWRB*(RNU_WATER)*(WAVNUM(IJ,:)**2))
+      D(IJ,:,IGST) = D(IJ,:,IGST) - (4._JWRB*(RNU_WATER)*(WN2(IJ,:)**2))
       S(IJ,:,IGST) = D(IJ,:,IGST) * A(IJ,:)
     ELSE
       ! Update spectrum as per normal
