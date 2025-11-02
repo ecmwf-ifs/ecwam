@@ -53,8 +53,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM, ONLY : NANG     ,NFRE
-      USE YOWPHYS,  ONLY : XKAPPA, XNLEV, CDFAC
-      USE YOWSTAT,  ONLY : IPHYS2_AIRSEA
+      USE YOWPHYS,  ONLY : XKAPPA, XNLEV
+      USE YOWSTAT,  ONLY : IPHYS2_AIRSEA, ZCDFAC
       USE YOWPCONS, ONLY : G
       USE YOWTEST,  ONLY : IU06
       USE YOWWIND,  ONLY : WSPMIN
@@ -120,7 +120,7 @@
         ! implementation of Hwang (2011) as in ST6
         CASE(0,1)
           ! IPHYS2_AIRSEA=0,1 use Hwang (2011) as in ST6
-          FLX4A0 = CDFAC
+          FLX4A0 = ZCDFAC
           DO IJ=KIJS,KIJL
             IF (U10(IJ) .GE. 50.33_JWRB) THEN
                 US(IJ) = 2.026_JWRB * SQRT(FLX4A0)

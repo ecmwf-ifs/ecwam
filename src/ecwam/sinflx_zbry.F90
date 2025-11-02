@@ -104,11 +104,11 @@ SUBROUTINE SINFLX_ZBRY (ICALL, NCALL, NGST, KIJS, KIJL,  &
      &                      RNU      ,RNUM, &
      &                      SWELLF   ,SWELLF2  ,SWELLF3  ,SWELLF4  , SWELLF5, &
      &                      SWELLF6  ,SWELLF7  ,SWELLF7M1, Z0RAT   ,Z0TUBMAX , &
-     &                      ABMIN  ,ABMAX, CDFAC, DTHRN_A  ,DTHRN_U, RNU_WATER, &
+     &                      ABMIN  ,ABMAX, DTHRN_A  ,DTHRN_U, RNU_WATER, &
      &                      ZSIN6A0, FRQMAX, LLFACT
       USE YOWTEST  , ONLY : IU06
       USE YOWTABL  , ONLY : IAB      ,SWELLFT
-      USE YOWSTAT  , ONLY : IPHYS2_AIRSEA, LLLOWWINDS
+      USE YOWSTAT  , ONLY : IPHYS2_AIRSEA, LLLOWWINDS, ZCDFAC
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -380,12 +380,12 @@ DO IGST=1,NGST
   CASE(0,1,2)
     ! IPHYS2_AIRSEA=0,1,2 use USTAR
     DO IJ = KIJS,KIJL
-        UPROXYGST(IJ,IGST) = 32.0_JWRB * CDFAC * USTARGST(IJ,IGST)
+        UPROXYGST(IJ,IGST) = 32.0_JWRB * ZCDFAC * USTARGST(IJ,IGST)
     END DO
   CASE(3)
     ! IPHYS2_AIRSEA=3 is based on wind directly
     DO IJ = KIJS,KIJL  
-        UPROXYGST(IJ,IGST) = UABSGST(IJ,IGST) * CDFAC ! because FRIC=1/sqrt(CD), then this turns to purely a wind dependence (USTARGST cancels out)
+        UPROXYGST(IJ,IGST) = UABSGST(IJ,IGST) * ZCDFAC ! because FRIC=1/sqrt(CD), then this turns to purely a wind dependence (USTARGST cancels out)
     ENDDO
   END SELECT
 END DO    

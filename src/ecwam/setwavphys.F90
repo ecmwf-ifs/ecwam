@@ -26,7 +26,7 @@ USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C,                     &
      &                SWELLF4,  SWELLF7, SWELLF7M1, Z0TUBMAX, Z0RAT,    &
-     &                SSDSC5, CDFAC, ZSIN6A0, LLSWL6CSTB1, ZSWL6B1,     &
+     &                SSDSC5,   ZSIN6A0, LLSWL6CSTB1, ZSWL6B1,          &
      &                ZSDS6A1, ZSDS6A2, ISDS6P1, ISDS6P2, LLSDS6ET,     & 
      &                NGST, FRQMAX, LLFACT
 
@@ -276,7 +276,6 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           CALL ABORT1
         END SELECT
         ALPHA   = 0.0065_JWRB
-        CDFAC   = 1.0_JWRB
         LLSDS6ET  = .TRUE.
         ZSDS6A1  = 4.75E-6_JWRB
         ISDS6P1  = 4

@@ -121,7 +121,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            CHNKMIN_U, CDIS ,DELTA_SDIS, CDISVIS,                 &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,               &
      &            DELTA_THETA_RN, DTHRN_A, DTHRN_U,                     &
-     &            SWELLF4,  SWELLF7, SSDSC5, CDFAC,                     &
+     &            SWELLF4,  SWELLF7, SSDSC5,                            &
      &            ZSIN6A0, LLSWL6CSTB1, ZSWL6B1,                        &
      &            ZSDS6A1, ZSDS6A2, ISDS6P1, ISDS6P2, LLSDS6ET
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,BATHYMAX
@@ -144,7 +144,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            LRELWIND ,                                            &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST,          &
-     &            LLLOWWINDS, IPHYS2_AIRSEA
+     &            LLLOWWINDS, IPHYS2_AIRSEA, ZCDFAC
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,   &
      &            PATH     ,CPATH    ,CWI
@@ -788,7 +788,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '                SSDSC5 = ....... ', SSDSC5 
       ELSEIF (IPHYS == 2) THEN
       WRITE(IU06,*) '                IPHYS2_AIRSEA = .', IPHYS2_AIRSEA
-      WRITE(IU06,*) '                CDFAC = ........ ', CDFAC
+      WRITE(IU06,*) '                ZCDFAC = ....... ', ZCDFAC
       WRITE(IU06,*) '                LLSDS6ET = ..... ', LLSDS6ET
       WRITE(IU06,*) '                ZSDS6A1 = ...... ', ZSDS6A1
       WRITE(IU06,*) '                ISDS6P1 = ...... ', ISDS6P1

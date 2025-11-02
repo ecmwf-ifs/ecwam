@@ -77,7 +77,6 @@
 &                           DF       ,NFRE_EXT ,DSII_EXT ,SIG_EXT
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,EPSMIN, GM1
-      USE YOWPHYS  , ONLY : CDFAC
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------

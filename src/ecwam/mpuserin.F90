@@ -98,7 +98,7 @@
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
      &            IDELBC   ,                                            &
      &            ICASE    ,ISHALLO  ,                                  &
-     &            IPHYS    ,IPHYS2_AIRSEA,LLLOWWINDS,              &
+     &            IPHYS    ,IPHYS2_AIRSEA,LLLOWWINDS     ,ZCDFAC   ,    &
      &            ISNONLIN ,                                            &
      &            IDAMPING ,                                            &
      &            LBIWBK   ,                                            &
@@ -610,7 +610,8 @@
       ISHALLO   = 0   !! depricated 
       IPHYS     = 1
       IPHYS2_AIRSEA = 0
-      LLLOWWINDS = .FALSE. ! .TRUE. if low winds are treated differently
+      LLLOWWINDS = .FALSE.
+      ZCDFAC    = 1.5_JWRB
       ISNONLIN  = 1 
       IDAMPING  = 1 
       IPROPAGS  = 0 
