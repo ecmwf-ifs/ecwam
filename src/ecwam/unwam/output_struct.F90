@@ -488,7 +488,6 @@ END INTERFACE
 !**********************************************************************
       SUBROUTINE INITIAL_OUTPUT_INITS_NEXTGEN
 !     PREPARE OUTPUT OF UNSTRUCTURED GRID TO STRUCTURED GRID (as read in)
-      USE MPL_MPIF
       USE yowpd, only: MNE=>ne, INE, MNP=>npa, NP_RES=>np
       USE yownodepool, ONLY : iplg, ipgl
       USE YOWMPP   , ONLY : IRANK, NPROC
