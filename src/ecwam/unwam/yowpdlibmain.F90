@@ -1035,7 +1035,7 @@ module yowpdlibMain
         ! send to the neighbor how many ghost nodes we want from him
         call MPI_Isend(neighborDomains(i)%numNodesToReceive, &
                 1, &
-                MPI_INT, &
+                MPI_INTEGER, &
                 neighborDomains(i)%domainID-1, &
                 tag, &
                 comm, &
@@ -1049,7 +1049,7 @@ module yowpdlibMain
         ! send to the neighbor which ghost nodes we want from him
         call MPI_Isend(neighborDomains(i)%nodesToReceive, &
                 neighborDomains(i)%numNodesToReceive, &
-                MPI_INT, &
+                MPI_INTEGER, &
                 neighborDomains(i)%domainID-1, &
                 tag, &
                 comm, &
@@ -1064,7 +1064,7 @@ module yowpdlibMain
         tag = (myrank+1)*10 + 1
         call MPI_Irecv(neighborDomains(i)%numNodesToSend, &
                 1, &
-                MPI_INT, &
+                MPI_INTEGER, &
                 neighborDomains(i)%domainID-1, &
                 tag, &
                 comm, &
@@ -1098,7 +1098,7 @@ module yowpdlibMain
         tag = (myrank+1)*10 + 2
         call MPI_Irecv(neighborDomains(i)%nodesToSend, &
                 neighborDomains(i)%numNodesToSend, &
-                MPI_INT, &
+                MPI_INTEGER, &
                 neighborDomains(i)%domainID-1, &
                 tag, &
                 comm, &
