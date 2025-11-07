@@ -71,9 +71,9 @@ for SEARCH_LOCATION in ${SEARCH_LOCATIONS[*]}; do
 done
 
 ################################################################################################
-# 3. FILE is not found in any path hierarchy. Download from get.ecmwf.int
+# 3. FILE is not found in any path hierarchy. Download from sites.ecmwf.int
 
-ECWAM_URL=https://get.ecmwf.int/repository/ecwam
+ECWAM_URL=https://sites.ecmwf.int/repository/ecwam
 
 function command_exists () {
     type "$1" &> /dev/null ;
