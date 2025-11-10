@@ -611,7 +611,7 @@
       IPHYS     = 1
       IPHYS2_AIRSEA = 0
       LLLOWWINDS = .FALSE.
-      ZCDFAC    = 1.5_JWRB
+      ZCDFAC    = 1.0_JWRB
       ISNONLIN  = 1 
       IDAMPING  = 1 
       IPROPAGS  = 0 
