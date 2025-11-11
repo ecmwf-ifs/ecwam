@@ -75,7 +75,7 @@
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : IFRE1, FR1, XKMSS_CUTOFF 
-      USE YOWGRIBHD, ONLY : LGRHDIFS,                                   &
+      USE YOWGRIBHD, ONLY : LGRHDIFS, IMDLGRBID_G, IMDLGRBID_M,         &
      &                      LNEWLVTP, LL_GRID_SIMPLE_MATRIX, LLRSTGRIBPARAM
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWGRID  , ONLY : NPROMA_WAM
@@ -237,7 +237,8 @@
      &   LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                                &
      &   LWAM_USE_IO_SERV,                                              &
      &   LOUTMDLDCP,                                                    &
-     &   ROAIR, ROWATER, GAM_SURF
+     &   ROAIR, ROWATER, GAM_SURF,                                      &
+     &   IMDLGRBID_G, IMDLGRBID_M
 
 
       CHARACTER(LEN=14) :: CLOUT
@@ -773,6 +774,8 @@
       ROWATER = 1000.0_JWRB
       GAM_SURF = 0.0717_JWRB
 
+      IMDLGRBID_G = -1
+      IMDLGRBID_M = -1
 ! ----------------------------------------------------------------------
 
 !*    1. READ NAMELIST NALINE.
