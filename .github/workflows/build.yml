@@ -80,11 +80,11 @@ jobs:
 
           - name: macos
             # Xcode compiler requires empty environment variables, so we pass null (~) here
-            os: macos-13
-            compiler: clang-14
+            os: macos-15
+            compiler: clang-17
             compiler_cc: ~
             compiler_cxx: ~
-            compiler_fc: gfortran-13
+            compiler_fc: gfortran-15
             python-version: '3.11'
             caching: true
 
@@ -110,10 +110,12 @@ jobs:
           export HOMEBREW_NO_AUTO_UPDATE=1
           export HOMEBREW_NO_INSTALL_CLEANUP=1
           export SDKROOT=$(xcrun --show-sdk-path)
+          export ECWAM_LAUNCH_ARGS=--oversubscribe
           echo "HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1" >> $GITHUB_ENV
           echo "HOMEBREW_NO_AUTO_UPDATE=1"                >> $GITHUB_ENV
           echo "HOMEBREW_NO_INSTALL_CLEANUP=1"            >> $GITHUB_ENV
           echo "SDKROOT=$(xcrun --show-sdk-path)"         >> $GITHUB_ENV
+          echo "ECWAM_LAUNCH_ARGS=--oversubscribe"    >> $GITHUB_ENV
           brew install ninja
           brew install libomp
           brew install libaec
