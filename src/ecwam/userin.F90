@@ -488,6 +488,18 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         LFDBIOOUT=.FALSE.
       ENDIF
 
+      IF (IMDLGRBID_M < 0 .OR. IMDLGRBID_G < 0) THEN
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*)'+                                                +'
+        WRITE(IU06,*)'+ SUBROUTINE USERIN :                            +'
+        WRITE(IU06,*)'+ READ NAMELIST FAILED                           +'
+        WRITE(IU06,*)'+ IMDLGRBID_M and IMDLGRBID_G MUST BE SPECIFIED  +'
+        WRITE(IU06,*)'+ PROGRAM WILL ABORT                             +'
+        WRITE(IU06,*)'+                                                +'
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++++++++'
+        CALL WAM_ABORT("Expected namelist input for IMDLGRBID_M and IMDLGRBID_G",__FILENAME__,__LINE__)
+      ENDIF
+
 !*    1.1  READ THE WAMINFO FILE AND OVERWRITE INPUT.
 !          ------------------------------------------
 
