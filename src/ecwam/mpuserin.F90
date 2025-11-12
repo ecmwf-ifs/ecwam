@@ -503,7 +503,24 @@
 !     ROAIR : DEFAULT VALUES FOR AIR DENSITY (kg m**-3)
 !     ROWATER : DEFAULT VALUES FOR WATER DENSITY (kg m**-3)
 !     GAM_SURF : DEFAUT VALUE FOR WATER SURFACE TENSION (in N/m)
+!     IMDLGRBID_G: GLOBAL MODEL IDENTIFICATION FOR GRIB CODING
+!     IMDLGRBID_M: LAW MODEL IDENTIFICATION FOR GRIB CODING
+! 
+! The generating process identification numbers (model numbers IMDLGRBID_G/IMDLGRBID_M) 
+! for GRIB headers are allocated in pre-defined ranges for ECMWF GRIB coded
+! fields. The field in the GRIB code for this number is 1 octet and with
+! the value 255 indicating 'missing value', only numbers 1-254 are
+! available for use.
+! The atmospheric model allocated numbers are in the range 121 to 203.
+! The Global wave model allocated numbers are in the range 104 to 120.
+! The LAW model allocated numbers are in the range 204 to 220.
+! The numbers 221 to 254 stay reserved for the moment.
+! This pre-allocation was introduced to enable some Member States, which
+! use the model number to identify products, to write their software in
+! such a way that model number changes did not cause them problems with
+! hard-coded model numbers. 
 
+      
 
 !     NAMELIST NAOT : 
 !     ===============
@@ -810,7 +827,7 @@
       ROWATER = 1000.0_JWRB
       GAM_SURF = 0.0717_JWRB
 
-      IMDLGRBID_G = -1
+      IMDLGRBID_G = -1 
       IMDLGRBID_M = -1
 ! ----------------------------------------------------------------------
 
@@ -1094,6 +1111,8 @@
         WRITE(6,*) '*** ROAIR = ',ROAIR
         WRITE(6,*) '*** ROWATER = ',ROWATER
         WRITE(6,*) '*** GAM_SURF = ',GAM_SURF
+        WRITE(6,*) '*** IMDLGRBID_G = ',IMDLGRBID_G
+        WRITE(6,*) '*** IMDLGRBID_M = ',IMDLGRBID_M
         IF (NGOUT > 0) THEN
           WRITE (6,*) " OUTPUT POINTS FOR SPECTRA AS DEFINED BY USER INPUT    NO.    LAT.   LONG. "
           DO IC=1,NGOUT
