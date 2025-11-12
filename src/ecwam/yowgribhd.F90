@@ -19,8 +19,8 @@
       CHARACTER(LEN=4), PARAMETER :: CEXPVERCLIM='0001'  !! reference expver for wave climate fields (see *preproc*) 
       INTEGER(KIND=JWIM), PARAMETER :: KPARAM_SUBGRIG=219 !! parameter id of the model bathymetry to insure the same interpolation method
                                                           !! is used for the sub grid obstruction coeeficient
-      INTEGER(KIND=JWIM) :: IMDLGRBID_G=107 !! see below the rule on how to select IMDLGRBID_G
-      INTEGER(KIND=JWIM) :: IMDLGRBID_M=207
+      INTEGER(KIND=JWIM) :: IMDLGRBID_G !! see below the rule on how to select IMDLGRBID_G
+      INTEGER(KIND=JWIM) :: IMDLGRBID_M
 
       INTEGER(KIND=JWIM) :: NDATE_TIME_WINDOW_END=0
       INTEGER(KIND=JWIM) :: NWINOFF
@@ -59,27 +59,9 @@
 !*    VARIABLE.   TYPE.     PURPOSE.
 !     ---------   -------   --------
 !     IMDLGRBID_G INTEGER   GLOBAL MODEL IDENTIFICATION FOR GRIB CODING
-!                           IT CAN ALSO BE MODIFIED IN THE INPUT NAMELIST.
+!                           MUST BE SPECIFIED IN THE INPUT NAMELIST.
 !     IMDLGRBID_M INTEGER   LAW MODEL IDENTIFICATION FOR GRIB CODING
-!                           IT CAN ALSO BE MODIFIED IN THE INPUT NAMELIST.
-! 
-! The generating process identification numbers (model numbers) for GRIB
-! headers are allocated in pre-defined ranges for ECMWF GRIB coded
-! fields. The field in the GRIB code for this number is 1 octet and with
-! the value 255 indicating 'missing value', only numbers 1-254 are
-! available for use.
-
-! The atmospheric model allocated numbers are in the range 121 to 203.
-! The Global wave model allocated numbers are in the range 104 to 120.
-! The LAW model allocated numbers are in the range 204 to 220.
- 
-! The numbers 221 to 254 stay reserved for the moment.
-
-! This pre-allocation was introduced to enable some Member States, which
-! use the model number to identify products, to write their software in
-! such a way that model number changes did not cause them problems with
-! hard-coded model numbers. 
-
+!                           MUST BE SPECIFIED IN THE INPUT NAMELIST.
 !     PPMISS      REAL      ALL SPECTRAL VALUES LESS OR EQUAL PPMISS ARE
 !                           REPLACED BY THE MISSING DATA INDICATOR
 !     PPEPS       REAL      SMALL NUMBER USED IN SPECTRAL PACKING OF 251
