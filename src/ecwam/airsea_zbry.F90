@@ -77,7 +77,7 @@
 
       REAL(KIND=JWRB) :: ZNLEV
       REAL(KIND=JWRB), PARAMETER :: RKAP = 0.4_JWRB
-      REAL(KIND=JWRB), PARAMETER :: ZRN=1.65E-6_JWRB  ! effective kinematic viscosity (0.11*1.5e-5)
+      REAL(KIND=JWRB), PARAMETER :: ZRN=1.65E-6_JWRB  ! effective kinematic viscosity (0.11*1.5e-5) ! TODO: use instead RNU_WATER
 
       ! for the ietrative scheme
       INTEGER(KIND=JWIM), PARAMETER :: NITER=15
