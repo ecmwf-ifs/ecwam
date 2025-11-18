@@ -379,7 +379,7 @@ PROGRAM preproc
       LGRHDIFS =.FALSE.
       LNEWLVTP =.FALSE.
       NDATE_TIME_WINDOW_END = 0
-      KCOUSTEP = .FALSE.
+      KCOUSTEP = 0
       LRSTST0 = .FALSE.
 
       IF ( LLGRIB_BATHY_OUT ) THEN
