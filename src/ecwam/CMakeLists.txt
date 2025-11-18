@@ -427,6 +427,8 @@ if( HAVE_GPU_AWARE_MPI )
   list(APPEND ECWAM_DEFINITIONS WITH_GPU_AWARE_MPI )
 endif()
 
+list(APPEND ECWAM_PRIVATE_DEFINITIONS WAM_HAVE_ATLAS=${ecwam_HAVE_ATLAS})
+
 foreach( prec sp dp )
   if( HAVE_${prec} )
     set( ${PNAME}_OCEANMODEL_LIBRARIES "" )
@@ -446,7 +448,7 @@ foreach( prec sp dp )
         PUBLIC_LIBS      fiat parkind_${prec} ecwam_intfb
                          ${MPI_Fortran_LIBRARIES}
                          ${${PNAME}_OCEANMODEL_LIBRARIES}
-                         field_api_${prec}
+                         ${FIELD_API}_${prec}
         PRIVATE_LIBS     eccodes_f90
                          ${MULTIO_LIBRARIES}
                          ${OpenMP_Fortran_LIBRARIES}

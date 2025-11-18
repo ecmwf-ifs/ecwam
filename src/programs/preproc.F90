@@ -161,6 +161,11 @@ PROGRAM preproc
 
       USE YOWGRIB , ONLY : IGRIB_OPEN_FILE
 
+#if WAM_HAVE_ATLAS
+      USE FCKIT_MODULE, ONLY : FCKIT_MAIN, FCKIT_MPI
+      USE ATLAS_MODULE, ONLY : ATLAS_INIT, ATLAS_FINAL
+#endif
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -203,6 +208,13 @@ PROGRAM preproc
 
       IU02  = 2
       IU06  = 6
+
+! ----------------------------------------------------------------------
+
+#if WAM_HAVE_ATLAS
+      CALL FCKIT_MAIN%INITIALISE()
+      CALL ATLAS_INIT()
+#endif
 
 ! ----------------------------------------------------------------------
 
@@ -443,5 +455,15 @@ PROGRAM preproc
 !         --------------------------------------------------
 
       CALL CHECK (IINPC)
+
+! ----------------------------------------------------------------------
+
+#if WAM_HAVE_ATLAS
+      CALL ATLAS_FINAL()
+      CALL FCKIT_MAIN%FINALISE()
+      CALL FCKIT_MPI%FINALIZE()
+#endif
+
+! ----------------------------------------------------------------------
  
 END PROGRAM

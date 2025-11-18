@@ -25,6 +25,7 @@ foreach( prec sp dp )
           TARGET          ecwam-${program}-${prec}
           SOURCES         ${program}.F90
           LIBS            ecwam_${prec} ${OpenMP_Fortran_LIBRARIES}
+          DEFINITIONS     WAM_HAVE_ATLAS=${ecwam_HAVE_ATLAS}
           LINKER_LANGUAGE Fortran
       )
       ecwam_target_compile_definitions_FILENAME( ecwam-${program}-${prec} )

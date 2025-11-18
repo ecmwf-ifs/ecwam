@@ -94,6 +94,10 @@
       USE YOMHOOK,    ONLY : LHOOK, DR_HOOK, JPHOOK
       USE MPL_MODULE, ONLY : MPL_INIT, MPL_END
       USE YOWNEMOIO,  ONLY : LNEMOIOSERVER, WAMININEMOIO, WAMENDNEMOIO
+#if WAM_HAVE_ATLAS
+      USE FCKIT_MODULE, ONLY : FCKIT_MAIN
+      USE ATLAS_MODULE, ONLY : ATLAS_INIT, ATLAS_FINAL
+#endif
 
 ! ----------------------------------------------------------------------
 
@@ -113,6 +117,11 @@
 !     Initialise MPI if not done yet
       CALL MPL_INIT
 
+#if WAM_HAVE_ATLAS
+      CALL FCKIT_MAIN%INITIALISE()
+      CALL ATLAS_INIT()
+#endif
+
 !     IO-servers skip execution
       IF (.NOT.LNEMOIOSERVER) THEN
 
@@ -130,6 +139,11 @@
 
 !     Close NEMO IO servers
       CALL WAMENDNEMOIO
+
+#if WAM_HAVE_ATLAS
+      CALL ATLAS_FINAL()
+      CALL FCKIT_MAIN%FINALISE()
+#endif
 
 !     Finalise MPI if not done yet
       CALL MPL_END(LDMEMINFO=.FALSE.)
