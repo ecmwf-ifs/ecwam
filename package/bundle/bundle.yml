@@ -8,7 +8,10 @@ cmake   : CMAKE_LINK_DEPENDS_NO_SHARED=ON
           ENABLE_SINGLE_PRECISION=OFF
           ENABLE_ACC=OFF 
           ENABLE_CUDA=OFF
+          BUILD_eckit=OFF
           BUILD_fckit=OFF
+          BUILD_atlas=OFF
+          BUILD_atlas_field_api=OFF
 
 projects :
 
@@ -20,12 +23,52 @@ projects :
     - eccodes :
         git     : https://github.com/ecmwf/eccodes
         version : 2.44.0
-        cmake   : ENABLE_MEMFS=ON
+        cmake   : >
+            ECCODES_ENABLE_TESTS=OFF
+            ECCODES_ENABLE_MEMFS=ON
+
+    - eckit :
+        git     : https://github.com/ecmwf/eckit
+        version : 1.32.3
+        cmake   : >
+            ECKIT_ENABLE_TESTS=OFF
+            ECKIT_ENABLE_ECKIT_GEO=OFF
+            ECKIT_ENABLE_ECKIT_CMD=OFF
+            ECKIT_ENABLE_ECKIT_SQL=OFF
+            ECKIT_ENABLE_ECKIT_CODEC=OFF
+            ECKIT_ENABLE_RADOS=OFF
+            ECKIT_ENABLE_SNAPPY=OFF
+            ECKIT_ENABLE_XXHASH=OFF
+            ECKIT_ENABLE_BZIP2=OFF
+            ECKIT_ENABLE_LZ4=OFF
+            ECKIT_ENABLE_CURL=OFF
+            ECKIT_ENABLE_AIO=OFF
+            ECKIT_ENABLE_PROJ=OFF
+            ECKIT_ENABLE_UNICODE=OFF
+            ECKIT_ENABLE_BUILD_TOOLS=OFF
+            ECKIT_ENABLE_CUDA=OFF
+            ECKIT_ENABLE_HIP=OFF
 
     - fckit :
         git     : https://github.com/ecmwf/fckit
-        version : 0.13.0
-        cmake   : ENABLE_FCKIT_VENV=ON
+        version : 0.14.1
+        cmake   : >
+            FCKIT_ENABLE_TESTS=ON
+
+    - atlas :
+        git     : https://github.com/ecmwf/atlas
+        version : atlas_field_api
+        require : fckit eckit
+        cmake   : >
+            ATLAS_ENABLE_TESTS=OFF
+            ATLAS_ENABLE_ATLAS_TRANS=OFF
+            ATLAS_ENABLE_ATLAS_NUMERICS=OFF
+            ATLAS_ENABLE_ATLAS_INTERPOLATION=OFF
+
+    - atlas_field_api :
+        dir     : atlas/atlas_field_api
+        version : atlas_field_api
+        require : atlas
 
     - fiat :
         git     : https://github.com/ecmwf-ifs/fiat 
@@ -97,8 +140,12 @@ options :
 
     - with-fckit :
         help  : Build fckit with Python virtual environment containing fypp and yaml parser
-        cmake : BUILD_fckit=ON
+        cmake : BUILD_fckit=ON ENABLE_FCKIT_VENV=ON
 
     - with-static-linking :
         help  : Build static libraries by default
-        cmake : BUILD_SHARED_LIBS=OFF
+        cmake : ECWAM_BUILD_SHARED_LIBS=OFF FIELD_API_BUILD_SHARED_LIBS=OFF
+
+    - with-atlas :
+        help  : Enable atlas-field-api
+        cmake : BUILD_field_api=OFF BUILD_eckit=ON BUILD_fckit=ON BUILD_atlas=ON BUILD_atlas_field_api=ON FIELD_API=atlas_field_api
