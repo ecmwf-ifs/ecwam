@@ -791,8 +791,8 @@
       ROWATER = 1000.0_JWRB
       GAM_SURF = 0.0717_JWRB
 
-      IMDLGRBID_G = -1 
-      IMDLGRBID_M = -1
+      IMDLGRBID_G = 108 
+      IMDLGRBID_M = 208
 ! ----------------------------------------------------------------------
 
 !*    1. READ NAMELIST NALINE.
