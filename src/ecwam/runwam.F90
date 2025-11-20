@@ -112,6 +112,7 @@
       USE YOWTEST, ONLY : IU06
       USE YOWGSTATS, ONLY : WAM_GSTATS_SETUP, WAM_GSTATS_PRINT, &
      &                      WAM_GSTATS_FILE_OPEN, WAM_GSTATS_FILE_CLOSE
+      USE WAM_TRACE_MOD, ONLY : WAM_TRACE
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -178,6 +179,8 @@
       INTEGER :: IUGSTATS
       INTEGER :: ISTEP = 0
 
+      TYPE(WAM_TRACE) :: TRACE
+
       DATA LLSTOP, LLWRRE, LLNORMWAMOUT_GLOBAL  / 3*.FALSE. /
 
 ! ----------------------------------------------------------------------
@@ -205,6 +208,8 @@
         WRITE (IU06,*) ' ******************************************'
         CALL ABORT1
       ENDIF
+
+      CALL TRACE%INIT(__FILENAME__,__LINE__,"RUNWAM")
 
       IF (LHOOK) CALL DR_HOOK('RUNWAM',0,ZHOOK_HANDLE)
 
@@ -414,6 +419,8 @@
       CALL MPCLOSE_UNIT
 
       IF (LHOOK) CALL DR_HOOK('RUNWAM',1,ZHOOK_HANDLE)
+
+      CALL TRACE%FINAL()
 
 CONTAINS
 

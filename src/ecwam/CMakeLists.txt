@@ -283,6 +283,7 @@ list( APPEND ecwam_srcs
   wam_sortini.F90
   wam_u2l1cr.F90
   wam_user_clock.F90
+  wam_trace_mod.F90
   wamadswstar.F90
   wamcur.F90
   wamintgr.F90

@@ -49,6 +49,9 @@
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE, ONLY : MPL_BROADCAST
 
+      USE WAM_TRACE_MOD, ONLY : WAM_TRACE
+
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -82,7 +85,11 @@
       CHARACTER(LEN= 14) :: ZERO
       CHARACTER(LEN=296) :: FILENAME
 
+      TYPE(WAM_TRACE) :: TRACE
+
 ! ----------------------------------------------------------------------
+
+      CALL TRACE%INIT("getstress.F90",__LINE__,"GETSTRESS")
 
       IF (LHOOK) CALL DR_HOOK('GETSTRESS',0,ZHOOK_HANDLE)
 
@@ -307,6 +314,8 @@
       WRITE(IU06,*) ' WIND AND STRESS FILES READ IN....... CDTPRO  = ', CDTPRO
       CALL FLUSH (IU06)
 
-IF (LHOOK) CALL DR_HOOK('GETSTRESS',1,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('GETSTRESS',1,ZHOOK_HANDLE)
+
+      CALL TRACE%FINAL()
 
 END SUBROUTINE GETSTRESS

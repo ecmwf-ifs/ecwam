@@ -54,6 +54,8 @@
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
+      USE WAM_TRACE_MOD, ONLY : WAM_TRACE
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -82,8 +84,11 @@
 
       LOGICAL :: LOUNIT
 
+      TYPE(WAM_TRACE) :: TRACE
+
 ! ----------------------------------------------------------------------
 
+      CALL TRACE%INIT(__FILENAME__,__LINE__,"SAVSPEC")
       IF (LHOOK) CALL DR_HOOK('SAVSPEC',0,ZHOOK_HANDLE)
 
       LOUNIT = .TRUE.
@@ -164,5 +169,6 @@
       WRITE(IU06,*) ' SPECTRUM FILE DISPOSED AT........ CDTPRO  = ', CDTPRO
 
       IF (LHOOK) CALL DR_HOOK('SAVSPEC',1,ZHOOK_HANDLE)
+      CALL TRACE%FINAL()
 
       END SUBROUTINE SAVSPEC
