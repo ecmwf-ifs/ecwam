@@ -473,6 +473,30 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         LFDBIOOUT=.FALSE.
       ENDIF
 
+      IF (IMDLGRBID_M < 204 .OR. IMDLGRBID_M > 220) THEN
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*)'+                                                +'
+        WRITE(IU06,*)'+ SUBROUTINE USERIN :                            +'
+        WRITE(IU06,*)'+ READ NAMELIST FAILED                           +'
+        WRITE(IU06,*)'+ IMDLGRBID_M MUST BE IN THE RANGE 204 - 220     +'
+        WRITE(IU06,*)'+ PROGRAM WILL ABORT                             +'
+        WRITE(IU06,*)'+                                                +'
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++++++++'
+        CALL WAM_ABORT("Unexpected namelist input for IMDLGRBID_M",__FILENAME__,__LINE__)
+      ENDIF
+
+      IF (IMDLGRBID_G < 104 .OR. IMDLGRBID_G > 120) THEN
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*)'+                                                +'
+        WRITE(IU06,*)'+ SUBROUTINE USERIN :                            +'
+        WRITE(IU06,*)'+ READ NAMELIST FAILED                           +'
+        WRITE(IU06,*)'+ IMDLGRBID_G MUST BE IN THE RANGE 104 - 120     +'
+        WRITE(IU06,*)'+ PROGRAM WILL ABORT                             +'
+        WRITE(IU06,*)'+                                                +'
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++++++++'
+        CALL WAM_ABORT("Unexpected namelist input for IMDLGRBID_G",__FILENAME__,__LINE__)
+      ENDIF
+
 !*    1.1  READ THE WAMINFO FILE AND OVERWRITE INPUT.
 !          ------------------------------------------
 
