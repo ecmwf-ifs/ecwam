@@ -83,7 +83,12 @@ MODULE ${obj.upper()}$_TYPE_MOD
 
       #:for type, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
+#if WAM_HAVE_ATLAS
+      CALL FIELD_NEW(SELF%F_${var.upper()}$, LBOUNDS=LLBOUNDS, UBOUNDS=UBOUNDS, PERSISTENT=.TRUE., NAME="${obj}$%${var}$")
+#else
       CALL FIELD_NEW(SELF%F_${var.upper()}$, LBOUNDS=LLBOUNDS, UBOUNDS=UBOUNDS, PERSISTENT=.TRUE.)
+#endif
+
       CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDWR(SELF%${var.upper()}$)
       SELF%${var.upper()}$(${','.join(':' * rank)}$) = 0_${type2kind[type]}$
           #:endfor
