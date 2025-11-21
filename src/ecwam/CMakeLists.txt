@@ -484,7 +484,7 @@ foreach( prec sp dp )
       target_compile_options( ecwam_${prec} PRIVATE ${autopromote_flags} )
     endif()
 
-	if( HAVE_CUDA AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" )
+    if( HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND NOT FIELD_API MATCHES atlas )
       if(CMAKE_Fortran_COMPILER_VERSION VERSION_LESS "25.5")
         target_link_options( ecwam_${prec} PUBLIC "-cuda;-gpu=pinned" )
       else()
