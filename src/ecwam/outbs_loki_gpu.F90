@@ -99,7 +99,7 @@ ENDIF
 
 IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
       CALL GSTATS(1502,0)
-!$loki structured-data present(MIJ,WVPRPT,WVENVI,INTFLDS,FF_NOW,NEMO2WAM,BOUT)
+!$loki structured-data present(MIJ,WVPRPT,WVENVI,INTFLDS,FF_NOW,BOUT)
 
       DO ICHNK = 1, NCHNK
         CALL OUTBLOCK(1, NPROMA_WAM, MIJ(:,ICHNK),                        &
