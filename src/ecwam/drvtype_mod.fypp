@@ -15,6 +15,7 @@
 #:set type2field_sp = {'real': 'RB', 'int': 'IM', 'ocean': 'RM'}
 #:set type2field_dp = {'real': 'RB', 'int': 'IM', 'ocean': 'RD'}
 #:set type2dtype = {'real': 'REAL(KIND=JWRB)', 'int': 'INTEGER(KIND=JWIM)', 'ocean': 'REAL(KIND=JWRO)'}
+#:set type2kind = {'real': 'JWRB', 'int': 'JWIM', 'ocean': 'JWRO'}
 $:f.close()
 #:endmute
 #!
@@ -80,10 +81,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
       LLBOUNDS(:) = 1
       IF(PRESENT(LBOUNDS)) LLBOUNDS = LBOUNDS
 
-      #:for _, vars in zip(_def['types'], _def['vars'])
+      #:for type, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
       CALL FIELD_NEW(SELF%F_${var.upper()}$, LBOUNDS=LLBOUNDS, UBOUNDS=UBOUNDS, PERSISTENT=.TRUE.)
       CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDWR(SELF%${var.upper()}$)
+      SELF%${var.upper()}$(${','.join(':' * rank)}$) = 0_${type2kind[type]}$
           #:endfor
       #:endfor
 
