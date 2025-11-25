@@ -56,6 +56,9 @@
       USE YOWTEST  , ONLY : IU06
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
+      USE WAM_TRACE_MOD, ONLY : WAM_TRACE
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -74,12 +77,16 @@ include "nlweigt.intfb.h"
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
+      TYPE(WAM_TRACE) :: TRACE
+
 !     INLINE FUNCTION (PIERSON-MOSKOWITZ SMOOTH CUT-OFF)
 !     X == FR(1)/FREQUENCY
       REAL(KIND=JWRB) :: EPMMA, X
       EPMMA(X)= EXP(-MIN(1.25_JWRB*X**4,50.0_JWRB))*(X**5)
 
 ! ----------------------------------------------------------------------
+
+      CALL TRACE%INIT(__FILENAME__,__LINE__,"INISNONLIN")
 
       IF (LHOOK) CALL DR_HOOK('INISNONLIN',0,ZHOOK_HANDLE)
 
@@ -287,5 +294,7 @@ include "nlweigt.intfb.h"
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('INISNONLIN',1,ZHOOK_HANDLE)
+
+      CALL TRACE%FINAL()
 
       END SUBROUTINE INISNONLIN

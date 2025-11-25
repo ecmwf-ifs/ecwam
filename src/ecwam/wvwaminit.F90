@@ -46,6 +46,8 @@
       USE MPL_MODULE, ONLY : MPL_MYRANK, MPL_NPROC
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
+      USE WAM_TRACE_MOD, ONLY : WAM_TRACE
+
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "expand_string.intfb.h"
@@ -71,9 +73,13 @@
       LOGICAL :: LLEXIST
       LOGICAL, SAVE :: LFRST
 
+      TYPE(WAM_TRACE) :: TRACE
+
       DATA LFRST /.TRUE./
 
 ! ----------------------------------------------------------------------
+
+      CALL TRACE%INIT(__FILENAME__,__LINE__,"WVWAMINIT")
 
       IF (LHOOK) CALL DR_HOOK('WVWAMINIT',0,ZHOOK_HANDLE)
 
@@ -143,5 +149,7 @@
       RNORTW=AMONOP
 
       IF (LHOOK) CALL DR_HOOK('WVWAMINIT',1,ZHOOK_HANDLE)
+
+      CALL TRACE%FINAL()
 
       END SUBROUTINE WVWAMINIT

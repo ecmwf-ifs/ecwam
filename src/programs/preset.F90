@@ -125,6 +125,11 @@ PROGRAM preset
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
 
+#if WAM_HAVE_ATLAS
+      USE FCKIT_MODULE, ONLY : FCKIT_MAIN
+      USE ATLAS_MODULE, ONLY : ATLAS_INIT, ATLAS_FINAL
+#endif
+
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE 
@@ -217,6 +222,15 @@ PROGRAM preset
 ! ----------------------------------------------------------------------
 
       CALL MPL_INIT(KOUTPUT=1)
+
+! ----------------------------------------------------------------------
+
+#if WAM_HAVE_ATLAS
+      CALL FCKIT_MAIN%INITIALISE()
+      CALL ATLAS_INIT()
+#endif
+
+! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
@@ -711,8 +725,13 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       WRITE (IU06,*) ' '
       WRITE (IU06,*) ' PROGRAM PRESET: ALL DONE'
 
-      CALL MPL_END()
+      IF (LHOOK) CALL DR_HOOK('PRESET',1,ZHOOK_HANDLE)
 
-IF (LHOOK) CALL DR_HOOK('PRESET',1,ZHOOK_HANDLE)
+#if WAM_HAVE_ATLAS
+      CALL ATLAS_FINAL()
+      CALL FCKIT_MAIN%FINALISE()
+#endif
+
+      CALL MPL_END()
 
 END PROGRAM preset

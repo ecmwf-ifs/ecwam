@@ -283,6 +283,7 @@ list( APPEND ecwam_srcs
   wam_sortini.F90
   wam_u2l1cr.F90
   wam_user_clock.F90
+  wam_trace_mod.F90
   wamadswstar.F90
   wamcur.F90
   wamintgr.F90
@@ -427,6 +428,8 @@ if( HAVE_GPU_AWARE_MPI )
   list(APPEND ECWAM_DEFINITIONS WITH_GPU_AWARE_MPI )
 endif()
 
+list(APPEND ECWAM_PRIVATE_DEFINITIONS WAM_HAVE_ATLAS=${ecwam_HAVE_ATLAS})
+
 foreach( prec sp dp )
   if( HAVE_${prec} )
     set( ${PNAME}_OCEANMODEL_LIBRARIES "" )
@@ -446,7 +449,7 @@ foreach( prec sp dp )
         PUBLIC_LIBS      fiat parkind_${prec} ecwam_intfb
                          ${MPI_Fortran_LIBRARIES}
                          ${${PNAME}_OCEANMODEL_LIBRARIES}
-                         field_api_${prec}
+                         ${FIELD_API}_${prec}
         PRIVATE_LIBS     eccodes_f90
                          ${MULTIO_LIBRARIES}
                          ${OpenMP_Fortran_LIBRARIES}
@@ -482,7 +485,7 @@ foreach( prec sp dp )
       target_compile_options( ecwam_${prec} PRIVATE ${autopromote_flags} )
     endif()
 
-	if( HAVE_CUDA AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" )
+    if( HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND NOT FIELD_API MATCHES atlas )
       if(CMAKE_Fortran_COMPILER_VERSION VERSION_LESS "25.5")
         target_link_options( ecwam_${prec} PUBLIC "-cuda;-gpu=pinned" )
       else()

@@ -61,6 +61,8 @@ SUBROUTINE OUTBS (MIJ, FL1, XLLWS,                            &
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
+      USE WAM_TRACE_MOD, ONLY : WAM_TRACE
+
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
@@ -84,9 +86,13 @@ SUBROUTINE OUTBS (MIJ, FL1, XLLWS,                            &
 
       LOGICAL :: LDREPROD
 
+      TYPE(WAM_TRACE) :: TRACE
+
 ! ----------------------------------------------------------------------
 
-IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
+      CALL TRACE%INIT(__FILENAME__,__LINE__,"OUTBS")
+
+      IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
 
 !*    1. COMPUTE MEAN PARAMETERS.
 !        ------------------------
@@ -127,5 +133,8 @@ IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
 
 
 IF (LHOOK) CALL DR_HOOK('OUTBS',1,ZHOOK_HANDLE)
+
+      CALL TRACE%FINAL()
+
 
 END SUBROUTINE OUTBS

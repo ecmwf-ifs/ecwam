@@ -80,6 +80,8 @@ SUBROUTINE READPRE (LLBATHY)
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
+      USE WAM_TRACE_MOD, ONLY : WAM_TRACE
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -103,7 +105,11 @@ SUBROUTINE READPRE (LLBATHY)
 
       LOGICAL :: LLSCANNS
 
+      TYPE(WAM_TRACE) :: TRACE
+
 ! ----------------------------------------------------------------------
+
+      CALL TRACE%INIT(__FILENAME__,__LINE__,"READPRE")
 
       IF (LHOOK) CALL DR_HOOK('READPRE',0,ZHOOK_HANDLE)
 
@@ -295,6 +301,8 @@ SUBROUTINE READPRE (LLBATHY)
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('READPRE',1,ZHOOK_HANDLE)
+
+      CALL TRACE%FINAL()
 
       RETURN
 

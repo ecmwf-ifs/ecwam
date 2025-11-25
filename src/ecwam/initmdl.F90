@@ -231,6 +231,8 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE EC_LUN   , ONLY : NULERR
       USE OML_MOD  , ONLY : OML_GET_MAX_THREADS
 
+      USE WAM_TRACE_MOD, ONLY : WAM_TRACE
+
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -318,9 +320,13 @@ SUBROUTINE INITMDL (NADV,                                 &
       LOGICAL :: LLINIT_FIELDG
       LOGICAL, SAVE :: LLINTERPOL
 
+      TYPE(WAM_TRACE) :: TRACE
+
       DATA LLINTERPOL /.TRUE./
 
 !----------------------------------------------------------------------
+
+      CALL TRACE%INIT(__FILENAME__,__LINE__,"INITMDL")
 
 IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
@@ -1104,5 +1110,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
 
 IF (LHOOK) CALL DR_HOOK('INITMDL',1,ZHOOK_HANDLE)
+
+      CALL TRACE%FINAL()
 
 END SUBROUTINE INITMDL

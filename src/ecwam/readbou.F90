@@ -55,6 +55,8 @@
       USE YOWPARAM , ONLY : LL1D
       USE YOWSPEC  , ONLY : IJ2NEWIJ
 
+      USE WAM_TRACE_MOD, ONLY : WAM_TRACE
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -69,7 +71,11 @@
       REAL(KIND=JWRB) :: DLA, DPH, AMOS, AMON, AMOE, AMOW
       REAL(KIND=JWRB), DIMENSION(:), ALLOCATABLE :: BLNGC, BLATC
 
+      TYPE(WAM_TRACE) :: TRACE
+
 ! ----------------------------------------------------------------------
+
+      CALL TRACE%INIT(__FILENAME__,__LINE__,"READBOU")
 
       IF (IBOUNC.EQ.1) THEN
         READ(IU09, ERR=2000) GBOUNC
@@ -117,6 +123,9 @@
         ENDIF
 
       ENDIF
+
+      CALL TRACE%FINAL()
+
       RETURN
  2000 CONTINUE
       WRITE(IU06,*) '****************************************'

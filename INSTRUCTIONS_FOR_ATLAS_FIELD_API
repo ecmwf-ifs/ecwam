@@ -1,0 +1,227 @@
+set -exa
+
+# Download
+git clone https://github.com/wdeconinck/ecwam -b atlas_field_api
+
+# Compile
+cd ecwam
+./package/bundle/ecwam-bundle create --bundle package/bundle/bundle.yml
+./package/bundle/ecwam-bundle build --build-type=BIT --arch ecmwf/hpc2020/nvhpc/22.11 --with-atlas --with-fckit --with-acc --with-cuda --with-gpu-aware-mpi --with-static-linking --with-loki --dryrun
+
+cd build
+./configure.sh
+srun -c 64 --mem 80g --gres=ssdtmp:40G build.sh
+
+# Run tests on dg queue
+
+source env.sh
+
+export ATLAS_DEBUG=1        # Print information upon ATLAS_INIT
+export ATLAS_TRACE_REPORT=1 # Print TRACE and MEMORY statistics upon ATLAS_FINAL 
+export ATLAS_TRACE=1        # Print location upon entering/exiting routines that use ATLAS_TRACE
+export PLUTO_TRACE=1        # Print pluto executions (allocations/deallocations/device-host-copy,...)
+export ATLAS_TRACE_MEMORY=1 # Printing of "update_device, update_host, allocate_host, allocate_device, ..."
+
+salloc -N 1 -n 4 -c 32 -q dg --gpus-per-task=1 --mem 0 --time=00:30:00 ctest --output-on-failure -R ecwam_test
+
+
+Testing of O320 :
+=================
+
+source env.sh
+export NVCOMPILER_ACC_NOTIFY=0
+export PGI_ACC_DEBUG=0
+export NV_ACC_CUDA_HEAPSIZE=10G
+export ATLAS_TRACE_MEMORY=1
+export ATLAS_TRACE=0
+export PLUTO_TRACE=0
+export OMP_PLACES=cores
+export OMP_STACKSIZE=512M
+export ATLAS_DEBUG=1
+export ATLAS_TRACE_REPORT=1
+export NVCOMPILER_ACC_SYNCHRONOUS=1
+export PGI_ACC_SYNCHRONOUS=1
+
+#bin/ecwam-run-model --run-dir=run-O48 -nt 1 -np 1 --launch="srun -q dg -n 1 -c 1 --gpus-per-task=1 --mem 0 $1"
+bin/ecwam-run-model --run-dir=rundir -nt 32 -np 4 --launch="srun -q dg -n 4 -c 32 --gpus-per-task=1 --mem 0 $1"
+
+Status on Friday 21.11.2025
+
+-----------------
+Without pinning
+────────────────────────────────────────────────┬──────┬───────────┬───────────┬───────────┬───────────┬───────────┬───────────────────────────────
+Timers                                          │ cnt  │ tot       │ avg       │ std       │ min       │ max       │ location
+────────────────────────────────────────────────┼──────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────────────────────────
+0  : └─RUNWAM                                   │ 1    │ 42.04041s │ 42.04041s │  0.00000s │ 42.04041s │ 42.04041s │ runwam.F90 +212
+1  :   ├─WVWAMINIT                              │ 1    │  0.43427s │  0.43427s │  0.00000s │  0.43427s │  0.43427s │ wvwaminit.F90 +82
+2  :   │ └─READMDLCONF                          │ 1    │  0.06682s │  0.06682s │  0.00000s │  0.06682s │  0.06682s │ readmdlconf.F90 +66
+3  :   │   ├─READPRE                            │ 1    │  0.04725s │  0.04725s │  0.00000s │  0.04725s │  0.04725s │ readpre.F90 +112
+4  :   │   └─allocate_host                      │ 2    │  0.00013s │  0.00007s │  0.00004s │  0.00001s │  0.00012s │ [atlas] NativeDataStore.h +347
+5  :   ├─allocate_host                          │ 108  │  0.00125s │  0.00001s │  0.00001s │  0.00000s │  0.00006s │ [atlas] NativeDataStore.h +347
+6  :   ├─WAVEMDL                                │ 8    │ 39.72726s │  4.96591s │  4.31705s │  1.14629s │ 17.64037s │ wavemdl.F90 +318
+7  :   │ ├─INITMDL                              │ 1    │ 12.99111s │ 12.99111s │  0.00000s │ 12.99111s │ 12.99111s │ initmdl.F90 +329
+8  :   │ │ ├─INITDPTHFLDS                       │ 1    │  0.01129s │  0.01129s │  0.00000s │  0.01129s │  0.01129s │ initdpthflds.F90 +56
+9  :   │ │ ├─GETSTRESS                          │ 1    │  0.23318s │  0.23318s │  0.00000s │  0.23318s │  0.23318s │ getstress.F90 +92
+10 :   │ │ ├─allocate_host                      │ 21   │  0.00026s │  0.00001s │  0.00000s │  0.00000s │  0.00004s │ [atlas] NativeDataStore.h +347
+11 :   │ │ ├─deallocate_host                    │ 21   │  0.00011s │  0.00001s │  0.00001s │  0.00000s │  0.00006s │ [atlas] NativeDataStore.h +362
+12 :   │ │ ├─GETSPEC                            │ 1    │ 11.53091s │ 11.53091s │  0.00000s │ 11.53091s │ 11.53091s │ getspec.F90 +165
+13 :   │ │ ├─INISNONLIN                         │ 1    │  0.00037s │  0.00037s │  0.00000s │  0.00037s │  0.00037s │ inisnonlin.F90 +89
+14 :   │ │ └─OUTSTEP0                           │ 1    │  0.68189s │  0.68189s │  0.00000s │  0.68189s │  0.68189s │ outstep0.F90 +100
+15 :   │ │   ├─OUTBS                            │ 1    │  0.09030s │  0.09030s │  0.00000s │  0.09030s │  0.09030s │ outbs.F90.F90 +93
+16 :   │ │   └─OUTWINT                          │ 1    │  0.33650s │  0.33650s │  0.00000s │  0.33650s │  0.33650s │ outwint.F90 +65
+17 :   │ ├─WAMODEL                              │ 8    │ 25.10281s │  3.13785s │  3.54472s │  0.93870s │ 11.16221s │ wamodel.F90 +168
+18 :   │ │ ├─allocate_host                      │ 1    │  0.00002s │  0.00002s │  0.00000s │  0.00002s │  0.00002s │ [atlas] NativeDataStore.h +347
+19 :   │ │ ├─UPDATE_DEVICE                      │ 8    │  0.73641s │  0.09205s │  0.02025s │  0.09072s │  0.09329s │ wamodel.F90 +207
+20 :   │ │ │ ├─allocate_device                  │ 632  │  0.05551s │  0.00009s │  0.00014s │  0.00001s │  0.00101s │ [atlas] NativeDataStore.h +247
+21 :   │ │ │ └─update_device                    │ 632  │  0.66635s │  0.00105s │  0.00549s │  0.00001s │  0.03710s │ [atlas] NativeDataStore.h +171
+22 :   │ │ ├─ADVECTION_LOOP                     │ 8    │ 23.57877s │  2.94735s │  3.54188s │  0.74778s │ 10.97048s │ wamodel.F90 +233
+23 :   │ │ │ ├─1.2 PROPAGATE                    │ 72   │  9.51953s │  0.13222s │  0.00863s │  0.12692s │  0.24986s │ wamodel.F90 +290
+24 :   │ │ │ │ └─WAMINTGR                       │ 72   │  9.51230s │  0.13212s │  0.00850s │  0.12688s │  0.24904s │ wamintgr_loki_gpu.F90 +94
+25 :   │ │ │ │   ├─UPDATE_DEVICE                │ 72   │  0.00720s │  0.00010s │  0.00009s │  0.00006s │  0.00046s │ wamintgr_loki_gpu.F90 +105
+26 :   │ │ │ │   │ ├─allocate_device            │ 8    │  0.00114s │  0.00014s │  0.00008s │  0.00002s │  0.00026s │ [atlas] NativeDataStore.h +247
+27 :   │ │ │ │   │ └─update_device              │ 8    │  0.00037s │  0.00005s │  0.00001s │  0.00004s │  0.00005s │ [atlas] NativeDataStore.h +171
+28 :   │ │ │ │   ├─PROPAG_WAM                   │ 72   │  1.31656s │  0.01829s │  0.01121s │  0.01335s │  0.13135s │ propag_wam.F90 +104
+29 :   │ │ │ │   ├─UPDATE_DEVICE                │ 72   │  0.00636s │  0.00009s │  0.00003s │  0.00007s │  0.00032s │ wamintgr_loki_gpu.F90 +129
+30 :   │ │ │ │   ├─NEWWIND                      │ 72   │  0.00042s │  0.00001s │  0.00002s │  0.00000s │  0.00015s │ newwind.F90 +99
+31 :   │ │ │ │   ├─UPDATE_DEVICE                │ 72   │  0.01585s │  0.00022s │  0.00017s │  0.00014s │  0.00107s │ wamintgr_loki_gpu.F90 +152
+32 :   │ │ │ │   │ ├─allocate_device            │ 32   │  0.00153s │  0.00005s │  0.00007s │  0.00001s │  0.00016s │ [atlas] NativeDataStore.h +247
+33 :   │ │ │ │   │ └─update_device              │ 32   │  0.00156s │  0.00005s │  0.00001s │  0.00004s │  0.00005s │ [atlas] NativeDataStore.h +171
+34 :   │ │ │ │   ├─IMPLSCH                      │ 72   │  5.40754s │  0.07510s │  0.00573s │  0.07468s │  0.07654s │ wamintgr_loki_gpu.F90 +168
+35 :   │ │ │ │   └─UPDATE_HOST                  │ 72   │  2.75302s │  0.03824s │  0.00295s │  0.03802s │  0.03861s │ wamintgr_loki_gpu.F90 +207
+36 :   │ │ │ │     └─update_host                │ 2664 │  2.73860s │  0.00103s │  0.00574s │  0.00004s │  0.03593s │ [atlas] NativeDataStore.h +184
+37 :   │ │ │ ├─UPDATE_DEVICE                    │ 72   │  0.00087s │  0.00001s │  0.00001s │  0.00001s │  0.00003s │ wamodel.F90 +584
+38 :   │ │ │ ├─1.5 FIELD/NORM OUTPUT            │ 18   │  0.58193s │  0.03233s │  0.00414s │  0.03155s │  0.03738s │ wamodel.F90 +346
+39 :   │ │ │ │ ├─UPDATE_DEVICE                  │ 18   │  0.00091s │  0.00005s │  0.00012s │  0.00001s │  0.00080s │ wamodel.F90 +349
+40 :   │ │ │ │ │ └─allocate_device              │ 1    │  0.00076s │  0.00076s │  0.00000s │  0.00076s │  0.00076s │ [atlas] NativeDataStore.h +247
+41 :   │ │ │ │ ├─OUTBS                          │ 18   │  0.41680s │  0.02316s │  0.00332s │  0.02300s │  0.02425s │ outbs_loki_gpu.F90 +93
+42 :   │ │ │ │ │ └─UPDATE_DEVICE                │ 1    │  0.00021s │  0.00021s │  0.00000s │  0.00021s │  0.00021s │ outbs_loki_gpu.F90 +100
+43 :   │ │ │ │ └─UPDATE_HOST                    │ 18   │  0.00766s │  0.00043s │  0.00007s │  0.00040s │  0.00045s │ wamodel.F90 +357
+44 :   │ │ │ │   └─update_host                  │ 18   │  0.00740s │  0.00041s │  0.00006s │  0.00038s │  0.00044s │ [atlas] NativeDataStore.h +184
+45 :   │ │ │ ├─1.9 WRITE INTGR DATA TO FDB/FILE │ 18   │  3.26169s │  0.18121s │  0.02774s │  0.17540s │  0.18964s │ wamodel.F90 +559
+46 :   │ │ │ │ └─OUTWINT                        │ 18   │  3.26009s │  0.18112s │  0.02773s │  0.17532s │  0.18955s │ outwint.F90 +65
+53 :   │ │ │ └─1.8 SAVE FIELDS                  │ 1    │ 10.21179s │ 10.21179s │  0.00000s │ 10.21179s │ 10.21179s │ wamodel.F90 +423
+54 :   │ │ │   ├─UPDATE_HOST                    │ 1    │  0.00008s │  0.00008s │  0.00000s │  0.00008s │  0.00008s │ wamodel.F90 +470
+55 :   │ │ │   ├─SAVSTRESS                      │ 1    │  0.19620s │  0.19620s │  0.00000s │  0.19620s │  0.19620s │ savstress.F90 +84
+56 :   │ │ │   └─SAVSPEC                        │ 1    │ 10.01528s │ 10.01528s │  0.00000s │ 10.01528s │ 10.01528s │ savspec.F90 +91
+47 :   │ │ ├─UPDATE_HOST                        │ 8    │  0.67267s │  0.08408s │  0.01835s │  0.08373s │  0.08526s │ wamodel.F90 +689
+48 :   │ │ │ └─update_host                      │ 376  │  0.66698s │  0.00177s │  0.00696s │  0.00004s │  0.03560s │ [atlas] NativeDataStore.h +184
+49 :   │ │ └─DEALLOCATE_DEVICE                  │ 8    │  0.11387s │  0.01423s │  0.00312s │  0.01232s │  0.01473s │ wamodel.F90 +702
+50 :   │ │   └─deallocate_device                │ 672  │  0.10857s │  0.00016s │  0.00022s │  0.00001s │  0.00112s │ [atlas] NativeDataStore.h +271
+51 :   │ ├─allocate_host                        │ 147  │  0.00061s │  0.00000s │  0.00000s │  0.00000s │  0.00002s │ [atlas] NativeDataStore.h +347
+52 :   │ └─deallocate_host                      │ 147  │  0.00062s │  0.00000s │  0.00001s │  0.00000s │  0.00003s │ [atlas] NativeDataStore.h +362
+57 :   ├─deallocate_host                        │ 111  │  0.06669s │  0.00060s │  0.00383s │  0.00000s │  0.02992s │ [atlas] NativeDataStore.h +362
+58 :   └─deallocate_device                      │ 1    │  0.00070s │  0.00070s │  0.00000s │  0.00070s │  0.00070s │ [atlas] NativeDataStore.h +271
+────────────────────────────────────────────────┴──────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────────────────────────
+─────────────────────────────────────────┬───────┬─────────────
+Timers accumulated by label              │ count │ time
+─────────────────────────────────────────┼───────┼─────────────
+DATA_OFFLOAD                             │ 422   │  4.31511s
+memory                                   │ 5634  │  4.31915s
+memory.allocator                         │ 1904  │  0.23789s
+memory.allocator.device                  │ 1346  │  0.16820s
+memory.allocator.device.allocate         │ 673   │  0.05893s
+memory.allocator.device.deallocate       │ 673   │  0.10927s
+memory.allocator.host                    │ 558   │  0.06969s
+memory.allocator.host.allocate           │ 279   │  0.00227s
+memory.allocator.host.deallocate         │ 279   │  0.06742s
+memory.transfer                          │ 3730  │  4.08126s
+memory.transfer.d2h                      │ 3058  │  3.41298s
+memory.transfer.h2d                      │ 672   │  0.66828s
+─────────────────────────────────────────┴───────┴─────────────
+
+Memory resource          host           host_pool      pinned         pinned_pool    device         device_pool    managed        managed_pool
+Total allocations:       279            0              0              0              673            0              0              0
+High Watermark:          1.19G          0.00B          0.00B          0.00B          1.15G          0.00B          0.00B          0.00B
+Largest Allocation:      495.70M        0.00B          0.00B          0.00B          495.70M        0.00B          0.00B          0.00B
+Allocated:               0.00B (0)      0.00B (0)      0.00B (0)      0.00B (0)      0.00B (0)      0.00B (0)      0.00B (0)      0.00B (0)
+Capacity:                -              0.00B          -              0.00B          -              0.00B          -              0.00B
+
+
+-----------------
+With pinning:
+────────────────────────────────────────────────┬──────┬───────────┬───────────┬───────────┬───────────┬───────────┬───────────────────────────────
+Timers                                          │ cnt  │ tot       │ avg       │ std       │ min       │ max       │ location
+────────────────────────────────────────────────┼──────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────────────────────────
+0  : └─RUNWAM                                   │ 1    │ 40.81587s │ 40.81587s │  0.00000s │ 40.81587s │ 40.81587s │ runwam.F90 +212
+1  :   ├─WVWAMINIT                              │ 1    │  0.43340s │  0.43340s │  0.00000s │  0.43340s │  0.43340s │ wvwaminit.F90 +82
+2  :   │ └─READMDLCONF                          │ 1    │  0.06269s │  0.06269s │  0.00000s │  0.06269s │  0.06269s │ readmdlconf.F90 +66
+3  :   │   ├─READPRE                            │ 1    │  0.04588s │  0.04588s │  0.00000s │  0.04588s │  0.04588s │ readpre.F90 +112
+4  :   │   └─allocate_host                      │ 2    │  0.00012s │  0.00006s │  0.00003s │  0.00001s │  0.00011s │ [atlas] NativeDataStore.h +347
+5  :   ├─allocate_host                          │ 108  │  0.33448s │  0.00310s │  0.01714s │  0.00000s │  0.12946s │ [atlas] NativeDataStore.h +347
+6  :   ├─WAVEMDL                                │ 8    │ 38.33771s │  4.79221s │  4.28209s │  1.02938s │ 17.37496s │ wavemdl.F90 +318
+7  :   │ ├─INITMDL                              │ 1    │ 13.13869s │ 13.13869s │  0.00000s │ 13.13869s │ 13.13869s │ initmdl.F90 +329
+8  :   │ │ ├─INITDPTHFLDS                       │ 1    │  0.01129s │  0.01129s │  0.00000s │  0.01129s │  0.01129s │ initdpthflds.F90 +56
+9  :   │ │ ├─GETSTRESS                          │ 1    │  0.23628s │  0.23628s │  0.00000s │  0.23628s │  0.23628s │ getstress.F90 +92
+10 :   │ │ ├─allocate_host                      │ 21   │  0.00024s │  0.00001s │  0.00000s │  0.00000s │  0.00002s │ [atlas] NativeDataStore.h +347
+11 :   │ │ ├─deallocate_host                    │ 21   │  0.00011s │  0.00001s │  0.00001s │  0.00000s │  0.00006s │ [atlas] NativeDataStore.h +362
+12 :   │ │ ├─GETSPEC                            │ 1    │ 11.67772s │ 11.67772s │  0.00000s │ 11.67772s │ 11.67772s │ getspec.F90 +165
+13 :   │ │ ├─INISNONLIN                         │ 1    │  0.00037s │  0.00037s │  0.00000s │  0.00037s │  0.00037s │ inisnonlin.F90 +89
+14 :   │ │ └─OUTSTEP0                           │ 1    │  0.68100s │  0.68100s │  0.00000s │  0.68100s │  0.68100s │ outstep0.F90 +100
+15 :   │ │   ├─OUTBS                            │ 1    │  0.08998s │  0.08998s │  0.00000s │  0.08998s │  0.08998s │ outbs.F90.F90 +93
+16 :   │ │   └─OUTWINT                          │ 1    │  0.33781s │  0.33781s │  0.00000s │  0.33781s │  0.33781s │ outwint.F90 +65
+17 :   │ ├─WAMODEL                              │ 8    │ 23.53103s │  2.94138s │  3.50136s │  0.81256s │ 10.93060s │ wamodel.F90 +168
+18 :   │ │ ├─allocate_host                      │ 1    │  0.00079s │  0.00079s │  0.00000s │  0.00079s │  0.00079s │ [atlas] NativeDataStore.h +347
+19 :   │ │ ├─UPDATE_DEVICE                      │ 8    │  0.44182s │  0.05523s │  0.01133s │  0.05466s │  0.05775s │ wamodel.F90 +207
+20 :   │ │ │ ├─allocate_device                  │ 632  │  0.03744s │  0.00006s │  0.00010s │  0.00001s │  0.00082s │ [atlas] NativeDataStore.h +247
+21 :   │ │ │ └─update_device                    │ 632  │  0.39409s │  0.00062s │  0.00319s │  0.00001s │  0.02134s │ [atlas] NativeDataStore.h +171
+22 :   │ │ ├─ADVECTION_LOOP                     │ 8    │ 22.53901s │  2.81738s │  3.49667s │  0.69048s │ 10.79959s │ wamodel.F90 +233
+23 :   │ │ │ ├─1.2 PROPAGATE                    │ 72   │  8.47670s │  0.11773s │  0.00876s │  0.11238s │  0.24158s │ wamodel.F90 +290
+24 :   │ │ │ │ └─WAMINTGR                       │ 72   │  8.47144s │  0.11766s │  0.00870s │  0.11234s │  0.24105s │ wamintgr_loki_gpu.F90 +94
+25 :   │ │ │ │   ├─UPDATE_DEVICE                │ 72   │  0.00676s │  0.00009s │  0.00008s │  0.00006s │  0.00045s │ wamintgr_loki_gpu.F90 +105
+26 :   │ │ │ │   │ ├─allocate_device            │ 8    │  0.00093s │  0.00012s │  0.00006s │  0.00001s │  0.00017s │ [atlas] NativeDataStore.h +247
+27 :   │ │ │ │   │ └─update_device              │ 8    │  0.00037s │  0.00005s │  0.00001s │  0.00005s │  0.00005s │ [atlas] NativeDataStore.h +171
+28 :   │ │ │ │   ├─PROPAG_WAM                   │ 72   │  1.30180s │  0.01808s │  0.01149s │  0.01330s │  0.13273s │ propag_wam.F90 +104
+29 :   │ │ │ │   ├─UPDATE_DEVICE                │ 72   │  0.00617s │  0.00009s │  0.00003s │  0.00007s │  0.00032s │ wamintgr_loki_gpu.F90 +129
+30 :   │ │ │ │   ├─NEWWIND                      │ 72   │  0.00040s │  0.00001s │  0.00002s │  0.00000s │  0.00013s │ newwind.F90 +99
+31 :   │ │ │ │   ├─UPDATE_DEVICE                │ 72   │  0.01542s │  0.00021s │  0.00016s │  0.00014s │  0.00102s │ wamintgr_loki_gpu.F90 +152
+32 :   │ │ │ │   │ ├─allocate_device            │ 32   │  0.00167s │  0.00005s │  0.00007s │  0.00001s │  0.00027s │ [atlas] NativeDataStore.h +247
+33 :   │ │ │ │   │ └─update_device              │ 32   │  0.00148s │  0.00005s │  0.00001s │  0.00004s │  0.00005s │ [atlas] NativeDataStore.h +171
+34 :   │ │ │ │   ├─IMPLSCH                      │ 72   │  5.41509s │  0.07521s │  0.00532s │  0.07463s │  0.08188s │ wamintgr_loki_gpu.F90 +168
+35 :   │ │ │ │   └─UPDATE_HOST                  │ 72   │  1.72054s │  0.02390s │  0.00185s │  0.02371s │  0.02415s │ wamintgr_loki_gpu.F90 +207
+36 :   │ │ │ │     └─update_host                │ 2664 │  1.70705s │  0.00064s │  0.00357s │  0.00003s │  0.02235s │ [atlas] NativeDataStore.h +184
+37 :   │ │ │ ├─UPDATE_DEVICE                    │ 72   │  0.00088s │  0.00001s │  0.00001s │  0.00001s │  0.00003s │ wamodel.F90 +584
+38 :   │ │ │ ├─1.5 FIELD/NORM OUTPUT            │ 18   │  0.68172s │  0.03787s │  0.02376s │  0.03120s │  0.12989s │ wamodel.F90 +346
+39 :   │ │ │ │ ├─UPDATE_DEVICE                  │ 18   │  0.00071s │  0.00004s │  0.00009s │  0.00001s │  0.00060s │ wamodel.F90 +349
+40 :   │ │ │ │ │ └─allocate_device              │ 1    │  0.00056s │  0.00056s │  0.00000s │  0.00056s │  0.00056s │ [atlas] NativeDataStore.h +247
+41 :   │ │ │ │ ├─OUTBS                          │ 18   │  0.41604s │  0.02311s │  0.00334s │  0.02293s │  0.02411s │ outbs_loki_gpu.F90 +93
+42 :   │ │ │ │ │ └─UPDATE_DEVICE                │ 1    │  0.00019s │  0.00019s │  0.00000s │  0.00019s │  0.00019s │ outbs_loki_gpu.F90 +100
+43 :   │ │ │ │ └─UPDATE_HOST                    │ 18   │  0.00435s │  0.00024s │  0.00003s │  0.00022s │  0.00027s │ wamodel.F90 +357
+44 :   │ │ │ │   └─update_host                  │ 18   │  0.00411s │  0.00023s │  0.00003s │  0.00020s │  0.00024s │ [atlas] NativeDataStore.h +184
+45 :   │ │ │ ├─1.9 WRITE INTGR DATA TO FDB/FILE │ 18   │  3.27730s │  0.18207s │  0.02808s │  0.17491s │  0.19361s │ wamodel.F90 +559
+46 :   │ │ │ │ └─OUTWINT                        │ 18   │  3.27574s │  0.18199s │  0.02807s │  0.17483s │  0.19352s │ outwint.F90 +65
+53 :   │ │ │ └─1.8 SAVE FIELDS                  │ 1    │ 10.09959s │ 10.09959s │  0.00000s │ 10.09959s │ 10.09959s │ wamodel.F90 +423
+54 :   │ │ │   ├─UPDATE_HOST                    │ 1    │  0.00007s │  0.00007s │  0.00000s │  0.00007s │  0.00007s │ wamodel.F90 +470
+55 :   │ │ │   ├─SAVSTRESS                      │ 1    │  0.19491s │  0.19491s │  0.00000s │  0.19491s │  0.19491s │ savstress.F90 +84
+56 :   │ │ │   └─SAVSPEC                        │ 1    │  9.90437s │  9.90437s │  0.00000s │  9.90437s │  9.90437s │ savspec.F90 +91
+47 :   │ │ ├─UPDATE_HOST                        │ 8    │  0.42967s │  0.05371s │  0.01244s │  0.05240s │  0.06132s │ wamodel.F90 +689
+48 :   │ │ │ └─update_host                      │ 376  │  0.42393s │  0.00113s │  0.00447s │  0.00003s │  0.02565s │ [atlas] NativeDataStore.h +184
+49 :   │ │ └─DEALLOCATE_DEVICE                  │ 8    │  0.11876s │  0.01484s │  0.00329s │  0.01464s │  0.01505s │ wamodel.F90 +702
+50 :   │ │   └─deallocate_device                │ 672  │  0.11346s │  0.00017s │  0.00025s │  0.00001s │  0.00254s │ [atlas] NativeDataStore.h +271
+51 :   │ ├─allocate_host                        │ 147  │  0.00064s │  0.00000s │  0.00000s │  0.00000s │  0.00003s │ [atlas] NativeDataStore.h +347
+52 :   │ └─deallocate_host                      │ 147  │  0.00062s │  0.00000s │  0.00001s │  0.00000s │  0.00003s │ [atlas] NativeDataStore.h +362
+57 :   ├─deallocate_host                        │ 111  │  0.19109s │  0.00172s │  0.01067s │  0.00000s │  0.09633s │ [atlas] NativeDataStore.h +362
+58 :   └─deallocate_device                      │ 1    │  0.00051s │  0.00051s │  0.00000s │  0.00051s │  0.00051s │ [atlas] NativeDataStore.h +271
+────────────────────────────────────────────────┴──────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────────────────────────
+─────────────────────────────────────────┬───────┬─────────────
+Timers accumulated by label              │ count │ time
+─────────────────────────────────────────┼───────┼─────────────
+DATA_OFFLOAD                             │ 422   │  2.74533s
+memory                                   │ 5634  │  3.21368s
+memory.allocator                         │ 1904  │  0.68264s
+memory.allocator.device                  │ 1346  │  0.15456s
+memory.allocator.device.allocate         │ 673   │  0.04059s
+memory.allocator.device.deallocate       │ 673   │  0.11397s
+memory.allocator.host                    │ 558   │  0.52808s
+memory.allocator.host.allocate           │ 279   │  0.33627s
+memory.allocator.host.deallocate         │ 279   │  0.19181s
+memory.transfer                          │ 3730  │  2.53104s
+memory.transfer.d2h                      │ 3058  │  2.13510s
+memory.transfer.h2d                      │ 672   │  0.39594s
+─────────────────────────────────────────┴───────┴─────────────
+
+Memory resource          host           host_pool      pinned         pinned_pool    device         device_pool    managed        managed_pool
+Total allocations:       183            0              96             0              673            0              0              0
+High Watermark:          34.13M         0.00B          1.16G          0.00B          1.15G          0.00B          0.00B          0.00B
+Largest Allocation:      1.24M          0.00B          495.70M        0.00B          495.70M        0.00B          0.00B          0.00B
+Allocated:               0.00B (0)      0.00B (0)      0.00B (0)      0.00B (0)      0.00B (0)      0.00B (0)      0.00B (0)      0.00B (0)
+Capacity:                -              0.00B          -              0.00B          -              0.00B          -              0.00B

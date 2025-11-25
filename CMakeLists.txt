@@ -30,7 +30,16 @@ ecbuild_enable_fortran( REQUIRED NO_MODULE_DIRECTORY )
 
 ecbuild_find_package( fiat      REQUIRED )
 ecbuild_find_package( eccodes   REQUIRED )
-ecbuild_find_package( field_api REQUIRED )
+if (NOT DEFINED FIELD_API)
+  set(FIELD_API field_api)
+endif()
+ecbuild_find_package( ${FIELD_API} REQUIRED )
+
+set(ecwam_HAVE_ATLAS 0)
+if (FIELD_API MATCHES atlas) # partial match is OK
+  set(ecwam_HAVE_ATLAS 1)
+  ecbuild_info("${ECWAM_PROJECT_NAME} configured to use atlas instead of field_api")
+endif()
 
 ### Options
 
