@@ -64,6 +64,7 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
       USE YOWMAP   , ONLY : IRGG     ,NLONRGG
+      USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO
       USE YOWMESPAS, ONLY : LGRIBIN
       USE YOWMAP   , ONLY : NGY      ,NIBLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,                        &
@@ -144,7 +145,7 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: ZRECVBUF
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:) :: RFL
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: FIELD
-      TYPE(FORCING_FIELDS) :: FIELDG
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: XLON, YLAT
 
       CHARACTER(LEN= 14) :: CDATE 
       CHARACTER(LEN=296) :: FILENAME
@@ -247,9 +248,17 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
         LLINIALL = .FALSE.
         LLOCAL = .FALSE.
 
-        IF(.NOT. FIELDG%LALLOC) CALL FIELDG%ALLOC(LBOUNDS=[NXFFS, NYFFS], UBOUNDS=[NXFFE, NYFFE])
-        CALL INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL,         &
-     &                   NXFFS, NXFFE, NYFFS, NYFFE, FIELDG)
+        ALLOCATE(XLON(NXFFS:NXFFE,NYFFS:NYFFE))
+        ALLOCATE(YLAT(NXFFS:NXFFE,NYFFS:NYFFE))
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(IY, IX, JSN)
+          DO IY = NYFFS, NYFFE
+            JSN = NGY-IY+1
+            DO IX = NXFFS, MIN(NLONRGG(JSN), NXFFE)
+              XLON(IX,IY) = AMOWEP + (IX-1)*ZDELLO(JSN)
+              YLAT(IX,IY) = AMOSOP + (JSN-1)*XDELLA
+            ENDDO
+          ENDDO
+!$OMP     END PARALLEL DO
 
 
 
@@ -398,7 +407,7 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
      &                         LLUNSTR, LLCHKINT,                          &
      &                         NGY, IRGG, NLONRGG_LOC,                     &
      &                         NXFFS, NXFFE, NYFFS, NYFFE,                 &
-     &                         FIELDG%XLON, FIELDG%YLAT,                   &
+     &                         XLON, YLAT,                   &
      &                         ZMISS, PPREC, PPEPS,                        &
      &                         CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
 
@@ -625,7 +634,6 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
         ENDDO ALL_FILE
 
         IF(ALLOCATED(ZRECVBUF)) DEALLOCATE(ZRECVBUF)
-        CALL FIELDG%DEALLOC()
 
         IF (IRANK == IREAD) THEN
           CALL IGRIB_CLOSE_FILE(KFILE_HANDLE)

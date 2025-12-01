@@ -250,7 +250,7 @@
 
       KTAG=KTAG+1
 
-!$acc exit data delete(ZCOMBUFS,ZCOMBUFR)
+!$acc exit data delete(ZCOMBUFS,ZCOMBUFR) finalize
       DEALLOCATE(ZCOMBUFS)
       DEALLOCATE(ZCOMBUFR)
 

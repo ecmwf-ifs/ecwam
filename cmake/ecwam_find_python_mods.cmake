@@ -8,9 +8,6 @@
 
 macro( ecwam_find_python_mods )
 
-   # Find the system python install
-   set( Python3_FIND_VIRTUALENV STANDARD )
-
    # Look for python interpreter and pyyaml
    find_package( Python3 COMPONENTS Interpreter REQUIRED)
    set(ECWAM_PYTHON_INTERP ${Python3_EXECUTABLE})

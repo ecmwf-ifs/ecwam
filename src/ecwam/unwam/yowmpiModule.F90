@@ -14,6 +14,6 @@ module yowMpiModule
 #ifdef WAM_HAVE_MPI_F08
   use mpi_f08
 #else
-  use MPL_MPIF
+#include "mpif.h"
 #endif
 end module

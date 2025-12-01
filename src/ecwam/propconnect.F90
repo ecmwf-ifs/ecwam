@@ -683,7 +683,7 @@ SUBROUTINE PROPCONNECT(IJS, IJL, NEWIJ2IJ)
           I = BLK2GLO%IXLG(IP)
           K = BLK2GLO%KXLT(IP)
           IP1D = NEWIJ2IJ(IP)
-          D0 = FLOAT(I-1)*ZDELLO(K)
+          D0 = REAL(I-1,JWRB)*ZDELLO(K)
           D3=D0-0.5_JWRB*ZDELLO(K)
           D5=D0+0.5_JWRB*ZDELLO(K)
 
