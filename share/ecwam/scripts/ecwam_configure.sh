@@ -164,16 +164,6 @@ function ecwam_configure {
     iper=1
   elif [[ $wamresol = medite25 ]] ; then
     xdella=0.2500000
-    amosop=9.00000
-    amonop=90.00000
-    amowep=-98.00000
-    amoeap=42.0000
-    iper=0
-    ##!!
-    cldomain=m
-    ##!!
-  elif [[ $wamresol = medite25 ]] ; then
-    xdella=0.2500000
     amosop=30.00000
     amonop=46.00000
     amowep=-6.00000
@@ -205,6 +195,24 @@ function ecwam_configure {
     ##!!
     cldomain=m
     ##!!
+  elif [[ $wamresol = lam_highres ]] ; then
+    xdella=0.016666667
+    amosop=30.00000
+    amonop=46.00000
+    amowep=10.00000
+    amoeap=24.0000
+    iper=0
+    deptha=1.0
+    irgg=0
+    fr1=0.05
+    ifre1=1
+    ##!!
+    cldomain=m
+    ##!!
+    llobstrct=F
+    llgrib_bathy_out=T
+    llgrib_obstrt_out=T
+    llobstrout=F
   elif [[ $wamresol = onegrdpt ]] ; then
   # one grid point setup
     xdella=0.5000000

@@ -145,6 +145,7 @@ begoffo=$(read_config forcings.at[1].begin --format="%Y%m%d%H%M%S" --default=${e
 
 # MODEL SETUP:
 ##############
+cldomain=$(read_config cldomain --default=g)
 wamnang=$(read_config directions)
 wamnfre=$(read_config frequencies)
 
@@ -192,6 +193,7 @@ ln -s ${DATA_DIR}/${forcings_file} sfcwindin
 cat > PREINFO <<EOF
 &NALINE
  HEADER    = " WAVE MODEL INITIALISATION "
+ CLDOMAIN  = "${cldomain}",
  CPATH     = "${WORK_DIR}"
  CDATEA    = "${begofrn}"
  IOPTI     = ${opti}

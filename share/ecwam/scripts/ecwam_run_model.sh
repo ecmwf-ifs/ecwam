@@ -78,6 +78,7 @@ done
 
 # MODEL SETUP:
 ##############
+cldomain=$(read_config cldomain --default=g)
 wamnang=$(read_config directions)
 wamnfre=$(read_config frequencies)
 
@@ -214,6 +215,7 @@ cat > wam_namelist << EOF
   NFRE                  = 36,
   NFRE_RED              = ${wamnfre},
   CLHEADER              = " WAVE MODEL ",
+  CLDOMAIN              = "${cldomain}",
   CBPLTDT               = "${begofrn}",
   CEPLTDT               = "${endofrn}",
   CDATEF                = "${begoffo}",

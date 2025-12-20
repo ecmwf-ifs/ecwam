@@ -1,4 +1,5 @@
 grid:        O48
+cldomain:     g
 directions:  12 
 frequencies: 25
 bathymetry:  ETOPO1

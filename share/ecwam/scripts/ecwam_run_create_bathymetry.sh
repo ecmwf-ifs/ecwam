@@ -173,12 +173,12 @@ else
     echo "\n\n\t Getting ETOPO1 data set\n"
     log ${SCRIPTS_DIR}/ecwam_retrieve.sh ${ETOPO1} ${DATA_DIR}/${ETOPO1}
     ln -sf ${DATA_DIR}/${ETOPO1} ETOPO1_Ice_g_int.xyz
-    CREATE_WAM_BATHYMETRY_EXE=${CREATE_WAM_BATHYMETRY_ETOPO1}
+    CREATE_WAM_BATHYMETRY_EXE=${CREATE_WAM_BATHYMETRY_ETOPO1}-${prec}
   else
     echo "\n\n\t Getting ETOPO2 data set\n"
     log ${SCRIPTS_DIR}/ecwam_retrieve.sh ${ETOPO2} ${DATA_DIR}/${ETOPO2}
     ln -sf ${DATA_DIR}/${ETOPO2} etopo2_2006apr.dat
-    CREATE_WAM_BATHYMETRY_EXE=${CREATE_WAM_BATHYMETRY_ETOPO2}
+    CREATE_WAM_BATHYMETRY_EXE=${CREATE_WAM_BATHYMETRY_ETOPO2}-${prec}
   fi
 
   assert_executable_is_available ${CREATE_WAM_BATHYMETRY_EXE} || abort 4
