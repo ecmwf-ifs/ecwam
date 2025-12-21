@@ -81,7 +81,8 @@ done
 cldomain=$(read_config cldomain --default=g)
 wamnang=$(read_config directions)
 wamnfre=$(read_config frequencies)
-
+fr1=$(read_config fr1 --default=4.177248E-02)
+ifre1=$(read_config ifre1 --default=1)
 nproma=$(read_config nproma --default=24)
 iphys=$(read_config iphys --default=1)
 llgcbz0=$(read_config llgcbz0 --default=F)
@@ -211,11 +212,13 @@ ln -s ${DATA_DIR}/${forcings_file} sfcwindin
 
 cat > wam_namelist << EOF
 &NALINE
+  CLHEADER              = " WAVE MODEL ",
+  CLDOMAIN              = "${cldomain}",
   NANG                  = ${wamnang},
   NFRE                  = 36,
   NFRE_RED              = ${wamnfre},
-  CLHEADER              = " WAVE MODEL ",
-  CLDOMAIN              = "${cldomain}",
+  FR1                   = ${fr1},
+  IFRE1                 = ${ifre1},
   CBPLTDT               = "${begofrn}",
   CEPLTDT               = "${endofrn}",
   CDATEF                = "${begoffo}",

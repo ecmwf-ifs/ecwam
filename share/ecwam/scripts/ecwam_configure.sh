@@ -204,12 +204,11 @@ function ecwam_configure {
     iper=0
     deptha=1.0
     irgg=0
-    fr1=0.05
+    fr1=0.055
     ifre1=1
     ##!!
     cldomain=m
     ##!!
-    llobstrct=F
     llgrib_bathy_out=T
     llgrib_obstrt_out=T
     llobstrout=F

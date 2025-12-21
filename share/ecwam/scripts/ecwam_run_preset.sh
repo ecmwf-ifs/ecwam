@@ -148,6 +148,8 @@ begoffo=$(read_config forcings.at[1].begin --format="%Y%m%d%H%M%S" --default=${e
 cldomain=$(read_config cldomain --default=g)
 wamnang=$(read_config directions)
 wamnfre=$(read_config frequencies)
+fr1=$(read_config fr1 --default=4.177248E-02)
+ifre1=$(read_config ifre1 --default=1)
 
 forcings_file=$(read_config forcings.file)
 
@@ -216,6 +218,9 @@ cat > PREINFO <<EOF
  NANG      = ${wamnang}
  NFRE      = 36
  NFRE_RED  = ${wamnfre}
+ FR1       = ${fr1}
+ IFRE1     = ${ifre1}
+
 /
 EOF
 

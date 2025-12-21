@@ -2,15 +2,17 @@ grid:        lam_highres
 cldomain:     m
 directions:  36
 frequencies: 36
+fr1:         0.055
+ifre1:       1
 bathymetry:  ETOPO1
 
 advection:
-    timestep: 100
+    timestep: 120
     fast_waves:
-        timestep: 50
-        max_frequency: 0
+        timestep: 60
+        max_frequency: 5
 physics:
-    timestep: 300
+    timestep: 240
 
 analysis.begin: 2022-12-31 12:00:00
 analysis.end:   2023-01-01 00:00:00
