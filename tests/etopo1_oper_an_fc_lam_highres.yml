@@ -29,7 +29,7 @@ lciwa3: T
 lciscal: T
 
 forcings:
-    sea_ice: True 
+    sea_ice: False 
 
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O1280.grib
 
