@@ -1,14 +1,23 @@
 grid:        O320
+cldomain:     g
 directions:  24
 frequencies: 29
 fr1:         4.177248E-02 
 ifre1:       3
 bathymetry:  ETOPO1
+lsubgrid:    T
 
 advection:
+    irefra: 2
     timestep: 450
 physics:
+    iphys: 1
     timestep: 900
+    llgcbz0: T
+    llnormagam: T
+    lmaskice: T
+    lciwa3: F
+    lciscal: T
 
 analysis.begin: 2022-12-31 12:00:00
 analysis.end:   2023-01-01 00:00:00
@@ -19,7 +28,8 @@ begin: ${analysis.begin}
 end:   ${forecast.end}
 
 nproma: 64
-irefra: 2
+lgribin: F
+lgribout: F
 
 forcings:
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O320.grib
@@ -33,6 +43,7 @@ forcings:
         timestep:  01:00
 
 currents:
+    file:  data/forcings/daily_average_surface_currents_ORAS6_20221231_20230102_O320.grib
     input_step: 86400 
 
 output:
@@ -52,7 +63,7 @@ output:
     restart:
         format: binary # (default : binary) or grib
         at:
-          - time: ${end}
+          - time: ${analysis.end}
 
 
 validation:
@@ -62,31 +73,31 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 0.1334550046812762E+01
+      average: 0.3989519075200000E-00
       relative_tolerance: 1.e-14
       hashes: ['0x3FF55A51265EFA31']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1522843092815532E+01
+      average: 0.1101270486170951E+01
       relative_tolerance: 1.e-14
       hashes: ['0x3FF85D90B80950B2']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1602510880624898E+01
+      average: 0.1268335673012586E+01
       relative_tolerance: 1.e-14
       hashes: ['0x3FF9A3E272FC4A20']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.1582275045416100E-01
+      minimum: 0.1588329468551577E-01
       relative_tolerance: 1.e-14
       hashes: ['0x3F9033D6CEEEFDF6']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.7461369035298830E+01
+      maximum: 0.6931935014221872E+01
       relative_tolerance: 1.e-14
       hashes: ['0x401DD8711FD7FB70']
 

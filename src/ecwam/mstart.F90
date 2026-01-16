@@ -10,6 +10,7 @@
       SUBROUTINE MSTART (IOPTI, FETCH, FRMAX, THETAQ,     &
      &                   FM, ALFA, ZGAMMA, SA, SB,        &
      &                   KIJS, KIJL, FL1,                 &
+     &                   CICOVER,                         &
      &                   WSWAVE, WDWAVE) 
 ! ----------------------------------------------------------------------
 
@@ -44,6 +45,7 @@
 !      *SB*     REAL      RIGHT PEAK WIDTH.
 
 !      *FL1*    REAL      2-D SPECTRUM FOR EACH GRID POINT 
+!      *CICOVER*REAL      SEA ICE COVER. 
 !      *WSWAVE* REAL      WIND SPEED. 
 !      *WDWAVE* REAL      WIND DIRECTION. 
 
@@ -69,6 +71,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE
       USE YOWPCONS , ONLY : DEG
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
@@ -84,11 +87,12 @@
 
       REAL(KIND=JWRB), INTENT(IN) :: FETCH, FRMAX, THETAQ
       REAL(KIND=JWRB), INTENT(IN) :: FM, ALFA, ZGAMMA, SA, SB
-      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: WSWAVE, WDWAVE
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER, WSWAVE, WDWAVE
       REAL(KIND=JWRB),DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(OUT) :: FL1
 
 
       INTEGER(KIND=JWIM) :: M, K, IJ, NGOU
+      REAL(KIND=JWRB) :: CILIMIT
       REAL(KIND=JWRB),DIMENSION(KIJS:KIJL) :: FP, ALPHAJ, THES
 
       CHARACTER(LEN=14), PARAMETER :: ZERO='              '
@@ -134,5 +138,24 @@
 !*    2.2 COMPUTE SPECTRA FROM PARAMETERS.
 !         --------------------------------
         CALL SPECTRA (KIJS, KIJL, ZGAMMA, SA, SB, FP, ALPHAJ, THES, FL1)
+
+        IF (LICERUN) THEN
+!         REDUCE JOSNWAP IN SEA ICE
+          IF (LMASKICE) THEN
+            CILIMIT=0.3_JWRB
+          ELSE
+            CILIMIT=0.0_JWRB
+          ENDIF
+
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IJ=KIJS,KIJL
+                IF (CICOVER(IJ) > CILIMIT) THEN
+                  FL1(IJ,K,M) =  MAX((1.0_JWRB - CICOVER(IJ)) * FL1(IJ,K,M), 0.0_JWRB)
+                ENDIF
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDIF
 
       END SUBROUTINE MSTART

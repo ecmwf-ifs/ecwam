@@ -30,11 +30,26 @@ endofrn=$(read_config end                 --format="%Y%m%d%H%M%S")
 begoffo=$(read_config forcing.at[1].begin --format="%Y%m%d%H%M%S" --default=${endofrn} )
 
 find_preproc_files
-find_preset_files ${begofrn}
 
-lgribin=F
-lgribout=F
+lgribin=$(read_config lgribin --default=F)
+lgribout=$(read_config lgribout --default=F)
+# Note that lnocdin=T is only meaningful for grib restart (lgribin=T) (rather than pure binary)
+# for which the model drag coefficient and the corresponding 10m wind speed are not available 
+# For cycling the runs, one will need to extract the relevant parameters from the grib output MPP*
+# and place them in the relevant CDWAVEIN* and UWAVEIN* files 
 lnocdin=T
+
+
+if [[ ${lgribin} = T ]]; then
+  if [[ ${lnocdin} = T ]]; then
+    initial_file_header_list="SGS"
+  else
+    initial_file_header_list="SGS CDWAVEIN UWAVEIN"
+  fi
+else
+  initial_file_header_list="LAW BLS"
+fi
+find_preset_files ${begofrn} ${initial_file_header_list}
 
 output_fields=$(read_config output.fields.name[:] --default="")
 output_statistics=$(read_config output.statistics.name[:] --default="")
@@ -81,17 +96,21 @@ done
 cldomain=$(read_config cldomain --default=g)
 wamnang=$(read_config directions)
 wamnfre=$(read_config frequencies)
-fr1=$(read_config fr1 --default=4.177248E-02)
+fr1=$(read_config fr1/ --default=4.177248E-02)
 ifre1=$(read_config ifre1 --default=1)
+lsubgrid=$(read_config lsubgrid --default=T)
+irefra=$(read_config advection.irefra --default=0)
+
+iphys=$(read_config physics.iphys --default=1)
+llgcbz0=$(read_config physics.llgcbz0 --default=F)
+llnormagam=$(read_config physics.llnormagam --default=F)
+lmaskice=$(read_config physics.lmaskice --default=T)
+lciwa1=$(read_config physics.lciwa1 --default=F)
+lciwa2=$(read_config physics.lciwa2 --default=F)
+lciwa3=$(read_config physics.lciwa3 --default=F)
+lciscal=$(read_config physics.lciscal --default=F)
+
 nproma=$(read_config nproma --default=24)
-iphys=$(read_config iphys --default=1)
-llgcbz0=$(read_config llgcbz0 --default=F)
-llnormagam=$(read_config llnormagam --default=F)
-irefra=$(read_config irefra --default=0)
-lciwa1=$(read_config lciwa1 --default=F)
-lciwa2=$(read_config lciwa2 --default=F)
-lciwa3=$(read_config lciwa3 --default=F)
-lciscal=$(read_config lciscal --default=F)
 
 # read timesteps
 phys_tstp=$(read_config physics.timestep --format=seconds --default=900)
@@ -119,6 +138,7 @@ fi
 ppfreq=$(read_config output.fields.at[0].timestep --format=hours --default=02:00)
 
 forcings_file=$(read_config forcings.file)
+currents_file=$(read_config currents.file --default=NOTFOUND )
 
 function cleanup() {
   shopt -s nullglob
@@ -146,7 +166,7 @@ function cleanup() {
   done
 
   mkdir -p ${RUN_DIR}/restart/
-  for outfile in ${WORK_DIR}/LAW* ${WORK_DIR}/BLS*; do
+  for outfile in ${WORK_DIR}/LAW* ${WORK_DIR}/BLS* ${WORK_DIR}/SGS* ; do
     mv ${outfile} ${RUN_DIR}/restart/
   done
 
@@ -187,14 +207,33 @@ done
 # Initial stress and spectrum
 #############################
 
-for preset_file in LAW${begofrn}_000000000000 BLS${begofrn}_000000000000; do
+rm -rf specwavein cdwavein uwavein
+
+for header in ${initial_file_header_list}; do
+  preset_file=${header}${begofrn}_000000000000
+
   if [[ -r ${RUN_DIR}/restart/${preset_file} ]] ; then
-    ln -sf ${RUN_DIR}/restart/${preset_file} ${preset_file}
+    if [[ ${lgribin} = T ]]; then
+      # Grib restart files
+      if [[ ${header} = SGS ]] ; then
+        ln -sf ${RUN_DIR}/restart/${preset_file} specwavein
+      elif [[ ${header} = CDWAVEIN ]] ; then
+        ln -sf ${RUN_DIR}/restart/${preset_file} cdwavein 
+      elif [[ ${header} = UWAVEIN ]] ; then
+        ln -sf ${RUN_DIR}/restart/${preset_file} uwavein 
+      else
+        ln -sf ${RUN_DIR}/restart/${preset_file} ${preset_file}
+      fi
+    else
+      # Pure binary restart files
+      ln -sf ${RUN_DIR}/restart/${preset_file} ${preset_file}
+    fi
   else
     echo "\n\n\tPRESET FILE ${preset_file} was not found in ${RUN_DIR}/restart"
     trace_ls ${RUN_DIR}/restart
     exit 1
   fi
+
 done
 
 # Forcing
@@ -206,6 +245,18 @@ log ${SCRIPTS_DIR}/ecwam_retrieve.sh ${forcings_file} ${DATA_DIR}/${forcings_fil
 }
 
 ln -s ${DATA_DIR}/${forcings_file} sfcwindin
+
+
+# Surface currents (if needed)
+##############################
+if [ "${currents_file}" != NOTFOUND ]; then
+  log ${SCRIPTS_DIR}/ecwam_retrieve.sh ${currents_file} ${DATA_DIR}/${currents_file} || {
+    echo "ERROR: Could not retrieve surface currents ${currents_file}"
+    exit 4
+}
+
+  ln -s ${DATA_DIR}/${currents_file} currents 
+fi
 
 # NAMELIST
 ##########
@@ -239,14 +290,17 @@ cat > wam_namelist << EOF
   LLCAPCHNK             = T,
   LLGCBZ0               = ${llgcbz0},
   LLNORMAGAM            = ${llnormagam},
+  LCIWA1                = ${lciwa1},
+  LCIWA2                = ${lciwa2},
+  LCIWA3                = ${lciwa3},
+  LCISCAL               = ${lciscal},
   IPROPAGS              = 2,
-  LSUBGRID              = F,
+  LSUBGRID              = ${lsubgrid},
   IREFRA                = ${irefra},
   LICERUN               = ${licerun},
-  LMASKICE              = T,
+  LMASKICE              = ${lmaskice},
   LWAMRSETCI            = T,
   NGRIB_VERSION         = 2,
-  LL_GRID_SIMPLE_MATRIX = F,
   LLRSTGRIBPARAM        = F,
   YCLASS                = "rd",
   YEXPVER               = "wave",
@@ -266,10 +320,6 @@ cat > wam_namelist << EOF
   LLNORMWAMOUT          = T,
   LLNORMWAMOUT_GLOBAL   = T,
   CNORMWAMOUT_FILE      = "statistics.log",
-  LCIWA1                = ${lciwa1},
-  LCIWA2                = ${lciwa2},
-  LCIWA3                = ${lciwa3},
-  LCISCAL               = ${lciscal},
   ${OUTPUT_FLAGS}
 /
 ${NAWI}

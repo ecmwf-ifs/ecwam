@@ -5,14 +5,22 @@ frequencies: 36
 fr1:         0.055
 ifre1:       1
 bathymetry:  ETOPO1
+lsubgrid:    F
 
 advection:
+    irefra: 0
     timestep: 120
     fast_waves:
         timestep: 60
         max_frequency: 5
 physics:
+    iphys: 1
     timestep: 240
+    llgcbz0: T
+    llnormagam: T
+    lmaskice: F
+    lciwa3: T
+    lciscal: T
 
 analysis.begin: 2022-12-31 12:00:00
 analysis.end:   2023-01-01 00:00:00
@@ -23,10 +31,8 @@ begin: ${analysis.begin}
 end:   ${forecast.end}
 
 nproma: 24
-llgcbz0: T
-llnormagam: T
-lciwa3: T
-lciscal: T
+lgribin: F
+lgribout: F
 
 forcings:
     sea_ice: False 
@@ -58,7 +64,7 @@ output:
     restart:
         format: binary # (default : binary) or grib
         at:
-          - time: ${end}
+          - time: ${analysis.end}
 
 
 validation:
@@ -68,29 +74,29 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 3.187297962906810e-01
+      average: 3.188565402145367e-01
       relative_tolerance: 1.e-14
       hashes: ['0x3FD46611A8D511E4']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 2.302391668008772e-01 
+      average: 2.297867064718079e-01
       hashes: ['0x3FCD787A1DD582E1']
 
     # 6h into forcast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 2.536693790443732e-01 
+      average: 2.531205436037192e-01
       relative_tolerance: 1.e-14
       hashes: ['0x3FD03C1E7DBF8061']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 2.172002527339524e-02 
+      minimum: 1.261118225844372e-02
       relative_tolerance: 1.e-14
       hashes: ['0x3F963DC638DEBF23']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 9.275511810397952e-01 
+      maximum: 9.275915911218660e-01
       relative_tolerance: 1.e-14
       hashes: ['0x3FEDAE7FD07DD3BA']

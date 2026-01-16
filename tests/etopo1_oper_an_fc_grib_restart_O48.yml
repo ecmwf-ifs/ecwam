@@ -28,8 +28,8 @@ begin: ${analysis.begin}
 end:   ${forecast.end}
 
 nproma: 32
-lgribin: F
-lgribout: F
+lgribin: T
+lgribout: T
 
 forcings:
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O48.grib
@@ -69,23 +69,23 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 0.3832217447705822E+00 
+      average: 0.4060662972705505E+00 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD886B47F39F725']
+      hashes: ['0x3FD9FCFD7EB23AA2']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1059077112061130E+01
+      average: 0.1063234106230750E+01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF0F1FAD783EA34']
+      hashes: ['0x3FF10301C4240BBA']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1223563702803160E+01 
+      average: 0.1226326812216435E+01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF393B78881CBB7']
+      hashes: ['0x3FF39F08DD0AD71F']
     - name: swh
       time: 2023-01-01 06:00:00
       minimum: 0.4326539111291028E-02
@@ -93,9 +93,9 @@ validation:
       hashes: ['0x3F9382527C89D368']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.6511460010823872E+01
+      maximum: 0.6512642507920472E+01 
       relative_tolerance: 1.e-14
-      hashes: ['0x401B3A7CE5412342']
+      hashes: ['0x401A0CF228583B3C']
 
   single_precision:
 

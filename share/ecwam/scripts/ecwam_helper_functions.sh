@@ -97,17 +97,19 @@ function find_preproc_files() {
 
 function find_preset_files() {
   date=${1}
+  header_list=${2}
   SEARCH_LOCATION=${ECWAM_PRESET_RUN_DIR:-${RUN_DIR}}
   found=true
-  files=(restart/LAW${date}_000000000000 restart/BLS${date}_000000000000)
-  for file in "${files[@]}"; do
+  for header in "${header_list}"; do
+    file="restart/${header}${date}_000000000000"
     if [[ ! ( -r ${SEARCH_LOCATION}/${file} ) ]] ; then
       found=false
     fi
   done
   if $found ; then
     mkdir -p ${RUN_DIR}/restart
-    for file in "${files[@]}"; do
+    for header in "${header_list}"; do
+      file="restart/${header}${date}_000000000000"
       if [[ ! ( -r ${RUN_DIR}/${file} ) ]] ; then
         echo "        ln -sf ${SEARCH_LOCATION}/${file} ${RUN_DIR}/${file}"
         ln -sf ${SEARCH_LOCATION}/${file} ${RUN_DIR}/${file}
@@ -116,7 +118,8 @@ function find_preset_files() {
   else
     builtin echo
     builtin echo "ERROR: Initial condition files not found in ${SEARCH_LOCATION}:"
-    for file in "${files[@]}"; do
+    for header in "${header_list}"; do
+      file="restart/${header}${date}_000000000000"
       if [[ ! ( -r ${SEARCH_LOCATION}/${file} ) ]] ; then
         builtin echo "         - ${file}"
       fi

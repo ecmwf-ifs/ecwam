@@ -156,8 +156,14 @@ forcings_file=$(read_config forcings.file)
 opti=1
 fetch=1200.0
 fmax=0.4000000
+lmaskice=$(read_config lmaskice --default=T)
+if [[ $(read_config forcings.sea_ice --default=True) == "True" ]] ; then
+  licerun=T
+else
+  licerun=F
+fi
 llunstr=F
-lgribout=F
+lgribout=$(read_config lgribout --default=F)
 
 assert_executable_is_available ${PRESET}-${prec} || abort 4
 
@@ -208,6 +214,8 @@ cat > PREINFO <<EOF
  SB        = 9.000000E-02
  THETA     = 0.0
  FETCH     = ${fetch}
+ LICERUN   = ${licerun},
+ LMASKICE  = ${lmaskice},
  LLUNSTR   = ${llunstr}
  ! IDELWI    =  21600
  CLTUNIT   = "S"
