@@ -47,13 +47,13 @@ parameters:
         mpts:
                 index: 16
                 description: Mean period of total swell
-        '017':
+        awh:
                 index: 17
                 description: Altimeter wave height
-        '018':
+        acwh':
                 index: 18
                 description: Corrected altimeter wave height
-        '019':
+        arrc:
                 index: 19
                 description: Altimeter range correction
         mp1:
@@ -113,124 +113,132 @@ parameters:
         vcu:
                 index: 38
                 description: Northward sea water velocity
-        '039':
+        phioc:
                 index: 39
                 description: Normalised energy flux to ocean
-        '040':
+        phiaw:
                 index: 40
                 description: Normalised energy flux to waves
-        '041':
+        tauoc:
                 index: 41
                 description: Normalised momentum flux to ocean
-        '042':
+        swh1:
                 index: 42
                 description: Swell partition 1 wave height
-        '043':
+        mwd1:
                 index: 43
                 description: Swell partition 1 direction
-        '044':
+        mwp1:
                 index: 44
                 description: Swell partition 1 mean period
-        '045':
+        swh2:
                 index: 45
                 description: Swell partition 2 wave height
-        '046':
+        mwd2:
                 index: 46
                 description: Swell partition 2 direction
-        '047':
+        mwp2:
                 index: 47
                 description: Swell partition 2 mean period
-        '048':
+        swh3:
                 index: 48
                 description: Swell partition 3 wave height
-        '049':
+        mwd3:
                 index: 49
                 description: Swell partition 3 direction
-        '050':
+        mwp3:
                 index: 50
                 description: Swell partition 3 mean period
-        '051':
+        mswsi:
                 index: 51
                 description: Mean square strain in ice
-        '052':
+        sh10:
                 index: 52
                 description: Wave height with period > 10s
-        '053':
+        rhoao:
                 index: 53
                 description: Surface air density
-        '054':
+        wstar:
                 index: 54
                 description: Convective velocity scale
         ci:
                 index: 55
                 description: Sea ice area fraction
-        '056':
+        sithick:
                 index: 56
                 description: Sea ice thickness
-        '057':
+        wss:
                 index: 57
                 description: Spectral skewness
-        sst:
+        sic:
                 index: 58
-                description: Specified sea surface temperature (NEMO)
+                description: Sea ice cover (NEMO)
         '059':
                 index: 59
-                description: Sea ice cover (NEMO)
-        '060':
-                index: 60
                 description: Sea ice thickness (NEMO)
         ucurr:
-                index: 61
+                index: 60
                 description: U-component of current (NEMO)
         vcurr:
-                index: 62
+                index: 61
                 description: V-component of current (NEMO)
-        '063':
-                index: 63
+        wefxm:
+                index: 62
                 description: Wave energy flux magnitude
-        '064':
-                index: 64
+        wefxd':
+                index: 63
                 description: Wave energy flux direction
-        '065':
-                index: 65
+        h1012:
+                index: 64
                 description: Significant wave height 10<=T<=12
-        '066':
-                index: 66
+        h1214:
+                index: 65
                 description: Significant wave height 12<=T<=14
-        '067':
-                index: 67
+        h1417:
+                index: 66
                 description: Significant wave height 14<=T<=17
-        '068':
-                index: 68
+        h1721:
+                index: 67
                 description: Significant wave height 17<=T<=21
-        '069':
-                index: 69
+        h2125:
+                index: 68
                 description: Significant wave height 21<=T<=25
-        '070':
-                index: 70
+        h2530:
+                index: 69
                 description: Significant wave height 25<=T<=30
-        '071':
-                index: 71
+        weta:
+                index: 70
                 description: Wave induced sea level correction
-        '072':
-                index: 72
+        wraf:
+                index: 71
                 description: Spectral width index
-        '073':
-                index: 73
+        wnslc:
+                index: 72
                 description: Number of freak waves events
-        '074':
-                index: 74
+        utaua:
+                index: 73
                 description: U-component atmospheric stress
-        '075':
-                index: 75
+        vtaua:
+                index: 74
                 description: V-component atmospheric stress
-        '076':
-                index: 76
+        utauo:
+                index: 75
                 description: U-component stress into oceans
-        '077':
-                index: 77
+        vtauo:
+                index: 76
                 description: V-component stress into oceans
-        '078':
-                index: 78
+        wphio:
+                index: 77
                 description: Turbulence energy flux into oceans
-
+        tdcmax:
+                index: 78
+                description: Time domain maximum crest height
+        tdhmax:
+                index: 79
+                description: Time domain maximum wave height
+        stcmax:
+                index: 80
+                description: Space time maximum crest type
+        sthmax:
+                index: 81
+                description: Space time maximum wave height
