@@ -230,16 +230,16 @@ parameters:
         '077':
                 index: 77
                 description: Turbulence energy flux into oceans
-        '078':
+        tdcmax:
                 index: 78
                 description: Time domain maximum crest height
-        '079':
+        tdhmax:
                 index: 79
                 description: Time domain maximum wave height
-        '080':
+        stcmax:
                 index: 80
-                description: Space time maximum crest type
-        '081':
+                description: Space time maximum crest height
+        sthmax:
                 index: 81
                 description: Space time maximum wave height
 
