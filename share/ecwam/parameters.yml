@@ -170,7 +170,7 @@ parameters:
         '057':
                 index: 57
                 description: Spectral skewness
-        '058':
+        sic:
                 index: 58
                 description: Sea ice cover (NEMO)
         '059':
