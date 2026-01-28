@@ -462,10 +462,10 @@ foreach( prec sp dp )
         PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
     )
 
-    ecwam_target_fortran_module_directory(
-        TARGET ecwam_${prec}
-        MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/ecwam_${prec}
-        INSTALL_DIRECTORY module/ecwam_${prec}
+    ecbuild_target_fortran_module_directory(
+        TARGET                   ecwam_${prec}
+        MODULE_DIRECTORY         ${CMAKE_BINARY_DIR}/module/ecwam_${prec}
+        INSTALL_MODULE_DIRECTORY module/ecwam_${prec}
     )
 
     if( HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
