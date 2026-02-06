@@ -98,6 +98,11 @@
         ENDIF
       ENDIF
 
+      ! exception for step 0 changes
+      IF ((.NOT. LANAONLY) .AND. (MARSTYPE == 'fc') .AND. (IASSI==1) .AND. (L4VTYPE)) THEN
+        MARSTYPE = '4v'
+      ENDIF         
+
       IF (LHOOK) CALL DR_HOOK('SETMARSTYPE',1,ZHOOK_HANDLE)
 
       END SUBROUTINE SETMARSTYPE

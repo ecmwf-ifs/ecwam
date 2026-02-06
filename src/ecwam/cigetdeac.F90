@@ -63,7 +63,6 @@
 
 !     ice thickness discretisation
       NICH=36
-      HICMIN=0.2_JWRB
       DHIC=0.1_JWRB
       
 !     wave period discretisation
