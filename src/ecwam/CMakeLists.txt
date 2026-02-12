@@ -274,6 +274,7 @@ list( APPEND ecwam_srcs
   w_pmax.F90
   wam_multio_mod.F90
   wam_nproma.F90
+  wam_plume_module.F90
   wam_sorti.F90
   wam_sortini.F90
   wam_u2l1cr.F90
@@ -428,6 +429,10 @@ endif()
 
 if( HAVE_SINGLE_PRECISION )
   list(APPEND ECWAM_DEFINITIONS WAM_HAVE_SINGLE_PRECISION )
+endif()
+
+if( HAVE_PLUME )
+  list( APPEND ECWAM_DEFINITIONS WITH_PLUME )
 endif()
 
 ecbuild_add_library(
