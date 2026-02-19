@@ -150,6 +150,8 @@ jobs:
                 git init
                 git remote add origin ${{ github.server_url }}/{{name}}
                 git fetch origin {{options['version']}}
+                echo "=====writing fetch_head======"
+                echo $FETCH_HEAD
                 git reset --hard FETCH_HEAD
 
                 cmake -G Ninja -S . -B build \
