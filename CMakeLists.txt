@@ -55,7 +55,8 @@ set( HAVE_sp ${HAVE_SINGLE_PRECISION} )
 
 ecbuild_add_option( FEATURE PLUME
                     DEFAULT OFF
-                    DESCRIPTION "Support for Plume plugins" )
+                    DESCRIPTION "Support for Plume plugins"
+                    REQUIRED_PACKAGES "plume" )
 
 
 ### Determine ocean model precision
