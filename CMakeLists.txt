@@ -56,7 +56,8 @@ ecbuild_add_option( FEATURE UNWAM
 
 ecbuild_add_option( FEATURE PLUME
                     DEFAULT OFF
-                    DESCRIPTION "Support for Plume plugins" )
+                    DESCRIPTION "Support for Plume plugins"
+                    REQUIRED_PACKAGES "plume" )
 
 ### Determine ocean model precision
 if( NOT DEFINED OCEAN_PREC )
