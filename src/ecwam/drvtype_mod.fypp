@@ -61,6 +61,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
       PROCEDURE :: SYNC_HOST_RDONLY => ${obj.upper()}$_SYNC_HOST_RDONLY
       PROCEDURE :: GET_DEVICE_DATA_RDWR => ${obj.upper()}$_GET_DEVICE_DATA_RDWR
       PROCEDURE :: GET_DEVICE_DATA_RDONLY => ${obj.upper()}$_GET_DEVICE_DATA_RDONLY
+      PROCEDURE :: GET_DEVICE_DATA_WRONLY => ${obj.upper()}$_GET_DEVICE_DATA_WRONLY
       PROCEDURE :: GET_HOST_DATA_RDWR => ${obj.upper()}$_GET_HOST_DATA_RDWR
       PROCEDURE :: GET_HOST_DATA_RDONLY => ${obj.upper()}$_GET_HOST_DATA_RDONLY
       PROCEDURE :: DELETE_DEVICE_DATA => ${obj.upper()}$_DELETE_DEVICE_DATA
@@ -151,6 +152,46 @@ MODULE ${obj.upper()}$_TYPE_MOD
       ENDIF
 
    END SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA_RDWR
+
+   SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA_WRONLY(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
+      CLASS(${obj.upper()}$) :: SELF
+      #:for _, vars in zip(_def['types'], _def['vars'])
+          #:for var in vars
+            #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
+            $:flag
+            #:set flag = '      LOGICAL :: ' + f'L_{var.upper()} = .FALSE.'
+            $:flag
+          #:endfor
+      #:endfor
+
+     #:for _, vars in zip(_def['types'], _def['vars'])
+         #:for var in vars
+     IF(PRESENT(${var.upper()}$)) L_${var.upper()}$ = ${var.upper()}$
+         #:endfor
+     #:endfor
+
+
+      IF(${'.OR.'.join(f'L_{var.upper()}' for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)THEN
+         !... copy only selected members
+         #:for _, vars in zip(_def['types'], _def['vars'])
+             #:for var in vars
+         IF(${f'L_{var.upper()}'}$)THEN
+             CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_WRONLY(SELF%${var.upper()}$)
+             !$acc enter data attach(SELF%${var.upper()}$)
+         ENDIF
+             #:endfor
+         #:endfor
+      ELSE
+         !... copy entire struct
+         #:for _, vars in zip(_def['types'], _def['vars'])
+             #:for var in vars
+         CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_WRONLY(SELF%${var.upper()}$)
+         !$acc enter data attach(SELF%${var.upper()}$)
+             #:endfor
+         #:endfor
+      ENDIF
+
+   END SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA_WRONLY
 
    SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA_RDONLY(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
       CLASS(${obj.upper()}$) :: SELF

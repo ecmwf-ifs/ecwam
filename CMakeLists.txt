@@ -7,7 +7,7 @@
 # nor does it submit to any jurisdiction.
 
 cmake_minimum_required( VERSION 3.24 FATAL_ERROR )
-find_package( ecbuild 3.4 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild )
+find_package( ecbuild 3.8 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild )
 
 # If the directory name matches ecwam_dp or ecwam_sp, that will be chosen as PROJECT_NAME instead
 get_filename_component( ecwam-source_dir ${CMAKE_CURRENT_SOURCE_DIR} NAME )

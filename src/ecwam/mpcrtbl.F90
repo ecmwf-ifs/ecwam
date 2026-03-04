@@ -249,11 +249,11 @@
                            & 'V-COMP SURFACE STOKES DRIFT' )
 
 !     PARAMETER 037
-      IR = DEFINE_PARAMETER( 37, 'ocu', 151131, 0, 0, 0, .False., .True., &
+      IR = DEFINE_PARAMETER( 37, 'ocu', 262140, 0, 0, 0, .False., .True., &
                            & 'U-COMP SURFACE CURRENT' )
 
 !     PARAMETER 038
-      IR = DEFINE_PARAMETER( 38, 'vcu', 151132, 0, 0, 0, .False., .True., &
+      IR = DEFINE_PARAMETER( 38, 'vcu', 262139, 0, 0, 0, .False., .True., &
                            & 'V-COMP SURFACE CURRENT' )
 
 !     PARAMETER 039
@@ -336,12 +336,12 @@
                            & 'SEA ICE COVER' )
 
 !     PARAMETER 056
-      IR = DEFINE_PARAMETER( 56, '056', 174098, 0, 0, 0, .False., .True., &
+      IR = DEFINE_PARAMETER( 56, '056', 262000, 0, 0, 0, .False., .True., &
                            & 'SEA ICE THICKNESS' )
 
 !     PARAMETER 057
       IR = DEFINE_PARAMETER( 57, '057', 140207, 0, 0, 0, .True., .True., &
-                           & 'SPECTRAL SKWENESS' )
+                           & 'SPECTRAL SKEWNESS' )
 
 !     PARAMETER 058
       IR = DEFINE_PARAMETER( 58, 'sic', 003091, 0, 0, 0, .False., .False., &

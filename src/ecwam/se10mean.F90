@@ -47,9 +47,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FLOGSPRDM1
+      USE YOWFRED  , ONLY : FR
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : EPSMIN
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -57,58 +56,22 @@
 
       IMPLICIT NONE
 
+#include "sebtmean.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJL, NANG, NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(OUT) :: E10
 
-
-      INTEGER(KIND=JWIM) :: IJ, M, K, MCUT
-
-      REAL(KIND=JWRB), PARAMETER :: FCUT=0.1_JWRB
-      REAL(KIND=JWRB) :: DFCUT
+      REAL(KIND=JWRB) :: TEWHMIN, TEWHMAX
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NFRE) :: DFIMLOC
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: TEMP
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('SE10MEAN',0,ZHOOK_HANDLE)
 
-      MCUT=NINT(LOG10(FCUT/FR(1))*FLOGSPRDM1)+1
-      MCUT=MIN(MAX(1,MCUT),NFRE)
-
-      DFIMLOC(:)=DFIM(:)
-      DFCUT=0.5_JWRB*MAX(0.0_JWRB,FCUT-0.5_JWRB*(FR(MAX(1,MCUT-1))+FR(MCUT)))
-      DFIMLOC(MCUT)=MIN(DFCUT*DELTH,DFIM(MCUT))
-
-
-!*    1. INITIALISE ENERGY ARRAY.
-!        ------------------------
-
-      DO IJ=KIJS,KIJL
-        E10(IJ) = EPSMIN 
-      ENDDO
-
-! ----------------------------------------------------------------------
-
-!*    2. INTEGRATE OVER FREQUENCIES AND DIRECTION.
-!        -----------------------------------------
-
-      DO M=1,MCUT
-        K=1
-        DO IJ=KIJS,KIJL
-          TEMP(IJ) = FL1(IJ,K,M)
-        ENDDO
-        DO K=2,NANG
-          DO IJ=KIJS,KIJL
-            TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,M)
-          ENDDO
-        ENDDO
-        DO IJ=KIJS,KIJL
-          E10(IJ) = E10(IJ)+DFIMLOC(M)*TEMP(IJ)
-        ENDDO
-      ENDDO
+      TEWHMIN = 10.0_JWRB
+      TEWHMAX = 1.0_JWRB / FR(1)
+      CALL SEBTMEAN (KIJS, KIJL, FL1, TEWHMIN, TEWHMAX, E10)
 
       IF (LHOOK) CALL DR_HOOK('SE10MEAN',1,ZHOOK_HANDLE)
 
