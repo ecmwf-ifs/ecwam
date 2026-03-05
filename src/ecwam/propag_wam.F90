@@ -117,7 +117,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 !!! the advection schemes are still written in block structure
 !!! mapping chuncks to block ONLY for actual grid points !!!!
 #ifdef _OPENACC
-        !$acc parallel loop private(KIJS, IJSB, KIJL, IJLB)
+        !$acc parallel loop gang private(KIJS, IJSB, KIJL, IJLB) vector_length(NPROMA_WAM)
 #else
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K)
 #endif /*_OPENACC*/
@@ -126,10 +126,12 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
           IJSB = IJFROMCHNK(KIJS, ICHNK)
           KIJL = KIJL4CHNK(ICHNK)
           IJLB = IJFROMCHNK(KIJL, ICHNK)
-          !$acc loop independent collapse(2)
           DO M = 1, NFRE_RED
             DO K = 1, NANG
-              FL1_EXT(IJSB:IJLB, K, M) = FL1(KIJS:KIJL, K, M, ICHNK)
+              !$acc loop vector
+              DO IJ = KIJS,KIJL
+                FL1_EXT(IJ-KIJS+IJSB, K, M) = FL1(IJ, K, M, ICHNK)
+              ENDDO
             ENDDO
           ENDDO
         ENDDO
@@ -264,16 +266,16 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                DO WHILE (ISUBST <= NSTEP_LF)
 
 #ifdef _OPENACC
-!$acc kernels loop private(KIJS, KIJL)
+!$acc parallel loop gang private(KIJS, KIJL) vector_length(NPROMA)
 #else
 !$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, M, K, IJ)
 #endif /*_OPENACC*/
                  DO JKGLO = IJSG, IJLG, NPROMA
                    KIJS=JKGLO
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
-                   !$acc loop independent collapse(3)
                    DO M = ND3S, ND3E
                      DO K = 1, NANG
+                       !$acc loop vector
                        DO IJ = KIJS, KIJL
                          FL1_EXT(IJ, K, M) = FL3_EXT(IJ, K, M)
                        ENDDO
@@ -281,7 +283,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                    ENDDO
                  ENDDO
 #ifdef _OPENACC
-!$acc end kernels
+!$acc end parallel loop
 #else
 !$OMP            END PARALLEL DO
 #endif /*_OPENACC*/
