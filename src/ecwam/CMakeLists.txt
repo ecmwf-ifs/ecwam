@@ -430,6 +430,11 @@ if( HAVE_SINGLE_PRECISION )
   list(APPEND ECWAM_DEFINITIONS WAM_HAVE_SINGLE_PRECISION )
 endif()
 
+if( HAVE_PLUME )
+  list( APPEND ecwam_srcs wam_plume_module.F90 )
+  list( APPEND ECWAM_DEFINITIONS WITH_PLUME )
+endif()
+
 ecbuild_add_library(
     TARGET           ${ecwam}
     SOURCES          ${ecwam_srcs}
