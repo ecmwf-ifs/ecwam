@@ -69,6 +69,7 @@ list( APPEND ecwam_srcs
   current2wam.F90
   depthprpt.F90
   difdate.F90
+  dmeansqs_lf.F90
   dominant_period.F90
   expand_string.F90
   femean.F90

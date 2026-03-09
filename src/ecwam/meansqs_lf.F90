@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE MEANSQS_LF(NFRE_EFF, KIJS, KIJL, F, WAVNUM, XMSS)
+      SUBROUTINE MEANSQS_LF(NFRE_EFF, KIJS, KIJL, F, WAVNUM, XMSS, WANG)
 
 ! ----------------------------------------------------------------------
 
@@ -22,12 +22,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MEANSQS_LF (NFRE_EFF, KIJS, KIJL, F, WAVNUM, XMSS)*
+!              *CALL* *MEANSQS_LF (NFRE_EFF, KIJS, KIJL, F, WAVNUM, XMSS [,WANG])*
 !              *XKMSS*   - WAVE NUMBER CUT OFF
 !              *KIJS*    - INDEX OF FIRST GRIDPOINT
 !              *KIJL*    - INDEX OF LAST GRIDPOINT
 !              *F*       - SPECTRUM.
 !              *WAVNUM*  - WAVE NUMBER.
+!              *WANG*    - ANGULAR WEIGHTING (FOR DIRECTIONAL MSS)
 !              *XMSS*    - MEAN SQUARE SLOPE (OUTPUT).
 
 !     METHOD.
@@ -62,7 +63,8 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: F
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM 
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(OUT) :: XMSS 
+      REAL(KIND=JWRB), DIMENSION(NANG), INTENT(IN), OPTIONAL :: WANG
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(OUT) :: XMSS
 
 
       INTEGER(KIND=JWIM) :: IJ, M, K, KFRE
@@ -70,6 +72,7 @@
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FD
       REAL(KIND=JWRB), DIMENSION(KIJL) :: TEMP1, TEMP2
+      REAL(KIND=JWRB), DIMENSION(NANG) :: ZWANG
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('MEANSQS_LF',0,ZHOOK_HANDLE)
@@ -81,6 +84,12 @@
 
       XMSS(KIJS:KIJL) = 0.0_JWRB
 
+      IF (PRESENT(WANG)) THEN
+        ZWANG(:) = WANG(:)
+      ELSE
+        ZWANG(:) = 1.0_JWRB
+      ENDIF
+
 !*    2.2 SHALLOW WATER INTEGRATION.
 !         --------------------------
 
@@ -91,7 +100,7 @@
           ENDDO
           DO K = 1, NANG
             DO IJ = KIJS, KIJL
-              TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
+              TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)*ZWANG(K)
             ENDDO
           ENDDO
           DO IJ = KIJS, KIJL

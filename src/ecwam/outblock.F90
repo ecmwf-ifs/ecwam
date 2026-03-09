@@ -79,6 +79,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
 #include "cal_second_order_spec.intfb.h"
 #include "cimsstrn.intfb.h"
 #include "ctcor.intfb.h"
+#include "dmeansqs_lf.intfb.h"
 #include "dominant_period.intfb.h"
 #include "femean.intfb.h"
 #include "ibrmemout.intfb.h"
@@ -129,7 +130,6 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
       REAL(KIND=JWRB), PARAMETER :: PMWPICE=12.5_JWRB       ! Mean wave period default value in sea ice
       REAL(KIND=JWRB) :: SIG
       REAL(KIND=JWRB) :: GOZPI 
-      REAL(KIND=JWRB) :: XMODEL_CUTOFF
       REAL(KIND=JWRB) :: TEWHMIN, TEWHMAX
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(KIJL) :: SWH, EM, FM, DP
@@ -146,6 +146,8 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
       REAL(KIND=JWRB), DIMENSION(KIJL,NTRAIN) :: EMTRAIN
       REAL(KIND=JWRB), DIMENSION(KIJL,NTRAIN) :: THTRAIN, PMTRAIN
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: COSWDIF
+
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: MSSXX, MSSYY, MSSXY
 
 !     *FL2ND*  SPECTRUM with second order effect added if LSECONDORDER is true .
 !            and in the absolute frame of reference if currents are used
@@ -615,26 +617,32 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 
 !     COMPUTE OUTPUT EXTRA FIELDS
 !     add necessary code to compute the extra output fields
-!!!for testing
+
+! CURRENTLY BEING USED TO TEST MSS CALCULATIONS
+
+! MEAN SQUARE SLOPE CALCULATED WITH NO CUT-OFF (I.E. NO TAIL OR GC CONTRIBUTIONS)
       IF (IPFGTBL(68 + 3*NTRAIN + NTEWH) /= 0) THEN
-        CALL CTCOR (KIJS, KIJL, FL1, BOUT(:,ITOBOUT(68 + 3*NTRAIN + NTEWH)))
+        CALL MEANSQS (0.0_JWRB, KIJS, KIJL, FL1, WAVNUM, UFRIC, WSWAVE, COSWDIF, BOUT(:,ITOBOUT(68 + 3*NTRAIN + NTEWH)))
       ENDIF
 
+! MSSXX
       IF (IPFGTBL(69 + 3*NTRAIN + NTEWH) /= 0) THEN
-        XMODEL_CUTOFF=(ZPI*FR(NFRE))**2/G
-        CALL MEANSQS (XMODEL_CUTOFF, KIJS, KIJL, FL1, WAVNUM, UFRIC, WSWAVE, COSWDIF, BOUT(:,ITOBOUT(69 + 3*NTRAIN + NTEWH)))
+        CALL DMEANSQS_LF (0.0_JWRB, KIJS, KIJL, FL1, WAVNUM, BOUT(:,ITOBOUT(69 + 3*NTRAIN + NTEWH)), MSSYY, MSSXY)
       ENDIF
 
+! MSSYY
       IF (IPFGTBL(70 + 3*NTRAIN + NTEWH) /= 0) THEN
-        CALL IBRMEMOUT (KIJS, KIJL, IBRMEM, CICOVER, BOUT(:,ITOBOUT(70 + 3*NTRAIN + NTEWH)))
+        CALL DMEANSQS_LF (0.0_JWRB, KIJS, KIJL, FL1, WAVNUM, MSSXX, BOUT(:,ITOBOUT(70 + 3*NTRAIN + NTEWH)), MSSXY)
       ENDIF
 
+! MSSXY
       IF (IPFGTBL(71 + 3*NTRAIN + NTEWH) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(71 + 3*NTRAIN + NTEWH))=TAUICX(KIJS:KIJL)
+        CALL DMEANSQS_LF (0.0_JWRB, KIJS, KIJL, FL1, WAVNUM, MSSXX, MSSYY, BOUT(:,ITOBOUT(71 + 3*NTRAIN + NTEWH)))
       ENDIF
 
+! Something else: Cress-trough correlation
       IF (IPFGTBL(72 + 3*NTRAIN + NTEWH) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(72 + 3*NTRAIN + NTEWH))=TAUICY(KIJS:KIJL)
+        CALL CTCOR (KIJS, KIJL, FL1, BOUT(:,ITOBOUT(72 + 3*NTRAIN + NTEWH)))
       ENDIF
 !$loki end remove
 
