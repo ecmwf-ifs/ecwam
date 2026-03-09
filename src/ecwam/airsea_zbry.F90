@@ -53,7 +53,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM, ONLY : NANG     ,NFRE
-      USE YOWPHYS,  ONLY : XKAPPA, XNLEV
+      USE YOWPHYS,  ONLY : XKAPPA, XNLEV, ALPHA
       USE YOWSTAT,  ONLY : IPHYS2_AIRSEA, ZCDFAC
       USE YOWPCONS, ONLY : G
       USE YOWTEST,  ONLY : IU06
@@ -131,6 +131,8 @@
             END IF
       !
             Z0(IJ)  = ZNLEV * EXP ( -0.4_JWRB / SQRT(CD) )
+            Z0B(IJ) = ALPHA * (US(IJ)**2) / G  ! background roughness: Charnock
+
           ENDDO
 
         ! implementation of iterative scheme
