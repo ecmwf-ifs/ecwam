@@ -69,7 +69,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 !      -----------
 
 ! ----------------------------------------------------------------------
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWIB, JWRB, JWRU
 
       USE YOWGRIBHD, ONLY : NTRG2TMPD, NTRG2TMPP, LLRSTGRIBPARAM
 
@@ -136,6 +136,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       INTEGER(KIND=JWIM) :: IY2,IM2,ID2,IH2,IMN2,ISS2
       INTEGER(KIND=JWIM) :: IDUM, IRET, IERR
       INTEGER(KIND=JWIM) :: NWINOFF
+      INTEGER(KIND=JWIB) :: NWINOFF_B
       INTEGER(KIND=JWIM) :: NPROMA, MTHREADS, JC, JCS, JCL, JJ, ITHRS
 
 
@@ -331,8 +332,8 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
               IMN1=0
               ISS1=0
               WRITE(CDATE1,'(I4,5I2)')IY1,IM1,ID1,IH1,IMN1,ISS1
-              CALL DIFDATE(CDATE2,CDATE1,NWINOFF)
-              NWINOFF=NWINOFF/3600
+              CALL DIFDATE(CDATE2,CDATE1,NWINOFF_B)
+              NWINOFF=NWINOFF_B/3600
             ELSE
 !             this only works for 12 hour analysis windows !!!1
               IF (IH2+3 == 12 ) THEN

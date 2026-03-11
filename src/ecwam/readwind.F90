@@ -122,6 +122,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
                         & IGRIB_READ_FROM_FILE, &
                         & IGRIB_RELEASE
       USE YOWABORT, ONLY : WAM_ABORT
+      USE YOWINCDATE, ONLY : INCDATE
 
 ! --------------------------------------------------------------------- 
 
@@ -129,7 +130,6 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
 
 #include "abort1.intfb.h"
 #include "grib2wgrid.intfb.h"
-#include "incdate.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "kgribsize.intfb.h"
 

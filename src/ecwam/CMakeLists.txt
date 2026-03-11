@@ -98,7 +98,6 @@ list( APPEND ecwam_srcs
   headbc.F90
   imphftail.F90
   implsch.F90
-  incdate.F90
   inisnonlin.F90
   init_fieldg.F90
   init_sdiss_ardh.F90
@@ -332,6 +331,7 @@ list( APPEND ecwam_srcs
   yowgrid.F90
   yowgstats.F90
   yowice.F90
+  yowincdate.F90
   yowindn.F90
   yowintp.F90
   yowjons.F90

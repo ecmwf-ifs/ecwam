@@ -54,6 +54,7 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,              &
       USE YOWWIND  , ONLY : CDATEWL  ,CDTNEXT
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWINCDATE, ONLY : INCDATE
 
 ! ----------------------------------------------------------------------
 
@@ -61,7 +62,6 @@ SUBROUTINE NOTIM (CDTWIS, CDTWIE,              &
 
 #include "abort1.intfb.h"
 #include "getwnd.intfb.h"
-#include "incdate.intfb.h"
 
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE

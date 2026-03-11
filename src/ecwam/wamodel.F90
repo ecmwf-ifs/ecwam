@@ -46,7 +46,7 @@ SUBROUTINE WAMODEL (NADV, LINIONLY, LFRSTRST, LDSTOP, LDWRRE, BLK2GLO,&
 
 ! -------------------------------------------------------------------
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWIB, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : WVGRIDGLO, ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN, OCEAN2WAVE, TYPE_4D, &
                                MIJ_TYPE
@@ -95,6 +95,7 @@ SUBROUTINE WAMODEL (NADV, LINIONLY, LFRSTRST, LDSTOP, LDWRRE, BLK2GLO,&
 #ifdef WITH_PLUME   
       USE WAM_PLUME_MODULE, ONLY : COMPUTE_PLUME_FLDS, WAM_PLUGINS_RUN
 #endif
+      USE YOWINCDATE, ONLY : INCDATE
 
 
 ! ----------------------------------------------------------------------
@@ -110,7 +111,6 @@ SUBROUTINE WAMODEL (NADV, LINIONLY, LFRSTRST, LDSTOP, LDWRRE, BLK2GLO,&
 #include "gsfile_new.intfb.h"
 #include "headbc.intfb.h"
 #include "iwam_get_unit.intfb.h"
-#include "incdate.intfb.h"
 #include "outbc.intfb.h"
 #include "outspec.intfb.h"
 #include "outstep0.intfb.h"

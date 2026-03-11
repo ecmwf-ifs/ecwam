@@ -69,16 +69,21 @@
 
 !----------------------------------------------------------------------
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWIB, JWRB, JWRU
       USE YOWABORT, ONLY : WAM_ABORT
+      USE YOWINCDATE, ONLY : INCDATE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 !----------------------------------------------------------------------
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "incdate.intfb.h"
 
-      INTEGER(KIND=JWIM) :: M, IL, ISI, IDUM, IRET, ISHIFT, KSHIFT
+! Dummy arguments
+      CHARACTER(LEN=*), INTENT(IN) :: CDATE1, CDATE2
+      INTEGER(KIND=JWIB), INTENT(OUT) :: KSHIFT
+
+! Local variables
+      INTEGER(KIND=JWIM) :: M, IL, ISI, IDUM, IRET, ISHIFT
       INTEGER(KIND=JWIM) :: IYEAR ,IMON ,IDAY ,IHOUR ,IMIN ,ISEC
       INTEGER(KIND=JWIM) :: IYEAR1,IMON1,IDAY1,IHOUR1,IMIN1,ISEC1
       INTEGER(KIND=JWIM) :: IYEAR2,IMON2,IDAY2,IHOUR2,IMIN2,ISEC2
@@ -86,7 +91,6 @@
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
-      CHARACTER(LEN=*) :: CDATE1, CDATE2
       CHARACTER(LEN=14) :: CDT1, CDT2
       CHARACTER(LEN=80) :: CLFMT
 

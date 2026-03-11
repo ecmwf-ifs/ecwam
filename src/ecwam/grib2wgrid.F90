@@ -102,6 +102,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
       USE YOWGRIB   ,ONLY : IGRIB_GET_VALUE, IGRIB_SET_VALUE, JPGRIB_SUCCESS
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWINCDATE, ONLY : INCDATE
                                                                         
 ! ----------------------------------------------------------------------
 
@@ -109,7 +110,6 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
 #include "abort1.intfb.h"
 #include "adjust.intfb.h"
-#include "incdate.intfb.h"
 #include "wstream_strg.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, KPROMA, KGRIB_HANDLE, ISIZE
