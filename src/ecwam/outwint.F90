@@ -26,11 +26,10 @@ SUBROUTINE OUTWINT(BOUT)
 !     -------
 
 ! ----------------------------------------------------------------------
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWIB, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
       USE YOWCOUP  , ONLY : LWCOU, LIFS_IO_SERV_ENABLED, OUTINT_IO_SERV
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWCOUT  , ONLY : JPPFLAG ,NIPRMOUT , NINFOBOUT,              &
      &                      INFOBOUT,LWAM_USE_IO_SERV
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
@@ -38,6 +37,7 @@ SUBROUTINE OUTWINT(BOUT)
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK, DR_HOOK, JPHOOK
       USE YOWABORT, ONLY : WAM_ABORT
+      USE YOWINCDATE, ONLY : INCDATE
 
 ! ----------------------------------------------------------------------
 
@@ -45,13 +45,13 @@ SUBROUTINE OUTWINT(BOUT)
 
 #include "abort1.intfb.h"
 #include "difdate.intfb.h"
-#include "incdate.intfb.h"
 #include "outint.intfb.h"
 
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK), INTENT(IN) :: BOUT
 
 
       INTEGER(KIND=JWIM) :: IFCST, INHOUR, ISHIFT, IY, IM, ID, IH, IMN, ISS
+      INTEGER(KIND=JWIB) :: IFCST_B, ISHIFT_B
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -66,8 +66,8 @@ SUBROUTINE OUTWINT(BOUT)
         CDATE=CDATEA
         CDATED=CDATEA
         READ(CDATEA,'(I4,5I2)')IY,IM,ID,IH,IMN,ISS
-        CALL DIFDATE(CDATEA, CDTPRO, IFCST)
-        IFCST=IFCST/3600
+        CALL DIFDATE(CDATEA, CDTPRO, IFCST_B)
+        IFCST=IFCST_B/3600
       ELSEIF (CDTPRO <= CDATEF) THEN
 !*      THIS IS AN ANALYSIS DATE
         CDATE=CDTPRO
@@ -88,16 +88,16 @@ SUBROUTINE OUTWINT(BOUT)
         INHOUR=0
 !       FIND THE NUMBER OF FULL YEARS AND CONVERT THEM IN HOURS
         DO WHILE (CDATE2 < CDTPRO)
-          CALL DIFDATE(CDATE1, CDATE2, ISHIFT)
-          INHOUR=INHOUR+ISHIFT/3600
+          CALL DIFDATE(CDATE1, CDATE2, ISHIFT_B)
+          INHOUR=INHOUR+ISHIFT_B/3600
           CDATE1=CDATE2
           CDATE2=CDATE1(1:8)//'010000'
           CALL INCDATE(CDATE2,31622400) 
           CDATE2=CDATE2(1:8)//'010000'
         ENDDO
-        CALL DIFDATE(CDATE1, CDTPRO, IFCST)
-        IF(MOD(IFCST,3600) == 0 ) THEN
-          IFCST=IFCST/3600
+        CALL DIFDATE(CDATE1, CDTPRO, IFCST_B)
+        IF(MOD(IFCST_B,3600) == 0 ) THEN
+          IFCST=IFCST_B/3600
         ELSE
           WRITE(IU06,*) ' -----------------------------------------'
           WRITE(IU06,*) ' ERROR in routine OUTWINT :'

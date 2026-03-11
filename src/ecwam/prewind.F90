@@ -96,6 +96,7 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
 
       USE YOWABORT , ONLY : WAM_ABORT
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWINCDATE, ONLY : INCDATE
 
 
 ! ----------------------------------------------------------------------
@@ -105,7 +106,6 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
 #include "abort1.intfb.h"
 #include "getcurr.intfb.h"
 #include "getfrstwnd.intfb.h"
-#include "incdate.intfb.h"
 #include "init_fieldg.intfb.h"
 #include "notim.intfb.h"
 #include "recvnemofields.intfb.h"

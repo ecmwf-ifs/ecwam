@@ -39,7 +39,7 @@
 !
 !--------------------------------------------------------------------
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWIB, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,NFLAG     ,   &
      &            IPFGTBL  ,NIPRMOUT ,ITOBOUT  ,IRCD     ,IRU10     ,   &
@@ -61,7 +61,8 @@
 #include "difdate.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU06, IU_INTP
-      INTEGER(KIND=JWIM) :: ITIME, I, J
+      INTEGER(KIND=JWIB) :: ITIME
+      INTEGER(KIND=JWIM) :: I, J
       INTEGER(KIND=JWIM) :: IPHS, IPCD, IPU10, IPTP, IPT1, IPPHIAW, IPPHIOC, IPTAUOC, IPMSS
       INTEGER(KIND=JWIM) :: IPHSWS, IPT1WS, IPBATHY
 

@@ -70,6 +70,7 @@ SUBROUTINE NEWWIND (CDATE, CDATEWH, LLNEWFILE,           &
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWINCDATE, ONLY : INCDATE
 
 ! ----------------------------------------------------------------------
 
@@ -81,7 +82,6 @@ SUBROUTINE NEWWIND (CDATE, CDATEWH, LLNEWFILE,           &
 #else
 #include "cireduce.intfb.h"
 #endif
-#include "incdate.intfb.h"
 
       CHARACTER(LEN=14), INTENT(IN)    :: CDATE
       CHARACTER(LEN=14), INTENT(INOUT) :: CDATEWH

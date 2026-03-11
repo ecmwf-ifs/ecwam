@@ -44,7 +44,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 
 ! -------------------------------------------------------------------
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWIB, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : WVGRIDGLO, ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN, OCEAN2WAVE, TYPE_4D, &
                                MIJ_TYPE
@@ -90,6 +90,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       USE FIELD_ASYNC_MODULE, ONLY : WAIT_FOR_ASYNC_QUEUE
       USE FIELD_MODULE, ONLY : FIELD_3RB
       USE FIELD_FACTORY_MODULE, ONLY : FIELD_NEW, FIELD_DELETE
+      USE YOWINCDATE, ONLY : INCDATE
 
 
 ! ----------------------------------------------------------------------
@@ -105,7 +106,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #include "gsfile_new.intfb.h"
 #include "headbc.intfb.h"
 #include "iwam_get_unit.intfb.h"
-#include "incdate.intfb.h"
 #include "outbc.intfb.h"
 #include "outspec.intfb.h"
 #include "outstep0.intfb.h"
