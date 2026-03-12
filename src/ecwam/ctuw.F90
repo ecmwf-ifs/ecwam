@@ -814,6 +814,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
 !       =1 IF A AND B HAVE THE SAME SIGN, 0 OTHERWISE
         USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
         IMPLICIT NONE
+#ifdef OMPGPU
+        !$omp declare target
+#else
+        !$acc routine seq
+#endif
 
         REAL(KIND=JWRB), INTENT(IN) :: A,B
 
