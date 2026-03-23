@@ -70,7 +70,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
 ! ----------------------------------------------------------------------
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWIB, JWRB, JWRU
 
       USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH, &
      &            ALTGRTHRSH,HSALTCUT, LALTGRDOUT, LALTPAS, LALTPASSIV, &
@@ -153,6 +153,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE EC_LUN   , ONLY : NULERR
       USE YOWABORT, ONLY : WAM_ABORT
+      USE YOWDATE_UTILS, ONLY : DIFDATE
       USE YOWGRIB , ONLY : IGRIB_GET_VALUE
 
 ! ----------------------------------------------------------------------
@@ -161,7 +162,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
 #include "abort1.intfb.h"
 #include "chkoops.intfb.h"
-#include "difdate.intfb.h"
 #include "initgc.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "mpcrtbl.intfb.h"
@@ -177,7 +177,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       INTEGER(KIND=JWIM) :: LEN
       INTEGER(KIND=JWIM) :: IFS_STREAM, KSTREAM
       INTEGER(KIND=JWIM) :: IDELT_NEW
-      INTEGER(KIND=JWIM) :: ISHIFT
+      INTEGER(KIND=JWIB) :: ISHIFT
       INTEGER(KIND=JWIM) :: IDELPRO_NEW
       INTEGER(KIND=JWIM) :: MINBUFRSAT, MAXBUFRSAT
       INTEGER(KIND=JWIM) :: IUWDFILE

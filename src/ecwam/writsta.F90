@@ -63,7 +63,7 @@
 
 !---------------------------------------------------------------------- 
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWIB, JWRB, JWRU
 
       USE YOWCARD  , ONLY : JPCL     ,CARD
 
@@ -72,7 +72,7 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IDIN, IS, IASS, NF 
-      INTEGER(KIND=JWIM), INTENT(IN) :: ANALPD, FOREPD
+      INTEGER(KIND=JWIB), INTENT(IN) :: ANALPD, FOREPD
       INTEGER(KIND=JWIM), INTENT(IN) :: ISTAT(3)
       INTEGER(KIND=JWIM), INTENT(IN) :: NPROC_RST
 
@@ -95,10 +95,10 @@
       CARD(3)='REPRES=GG,'
 
       WRITE(CARD(4), 2) ANALPD                                          
-    2 FORMAT('ANALYSIS PERIOD = ',I7)        
+    2 FORMAT('ANALYSIS PERIOD = ',I12)        
                                                                         
       WRITE(CARD(5), 3) FOREPD                                          
-    3 FORMAT('FORECAST PERIOD = ',I10)         
+    3 FORMAT('FORECAST PERIOD = ',I12)         
                                                                         
       WRITE(CARD(6), 4) IS                                              
     4 FORMAT('WIND TIME STEP IN SECONDS = ',I7)
