@@ -229,7 +229,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE EC_LUN   , ONLY : NULERR
       USE OML_MOD  , ONLY : OML_GET_MAX_THREADS
-      USE YOWINCDATE, ONLY : INCDATE
+      USE YOWDATE_UTILS, ONLY : INCDATE
 
 ! -------------------------------------------------------------------
 

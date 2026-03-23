@@ -102,7 +102,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
       USE YOWGRIB   ,ONLY : IGRIB_GET_VALUE, IGRIB_SET_VALUE, JPGRIB_SUCCESS
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE YOWINCDATE, ONLY : INCDATE
+      USE YOWDATE_UTILS, ONLY : INCDATE
                                                                         
 ! ----------------------------------------------------------------------
 

@@ -91,7 +91,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWTEXT  , ONLY : PATH
-      USE YOWINCDATE, ONLY : INCDATE
+      USE YOWDATE_UTILS, ONLY : DIFDATE
+      USE YOWDATE_UTILS, ONLY : INCDATE
 
  
 ! ----------------------------------------------------------------------

@@ -96,7 +96,7 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
 
       USE YOWABORT , ONLY : WAM_ABORT
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE YOWINCDATE, ONLY : INCDATE
+      USE YOWDATE_UTILS, ONLY : INCDATE
 
 
 ! ----------------------------------------------------------------------

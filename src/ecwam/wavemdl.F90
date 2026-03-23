@@ -147,7 +147,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWASSI  , ONLY : WAMASSI
       USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_GATHERV
-      USE YOWINCDATE, ONLY : INCDATE
+      USE YOWDATE_UTILS, ONLY : DIFDATE
+      USE YOWDATE_UTILS, ONLY : INCDATE
 #ifdef WAM_HAVE_ECFLOW
       USE ECFLOW_LIGHT, ONLY : ECFLOW_LIGHT_UPDATE_METER
 #endif
@@ -157,7 +158,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
 
 #include "abort1.intfb.h"
 #include "chkoops.intfb.h"
-#include "difdate.intfb.h"
 #include "initmdl.intfb.h"
 #include "mpfldtoifs.intfb.h"
 #include "outbeta.intfb.h"

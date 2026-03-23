@@ -122,7 +122,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
                         & IGRIB_READ_FROM_FILE, &
                         & IGRIB_RELEASE
       USE YOWABORT, ONLY : WAM_ABORT
-      USE YOWINCDATE, ONLY : INCDATE
+      USE YOWDATE_UTILS, ONLY : INCDATE
 
 ! --------------------------------------------------------------------- 
 

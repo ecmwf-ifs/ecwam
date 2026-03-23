@@ -153,6 +153,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE EC_LUN   , ONLY : NULERR
       USE YOWABORT, ONLY : WAM_ABORT
+      USE YOWDATE_UTILS, ONLY : DIFDATE
       USE YOWGRIB , ONLY : IGRIB_GET_VALUE
 
 ! ----------------------------------------------------------------------
@@ -161,7 +162,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
 #include "abort1.intfb.h"
 #include "chkoops.intfb.h"
-#include "difdate.intfb.h"
 #include "initgc.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "mpcrtbl.intfb.h"

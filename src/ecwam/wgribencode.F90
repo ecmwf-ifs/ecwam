@@ -77,11 +77,11 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
       USE EC_LUN   , ONLY : NULERR
       USE OML_MOD  , ONLY : OML_GET_MAX_THREADS
+      USE YOWDATE_UTILS, ONLY : DIFDATE
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "difdate.intfb.h"
 #include "wgribencode_values.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, I1, I2

@@ -61,13 +61,13 @@ SUBROUTINE OUTSPEC (FL1, FF_NOW)
 
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
       USE YOWABORT, ONLY : WAM_ABORT
+      USE YOWDATE_UTILS, ONLY : DIFDATE
 
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
 #include "outwspec.intfb.h"
-#include "difdate.intfb.h"
 
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL1
       TYPE(FORCING_FIELDS), INTENT(IN) :: FF_NOW
