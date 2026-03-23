@@ -64,6 +64,7 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWIB, JWRB, JWRU
+      USE YOWDATE_UTILS, ONLY : DIFDATE
 
       IMPLICIT NONE
 

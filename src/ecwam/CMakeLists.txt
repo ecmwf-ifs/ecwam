@@ -69,7 +69,6 @@ list( APPEND ecwam_srcs
   ctuwupdt.F90
   current2wam.F90
   depthprpt.F90
-  difdate.F90
   dominant_period.F90
   expand_string.F90
   femean.F90
@@ -310,6 +309,7 @@ list( APPEND ecwam_srcs
   wvwaminit.F90
   wvwaminit1.F90
   yowabort.F90
+  yowdate_utils.F90
   yowaltas.F90
   yowassi.F90
   yowcard.F90

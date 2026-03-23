@@ -87,10 +87,11 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
       USE WAM_MULTIO_MOD, ONLY : WAM_MULTIO_FLUSH
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWABORT , ONLY : WAM_ABORT
+      USE YOWDATE_UTILS, ONLY : DIFDATE
       USE FIELD_ASYNC_MODULE, ONLY : WAIT_FOR_ASYNC_QUEUE
       USE FIELD_MODULE, ONLY : FIELD_3RB
       USE FIELD_FACTORY_MODULE, ONLY : FIELD_NEW, FIELD_DELETE
-      USE YOWINCDATE, ONLY : INCDATE
+      USE YOWDATE_UTILS, ONLY : INCDATE
 
 
 ! ----------------------------------------------------------------------
@@ -102,7 +103,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, BLK2GLO,             &
 #include "outwnorm.intfb.h"
 #include "abort1.intfb.h"
 #include "bouinpt.intfb.h"
-#include "difdate.intfb.h"
 #include "gsfile_new.intfb.h"
 #include "headbc.intfb.h"
 #include "iwam_get_unit.intfb.h"

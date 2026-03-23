@@ -52,6 +52,7 @@ USE YOWGRIB  , ONLY : JPKSIZE_T, &
                     & IGRIB_GET_MESSAGE_SIZE, &
                     & IGRIB_CLONE, &
                     & IGRIB_RELEASE
+USE YOWDATE_UTILS, ONLY : DIFDATE
 
 ! ----------------------------------------------------------------------
 
@@ -61,7 +62,6 @@ IMPLICIT NONE
 #include "outgrid.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 #include "wgribencode.intfb.h"
-#include "difdate.intfb.h"
 
 TYPE(OCEAN2WAVE), INTENT(IN), OPTIONAL :: NEMO2WAM
 TYPE(WAVE2OCEAN), INTENT(IN), OPTIONAL :: WAM2NEMO

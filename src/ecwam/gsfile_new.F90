@@ -81,12 +81,12 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWIB, JWRB, JWRU
 
       USE YOWTEXT  , ONLY : LRESTARTED,USERID   ,PATH
+      USE YOWDATE_UTILS, ONLY : DIFDATE
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "difdate.intfb.h"
 #include "file_transfer.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ICH

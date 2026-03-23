@@ -54,11 +54,11 @@
       USE YOWPHYS  , ONLY : XKAPPA   ,XNLEV    ,RNUM     ,ALPHAMIN
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWDATE_UTILS, ONLY : DIFDATE
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "difdate.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU06, IU_INTP
       INTEGER(KIND=JWIB) :: ITIME

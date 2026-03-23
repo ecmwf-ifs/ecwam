@@ -37,14 +37,14 @@ SUBROUTINE OUTWINT(BOUT)
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK, DR_HOOK, JPHOOK
       USE YOWABORT, ONLY : WAM_ABORT
-      USE YOWINCDATE, ONLY : INCDATE
+      USE YOWDATE_UTILS, ONLY : DIFDATE
+      USE YOWDATE_UTILS, ONLY : INCDATE
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
 #include "abort1.intfb.h"
-#include "difdate.intfb.h"
 #include "outint.intfb.h"
 
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NIPRMOUT, NCHNK), INTENT(IN) :: BOUT

@@ -71,7 +71,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE EC_LUN   , ONLY : NULERR
       USE MPL_MODULE, ONLY : MPL_ALLREDUCE
-      USE YOWINCDATE, ONLY : INCDATE
+      USE YOWDATE_UTILS, ONLY : INCDATE
 
 ! --------------------------------------------------------------------
 

@@ -70,7 +70,7 @@ SUBROUTINE NEWWIND (CDATE, CDATEWH, LLNEWFILE,           &
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE YOWINCDATE, ONLY : INCDATE
+      USE YOWDATE_UTILS, ONLY : INCDATE
 
 ! ----------------------------------------------------------------------
 

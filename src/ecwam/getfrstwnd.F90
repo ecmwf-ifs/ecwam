@@ -54,7 +54,7 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
       USE YOWWIND  , ONLY : CDATEWL
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE YOWINCDATE, ONLY : INCDATE
+      USE YOWDATE_UTILS, ONLY : INCDATE
 
 ! ----------------------------------------------------------------------
 
