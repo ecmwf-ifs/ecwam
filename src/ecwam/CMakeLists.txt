@@ -437,7 +437,7 @@ foreach( prec sp dp )
        else()
            string( TOUPPER "${prec}" _OCEAN_PREC )
        endif()
-       set( ${PNAME}_OCEANMODEL_LIBRARIES ${nemo_${_OCEAN_PREC}_COUPLING_LIBRARIES} )
+       set( ${PNAME}_OCEANMODEL_LIBRARIES nemogcmcoup.${_OCEAN_PREC} )
     endif()
 
     ecbuild_add_library(
