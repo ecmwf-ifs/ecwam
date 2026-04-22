@@ -185,7 +185,7 @@
 #ifdef WITH_GPU_AWARE_MPI
         ICOMM%MPI_VAL=MPL_COMM_OML(OML_MY_THREAD())
 #ifdef OMPGPU
-!$omp target data has_device_addr(ZCOMBUFR)
+!$omp target data use_device_addr(ZCOMBUFR)
 #else
 !$acc host_data use_device(ZCOMBUFR)
 #endif
@@ -213,7 +213,7 @@
 #ifdef WITH_GPU_AWARE_MPI
         ICOMM%MPI_VAL=MPL_COMM_OML(OML_MY_THREAD())
 #ifdef OMPGPU
-!$omp target data has_device_addr(ZCOMBUFS)
+!$omp target data use_device_addr(ZCOMBUFS)
 #else
 !$acc host_data use_device(ZCOMBUFS)
 #endif
