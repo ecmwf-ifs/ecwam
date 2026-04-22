@@ -90,7 +90,7 @@
 
       IF (.NOT. WVPRPT_LAND%LALLOC) CALL WVPRPT_LAND%ALLOC(WVPRPT_LAND, UBOUNDS=[NFRE])
 
-#ifdef WAM_HAVE_CUDA
+#ifdef WAM_HAVE_HIC
 !.... Enable pinning of fields in page-locked memory
       INIT_PINNED_VALUE=.FALSE.
 #endif
