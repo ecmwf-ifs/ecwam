@@ -9,15 +9,7 @@
 cmake_minimum_required( VERSION 3.24 FATAL_ERROR )
 find_package( ecbuild 3.8 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild )
 
-# If the directory name matches ecwam_dp or ecwam_sp, that will be chosen as PROJECT_NAME instead
-get_filename_component( ecwam-source_dir ${CMAKE_CURRENT_SOURCE_DIR} NAME )
-if( ecwam-source_dir MATCHES "ecwam_(dp|sp)" )
-  set( ECWAM_PROJECT_NAME ${ecwam-source_dir} )
-endif()
-
-if( NOT ECWAM_PROJECT_NAME )
-  set( ECWAM_PROJECT_NAME ecwam )
-endif()
+set( ECWAM_PROJECT_NAME ecwam )
 
 string( TOUPPER ${ECWAM_PROJECT_NAME} PNAME )
 set( ${PNAME}_ECBUILD_COMPILE_FLAGS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ecwam_init_flags.cmake CACHE FILEPATH "")
@@ -61,31 +53,13 @@ ecbuild_add_option( FEATURE UNWAM
 set( HAVE_dp ${HAVE_DOUBLE_PRECISION} )
 set( HAVE_sp ${HAVE_SINGLE_PRECISION} )
 
-# if built as part of ifs-bundle, build only precision requested via directory name
-if ( ${PROJECT_NAME} STREQUAL "ecwam_dp" )
-  unset( HAVE_sp )
-elseif( ${PROJECT_NAME} STREQUAL "ecwam_sp" )
-  unset( HAVE_dp )
-endif()
-
 ### Determine ocean model precision
-if( DEFINED OCEAN_PREC )
-  string( TOLOWER "${OCEAN_PREC}" ocean_prec )
-  set(nemo_prec "nemo_${ocean_prec}")
-else()
-  set(nemo_prec "")
-  if( HAVE_SINGLE_PRECISION )
-     set(nemo_prec "${nemo_prec};nemo_sp")
-  endif()
-  if( HAVE_DOUBLE_PRECISION )
-     set(nemo_prec "${nemo_prec};nemo_dp")
-  endif()
-endif()
-
+include( ecwam_find_nemo )
 ecbuild_add_option( FEATURE OCEAN_COUPLING
                     DEFAULT ON
                     DESCRIPTION "Support ocean coupling"
-                    REQUIRED_PACKAGES ${nemo_prec} )
+		    CONDITION nemo_found )
+
 
 ecbuild_add_option( FEATURE ECWAM_LAUNCH
                     DEFAULT ON
