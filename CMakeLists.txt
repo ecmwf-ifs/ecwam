@@ -54,11 +54,11 @@ set( HAVE_dp ${HAVE_DOUBLE_PRECISION} )
 set( HAVE_sp ${HAVE_SINGLE_PRECISION} )
 
 ### Determine ocean model precision
-include( ecwam_find_nemo )
+ecwam_find_nemo()
 ecbuild_add_option( FEATURE OCEAN_COUPLING
                     DEFAULT ON
                     DESCRIPTION "Support ocean coupling"
-		    CONDITION nemo_found )
+                    CONDITION nemo_found )
 
 
 ecbuild_add_option( FEATURE ECWAM_LAUNCH
