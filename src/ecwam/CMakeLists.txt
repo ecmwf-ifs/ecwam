@@ -115,7 +115,6 @@ list( APPEND ecwam_srcs
   intrpolchk.F90
   intspec.F90
   inwgrib.F90
-  irange.F90
   iwam_get_unit.F90
   jafu.F90
   jonswap.F90

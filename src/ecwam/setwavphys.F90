@@ -206,39 +206,25 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
       ELSE IF (IPHYS.EQ.2) THEN
 
-        ! ----------------------------------------------------------------------
-        ! ----------------------------------------------------------------------
-        ! ----------------------------------------------------------------------
-        ! Not used in IPHYS=2, but some needed to make sure code compiles/runs (also TODO for FRQMAX for IPHYS=0,1)
+        ! Dummy values for IPHYS=1-inherited variables not used in IPHYS=2
         ZALP    = 0.008_JWRB
         ANG_GC_A = 0.35_JWRB
         ANG_GC_B = 0.65_JWRB
         ANG_GC_C = 3.0_JWRB
         RN1_RN = 0.25_JWRB
-
         DELTA_THETA_RN = 0.75_JWRB
         DTHRN_A = 0.60_JWRB
-        DTHRN_U = 200.0_JWRB  ! i.e. not used 
-
+        DTHRN_U = 200.0_JWRB
         Z0TUBMAX = 0.0005_JWRB
         Z0RAT = 0.04_JWRB
         SWELLF4 = 1.5E05_JWRB
         SWELLF7 = 3.6E05_JWRB
-        SWELLF7M1 = 1.0_JWRB/SWELLF7 
-
+        SWELLF7M1 = 1.0_JWRB/SWELLF7
         SSDSC5  = 0.0_JWRB
-
-        BETAMAX = 1.39_JWRB
-        TAUWSHELTER = 0.0_JWRB
-        ALPHAMIN = 0.0005_JWRB
-        CHNKMIN_U = 30._JWRB
         BETAMAX = 1.40_JWRB
         TAUWSHELTER = 0.25_JWRB
         ALPHAMIN = 0.0001_JWRB
         CHNKMIN_U = 33._JWRB
-        ! ----------------------------------------------------------------------
-        ! ----------------------------------------------------------------------
-        ! ----------------------------------------------------------------------
 
 !!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
 !       TODO: THESE WILL REQUIRE RECALIBRATION IF USING W. DATA ASSIMILATION
@@ -257,8 +243,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         CASE(0,1)  
           NGST=1
           ALPHAPMAX = 1.0_JWRB ! i.e. no cap on max spectral steepness
-          TAILFACTOR=6.0_JWRB    ! SIN6FC = 6.0 from WW3-ST6
-          TAILFACTOR_PM=4.0_JWRB ! FXPM = 4.0 from WW3 (all)
+          TAILFACTOR=6.0_JWRB
+          TAILFACTOR_PM=4.0_JWRB
         CASE(2,3)
           ! NGST=2 ! intend to use this later
           NGST=1 ! keep NGST=1 for clean comparison

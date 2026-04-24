@@ -248,7 +248,6 @@ SUBROUTINE INITMDL (NADV,                                 &
 #include "initdpthflds.intfb.h"
 #include "initnemocpl.intfb.h"
 #include "iniwcst.intfb.h"
-#include "irange.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "mcout.intfb.h"
 #include "outstep0.intfb.h"
@@ -522,7 +521,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       ! DETERMINE THE NUMBER OF FREQUENCIES TO EXTEND TO
       NFRE_EXT = CEILING(LOG(FRQMAX/FR(1))/LOG(FRATIO))+1
       NFRE_EXT = MAX(NFRE,NFRE_EXT)
-      IFRE_EXT = REAL( IRANGE(1,NFRE_EXT,1) )
+      IFRE_EXT(1:NFRE_EXT) = (/ (REAL(M, KIND=JWRB), M=1,NFRE_EXT) /)
       IF (.NOT.ALLOCATED(SIG_EXT))  ALLOCATE(SIG_EXT(NFRE_EXT))
       IF (.NOT.ALLOCATED(DSII_EXT)) ALLOCATE(DSII_EXT(NFRE_EXT))
       IF (NFRE .LT. NFRE_EXT) THEN

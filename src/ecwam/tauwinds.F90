@@ -28,8 +28,6 @@
 !     ----------
 !     Adapted from Babanin Young Donelan & Banner (ZBRY) physics 
 !     as implemented as ST6 in WAVEWATCH-III 
-!     WW3 module:       W3SRC6MD    
-!     WW3 subroutine:   TAUWINDS
 !     Implementation into ECWAM DECEMBER 2021 by J. Kousal 
 
 ! ----------------------------------------------------------------------------

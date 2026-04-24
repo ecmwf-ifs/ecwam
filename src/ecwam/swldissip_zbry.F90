@@ -47,8 +47,6 @@
 !     EXTERNALS.
 !     ----------
 
-!     IRANGE
-
 !     REFERENCE.
 !     ----------
 
@@ -58,8 +56,6 @@
 !     ----------
 !     Adapted from Babanin Young Donelan & Banner (ZBRY) physics 
 !     as implemented as ST6 in WAVEWATCH-III
-!     WW3 module:       W3SWLDMD
-!     WW3 subroutine:   W3SWL6
 !     Implementation into ECWAM DECEMBER 2021 by J. Kousal 
 
 
@@ -77,7 +73,6 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "irange.intfb.h"      
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
@@ -88,15 +83,12 @@
       REAL(KIND=JWRB), DIMENSION(KIJL, NANG), INTENT(IN) :: COSWDIF 
 
       INTEGER(KIND=JWIM) :: IJ, M, I, J, M2, K2, K, NANGD
-      INTEGER(KIND=JWIM) :: NSPEC !num. of freqs, dirs, spec. bins
-      INTEGER(KIND=JWIM), DIMENSION(NANG) :: ITHN
-      INTEGER(KIND=JWIM), DIMENSION(NFRE) :: IKN
 
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: ABAND, KMAX, ANAR, BN, DDIS
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: KK
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG*NFRE) :: S, D, A, CG2
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: D, A, CG2
       REAL(KIND=JWRB), DIMENSION(KIJL)      :: B1
-      REAL(KIND=JWRB), DIMENSION(NANG*NFRE) :: SIG2 
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: SIG2
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: DSWL
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -105,40 +97,32 @@
 
       IF (LHOOK) CALL DR_HOOK('SWLDISSIP_ZBRY',0,ZHOOK_HANDLE)
 
-      NSPEC = NANG * NFRE   ! NUMBER OF SPECTRAL BINS
-
-      IKN    = IRANGE(1,NSPEC,NANG)   ! Index vector for elements of 1 ... NFRE
-!                                     ! such that e.g. SIG(1:NFRE) = SIG2(IKN).
       DO K = 1, NANG                    ! Apply to all directions 
-         SIG2   (IKN+(K-1)) = SIG
+         SIG2(K,:) = SIG
       END DO
       
       DO K = 1, NANG
         DO IJ = KIJS,KIJL
-           CG2    (IJ,IKN+(K-1)) = CGROUP(IJ,:)
+           CG2(IJ,K,:) = CGROUP(IJ,:)
         END DO
       END DO
 
       DO IJ = KIJS,KIJL
-        A(IJ,:) = RESHAPE( FL1(IJ,:,:) , (/NSPEC/)) * CG2(IJ,:) / ( ZPI * SIG2 )! ACTION DENSITY SPECTRUM
-        ! WAM E(f,theta) to WW3 A(k,theta) conversion factor: CG2 / ( ZPI *SIG2 ) 
+        A(IJ,:,:) = FL1(IJ,:,:) * CG2(IJ,:,:) / ( ZPI * SIG2(:,:) ) ! ACTION DENSITY SPECTRUM
       END DO
       
       !/ 0) --- Initialize parameters -------------------------------------- /
-      IKN   = IRANGE(1,NSPEC,NANG)       ! Index vector for array access, e.g.
-                                         ! in form of WN(1:NFRE) == WN2(IKN).
-
       DO IJ = KIJS,KIJL
-        ABAND(IJ,:) = SUM(RESHAPE(A(IJ,:),(/ NANG,NFRE /)),1) ! action density as function of wavenumber
+        ABAND(IJ,:) = SUM(A(IJ,:,:),1) ! action density as function of wavenumber
         DDIS(IJ,:)  = 0.0_JWRB
-        D(IJ,:)     = 0.0_JWRB
+        D(IJ,:,:)   = 0.0_JWRB
       END DO
 
 !/ 1) --- Choose calculation of steepness a*k ------------------------ /
 !/        Replace the measure of steepness with the spectral
 !         saturation after Banner et al. (2002) ---------------------- /
       DO IJ = KIJS,KIJL
-        KK(IJ,:,:)    = RESHAPE(A(IJ,:),(/ NANG,NFRE /))
+        KK(IJ,:,:)  = A(IJ,:,:)
         KMAX(IJ,:)  = MAXVAL(KK(IJ,:,:),1)
       END DO
 
@@ -183,12 +167,12 @@
 !/ 3) --- Apply dissipation term of derivative to all directions ----- /
       DO K = 1, NANG
         DO IJ = KIJS,KIJL
-          D(IJ,IKN+(K-1)) = DDIS(IJ,:)
+          D(IJ,K,:) = DDIS(IJ,:)
         END DO
       END DO
 !
       DO IJ = KIJS,KIJL
-        DSWL(IJ,:,:) = RESHAPE(D(IJ,:),(/NANG,NFRE/))
+        DSWL(IJ,:,:) = D(IJ,:,:)
       END DO   
  
       DO M = 1,NFRE

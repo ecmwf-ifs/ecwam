@@ -41,6 +41,7 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
 
       IMPLICIT NONE
 
+#include "abort1.intfb.h"
 #include "sinflx_ard_jan.intfb.h"
 #include "sinflx_zbry.intfb.h"
 
@@ -127,6 +128,9 @@ CASE(2)
      &               Z0M, Z0B, CHRNCK, PHIWA,   &
      &               FLD, SL, SPOS,             &
      &               MIJ, RHOWGDFTH, XLLWS)
+CASE DEFAULT
+  WRITE(*,*) ' SINFLX: UNKNOWN IPHYS =', IPHYS
+  CALL ABORT1
 END SELECT
 
 IF (LHOOK) CALL DR_HOOK('SINFLX',1,ZHOOK_HANDLE)

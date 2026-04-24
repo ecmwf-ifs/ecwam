@@ -52,8 +52,6 @@
 !     EXTERNALS.
 !     ----------
 
-!     IRANGE
-
 !     REFERENCE.
 !     ----------
 
@@ -64,8 +62,6 @@
 !     ----------
 !     Adapted from Babanin Young Donelan & Banner (ZBRY) physics 
 !     as implemented as ST6 in WAVEWATCH-III
-!     WW3 module:       W3SRC6MD
-!     WW3 subroutine:   W3SDS6
 !     Implementation into ECWAM DECEMBER 2021 by J. Kousal 
 
 
@@ -84,7 +80,6 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "irange.intfb.h"      
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
 
@@ -95,9 +90,6 @@
       REAL(KIND=JWRB), DIMENSION(KIJL, NANG), INTENT(IN) :: COSWDIF 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, I, J
-      INTEGER(KIND=JWIM) :: NSPEC !num. of freqs, dirs, spec. bins
-      INTEGER(KIND=JWIM), DIMENSION(NANG) :: ITHN
-      INTEGER(KIND=JWIM), DIMENSION(NFRE) :: IKN
 
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FREQ ! frequencies [Hz]
       REAL(KIND=JWRB), DIMENSION(NFRE) :: DFII ! frequency bandwiths [Hz]
@@ -114,9 +106,9 @@
       REAL(KIND=JWRB) :: XFAC ! temporary variableis
       REAL(KIND=JWRB), DIMENSION(KIJL) :: EDENSMAX ! temporary variable
 
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG*NFRE) :: S, D, A
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG*NFRE) :: CG2
-      REAL(KIND=JWRB), DIMENSION(NANG*NFRE)      :: SIG2
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: D, A
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: CG2
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE)      :: SIG2
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: DDS
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -125,30 +117,21 @@
 
       IF (LHOOK) CALL DR_HOOK('SDISSIP_ZBRY',0,ZHOOK_HANDLE)
 
-      NSPEC = NANG * NFRE   ! NUMBER OF SPECTRAL BINS
-
-      IKN    = IRANGE(1,NSPEC,NANG)   ! Index vector for elements of 1 ... NFRE
-!                                     ! such that e.g. SIG(1:NFRE) = SIG2(IKN).
-
       DO K = 1, NANG                    ! Apply to all directions 
-         SIG2   (IKN+(K-1)) = SIG
+         SIG2(K,:) = SIG
       END DO
       
       DO K = 1, NANG                    ! Apply to all directions
          DO IJ = KIJS,KIJL
-            CG2    (IJ,IKN+(K-1)) = CGROUP(IJ,:)
-        END DO
+            CG2(IJ,K,:) = CGROUP(IJ,:)
+         END DO
       END DO
       
       DO IJ = KIJS,KIJL
-        A(IJ,:) = RESHAPE( FL1(IJ,:,:) , (/NSPEC/)) * CG2(IJ,:) / ( ZPI * SIG2 )! ACTION DENSITY SPECTRUM
-        ! WAM E(f,theta) to WW3 A(k,theta) conversion factor: CG2 / ( ZPI *SIG2 ) 
+         A(IJ,:,:) = FL1(IJ,:,:) * CG2(IJ,:,:) / ( ZPI * SIG2(:,:) ) ! ACTION DENSITY SPECTRUM
       END DO
 
 !/ 0) --- Initialize essential parameters ---------------------------- /
-      IKN     = IRANGE(1,NSPEC,NANG)    ! Index vector for elements of 1,
-!                                       ! 2,..., NFRE such that for example
-!                                       ! SIG(1:NFRE) = SIG2(IKN).
       FREQ    = FR(1:NFRE)
       BNT     = 0.035_JWRB**2
       DO IJ = KIJS,KIJL
@@ -168,7 +151,7 @@
 !
 !/    --- normalise by a generic spectral density -------------------- /
       DO IJ = KIJS,KIJL
-        IF (LLSDS6ET) THEN                ! ww3_grid.inp: &SDS6 SDSET = T or F
+        IF (LLSDS6ET) THEN                
            NEXDENS(IJ,:) = EXDENS(IJ,:) / ETDENS(IJ,:)    ! normalise by threshold spectral density
         ELSE                            ! normalise by spectral density
            EDENSMAX(IJ) = MAXVAL(EDENS(IJ,:))*1.0E-5_JWRB
@@ -213,13 +196,13 @@
 
       DO K = 1, NANG
          DO IJ = KIJS,KIJL
-            D(IJ,IKN+(K-1)) = T12(IJ,:)
+            D(IJ,K,:) = T12(IJ,:)
          END DO
       END DO
 !
 !
       DO IJ = KIJS,KIJL
-         DDS(IJ,:,:) = RESHAPE(D(IJ,:),(/NANG,NFRE/))
+         DDS(IJ,:,:) = D(IJ,:,:)
       END DO
 
       IF (LLLOWWINDS) THEN

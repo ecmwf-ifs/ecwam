@@ -39,14 +39,11 @@
 !     EXTERNALS.
 !     ----------
 !     TAUWINDS
-!     IRANGE
 
 !     ORIGIN.
 !     ----------
 !     Adapted from Babanin Young Donelan & Banner (ZBRY) physics 
 !     as implemented as ST6 in WAVEWATCH-III 
-!     WW3 module:       W3SRC6MD    
-!     WW3 subroutine:   TAU_WAVE_ATMOS
 !     Implementation into ECWAM DECEMBER 2021 by J. Kousal 
 
 ! ----------------------------------------------------------------------
@@ -63,7 +60,6 @@
 ! ----------------------------------------------------------------------
 
         IMPLICIT NONE
-#include "irange.intfb.h"
 #include "tauwinds.intfb.h"
 
         REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: S ! Sin(sigma) in [m2/rad-Hz]
@@ -71,7 +67,6 @@
         REAL(KIND=JWRB),                       INTENT(OUT) :: TAUNWX, TAUNWY 
 
 
-        REAL(KIND=JWRB), DIMENSION(NANG*NFRE) :: ECOS2, ESIN2
         REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: SX, SY
 
         REAL(KIND=JWRB), DIMENSION(NFRE)  :: SDENSX_LF, SDENSY_LF
@@ -81,29 +76,14 @@
         REAL(KIND=JWRB)               :: TAUNWX_LF, TAUNWY_LF
         REAL(KIND=JWRB)               :: TAUNWX_HF, TAUNWY_HF
         
-        INTEGER(KIND=JWIM) :: IK, ITH
-        INTEGER(KIND=JWIM) :: NK, NTH, NSPEC !num. of freqs, dirs, spec. bins
-        INTEGER(KIND=JWIM), DIMENSION(NANG) :: ITHN
-        INTEGER(KIND=JWIM), DIMENSION(NFRE) :: IKN
-
         REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('TAU_WAVE_ATMOS',0,ZHOOK_HANDLE)
 
-      NTH   = NANG  ! NUMBER OF DIRS , SAME AS KL
-      NK    = NFRE  ! NUMBER OF FREQS, SAME AS ML
-      NSPEC = NK * NTH   ! NUMBER OF SPECTRAL BINS
-
-      ITHN   = IRANGE(1,NTH,1)    ! Index vector 1:NTH
-      DO IK = 1, NK
-        ECOS2 (ITHN+(IK-1)*NTH) = COSTH
-        ESIN2 (ITHN+(IK-1)*NTH) = SINTH
-      END DO
-
-      SX = ABS(MIN(0.0_JWRB,S))*RESHAPE(ECOS2,(/NTH,NK/))  
-      SY = ABS(MIN(0.0_JWRB,S))*RESHAPE(ESIN2,(/NTH,NK/))  
+      SX = ABS(MIN(0.0_JWRB,S)) * SPREAD(COSTH,2,NFRE)
+      SY = ABS(MIN(0.0_JWRB,S)) * SPREAD(SINTH,2,NFRE)
 
       !/ 0) --- split integral into low/high frequency contributions ------------- /
       !

@@ -77,14 +77,11 @@ SUBROUTINE SINFLX_ZBRY (ICALL, NCALL, NGST, KIJS, KIJL,  &
 !     ----------
 !     TAU_WAVE_ATMOS
 !     LFACTOR
-!     IRANGE
 
 !     ORIGIN.
 !     ----------
 !     Adapted from Babanin Young Donelan & Banner (ZBRY) physics 
 !     as implemented as ST6 in WAVEWATCH-III
-!     WW3 module:       W3SRC6MD
-!     WW3 subroutine:   W3SIN6
 !     Implementation into ECWAM DECEMBER 2021 by J. Kousal
 
 
@@ -123,7 +120,6 @@ SUBROUTINE SINFLX_ZBRY (ICALL, NCALL, NGST, KIJS, KIJL,  &
 #include "wsigstar.intfb.h"
 #include "tau_wave_atmos.intfb.h"
 #include "lfactor.intfb.h"
-#include "irange.intfb.h"
 #include "calcphiwa.intfb.h"
 
 
@@ -174,24 +170,20 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 REAL(KIND=JWRB), DIMENSION(KIJL) :: RNFAC
 
 INTEGER(KIND=JWIM) :: IJ, K, M, IND, IGST
-INTEGER(KIND=JWIM) :: NSPEC !num. of freqs, dirs, spec. bins
-INTEGER(KIND=JWIM), DIMENSION(NANG) :: ITHN
-INTEGER(KIND=JWIM), DIMENSION(NFRE) :: IKN
 
-REAL(KIND=JWRB), DIMENSION(NANG*NFRE)      :: ECOS2, ESIN2, SIG2
+REAL(KIND=JWRB), DIMENSION(NANG,NFRE)      :: ECOS2, ESIN2, SIG2
 REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: SPOSDENSIG, SNEGDENSIG
 
-REAL(KIND=JWRB), DIMENSION(KIJL,NANG*NFRE) :: CG2, WN2
-REAL(KIND=JWRB), DIMENSION(KIJL,NANG*NFRE) :: SQRTBN2, CINV2, A
+REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: CG2, WN2
+REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SQRTBN2, CINV2, A
 REAL(KIND=JWRB), DIMENSION(KIJL,NFRE)      :: ADENSIG, KMAX, ANAR, SQRTBN, CINV1
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: KK
-REAL(KIND=JWRB), DIMENSION(KIJL,NANG*NFRE,NGST) :: W1, W2, S, D
+REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE,NGST) :: W1, W2, S, D
 REAL(KIND=JWRB), DIMENSION(KIJL,NFRE,NGST)      :: LFACT
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE,NGST) :: SDENSIG, DINPOS, DINTOT
 
 
 REAL(KIND=JWRB), DIMENSION(KIJL,NGST) :: TAUWX, TAUWY ! Component of the wave-supported stress
-! REAL(KIND=JWRB), DIMENSION(KIJL,NGST) :: TAUNWX, TAUNWY ! Component of the neg. wave-supported stress
 REAL(KIND=JWRB), DIMENSION(KIJL) :: COSU, SINU
 REAL(KIND=JWRB), DIMENSION(KIJL,NGST) :: UPROXYGST
 
@@ -217,7 +209,6 @@ REAL(KIND=JWRB), PARAMETER :: BMAX=0.01_JWRB
 REAL(KIND=JWRB) :: ALPHAOGMAXU10
 
 REAL(KIND=JWRB), DIMENSION(KIJL)      :: ROAIRN, CHNKOG
-! REAL(KIND=JWRB), DIMENSION(KIJL)      :: TAUNW, TAUNWGST_AVG
 
 ! For GUSTINESS
 REAL(KIND=JWRB)                          :: AVG_GST
@@ -264,8 +255,6 @@ ENDIF
 ! ----------------------------------------------------------------------
 ! input source term!!!! (start)
 
-NSPEC = NANG * NFRE   ! NUMBER OF SPECTRAL BINS
-
 !     Wind height
 ZNLEV    = 10._JWRB
 
@@ -276,17 +265,13 @@ DO M=1,NFRE
 ENDDO
 
 
-ITHN   = IRANGE(1,NANG,1)    ! Index vector 1:NANG
 DO M = 1, NFRE
-  ECOS2 (ITHN+(M-1)*NANG) = COSTH
-  ESIN2 (ITHN+(M-1)*NANG) = SINTH
+  ECOS2(:,M) = COSTH
+  ESIN2(:,M) = SINTH
 END DO
 !
-IKN    = IRANGE(1,NSPEC,NANG)   ! Index vector for elements of 1 ... NFRE
-!                               ! such that e.g. SIG(1:NFRE) = SIG2(IKN).
-
-DO K = 1, NANG                    ! Apply to all directions 
-  SIG2  (IKN+(K-1)) = SIG
+DO K = 1, NANG                    ! Apply to all directions
+  SIG2(K,:) = SIG
 END DO
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
@@ -326,14 +311,14 @@ END DO
 
 DO K = 1, NANG
   DO IJ = KIJS,KIJL
-      WN2   (IJ,IKN+(K-1)) = WAVNUM(IJ,:)  ! using WAM native WN,CG
-      CG2   (IJ,IKN+(K-1)) = CGROUP(IJ,:)
+    WN2(IJ,K,:) = WAVNUM(IJ,:)  ! using WAM native WN,CG
+    CG2(IJ,K,:) = CGROUP(IJ,:)
   END DO
 END DO
 
 DO IJ = KIJS,KIJL
-  CINV2(IJ,:)  = WN2(IJ,:) / SIG2            ! inverse phase speed
-  CINV1(IJ,:)  = CINV2(IJ,IKN)
+  CINV2(IJ,:,:) = WN2(IJ,:,:) / SIG2(:,:)    ! inverse phase speed
+  CINV1(IJ,:)   = CINV2(IJ,1,:)
 END DO
 
 !/ 0) --- set up a basic variables ----------------------------------- /
@@ -344,8 +329,6 @@ END DO
 !
 DO IGST=1,NGST
   DO IJ = KIJS,KIJL
-    ! TAUNWX(IJ,IGST) = 0.0_JWRB
-    ! TAUNWY(IJ,IGST) = 0.0_JWRB
     TAUWX(IJ,IGST)  = 0.0_JWRB
     TAUWY(IJ,IGST)  = 0.0_JWRB
     TAU(IJ,IGST) = 0.0_JWRB
@@ -383,17 +366,13 @@ END DO
 ! START: using intrinsic frequency spectra
 
 !
-  ! To reshape from 1D to 2D: 
-  !    K = RESHAPE( A          , (/ NANG, NFRE /))
-  ! To reshape from 2D to 1D:
-  !    A = RESHAPE( F(IJ,:,:)  , (/NSPEC/)    )
 DO IJ = KIJS,KIJL
-  A(IJ,:) = RESHAPE( FL1(IJ,:,:) , (/NSPEC/)) * CG2(IJ,:) / ( ZPI * SIG2 )! ACTION DENSITY SPECTRUM
+  A(IJ,:,:) = FL1(IJ,:,:) * CG2(IJ,:,:) / ( ZPI * SIG2(:,:) )  ! ACTION DENSITY SPECTRUM
 !
 !/ 1) --- calculate 1d action density spectrum (A(sigma)) and
 !/        zero-out values less than 1.0E-32 to avoid NaNs when
 !/        computing directional narrowness in step 4). --------------- /
-  KK(IJ,:,:)      = RESHAPE(A(IJ,:),(/ NANG, NFRE /))
+  KK(IJ,:,:) = A(IJ,:,:)
   
   ADENSIG(IJ,:) = SUM(KK(IJ,:,:),1) * SIG * DELTH ! Integrate over directions.
   
@@ -419,11 +398,11 @@ DO IJ = KIJS,KIJL
   SQRTBN(IJ,:)  = SQRT( ANAR(IJ,:) * ADENSIG(IJ,:) * WAVNUM(IJ,:)**3 )
 END DO
 
-DO K  = 1, NANG
+DO K = 1, NANG
   DO IJ = KIJS,KIJL
-    SQRTBN2(IJ,IKN+(K-1)) = SQRTBN(IJ,:)          ! Calculate SQRTBN for
-  END DO                                    ! the entire spectrum.
-END DO                                    ! the entire spectrum.
+    SQRTBN2(IJ,K,:) = SQRTBN(IJ,:)          ! Calculate SQRTBN for
+  END DO                                     ! the entire spectrum.
+END DO
 !
 !/ 4) --- calculate growth rate GAMMA and S for all directions for
 !/        following winds (U10/c - 1 is positive; W1) and in 7) for
@@ -431,20 +410,20 @@ END DO                                    ! the entire spectrum.
 !/        complement one another. ------------------------------------ /
 DO IGST=1,NGST
   DO IJ = KIJS,KIJL
-    W1(IJ,:,IGST)= MAX(0.0_JWRB,                   &
-  &                 UPROXYGST(IJ,IGST)*CINV2(IJ,:)*(ECOS2*COSU(IJ) + ESIN2*SINU(IJ)) - 1.0_JWRB)**2
+    W1(IJ,:,:,IGST) = MAX(0.0_JWRB,                   &
+  &                 UPROXYGST(IJ,IGST)*CINV2(IJ,:,:)*(ECOS2(:,:)*COSU(IJ) + ESIN2(:,:)*SINU(IJ)) - 1.0_JWRB)**2
 !
-    D(IJ,:,IGST) = (RAORW(IJ) ) * SIG2 * &
-                (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN2(IJ,:)*W1(IJ,:,IGST)-11.0_JWRB)))*&
-  &             SQRTBN2(IJ,:)*W1(IJ,:,IGST)
+    D(IJ,:,:,IGST) = (RAORW(IJ)) * SIG2(:,:) * &
+                (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN2(IJ,:,:)*W1(IJ,:,:,IGST)-11.0_JWRB)))* &
+  &             SQRTBN2(IJ,:,:)*W1(IJ,:,:,IGST)
 !
     IF (LLLOWWINDS .AND. UABSGST(IJ,IGST)<=1.5_JWRB) THEN
       ! Reduce growth rates for low winds (following Muhammad Yasrab's work)
-      D(IJ,:,IGST) = D(IJ,:,IGST) - (4._JWRB*(RNU_WATER)*(WN2(IJ,:)**2))
-      S(IJ,:,IGST) = D(IJ,:,IGST) * A(IJ,:)
+      D(IJ,:,:,IGST) = D(IJ,:,:,IGST) - (4._JWRB*(RNU_WATER)*(WN2(IJ,:,:)**2))
+      S(IJ,:,:,IGST) = D(IJ,:,:,IGST) * A(IJ,:,:)
     ELSE
       ! Update spectrum as per normal
-      S(IJ,:,IGST) = D(IJ,:,IGST) * A(IJ,:)
+      S(IJ,:,:,IGST) = D(IJ,:,:,IGST) * A(IJ,:,:)
     END IF
 
   ENDDO
@@ -458,7 +437,7 @@ IF (LLFACT) THEN ! TODO: how to make more efficient? is difficult...
   DO IGST=1,NGST
     
     DO IJ = KIJS,KIJL
-      SDENSIG(IJ,:,:,IGST) = RESHAPE(S(IJ,:,IGST)*SIG2/CG2(IJ,:),(/ NANG, NFRE /))
+      SDENSIG(IJ,:,:,IGST) = S(IJ,:,:,IGST)*SIG2(:,:)/CG2(IJ,:,:)
 
       CALL LFACTOR(SDENSIG(IJ,:,:,IGST), CINV1(IJ,:), UABSGST(IJ,IGST), USTARGST(IJ,IGST), UPROXYGST(IJ,IGST), WDWAVE(IJ),    &
   &                      ROAIRN(IJ), LFACT(IJ,:,IGST), TAUWX(IJ,IGST), TAUWY(IJ,IGST), TAU(IJ,IGST))
@@ -469,11 +448,11 @@ IF (LLFACT) THEN ! TODO: how to make more efficient? is difficult...
     DO IJ = KIJS,KIJL 
       IF (SUM(LFACT(IJ,:,IGST)) .LT. NFRE) THEN
         DO K = 1, NANG
-            D(IJ,IKN+K-1,IGST) = D(IJ,IKN+K-1,IGST) * LFACT(IJ,:,IGST)
+            D(IJ,K,:,IGST) = D(IJ,K,:,IGST) * LFACT(IJ,:,IGST)
         END DO
-        S(IJ,:,IGST) = D(IJ,:,IGST) * A(IJ,:)
+        S(IJ,:,:,IGST) = D(IJ,:,:,IGST) * A(IJ,:,:)
       END IF
-      DINPOS(IJ,:,:,IGST)  = RESHAPE(D(IJ,:,IGST),(/ NANG, NFRE /))
+      DINPOS(IJ,:,:,IGST) = D(IJ,:,:,IGST)
     ENDDO
 
   ENDDO
@@ -483,24 +462,21 @@ END IF
 !/ 7) --- compute negative wind input for adverse winds. negative
 !/        growth is typically smaller by a factor of ~2.5 (=.28/.11)
 !/        than those for the favourable winds [Donelan, 2006, Eq. (7)].
-!/        the factor is adjustable with NAMELIST parameter in
-!/        ww3_grid.inp: '&SIN6 SINA0 = 0.04 /' ----------------------- /
+!/        the factor is adjustable with namelist parameter ZSIN6A0 ---- /
 DO IGST=1,NGST
   IF (ZSIN6A0.GT.0.0_JWRB) THEN
     DO IJ = KIJS,KIJL
-      W2(IJ,:,IGST)  = MIN( 0.0_JWRB,UPROXYGST(IJ,IGST) * CINV2(IJ,:) * &
-  &                               (ECOS2*COSU(IJ) + ESIN2*SINU(IJ)) - 1.0_JWRB )**2
-      D(IJ,:,IGST)   = D(IJ,:,IGST) - ( RAORW(IJ) * SIG2 * ZSIN6A0 * &
-                    (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN2(IJ,:)*W2(IJ,:,IGST) - 11.0_JWRB)))&
-  &                 *SQRTBN2(IJ,:)*W2(IJ,:,IGST) )
-
-      DINTOT(IJ,:,:,IGST)= RESHAPE(D(IJ,:,IGST),(/NANG,NFRE/))
-      S(IJ,:,IGST)       = D(IJ,:,IGST) * A(IJ,:)
+      W2(IJ,:,:,IGST)  = MIN( 0.0_JWRB,UPROXYGST(IJ,IGST) * CINV2(IJ,:,:) * &
+  &                               (ECOS2(:,:)*COSU(IJ) + ESIN2(:,:)*SINU(IJ)) - 1.0_JWRB )**2
+      D(IJ,:,:,IGST)   = D(IJ,:,:,IGST) - ( RAORW(IJ) * SIG2(:,:) * ZSIN6A0 * &
+                    (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN2(IJ,:,:)*W2(IJ,:,:,IGST) - 11.0_JWRB)))&
+  &                 *SQRTBN2(IJ,:,:)*W2(IJ,:,:,IGST) )
+      DINTOT(IJ,:,:,IGST) = D(IJ,:,:,IGST)
+      S(IJ,:,:,IGST)      = D(IJ,:,:,IGST) * A(IJ,:,:)
 
 ! !     --- compute negative component of the wave supported stresses
 ! !         from negative part of the wind input  ---------------------- /
-      SDENSIG(IJ,:,:,IGST) = RESHAPE(S(IJ,:,IGST)*SIG2/CG2(IJ,:),(/ NANG, NFRE /))
-      ! CALL TAU_WAVE_ATMOS(SDENSIG(IJ,:,:,IGST), CINV1(IJ,:), TAUNWX(IJ,IGST), TAUNWY(IJ,IGST) )
+      SDENSIG(IJ,:,:,IGST) = S(IJ,:,:,IGST)*SIG2(:,:)/CG2(IJ,:,:)
     ENDDO
   ELSE
     DO IJ = KIJS,KIJL
@@ -513,7 +489,6 @@ DO IGST=1,NGST
   DO IJ = KIJS,KIJL
     TAUWGST(IJ,IGST)     = SQRT(TAUWX(IJ,IGST)**2+TAUWY(IJ,IGST)**2) / ROAIRN(IJ) ! KINEMATIC TAUW
     TAUWDIRGST(IJ,IGST)  = ATAN2(TAUWX(IJ,IGST),TAUWY(IJ,IGST))
-    ! TAUNWGST(IJ,IGST)    = SQRT(TAUNWX(IJ,IGST)**2+TAUNWY(IJ,IGST)**2) / ROAIRN(IJ) ! KINEMATIC TAUNW
     ENDDO
   ENDDO
 
@@ -556,7 +531,6 @@ IGST=1
   DO IJ = KIJS,KIJL
     TAUWGST_AVG(IJ)     = TAUWGST(IJ,IGST)
     TAUWDIRGST_AVG(IJ)  = TAUWDIRGST(IJ,IGST)
-    ! TAUNWGST_AVG(IJ)    = TAUNWGST(IJ,IGST)
     USTARGST_AVG(IJ)    = USTARGST(IJ,IGST)
     SLGST_AVG(IJ,:,:)   = SLGST(IJ,:,:,IGST)
     SPOSGST_AVG(IJ,:,:) = SPOSGST(IJ,:,:,IGST)
@@ -566,7 +540,6 @@ DO IGST=2,NGST
   DO IJ = KIJS,KIJL
     TAUWGST_AVG(IJ)      = TAUWGST_AVG(IJ)     + TAUWGST(IJ,IGST)
     TAUWDIRGST_AVG(IJ)   = TAUWDIRGST_AVG(IJ)  + TAUWDIRGST(IJ,IGST)
-    ! TAUNWGST_AVG(IJ)     = TAUNWGST_AVG(IJ)    + TAUNWGST(IJ,IGST)
     USTARGST_AVG(IJ)     = USTARGST_AVG(IJ)    + USTARGST(IJ,IGST)
     SLGST_AVG(IJ,:,:)    = SLGST_AVG(IJ,:,:)   + SLGST(IJ,:,:,IGST)
     SPOSGST_AVG(IJ,:,:)  = SPOSGST_AVG(IJ,:,:) + SPOSGST(IJ,:,:,IGST)
@@ -577,7 +550,6 @@ END DO
 DO IJ = KIJS,KIJL
   TAUW(IJ)     = AVG_GST*TAUWGST_AVG(IJ)
   TAUWDIR(IJ)  = AVG_GST*TAUWDIRGST_AVG(IJ)
-  ! TAUNW(IJ)    = AVG_GST*TAUNWGST_AVG(IJ)
   UFRIC(IJ)    = AVG_GST*USTARGST_AVG(IJ)
   SL(IJ,:,:)   = AVG_GST*SLGST_AVG(IJ,:,:)
   SPOS(IJ,:,:) = AVG_GST*SPOSGST_AVG(IJ,:,:)

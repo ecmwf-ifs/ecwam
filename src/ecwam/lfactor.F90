@@ -59,14 +59,11 @@
 !     EXTERNALS.
 !     ----------
 !     TAUWINDS
-!     IRANGE
 
 !     ORIGIN.
 !     ----------
 !     Adapted from Babanin Young Donelan & Banner (ZBRY) physics 
 !     as implemented as ST6 in WAVEWATCH-III 
-!     WW3 module:       W3SRC6MD    
-!     WW3 subroutine:   LFACTOR
 !     Implementation into ECWAM DECEMBER 2021 by J. Kousal 
 
 ! ----------------------------------------------------------------------
@@ -82,9 +79,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "irange.intfb.h"
 #include "tauwinds.intfb.h"
-#include "abort1.intfb.h"
  
       REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: S ! Sin(sigma) in [m2/rad-Hz]
       REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: CINV
@@ -96,7 +91,6 @@
       INTEGER(KIND=JWIM), PARAMETER :: ITERMAX = 80 ! Max. no. iterations
                                                     ! to find numerical LFACT soln
 
-      REAL(KIND=JWRB), DIMENSION(NANG*NFRE) :: ECOS2, ESIN2
       REAL(KIND=JWRB), DIMENSION(NFRE_EXT) :: LF_EXT, CINV_EXT
       REAL(KIND=JWRB), DIMENSION(NFRE_EXT) :: SDENS_EXT, SDENSX_EXT, SDENSY_EXT
       REAL(KIND=JWRB), DIMENSION(NFRE_EXT) :: UCINV_EXT
@@ -106,12 +100,8 @@
       REAL(KIND=JWRB)      :: TAU_NND, TAU_INIT(2)
       REAL(KIND=JWRB)      :: RTAU, DRTAU, ERR   
       LOGICAL              :: OVERSHOT
-      CHARACTER(LEN=23)    :: IDTIME
 
-      INTEGER(KIND=JWIM) :: IK, ITH, M, SIGN_NEW, SIGN_OLD
-      INTEGER(KIND=JWIM) :: NK, NTH, NSPEC !num. of freqs, dirs, spec. bins
-      INTEGER(KIND=JWIM), DIMENSION(NANG) :: ITHN
-      INTEGER(KIND=JWIM), DIMENSION(NFRE) :: IKN
+      INTEGER(KIND=JWIM) :: IK, K, SIGN_NEW, SIGN_OLD
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -119,34 +109,36 @@
 
       IF (LHOOK) CALL DR_HOOK('LFACTOR',0,ZHOOK_HANDLE)
 
-      NTH   = NANG  ! NUMBER OF DIRS , SAME AS KL
-      NK    = NFRE  ! NUMBER OF FREQS, SAME AS ML
-      NSPEC = NK * NTH   ! NUMBER OF SPECTRAL BINS
-
-      ITHN   = IRANGE(1,NTH,1)    ! Index vector 1:NTH
-      DO IK = 1, NK
-         ECOS2 (ITHN+(IK-1)*NTH) = COSTH
-         ESIN2 (ITHN+(IK-1)*NTH) = SINTH
-      END DO
-
 !/ 1) --- Either extrapolate arrays up to 10Hz or use discrete spectral
 !         grid per se. Limit the constraint to the positive part of the
 !         wind input only. ---------------------------------------------- /
       IF (NFRE .LT. NFRE_EXT) THEN
-            CINV_EXT(1:NK)          = CINV
-            SDENS_EXT(1:NK)         = SUM(S,1) * DELTH
-            SDENSX_EXT(1:NK)        = SUM(MAX(0.0_JWRB,S)*RESHAPE(ECOS2,(/NTH,NK/)),1) * DELTH
-            SDENSY_EXT(1:NK)        = SUM(MAX(0.0_JWRB,S)*RESHAPE(ESIN2,(/NTH,NK/)),1) * DELTH
-            !        --- Spectral slope for S_IN(F) is proportional to F**(-2) ------ /
-            CINV_EXT(NK+1:NFRE_EXT)   = SIG_EXT(NK+1:NFRE_EXT)*GM1 ! 1/c=σ/g
-            SDENS_EXT(NK+1:NFRE_EXT)  = SDENS_EXT(NK)  * (SIG_EXT(NK)/SIG_EXT(NK+1:NFRE_EXT))**2
-            SDENSX_EXT(NK+1:NFRE_EXT) = SDENSX_EXT(NK) * (SIG_EXT(NK)/SIG_EXT(NK+1:NFRE_EXT))**2
-            SDENSY_EXT(NK+1:NFRE_EXT) = SDENSY_EXT(NK) * (SIG_EXT(NK)/SIG_EXT(NK+1:NFRE_EXT))**2
+            CINV_EXT(1:NFRE)          = CINV
+            SDENS_EXT(1:NFRE)         = SUM(S,1) * DELTH
+            SDENSX_EXT(1:NFRE)        = 0.0_JWRB
+            SDENSY_EXT(1:NFRE)        = 0.0_JWRB
+            DO K = 1, NANG
+                  SDENSX_EXT(1:NFRE) = SDENSX_EXT(1:NFRE) + MAX(0.0_JWRB,S(K,1:NFRE))*COSTH(K)
+                  SDENSY_EXT(1:NFRE) = SDENSY_EXT(1:NFRE) + MAX(0.0_JWRB,S(K,1:NFRE))*SINTH(K)
+            END DO
+            SDENSX_EXT(1:NFRE)        = SDENSX_EXT(1:NFRE) * DELTH
+            SDENSY_EXT(1:NFRE)        = SDENSY_EXT(1:NFRE) * DELTH
+!        --- Spectral slope for S_IN(F) is proportional to F**(-2) ------ /
+            CINV_EXT(NFRE+1:NFRE_EXT)   = SIG_EXT(NFRE+1:NFRE_EXT)*GM1 ! 1/c=σ/g
+            SDENS_EXT(NFRE+1:NFRE_EXT)  = SDENS_EXT(NFRE)  * (SIG_EXT(NFRE)/SIG_EXT(NFRE+1:NFRE_EXT))**2
+            SDENSX_EXT(NFRE+1:NFRE_EXT) = SDENSX_EXT(NFRE) * (SIG_EXT(NFRE)/SIG_EXT(NFRE+1:NFRE_EXT))**2
+            SDENSY_EXT(NFRE+1:NFRE_EXT) = SDENSY_EXT(NFRE) * (SIG_EXT(NFRE)/SIG_EXT(NFRE+1:NFRE_EXT))**2
       ELSE
             CINV_EXT         = CINV
-            SDENS_EXT(1:NK)  = SUM(S,1) * DELTH
-            SDENSX_EXT(1:NK) = SUM(MAX(0.0_JWRB,S)*RESHAPE(ECOS2,(/NTH,NK/)),1) * DELTH
-            SDENSY_EXT(1:NK) = SUM(MAX(0.0_JWRB,S)*RESHAPE(ESIN2,(/NTH,NK/)),1) * DELTH
+            SDENS_EXT(1:NFRE)  = SUM(S,1) * DELTH
+            SDENSX_EXT(1:NFRE) = 0.0_JWRB
+            SDENSY_EXT(1:NFRE) = 0.0_JWRB
+            DO K = 1, NANG
+                  SDENSX_EXT(1:NFRE) = SDENSX_EXT(1:NFRE) + MAX(0.0_JWRB,S(K,1:NFRE))*COSTH(K)
+                  SDENSY_EXT(1:NFRE) = SDENSY_EXT(1:NFRE) + MAX(0.0_JWRB,S(K,1:NFRE))*SINTH(K)
+            END DO
+            SDENSX_EXT(1:NFRE) = SDENSX_EXT(1:NFRE) * DELTH
+            SDENSY_EXT(1:NFRE) = SDENSY_EXT(1:NFRE) * DELTH
       END IF
 !
 !/ 2) --- Stress calculation ----------------------------------------- /
@@ -156,7 +148,6 @@
 !     --- The viscous stress and check that it does not exceed
 !         the total stress. ------------------------------------------ /
       TAU_VIS  = MAX(0.0_JWRB, -5.0E-5_JWRB*U10 + 1.1E-3_JWRB) * U10**2 * ROAIRN
-!       TAU_VIS  = MIN(0.9 * TAU_TOT, TAU_VIS)
       TAU_VIS  = MIN(0.95_JWRB * TAU_TOT, TAU_VIS)
 !
       TAUVX    = TAU_VIS * COS(USDIR)
@@ -165,9 +156,6 @@
 !     --- The wave supported stress. --------------------------------- /
       TAUWX    = TAUWINDS(SDENSX_EXT,CINV_EXT,DSII_EXT)   ! normal stress (x-component)
       TAUWY    = TAUWINDS(SDENSY_EXT,CINV_EXT,DSII_EXT)   ! normal stress (y-component)
-      ! WRITE (*,*) '   '
-      ! WRITE (*,*) '  TAUWX_LF    ',TAUWINDS(SDENSX_EXT(1:NK),CINV_EXT(1:NK),DSII_EXT(1:NK))
-      ! WRITE (*,*) '  TAUWX_MF_HF ',TAUWINDS(SDENSX_EXT(NK+1:NFRE_EXT),CINV_EXT(1:NK),DSII_EXT(NK+1:NFRE_EXT))
       TAU_NND  = TAUWINDS(SDENS_EXT, CINV_EXT,DSII_EXT)   ! normal stress (non-directional)
       TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)        ! normal stress (magnitude)
       TAU_INIT = (/TAUWX,TAUWY/)                  ! unadjusted normal stress components
@@ -179,7 +167,6 @@
 !
 !/ 3) --- Find reduced Sin(f) = L(f)*Sin(f) to satisfy our constraint
 !/        TAU <= TAU_TOT --------------------------------------------- /
-      !CALL STME21 ( TIME , IDTIME )
       LF_EXT = 1.0_JWRB
       IK = 0
 !
@@ -199,9 +186,6 @@
             TAU_NND  = TAUWINDS(SDENS_EXT *LF_EXT,CINV_EXT,DSII_EXT)
             TAUWX    = TAUWINDS(SDENSX_EXT*LF_EXT,CINV_EXT,DSII_EXT)
             TAUWY    = TAUWINDS(SDENSY_EXT*LF_EXT,CINV_EXT,DSII_EXT)
-            ! WRITE (*,*) '   '
-            ! WRITE (*,*) '  TAUWX_LF    ',TAUWINDS(SDENSX_EXT(1:NK)*LF_EXT(1:NK),CINV_EXT(1:NK),DSII_EXT(1:NK))
-            ! WRITE (*,*) '  TAUWX_MF_HF ',TAUWINDS(SDENSX_EXT(NK+1:NFRE_EXT)*LF_EXT(NK+1:NFRE_EXT),CINV_EXT(1:NK),DSII_EXT(NK+1:NFRE_EXT))
             TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)
             TAUX     = TAUVX + TAUWX
             TAUY     = TAUVY + TAUWY
@@ -215,10 +199,7 @@
             IF (SIGN_NEW .NE. SIGN_OLD) OVERSHOT = .TRUE.
             IF (OVERSHOT) DRTAU = MAX(0.5_JWRB*(1.0_JWRB+DRTAU),1.00010_JWRB)
 
-            RTAU = RTAU * (DRTAU**SIGN_NEW)
-
-            ! CALL ABORT1
-            
+            RTAU = RTAU * (DRTAU**SIGN_NEW)            
 
             IF (ABS(ERR) .LT. 1.54E-4_JWRB) EXIT
             
@@ -226,7 +207,7 @@
 
       END IF
 
-      LFACT(1:NK) = LF_EXT(1:NK)
+      LFACT(1:NFRE) = LF_EXT(1:NFRE)
 
       IF (LHOOK) CALL DR_HOOK('LFACTOR',1,ZHOOK_HANDLE)
 
