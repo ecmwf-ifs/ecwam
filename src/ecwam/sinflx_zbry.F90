@@ -171,12 +171,10 @@ REAL(KIND=JWRB), DIMENSION(KIJL) :: RNFAC
 
 INTEGER(KIND=JWIM) :: IJ, K, M, IND, IGST
 
-REAL(KIND=JWRB), DIMENSION(NANG,NFRE)      :: ECOS2, ESIN2, SIG2
 REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: SPOSDENSIG, SNEGDENSIG
 
-REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: CG2, WN2
-REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SQRTBN2, CINV2, A
-REAL(KIND=JWRB), DIMENSION(KIJL,NFRE)      :: ADENSIG, KMAX, ANAR, SQRTBN, CINV1
+REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: A
+REAL(KIND=JWRB), DIMENSION(KIJL,NFRE)      :: ADENSIG, KMAX, ANAR, SQRTBN
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: KK
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE,NGST) :: W1, W2, S, D
 REAL(KIND=JWRB), DIMENSION(KIJL,NFRE,NGST)      :: LFACT
@@ -268,15 +266,6 @@ DO M=1,NFRE
 ENDDO
 
 
-DO M = 1, NFRE
-  ECOS2(:,M) = COSTH
-  ESIN2(:,M) = SINTH
-END DO
-!
-DO K = 1, NANG                    ! Apply to all directions
-  SIG2(K,:) = SIG
-END DO
-
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
 CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N, SIG_U10)
 AVG_GST = 1.0_JWRB/NGST
@@ -311,19 +300,6 @@ DO IJ=KIJS,KIJL
 END DO
 
 !/  --- Main loop over LOC ----------------------------------- /
-
-DO M = 1, NFRE
-  DO K = 1, NANG
-    DO IJ = KIJS,KIJL
-      WN2(IJ,K,M) = WAVNUM(IJ,M)  ! using WAM native WN,CG
-      CG2(IJ,K,M) = CGROUP(IJ,M)
-      CINV2(IJ,K,M) = WN2(IJ,K,M) / SIG2(K,M)    ! inverse phase speed
-    END DO
-  END DO
-  DO IJ = KIJS,KIJL
-    CINV1(IJ,M) = CINV2(IJ,1,M)
-  END DO
-END DO
 
 !/ 0) --- set up a basic variables ----------------------------------- /
 DO IJ = KIJS,KIJL
@@ -378,7 +354,7 @@ END DO
 DO M = 1, NFRE
   DO K = 1, NANG
     DO IJ = KIJS,KIJL
-      A(IJ,K,M) = FL1(IJ,K,M) * CG2(IJ,K,M) / ( ZPI * SIG2(K,M) )  ! ACTION DENSITY SPECTRUM
+      A(IJ,K,M) = FL1(IJ,K,M) * CGROUP(IJ,M) / ( ZPI * SIG(M) )  ! ACTION DENSITY SPECTRUM
       KK(IJ,K,M) = A(IJ,K,M)
     END DO
   END DO
@@ -423,11 +399,6 @@ DO M = 1, NFRE
     SQRTBN(IJ,M)  = SQRT( ANAR(IJ,M) * ADENSIG(IJ,M) * WAVNUM(IJ,M)**3 )
   END DO
 
-  DO K = 1, NANG
-    DO IJ = KIJS,KIJL
-      SQRTBN2(IJ,K,M) = SQRTBN(IJ,M)          ! Calculate SQRTBN for
-    END DO                                    ! the entire spectrum.
-  END DO
 END DO
 !
 !/ 4) --- calculate growth rate GAMMA and S for all directions for
@@ -439,14 +410,14 @@ DO IGST=1,NGST
     DO K = 1, NANG
       DO IJ = KIJS,KIJL
         W1(IJ,K,M,IGST) = MAX(0.0_JWRB,                   &
-  &                 UPROXYGST(IJ,IGST)*CINV2(IJ,K,M)*(ECOS2(K,M)*COSU(IJ) + ESIN2(K,M)*SINU(IJ)) - 1.0_JWRB)**2
-        D(IJ,K,M,IGST) = (RAORW(IJ)) * SIG2(K,M) * &
-                (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN2(IJ,K,M)*W1(IJ,K,M,IGST)-11.0_JWRB)))* &
-  &             SQRTBN2(IJ,K,M)*W1(IJ,K,M,IGST)
+  &                 UPROXYGST(IJ,IGST)*CINV(IJ,M)*(COSTH(K)*COSU(IJ) + SINTH(K)*SINU(IJ)) - 1.0_JWRB)**2
+        D(IJ,K,M,IGST) = (RAORW(IJ)) * SIG(M) * &
+                (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN(IJ,M)*W1(IJ,K,M,IGST)-11.0_JWRB)))* &
+  &             SQRTBN(IJ,M)*W1(IJ,K,M,IGST)
 
         IF (LLLOWWINDS .AND. UABSGST(IJ,IGST)<=1.5_JWRB) THEN
           ! Reduce growth rates for low winds (following Muhammad Yasrab's work)
-          D(IJ,K,M,IGST) = D(IJ,K,M,IGST) - (4._JWRB*(RNU_WATER)*(WN2(IJ,K,M)**2))
+          D(IJ,K,M,IGST) = D(IJ,K,M,IGST) - (4._JWRB*(RNU_WATER)*(WAVNUM(IJ,M)**2))
         END IF
         S(IJ,K,M,IGST) = D(IJ,K,M,IGST) * A(IJ,K,M)
       END DO
@@ -463,13 +434,13 @@ IF (LLFACT) THEN ! TODO: how to make more efficient? is difficult...
     DO M = 1, NFRE
       DO K = 1, NANG
         DO IJ = KIJS,KIJL
-          SDENSIG(IJ,K,M,IGST) = S(IJ,K,M,IGST)*SIG2(K,M)/CG2(IJ,K,M)
+          SDENSIG(IJ,K,M,IGST) = S(IJ,K,M,IGST)*SIG(M)/CGROUP(IJ,M)
         END DO
       END DO
     END DO
 
     DO IJ = KIJS,KIJL
-      CALL LFACTOR(SDENSIG(IJ,:,:,IGST), CINV1(IJ,:), UABSGST(IJ,IGST), USTARGST(IJ,IGST), UPROXYGST(IJ,IGST), WDWAVE(IJ),    &
+      CALL LFACTOR(SDENSIG(IJ,:,:,IGST), CINV(IJ,:), UABSGST(IJ,IGST), USTARGST(IJ,IGST), UPROXYGST(IJ,IGST), WDWAVE(IJ),    &
   &                      ROAIRN(IJ), LFACT(IJ,:,IGST), TAUWX(IJ,IGST), TAUWY(IJ,IGST), TAU(IJ,IGST))
     ENDDO
 
@@ -503,17 +474,17 @@ DO IGST=1,NGST
     DO M = 1, NFRE
       DO K = 1, NANG
         DO IJ = KIJS,KIJL
-          W2(IJ,K,M,IGST)  = MIN( 0.0_JWRB,UPROXYGST(IJ,IGST) * CINV2(IJ,K,M) * &
-  &                               (ECOS2(K,M)*COSU(IJ) + ESIN2(K,M)*SINU(IJ)) - 1.0_JWRB )**2
-          D(IJ,K,M,IGST)   = D(IJ,K,M,IGST) - ( RAORW(IJ) * SIG2(K,M) * ZSIN6A0 * &
-                    (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN2(IJ,K,M)*W2(IJ,K,M,IGST) - 11.0_JWRB)))&
-  &                 *SQRTBN2(IJ,K,M)*W2(IJ,K,M,IGST) )
+          W2(IJ,K,M,IGST)  = MIN( 0.0_JWRB,UPROXYGST(IJ,IGST) * CINV(IJ,M) * &
+  &                               (COSTH(K)*COSU(IJ) + SINTH(K)*SINU(IJ)) - 1.0_JWRB )**2
+          D(IJ,K,M,IGST)   = D(IJ,K,M,IGST) - ( RAORW(IJ) * SIG(M) * ZSIN6A0 * &
+                    (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN(IJ,M)*W2(IJ,K,M,IGST) - 11.0_JWRB)))&
+  &                 *SQRTBN(IJ,M)*W2(IJ,K,M,IGST) )
           DINTOT(IJ,K,M,IGST) = D(IJ,K,M,IGST)
           S(IJ,K,M,IGST)      = D(IJ,K,M,IGST) * A(IJ,K,M)
 
 ! !     --- compute negative component of the wave supported stresses
 ! !         from negative part of the wind input  ---------------------- /
-          SDENSIG(IJ,K,M,IGST) = S(IJ,K,M,IGST)*SIG2(K,M)/CG2(IJ,K,M)
+          SDENSIG(IJ,K,M,IGST) = S(IJ,K,M,IGST)*SIG(M)/CGROUP(IJ,M)
         END DO
       END DO
     END DO

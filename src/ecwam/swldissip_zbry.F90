@@ -87,10 +87,8 @@
 
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: ABAND, KMAX, ANAR, BN, DDIS
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: KK
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: D, A, CG2
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: A
       REAL(KIND=JWRB), DIMENSION(KIJL)      :: B1, SUMDIR_IJ
-      REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: SIG2
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: DSWL
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       
@@ -100,10 +98,8 @@
 
       DO M = 1, NFRE
         DO K = 1, NANG                    ! Apply to all directions
-          SIG2(K,M) = SIG(M)
           DO IJ = KIJS,KIJL
-            CG2(IJ,K,M) = CGROUP(IJ,M)
-            A(IJ,K,M) = FL1(IJ,K,M) * CG2(IJ,K,M) / ( ZPI * SIG2(K,M) ) ! ACTION DENSITY SPECTRUM
+            A(IJ,K,M) = FL1(IJ,K,M) * CGROUP(IJ,M) / ( ZPI * SIG(M) ) ! ACTION DENSITY SPECTRUM
           END DO
         END DO
       END DO
@@ -119,7 +115,6 @@
         DO K = 1, NANG
           DO IJ = KIJS,KIJL
             ABAND(IJ,M) = ABAND(IJ,M) + A(IJ,K,M)
-            D(IJ,K,M)   = 0.0_JWRB
           END DO
         END DO
       END DO
@@ -197,21 +192,12 @@
       END DO
 !
 !/ 3) --- Apply dissipation term of derivative to all directions ----- /
-      DO K = 1, NANG
-        DO M = 1,NFRE
-          DO IJ = KIJS,KIJL
-            D(IJ,K,M) = DDIS(IJ,M)
-            DSWL(IJ,K,M) = D(IJ,K,M)
-          END DO
-        END DO
-      END DO
- 
       DO M = 1,NFRE
         DO K = 1, NANG
           DO IJ = KIJS,KIJL
-             SL(IJ,K,M)  = SL(IJ,K,M)  + DSWL(IJ,K,M)*FL1(IJ,K,M)
-             FLD(IJ,K,M) = FLD(IJ,K,M) + DSWL(IJ,K,M)
-          END DO  
+            SL(IJ,K,M)  = SL(IJ,K,M)  + DDIS(IJ,M)*FL1(IJ,K,M)
+            FLD(IJ,K,M) = FLD(IJ,K,M) + DDIS(IJ,M)
+          END DO
         END DO
       END DO
 

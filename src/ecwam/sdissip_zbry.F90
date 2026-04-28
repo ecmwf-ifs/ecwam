@@ -106,10 +106,7 @@
       REAL(KIND=JWRB) :: XFAC ! temporary variableis
       REAL(KIND=JWRB), DIMENSION(KIJL) :: EDENSMAX ! temporary variable
 
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: D, A
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: CG2
-      REAL(KIND=JWRB), DIMENSION(NANG,NFRE)      :: SIG2
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: DDS
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: A
       REAL(KIND=JWRB), DIMENSION(KIJL)           :: CUMADF
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -120,10 +117,8 @@
 
       DO M = 1, NFRE
          DO K = 1, NANG                    ! Apply to all directions
-            SIG2(K,M) = SIG(M)
             DO IJ = KIJS,KIJL
-               CG2(IJ,K,M) = CGROUP(IJ,M)
-               A(IJ,K,M) = FL1(IJ,K,M) * CG2(IJ,K,M) / ( ZPI * SIG2(K,M) ) ! ACTION DENSITY SPECTRUM
+               A(IJ,K,M) = FL1(IJ,K,M) * CGROUP(IJ,M) / ( ZPI * SIG(M) ) ! ACTION DENSITY SPECTRUM
             END DO
          END DO
       END DO
@@ -201,16 +196,12 @@
          END IF
       END DO
 
+      DO IJ = KIJS,KIJL
+         CUMADF(IJ) = 0.0_JWRB
+      END DO
       DO M = 1,NFRE
          DO IJ = KIJS,KIJL
-            CUMADF(IJ) = 0.0_JWRB
-         END DO
-         DO I = 1,M
-            DO IJ = KIJS,KIJL
-               CUMADF(IJ) = CUMADF(IJ) + ADF(IJ,I)*DFII(I)
-            END DO
-         END DO
-         DO IJ = KIJS,KIJL
+            CUMADF(IJ) = CUMADF(IJ) + ADF(IJ,M)*DFII(M)
             T2(IJ,M) = ZSDS6A2 * CUMADF(IJ)
          END DO
       END DO
@@ -222,23 +213,14 @@
          END DO
       END DO
 
-      DO K = 1, NANG
-         DO M = 1, NFRE
-            DO IJ = KIJS,KIJL
-               D(IJ,K,M) = T12(IJ,M)
-               DDS(IJ,K,M) = D(IJ,K,M)
-            END DO
-         END DO
-      END DO
-
       IF (LLLOWWINDS) THEN
          DO M = 1,NFRE
             DO K = 1, NANG
                DO IJ = KIJS,KIJL
                   IF ( WSWAVE(IJ)>=5._JWRB) THEN
                      ! no dissipation for winds<5m/s (following Muhammad Yasrab's work)
-                     SL(IJ,K,M)  = SL(IJ,K,M)  + DDS(IJ,K,M)*FL1(IJ,K,M)
-                     FLD(IJ,K,M) = FLD(IJ,K,M) + DDS(IJ,K,M)
+                     SL(IJ,K,M)  = SL(IJ,K,M)  + T12(IJ,M)*FL1(IJ,K,M)
+                     FLD(IJ,K,M) = FLD(IJ,K,M) + T12(IJ,M)
                   END IF
                END DO
             END DO
@@ -247,8 +229,8 @@
          DO M = 1,NFRE
             DO K = 1, NANG
                DO IJ = KIJS,KIJL
-                  SL(IJ,K,M)  = SL(IJ,K,M)  + DDS(IJ,K,M)*FL1(IJ,K,M)
-                  FLD(IJ,K,M) = FLD(IJ,K,M) + DDS(IJ,K,M)
+                  SL(IJ,K,M)  = SL(IJ,K,M)  + T12(IJ,M)*FL1(IJ,K,M)
+                  FLD(IJ,K,M) = FLD(IJ,K,M) + T12(IJ,M)
                END DO
             END DO
          END DO
