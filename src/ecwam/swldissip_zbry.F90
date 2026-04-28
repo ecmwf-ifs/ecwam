@@ -83,11 +83,12 @@
       REAL(KIND=JWRB), DIMENSION(KIJL, NANG), INTENT(IN) :: COSWDIF 
 
       INTEGER(KIND=JWIM) :: IJ, M, I, J, M2, K2, K, NANGD
+      INTEGER(KIND=JWIM), DIMENSION(KIJL) :: MPEAK
 
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: ABAND, KMAX, ANAR, BN, DDIS
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: KK
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: D, A, CG2
-      REAL(KIND=JWRB), DIMENSION(KIJL)      :: B1
+      REAL(KIND=JWRB), DIMENSION(KIJL)      :: B1, SUMDIR_IJ
       REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: SIG2
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: DSWL
 
@@ -97,48 +98,72 @@
 
       IF (LHOOK) CALL DR_HOOK('SWLDISSIP_ZBRY',0,ZHOOK_HANDLE)
 
-      DO K = 1, NANG                    ! Apply to all directions 
-         SIG2(K,:) = SIG
-      END DO
-      
-      DO K = 1, NANG
-        DO IJ = KIJS,KIJL
-           CG2(IJ,K,:) = CGROUP(IJ,:)
+      DO M = 1, NFRE
+        DO K = 1, NANG                    ! Apply to all directions
+          SIG2(K,M) = SIG(M)
+          DO IJ = KIJS,KIJL
+            CG2(IJ,K,M) = CGROUP(IJ,M)
+            A(IJ,K,M) = FL1(IJ,K,M) * CG2(IJ,K,M) / ( ZPI * SIG2(K,M) ) ! ACTION DENSITY SPECTRUM
+          END DO
         END DO
-      END DO
-
-      DO IJ = KIJS,KIJL
-        A(IJ,:,:) = FL1(IJ,:,:) * CG2(IJ,:,:) / ( ZPI * SIG2(:,:) ) ! ACTION DENSITY SPECTRUM
       END DO
       
       !/ 0) --- Initialize parameters -------------------------------------- /
-      DO IJ = KIJS,KIJL
-        ABAND(IJ,:) = SUM(A(IJ,:,:),1) ! action density as function of wavenumber
-        DDIS(IJ,:)  = 0.0_JWRB
-        D(IJ,:,:)   = 0.0_JWRB
+      DO M = 1, NFRE
+        DO IJ = KIJS,KIJL
+          ABAND(IJ,M) = 0.0_JWRB
+          DDIS(IJ,M)  = 0.0_JWRB
+        END DO
+      END DO
+      DO M = 1, NFRE
+        DO K = 1, NANG
+          DO IJ = KIJS,KIJL
+            ABAND(IJ,M) = ABAND(IJ,M) + A(IJ,K,M)
+            D(IJ,K,M)   = 0.0_JWRB
+          END DO
+        END DO
       END DO
 
 !/ 1) --- Choose calculation of steepness a*k ------------------------ /
 !/        Replace the measure of steepness with the spectral
 !         saturation after Banner et al. (2002) ---------------------- /
-      DO IJ = KIJS,KIJL
-        KK(IJ,:,:)  = A(IJ,:,:)
-        KMAX(IJ,:)  = MAXVAL(KK(IJ,:,:),1)
+      DO M = 1,NFRE
+        DO IJ = KIJS,KIJL
+          KMAX(IJ,M) = 0.0_JWRB
+        END DO
+        DO K = 1,NANG
+          DO IJ = KIJS,KIJL
+            KK(IJ,K,M) = A(IJ,K,M)
+            KMAX(IJ,M) = MAX(KMAX(IJ,M), KK(IJ,K,M))
+          END DO
+        END DO
+      END DO
+
+      DO M = 1,NFRE
+        DO K = 1,NANG
+          DO IJ = KIJS,KIJL
+            IF (KMAX(IJ,M).LT.1.0E-34_JWRB) THEN
+              KK(IJ,K,M) = 1.0_JWRB
+            ELSE
+              KK(IJ,K,M) = KK(IJ,K,M)/KMAX(IJ,M)
+            END IF
+          END DO
+        END DO
       END DO
 
       DO M = 1,NFRE
         DO IJ = KIJS,KIJL
-           IF (KMAX(IJ,M).LT.1.0E-34_JWRB) THEN
-              KK(IJ,1:NANG,M) = 1.0_JWRB
-           ELSE
-              KK(IJ,1:NANG,M) = KK(IJ,1:NANG,M)/KMAX(IJ,M)
-           END IF
+          SUMDIR_IJ(IJ) = 0.0_JWRB
         END DO
-      END DO
-
-      DO IJ = KIJS,KIJL
-        ANAR(IJ,:)  = 1.0_JWRB/( SUM(KK(IJ,:,:),1) * DELTH )
-        BN(IJ,:)    = ANAR(IJ,:) * ( ABAND(IJ,:) * SIG * DELTH ) * WAVNUM(IJ,:)**3
+        DO K = 1,NANG
+          DO IJ = KIJS,KIJL
+            SUMDIR_IJ(IJ) = SUMDIR_IJ(IJ) + KK(IJ,K,M)
+          END DO
+        END DO
+        DO IJ = KIJS,KIJL
+          ANAR(IJ,M) = 1.0_JWRB/( SUMDIR_IJ(IJ) * DELTH )
+          BN(IJ,M) = ANAR(IJ,M) * ( ABAND(IJ,M) * SIG(M) * DELTH ) * WAVNUM(IJ,M)**3
+        END DO
       END DO
 
 !
@@ -149,9 +174,16 @@
 !/        the peak wavenumber. ZSWL6B1 remains a scaling constant, but
 !/        with different magnitude.  --------------------------------- /
         DO IJ = KIJS,KIJL
-            M      = MAXLOC(ABAND(IJ,:),1)         ! Index for peak
-            B1(IJ) = ZSWL6B1*(2.0_JWRB*SQRT(SUM(ABAND(IJ,:)*DDEN/CGROUP(IJ,:)))*&
-            &        WAVNUM(IJ,M))
+          MPEAK(IJ) = MAXLOC(ABAND(IJ,:),1)         ! Index for peak
+          SUMDIR_IJ(IJ) = 0.0_JWRB
+        END DO
+        DO K = 1,NFRE
+          DO IJ = KIJS,KIJL
+            SUMDIR_IJ(IJ) = SUMDIR_IJ(IJ) + ABAND(IJ,K)*DDEN(K)/CGROUP(IJ,K)
+          END DO
+        END DO
+        DO IJ = KIJS,KIJL
+          B1(IJ) = ZSWL6B1*(2.0_JWRB*SQRT(SUMDIR_IJ(IJ))*WAVNUM(IJ,MPEAK(IJ)))
         END DO
       END IF
 !
@@ -166,14 +198,13 @@
 !
 !/ 3) --- Apply dissipation term of derivative to all directions ----- /
       DO K = 1, NANG
-        DO IJ = KIJS,KIJL
-          D(IJ,K,:) = DDIS(IJ,:)
+        DO M = 1,NFRE
+          DO IJ = KIJS,KIJL
+            D(IJ,K,M) = DDIS(IJ,M)
+            DSWL(IJ,K,M) = D(IJ,K,M)
+          END DO
         END DO
       END DO
-!
-      DO IJ = KIJS,KIJL
-        DSWL(IJ,:,:) = D(IJ,:,:)
-      END DO   
  
       DO M = 1,NFRE
         DO K = 1, NANG

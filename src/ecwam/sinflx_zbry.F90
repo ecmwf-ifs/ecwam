@@ -207,6 +207,7 @@ REAL(KIND=JWRB), PARAMETER :: ALPHAMAX=0.1_JWRB
 REAL(KIND=JWRB), PARAMETER :: AMAX=0.02_JWRB
 REAL(KIND=JWRB), PARAMETER :: BMAX=0.01_JWRB
 REAL(KIND=JWRB) :: ALPHAOGMAXU10
+REAL(KIND=JWRB) :: SUMDIR
 
 REAL(KIND=JWRB), DIMENSION(KIJL)      :: ROAIRN, CHNKOG
 
@@ -217,6 +218,8 @@ REAL(KIND=JWRB), DIMENSION(KIJL,NGST) :: TAUWGST, TAUWDIRGST, UABSGST, USTARGST
 ! REAL(KIND=JWRB), DIMENSION(KIJL,NGST) :: TAUNWGST
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SLGST_AVG, SPOSGST_AVG, FLGST_AVG
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE,NGST) :: SLGST, SPOSGST, FLGST
+REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: SPOS_IJ, SNEG_IJ
+LOGICAL, DIMENSION(KIJL) :: LREDUCE
 
 ! ----------------------------------------------------------------------
 
@@ -309,16 +312,17 @@ END DO
 
 !/  --- Main loop over LOC ----------------------------------- /
 
-DO K = 1, NANG
-  DO IJ = KIJS,KIJL
-    WN2(IJ,K,:) = WAVNUM(IJ,:)  ! using WAM native WN,CG
-    CG2(IJ,K,:) = CGROUP(IJ,:)
+DO M = 1, NFRE
+  DO K = 1, NANG
+    DO IJ = KIJS,KIJL
+      WN2(IJ,K,M) = WAVNUM(IJ,M)  ! using WAM native WN,CG
+      CG2(IJ,K,M) = CGROUP(IJ,M)
+      CINV2(IJ,K,M) = WN2(IJ,K,M) / SIG2(K,M)    ! inverse phase speed
+    END DO
   END DO
-END DO
-
-DO IJ = KIJS,KIJL
-  CINV2(IJ,:,:) = WN2(IJ,:,:) / SIG2(:,:)    ! inverse phase speed
-  CINV1(IJ,:)   = CINV2(IJ,1,:)
+  DO IJ = KIJS,KIJL
+    CINV1(IJ,M) = CINV2(IJ,1,M)
+  END DO
 END DO
 
 !/ 0) --- set up a basic variables ----------------------------------- /
@@ -366,42 +370,64 @@ END DO
 ! START: using intrinsic frequency spectra
 
 !
-DO IJ = KIJS,KIJL
-  A(IJ,:,:) = FL1(IJ,:,:) * CG2(IJ,:,:) / ( ZPI * SIG2(:,:) )  ! ACTION DENSITY SPECTRUM
 !
 !/ 1) --- calculate 1d action density spectrum (A(sigma)) and
 !/        zero-out values less than 1.0E-32 to avoid NaNs when
 !/        computing directional narrowness in step 4). --------------- /
-  KK(IJ,:,:) = A(IJ,:,:)
-  
-  ADENSIG(IJ,:) = SUM(KK(IJ,:,:),1) * SIG * DELTH ! Integrate over directions.
-  
-  KMAX(IJ,:) = MAXVAL(KK(IJ,:,:),1)
-END DO
+
+DO M = 1, NFRE
+  DO K = 1, NANG
+    DO IJ = KIJS,KIJL
+      A(IJ,K,M) = FL1(IJ,K,M) * CG2(IJ,K,M) / ( ZPI * SIG2(K,M) )  ! ACTION DENSITY SPECTRUM
+      KK(IJ,K,M) = A(IJ,K,M)
+    END DO
+  END DO
+
+  DO IJ = KIJS,KIJL
+    ADENSIG(IJ,M) = 0.0_JWRB
+    KMAX(IJ,M) = 0.0_JWRB
+  END DO
+  DO K = 1, NANG
+    DO IJ = KIJS,KIJL
+      ADENSIG(IJ,M) = ADENSIG(IJ,M) + KK(IJ,K,M)
+      KMAX(IJ,M) = MAX(KMAX(IJ,M), KK(IJ,K,M))
+    END DO
+  END DO
+  DO IJ = KIJS,KIJL
+    ADENSIG(IJ,M) = ADENSIG(IJ,M) * SIG(M) * DELTH  ! Integrate over directions.
+  END DO
 !
 !/ 2) --- calculate normalised directional spectrum K(theta,sigma) --- /
-DO M = 1,NFRE
-  DO IJ = KIJS,KIJL
+
+  DO K = 1, NANG
+    DO IJ = KIJS,KIJL
       IF (KMAX(IJ,M).LT.1.0E-34_JWRB) THEN
-        KK(IJ,1:NANG,M) = 1.0_JWRB
+        KK(IJ,K,M) = 1.0_JWRB
       ELSE
-        KK(IJ,1:NANG,M) = KK(IJ,1:NANG,M)/KMAX(IJ,M)
+        KK(IJ,K,M) = KK(IJ,K,M)/KMAX(IJ,M)
       END IF
+    END DO
   END DO
-END DO
 !
 !/ 3) --- calculate normalised spectral saturation BN(M) ------------ /
-DO IJ = KIJS,KIJL
-  ANAR(IJ,:)    = 1.0_JWRB/( SUM(KK(IJ,:,:),1) * DELTH )          ! directional narrowness
-  !
-  !        SQRTBN  = SQRT( ANAR * ADENSIG * WN(IJ,:)**3 )
-  SQRTBN(IJ,:)  = SQRT( ANAR(IJ,:) * ADENSIG(IJ,:) * WAVNUM(IJ,:)**3 )
-END DO
-
-DO K = 1, NANG
   DO IJ = KIJS,KIJL
-    SQRTBN2(IJ,K,:) = SQRTBN(IJ,:)          ! Calculate SQRTBN for
-  END DO                                     ! the entire spectrum.
+    ANAR(IJ,M) = 0.0_JWRB
+  END DO
+  DO K = 1, NANG
+    DO IJ = KIJS,KIJL
+      ANAR(IJ,M) = ANAR(IJ,M) + KK(IJ,K,M)
+    END DO
+  END DO
+  DO IJ = KIJS,KIJL
+    ANAR(IJ,M) = 1.0_JWRB/( ANAR(IJ,M) * DELTH )          ! directional narrowness
+    SQRTBN(IJ,M)  = SQRT( ANAR(IJ,M) * ADENSIG(IJ,M) * WAVNUM(IJ,M)**3 )
+  END DO
+
+  DO K = 1, NANG
+    DO IJ = KIJS,KIJL
+      SQRTBN2(IJ,K,M) = SQRTBN(IJ,M)          ! Calculate SQRTBN for
+    END DO                                    ! the entire spectrum.
+  END DO
 END DO
 !
 !/ 4) --- calculate growth rate GAMMA and S for all directions for
@@ -409,25 +435,24 @@ END DO
 !/        adverse winds (U10/c -1 is negative, W2). W1 and W2
 !/        complement one another. ------------------------------------ /
 DO IGST=1,NGST
-  DO IJ = KIJS,KIJL
-    W1(IJ,:,:,IGST) = MAX(0.0_JWRB,                   &
-  &                 UPROXYGST(IJ,IGST)*CINV2(IJ,:,:)*(ECOS2(:,:)*COSU(IJ) + ESIN2(:,:)*SINU(IJ)) - 1.0_JWRB)**2
-!
-    D(IJ,:,:,IGST) = (RAORW(IJ)) * SIG2(:,:) * &
-                (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN2(IJ,:,:)*W1(IJ,:,:,IGST)-11.0_JWRB)))* &
-  &             SQRTBN2(IJ,:,:)*W1(IJ,:,:,IGST)
-!
-    IF (LLLOWWINDS .AND. UABSGST(IJ,IGST)<=1.5_JWRB) THEN
-      ! Reduce growth rates for low winds (following Muhammad Yasrab's work)
-      D(IJ,:,:,IGST) = D(IJ,:,:,IGST) - (4._JWRB*(RNU_WATER)*(WN2(IJ,:,:)**2))
-      S(IJ,:,:,IGST) = D(IJ,:,:,IGST) * A(IJ,:,:)
-    ELSE
-      ! Update spectrum as per normal
-      S(IJ,:,:,IGST) = D(IJ,:,:,IGST) * A(IJ,:,:)
-    END IF
+  DO M = 1, NFRE
+    DO K = 1, NANG
+      DO IJ = KIJS,KIJL
+        W1(IJ,K,M,IGST) = MAX(0.0_JWRB,                   &
+  &                 UPROXYGST(IJ,IGST)*CINV2(IJ,K,M)*(ECOS2(K,M)*COSU(IJ) + ESIN2(K,M)*SINU(IJ)) - 1.0_JWRB)**2
+        D(IJ,K,M,IGST) = (RAORW(IJ)) * SIG2(K,M) * &
+                (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN2(IJ,K,M)*W1(IJ,K,M,IGST)-11.0_JWRB)))* &
+  &             SQRTBN2(IJ,K,M)*W1(IJ,K,M,IGST)
 
-  ENDDO
-ENDDO
+        IF (LLLOWWINDS .AND. UABSGST(IJ,IGST)<=1.5_JWRB) THEN
+          ! Reduce growth rates for low winds (following Muhammad Yasrab's work)
+          D(IJ,K,M,IGST) = D(IJ,K,M,IGST) - (4._JWRB*(RNU_WATER)*(WN2(IJ,K,M)**2))
+        END IF
+        S(IJ,K,M,IGST) = D(IJ,K,M,IGST) * A(IJ,K,M)
+      END DO
+    END DO
+  END DO
+END DO
 
 IF (LLFACT) THEN ! TODO: how to make more efficient? is difficult...
 
@@ -435,25 +460,35 @@ IF (LLFACT) THEN ! TODO: how to make more efficient? is difficult...
   !         spectral density of the wind input ------------------------- /
 
   DO IGST=1,NGST
-    
-    DO IJ = KIJS,KIJL
-      SDENSIG(IJ,:,:,IGST) = S(IJ,:,:,IGST)*SIG2(:,:)/CG2(IJ,:,:)
+    DO M = 1, NFRE
+      DO K = 1, NANG
+        DO IJ = KIJS,KIJL
+          SDENSIG(IJ,K,M,IGST) = S(IJ,K,M,IGST)*SIG2(K,M)/CG2(IJ,K,M)
+        END DO
+      END DO
+    END DO
 
+    DO IJ = KIJS,KIJL
       CALL LFACTOR(SDENSIG(IJ,:,:,IGST), CINV1(IJ,:), UABSGST(IJ,IGST), USTARGST(IJ,IGST), UPROXYGST(IJ,IGST), WDWAVE(IJ),    &
   &                      ROAIRN(IJ), LFACT(IJ,:,IGST), TAUWX(IJ,IGST), TAUWY(IJ,IGST), TAU(IJ,IGST))
     ENDDO
 
   !/ 6) --- apply reduction (LFACT) to the entire spectrum ------------- /
 
-    DO IJ = KIJS,KIJL 
-      IF (SUM(LFACT(IJ,:,IGST)) .LT. NFRE) THEN
-        DO K = 1, NANG
-            D(IJ,K,:,IGST) = D(IJ,K,:,IGST) * LFACT(IJ,:,IGST)
+    DO IJ = KIJS,KIJL
+      LREDUCE(IJ) = SUM(LFACT(IJ,:,IGST)) .LT. NFRE
+    END DO
+    DO M = 1, NFRE
+      DO K = 1, NANG
+        DO IJ = KIJS,KIJL
+          IF (LREDUCE(IJ)) THEN
+            D(IJ,K,M,IGST) = D(IJ,K,M,IGST) * LFACT(IJ,M,IGST)
+            S(IJ,K,M,IGST) = D(IJ,K,M,IGST) * A(IJ,K,M)
+          END IF
+          DINPOS(IJ,K,M,IGST) = D(IJ,K,M,IGST)
         END DO
-        S(IJ,:,:,IGST) = D(IJ,:,:,IGST) * A(IJ,:,:)
-      END IF
-      DINPOS(IJ,:,:,IGST) = D(IJ,:,:,IGST)
-    ENDDO
+      END DO
+    END DO
 
   ENDDO
 END IF
@@ -465,23 +500,31 @@ END IF
 !/        the factor is adjustable with namelist parameter ZSIN6A0 ---- /
 DO IGST=1,NGST
   IF (ZSIN6A0.GT.0.0_JWRB) THEN
-    DO IJ = KIJS,KIJL
-      W2(IJ,:,:,IGST)  = MIN( 0.0_JWRB,UPROXYGST(IJ,IGST) * CINV2(IJ,:,:) * &
-  &                               (ECOS2(:,:)*COSU(IJ) + ESIN2(:,:)*SINU(IJ)) - 1.0_JWRB )**2
-      D(IJ,:,:,IGST)   = D(IJ,:,:,IGST) - ( RAORW(IJ) * SIG2(:,:) * ZSIN6A0 * &
-                    (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN2(IJ,:,:)*W2(IJ,:,:,IGST) - 11.0_JWRB)))&
-  &                 *SQRTBN2(IJ,:,:)*W2(IJ,:,:,IGST) )
-      DINTOT(IJ,:,:,IGST) = D(IJ,:,:,IGST)
-      S(IJ,:,:,IGST)      = D(IJ,:,:,IGST) * A(IJ,:,:)
+    DO M = 1, NFRE
+      DO K = 1, NANG
+        DO IJ = KIJS,KIJL
+          W2(IJ,K,M,IGST)  = MIN( 0.0_JWRB,UPROXYGST(IJ,IGST) * CINV2(IJ,K,M) * &
+  &                               (ECOS2(K,M)*COSU(IJ) + ESIN2(K,M)*SINU(IJ)) - 1.0_JWRB )**2
+          D(IJ,K,M,IGST)   = D(IJ,K,M,IGST) - ( RAORW(IJ) * SIG2(K,M) * ZSIN6A0 * &
+                    (2.8_JWRB-(1.0_JWRB+TANH(10.0_JWRB*SQRTBN2(IJ,K,M)*W2(IJ,K,M,IGST) - 11.0_JWRB)))&
+  &                 *SQRTBN2(IJ,K,M)*W2(IJ,K,M,IGST) )
+          DINTOT(IJ,K,M,IGST) = D(IJ,K,M,IGST)
+          S(IJ,K,M,IGST)      = D(IJ,K,M,IGST) * A(IJ,K,M)
 
 ! !     --- compute negative component of the wave supported stresses
 ! !         from negative part of the wind input  ---------------------- /
-      SDENSIG(IJ,:,:,IGST) = S(IJ,:,:,IGST)*SIG2(:,:)/CG2(IJ,:,:)
-    ENDDO
+          SDENSIG(IJ,K,M,IGST) = S(IJ,K,M,IGST)*SIG2(K,M)/CG2(IJ,K,M)
+        END DO
+      END DO
+    END DO
   ELSE
-    DO IJ = KIJS,KIJL
-      DINTOT(IJ,:,:,IGST)=DINPOS(IJ,:,:,IGST)
-    ENDDO
+    DO M = 1, NFRE
+      DO K = 1, NANG
+        DO IJ = KIJS,KIJL
+          DINTOT(IJ,K,M,IGST) = DINPOS(IJ,K,M,IGST)
+        END DO
+      END DO
+    END DO
   END IF
 ENDDO
 !
@@ -521,39 +564,65 @@ DO IGST=1,NGST
 END DO
 
 DO IGST=1,NGST
-  DO IJ = KIJS,KIJL
-    FLGST(IJ,:,:,IGST)   = DINTOT(IJ,:,:,IGST)
-  ENDDO
+  DO M = 1,NFRE
+    DO K = 1, NANG
+      DO IJ = KIJS,KIJL
+        FLGST(IJ,K,M,IGST) = DINTOT(IJ,K,M,IGST)
+      END DO
+    END DO
+  END DO
 END DO
 
 ! 9) --- Averaging over gust components ------------- /
-IGST=1
-  DO IJ = KIJS,KIJL
-    TAUWGST_AVG(IJ)     = TAUWGST(IJ,IGST)
-    TAUWDIRGST_AVG(IJ)  = TAUWDIRGST(IJ,IGST)
-    USTARGST_AVG(IJ)    = USTARGST(IJ,IGST)
-    SLGST_AVG(IJ,:,:)   = SLGST(IJ,:,:,IGST)
-    SPOSGST_AVG(IJ,:,:) = SPOSGST(IJ,:,:,IGST)
-    FLGST_AVG(IJ,:,:)   = FLGST(IJ,:,:,IGST)
+DO IJ = KIJS,KIJL
+  TAUWGST_AVG(IJ)     = 0.0_JWRB
+  TAUWDIRGST_AVG(IJ)  = 0.0_JWRB
+  USTARGST_AVG(IJ)    = 0.0_JWRB
+END DO
+DO M = 1,NFRE
+  DO K = 1, NANG
+    DO IJ = KIJS,KIJL
+      SLGST_AVG(IJ,K,M)   = 0.0_JWRB
+      SPOSGST_AVG(IJ,K,M) = 0.0_JWRB
+      FLGST_AVG(IJ,K,M)   = 0.0_JWRB
+    END DO
   END DO
-DO IGST=2,NGST
+END DO
+
+DO IGST=1,NGST
   DO IJ = KIJS,KIJL
     TAUWGST_AVG(IJ)      = TAUWGST_AVG(IJ)     + TAUWGST(IJ,IGST)
     TAUWDIRGST_AVG(IJ)   = TAUWDIRGST_AVG(IJ)  + TAUWDIRGST(IJ,IGST)
     USTARGST_AVG(IJ)     = USTARGST_AVG(IJ)    + USTARGST(IJ,IGST)
-    SLGST_AVG(IJ,:,:)    = SLGST_AVG(IJ,:,:)   + SLGST(IJ,:,:,IGST)
-    SPOSGST_AVG(IJ,:,:)  = SPOSGST_AVG(IJ,:,:) + SPOSGST(IJ,:,:,IGST)
-    FLGST_AVG(IJ,:,:)    = FLGST_AVG(IJ,:,:)   + FLGST(IJ,:,:,IGST)
   ENDDO
+  DO M = 1,NFRE
+    DO K = 1, NANG
+      DO IJ = KIJS,KIJL
+        SLGST_AVG(IJ,K,M)    = SLGST_AVG(IJ,K,M)   + SLGST(IJ,K,M,IGST)
+        SPOSGST_AVG(IJ,K,M)  = SPOSGST_AVG(IJ,K,M) + SPOSGST(IJ,K,M,IGST)
+        FLGST_AVG(IJ,K,M)    = FLGST_AVG(IJ,K,M)   + FLGST(IJ,K,M,IGST)
+      END DO
+    END DO
+  END DO
 END DO
 
 DO IJ = KIJS,KIJL
   TAUW(IJ)     = AVG_GST*TAUWGST_AVG(IJ)
   TAUWDIR(IJ)  = AVG_GST*TAUWDIRGST_AVG(IJ)
   UFRIC(IJ)    = AVG_GST*USTARGST_AVG(IJ)
-  SL(IJ,:,:)   = AVG_GST*SLGST_AVG(IJ,:,:)
-  SPOS(IJ,:,:) = AVG_GST*SPOSGST_AVG(IJ,:,:)
-  FLD(IJ,:,:)  = AVG_GST*FLGST_AVG(IJ,:,:)
+END DO
+
+DO M = 1,NFRE
+  DO K = 1, NANG
+    DO IJ = KIJS,KIJL
+      SL(IJ,K,M)   = AVG_GST*SLGST_AVG(IJ,K,M)
+      SPOS(IJ,K,M) = AVG_GST*SPOSGST_AVG(IJ,K,M)
+      FLD(IJ,K,M)  = AVG_GST*FLGST_AVG(IJ,K,M)
+    END DO
+  END DO
+END DO
+
+DO IJ = KIJS,KIJL
 
 ! 10) --- Calculate roughness length and charnock ------------- /
 
@@ -579,7 +648,13 @@ DO IJ = KIJS,KIJL
 ! 11) --- PHIWA calculation using non-directional
 !         spectral density of the wind input  ---------------------- /
 !              CALCPHIWA(SPOS        ,SNEG                     )               
-  PHIWA(IJ)  = CALCPHIWA(SPOS(IJ,:,:),SL(IJ,:,:) - SPOS(IJ,:,:))
+  DO M = 1,NFRE
+    DO K = 1, NANG
+      SPOS_IJ(K,M) = SPOS(IJ,K,M)
+      SNEG_IJ(K,M) = SL(IJ,K,M) - SPOS(IJ,K,M)
+    END DO
+  END DO
+  PHIWA(IJ)  = CALCPHIWA(SPOS_IJ,SNEG_IJ)
 END DO
 
 ! XLLWS based on SL (mask for pos. input)

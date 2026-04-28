@@ -110,6 +110,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: CG2
       REAL(KIND=JWRB), DIMENSION(NANG,NFRE)      :: SIG2
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: DDS
+      REAL(KIND=JWRB), DIMENSION(KIJL)           :: CUMADF
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       
@@ -117,66 +118,80 @@
 
       IF (LHOOK) CALL DR_HOOK('SDISSIP_ZBRY',0,ZHOOK_HANDLE)
 
-      DO K = 1, NANG                    ! Apply to all directions 
-         SIG2(K,:) = SIG
-      END DO
-      
-      DO K = 1, NANG                    ! Apply to all directions
-         DO IJ = KIJS,KIJL
-            CG2(IJ,K,:) = CGROUP(IJ,:)
+      DO M = 1, NFRE
+         DO K = 1, NANG                    ! Apply to all directions
+            SIG2(K,M) = SIG(M)
+            DO IJ = KIJS,KIJL
+               CG2(IJ,K,M) = CGROUP(IJ,M)
+               A(IJ,K,M) = FL1(IJ,K,M) * CG2(IJ,K,M) / ( ZPI * SIG2(K,M) ) ! ACTION DENSITY SPECTRUM
+            END DO
          END DO
-      END DO
-      
-      DO IJ = KIJS,KIJL
-         A(IJ,:,:) = FL1(IJ,:,:) * CG2(IJ,:,:) / ( ZPI * SIG2(:,:) ) ! ACTION DENSITY SPECTRUM
       END DO
 
 !/ 0) --- Initialize essential parameters ---------------------------- /
       FREQ    = FR(1:NFRE)
       BNT     = 0.035_JWRB**2
-      DO IJ = KIJS,KIJL
-         ANAR(IJ,:)    = 1.0_JWRB
-         T1(IJ,:)      = 0.0_JWRB
-         T2(IJ,:)      = 0.0_JWRB
-         NEXDENS(IJ,:) = 0.0_JWRB
+      DO M = 1, NFRE
+         DO IJ = KIJS,KIJL
+            ANAR(IJ,M)    = 1.0_JWRB
+            T1(IJ,M)      = 0.0_JWRB
+            T2(IJ,M)      = 0.0_JWRB
+            NEXDENS(IJ,M) = 0.0_JWRB
+         END DO
       END DO
 !
 !/ 1) --- Calculate threshold spectral density, spectral density, and
 !/        the level of exceedence EXDENS(f) -------------------------- /
-      DO IJ = KIJS,KIJL
-        ETDENS(IJ,:)  = ( ZPI * BNT ) / ( ANAR(IJ,:) * CGROUP(IJ,:) * WAVNUM(IJ,:)**3 )
-        EDENS(IJ,:)   = SUM(FL1(IJ,:,:),1) * DELTH   !E(f)
-        EXDENS(IJ,:)  = MAX(0.0_JWRB,EDENS(IJ,:)-ETDENS(IJ,:))
-      END DO
+         DO M = 1, NFRE
+            DO IJ = KIJS,KIJL
+               ETDENS(IJ,M) = ( ZPI * BNT ) / ( ANAR(IJ,M) * CGROUP(IJ,M) * WAVNUM(IJ,M)**3 )
+               EDENS(IJ,M) = 0.0_JWRB
+            END DO
+            DO K = 1, NANG
+               DO IJ = KIJS,KIJL
+                  EDENS(IJ,M) = EDENS(IJ,M) + FL1(IJ,K,M)
+               END DO
+            END DO
+            DO IJ = KIJS,KIJL
+               EDENS(IJ,M) = EDENS(IJ,M) * DELTH   ! E(f)
+               EXDENS(IJ,M) = MAX(0.0_JWRB,EDENS(IJ,M)-ETDENS(IJ,M))
+            END DO
+         END DO
 !
 !/    --- normalise by a generic spectral density -------------------- /
-      DO IJ = KIJS,KIJL
-        IF (LLSDS6ET) THEN                
-           NEXDENS(IJ,:) = EXDENS(IJ,:) / ETDENS(IJ,:)    ! normalise by threshold spectral density
-        ELSE                            ! normalise by spectral density
-           EDENSMAX(IJ) = MAXVAL(EDENS(IJ,:))*1.0E-5_JWRB
-           IF (ALL(EDENS(IJ,:) .GT. EDENSMAX(IJ))) THEN
-              NEXDENS(IJ,:) = EXDENS(IJ,:) / EDENS(IJ,:)
-           ELSE
-              DO M = 1,NFRE
-                 IF (EDENS(IJ,M) .GT. EDENSMAX(IJ)) THEN
-                   NEXDENS(IJ,M) = EXDENS(IJ,M) / EDENS(IJ,M)
-                 END IF
-              END DO
-           END IF
-        END IF
-      END DO
+      IF (LLSDS6ET) THEN
+         DO M = 1,NFRE
+            DO IJ = KIJS,KIJL
+               NEXDENS(IJ,M) = EXDENS(IJ,M) / ETDENS(IJ,M)    ! normalise by threshold spectral density
+            END DO
+         END DO
+      ELSE                            ! normalise by spectral density
+         DO IJ = KIJS,KIJL
+            EDENSMAX(IJ) = MAXVAL(EDENS(IJ,1:NFRE))*1.0E-5_JWRB
+         END DO
+         DO M = 1,NFRE
+            DO IJ = KIJS,KIJL
+               IF (EDENS(IJ,M) .GT. EDENSMAX(IJ)) THEN
+                  NEXDENS(IJ,M) = EXDENS(IJ,M) / EDENS(IJ,M)
+               END IF
+            END DO
+         END DO
+      END IF
 !
 !/ 2) --- Calculate inherent breaking component T1 ------------------- /
-      DO IJ = KIJS,KIJL  
-        T1(IJ,:) = ZSDS6A1 * ANAR(IJ,:) * FREQ * (NEXDENS(IJ,:)**ISDS6P1)
-      END DO
+         DO M = 1,NFRE
+            DO IJ = KIJS,KIJL
+               T1(IJ,M) = ZSDS6A1 * ANAR(IJ,M) * FREQ(M) * (NEXDENS(IJ,M)**ISDS6P1)
+            END DO
+         END DO
 !
 !/ 3) --- Calculate T2, the dissipation of waves induced by
 !/        the breaking of longer waves T2 ---------------------------- /
-      DO IJ = KIJS,KIJL
-        ADF(IJ,:)    = ANAR(IJ,:) * (NEXDENS(IJ,:)**ISDS6P2)
-      END DO
+         DO M = 1,NFRE
+            DO IJ = KIJS,KIJL
+               ADF(IJ,M) = ANAR(IJ,M) * (NEXDENS(IJ,M)**ISDS6P2)
+            END DO
+         END DO
 
       XFAC   = (1.0_JWRB-1.0_JWRB/FRATIO)/(FRATIO-1.0_JWRB/FRATIO)
       DO M = 1,NFRE
@@ -184,25 +199,36 @@
          IF (M .GT. 1 .AND. M .LT. NFRE) THEN
             DFII(M) = DFII(M) * XFAC
          END IF
+      END DO
+
+      DO M = 1,NFRE
          DO IJ = KIJS,KIJL
-            T2(IJ,M) = ZSDS6A2 * SUM( ADF(IJ,1:M)*DFII(1:M) )
+            CUMADF(IJ) = 0.0_JWRB
+         END DO
+         DO I = 1,M
+            DO IJ = KIJS,KIJL
+               CUMADF(IJ) = CUMADF(IJ) + ADF(IJ,I)*DFII(I)
+            END DO
+         END DO
+         DO IJ = KIJS,KIJL
+            T2(IJ,M) = ZSDS6A2 * CUMADF(IJ)
          END DO
       END DO
 
 !/ 4) --- Sum up dissipation terms and apply to all directions ------- /
-      DO IJ = KIJS,KIJL
-         T12(IJ,:) = -1.0_JWRB * ( MAX(0.0_JWRB,T1(IJ,:))+MAX(0.0_JWRB,T2(IJ,:)) )
+      DO M = 1,NFRE
+         DO IJ = KIJS,KIJL
+            T12(IJ,M) = -1.0_JWRB * ( MAX(0.0_JWRB,T1(IJ,M))+MAX(0.0_JWRB,T2(IJ,M)) )
+         END DO
       END DO
 
       DO K = 1, NANG
-         DO IJ = KIJS,KIJL
-            D(IJ,K,:) = T12(IJ,:)
+         DO M = 1, NFRE
+            DO IJ = KIJS,KIJL
+               D(IJ,K,M) = T12(IJ,M)
+               DDS(IJ,K,M) = D(IJ,K,M)
+            END DO
          END DO
-      END DO
-!
-!
-      DO IJ = KIJS,KIJL
-         DDS(IJ,:,:) = D(IJ,:,:)
       END DO
 
       IF (LLLOWWINDS) THEN
