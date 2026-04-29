@@ -207,7 +207,7 @@ jobs:
         cache_suffix: "${{ matrix.build_type }}-${{ env.CACHE_SUFFIX }}"
         recreate_cache: ${{ matrix.caching == false }}
         dependencies: |
-          ecmwf/ecbuild
+          ecmwf/ecbuild@refs/tags/3.14.0
           ecmwf/eccodes@refs/tags/2.44.0
           ecmwf/fckit@refs/tags/0.13.0
           ecmwf-ifs/fiat
