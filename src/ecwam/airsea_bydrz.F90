@@ -7,13 +7,13 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE AIRSEA_ZBRY (KIJS, KIJL, &
+      SUBROUTINE AIRSEA_BYDRZ (KIJS, KIJL, &
 &                        U10, U10DIR, TAUW, TAUWDIR,  &
 &                        US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
 
-!**** *AIRSEA_ZBRY* - DETERMINE TOTAL STRESS IN SURFACE LAYER.
+!**** *AIRSEA_BYDRZ* - DETERMINE TOTAL STRESS IN SURFACE LAYER.
 !
 !     JOSH KOUSAL & JEAN BIDLOT    ECMWF 2023
 !
@@ -25,7 +25,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *AIRSEA_ZBRY (KIJS, KIJL,
+!       *CALL* *AIRSEA_BYDRZ (KIJS, KIJL,
 !                       U10, U10DIR, TAUW, TAUWDIR,
 !                       US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)*
 
@@ -101,7 +101,7 @@ REAL(KIND=JWRB) :: XLEV, FLX4A0, CD
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-IF (LHOOK) CALL DR_HOOK ('AIRSEA_ZBRY', 0, ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK ('AIRSEA_BYDRZ', 0, ZHOOK_HANDLE)
 
 !*    2. DETERMINE TOTAL STRESS AND ROUGHNESS (if needed)
 !        ----------------------------------
@@ -203,12 +203,12 @@ ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
 
 ELSE
       WRITE (IU06, * ) ' ++++++++++++++++++++++++++++++++++++++++++'
-      WRITE (IU06, * ) ' + AIRSEA_ZBRY : INVALID VALUE OF ICODE_WND    +'
+      WRITE (IU06, * ) ' + AIRSEA_BYDRZ : INVALID VALUE OF ICODE_WND    +'
       WRITE (IU06, * ) ' ICODE_WND = ', ICODE_WND
       WRITE (IU06, * ) ' ++++++++++++++++++++++++++++++++++++++++++'
       CALL ABORT1
 ENDIF
 
-IF (LHOOK) CALL DR_HOOK ('AIRSEA_ZBRY', 1, ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK ('AIRSEA_BYDRZ', 1, ZHOOK_HANDLE)
 
-END SUBROUTINE AIRSEA_ZBRY
+END SUBROUTINE AIRSEA_BYDRZ

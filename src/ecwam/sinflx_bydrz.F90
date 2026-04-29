@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE SINFLX_ZBRY (ICALL, NCALL, NGST, KIJS, KIJL,  &
+SUBROUTINE SINFLX_BYDRZ (ICALL, NCALL, NGST, KIJS, KIJL,  &
  &                 LUPDTUS,                   &
  &                 FL1,                       &
  &                 WAVNUM,CGROUP, CINV,       &
@@ -22,7 +22,7 @@ SUBROUTINE SINFLX_ZBRY (ICALL, NCALL, NGST, KIJS, KIJL,  &
 
 ! ----------------------------------------------------------------------
 
-!**** *SINFLX_ZBRY* - COMPUTATION OF INPUT SOURCE FUNCTION AND STRESSES
+!**** *SINFLX_BYDRZ* - COMPUTATION OF INPUT SOURCE FUNCTION AND STRESSES
 !
 !     JOSH KOUSAL & JEAN BIDLOT    ECMWF 2023
 !
@@ -36,7 +36,7 @@ SUBROUTINE SINFLX_ZBRY (ICALL, NCALL, NGST, KIJS, KIJL,  &
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINFLX_ZBRY (ICALL, NCALL, NGST, KIJS, KIJL, LUPDTUS,*
+!     *CALL* *SINFLX_BYDRZ (ICALL, NCALL, NGST, KIJS, KIJL, LUPDTUS,*
 !    &                    FL1, WAVNUM, CGROUP, CINV,
 !    &                    WSWAVE, WDWAVE, AIRD,
 !    &                    RAORW, WSTAR, CICOVER,
@@ -92,7 +92,7 @@ SUBROUTINE SINFLX_ZBRY (ICALL, NCALL, NGST, KIJS, KIJL,  &
 
 !     ORIGIN.
 !     ----------
-!     Adapted from Babanin Young Donelan & Banner (ZBRY) physics 
+!     Adapted from Babanin Young Donelan & Banner (BYDRZ) physics 
 !     as implemented as ST6 in WAVEWATCH-III
 !     Implementation into ECWAM DECEMBER 2021 by J. Kousal
 
@@ -292,7 +292,7 @@ ELSE
       WRITE (IU06,*) '**************************************'
       WRITE (IU06,*) '*    FATAL ERROR                     *'
       WRITE (IU06,*) '*    ===========                     *'
-      WRITE (IU06,*) '* IN SINFLX_ZBRY: NGST > 2            *'
+      WRITE (IU06,*) '* IN SINFLX_BYDRZ: NGST > 2            *'
       WRITE (IU06,*) '* NGST = ', NGST
       WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.  *'
       WRITE (IU06,*) '*                                    *'
@@ -602,7 +602,7 @@ DO IJ = KIJS,KIJL
   Z0        = ZNLEV / ( EXP(KUOUST) - 1.0_JWRB )
   Z0        = MAX(Z0, 0.0000001_JWRB)
   Z0M(IJ)   = Z0                                 ! Update z0 
-  CHNKOG(IJ)    = ( Z0 - RNU_WATER*USTM1 ) * USTM2     ! Update charnock (where Z0=Z0CH+Z0VIS from airsea_zbry)
+  CHNKOG(IJ)    = ( Z0 - RNU_WATER*USTM1 ) * USTM2     ! Update charnock (where Z0=Z0CH+Z0VIS from airsea_bydrz)
   ALPHAOGMAXU10 = MIN(ALPHAMAX,AMAX+BMAX*WSWAVE(IJ))*GM1 ! protective code taken from outbeta (incl /G)
   CHNKOG(IJ)    = MIN(CHNKOG(IJ),ALPHAOGMAXU10)        ! protective code taken from outbeta (incl /G)
 
@@ -660,4 +660,4 @@ CALL FRCUTINDEX(KIJS, KIJL, FMEAN, FMEANWS, UFRIC, CICOVER, MIJ, RHOWGDFTH)
 
 IF (LHOOK) CALL DR_HOOK('SINFLX',1,ZHOOK_HANDLE)
 
-END SUBROUTINE SINFLX_ZBRY
+END SUBROUTINE SINFLX_BYDRZ

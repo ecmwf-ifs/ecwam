@@ -150,28 +150,28 @@
 !     Wave-turbulence interaction coefficient 
       REAL(KIND=JWRB) :: SSDSC5  !! See *SETWAVPHYS*
 
-!     ZBRY PHYS ::
+!     BYDRZ PHYS ::
 !     ==========
       
-!     *SIN6A0*    PARAMETER FOR NEGATIVE WIND INPUT (a0) FOR ZBRY PHYS
+!     *SIN6A0*    PARAMETER FOR NEGATIVE WIND INPUT (a0) FOR BYDRZ PHYS
       REAL(KIND=JWRB) :: ZSIN6A0 
 
-!     Swell attenuation logical for ZBRY physics
+!     Swell attenuation logical for BYDRZ physics
       LOGICAL :: LLSWL6CSTB1
       
-!     Swell attenuation coefficient for ZBRY physics
+!     Swell attenuation coefficient for BYDRZ physics
       REAL(KIND=JWRB) :: ZSWL6B1
       
-!     Dissipation coefficient for inherent breaking term for ZBRY physics (T1,a1)
+!     Dissipation coefficient for inherent breaking term for BYDRZ physics (T1,a1)
       REAL(KIND=JWRB) :: ZSDS6A1
 
-!     Dissipation coefficient for forced dissipation term for ZBRY physics (T1,a2)
+!     Dissipation coefficient for forced dissipation term for BYDRZ physics (T1,a2)
       REAL(KIND=JWRB) :: ZSDS6A2
 
-!     Dissipation exponent for inherent breaking term for ZBRY physics (T1,p1)      
+!     Dissipation exponent for inherent breaking term for BYDRZ physics (T1,p1)      
       INTEGER(KIND=JWIM) :: ISDS6P1
 
-!     Dissipation exponent for forced dissipation term for ZBRY physics (T2,p2)      
+!     Dissipation exponent for forced dissipation term for BYDRZ physics (T2,p2)      
       INTEGER(KIND=JWIM) :: ISDS6P2
 
 !     Dissipation, logical to normalise by **threshold** spectral density

@@ -7,12 +7,12 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE SDISSIP_ZBRY (KIJS, KIJL, FL1, FLD, SL,          &
+      SUBROUTINE SDISSIP_BYDRZ (KIJS, KIJL, FL1, FLD, SL,          &
      &                        WSWAVE, WAVNUM, CGROUP,             &
      &                        UFRIC, RAORW)
 ! ----------------------------------------------------------------------
 
-!**** *SDISSIP_ZBRY* - COMPUTATION OF DISSIPATION SOURCE FUNCTION.
+!**** *SDISSIP_BYDRZ* - COMPUTATION OF DISSIPATION SOURCE FUNCTION.
 !
 !     JOSH KOUSAL & JEAN BIDLOT    ECMWF 2023
 !
@@ -29,7 +29,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDISSIP_ZBRY (KIJS, KIJL, FL1, FLD, SL,*
+!       *CALL* *SDISSIP_BYDRZ (KIJS, KIJL, FL1, FLD, SL,*
 !                            WSWAVE, WAVNUM, CGROUP,
 !                            UFRIC, RAORW)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
@@ -60,7 +60,7 @@
 
 !     ORIGIN.
 !     ----------
-!     Adapted from Babanin Young Donelan & Banner (ZBRY) physics 
+!     Adapted from Babanin Young Donelan & Banner (BYDRZ) physics 
 !     as implemented as ST6 in WAVEWATCH-III
 !     Implementation into ECWAM DECEMBER 2021 by J. Kousal 
 
@@ -111,7 +111,7 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
-IF (LHOOK) CALL DR_HOOK('SDISSIP_ZBRY',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('SDISSIP_BYDRZ',0,ZHOOK_HANDLE)
 
 DO M = 1, NFRE
    DO K = 1, NANG
@@ -234,6 +234,6 @@ ELSE
    END DO
 END IF
 
-IF (LHOOK) CALL DR_HOOK('SDISSIP_ZBRY',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('SDISSIP_BYDRZ',1,ZHOOK_HANDLE)
 
-END SUBROUTINE SDISSIP_ZBRY
+END SUBROUTINE SDISSIP_BYDRZ

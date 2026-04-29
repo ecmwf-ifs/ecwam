@@ -126,7 +126,7 @@
 !      *CDTINTT*   CHAR*14   NEXT DATE TO WRITE INTEG. PARAMETERS.
 
 !      *IFRELFMAX* INTEGER   FREQUENCY INDEX FOR THE LOW FREQUENCY WAVES (see DELPRO_LF below)
-!      *ZCDFAC*    REAL      PARAMETER FOR WIND INPUT FOR ZBRY PHYS.
+!      *ZCDFAC*    REAL      PARAMETER FOR WIND INPUT FOR BYDRZ PHYS.
 !      *DELPRO_LF* REAL      TIMESTEP WAM PROPAGATION IN SECONDS FOR LOW FREQUENCY WAVES (can be fraction od seconds)
 !                            FOR ALL WAVES WITH FREQUENCY <= FR(IFRELFMAX), IF IFRELFMAX>0
 !                            !!! this option is only possible when no refraction effects are used (IREFRA=0)

@@ -208,7 +208,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
         ! Dummy values for IPHYS=1-inherited variables not used in IPHYS=2. 
         ! N. B. The issue only appears when compiling in coupled mode
-        ! ZBRY TODO: these should be cleaned up so they are not required with this physics option. 
+        ! BYDRZ TODO: these should be cleaned up so they are not required with this physics option. 
         ZALP    = 0.008_JWRB
         ANG_GC_A = 0.35_JWRB
         ANG_GC_B = 0.65_JWRB

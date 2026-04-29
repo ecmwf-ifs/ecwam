@@ -26,7 +26,7 @@
 
 !     ORIGIN.
 !     ----------
-!     Adapted from Babanin Young Donelan & Banner (ZBRY) physics 
+!     Adapted from Babanin Young Donelan & Banner (BYDRZ) physics 
 !     as implemented as ST6 in WAVEWATCH-III 
 !     Implementation into ECWAM DECEMBER 2021 by J. Kousal 
 

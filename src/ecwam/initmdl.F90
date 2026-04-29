@@ -504,7 +504,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       ENDDO
 
       ! --------------------------------------------------
-      ! ZBRY-specific frequency-space setup (only needed for IPHYS=2).
+      ! BYDRZ-specific frequency-space setup (only needed for IPHYS=2).
       IF (IPHYS == 2) THEN
         IF (.NOT.ALLOCATED(DF))    ALLOCATE(DF(NFRE))
         IF (.NOT.ALLOCATED(SIG))   ALLOCATE(SIG(NFRE))

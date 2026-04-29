@@ -70,7 +70,7 @@
 
 #include "abort1.intfb.h"
 #include "airsea_jan.intfb.h"
-#include "airsea_zbry.intfb.h"
+#include "airsea_bydrz.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (IN), OPTIONAL :: HALP, RNFAC
@@ -100,7 +100,7 @@
 &                              HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,  &
 &                              US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
       CASE(2) 
-            CALL AIRSEA_ZBRY(KIJS, KIJL, &
+            CALL AIRSEA_BYDRZ(KIJS, KIJL, &
             &                U10, U10DIR, TAUW, TAUWDIR,  &
             &                US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
             

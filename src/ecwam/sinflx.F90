@@ -43,7 +43,7 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
 
 #include "abort1.intfb.h"
 #include "sinflx_ard_jan.intfb.h"
-#include "sinflx_zbry.intfb.h"
+#include "sinflx_bydrz.intfb.h"
 
 INTEGER(KIND=JWIM), INTENT(IN) :: ICALL  !! CALL NUMBER.
 INTEGER(KIND=JWIM), INTENT(IN) :: NCALL  !! TOTAL NUMBER OF CALLS.
@@ -115,7 +115,7 @@ CASE(0,1)
      &               FLD, SL, SPOS,             &
      &               MIJ, RHOWGDFTH, XLLWS)
 CASE(2)
-  CALL SINFLX_ZBRY (ICALL, NCALL, NGST, KIJS, KIJL,  &
+  CALL SINFLX_BYDRZ (ICALL, NCALL, NGST, KIJS, KIJL,  &
      &               LUPDTUS,                   &
      &               FL1,                       &
      &               WAVNUM,CGROUP, CINV,       &

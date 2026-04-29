@@ -122,7 +122,7 @@
      &                   RAORW, WSTAR, RNFAC,            &
      &                   FLD, SL, SPOS, XLLWS)
       ! CASE(2)
-      ! - not called from SINPUT because it is handled input source term in SINFLX_ZBRY
+      ! - not called from SINPUT because it is handled input source term in SINFLX_BYDRZ
     END SELECT 
 
       IF (LHOOK) CALL DR_HOOK('SINPUT',1,ZHOOK_HANDLE)
