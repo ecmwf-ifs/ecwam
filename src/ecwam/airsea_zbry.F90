@@ -76,7 +76,7 @@ INTEGER(KIND=JWIM) :: IJ, I, J
 REAL(KIND=JWRB) :: ZNLEV
 REAL(KIND=JWRB), PARAMETER :: RKAP = 0.4_JWRB
 
-! for the ietrative scheme
+! for the iterative scheme
 INTEGER(KIND=JWIM), PARAMETER :: NITER=15
 
 !      CD=ACD+BCD*U10
@@ -148,8 +148,8 @@ IF (ICODE_WND == 3) THEN
             CDLIN= ACDLIN + BCDLIN*SQRT(PCHAROG*G) * U10(IJ)
 
             ! first guess for u*
-!          UST = U10(IJ)*SQRT(ACD+BCD*U10(IJ))   ! Use linear approx
-!          UST = SQRT(CD)*U10(IJ)                ! Use Hersbach approx
+!           UST = U10(IJ)*SQRT(ACD+BCD*U10(IJ))    ! Use linear approx
+!           UST = SQRT(CD)*U10(IJ)                 ! Use Hersbach approx
             UST = SQRT(CDLIN)*U10(IJ)              ! Use Hersbach approx
 
             ! iterate
@@ -175,7 +175,7 @@ IF (ICODE_WND == 3) THEN
                   US(IJ) = XKUTOP/LOG(1.0+ZNLEV/Z0(IJ))
             ELSE
                   US(IJ) = MAX(UST,USTMIN)
-      !            Z0(IJ) = Z0CH ! Commented out -> Z0=Z0TOT
+      !           Z0(IJ) = Z0CH ! N.B. not needed here because Z0=Z0TOT
             ENDIF
             
             

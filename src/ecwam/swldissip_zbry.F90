@@ -8,8 +8,8 @@
 !
 
       SUBROUTINE SWLDISSIP_ZBRY (KIJS, KIJL, FL1, FLD, SL,          &
-     &                        WAVNUM, CGROUP,                       &
-     &                        UFRIC, RAORW)
+     &                           WAVNUM, CGROUP,                    &
+     &                           UFRIC, RAORW)
 ! ----------------------------------------------------------------------
 
 !**** *SWLDISSIP_ZBRY* - COMPUTATION OF DISSIPATION SOURCE FUNCTION.
@@ -95,7 +95,7 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('SWLDISSIP_ZBRY',0,ZHOOK_HANDLE)
 
 DO M = 1, NFRE
-  DO K = 1, NANG                    ! Apply to all directions
+  DO K = 1, NANG
     DO IJ = KIJS,KIJL
       A(IJ,K,M) = FL1(IJ,K,M) * CGROUP(IJ,M) / ( ZPI * SIG(M) ) ! ACTION DENSITY SPECTRUM
     END DO

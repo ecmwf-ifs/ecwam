@@ -6,7 +6,7 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 
-        SUBROUTINE TAU_WAVE_ATMOS(S, CINV, TAUNWX, TAUNWY )
+        SUBROUTINE TAU_WAVE_ATMOS(S, CINV, TAUNWX, TAUNWY)
 
 ! ----------------------------------------------------------------------
 !
@@ -30,7 +30,7 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *TAU_WAVE_ATMOS(S, CINV, TAUNWX, TAUNWY )
+!     *CALL* *TAU_WAVE_ATMOS(S, CINV, TAUNWX, TAUNWY)*
 
 !            *S*  - NEG. WIND INPUT ENERGY DENSITY SPECTRUM.
 !          *CINV* - INVERSE PHASE SPEED CALC. IN INPUT ROUTINE

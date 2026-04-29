@@ -29,7 +29,7 @@
 !             *Z0M*    - ROUGHNESS LENGTH IN M.
 !             *WSTAR*  - FREE CONVECTION VELOCITY SCALE (M/S).
 !             *SIG_N*  - ESTIMATED RELATIVE STANDARD DEVIATION OF USTAR.
-!             *SIG_U10*  - ESTIMATED RELATIVE STANDARD DEVIATION OF U10.
+!             *SIG_U10*- ESTIMATED RELATIVE STANDARD DEVIATION OF U10.
 
 !     METHOD.
 !     -------
@@ -103,8 +103,7 @@
           SIG_N(IJ) = MIN(SIG_NMAX, SIG_CONV * U10M1*(BG_GUST*UFRIC(IJ)**3 + &
      &                    0.5_JWRB*XKAPPA*WSTAR(IJ)**3)**ONETHIRD )
           SIG_U10(IJ) = MIN(SIG_U10MAX, (BG_GUST*UFRIC(IJ)**3 + &
-     &                    0.5_JWRB*XKAPPA*WSTAR(IJ)**3)**ONETHIRD )
-            
+     &                    0.5_JWRB*XKAPPA*WSTAR(IJ)**3)**ONETHIRD )            
         ENDDO
 
        ELSE
@@ -131,7 +130,6 @@
      &                    0.5_JWRB*XKAPPA*WSTAR(IJ)**3)**ONETHIRD )
           SIG_U10(IJ) = MIN(SIG_U10MAX, (BG_GUST*UFRIC(IJ)**3 + &
      &                    0.5_JWRB*XKAPPA*WSTAR(IJ)**3)**ONETHIRD )
-
         ENDDO
 
       ENDIF

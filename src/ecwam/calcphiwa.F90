@@ -67,7 +67,6 @@ IF (LHOOK) CALL DR_HOOK('CALCPHIWA',0,ZHOOK_HANDLE)
 !/ 1) --- low frequency contributions to the integral ---------------------- /
 !         -- Direct summation over available freq. bins up to FR(NFRE)
 !
-! DFIM = DELTH * DF
 !
 SPOS_LF    = SUM(SUM(SPOS,1) * DFIM)
 SNEG_LF    = SUM(SUM(SNEG,1) * DFIM)

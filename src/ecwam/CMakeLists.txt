@@ -320,7 +320,6 @@ list( APPEND ecwam_srcs
   wvalloc.F90
   wvchkmid.F90
   wvdealloc.F90
-  wvei.F90
   wvfricvelo.F90
   wvopenbathy.F90
   wvopensubbathy.F90

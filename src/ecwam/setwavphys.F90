@@ -206,7 +206,9 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
       ELSE IF (IPHYS.EQ.2) THEN
 
-        ! Dummy values for IPHYS=1-inherited variables not used in IPHYS=2
+        ! Dummy values for IPHYS=1-inherited variables not used in IPHYS=2. 
+        ! N. B. The issue only appears when compiling in coupled mode
+        ! ZBRY TODO: these should be cleaned up so they are not required with this physics option. 
         ZALP    = 0.008_JWRB
         ANG_GC_A = 0.35_JWRB
         ANG_GC_B = 0.65_JWRB
@@ -246,8 +248,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           TAILFACTOR=6.0_JWRB
           TAILFACTOR_PM=4.0_JWRB
         CASE(2,3)
-          ! NGST=2 ! intend to use this later
-          NGST=1 ! keep NGST=1 for clean comparison
+          ! NGST=2
+          NGST=1                 ! keep NGST=1 for clean comparison to other IPHYS2_AIRSEA options
           ALPHAPMAX = 0.031_JWRB ! cap on spectral steepness as in ARD
           TAILFACTOR=2.5_JWRB
           TAILFACTOR_PM=3.0_JWRB ! as in ARD
