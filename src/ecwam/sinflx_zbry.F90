@@ -178,7 +178,6 @@ REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS  !! TOTAL WINDS
 INTEGER(KIND=JWIM) :: IUSFG, ICODE_WND
 
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-REAL(KIND=JWRB), DIMENSION(KIJL) :: RNFAC
 
 INTEGER(KIND=JWIM) :: IJ, K, M, IND, IGST
 
@@ -189,7 +188,7 @@ REAL(KIND=JWRB), DIMENSION(KIJL,NFRE)      :: ADENSIG, KMAX, ANAR, SQRTBN
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: KK
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE,NGST) :: W1, W2, S, D
 REAL(KIND=JWRB), DIMENSION(KIJL,NFRE,NGST)      :: LFACT
-REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE,NGST) :: SDENSIG, DINPOS, DINTOT
+REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE,NGST) :: DINPOS, DINTOT
 
 
 REAL(KIND=JWRB), DIMENSION(KIJL,NGST) :: TAUWX, TAUWY ! Component of the wave-supported stress
@@ -200,7 +199,6 @@ REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: XK, CGG_WAM, CM
 
 ! For USTAR, Z0, CHNK
 REAL(KIND=JWRB), DIMENSION(KIJL,NGST) :: TAU
-REAL(KIND=JWRB), PARAMETER :: ZRN=1.65E-6_JWRB  ! effective kinematic viscosity (0.11*1.5e-5) ! TODO: use instead RNU_WATER
 REAL(KIND=JWRB), PARAMETER :: RKAP = 0.4_JWRB
 REAL(KIND=JWRB)            :: ZNLEV, Z0, KUOUST, USTM1, USTM2
 REAL(KIND=JWRB), PARAMETER :: XEPS=0.00001_JWRB
@@ -228,6 +226,7 @@ REAL(KIND=JWRB), DIMENSION(KIJL,NGST) :: TAUWGST, TAUWDIRGST, UABSGST, USTARGST
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SLGST_AVG, SPOSGST_AVG, FLGST_AVG
 REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE,NGST) :: SLGST, SPOSGST, FLGST
 REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: SPOS_IJ, SNEG_IJ
+REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: SDENSIG_IJ
 LOGICAL, DIMENSION(KIJL) :: LREDUCE
 
 ! ----------------------------------------------------------------------
@@ -248,14 +247,10 @@ ELSE
 ENDIF
 
 IF(LUPDTUS) THEN
-  ! Dummy values for AIRSEA !TODO: implement these as optional arguments in AIRSEA 
-  RNFAC(KIJS:KIJL) = 1.0_JWRB
-  HALP(KIJS:KIJL)  = 0.0_JWRB
-
   !$loki inline
   CALL AIRSEA (KIJS, KIJL,                                  &
-&              HALP, WSWAVE, WDWAVE, TAUW, TAUWDIR, RNFAC,  &
-&              UFRIC, Z0M, Z0B, CHRNCK, ICODE_WND, IUSFG) 
+&              U10=WSWAVE, U10DIR=WDWAVE, TAUW=TAUW, TAUWDIR=TAUWDIR, &
+&              US=UFRIC, Z0=Z0M, Z0B=Z0B, CHRNCK=CHRNCK, ICODE_WND=ICODE_WND, IUSFG=IUSFG) 
 
 ENDIF
 
@@ -442,24 +437,18 @@ IF (LLFACT) THEN ! TODO: how to make more efficient? is difficult...
   !         spectral density of the wind input ------------------------- /
 
   DO IGST=1,NGST
-    DO M = 1, NFRE
-      DO K = 1, NANG
-        DO IJ = KIJS,KIJL
-          SDENSIG(IJ,K,M,IGST) = S(IJ,K,M,IGST)*SIG(M)/CGROUP(IJ,M)
+    DO IJ = KIJS,KIJL
+      DO M = 1, NFRE
+        DO K = 1, NANG
+          SDENSIG_IJ(K,M) = S(IJ,K,M,IGST)*SIG(M)/CGROUP(IJ,M)
         END DO
       END DO
-    END DO
-
-    DO IJ = KIJS,KIJL
-      CALL LFACTOR(SDENSIG(IJ,:,:,IGST), CINV(IJ,:), UABSGST(IJ,IGST), USTARGST(IJ,IGST), UPROXYGST(IJ,IGST), WDWAVE(IJ),    &
-  &                      ROAIRN(IJ), LFACT(IJ,:,IGST), TAUWX(IJ,IGST), TAUWY(IJ,IGST), TAU(IJ,IGST))
+      CALL LFACTOR(SDENSIG_IJ, CINV(IJ,:), UABSGST(IJ,IGST), USTARGST(IJ,IGST), UPROXYGST(IJ,IGST), WDWAVE(IJ),    &
+  &                      ROAIRN(IJ), LFACT(IJ,:,IGST), LREDUCE(IJ), TAUWX(IJ,IGST), TAUWY(IJ,IGST), TAU(IJ,IGST))
     ENDDO
 
   !/ 6) --- apply reduction (LFACT) to the entire spectrum ------------- /
 
-    DO IJ = KIJS,KIJL
-      LREDUCE(IJ) = SUM(LFACT(IJ,:,IGST)) .LT. NFRE
-    END DO
     DO M = 1, NFRE
       DO K = 1, NANG
         DO IJ = KIJS,KIJL
@@ -495,7 +484,6 @@ DO IGST=1,NGST
 
 ! !     --- compute negative component of the wave supported stresses
 ! !         from negative part of the wind input  ---------------------- /
-          SDENSIG(IJ,K,M,IGST) = S(IJ,K,M,IGST)*SIG(M)/CGROUP(IJ,M)
         END DO
       END DO
     END DO
@@ -614,7 +602,7 @@ DO IJ = KIJS,KIJL
   Z0        = ZNLEV / ( EXP(KUOUST) - 1.0_JWRB )
   Z0        = MAX(Z0, 0.0000001_JWRB)
   Z0M(IJ)   = Z0                                 ! Update z0 
-  CHNKOG(IJ)    = ( Z0 - ZRN*USTM1 ) * USTM2     ! Update charnock (where Z0=Z0CH+Z0VIS from airsea_zbry)
+  CHNKOG(IJ)    = ( Z0 - RNU_WATER*USTM1 ) * USTM2     ! Update charnock (where Z0=Z0CH+Z0VIS from airsea_zbry)
   ALPHAOGMAXU10 = MIN(ALPHAMAX,AMAX+BMAX*WSWAVE(IJ))*GM1 ! protective code taken from outbeta (incl /G)
   CHNKOG(IJ)    = MIN(CHNKOG(IJ),ALPHAOGMAXU10)        ! protective code taken from outbeta (incl /G)
 

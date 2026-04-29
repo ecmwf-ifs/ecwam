@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 
       SUBROUTINE LFACTOR(S, CINV, U10, USTAR, UPROXY, USDIR, ROAIRN, &
-     &                   LFACT, TAUWX, TAUWY, TAU)
+     &                   LFACT, LREDUCE, TAUWX, TAUWY, TAU)
  
 ! ----------------------------------------------------------------------------
 !
@@ -86,6 +86,7 @@
       REAL(KIND=JWRB),                       INTENT(IN)  :: U10, USTAR, UPROXY, USDIR, ROAIRN
 
       REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(OUT) :: LFACT
+      LOGICAL,                               INTENT(OUT) :: LREDUCE
       REAL(KIND=JWRB),                       INTENT(OUT) :: TAUWX, TAUWY, TAU
 
       INTEGER(KIND=JWIM), PARAMETER :: ITERMAX = 80 ! Max. no. iterations
@@ -97,11 +98,10 @@
 
       REAL(KIND=JWRB)      :: TAU_TOT, TAU_VIS, TAU_WAV
       REAL(KIND=JWRB)      :: TAUVX, TAUVY, TAUX, TAUY   
-      REAL(KIND=JWRB)      :: TAU_NND, TAU_INIT(2)
       REAL(KIND=JWRB)      :: RTAU, DRTAU, ERR   
       LOGICAL              :: OVERSHOT
 
-      INTEGER(KIND=JWIM) :: IK, K, SIGN_NEW, SIGN_OLD
+      INTEGER(KIND=JWIM) :: IK, K, M, SIGN_NEW, SIGN_OLD
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -114,13 +114,17 @@
 !         wind input only. ---------------------------------------------- /
       IF (NFRE .LT. NFRE_EXT) THEN
             CINV_EXT(1:NFRE)          = CINV
-            SDENS_EXT(1:NFRE)         = SUM(S,1) * DELTH
             SDENSX_EXT(1:NFRE)        = 0.0_JWRB
             SDENSY_EXT(1:NFRE)        = 0.0_JWRB
+            SDENS_EXT(1:NFRE)         = 0.0_JWRB
             DO K = 1, NANG
-                  SDENSX_EXT(1:NFRE) = SDENSX_EXT(1:NFRE) + MAX(0.0_JWRB,S(K,1:NFRE))*COSTH(K)
-                  SDENSY_EXT(1:NFRE) = SDENSY_EXT(1:NFRE) + MAX(0.0_JWRB,S(K,1:NFRE))*SINTH(K)
+                  DO M = 1, NFRE
+                        SDENS_EXT(M) = SDENS_EXT(M) + S(K,M)
+                        SDENSX_EXT(M) = SDENSX_EXT(M) + MAX(0.0_JWRB,S(K,M))*COSTH(K)
+                        SDENSY_EXT(M) = SDENSY_EXT(M) + MAX(0.0_JWRB,S(K,M))*SINTH(K)
+                  END DO
             END DO
+            SDENS_EXT(1:NFRE)         = SDENS_EXT(1:NFRE) * DELTH
             SDENSX_EXT(1:NFRE)        = SDENSX_EXT(1:NFRE) * DELTH
             SDENSY_EXT(1:NFRE)        = SDENSY_EXT(1:NFRE) * DELTH
 !        --- Spectral slope for S_IN(F) is proportional to F**(-2) ------ /
@@ -130,13 +134,17 @@
             SDENSY_EXT(NFRE+1:NFRE_EXT) = SDENSY_EXT(NFRE) * (SIG_EXT(NFRE)/SIG_EXT(NFRE+1:NFRE_EXT))**2
       ELSE
             CINV_EXT         = CINV
-            SDENS_EXT(1:NFRE)  = SUM(S,1) * DELTH
             SDENSX_EXT(1:NFRE) = 0.0_JWRB
             SDENSY_EXT(1:NFRE) = 0.0_JWRB
+            SDENS_EXT(1:NFRE)  = 0.0_JWRB
             DO K = 1, NANG
-                  SDENSX_EXT(1:NFRE) = SDENSX_EXT(1:NFRE) + MAX(0.0_JWRB,S(K,1:NFRE))*COSTH(K)
-                  SDENSY_EXT(1:NFRE) = SDENSY_EXT(1:NFRE) + MAX(0.0_JWRB,S(K,1:NFRE))*SINTH(K)
+                  DO M = 1, NFRE
+                        SDENS_EXT(M) = SDENS_EXT(M) + S(K,M)
+                        SDENSX_EXT(M) = SDENSX_EXT(M) + MAX(0.0_JWRB,S(K,M))*COSTH(K)
+                        SDENSY_EXT(M) = SDENSY_EXT(M) + MAX(0.0_JWRB,S(K,M))*SINTH(K)
+                  END DO
             END DO
+            SDENS_EXT(1:NFRE) = SDENS_EXT(1:NFRE) * DELTH
             SDENSX_EXT(1:NFRE) = SDENSX_EXT(1:NFRE) * DELTH
             SDENSY_EXT(1:NFRE) = SDENSY_EXT(1:NFRE) * DELTH
       END IF
@@ -156,9 +164,7 @@
 !     --- The wave supported stress. --------------------------------- /
       TAUWX    = TAUWINDS(SDENSX_EXT,CINV_EXT,DSII_EXT)   ! normal stress (x-component)
       TAUWY    = TAUWINDS(SDENSY_EXT,CINV_EXT,DSII_EXT)   ! normal stress (y-component)
-      TAU_NND  = TAUWINDS(SDENS_EXT, CINV_EXT,DSII_EXT)   ! normal stress (non-directional)
       TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)        ! normal stress (magnitude)
-      TAU_INIT = (/TAUWX,TAUWY/)                  ! unadjusted normal stress components
 !
       TAUX     = TAUVX + TAUWX                        ! total stress (x-component)
       TAUY     = TAUVY + TAUWY                        ! total stress (y-component)
@@ -168,6 +174,7 @@
 !/ 3) --- Find reduced Sin(f) = L(f)*Sin(f) to satisfy our constraint
 !/        TAU <= TAU_TOT --------------------------------------------- /
       LF_EXT = 1.0_JWRB
+      LREDUCE = .FALSE.
       IK = 0
 !
       IF (TAU .GT. TAU_TOT) THEN
@@ -183,7 +190,6 @@
          DO IK=1,ITERMAX
 
             LF_EXT   = MIN(1.0_JWRB, EXP(UCINV_EXT * RTAU) )
-            TAU_NND  = TAUWINDS(SDENS_EXT *LF_EXT,CINV_EXT,DSII_EXT)
             TAUWX    = TAUWINDS(SDENSX_EXT*LF_EXT,CINV_EXT,DSII_EXT)
             TAUWY    = TAUWINDS(SDENSY_EXT*LF_EXT,CINV_EXT,DSII_EXT)
             TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)
@@ -208,6 +214,7 @@
       END IF
 
       LFACT(1:NFRE) = LF_EXT(1:NFRE)
+      LREDUCE = ANY(LFACT(1:NFRE) .LT. 1.0_JWRB)
 
       IF (LHOOK) CALL DR_HOOK('LFACTOR',1,ZHOOK_HANDLE)
 

@@ -121,7 +121,6 @@ CASE(2)
      &               WAVNUM,CGROUP, CINV,       &
      &               WSWAVE, WDWAVE, AIRD,      &
      &               RAORW, WSTAR, CICOVER,     &
-     &               COSWDIF, SINWDIF2,         &
      &               FMEAN, HALP, FMEANWS,      &
      &               FLM,                       &
      &               UFRIC, TAUW, TAUWDIR,      &

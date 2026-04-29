@@ -91,10 +91,10 @@
          !$loki inline
          CALL SDISSIP_ZBRY (KIJS, KIJL, FL1 ,FLD, SL,  &
      &                      WSWAVE, WAVNUM, CGROUP,    &
-     &                      UFRIC, COSWDIF, RAORW)
+             &                      UFRIC, RAORW)
          CALL SWLDISSIP_ZBRY(KIJS, KIJL, FL1 ,FLD, SL, &
      &                       WAVNUM, CGROUP,           &
-     &                       UFRIC, COSWDIF, RAORW)
+             &                       UFRIC, RAORW)
    END SELECT 
 
       IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)

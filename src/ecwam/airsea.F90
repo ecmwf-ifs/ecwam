@@ -29,20 +29,17 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *AIRSEA (KIJS, KIJL, FL1, WAVNUM,
-!                       HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,
-!                       US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)*
+!       *CALL* *AIRSEA (KIJS, KIJL,
+!                       U10, U10DIR, TAUW, TAUWDIR,
+!                       US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG,
+!                       HALP, RNFAC)*
 
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*    - INDEX OF LAST GRIDPOINT.
-!          *FL1*     - SPECTRA
-!          *WAVNUM*  - WAVE NUMBER
-!          *HALP*    - 1/2 PHILLIPS PARAMETER
 !          *U10*     - WINDSPEED U10.
 !          *U10DIR*  - WINDSPEED DIRECTION.
 !          *TAUW*    - WAVE STRESS.
 !          *TAUWDIR* - WAVE STRESS DIRECTION.
-!          *RNFAC*   - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !          *US*      - OUTPUT OR OUTPUT BLOCK OF FRICTION VELOCITY.
 !          *Z0*      - OUTPUT BLOCK OF ROUGHNESS LENGTH.
 !          *Z0B*     - BACKGROUND ROUGHNESS LENGTH.
@@ -52,6 +49,8 @@
 !                     US:  ICODE_WND=1 OR 2 --> U10 will be updated
 !          *IUSFG*   - IF = 1 THEN USE THE FRICTION VELOCITY (US) AS FIRST GUESS in TAUT_Z0
 !                           0 DO NOT USE THE FIELD US 
+!          *HALP*    - OPTIONAL 1/2 PHILLIPS PARAMETER (required for JAN branch).
+!          *RNFAC*   - OPTIONAL WIND-DEPENDENT GROWTH RENORMALISATION FACTOR (required for JAN branch).
 
 
 ! ----------------------------------------------------------------------
@@ -74,7 +73,8 @@
 #include "airsea_zbry.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (IN) :: HALP, U10DIR, TAUW, TAUWDIR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (IN), OPTIONAL :: HALP, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (IN) :: U10DIR, TAUW, TAUWDIR
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (INOUT) :: U10, US, CHRNCK
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (OUT) :: Z0, Z0B 
 
@@ -90,6 +90,12 @@
 
       SELECT CASE (IPHYS)
       CASE(0,1)
+            IF ((.NOT.PRESENT(HALP)) .OR. (.NOT.PRESENT(RNFAC))) THEN
+                  WRITE (IU06, * ) ' ++++++++++++++++++++++++++++++++++++++++++'
+                  WRITE (IU06, * ) ' + AIRSEA : HALP/RNFAC REQUIRED FOR JAN   +'
+                  WRITE (IU06, * ) ' ++++++++++++++++++++++++++++++++++++++++++'
+                  CALL ABORT1
+            ENDIF
             CALL AIRSEA_JAN (KIJS, KIJL, &
 &                              HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,  &
 &                              US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)

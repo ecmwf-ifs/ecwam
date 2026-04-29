@@ -51,7 +51,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM, ONLY : NANG     ,NFRE
-      USE YOWPHYS,  ONLY : XKAPPA, XNLEV, ALPHA
+      USE YOWPHYS,  ONLY : XKAPPA, XNLEV, ALPHA, RNU_WATER
       USE YOWSTAT,  ONLY : IPHYS2_AIRSEA, ZCDFAC
       USE YOWPCONS, ONLY : G
       USE YOWTEST,  ONLY : IU06
@@ -75,7 +75,6 @@
 
       REAL(KIND=JWRB) :: ZNLEV
       REAL(KIND=JWRB), PARAMETER :: RKAP = 0.4_JWRB
-      REAL(KIND=JWRB), PARAMETER :: ZRN=1.65E-6_JWRB  ! effective kinematic viscosity (0.11*1.5e-5) ! TODO: use instead RNU_WATER
 
       ! for the ietrative scheme
       INTEGER(KIND=JWIM), PARAMETER :: NITER=15
@@ -157,7 +156,7 @@
                   DO ITER=1,NITER
                         USTOLD   = MAX(UST,USTMIN)
                         Z0CH     = PCHAROG*UST**2
-                        Z0VIS    = ZRN/UST
+                        Z0VIS    = RNU_WATER/UST
                         Z0(IJ)   = Z0CH+Z0VIS
                         XZNLEV    = ZNLEV/(ZNLEV+Z0(IJ))
                         XOLOGZ0  = 1.0_JWRB/LOG(1.0_JWRB+ZNLEV/Z0(IJ))
