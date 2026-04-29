@@ -9,7 +9,7 @@
 
       SUBROUTINE SWLDISSIP_ZBRY (KIJS, KIJL, FL1, FLD, SL,          &
      &                        WAVNUM, CGROUP,                       &
-     &                        UFRIC, COSWDIF, RAORW)
+     &                        UFRIC, RAORW)
 ! ----------------------------------------------------------------------
 
 !**** *SWLDISSIP_ZBRY* - COMPUTATION OF DISSIPATION SOURCE FUNCTION.
@@ -24,9 +24,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SWLDISSIP_ZBRY (KIJS, KIJL, FL1, FLD,SL,*
-!                            WAVNUM, CGROUP, 
-!                            UFRIC, COSWDIF, RAORW)*
+!       *CALL* *SWLDISSIP_ZBRY (KIJS, KIJL, FL1, FLD, SL,*
+!                            WAVNUM, CGROUP,
+!                            UFRIC, RAORW)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FL1*    - SPECTRUM.
@@ -36,7 +36,6 @@
 !          *CGROUP* - GROUP SPEED
 !          *UFRIC*  - FRICTION VELOCITY IN M/S.
 !          *RAORW*  - RATIO AIR DENSITY TO WATER DENSITY
-!          *COSWDIF*-  COS(TH(K)-WDWAVE(IJ))
 
 
 !     METHOD.
@@ -80,7 +79,6 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: UFRIC, RAORW 
-      REAL(KIND=JWRB), DIMENSION(KIJL, NANG), INTENT(IN) :: COSWDIF 
 
       INTEGER(KIND=JWIM) :: IJ, M, I, J, M2, K2, K, NANGD
       INTEGER(KIND=JWIM), DIMENSION(KIJL) :: MPEAK

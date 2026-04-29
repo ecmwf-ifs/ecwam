@@ -9,7 +9,7 @@
 
       SUBROUTINE SDISSIP_ZBRY (KIJS, KIJL, FL1, FLD, SL,          &
      &                        WSWAVE, WAVNUM, CGROUP,             &
-     &                        UFRIC, COSWDIF, RAORW)
+     &                        UFRIC, RAORW)
 ! ----------------------------------------------------------------------
 
 !**** *SDISSIP_ZBRY* - COMPUTATION OF DISSIPATION SOURCE FUNCTION.
@@ -29,19 +29,19 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDISSIP_ZBRY (KIJS, KIJL, FL1, FLD,SL,*
-!                            WAVNUM, CGROUP, 
-!                            UFRIC, COSWDIF, RAORW)*
+!       *CALL* *SDISSIP_ZBRY (KIJS, KIJL, FL1, FLD, SL,*
+!                            WSWAVE, WAVNUM, CGROUP,
+!                            UFRIC, RAORW)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FL1*    - SPECTRUM.
 !          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY
+!          *WSWAVE* - WIND SPEED IN M/S.
 !          *WAVNUM* - WAVE NUMBER
 !          *CGROUP* - GROUP SPEED
 !          *UFRIC*  - FRICTION VELOCITY IN M/S.
 !          *RAORW*  - RATIO AIR DENSITY TO WATER DENSITY
-!          *COSWDIF*-  COS(TH(K)-WDWAVE(IJ))
 
 
 !     METHOD.
@@ -87,7 +87,6 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: WSWAVE, UFRIC, RAORW 
-      REAL(KIND=JWRB), DIMENSION(KIJL, NANG), INTENT(IN) :: COSWDIF 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, I, J
 
@@ -105,7 +104,6 @@
       REAL(KIND=JWRB) :: BNT ! empirical constant for wave breaking probability
       REAL(KIND=JWRB) :: XFAC ! temporary variableis
       REAL(KIND=JWRB), DIMENSION(KIJL) :: EDENSMAX ! temporary variable
-
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: A
       REAL(KIND=JWRB), DIMENSION(KIJL)           :: CUMADF
 
@@ -124,7 +122,7 @@
       END DO
 
 !/ 0) --- Initialize essential parameters ---------------------------- /
-      FREQ    = FR(1:NFRE)
+      FREQ(:) = FR(1:NFRE)
       BNT     = 0.035_JWRB**2
       DO M = 1, NFRE
          DO IJ = KIJS,KIJL
