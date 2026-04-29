@@ -63,86 +63,86 @@
 
 #include "tauwindsxy.intfb.h"
 
-        REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: S ! Sin(sigma) in [m2/rad-Hz]
-        REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: CINV
-        REAL(KIND=JWRB),                       INTENT(OUT) :: TAUNWX, TAUNWY 
+REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: S ! Sin(sigma) in [m2/rad-Hz]
+REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: CINV
+REAL(KIND=JWRB),                       INTENT(OUT) :: TAUNWX, TAUNWY 
 
 
-        REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: SX, SY
+REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: SX, SY
 
-        REAL(KIND=JWRB), DIMENSION(NFRE)  :: SDENSX_LF, SDENSY_LF
-        REAL(KIND=JWRB), DIMENSION(NFRE)  :: ZA_SX, ZA_SY
+REAL(KIND=JWRB), DIMENSION(NFRE)  :: SDENSX_LF, SDENSY_LF
+REAL(KIND=JWRB), DIMENSION(NFRE)  :: ZA_SX, ZA_SY
 
-        REAL(KIND=JWRB)               :: SDENSX_HF, SDENSY_HF
-        REAL(KIND=JWRB)               :: TAUNWX_LF, TAUNWY_LF
-        REAL(KIND=JWRB)               :: TAUNWX_HF, TAUNWY_HF
-        
-        REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+REAL(KIND=JWRB)               :: SDENSX_HF, SDENSY_HF
+REAL(KIND=JWRB)               :: TAUNWX_LF, TAUNWY_LF
+REAL(KIND=JWRB)               :: TAUNWX_HF, TAUNWY_HF
+
+REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('TAU_WAVE_ATMOS',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('TAU_WAVE_ATMOS',0,ZHOOK_HANDLE)
 
-      SX = ABS(MIN(0.0_JWRB,S)) * SPREAD(COSTH,2,NFRE)
-      SY = ABS(MIN(0.0_JWRB,S)) * SPREAD(SINTH,2,NFRE)
+SX = ABS(MIN(0.0_JWRB,S)) * SPREAD(COSTH,2,NFRE)
+SY = ABS(MIN(0.0_JWRB,S)) * SPREAD(SINTH,2,NFRE)
 
-      !/ 0) --- split integral into low/high frequency contributions ------------- /
-      !
-      !
-      !     Th=2pi,f=inf                   Th=2pi,f=FR(NFRE)         Th=2pi,f=inf  
-      !          / /                         / /                      / /
-      !          | | S(f,Th)/c df dTh  =     | | S(f,Th)/c df dTh +   | | S(f,Th)/c df dTh
-      !         / /                         / /                      / /
-      !     Th=0,f=0                     Th=0,f=0                 Th=0,f=FR(NFRE)
-      !
-      !
-      !                                =     LF_contribution      +  HF_contribution
-      !
-      !
-      !/ 1) --- low frequency contributions to the integral ---------------------- /
-      !         -- Direct summation over available freq. bins up to FR(NFRE)
-      
-      SDENSX_LF = SUM(SX,1) * DELTH
-      SDENSY_LF = SUM(SY,1) * DELTH
-      CALL TAUWINDSXY(SDENSX_LF, SDENSY_LF, CINV, DSII, NFRE, TAUNWX_LF, TAUNWY_LF)
+!/ 0) --- split integral into low/high frequency contributions ------------- /
+!
+!
+!     Th=2pi,f=inf                   Th=2pi,f=FR(NFRE)         Th=2pi,f=inf  
+!          / /                         / /                      / /
+!          | | S(f,Th)/c df dTh  =     | | S(f,Th)/c df dTh +   | | S(f,Th)/c df dTh
+!         / /                         / /                      / /
+!     Th=0,f=0                     Th=0,f=0                 Th=0,f=FR(NFRE)
+!
+!
+!                                =     LF_contribution      +  HF_contribution
+!
+!
+!/ 1) --- low frequency contributions to the integral ---------------------- /
+!         -- Direct summation over available freq. bins up to FR(NFRE)
 
-      !/ 2) --- high frequency contributions to the integral --------------------- /
-      !         -- Assume spectral slope for S_IN(F) is proportional to F**(-2), then 
-      !            integral collapses into easy analytic solution
-      !
-      !          
-      !   Th=2pi,ω=inf  
-      !     / /
-      !     | | S(f,Th)/c df dTh = (LOG(inf) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
-      !    / /
-      !  Th=0,ω=SIG(NFRE)
-      !
-      !  Instead, use FRQMAX extension (e.g. 10Hz)          
-      !
-      !   Th=2pi,ω=ZPI*FRQMAX  
-      !     / /
-      !     | | S(f,Th)/c df dTh = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
-      !    / /
-      !  Th=0,ω=SIG(NFRE)
-      !
-      !
-      ! Determine value of spectrum at NFRE (i.e. at highest frequency). 
-      !  - Note, direction dimension must remain
+SDENSX_LF = SUM(SX,1) * DELTH
+SDENSY_LF = SUM(SY,1) * DELTH
+CALL TAUWINDSXY(SDENSX_LF, SDENSY_LF, CINV, DSII, NFRE, TAUNWX_LF, TAUNWY_LF)
 
-      ZA_SX       = SX(:,NFRE)
-      ZA_SY       = SY(:,NFRE)
+!/ 2) --- high frequency contributions to the integral --------------------- /
+!         -- Assume spectral slope for S_IN(F) is proportional to F**(-2), then 
+!            integral collapses into easy analytic solution
+!
+!          
+!   Th=2pi,ω=inf  
+!     / /
+!     | | S(f,Th)/c df dTh = (LOG(inf) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
+!    / /
+!  Th=0,ω=SIG(NFRE)
+!
+!  Instead, use FRQMAX extension (e.g. 10Hz)          
+!
+!   Th=2pi,ω=ZPI*FRQMAX  
+!     / /
+!     | | S(f,Th)/c df dTh = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(S(:,NFRE)) * ZPI * GM1
+!    / /
+!  Th=0,ω=SIG(NFRE)
+!
+!
+! Determine value of spectrum at NFRE (i.e. at highest frequency). 
+!  - Note, direction dimension must remain
 
-      SDENSX_HF   = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * ZPI * GM1
-      SDENSY_HF   = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * ZPI * GM1
+ZA_SX       = SX(:,NFRE)
+ZA_SY       = SY(:,NFRE)
 
-      TAUNWX_HF   = G * ROWATER * ( SDENSX_HF )
-      TAUNWY_HF   = G * ROWATER * ( SDENSY_HF )
+SDENSX_HF   = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SX) * ZPI * GM1
+SDENSY_HF   = (LOG(ZPI*FRQMAX) - LOG(SIG(NFRE))) * SIG(NFRE)**2 * DELTH * SUM(ZA_SY) * ZPI * GM1
 
-      !/ 3) --- summate low + high frequency contributions to the integral ------- /
-      
-      TAUNWX = TAUNWX_LF + TAUNWX_HF
-      TAUNWY = TAUNWY_LF + TAUNWY_HF
+TAUNWX_HF   = G * ROWATER * ( SDENSX_HF )
+TAUNWY_HF   = G * ROWATER * ( SDENSY_HF )
 
-      IF (LHOOK) CALL DR_HOOK('TAU_WAVE_ATMOS',1,ZHOOK_HANDLE)
+!/ 3) --- summate low + high frequency contributions to the integral ------- /
 
-      END SUBROUTINE TAU_WAVE_ATMOS
+TAUNWX = TAUNWX_LF + TAUNWX_HF
+TAUNWY = TAUNWY_LF + TAUNWY_HF
+
+IF (LHOOK) CALL DR_HOOK('TAU_WAVE_ATMOS',1,ZHOOK_HANDLE)
+
+END SUBROUTINE TAU_WAVE_ATMOS
