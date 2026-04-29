@@ -49,7 +49,10 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
   set(autopromote_flags   "-r8")
   set(fpe_flags           "-Ktrap=fp")
   set(vectorization_flags "-O3 -fast")
-  string(REPLACE "-O2" "" ${PNAME}_Fortran_FLAGS_BIT ${${PNAME}_Fortran_FLAGS_BIT})
+  if( DEFINED ${PNAME}_Fortran_FLAGS_BIT )
+    string(REPLACE "-O2" "" ${PNAME}_Fortran_FLAGS_BIT ${${PNAME}_Fortran_FLAGS_BIT})
+  endif()
+
   set(checkbounds_flags   "-Mbounds")
 
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
