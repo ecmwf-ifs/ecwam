@@ -35,7 +35,7 @@ jobs:
         name:
           - linux gnu-10
           - linux gnu-14
-          - linux nvhpc-23.5
+          - linux nvhpc-25.9
           - linux intel-classic
           - macos
 
@@ -59,9 +59,9 @@ jobs:
             python-version: '3.11'
             caching: true
 
-          - name: linux nvhpc-23.5
+          - name: linux nvhpc-25.9
             os: ubuntu-22.04
-            compiler: nvhpc-23.5
+            compiler: nvhpc-25.9
             compiler_cc: nvc
             compiler_cxx: nvc++
             compiler_fc: nvfortran
@@ -163,12 +163,13 @@ jobs:
       if: contains( matrix.compiler, 'nvhpc' )
       shell: bash -eux {0}
       run: |
-        ${ECWAM_TOOLS}/install-nvhpc.sh --prefix /opt/nvhpc --version 23.5
+        ${ECWAM_TOOLS}/install-nvhpc.sh --prefix /opt/nvhpc --version 25.9
         source /opt/nvhpc/env.sh
         echo "${NVHPC_DIR}/compilers/bin"                   >> $GITHUB_PATH
         [ -z ${MPI_HOME+x} ] || echo "MPI_HOME=${MPI_HOME}" >> $GITHUB_ENV
         echo "localhost slots=72" >> ${MPI_HOME}/etc/openmpi-default-hostfile
-        echo "ECWAM_LAUNCH_SERIAL_MPI=1" >> $GITHUB_ENV
+        echo "ECWAM_LAUNCH_ARGS=--oversubscribe" >> $GITHUB_ENV
+        echo "ECWAM_LAUNCH_SERIAL_MPI=1"         >> $GITHUB_ENV
 
 
     - name: Install Intel oneAPI compiler
