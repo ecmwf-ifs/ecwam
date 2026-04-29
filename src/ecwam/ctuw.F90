@@ -142,7 +142,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
 !*        LOOP OVER FREQUENCIES.
 !         ----------------------
-!$acc kernels !loop private(CGYP,KIJS,KIJL,CGX,IX,KY,UU,UREL,ISSU,VV,VREL,ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
+!$acc kernels
           DO M = MSTART, MEND
 
 !*          LOOP OVER DIRECTIONS.

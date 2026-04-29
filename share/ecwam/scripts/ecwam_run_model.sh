@@ -23,7 +23,7 @@ source ${SCRIPTS_DIR}/ecwam_runtime.sh
 source ${SCRIPTS_DIR}/ecwam_parse_commandline.sh
 source ${SCRIPTS_DIR}/ecwam_helper_functions.sh
 
-assert_executable_is_available ${MODEL} || abort 4
+assert_executable_is_available ${MODEL}-${prec} || abort 4
 
 begofrn=$(read_config begin               --format="%Y%m%d%H%M%S")
 endofrn=$(read_config end                 --format="%Y%m%d%H%M%S")
@@ -86,6 +86,10 @@ iphys=$(read_config iphys --default=1)
 llgcbz0=$(read_config llgcbz0 --default=F)
 llnormagam=$(read_config llnormagam --default=F)
 irefra=$(read_config irefra --default=0)
+lciwa1=$(read_config lciwa1 --default=F)
+lciwa2=$(read_config lciwa2 --default=F)
+lciwa3=$(read_config lciwa3 --default=F)
+lciscal=$(read_config lciscal --default=F)
 
 # read timesteps
 phys_tstp=$(read_config physics.timestep --format=seconds --default=900)
@@ -253,10 +257,14 @@ cat > wam_namelist << EOF
   LRSTPARALR            = F,
   LRSTPARALW            = F,
   LSECONDORDER          = F,
-  LWVFLX_SNL            = F,
+  LWVFLX_SNL            = T,
   LLNORMWAMOUT          = T,
   LLNORMWAMOUT_GLOBAL   = T,
   CNORMWAMOUT_FILE      = "statistics.log",
+  LCIWA1                = ${lciwa1},
+  LCIWA2                = ${lciwa2},
+  LCIWA3                = ${lciwa3},
+  LCISCAL               = ${lciscal},
   ${OUTPUT_FLAGS}
 /
 ${NAWI}
@@ -271,7 +279,10 @@ echo "**************************************************************************
 log cat wam_namelist
 echo
 
-precision=$(${ECWAM_PROJECT_NAME} --precision)
+precision="double"
+if [ "${prec}" = "sp" ]; then
+    precision="single"
+fi;
 if ${dryrun}; then
   echo "*******************************************************************************"
   echo "WAVE MODEL DRYRUN"
@@ -280,7 +291,7 @@ if ${dryrun}; then
   echo "  cd ${RUN_DIR}/workdir"
   echo
   echo "#2 Execute wave model\n"
-  echo "  $(abs_path ${MODEL})"
+  echo "  $(abs_path ${MODEL}-${prec})"
   echo 
   echo "#3 Validate results\n"
   echo "  ${SCRIPTS_DIR}/ecwam_validation.py config.yml statistics.log --section=validation.${precision}_precision"
@@ -292,12 +303,12 @@ fi
 
 echo "*******************************************************************************"
 echo "WAVE MODEL START"
-echo "\n+ ${LAUNCH_PARALLEL} $(which ${MODEL})\n"
+echo "\n+ ${LAUNCH_PARALLEL} $(which ${MODEL}-${prec})\n"
 echo "*******************************************************************************"
 
 
 START=$(date +%s)
-log ${LAUNCH_PARALLEL} $(which ${MODEL}) || {
+log ${LAUNCH_PARALLEL} $(which ${MODEL}-${prec}) || {
   sleep 1
   echo
   echo "*******************************************************************************"
@@ -310,7 +321,7 @@ log ${LAUNCH_PARALLEL} $(which ${MODEL}) || {
 
 END=$(date +%s)
 DIFF=$(( $END - $START ))
-echo "\n\n\t Running ${LAUNCH_PARALLEL} $(which ${MODEL}) took $DIFF seconds\n"
+echo "\n\n\t Running ${LAUNCH_PARALLEL} $(which ${MODEL}-${prec}) took $DIFF seconds\n"
 
 trace_ls $(pwd)
 

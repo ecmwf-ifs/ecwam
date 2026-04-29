@@ -37,9 +37,9 @@ if (NOT FCM_EXECUTABLE)
 endif()
 
 
-include( ecwam_target_fortran_module_directory )
 include( ecwam_target_compile_definitions_FILENAME )
 include( ecwam_add_test )
 include( ecwam_cache_bathymetry )
 include( ecwam_find_python_mods )
 include( ecwam_expand_drv_types )
+include( ecwam_find_nemo )

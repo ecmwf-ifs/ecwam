@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
+SUBROUTINE GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,            &
  &                 NXS, NXE, NYS, NYE, FIELDG,       &
  &                 NEMO2WAM, WVENVI)
 
@@ -29,6 +29,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
 
 !     *LWCUR*  - LOGICAL CONTROLLING THE PRESENCE OF MEANINGFUL
 !                SURFACE CURRENTS IN ARRAY FORCING_FIELDS DATA STRUCTURE   
+!     *LLNEMOFLDUPDT* TRUE IF WAM2NEMO HAS BEEN UPDATED
 !     *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK IF NEEDED).
 !     *IFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !     *JFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
@@ -68,7 +69,8 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE YOWWIND  , ONLY : LLNEWCURR 
 
-      USE YOMHOOK  , ONLY  : LHOOK,   DR_HOOK, JPHOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
       USE MPL_MODULE, ONLY : MPL_ALLREDUCE
 
 ! --------------------------------------------------------------------
@@ -81,6 +83,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR
+      LOGICAL, INTENT(IN) :: LLNEMOFLDUPDT
       TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
       TYPE(ENVIRONMENT), INTENT(INOUT) :: WVENVI
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
@@ -100,6 +103,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
 
       LOGICAL :: LLCURRENT
       LOGICAL :: LLUPDATE
+      LOGICAL :: LLNEWINPUT
 
 ! --------------------------------------------------------------------- 
 
@@ -111,6 +115,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
       CALL GSTATS(1984,0)
 
 
+      LLNEWINPUT=.FALSE.
       IF (LLNEWCURR) THEN
         IF ( (LWCOU .AND. LWCUR ) .OR. LWNEMOCOUCUR .OR. IREFRA == 2 .OR. IREFRA == 3) THEN
 
@@ -120,10 +125,6 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
 
           IF (CDTPRO >= CDTNEWCUR) THEN
 
-            DO ICHNK=1,NCHNK
-              OLDUCUR(:,ICHNK) = WVENVI%UCUR(:,ICHNK)
-              OLDVCUR(:,ICHNK) = WVENVI%VCUR(:,ICHNK)
-            ENDDO
             LLCURRENT=.FALSE.
 
             CALL INCDATE(CDTCUR,IDELCUR)
@@ -133,9 +134,14 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
 !             --------------------------------
               IF (LWCUR .AND. .NOT.LWNEMOCOUCUR) THEN
 
+                LLNEWINPUT=.TRUE.
                 CALL GSTATS(1444,0)
 !$OMP           PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, KIJL)
                 DO ICHNK = 1, NCHNK
+
+                  OLDUCUR(:,ICHNK) = WVENVI%UCUR(:,ICHNK)
+                  OLDVCUR(:,ICHNK) = WVENVI%VCUR(:,ICHNK)
+
                   KIJS=1
                   KIJL=NPROMA_WAM
                   CALL WAMCUR (NXS, NXE, NYS, NYE, FIELDG,                                     &
@@ -148,31 +154,44 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
 !             CURRENTS FROM NEMO
 !             ------------------
               ELSEIF (LWNEMOCOUCUR) THEN
-                WRITE(IU06,*)' NEMO CURRENTS OBTAINED'!
+                IF (LLNEMOFLDUPDT) THEN
+                  LLNEWINPUT=.TRUE.
 
-                CALL GSTATS(1444,0)
-!$OMP           PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
-                DO ICHNK = 1, NCHNK
-                  DO IJ = 1, NPROMA_WAM
-                    IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
-                    JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
-                    IF (FIELDG%LKFR(IX,JY) <=  0.0_JWRB ) THEN
-!                     if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
-                      WVENVI%UCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOUCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
- &                                                 NEMO2WAM%NEMOUCUR(IJ,ICHNK))
-                      WVENVI%VCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOVCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
+                  CALL GSTATS(1444,0)
+!$OMP             PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
+                  DO ICHNK = 1, NCHNK
+
+                    OLDUCUR(:,ICHNK) = WVENVI%UCUR(:,ICHNK)
+                    OLDVCUR(:,ICHNK) = WVENVI%VCUR(:,ICHNK)
+
+                    DO IJ = 1, NPROMA_WAM
+                      IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
+                      JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
+                      IF (FIELDG%LKFR(IX,JY) <=  0.0_JWRB ) THEN
+!                       if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
+                        WVENVI%UCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOUCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
+ &                                                   NEMO2WAM%NEMOUCUR(IJ,ICHNK))
+                        WVENVI%VCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOVCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
  &                                                 NEMO2WAM%NEMOVCUR(IJ,ICHNK))
-                    ELSE
-!                     no currents over lakes and land
-                      WVENVI%UCUR(IJ,ICHNK) = 0.0_JWRB
-                      WVENVI%VCUR(IJ,ICHNK) = 0.0_JWRB
-                    ENDIF
+                      ELSE
+!                       no currents over lakes and land
+                        WVENVI%UCUR(IJ,ICHNK) = 0.0_JWRB
+                        WVENVI%VCUR(IJ,ICHNK) = 0.0_JWRB
+                      ENDIF
+                    ENDDO
                   ENDDO
-                ENDDO
-!$OMP           END PARALLEL DO
-                CALL GSTATS(1444,1)
+!$OMP             END PARALLEL DO
+                  CALL GSTATS(1444,1)
+
+                  WRITE(IU06,*)' NEW NEMO CURRENTS OBTAINED'!
+
+                ELSE
+!                 NO UPDATE FROM NEMO
+                  LLNEWINPUT=.FALSE.
+                ENDIF
 
               ELSE
+                LLNEWINPUT=.TRUE.
                 DO ICHNK=1, NCHNK
                   WVENVI%UCUR(:,ICHNK)=0.0_JWRB
                   WVENVI%VCUR(:,ICHNK)=0.0_JWRB
@@ -180,15 +199,17 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
                 WRITE(IU06,*)' '
                 WRITE(IU06,*)'    ****************************'
                 WRITE(IU06,*)'     IREFRA = ',IREFRA
-                WRITE(IU06,*)'     LWCUR IS FALSE !!!!' 
+                WRITE(IU06,*)'     LWCUR AND LWNEMOCOUCUR ARE FALSE !!!!' 
                 WRITE(IU06,*)'     CURRENTS ARE SET TO 0. '
                 WRITE(IU06,*)'    ****************************'
                 WRITE(IU06,*)' '
                 CALL FLUSH(IU06)
               ENDIF
+
             ELSE
 !             CURRENTS FROM INPUT FILE
 !             ------------------------
+              LLNEWINPUT=.TRUE.
               FILNM = 'currents'
               LIU   = LEN_TRIM(FILNM)
               FILNM=FILNM(1:LIU)
@@ -200,6 +221,11 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
      &                        ' FOR DATE ',CDTCUR
                 CALL FLUSH(IU06)
 
+                DO ICHNK=1,NCHNK
+                  OLDUCUR(:,ICHNK) = WVENVI%UCUR(:,ICHNK)
+                  OLDVCUR(:,ICHNK) = WVENVI%VCUR(:,ICHNK)
+                ENDDO
+
                 CALL CURRENT2WAM (FILNM, IREAD, CDATEIN,        &
      &                            BLK2LOC,                      &
      &                            NXS, NXE, NYS, NYE, FIELDG,   &
@@ -207,16 +233,16 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
                 
 
                 IF (CDATEIN /= CDTCUR) THEN
-                WRITE (IU06,*) ' **************************************'
-                WRITE (IU06,*) ' *                                    *'
-                WRITE (IU06,*) ' * PROBLEM IN GETCURR :               *'
-                WRITE (IU06,*) ' * THE REQUESTED DATE FOR THE CURRENTS*'
-                WRITE (IU06,*) ' * DOES NOT CORRESPOND TO THE DECODED *'
-                WRITE (IU06,*) ' * DATE !!!!                          *'
-                WRITE (IU06,*) ' * CDTCUR =',CDTCUR 
-                WRITE (IU06,*) ' * CDATEIN=',CDATEIN
-                WRITE (IU06,*) ' *                                    *'
-                WRITE (IU06,*) ' **************************************'
+                WRITE (NULERR,*) ' **************************************'
+                WRITE (NULERR,*) ' *                                    *'
+                WRITE (NULERR,*) ' * PROBLEM IN GETCURR :               *'
+                WRITE (NULERR,*) ' * THE REQUESTED DATE FOR THE CURRENTS*'
+                WRITE (NULERR,*) ' * DOES NOT CORRESPOND TO THE DECODED *'
+                WRITE (NULERR,*) ' * DATE !!!!                          *'
+                WRITE (NULERR,*) ' * CDTCUR =',CDTCUR 
+                WRITE (NULERR,*) ' * CDATEIN=',CDATEIN
+                WRITE (NULERR,*) ' *                                    *'
+                WRITE (NULERR,*) ' **************************************'
                 CALL ABORT1
                 ENDIF
               ELSE
@@ -235,42 +261,44 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
 
             ENDIF
 
-!           COMPUTE REFRACTION TERMS
-!           ------------------------
-!           CHECK IF UPDATE IS NEEDED
+!           CHECK IF UPDATE TO THE CALCULATION OF THE REFRACTION TERMS IS NEEDED
+!           --------------------------------------------------------------------
             LLUPDATE = .FALSE.
             KUPDATE = 0
-            OUT: DO ICHNK = 1, NCHNK
-              DO IJ = 1, KIJL4CHNK(ICHNK)
-                IF ( WVENVI%UCUR(IJ,ICHNK) /= OLDUCUR(IJ,ICHNK) .OR. WVENVI%VCUR(IJ,ICHNK) /= OLDVCUR(IJ,ICHNK) ) THEN
-                  LLUPDATE=.TRUE.
-                  KUPDATE = 1
-                  EXIT OUT
-                ENDIF 
-              ENDDO
-            ENDDO OUT
+            IF (LLNEWINPUT) THEN
+              OUT: DO ICHNK = 1, NCHNK
+                DO IJ = 1, KIJL4CHNK(ICHNK)
+                  IF ( WVENVI%UCUR(IJ,ICHNK) /= OLDUCUR(IJ,ICHNK) .OR. WVENVI%VCUR(IJ,ICHNK) /= OLDVCUR(IJ,ICHNK) ) THEN
+                    LLUPDATE=.TRUE.
+                    KUPDATE = 1
+                    EXIT OUT
+                  ENDIF 
+                ENDDO
+              ENDDO OUT
 
-            IF (NPROC > 1) THEN
-              CALL MPL_ALLREDUCE(KUPDATE,'MAX',CDSTRING='GETCURR KUPDATE:')
-              IF (KUPDATE > 0 ) LLUPDATE = .TRUE.
-            ENDIF
+              IF (NPROC > 1) THEN
+                CALL MPL_ALLREDUCE(KUPDATE,'MAX',CDSTRING='GETCURR KUPDATE:')
+                IF (KUPDATE > 0 ) LLUPDATE = .TRUE.
+              ENDIF
 
-            IF (LLUPDATE) THEN
-              IF (IREFRA /= 0) LLUPDTTD = .TRUE.
+              IF (LLUPDATE) THEN
+                IF (IREFRA /= 0) LLUPDTTD = .TRUE.
 
-              LLCHKCFLA=.TRUE.
+                LLCHKCFLA=.TRUE.
+!               SET LOGICAL TO RECOMPUTE THE WEIGHTS IN CTUW.
+                LUPDTWGHT=.TRUE.
 
-!             SET LOGICAL TO RECOMPUTE THE WEIGHTS IN CTUW.
-              LUPDTWGHT=.TRUE.
-
-            ELSE
-              LLCHKCFLA=.FALSE.
+              ELSE
+                LLCHKCFLA=.FALSE.
+              ENDIF
             ENDIF
 
           ELSE
             LLCHKCFLA=.FALSE.
           ENDIF
+
         ENDIF
+
       ELSE
         LLCHKCFLA=.FALSE.
       ENDIF

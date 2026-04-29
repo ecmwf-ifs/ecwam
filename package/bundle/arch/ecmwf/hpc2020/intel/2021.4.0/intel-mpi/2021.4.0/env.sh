@@ -32,7 +32,7 @@ module_load cmake/3.25.2
 module_load ninja/1.10.0
 module_load fcm/2019.05.0
 module_load aec/1.0.4
-module_load python3/3.8.8-01
+module_load python3/3.11.10-01
 
 # Setting required for bit reproducibility with Intel MKL:
 export MKL_CBWR=AUTO,STRICT

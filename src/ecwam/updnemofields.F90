@@ -67,6 +67,7 @@ SUBROUTINE UPDNEMOFIELDS
 ! -------------------------------------------------------------------   
 
       IMPLICIT NONE
+#include "outmdldcp.intfb.h"
 
       INTEGER(KIND=JWIM) :: ICHNK, IC, KIJS, KIJL
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -102,10 +103,12 @@ IF (LHOOK) CALL DR_HOOK('UPDNEMOFIELDS',0,ZHOOK_HANDLE)
 #ifdef WITH_NEMO
         CALL NEMOGCMCOUP_WAM_UPDATE( IRANK-1, NPROC, MPL_COMM,             &
      &                               NTOTIJ,                               &
-     &                               NSWH, NMWP, NPHIEPS, NTAUOC,          &
+     &                               NSWH, NMWP, NPHIEPS, NTAUOC,   &
      &                               NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES,   &
      &                               CDTPRO, LWNEMOCOUDEBUG )
 #endif
+
+        IF (LWNEMOCOUDEBUG) CALL OUTMDLDCP(WAM2NEMO=WAM2NEMO,NTYPE=2)
 
       ENDIF
 

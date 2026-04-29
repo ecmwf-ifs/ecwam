@@ -99,14 +99,16 @@ IF(LUPDATE_GPU_GLOBALS)THEN
 ENDIF
           CALL GSTATS(1493,0)
 !         DETERMINE THE WAVE ATTENUATION FACTOR
-!$acc data present(FF_NOW, WVPRPT)
+
+!$loki structured-data present(FF_NOW, WVPRPT)
 
           DO ICHNK = 1, NCHNK
             CALL CIWAF(1, NPROMA_WAM, WVPRPT%CGROUP(:,:,ICHNK), FF_NOW%CICOVER(:,ICHNK), &
 &                      FF_NOW%CITHICK(:,ICHNK), WVPRPT%CIWA(:,:,ICHNK))
           ENDDO
 
-!$acc end data
+!$loki end structured-data
+
           CALL GSTATS(1493,1)
         ENDIF
 

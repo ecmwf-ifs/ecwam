@@ -7,17 +7,9 @@
 # nor does it submit to any jurisdiction.
 
 cmake_minimum_required( VERSION 3.24 FATAL_ERROR )
-find_package( ecbuild 3.4 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild )
+find_package( ecbuild 3.8 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild )
 
-# If the directory name matches ecwam_dp or ecwam_sp, that will be chosen as PROJECT_NAME instead
-get_filename_component( ecwam-source_dir ${CMAKE_CURRENT_SOURCE_DIR} NAME )
-if( ecwam-source_dir MATCHES "ecwam_(dp|sp)" )
-  set( ECWAM_PROJECT_NAME ${ecwam-source_dir} )
-endif()
-
-if( NOT ECWAM_PROJECT_NAME )
-  set( ECWAM_PROJECT_NAME ecwam )
-endif()
+set( ECWAM_PROJECT_NAME ecwam )
 
 string( TOUPPER ${ECWAM_PROJECT_NAME} PNAME )
 set( ${PNAME}_ECBUILD_COMPILE_FLAGS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ecwam_init_flags.cmake CACHE FILEPATH "")
@@ -50,24 +42,24 @@ ecbuild_add_option( FEATURE SINGLE_PRECISION
                     DEFAULT OFF
                     DESCRIPTION "Support for Single Precision" )
 
+ecbuild_add_option( FEATURE DOUBLE_PRECISION
+                    DEFAULT ON
+                    DESCRIPTION "Support for Double Precision" )
+
 ecbuild_add_option( FEATURE UNWAM
                     DEFAULT OFF
                     DESCRIPTION "Support for UNWAM" )
 
-### Determine ocean model precision
-if( NOT DEFINED OCEAN_PREC )
-  if( HAVE_SINGLE_PRECISION )
-     set(OCEAN_PREC SP)
-  else()
-     set(OCEAN_PREC DP)
-  endif()
-endif()
-string( TOLOWER "${OCEAN_PREC}" ocean_prec )
+set( HAVE_dp ${HAVE_DOUBLE_PRECISION} )
+set( HAVE_sp ${HAVE_SINGLE_PRECISION} )
 
+### Determine ocean model precision
+ecwam_find_nemo()
 ecbuild_add_option( FEATURE OCEAN_COUPLING
                     DEFAULT ON
                     DESCRIPTION "Support ocean coupling"
-                    REQUIRED_PACKAGES "nemo_${ocean_prec}" )
+                    CONDITION nemo_found )
+
 
 ecbuild_add_option( FEATURE ECWAM_LAUNCH
                     DEFAULT ON
@@ -91,12 +83,6 @@ endif()
 ecwam_find_python_mods()
 
 ### Set third party libraries
-
-if( HAVE_SINGLE_PRECISION )
-  set( prec sp )
-else()
-  set( prec dp )
-endif()
 
 unset( OpenMP_Fortran_LIBRARIES )
 if( HAVE_OMP )

@@ -44,7 +44,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH, &
-     &            HSALTCUT, LALTGRDOUT, LALTPAS,                        &
+     &            ALTGRTHRSH, HSALTCUT, LALTGRDOUT, LALTPAS,            &
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX ,LWVFLX_SNL,    &
@@ -53,8 +53,9 @@
      &            LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE,                &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
      &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT,           &
-     &            LWNEMOCOUCUR,                                         &
-     &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOTAUOC, NEMOFRCO,  &
+     &            LWNEMOCOUCUR,  LWNEMOCOUIBR,                          &
+     &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOCOUWRS,           &
+     &            LWNEMOTAUOC, NEMOFRCO,                                &
      &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,GFLAG    ,                                  &
@@ -75,12 +76,13 @@
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : IFRE1, FR1, XKMSS_CUTOFF 
-      USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS,                    &
+      USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS, IMDLGRBID_G, IMDLGRBID_M, &
      &                      LNEWLVTP, LL_GRID_SIMPLE_MATRIX, LLRSTGRIBPARAM
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS, NGRIB_HANDLE_IFS2
       USE YOWGRID  , ONLY : NPROMA_WAM
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI, LCIWABR  ,  &
-     &            LICETH
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI ,            &
+     &            LCIWA1, LCIWA2, LCIWA3, LCISCAL,                      &
+     &            LICETH, ZALPFACB, ZALPFACX, ZALPWRS, ZIBRW_THRSH              
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMAP   , ONLY : CLDOMAIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
@@ -209,7 +211,7 @@
      &   IBUFRSAT, CSATNAME,                                            &
      &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,                   &
      &   DTNEWWIND, LTURN90,                                            &
-     &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,HSALTCUT, &
+     &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,ALTGRTHRSH,HSALTCUT, &
      &   ISTREAM, NLOCGRB, IREFDATE,                                    &
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,                           &
      &   LGUST, LADEN, LRELWIND, LALTGRDOUT, LSUBGRID, LALTPAS,         &
@@ -228,17 +230,19 @@
      &   LLRSTGRIBPARAM,                                                &
      &   LWCOUNORMS, LLNORMIFS2WAM, LLNORMWAM2IFS, LLNORMWAMOUT,        &
      &   LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE,                         &
-     &   LICERUN, LCIWABR, LICETH,                                      &
+     &   LICERUN, LCIWA1, LCIWA2, LCIWA3, LCISCAL,                      &
+     &   LICETH, ZALPFACB, ZALPFACX, ZALPWRS, ZIBRW_THRSH,              &
      &   LWVFLX_SNL,                                                    &
      &   LWNEMOCOU, NEMOFRCO,                                           &
-     &   LWNEMOCOUSEND, LWNEMOCOUSTK, LWNEMOCOUSTRN, LWNEMOTAUOC,       &
-     &   LWNEMOCOURECV,                                                 &
-     &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,                      &
+     &   LWNEMOCOUSEND, LWNEMOCOUSTK, LWNEMOCOUSTRN, LWNEMOCOUWRS,      &
+     &   LWNEMOTAUOC, LWNEMOCOURECV,                                    &
+     &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR, LWNEMOCOUIBR,        &
      &   LWNEMOCOUDEBUG,                                                &
      &   LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                                &
      &   LWAM_USE_IO_SERV,                                              &
      &   LOUTMDLDCP,                                                    &
-     &   ROAIR, ROWATER, GAM_SURF
+     &   ROAIR, ROWATER, GAM_SURF,                                      &
+     &   IMDLGRBID_G, IMDLGRBID_M
 
 
       CHARACTER(LEN=14) :: CLOUT
@@ -368,6 +372,7 @@
 !     LWNEMOCOUSEND: IF FALSE THEN NO DATA WILL BE SENT TO NEMO
 !     LWNEMOCOUSTK:  IF TRUE SEND SURFACE STOKES DRIFT TO NEMO
 !     LWNEMOCOUSTRN: IF TRUE SEND SEA ICE WAVE STRAIN TO NEMO
+!     LWNEMOCOUWRS:  IF TRUE SEND WAVE RADIATIVE STRESS TO NEMO
 !     LWNEMOTAUOC IF TRUE THEN THE ATMOSPHERIC STRESS THAT IS PASSED TO
 !                 NEMO VIA THE WAVE MODEL WILL ALSO BE MODULATED BY IT.
 !
@@ -375,6 +380,7 @@
 !     LWNEMOCOUCIC: IF TRUE THEN SEA ICE CONCENTRATION WILL BE OBTAINED FROM FROM NEMO 
 !     LWNEMOCOUCIT: IF TRUE THEN SEA ICE THICKNESS WILL BE OBTAINED FROM FROM NEMO 
 !     LWNEMOCOUCUR: IF TRUE THEN SURFACE CURRENTS WILL BE OBTAINED FROM FROM NEMO 
+!     LWNEMOCOUIBR: IF TRUE THEN ICE BREAKUP FIELD WILL BE OBTAINED FROM FROM NEMO 
 !
 !     LWNEMOCOUDEBUG: FALSE IF NO DEBUGGING OUTPUT IN WAM<->NEMO COUPLING
 !
@@ -421,6 +427,7 @@
 !                ALTIMETER WAVE HEIGHTS.
 !     ALTSDTHRSH:THRESHOLD FOR SUSPICIOUS DATA (SEE GRFIELD).
 !     ALTBGTHRSH:THRESHOLD FOR BACKGROUND CHECK (SEE GRFIELD).
+!     ALTGRTHRSH:THRESHOLD FOR GROSS ERROR CHECK (SEE GRFIELD).
 !     HSALTCUT: USER INPUT OF THE MINIMUM WAVE HEIGHT ALLOWED IN ALTAS
 !              (SEE GRFIELD). 
 !     ISTREAM: STREAM NUMBER USED WHEN GRIBBING THE DATA 
@@ -467,13 +474,22 @@
 !                DEFINITIONS ARE USED.
 !     LL_GRID_SIMPLE_MATRIX IF TRUE THEN THE 2D SPECTRA WILL USE THE LEGACY grid_simple_matrix
 !                           TO ENCODE THE 2D SPECTRA in GRIB1. THIS SHOULD BE PHASED OUT as soon as feasible!
+!     LLRSTGRIBPARAM IF TRUE, UNKNOWN GRIB PARAMETER WILL BE RESET TO EXPERIMENTAL PARAMETER TABLE 212
 !     LICERUN : FLAG CONTROLLING WHETHER OR NOT SEA ICE FRACTION (OR SST)
 !               FIEDS ARE PROVIDED WITH THE WIND FIELDS TO GENERATE THE
 !               SEA ICE MASK (TRUE BY DEFAULT). 
-!     LCIWABR : FLAG CONTROLLING THE USE OF SEA ICE BOTTOM FRICTION ATTENUATION  
+!     LCIWA1  : FLAG CONTROLLING SEA ICE SCATTERING ATTENUATION
+!     LCIWA2  : FLAG CONTROLLING SEA ICE BOTTOM FRICTION ATTENUATION
+!     LCIWA3  : FLAG CONTROLLING SEA ICE VISCOUS FRICTION ATTENUATION
+!     LCISCAL : FLAG CONTROLLING LINEAR SCALING OF INPUT AND DISSIPATION SOURCE TERMS BY SEA ICE CONCENTRATION
+!     ZALPFACB: FACTOR TO SCALE ATTENUATION FOR ALL SEA ICE
+!     ZALPFACX: FACTOR TO SCALE ATTENUATION UP/DOWN FOR SOLID/BROKEN ICE
+!     ZALPWRS : PROPORTION OF ENERGY LOST FROM SLICE THAT GOES INTO WAVE RADIATIVE STRESS
+!     ZIBRW_THRSH:  THRESHOLD AT WHICH SEA ICE IS CONSIDERED BROKEN
 !     LMASKICE  SET TO TRUE IF ICE MASK IS APPLIED
 !     LWAMRSETCI SET TO TRUE IF FIELDS THAT ARE EXCHANGED WITH THE ATMOSPHERE AND THE OCEAN
 !                ARE RESET TO WHAT WOULD BE USED IF THERE WERE NO WAVE MODELS.
+!                IT IS ONLY ACTIVE FOR CICOVER>CIBLOCK OR CICOVER>CITHRSH
 
 !     LICETH  : FLAG CONTROLLING WHETHER OR NOT SEA ICE THICKNESS FILEDS
 !               ARE PROVIDED WITH THE WIND FIELDS (FALSE BY DEFAULT). 
@@ -487,7 +503,24 @@
 !     ROAIR : DEFAULT VALUES FOR AIR DENSITY (kg m**-3)
 !     ROWATER : DEFAULT VALUES FOR WATER DENSITY (kg m**-3)
 !     GAM_SURF : DEFAUT VALUE FOR WATER SURFACE TENSION (in N/m)
+!     IMDLGRBID_G: GLOBAL MODEL IDENTIFICATION FOR GRIB CODING
+!     IMDLGRBID_M: LAW MODEL IDENTIFICATION FOR GRIB CODING
+! 
+! The generating process identification numbers (model numbers IMDLGRBID_G/IMDLGRBID_M) 
+! for GRIB headers are allocated in pre-defined ranges for ECMWF GRIB coded
+! fields. The field in the GRIB code for this number is 1 octet and with
+! the value 255 indicating 'missing value', only numbers 1-254 are
+! available for use.
+! The atmospheric model allocated numbers are in the range 121 to 203.
+! The Global wave model allocated numbers are in the range 104 to 120.
+! The LAW model allocated numbers are in the range 204 to 220.
+! The numbers 221 to 254 stay reserved for the moment.
+! This pre-allocation was introduced to enable some Member States, which
+! use the model number to identify products, to write their software in
+! such a way that model number changes did not cause them problems with
+! hard-coded model numbers. 
 
+      
 
 !     NAMELIST NAOT : 
 !     ===============
@@ -616,6 +649,8 @@
         HSCONSCOR(ISAT) = 0.0_JWRB
 
         ALTBGTHRSH(ISAT) = 1.5_JWRB
+        ALTGRTHRSH(ISAT) = 3.0_JWRB
+
 !       if no value is provided in the namelist ALTSDTHRSH will
 !       be set in grfield.
         ALTSDTHRSH(ISAT) = -1.0_JWRB
@@ -689,6 +724,8 @@
 
       LWNEMOCOUSTRN=.FALSE.
 
+      LWNEMOCOUWRS=.FALSE.
+
       LWNEMOTAUOC = .TRUE.
 
       LWNEMOCOURECV = .FALSE.
@@ -698,6 +735,8 @@
       LWNEMOCOUCIT=.FALSE.
 
       LWNEMOCOUCUR=.FALSE.
+      
+      LWNEMOCOUIBR=.FALSE.
 
       LWNEMOCOUDEBUG = .FALSE.
 
@@ -722,7 +761,7 @@
 
       LNEWLVTP = .FALSE.
 
-      LL_GRID_SIMPLE_MATRIX = .TRUE.
+      LL_GRID_SIMPLE_MATRIX = .FALSE.
 
       LLRSTGRIBPARAM = .FALSE.
 
@@ -730,7 +769,21 @@
 
       LICERUN = .TRUE.
 
-      LCIWABR = .FALSE.
+      LCIWA1 = .TRUE.
+
+      LCIWA2 = .FALSE.
+
+      LCIWA3 = .FALSE.    
+
+      LCISCAL = .FALSE.      
+
+      ZALPFACB = 1.0_JWRB
+      
+      ZALPFACX = 1.0_JWRB
+
+      ZALPWRS = 1.0_JWRB
+
+      ZIBRW_THRSH = 0.5_JWRB
 
       LMASKICE = .FALSE.
 
@@ -774,6 +827,8 @@
       ROWATER = 1000.0_JWRB
       GAM_SURF = 0.0717_JWRB
 
+      IMDLGRBID_G = 108 
+      IMDLGRBID_M = 208
 ! ----------------------------------------------------------------------
 
 !*    1. READ NAMELIST NALINE.
@@ -995,7 +1050,7 @@
       IF (IFRELFMAX <= 0) DELPRO_LF = REAL(IDELPRO, JWRB)
 
 !     WE SHOULD RECEIVE DATA FROM NEMO
-      IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT .OR. LWNEMOCOUCUR) LWNEMOCOURECV = .TRUE.
+      IF (LWNEMOCOUCIC .OR. LWNEMOCOUCIT .OR. LWNEMOCOUCUR .OR. LWNEMOCOUIBR) LWNEMOCOURECV = .TRUE.
 
 
 ! Here we set LL1D = .TRUE. for the case of LLUNSTR in order to omit the mapping for the parallel strucutured grid
@@ -1027,8 +1082,10 @@
         WRITE(6,*) '*** LWNEMOCOUCIC   = ',LWNEMOCOUCIC
         WRITE(6,*) '*** LWNEMOCOUCIT   = ',LWNEMOCOUCIT
         WRITE(6,*) '*** LWNEMOCOUCUR   = ',LWNEMOCOUCUR
+        WRITE(6,*) '*** LWNEMOCOUIBR   = ',LWNEMOCOUIBR
         WRITE(6,*) '*** LWNEMOCOUSTK   = ',LWNEMOCOUSTK
         WRITE(6,*) '*** LWNEMOCOUSTRN  = ',LWNEMOCOUSTRN
+        WRITE(6,*) '*** LWNEMOCOUWRS   = ',LWNEMOCOUWRS
         WRITE(6,*) '*** LWNEMOTAUOC    = ',LWNEMOTAUOC
         WRITE(6,*) '*** LSUBGRID= ',LSUBGRID
         WRITE(6,*) '*** IPROPAGS= ',IPROPAGS
@@ -1054,6 +1111,8 @@
         WRITE(6,*) '*** ROAIR = ',ROAIR
         WRITE(6,*) '*** ROWATER = ',ROWATER
         WRITE(6,*) '*** GAM_SURF = ',GAM_SURF
+        WRITE(6,*) '*** IMDLGRBID_G = ',IMDLGRBID_G
+        WRITE(6,*) '*** IMDLGRBID_M = ',IMDLGRBID_M
         IF (NGOUT > 0) THEN
           WRITE (6,*) " OUTPUT POINTS FOR SPECTRA AS DEFINED BY USER INPUT    NO.    LAT.   LONG. "
           DO IC=1,NGOUT

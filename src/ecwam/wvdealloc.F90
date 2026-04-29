@@ -24,17 +24,20 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LWNEMOCOU
+      USE YOWCOUP  , ONLY : LWNEMOCOU, LWCOU
       USE YOWMEAN  , ONLY : INTFLDS
       USE YOWWIND  , ONLY : FF_NEXT
       USE YOWGRID  , ONLY : NCHNK
       USE YOWSPEC  , ONLY : FF_NOW   ,VARS_4D, MIJ
-      USE YOWSHAL  , ONLY : WVPRPT
+      USE YOWSHAL  , ONLY : WVPRPT, WVENVI
       USE YOWFRED  , ONLY : WVPRPT_LAND
+      USE YOWMAP   , ONLY : BLK2GLO, BLK2LOC
+      USE YOWCOUT  , ONLY : F_BOUT
 
       USE YOWNEMOFLDS , ONLY : WAM2NEMO, NEMO2WAM
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE FIELD_FACTORY_MODULE, ONLY : FIELD_DELETE
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -83,6 +86,13 @@
       ENDIF
 
       IF(MIJ%LALLOC) CALL MIJ%DEALLOC()
+
+      !... We deallocate F_BOUT here even though it's allocated in WAMODEL rather than
+      !... WVALLOC. That's purely because NIPRMOUT isn't initialised when we call WVALLOC
+      IF (ASSOCIATED(F_BOUT)) THEN
+         CALL FIELD_DELETE(F_BOUT)
+         NULLIFY(F_BOUT)
+      ENDIF
 
       IF (LHOOK) CALL DR_HOOK('WVDEALLOC',1,ZHOOK_HANDLE)
 

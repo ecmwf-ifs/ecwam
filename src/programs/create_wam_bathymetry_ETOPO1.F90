@@ -327,7 +327,16 @@ PROGRAM CREATE_BATHY_ETOPO1
         NGX=NINT((DAMOEAP-DAMOWEP)/DXDELLO)+1
         NGY=NINT((DAMONOP-DAMOSOP)/DXDELLA)+1
 
+        WRITE(IU06,*) "NGX = ",NGX
+        WRITE(IU06,*) "NGY = ",NGY
+
         ALLOCATE(NLONRGG(NGY))
+
+        IF (IPER == 1) THEN
+          CLDOMAIN = 'g'
+        ELSE
+          CLDOMAIN = 'm'
+        ENDIF
       ENDIF
 
       AMONOP = REAL(DAMONOP,JWRB)
@@ -400,7 +409,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       LGRHDIFS =.FALSE.
       LNEWLVTP =.FALSE.
       NDATE_TIME_WINDOW_END = 0
-      KCOUSTEP = .FALSE.
+      KCOUSTEP = 0
       LRSTST0 = .FALSE.
 
 
@@ -422,8 +431,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !       FOR INTEGRATED PARAMETERS
         CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I,NGRIBV=2,LLCREATE=.true.,NBITSPERVALUE=24)
 !       FOR SPECTRA
-!!!  grib 2 spectra not yet implemented !!!!
-        CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S,NGRIBV=1,LLCREATE=.true.,NBITSPERVALUE=12)
+        CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S,NGRIBV=2,LLCREATE=.true.,NBITSPERVALUE=12)
         
         DO IP = 0, NPROPAGS 
           WRITE(C1,'(I1)') IP
@@ -531,19 +539,6 @@ PROGRAM CREATE_BATHY_ETOPO1
         ENDDO
       ENDDO
       CALL FLUSH(IU06)
-
-!     SOUTH OF 64S ALL NON DEEP POINTS ARE SET TO LAND TO AVOID
-!     THE PROBLEM WITH PERMANENT ICE SHEET
-        DO J=1,ILAT
-          YJ=ALAT(J)
-          IF (YJ <= -64.0_JWRU) THEN
-            DO I=1,ILON
-              IF (IDEPTH(I,J) >= -250_JWRU) THEN
-                IDEPTH(I,J)=1
-              ENDIF
-            ENDDO
-          ENDIF
-        ENDDO
 
 !     COMPUTE MEAN DEPTH 
 
@@ -958,7 +953,7 @@ IF ( LLOBSTROUT ) THEN
 
 !               AWAY FROM THE DATELINE
                 IF (ILONL <= ILONR) THEN
-                  NBLOCKLAND=0
+                  NBLOCKLAND=0                  
 !                 LOOP OVER SUBGRID LONGITUDE LINE:
                   DO I=ILONL,ILONR
                     NIOBSLON=0
@@ -1078,7 +1073,7 @@ IF ( LLOBSTROUT ) THEN
 !       -----------------------
 !       IS=1 is for the west-east advection
 !       IS=2 is for the east-west advection
-        WRITE(IU06,*) 'CREATE EAST-WEST  OBSTRUCTIONS '
+        WRITE(IU06,*) 'CREATE EAST-WEST OBSTRUCTIONS '
         DO IS=1,2
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
 !$OMP& PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX) &
@@ -2523,6 +2518,8 @@ IF ( LLOBSTROUT ) THEN
           CALL IGRIB_CLOSE_FILE(IU08(IP))
         ENDDO
       ENDIF
+
+      CALL FLUSH(IU06)
 
 ENDIF  !!! LLOBSTROUT
 

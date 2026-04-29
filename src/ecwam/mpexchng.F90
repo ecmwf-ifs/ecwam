@@ -121,11 +121,10 @@
 !     -------------------------------------------------
       CALL GSTATS(1892,0)
 #ifdef _OPENACC
-!$acc kernels loop independent private(IPROC) present(ZCOMBUFS,FLD) &
-!$acc copyin(NTOPELST,NTOPE,IJTOPE)
+!$acc parallel loop gang present(ZCOMBUFS,FLD,NTOPELST,NTOPE,IJTOPE)
       DO INGB=1,NGBTOPE !Total number of PE's to which information will be sent
         IPROC=NTOPELST(INGB)  !To which PE to send informations
-          !$acc loop independent collapse(3) private(IJ,KCOUNT,M,K,IH)
+          !$acc loop vector collapse(3) private(IJ,KCOUNT,M,K,IH)
           DO M = ND3S, ND3E
             DO K = 1, NDIM2
               DO IH = 1, NTOPE(IPROC) !How many halo points to be sent
@@ -136,7 +135,7 @@
           ENDDO
         ENDDO
       ENDDO
-!$acc end kernels
+!$acc end parallel loop
 #else
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(INGB,IPROC,KCOUNT,M,K,IH,IJ)
        DO INGB=1,NGBTOPE
@@ -215,11 +214,10 @@
 
       CALL GSTATS(1893,0)
 #ifdef _OPENACC
-      !$acc kernels loop independent private(IPROC) present(ZCOMBUFR,FLD) &
-      !$acc copyin(NFROMPELST,NFROMPE,NIJSTART)
+      !$acc parallel loop gang present(ZCOMBUFR,FLD,NFROMPELST,NFROMPE,NIJSTART)
       DO INGB=1,NGBFROMPE
         IPROC=NFROMPELST(INGB)
-        !$acc loop vector independent collapse(3) private(IJ,KCOUNT,M,K,IH)
+        !$acc loop vector collapse(3) private(IJ,KCOUNT,M,K,IH)
         DO M = ND3S, ND3E
           DO K = 1, NDIM2
             DO IH = 1, NFROMPE(IPROC)
@@ -230,7 +228,7 @@
           ENDDO
         ENDDO
       ENDDO
-      !$acc end kernels
+      !$acc end parallel loop
 #else
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(INGB,IPROC,KCOUNT,M,K,IH,IJ)
       DO INGB=1,NGBFROMPE
@@ -252,7 +250,7 @@
 
       KTAG=KTAG+1
 
-!$acc exit data delete(ZCOMBUFS,ZCOMBUFR)
+!$acc exit data delete(ZCOMBUFS,ZCOMBUFR) finalize
       DEALLOCATE(ZCOMBUFS)
       DEALLOCATE(ZCOMBUFR)
 

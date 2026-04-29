@@ -137,7 +137,9 @@
       ID=JD(KIJS)
       DO IJ=KIJS+1,KIJL
          LLSAMEDPTH=(LLSAMEDPTH.AND.(JD(IJ-1).EQ.JD(IJ)))
+         !$loki remove
          IF (.NOT.LLSAMEDPTH) EXIT
+         !$loki end remove
       ENDDO
 
       DO M=1,NFRE

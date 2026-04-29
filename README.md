@@ -68,6 +68,11 @@ Environment variables
     $ export FC=<path-to-Fortran-compiler>
     $ export CXX=<path-to-C++-compiler>
 
+Precision
+    An ecwam build will generate binaries and libraries in double precision (default), single precision, or both single and double precision if requested.
+    Precisions are requested by passing appropriate options (ENABLE_SINGLE_PRECISION, ENABLE_DOUBLE_PRECISION) to the `cmake` command, as described below. 
+    Note that fiat and field_api dependencies must contain the necessary single and/or double libraries.
+
 If you want to pre-download or install extra data files, run in the source-directory before CMake (re)configuration:
 
     $ share/ecwam/data/populate.sh
@@ -87,6 +92,8 @@ Extra options can be added to the `cmake` command to control the build:
  - `-DENABLE_MPI=<ON|OFF>`
  - `-DENABLE_OMP=<ON|OFF>`
  - `-DCMAKE_INSTALL_PREFIX=<install-prefix>`
+ - `-DENABLE_SINGLE_PRECISION=<ON|OFF>`
+ - `-DENABLE_DOUBLE_PRECISION=<ON|OFF>`
 
 More options to control compilation flags, only when defaults are not sufficient
 
@@ -124,7 +131,7 @@ The following options can also be configured during the bundle build step:
 
  Finally, additional `CMake` options can also be set during the bundle build step:
 
-`--cmake-"OPTION=<arg>"`
+`--cmake="OPTION=<arg>"`
 
 Running ecWAM
 =============
@@ -227,14 +234,14 @@ translation toolchain Loki. Currently, three Loki transformations are supported:
 The scc-hoist and scc-stack transformations offer superior performance to the scc transformation. Currently, only the
 OpenACC programming model on Nvidia GPUs is supported.
 
-NB: GPU offload is not supported for ecWAM 1.4.0.
+NB: GPU offload is not supported for ecWAM 1.4.0, 1.5.0 and 1.5.1.
 
 Building
 --------
 The recommended option for building the GPU enabled ecWAM is to use the provided bundle, and pass the
-`--with-loki --with-acc` options. Different Loki transformations can also be chosen at build-time via the following 
-bundle option: `--loki-mode=<trafo>`. Direct GPU-to-GPU MPI communications can be enabled by passing the 
-`--with-gpu-aware-mpi` option. CPU to GPU data transfers can be accelerated (via pinning of host-side allocations)
+`--with-loki --with-acc --with-static-linking` options. Different Loki transformations can also be chosen at
+build-time via the following bundle option: `--loki-mode=<trafo>`. Direct GPU-to-GPU MPI communications can be enabled by
+passing the `--with-gpu-aware-mpi` option. CPU to GPU data transfers can be accelerated (via pinning of host-side allocations)
 by building with the `--with-cuda` option.
 
 The ecwam-bundle also provides appropriate arch files for the nvhpc suite on the ECMWF ATOS system.
@@ -277,4 +284,4 @@ In order to do so, please open a [GitHub issue](https://github.com/ecmwf-ifs/ecw
 a feature request or bug can be discussed.
 Then create a [pull request](https://github.com/ecmwf-ifs/ecwam/pulls) with your contribution.
 All contributors to the pull request need to sign the
-[contributors license agreement (CLA)](http://claassistant.ecmwf.int/ecmwf-ifs/ecwam).
+[contributors license agreement (CLA)](https://bol-claassistant.ecmwf.int/ecmwf-ifs/ecwam).

@@ -73,11 +73,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH, &
-     &            HSALTCUT, LALTGRDOUT, LALTPAS, LALTPASSIV,            &
+     &            ALTGRTHRSH,HSALTCUT, LALTGRDOUT, LALTPAS, LALTPASSIV, &
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOURNW, LWCOUAST,     &
      &             LWCOUHMF, KCOUSTEP , LWFLUX, LWVFLX_SNL,             &
+     &             LWNEMOCOUIBR,LWNEMOCOUWRS,                           &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
      &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                       &
      &            IFSCONTEXT
@@ -107,12 +108,13 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWFRED  , ONLY : FR, XKMSS_CUTOFF, NWAV_GC, XK_GC
       USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G,IMDLGRBID_M
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS2
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI ,LCIWABR  ,  &
-     &            CITHRSH  ,CIBLOCK  ,LICETH   ,                        &
-     &            CITHRSH_SAT, CITHRSH_TAIL    ,CDICWA
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI ,            &
+     &            LCIWA1   ,LCIWA2   ,LCIWA3   ,LCISCAL    ,ZIBRW_THRSH,&
+     &            CITHRSH  ,CIBLOCK  ,LICETH   ,ZALPFACX   ,ZALPFACB   ,&
+     &            CITHRSH_SAT, CITHRSH_TAIL    ,CDICWA     ,ZALPWRS
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMAP   , ONLY : CLDOMAIN 
-      USE YOWMPP   , ONLY : NPROC    ,NPRECI   ,NPRECR
+      USE YOWMPP   , ONLY : IRANK, NPROC    ,NPRECI   ,NPRECR
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS   ,LL1D     ,LLUNSTR
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
@@ -393,6 +395,19 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
       ENDIF
 
+      IF (LCIWA3 .AND. (LCIWA1 .OR. LCIWA2) ) THEN
+        WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
+        WRITE(IU06,*)'+   SELECTING ATTENUATION BY SEA ICE METHOD               +'
+        WRITE(IU06,*)'+    - LCIWA3 designed as a standalone option, i.e.       +'
+        WRITE(IU06,*)'+      not to be used in conjunction with other options   +'
+        WRITE(IU06,*)'+   LCIWA1 = ', LCIWA1
+        WRITE(IU06,*)'+   LCIWA2 = ', LCIWA2
+        WRITE(IU06,*)'+   LCIWA3 = ', LCIWA3
+        WRITE(IU06,*)'+   ABORT SERVICE ROUTINE CALLED BY USERIN  +'
+        WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
+        CALL ABORT1
+      ENDIF
+
 !* CHECK FLAG FOR GRIBING AS SOME OPTIONS ARE NOT IMPLEMENTED
 !* IN OUTINT
       IF (IREST > 0 .AND. LGRIBOUT .AND. .NOT.GFLAG(IRWDIR)) THEN
@@ -471,6 +486,30 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
         LFDBIOOUT=.FALSE.
+      ENDIF
+
+      IF (IMDLGRBID_M < 204 .OR. IMDLGRBID_M > 220) THEN
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*)'+                                                +'
+        WRITE(IU06,*)'+ SUBROUTINE USERIN :                            +'
+        WRITE(IU06,*)'+ READ NAMELIST FAILED                           +'
+        WRITE(IU06,*)'+ IMDLGRBID_M MUST BE IN THE RANGE 204 - 220     +'
+        WRITE(IU06,*)'+ PROGRAM WILL ABORT                             +'
+        WRITE(IU06,*)'+                                                +'
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++++++++'
+        CALL WAM_ABORT("Unexpected namelist input for IMDLGRBID_M",__FILENAME__,__LINE__)
+      ENDIF
+
+      IF (IMDLGRBID_G < 104 .OR. IMDLGRBID_G > 120) THEN
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*)'+                                                +'
+        WRITE(IU06,*)'+ SUBROUTINE USERIN :                            +'
+        WRITE(IU06,*)'+ READ NAMELIST FAILED                           +'
+        WRITE(IU06,*)'+ IMDLGRBID_G MUST BE IN THE RANGE 104 - 120     +'
+        WRITE(IU06,*)'+ PROGRAM WILL ABORT                             +'
+        WRITE(IU06,*)'+                                                +'
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++++++++'
+        CALL WAM_ABORT("Unexpected namelist input for IMDLGRBID_G",__FILENAME__,__LINE__)
       ENDIF
 
 !*    1.1  READ THE WAMINFO FILE AND OVERWRITE INPUT.
@@ -923,15 +962,15 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         CDICWA=0.0_JWRB
       ELSE
 !     RELAX IT A BIT WHEN THE WAVES ARE ALLOWED TO PROPAGATE INTO THE ICE.
-        CITHRSH=0.70_JWRB
+        CITHRSH=1.0_JWRB
 !     EXCEPT FOR DATA ASSIMILATION
         CITHRSH_SAT=0.3_JWRB
 !     BUT ENFORCE FULL BLOCKING CI > CIBLOCK
-        CIBLOCK=0.70_JWRB
+        CIBLOCK=1.0_JWRB
 !     HIGH FREQUENCY SPECTRAL TAIL WILL ONLY BE IMPOSED IF SEA ICE COVER <=CITHRSH_TAIL
         CITHRSH_TAIL=0.1_JWRB
 !     ICE WATER DRAG COEFFICIENT
-        IF (LCIWABR) THEN
+        IF (LCIWA2) THEN
           CDICWA=0.01_JWRB
         ELSE
           CDICWA=0.0_JWRB
@@ -954,14 +993,38 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &                    CITHRSH_SAT
           WRITE(IU06,*) ' WITH A SPECTRAL TAIL SEA ICE THRESHOLD OF ',  &
      &                    CITHRSH_TAIL
-          IF (LCIWABR) THEN
+          IF (LCIWA2) THEN
           WRITE(IU06,*) ' WITH AN ICE-WATER DRAG COEFFICENT OF ',CDICWA
           ENDIF
         ENDIF
         IF (LWAMRSETCI) THEN
           WRITE(IU06,*) ''
-          WRITE(IU06,*) ' COUPLED WAVE FIELDS RESET UNDER SEA ICE'
+          WRITE(IU06,*) ' COUPLED WAVE FIELDS RESET UNDER SEA ICE IF CICOVER>CIBLOCK OR CICOVER>CITHRSH'
           WRITE(IU06,*) ''
+        ENDIF
+        IF (LCIWA1) THEN 
+          WRITE (IU06,*) ' ICE ATTENUATION DUE TO SCATTERING ACTIVATED, BASED ON:'
+          WRITE (IU06,*) '    KOHOUT AND MEYLAN, 2008'
+        ENDIF
+        IF (LCIWA2) THEN
+          WRITE (IU06,*)  ' ICE ATTENUATION DUE TO BOTTOM FRICTION ACTIVATED, BASED ON:'
+          WRITE (IU06,*)  '    KOHOUT A., M. MEYLAN, D PLEW, 2011'
+        ENDIF
+        IF (LCIWA3) THEN 
+          WRITE (IU06,*)  ' ICE ATTENUATION DUE TO VISCOUS FRICTION ACTIVATED, BASED ON:'
+          WRITE (IU06,*)  '    YU J., W. E. ROGERS, D. W. WANG, 2022'
+        ENDIF
+        IF (LCISCAL)   WRITE (IU06,*) ' LINEAR SCALING OF INPUT AND DISSIPATION SOURCE TERMS BY SEA ICE CONCENTRATION ACTIVATED'
+        IF (LWNEMOCOUIBR) THEN
+          WRITE (IU06,*) ' COUPLING THROUGH ICE BREAK UP AND ATTENUATION ACTIVATED'
+          WRITE (IU06,*) '    THRESHOLD AT WHICH SEA ICE IS CONSIDERED BROKEN, ZIBRW_THRSH= ', ZIBRW_THRSH
+          WRITE (IU06,*) '    ATTENUATION SCALED UP/DOWN BY FACTOR ZALPFACX FOR SOLID/BROKEN ICE, ZALPFACX= ', ZALPFACX
+        ENDIF
+        WRITE (IU06,*) ' ATTENUATION SCALED BY FACTOR ZALPFACB FOR ALL SEA ICE,              ZALPFACB= ', ZALPFACB
+        IF (LWNEMOCOUWRS) THEN
+          WRITE (IU06,*) ' COUPLING THROUGH WAVE RADIATIVE STRESS ACTIVATED'
+          WRITE (IU06,*) '    PROPORTION OF ENERGY LOST DUE TO WAVE-SEA ICE INTERACTIONS ',&
+          &                  'THAT GOES INTO WAVE RADIATIVE STRESS,  ZALPWRS= ', ZALPWRS
         ENDIF
       ENDIF
 
@@ -1044,14 +1107,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
               WRITE(IU06,*) ' THE DATA WILL BE CORRECTED '
               WRITE(IU06,*) ' ACCORDING TO THE MODEL SEA STATE.'
             ENDIF
-            WRITE(IU06,*) ' THE THRESHOLD FOR BACKGROUND CHECK IS ',    &
-     &                      ALTBGTHRSH(ISAT)
+            WRITE(IU06,*) ' THE THRESHOLD FOR BACKGROUND CHECK IS ', ALTBGTHRSH(ISAT) 
+            WRITE(IU06,*) ' THE THRESHOLD FOR GROSS ERROR CHECK IS ', ALTGRTHRSH(ISAT) 
             IF (HSALTCUT(ISAT) < 999999.) THEN
-              WRITE(IU06,*) ' THE INPUT MINIMUM WAVE HEIGHT IS ',       &
-     &                        HSALTCUT(ISAT)
+              WRITE(IU06,*) ' THE INPUT MINIMUM WAVE HEIGHT IS ', HSALTCUT(ISAT)
             ELSE
-              WRITE(IU06,*) ' THE MINIMUM WAVE HEIGHT WILL BE',         &
-     &                      ' THE OBSERVATION ERROR.'
+              WRITE(IU06,*) ' THE MINIMUM WAVE HEIGHT WILL BE THE OBSERVATION ERROR.'
             ENDIF
             IF (LALTGRDOUT(ISAT)) THEN
               WRITE(IU06,*) ' GRIDDED ALTIMETER FIELDS WILL BE PRODUCED FOR THIS ALTIMETER.'
@@ -1580,7 +1641,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !*    2.5 OUTPUT OPTION.
 !         --------------
 
-      IF (NOUTT > 0) THEN
+      IF (NOUTT > 0 .AND. .NOT.LRESTARTED) THEN
         DO J=1,NOUTT
           CALL DIFDATE (CDATEA, COUTT(J), ISHIFT)
           IF (ISHIFT < 0) THEN
@@ -1604,9 +1665,21 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*) '+ PROGRAM WILL IGNORE THIS OUTPUT TIME +'
             WRITE(IU06,*) '+                                      +'
             WRITE(IU06,*) '++++++++++++++++++++++++++++++++++++++++'
+          ELSE IF (MOD(ISHIFT,IDELT) /= 0 .AND. LLSOURCE ) THEN
+            WRITE(IU06,*) '++++++++++++++++++++++++++++++++++++++++'
+            WRITE(IU06,*) '+                                      +'
+            WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN      +'
+            WRITE(IU06,*) '+    ============================      +'
+            WRITE(IU06,*) '+ OUTPUT DATE IS NOT AT THE END OF A   +'
+            WRITE(IU06,*) '+ SOURCE TERM TIMESTEP IDELT= ', IDELT
+            WRITE(IU06,*) '+ DATE IS : ', COUTT(J)
+            WRITE(IU06,*) '+ PROGRAM WILL ABORT '
+            WRITE(IU06,*) '+                                       +'
+            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+            LERROR = .TRUE.
           ENDIF
         ENDDO
-      ELSE
+      ELSE IF (.NOT.LRESTARTED) THEN
         IF ((FFLAG20.OR.GFLAG20) .AND. IDELINT == 0) THEN
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) '*                                         *'
@@ -1625,7 +1698,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           WRITE(IU06,*) '*                                         *'
           WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
           WRITE(IU06,*) '*    ==========================           *'
-          WRITE(IU06,*) '* OUTPUT OF INTEGRATED DATA (TOTAL SEA)   *'
+          WRITE(IU06,*) '* OUTPUT OF INTEGRATED DATA               *'
           WRITE(IU06,*) '* IS REQUESTED.                           *'
           WRITE(IU06,*) '* OUTPUT TIME STEP HAS TO BE A MULTIPLE   *'
           WRITE(IU06,*) '* OF THE PROPAGATION TIME STEP.           *'
@@ -1635,9 +1708,26 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           WRITE(IU06,*) '*******************************************'
           LERROR = .TRUE.
         ENDIF
+        IF (LLSOURCE) THEN
+          IF ((FFLAG20 .OR. GFLAG20) .AND. MOD(IDELINT,IDELT) /= 0) THEN
+            WRITE(IU06,*) '*******************************************'
+            WRITE(IU06,*) '*                                         *'
+            WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+            WRITE(IU06,*) '*    ==========================           *'
+            WRITE(IU06,*) '* OUTPUT OF INTEGRATED DATA               *'
+            WRITE(IU06,*) '* IS REQUESTED.                           *'
+            WRITE(IU06,*) '* OUTPUT TIME STEP HAS TO BE A MULTIPLE   *'
+            WRITE(IU06,*) '* OF THE SOURCE TERM TIME STEP.           *'
+            WRITE(IU06,*) '* OUTPUT TIME STEP IS      IDELINT = ', IDELINT
+            WRITE(IU06,*) '* SOURCE TERM TIME STEP IS IDELT = ', IDELT 
+            WRITE(IU06,*) '*                                         *'
+            WRITE(IU06,*) '*******************************************'
+            LERROR = .TRUE.
+          ENDIF
+        ENDIF
       ENDIF
 
-      IF (NOUTS > 0) THEN
+      IF (NOUTS > 0 .AND. .NOT.LRESTARTED) THEN
         DO J=1,NOUTS
           CALL DIFDATE (CDATEA, COUTS(J), ISHIFT)
           IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELPRO) /= 0) THEN
@@ -1653,9 +1743,27 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
           ENDIF
         ENDDO
+        IF (LLSOURCE) THEN
+          DO J=1,NOUTS
+            CALL DIFDATE (CDATEA, COUTS(J), ISHIFT)
+            IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELT) /= 0) THEN
+              WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+              WRITE(IU06,*) '+                                       +'
+              WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN       +'
+              WRITE(IU06,*) '+    ============================       +'
+              WRITE(IU06,*) '+ SPECTRA OUTPUT DATE IS NOT AT THE END +'
+              WRITE(IU06,*) '+ OF A SOURCE TERM TIMESTEP IDELT= ', IDELT
+              WRITE(IU06,*) '+ DATE IS : ', COUTS(J)
+              WRITE(IU06,*) '+ PROGRAM WILL ABORT '
+              WRITE(IU06,*) '+                                       +'
+              WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+              LERROR = .TRUE.
+            ENDIF
+          ENDDO
+        ENDIF
       ENDIF
 
-      IF (NASS > 0 .AND. IASSI == 1) THEN
+      IF (NASS > 0 .AND. IASSI == 1 .AND. .NOT.LRESTARTED ) THEN
         DO J=1,NASS
           CALL DIFDATE (CDATEA, CASS(J), ISHIFT)
           IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELPRO) /= 0) THEN
@@ -1669,7 +1777,23 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             WRITE(IU06,*) '+ PROGRAM WILL ABORT '
             WRITE(IU06,*) '+                                       +'
             WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
-            CALL WAM_ABORT(__FILENAME__,__LINE__)
+            LERROR = .TRUE.
+          ENDIF
+        ENDDO
+        DO J=1,NASS
+          CALL DIFDATE (CDATEA, CASS(J), ISHIFT)
+          IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELT) /= 0) THEN
+            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+            WRITE(IU06,*) '+                                       +'
+            WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN       +'
+            WRITE(IU06,*) '+    ============================       +'
+            WRITE(IU06,*) '+ ASSIMILATION DATE IS NOT AT THE END   +'
+            WRITE(IU06,*) '+ OF A SOURCE TERM TIMESTEP IDELT= ', IDELT
+            WRITE(IU06,*) '+ DATE IS : ', CASS(J)
+            WRITE(IU06,*) '+ PROGRAM WILL ABORT '
+            WRITE(IU06,*) '+                                       +'
+            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+            LERROR = .TRUE.
           ENDIF
         ENDDO
       ENDIF
@@ -1691,6 +1815,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.       *'
         WRITE(IU06,*) '* ---------------   --------------        *'
         WRITE(IU06,*) '*******************************************'
+        IF (IRANK == 1) THEN
+          WRITE(NULERR,*) '*******************************************'
+          WRITE(NULERR,*) '*    FATAL ERROR(S) IN SUB. USERIN        *'
+          WRITE(NULERR,*) '*    SEE LOGFILE        *'
+          WRITE(NULERR,*) '*******************************************'
+        ENDIF
         CALL WAM_ABORT(__FILENAME__,__LINE__)
       ELSE
 

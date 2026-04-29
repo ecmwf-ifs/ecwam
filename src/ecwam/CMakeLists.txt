@@ -30,17 +30,19 @@ list( APPEND unwam_srcs
   unwam/yowunpool.F90
 )
 
-ecbuild_generate_fortran_interfaces(
-    TARGET ${ecwam}_intfb
-    DIRECTORIES ecwam
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..
-    DESTINATION intfb
-    INCLUDE_DIRS ecwam_intfb_includes
-    PARALLEL ${FCM_PARALLEL}
-)
-install( DIRECTORY ${ecwam_intfb_includes}/
-         DESTINATION include/${ecwam}
-         COMPONENT interfaces )
+if( NOT TARGET ecwam_intfb )
+   ecbuild_generate_fortran_interfaces(
+       TARGET ecwam_intfb
+       DIRECTORIES ecwam
+       SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..
+       DESTINATION intfb
+       INCLUDE_DIRS ecwam_intfb_includes
+       PARALLEL ${FCM_PARALLEL}
+   )
+   install( DIRECTORY ${ecwam_intfb_includes}/
+            DESTINATION include/ecwam
+            COMPONENT interfaces )
+endif()
 
 list( APPEND ecwam_srcs
   abort1.F90
@@ -59,9 +61,6 @@ list( APPEND ecwam_srcs
   chnkmin.F90
   cigetdeac.F90
   cimsstrn.F90
-  cireduce.F90
-  ciwabr.F90
-  ciwaf.F90
   ctcor.F90
   ctuw.F90
   ctuwdrv.F90
@@ -219,6 +218,12 @@ list( APPEND ecwam_srcs
   sdissip_ard.F90
   sdissip_jan.F90
   sdiwbk.F90
+  sdice.F90
+  sdice1.F90
+  sdice2.F90
+  sdice3.F90
+  icebreak_modify_attenuation.F90
+  ibrmemout.F90
   se10mean.F90
   sebtmean.F90
   second_order_lib.F90
@@ -291,6 +296,7 @@ list( APPEND ecwam_srcs
   wgrib_edition.F90
   wgribencode.F90
   wgribencode_model.F90
+  wgribencode_values.F90
   wgribenout.F90
   wgribout.F90
   wnfluxes.F90
@@ -409,13 +415,8 @@ if( HAVE_MULTIO )
   list(APPEND ECWAM_DEFINITIONS WAM_HAVE_MULTIO)
 endif()
 
-set( ${PNAME}_OCEANMODEL_LIBRARIES "" )
 if( HAVE_OCEAN_COUPLING )
   list(APPEND ECWAM_DEFINITIONS WITH_NEMO )
-  set( ${PNAME}_OCEANMODEL_LIBRARIES nemogcmcoup.${OCEAN_PREC} )
-endif()
-if( ${OCEAN_PREC} STREQUAL SP )
-  list(APPEND ECWAM_DEFINITIONS PARKIND1_SINGLE_NEMO )
 endif()
 
 if( HAVE_ECFLOW )
@@ -426,52 +427,74 @@ if( HAVE_GPU_AWARE_MPI )
   list(APPEND ECWAM_DEFINITIONS WITH_GPU_AWARE_MPI )
 endif()
 
-if( HAVE_SINGLE_PRECISION )
-  list(APPEND ECWAM_DEFINITIONS WAM_HAVE_SINGLE_PRECISION )
-endif()
+foreach( prec sp dp )
+  if( HAVE_${prec} )
+    set( ${PNAME}_OCEANMODEL_LIBRARIES "" )
+    if( HAVE_OCEAN_COUPLING )
+       set( _OCEAN_PREC "")
+       if( DEFINED OCEAN_PREC )
+           set( _OCEAN_PREC "${OCEAN_PREC}" )
+       else()
+           string( TOUPPER "${prec}" _OCEAN_PREC )
+       endif()
+       set( ${PNAME}_OCEANMODEL_LIBRARIES nemogcmcoup.${_OCEAN_PREC} )
+    endif()
 
-# Using dynamic linking creates undefined references to the device
-# copies of module global variables
-set( LIBRARY_TYPE SHARED )
-if( HAVE_ACC )
-  set( LIBRARY_TYPE STATIC )
-endif()
+    ecbuild_add_library(
+        TARGET           ecwam_${prec}
+        SOURCES          ${ecwam_srcs}
+        PUBLIC_LIBS      fiat parkind_${prec} ecwam_intfb
+                         ${MPI_Fortran_LIBRARIES}
+                         ${${PNAME}_OCEANMODEL_LIBRARIES}
+                         field_api_${prec}
+        PRIVATE_LIBS     eccodes_f90
+                         ${MULTIO_LIBRARIES}
+                         ${OpenMP_Fortran_LIBRARIES}
+                         $<${HAVE_ECFLOW}:ecflow_lightf>
+                         $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
+        PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
+        PRIVATE_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
+        PRIVATE_DEFINITIONS
+           ${ECWAM_PRIVATE_DEFINITIONS}
+           $<${HAVE_CUDA}:WAM_HAVE_CUDA>
+           $<$<STREQUAL:${_OCEAN_PREC},SP>:PARKIND1_SINGLE_NEMO>
+           $<$<STREQUAL:${prec},sp>:WAM_HAVE_SINGLE_PRECISION>
+        PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
+    )
 
-ecbuild_add_library(
-    TARGET           ${ecwam}
-    TYPE             ${LIBRARY_TYPE}
-    SOURCES          ${ecwam_srcs}
-    PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
-                     ${MPI_Fortran_LIBRARIES}
-                     ${${PNAME}_OCEANMODEL_LIBRARIES}
-                     field_api_${prec}
-    PRIVATE_LIBS     eccodes_f90
-                     ${MULTIO_LIBRARIES}
-                     ${OpenMP_Fortran_LIBRARIES}
-                     $<${HAVE_ECFLOW}:ecflow_lightf>
-                     $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
-    PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
-    PRIVATE_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
-    PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS} $<${HAVE_CUDA}:WAM_HAVE_CUDA>
-    PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
-)
+    ecbuild_target_fortran_module_directory(
+        TARGET                   ecwam_${prec}
+        MODULE_DIRECTORY         ${CMAKE_BINARY_DIR}/module/ecwam_${prec}
+        INSTALL_MODULE_DIRECTORY module/ecwam_${prec}
+    )
 
-ecwam_target_fortran_module_directory(
-    TARGET ${ecwam}
-    MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/module/${ecwam}
-    INSTALL_DIRECTORY module/${ecwam}
-)
+    if( HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
+       target_link_options( ecwam_${prec} INTERFACE SHELL:${OpenACC_Fortran_FLAGS} )
+       if( CMAKE_CUDA_ARCHITECTURES MATCHES 80 )
+         target_compile_options( ecwam_${prec} PRIVATE "-gpu=maxregcount:168,fastmath" )
+       else()
+         target_compile_options( ecwam_${prec} PRIVATE "-gpu=fastmath" )
+       endif()
+    endif()
 
-if( HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
-   target_link_options( ${ecwam} INTERFACE SHELL:${OpenACC_Fortran_FLAGS} )
-   target_compile_options( ${ecwam} PRIVATE "-gpu=maxregcount:168,fastmath" )
-endif()
+    # add autopromotion of reals if we are compiling in double precision
+    if( prec MATCHES "dp" )
+      target_compile_options( ecwam_${prec} PRIVATE ${autopromote_flags} )
+    endif()
 
-if( HAVE_CUDA )
-  target_link_options( ${ecwam} PUBLIC "-cuda;-gpu=pinned" )
-endif()
+	if( HAVE_CUDA AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" )
+      if(CMAKE_Fortran_COMPILER_VERSION VERSION_LESS "25.5")
+        target_link_options( ecwam_${prec} PUBLIC "-cuda;-gpu=pinned" )
+      else()
+        target_link_options( ecwam_${prec} PUBLIC "-cuda;-gpu=mem:separate:pinnedalloc" )
+      endif()
+    endif()
 
-ecwam_target_compile_definitions_FILENAME( ${ecwam} )
+    ecwam_target_compile_definitions_FILENAME( ecwam_${prec} )
+
+  endif()
+
+endforeach()
 
 ### The file mubuf.F90, which is only used for "preproc" is sensitive to optimisations
 #   possibly leading to different wam_grid_<1,2,3> files.
@@ -481,14 +504,18 @@ ecwam_target_compile_definitions_FILENAME( ${ecwam} )
 if( CMAKE_Fortran_COMPILER_ID MATCHES Intel )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
   set_source_files_properties( propconnect.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
+  set_source_files_properties( stresso.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
 elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-ffp-contract=off" )
   set_source_files_properties( sdice3.F90 PROPERTIES COMPILE_OPTIONS "-fdisable-ipa-simdclone" )
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHES "Bit")
   set_source_files_properties(
-      sbottom.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros "
+      w_maxh.F90 sbottom.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros "
   )
   set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-Mnofma" )
+  set_source_files_properties( initgc.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
+  set_source_files_properties( iniwcst.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
+  set_source_files_properties( depthprpt.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
   if( HAVE_SINGLE_PRECISION )
      set_source_files_properties( aki.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
      set_source_files_properties( kurtosis.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
@@ -517,34 +544,40 @@ if( HAVE_LOKI )
      set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config )
   else()
      set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
-     target_compile_definitions( ${ecwam} PRIVATE WAM_GPU )
   endif()
 
-  if( NOT LOKI_MODE MATCHES "idem|idem-stack")
-    # Preprocess propags2.F90 for GPU enabled runs using Loki
-    loki_transform_target( TARGET ${ecwam}
-      MODE "idem"
-      DIRECTIVE openacc
-      FRONTEND ${LOKI_FRONTEND}
-      CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_propags2_loki.config
-      PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_propags2_plan_ecwam.cmake
-      SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/
-    )
-  endif()
+  foreach(prec sp dp )
+     if( HAVE_${prec} )
 
-  # Apply Loki source file transformation to lib target
-  loki_transform_target( TARGET ${ecwam}
-    MODE ${LOKI_MODE}
-    DIRECTIVE openacc
-    FRONTEND ${LOKI_FRONTEND}
-    CONFIG ${LOKI_CONFIG_FILE}
-    PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_plan_ecwam.cmake
-    CPP
-    DEFINITIONS WAM_GPU
-    INCLUDES ${ecwam_intfb_includes}
-    SOURCES
-      ${CMAKE_CURRENT_SOURCE_DIR}/
-  )
+        if( NOT LOKI_MODE MATCHES "idem|idem-stack" )
+           target_compile_definitions( ecwam_${prec} PRIVATE WAM_GPU )
+        endif()
+
+        if( NOT LOKI_MODE MATCHES "idem|idem-stack")
+          # Preprocess propags2.F90 for GPU enabled runs using Loki
+          loki_transform_target( TARGET ecwam_${prec}
+            MODE "loop-unroll-fuse"
+            FRONTEND ${LOKI_FRONTEND}
+            CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_propags2_loki.config
+            PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_propags2_plan_ecwam.cmake
+            SOURCES
+              ${CMAKE_CURRENT_SOURCE_DIR}/
+          )
+        endif()
+
+        # Apply Loki source file transformation to lib target
+        loki_transform_target( TARGET ecwam_${prec}
+          MODE ${LOKI_MODE}
+          FRONTEND ${LOKI_FRONTEND}
+          CONFIG ${LOKI_CONFIG_FILE}
+          PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_plan_ecwam.cmake
+          CPP
+          DEFINITIONS WAM_GPU
+          INCLUDES ${ecwam_intfb_includes}
+          SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/
+        )
+     endif()
+  endforeach()
 
 endif()

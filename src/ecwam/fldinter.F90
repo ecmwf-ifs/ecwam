@@ -109,6 +109,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
+      USE YOWCOUP  , ONLY : LWNEMOCOUCUR
       USE YOWWIND  , ONLY : LLNEWCURR
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -195,7 +196,7 @@
             FIELDG%CITHICK(I,J) = 0.0_JWRB
           ENDDO
 
-          IF (LLNEWCURR) THEN
+          IF (LLNEWCURR .AND. .NOT. LWNEMOCOUCUR) THEN
             IF (LWCUR) THEN
               DO IJ = KIJS, KIJLMAX
                 I = IFROMIJ(IJ)
@@ -351,7 +352,7 @@
      &                  DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),8) +     &
      &                        DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),8) )
 
-            IF (LLNEWCURR) THEN
+            IF (LLNEWCURR .AND. .NOT. LWNEMOCOUCUR) THEN
               IF (LWCUR) THEN
                 FIELDG%UCUR(I,J)=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),9) +  &
      &                           DII1*FIELDS(IJBLOCK(II1,JJ),9) ) +     &
