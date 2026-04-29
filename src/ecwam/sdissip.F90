@@ -90,11 +90,11 @@
       CASE(2) 
          !$loki inline
          CALL SDISSIP_BYDRZ (KIJS, KIJL, FL1 ,FLD, SL,  &
-     &                      WSWAVE, WAVNUM, CGROUP,    &
-     &                      UFRIC, RAORW)
-         CALL SWLDISSIP_BYDRZ(KIJS, KIJL, FL1 ,FLD, SL, &
-     &                       WAVNUM, CGROUP,           &
+     &                       WSWAVE, WAVNUM, CGROUP,    &
      &                       UFRIC, RAORW)
+         CALL SWLDISSIP_BYDRZ(KIJS, KIJL, FL1 ,FLD, SL, &
+     &                        WAVNUM, CGROUP,           &
+     &                        UFRIC, RAORW)
       END SELECT 
 
       IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)

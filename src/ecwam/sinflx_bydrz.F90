@@ -292,7 +292,7 @@ ELSE
       WRITE (IU06,*) '**************************************'
       WRITE (IU06,*) '*    FATAL ERROR                     *'
       WRITE (IU06,*) '*    ===========                     *'
-      WRITE (IU06,*) '* IN SINFLX_BYDRZ: NGST > 2            *'
+      WRITE (IU06,*) '* IN SINFLX_BYDRZ: NGST > 2          *'
       WRITE (IU06,*) '* NGST = ', NGST
       WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.  *'
       WRITE (IU06,*) '*                                    *'

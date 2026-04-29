@@ -8,8 +8,8 @@
 !
 
       SUBROUTINE AIRSEA_BYDRZ (KIJS, KIJL, &
-&                        U10, U10DIR, TAUW, TAUWDIR,  &
-&                        US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
+&                              U10, U10DIR, TAUW, TAUWDIR,  &
+&                              US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
 
@@ -26,8 +26,8 @@
 !     ----------
 
 !       *CALL* *AIRSEA_BYDRZ (KIJS, KIJL,
-!                       U10, U10DIR, TAUW, TAUWDIR,
-!                       US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)*
+!                             U10, U10DIR, TAUW, TAUWDIR,
+!                             US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)*
 
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*    - INDEX OF LAST GRIDPOINT.
@@ -133,8 +133,7 @@ IF (ICODE_WND == 3) THEN
       ENDDO
 
       ! implementation of iterative scheme
-      CASE(2,3)  
-      ! (IPHYS2_AIRSEA=3 only needs this iteration to get USTARGST -> UABSGST , but there is probably a smarter way to do this)
+      CASE(2)
       DO IJ=KIJS,KIJL
             ! --------------------------------------------
             ! Iterative method
@@ -180,6 +179,17 @@ IF (ICODE_WND == 3) THEN
             
             
       ENDDO
+
+      CASE(3)
+      ! IPHYS2_AIRSEA=3 uses U10 directly for wind input (UABSGST); only a rough US
+      ! is needed as input to LFACTOR. A direct one-shot estimate is sufficient.
+      DO IJ=KIJS,KIJL
+            CD      = ACD + BCD*U10(IJ)
+            US(IJ)  = U10(IJ) * SQRT(CD)
+            Z0(IJ)  = ZNLEV * EXP(-RKAP / SQRT(CD))
+            Z0B(IJ) = ALPHA * (US(IJ)**2) / G
+      ENDDO
+
       END SELECT
 
 ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
@@ -202,10 +212,10 @@ ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
       ENDDO
 
 ELSE
-      WRITE (IU06, * ) ' ++++++++++++++++++++++++++++++++++++++++++'
-      WRITE (IU06, * ) ' + AIRSEA_BYDRZ : INVALID VALUE OF ICODE_WND    +'
-      WRITE (IU06, * ) ' ICODE_WND = ', ICODE_WND
-      WRITE (IU06, * ) ' ++++++++++++++++++++++++++++++++++++++++++'
+      WRITE (IU06, * ) ' +++++++++++++++++++++++++++++++++++++++++++++'
+      WRITE (IU06, * ) ' + AIRSEA_BYDRZ : INVALID VALUE OF ICODE_WND +'
+      WRITE (IU06, * ) ' + ICODE_WND = ', ICODE_WND
+      WRITE (IU06, * ) ' +++++++++++++++++++++++++++++++++++++++++++++'
       CALL ABORT1
 ENDIF
 

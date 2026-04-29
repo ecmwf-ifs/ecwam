@@ -101,8 +101,8 @@
 &                              US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
       CASE(2) 
             CALL AIRSEA_BYDRZ(KIJS, KIJL, &
-            &                U10, U10DIR, TAUW, TAUWDIR,  &
-            &                US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
+            &                 U10, U10DIR, TAUW, TAUWDIR,  &
+            &                 US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
             
       END SELECT
       

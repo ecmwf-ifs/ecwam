@@ -8,8 +8,8 @@
 !
 
       SUBROUTINE SDISSIP_BYDRZ (KIJS, KIJL, FL1, FLD, SL,          &
-     &                        WSWAVE, WAVNUM, CGROUP,             &
-     &                        UFRIC, RAORW)
+     &                          WSWAVE, WAVNUM, CGROUP,            &
+     &                          UFRIC, RAORW)
 ! ----------------------------------------------------------------------
 
 !**** *SDISSIP_BYDRZ* - COMPUTATION OF DISSIPATION SOURCE FUNCTION.
@@ -30,8 +30,8 @@
 !     ----------
 
 !       *CALL* *SDISSIP_BYDRZ (KIJS, KIJL, FL1, FLD, SL,*
-!                            WSWAVE, WAVNUM, CGROUP,
-!                            UFRIC, RAORW)*
+!                              WSWAVE, WAVNUM, CGROUP,
+!                              UFRIC, RAORW)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FL1*    - SPECTRUM.
@@ -60,7 +60,7 @@
 
 !     ORIGIN.
 !     ----------
-!     Adapted from Babanin Young Donelan & Banner (BYDRZ) physics 
+!     Adapted from Babanin Young Donelan Rogers & Zieger (BYDRZ) physics 
 !     as implemented as ST6 in WAVEWATCH-III
 !     Implementation into ECWAM DECEMBER 2021 by J. Kousal 
 
