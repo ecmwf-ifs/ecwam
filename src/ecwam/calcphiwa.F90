@@ -17,7 +17,7 @@ FUNCTION CALCPHIWA(SPOS,SNEG) RESULT(PHIWA)
 
 !     ORIGIN.
 !     ----------
-!     Adapted from TAUWINDS
+!     Adapted from TAUWINDSXY
 !     Implementation into ECWAM DECEMBER 2021 by J. Kousal 
 
 ! ----------------------------------------------------------------------------

@@ -45,20 +45,24 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *LFACTOR(S, CINV, U10, USTAR, USDIR, ROAIRN, SIG, DSII, &
-!     &                   LFACT, TAUWX, TAUWY, TAU)
-!            *S*   - NEG. WIND INPUT ENERGY DENSITY SPECTRUM.
-!          *CINV*  - INVERSE PHASE SPEED CALC. IN INPUT ROUTINE
-!         *UABS*   - 10M WIND SPEED
-!        *USTAR*   - NEW FRICTION VELOCITY IN M/S.
-!        *USDIR*   - WIND DIRECTION
-!       *ROAIRN*   - AIR DENSITY IN KG/M3
-!          *LFACT* - CORRECTION FACTOR
-!          *TAUNWX, TAUNWY* - NEGATIVE WAVE NORMAL STRESS COMPONENTS
+!     *CALL* *LFACTOR(S, CINV, U10, USTAR, UPROXY, USDIR, ROAIRN, &
+!     &                   LFACT, LREDUCE, TAUWX, TAUWY, TAU)
+!            *S*       - WIND INPUT ENERGY DENSITY SPECTRUM.
+!          *CINV*      - INVERSE PHASE SPEED.
+!          *U10*       - 10M WIND SPEED.
+!          *USTAR*     - FRICTION VELOCITY IN M/S.
+!          *UPROXY*    - PROXY WIND SPEED USED IN LFACT FORMULA.
+!          *USDIR*     - WIND DIRECTION.
+!          *ROAIRN*    - AIR DENSITY IN KG/M3.
+!          *LFACT*     - CORRECTION FACTOR.
+!          *LREDUCE*   - TRUE WHEN REDUCTION IS ACTUALLY APPLIED.
+!          *TAUWX*     - WAVE-SUPPORTED STRESS X-COMPONENT.
+!          *TAUWY*     - WAVE-SUPPORTED STRESS Y-COMPONENT.
+!          *TAU*       - TOTAL STRESS MAGNITUDE.
 
 !     EXTERNALS.
 !     ----------
-!     TAUWINDS
+!     TAUWINDSXY
 
 !     ORIGIN.
 !     ----------
@@ -79,7 +83,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "tauwinds.intfb.h"
+
+#include "tauwindsxy.intfb.h"
  
       REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: S ! Sin(sigma) in [m2/rad-Hz]
       REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: CINV
@@ -162,8 +167,7 @@
       TAUVY    = TAU_VIS * SIN(USDIR)
 !
 !     --- The wave supported stress. --------------------------------- /
-      TAUWX    = TAUWINDS(SDENSX_EXT,CINV_EXT,DSII_EXT)   ! normal stress (x-component)
-      TAUWY    = TAUWINDS(SDENSY_EXT,CINV_EXT,DSII_EXT)   ! normal stress (y-component)
+      CALL TAUWINDSXY(SDENSX_EXT, SDENSY_EXT, CINV_EXT, DSII_EXT, NFRE_EXT, TAUWX, TAUWY)
       TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)        ! normal stress (magnitude)
 !
       TAUX     = TAUVX + TAUWX                        ! total stress (x-component)
@@ -190,8 +194,7 @@
          DO IK=1,ITERMAX
 
             LF_EXT   = MIN(1.0_JWRB, EXP(UCINV_EXT * RTAU) )
-            TAUWX    = TAUWINDS(SDENSX_EXT*LF_EXT,CINV_EXT,DSII_EXT)
-            TAUWY    = TAUWINDS(SDENSY_EXT*LF_EXT,CINV_EXT,DSII_EXT)
+            CALL TAUWINDSXY(SDENSX_EXT*LF_EXT, SDENSY_EXT*LF_EXT, CINV_EXT, DSII_EXT, NFRE_EXT, TAUWX, TAUWY)
             TAU_WAV  = SQRT(TAUWX**2 + TAUWY**2)
             TAUX     = TAUVX + TAUWX
             TAUY     = TAUVY + TAUWY

@@ -6,7 +6,7 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 
-      FUNCTION TAUWINDS(SDENSIG,CINV,DSII) RESULT(TAU_WINDS)
+      SUBROUTINE TAUWINDSXY(SDENSX_IN, SDENSY_IN, CINV_IN, DSII_IN, NPTS, TAUWX_OUT, TAUWY_OUT)
 
 ! ----------------------------------------------------------------------------
 !
@@ -33,33 +33,40 @@
 ! ----------------------------------------------------------------------------
 !
 
-        USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-        USE YOWPCONS , ONLY : G        ,ZPI    ,ROWATER
-        USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWPCONS , ONLY : G, ROWATER
+      USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
 !----------------------------------------------------------------------
 
-        IMPLICIT NONE
 
-        REAL(KIND=JWRB), INTENT(IN)  :: SDENSIG(:) ! Sin(sigma) in [m2/rad-Hz]
-        REAL(KIND=JWRB), INTENT(IN)  :: CINV(:)    ! inverse phase speed
-        REAL(KIND=JWRB), INTENT(IN)  :: DSII(:)    ! freq. bandwidths in [radians]
+      IMPLICIT NONE
 
-        REAL(KIND=JWRB)   :: TAU_WINDS
-        REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-        INTEGER(KIND=JWIM) :: M
+      REAL(KIND=JWRB), INTENT(IN)  :: SDENSX_IN(*), SDENSY_IN(*)
+      REAL(KIND=JWRB), INTENT(IN)  :: CINV_IN(*), DSII_IN(*)
+      INTEGER(KIND=JWIM), INTENT(IN) :: NPTS
+      REAL(KIND=JWRB), INTENT(OUT) :: TAUWX_OUT, TAUWY_OUT
 
-! ----------------------------------------------------------------------------
+      INTEGER(KIND=JWIM) :: M
+      REAL(KIND=JWRB)    :: SUMX, SUMY
+      REAL(KIND=JPHOOK)  :: ZHOOK_HANDLE
+
+!----------------------------------------------------------------------
 !
 
-        IF (LHOOK) CALL DR_HOOK('TAUWINDS',0,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('TAUWINDSXY',0,ZHOOK_HANDLE)
 
-        TAU_WINDS = 0.0_JWRB
-        DO M = 1, SIZE(SDENSIG)
-          TAU_WINDS = TAU_WINDS + SDENSIG(M) * CINV(M) * DSII(M)
-        END DO
-        TAU_WINDS = G * ROWATER * TAU_WINDS
+      SUMX = 0.0_JWRB
+      SUMY = 0.0_JWRB
 
-        IF (LHOOK) CALL DR_HOOK('TAUWINDS',1,ZHOOK_HANDLE)
+      DO M = 1, NPTS
+         SUMX = SUMX + SDENSX_IN(M) * CINV_IN(M) * DSII_IN(M)
+         SUMY = SUMY + SDENSY_IN(M) * CINV_IN(M) * DSII_IN(M)
+      END DO
 
-        END FUNCTION TAUWINDS
+      TAUWX_OUT = G * ROWATER * SUMX
+      TAUWY_OUT = G * ROWATER * SUMY
+
+      IF (LHOOK) CALL DR_HOOK('TAUWINDSXY',1,ZHOOK_HANDLE)
+
+      END SUBROUTINE TAUWINDSXY

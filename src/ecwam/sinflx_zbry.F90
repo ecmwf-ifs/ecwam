@@ -260,7 +260,7 @@ ENDIF
 ! ----------------------------------------------------------------------
 ! ----------------------------------------------------------------------
 ! ----------------------------------------------------------------------
-! input source term!!!! (start)
+! input source term (start)
 
 !     Wind height
 ZNLEV    = 10._JWRB
@@ -431,7 +431,7 @@ DO IGST=1,NGST
   END DO
 END DO
 
-IF (LLFACT) THEN ! TODO: how to make more efficient? is difficult...
+IF (LLFACT) THEN ! TODO: can this be made still more efficient?
 
   !/ 5) --- calculate reduction factor LFACT using non-directional
   !         spectral density of the wind input ------------------------- /
@@ -641,7 +641,7 @@ DO M = 1,NFRE
 END DO
 ! ---------------------
 
-! input source term!!!! (end)
+! input source term (end)
 ! ----------------------------------------------------------------------
 ! ----------------------------------------------------------------------
 ! ----------------------------------------------------------------------

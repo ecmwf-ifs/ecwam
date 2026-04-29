@@ -38,7 +38,7 @@
 
 !     EXTERNALS.
 !     ----------
-!     TAUWINDS
+!     TAUWINDSXY
 
 !     ORIGIN.
 !     ----------
@@ -60,7 +60,8 @@
 ! ----------------------------------------------------------------------
 
         IMPLICIT NONE
-#include "tauwinds.intfb.h"
+
+#include "tauwindsxy.intfb.h"
 
         REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN)  :: S ! Sin(sigma) in [m2/rad-Hz]
         REAL(KIND=JWRB), DIMENSION(NFRE),      INTENT(IN)  :: CINV
@@ -103,9 +104,7 @@
       
       SDENSX_LF = SUM(SX,1) * DELTH
       SDENSY_LF = SUM(SY,1) * DELTH
-      
-      TAUNWX_LF = TAUWINDS(SDENSX_LF,CINV,DSII)   ! x-component
-      TAUNWY_LF = TAUWINDS(SDENSY_LF,CINV,DSII)   ! y-component
+      CALL TAUWINDSXY(SDENSX_LF, SDENSY_LF, CINV, DSII, NFRE, TAUNWX_LF, TAUNWY_LF)
 
       !/ 2) --- high frequency contributions to the integral --------------------- /
       !         -- Assume spectral slope for S_IN(F) is proportional to F**(-2), then 

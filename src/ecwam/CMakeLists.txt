@@ -265,7 +265,7 @@ list( APPEND ecwam_srcs
   tau_phi_hf.F90
   tau_wave_atmos.F90
   taut_z0.F90
-  tauwinds.F90
+  tauwindsxy.F90
   topoar.F90
   transf.F90
   transf_bfi.F90
