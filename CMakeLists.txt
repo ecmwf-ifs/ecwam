@@ -11,9 +11,9 @@ find_package( ecbuild 3.8 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CUR
 
 set( ECWAM_PROJECT_NAME ecwam )
 
-string( TOUPPER ${ECWAM_PROJECT_NAME} PNAME )
-set( ${PNAME}_ECBUILD_COMPILE_FLAGS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ecwam_init_flags.cmake CACHE FILEPATH "")
 project( ${ECWAM_PROJECT_NAME} LANGUAGES Fortran C CXX )
+
+string( TOUPPER ${PROJECT_NAME} PNAME )
 
 include( ecwam_macros )
 ecbuild_enable_fortran( REQUIRED NO_MODULE_DIRECTORY )
@@ -139,7 +139,10 @@ ecbuild_add_option( FEATURE GPU_AWARE_MPI
 
 ### Sources
 
-include(ecwam_compile_flags)
+ecbuild_override_compiler_flags(
+  COMPILE_FLAGS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ecwam_compile_flags.cmake
+  INHERIT_ECBUILD_FLAGS
+)
 add_subdirectory(src)
 add_subdirectory(share)
 

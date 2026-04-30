@@ -7,6 +7,7 @@
 # nor does it submit to any jurisdiction.
 
 set( ecwam ${PROJECT_NAME} )
+include( ${PROJECT_SOURCE_DIR}/cmake/ecwam_source_file_compile_flags.cmake )
 
 list( APPEND unwam_srcs
   unwam/output_struct.F90
@@ -495,45 +496,6 @@ foreach( prec sp dp )
   endif()
 
 endforeach()
-
-### The file mubuf.F90, which is only used for "preproc" is sensitive to optimisations
-#   possibly leading to different wam_grid_<1,2,3> files.
-#   This in turn leads to non-neglibible differences
-#   of average 'swh' when running "chief".
-
-if( CMAKE_Fortran_COMPILER_ID MATCHES Intel )
-  set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
-  set_source_files_properties( propconnect.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
-  set_source_files_properties( stresso.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
-elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
-  set_source_files_properties( sdice3.F90 PROPERTIES COMPILE_OPTIONS "-fdisable-ipa-simdclone" )
-elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHES "Bit")
-  set_source_files_properties(
-      w_maxh.F90 sbottom.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros "
-  )
-  set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-Mnofma" )
-  set_source_files_properties( initgc.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
-  set_source_files_properties( iniwcst.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
-  set_source_files_properties( depthprpt.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
-  if( HAVE_SINGLE_PRECISION )
-     set_source_files_properties( aki.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
-     set_source_files_properties( kurtosis.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
-     set_source_files_properties( stat_nl.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
-     set_source_files_properties( transf_bfi.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
-  endif()
-elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHES "Debug")
-  string(REPLACE "-Ktrap=fp" "" ${PNAME}_Fortran_FLAGS_DEBUG ${${PNAME}_Fortran_FLAGS_DEBUG})
-  set_source_files_properties( outbeta.F90 PROPERTIES COMPILE_OPTIONS "${${PNAME}_Fortran_FLAGS_DEBUG} -Ktrap=divz")
-  set_source_files_properties( secondhh.F90 PROPERTIES COMPILE_OPTIONS "${${PNAME}_Fortran_FLAGS_DEBUG} -Ktrap=inv,ovf")
-endif()
-
-### The file grib2wgrid.F90 is sensitive to optimizations in single precision builds.
-#   This leads to non-neglibible differences
-#   of average 'swh' when running "chief".
-
-if( CMAKE_Fortran_COMPILER_ID MATCHES Intel AND HAVE_SINGLE_PRECISION )
-  set_source_files_properties( grib2wgrid.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
-endif()
 
 if( HAVE_LOKI )
 
