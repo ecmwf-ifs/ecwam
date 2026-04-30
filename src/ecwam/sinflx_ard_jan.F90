@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
+SUBROUTINE SINFLX_ARD_JAN (ICALL, NCALL, KIJS, KIJL,  &
  &                 LUPDTUS,                   &
  &                 FL1,                       &
  &                 WAVNUM,CGROUP, CINV, XK2CG,&
@@ -31,9 +31,8 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
 
       USE YOWCOUP  , ONLY : LWCOU    ,LLCAPCHNK , LLGCBZ0, LLNORMAGAM
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPHYS  , ONLY : DTHRN_A  ,DTHRN_U, NGST 
+      USE YOWPHYS  , ONLY : DTHRN_A  ,DTHRN_U 
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
-      USE YOWSTAT  , ONLY : IPHYS    ,IPHYS2_AIRSEA
 
       USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK, JPHOOK
 
@@ -41,9 +40,12 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
 
       IMPLICIT NONE
 
-#include "abort1.intfb.h"
-#include "sinflx_ard_jan.intfb.h"
-#include "sinflx_bydrz.intfb.h"
+#include "airsea.intfb.h"
+#include "femeanws.intfb.h"
+#include "frcutindex.intfb.h"
+#include "halphap.intfb.h"
+#include "sinput.intfb.h"
+#include "stresso.intfb.h"
 
 INTEGER(KIND=JWIM), INTENT(IN) :: ICALL  !! CALL NUMBER.
 INTEGER(KIND=JWIM), INTENT(IN) :: NCALL  !! TOTAL NUMBER OF CALLS.
@@ -89,6 +91,7 @@ REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) :: XLLWS  !! TOTAL WINDS
 
 INTEGER(KIND=JWIM) :: IJ, K
 INTEGER(KIND=JWIM) :: IUSFG, ICODE_WND
+INTEGER(KIND=JWIM) :: NGST
 
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 REAL(KIND=JWRB), DIMENSION(KIJL) :: RNFAC
@@ -99,39 +102,88 @@ LOGICAL :: LLPHIWA, LLSNEG
 
 IF (LHOOK) CALL DR_HOOK('SINFLX',0,ZHOOK_HANDLE)
 
-SELECT CASE (IPHYS)
-CASE(0,1)
-  CALL SINFLX_ARD_JAN (ICALL, NCALL, KIJS, KIJL,  &
-     &               LUPDTUS,                   &
-     &               FL1,                       &
-     &               WAVNUM,CGROUP, CINV, XK2CG,&
-     &               WSWAVE, WDWAVE, AIRD,      &
-     &               RAORW, WSTAR, CICOVER,     &
-     &               COSWDIF, SINWDIF2,         &
-     &               FMEAN, HALP, FMEANWS,      &
-     &               FLM,                       &
-     &               UFRIC, TAUW, TAUWDIR,      &
-     &               Z0M, Z0B, CHRNCK, PHIWA,   &
-     &               FLD, SL, SPOS,             &
-     &               MIJ, RHOWGDFTH, XLLWS)
-CASE(2)
-  CALL SINFLX_BYDRZ (ICALL, NCALL, NGST, KIJS, KIJL,  &
-     &               LUPDTUS,                   &
-     &               FL1,                       &
-     &               WAVNUM,CGROUP, CINV,       &
-     &               WSWAVE, WDWAVE, AIRD,      &
-     &               RAORW, WSTAR, CICOVER,     &
-     &               FMEAN, HALP, FMEANWS,      &
-     &               FLM,                       &
-     &               UFRIC, TAUW, TAUWDIR,      &
-     &               Z0M, Z0B, CHRNCK, PHIWA,   &
-     &               FLD, SL, SPOS,             &
-     &               MIJ, RHOWGDFTH, XLLWS)
-CASE DEFAULT
-  WRITE(*,*) ' SINFLX: UNKNOWN IPHYS =', IPHYS
-  CALL ABORT1
-END SELECT
+! UPDATE UFRIC AND Z0M
+IF (ICALL == 1 ) THEN
+  IUSFG = 0
+  IF (LWCOU) THEN
+    ICODE_WND = ICODE_CPL
+  ELSE
+    ICODE_WND = ICODE
+  ENDIF
+ELSE
+  IUSFG = 1
+  ICODE_WND = 3
+ENDIF
+
+IF(LLNORMAGAM .AND. LLCAPCHNK ) THEN
+  RNFAC(KIJS:KIJL) = 1.0_JWRB+DTHRN_A*(1.0_JWRB+TANH(WSWAVE(KIJS:KIJL)-DTHRN_U))
+ELSE
+  RNFAC(KIJS:KIJL) = 1.0_JWRB
+ENDIF
+
+
+IF(LUPDTUS) THEN
+  ! increase noise level in the tail
+  IF (ICALL == 1 ) THEN
+    DO K=1,NANG
+      FL1(KIJS:KIJL,K,NFRE) = MAX(FL1(KIJS:KIJL,K,NFRE),FLM(KIJS:KIJL,K))
+    ENDDO
+
+    IF (LLGCBZ0) THEN
+      !$loki inline
+      CALL HALPHAP(KIJS, KIJL, WAVNUM, COSWDIF, FL1, HALP)
+    ELSE
+      HALP(KIJS:KIJL) = 0.0_JWRB
+    ENDIF
+
+  ENDIF
+
+  !$loki inline
+  CALL AIRSEA (KIJS, KIJL,                                  &
+&              HALP=HALP, U10=WSWAVE, U10DIR=WDWAVE, TAUW=TAUW, TAUWDIR=TAUWDIR, RNFAC=RNFAC,  &
+&              US=UFRIC, Z0=Z0M, Z0B=Z0B, CHRNCK=CHRNCK, ICODE_WND=ICODE_WND, IUSFG=IUSFG) 
+
+ENDIF
+
+! COMPUTE WIND INPUT
+!!  FLD AND SL ARE INITIALISED IN SINPUT
+IF(ICALL < NCALL ) THEN
+  NGST = 1
+  LLPHIWA = .FALSE.
+  LLSNEG = .FALSE.
+ELSE
+  NGST = 2
+  LLPHIWA = .TRUE.
+  LLSNEG = .TRUE.
+ENDIF
+
+!$loki inline
+CALL SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, &
+&            WAVNUM, CGROUP, CINV, XK2CG,   &
+&            WDWAVE, WSWAVE, UFRIC, Z0M,    &
+&            COSWDIF, SINWDIF2,             &
+&            RAORW, WSTAR, RNFAC,           &
+&            CHRNCK, FLD, SL, SPOS, XLLWS) 
+
+
+! MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
+!$loki inline
+CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, FMEANWS)
+
+! COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
+!$loki inline
+CALL FRCUTINDEX(KIJS, KIJL, FMEAN, FMEANWS, UFRIC, CICOVER, MIJ, RHOWGDFTH)
+
+! UPDATE TAUW
+!$loki inline
+CALL STRESSO (KIJS, KIJL, MIJ, RHOWGDFTH,          &
+&             FL1, SL, SPOS,                       &
+&             CINV,                                &
+&             WDWAVE, UFRIC, Z0M, AIRD, RNFAC,     &
+&             COSWDIF, SINWDIF2,                   &
+&             TAUW, TAUWDIR, PHIWA, LLPHIWA) 
+! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('SINFLX',1,ZHOOK_HANDLE)
 
-END SUBROUTINE SINFLX
+END SUBROUTINE SINFLX_ARD_JAN

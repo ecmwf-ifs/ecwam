@@ -23,6 +23,8 @@
       REAL(KIND=JWRB) :: RNU
 !     *RNUM*     REDUCED KINEMATIC AIR VISCOSITY FOR MOMENTUM TRANSFER (as RNU)
       REAL(KIND=JWRB) :: RNUM
+!     *RNU*      WATER VISCOSITY
+      REAL(KIND=JWRB), PARAMETER :: RNU_WATER=1.31E-6_JWRB    ! consistent with DWAT=1000 (assumes 10degC), estimates for this vary
 !     *PRCHAR*   DEFAULT VALUE FOR CHARNOCK
       REAL(KIND=JWRB) :: PRCHAR
 
@@ -147,6 +149,42 @@
 
 !     Wave-turbulence interaction coefficient 
       REAL(KIND=JWRB) :: SSDSC5  !! See *SETWAVPHYS*
+
+!     BYDRZ PHYS ::
+!     ==========
+      
+!     *SIN6A0*    PARAMETER FOR NEGATIVE WIND INPUT (a0) FOR BYDRZ PHYS
+      REAL(KIND=JWRB) :: ZSIN6A0 
+
+!     Swell attenuation logical for BYDRZ physics
+      LOGICAL :: LLSWL6CSTB1
+      
+!     Swell attenuation coefficient for BYDRZ physics
+      REAL(KIND=JWRB) :: ZSWL6B1
+      
+!     Dissipation coefficient for inherent breaking term for BYDRZ physics (T1,a1)
+      REAL(KIND=JWRB) :: ZSDS6A1
+
+!     Dissipation coefficient for forced dissipation term for BYDRZ physics (T1,a2)
+      REAL(KIND=JWRB) :: ZSDS6A2
+
+!     Dissipation exponent for inherent breaking term for BYDRZ physics (T1,p1)      
+      INTEGER(KIND=JWIM) :: ISDS6P1
+
+!     Dissipation exponent for forced dissipation term for BYDRZ physics (T2,p2)      
+      INTEGER(KIND=JWIM) :: ISDS6P2
+
+!     Dissipation, logical to normalise by **threshold** spectral density
+      LOGICAL :: LLSDS6ET
+
+!     Integer defining whether or not wind gustiness parametrization is used (1=no, 2=yes)
+      INTEGER(KIND=JWIM) :: NGST
+
+!     Logical to determine whether to use LFACTOR
+      LOGICAL :: LLFACT
+
+!     Upper freq. limit to extrap. to in LFACTOR
+      REAL(KIND=JWRB) :: FRQMAX   
 
 !     NSDSNTH is the number of directions on both used to compute the spectral saturation  
       INTEGER(KIND=JWIM) :: NSDSNTH

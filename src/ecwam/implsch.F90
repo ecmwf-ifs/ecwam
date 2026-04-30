@@ -91,7 +91,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                          ZALPFACX
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LLUNSTR
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
-      USE YOWSTAT  , ONLY : IDELT    ,LBIWBK   ,XIMP
+      USE YOWSTAT  , ONLY : IDELT    ,LBIWBK   ,XIMP, IPHYS
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -250,13 +250,20 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !           -------------------------------------------------------
 
       LUPDTUS = .TRUE.
-      NCALL = 2
+
+      SELECT CASE (IPHYS)
+      CASE(0,1)
+         NCALL = 2
+      CASE(2)
+         NCALL = 1
+      END SELECT
+
       DO ICALL = 1, NCALL 
         !$loki inline
         CALL SINFLX (ICALL, NCALL, KIJS, KIJL,  &
      &               LUPDTUS,                   &
      &               FL1,                       &
-     &               WAVNUM, CINV, XK2CG,       &
+     &               WAVNUM,CGROUP, CINV, XK2CG,&
      &               WSWAVE, WDWAVE, AIRD,      &
      &               RAORW, WSTAR, CICOVER,     &
      &               COSWDIF, SINWDIF2,         &
@@ -274,7 +281,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
       !$loki inline
       CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,   &
-     &              WAVNUM, CGROUP, XK2CG,      &
+     &              WSWAVE, WAVNUM, CGROUP, XK2CG, &
      &              EMEAN, F1MEAN, XKMEAN,      &
      &              UFRIC, COSWDIF, RAORW)
 

@@ -8,7 +8,7 @@
 !
 
       SUBROUTINE SDISSIP (KIJS, KIJL, FL1, FLD, SL,  &
-     &                    WAVNUM, CGROUP, XK2CG,     &
+     &                    WSWAVE, WAVNUM, CGROUP, XK2CG,     &
      &                    EMEAN, F1MEAN, XKMEAN,     &
      &                    UFRIC, COSWDIF, RAORW)
 ! ----------------------------------------------------------------------
@@ -58,12 +58,14 @@
 
 #include "sdissip_ard.intfb.h"
 #include "sdissip_jan.intfb.h"
+#include "sdissip_bydrz.intfb.h"
+#include "swldissip_bydrz.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP, XK2CG
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: EMEAN, F1MEAN, XKMEAN
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: WSWAVE, EMEAN, F1MEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: UFRIC, RAORW
       REAL(KIND=JWRB), DIMENSION(KIJL, NANG), INTENT(IN) :: COSWDIF
 
@@ -85,6 +87,14 @@
          CALL SDISSIP_ARD (KIJS, KIJL, FL1 ,FLD, SL,   &
      &                     WAVNUM, CGROUP, XK2CG,      &
      &                     UFRIC, COSWDIF, RAORW)
+      CASE(2) 
+         !$loki inline
+         CALL SDISSIP_BYDRZ (KIJS, KIJL, FL1 ,FLD, SL,  &
+     &                       WSWAVE, WAVNUM, CGROUP,    &
+     &                       UFRIC, RAORW)
+         CALL SWLDISSIP_BYDRZ(KIJS, KIJL, FL1 ,FLD, SL, &
+     &                        WAVNUM, CGROUP,           &
+     &                        UFRIC, RAORW)
       END SELECT 
 
       IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)

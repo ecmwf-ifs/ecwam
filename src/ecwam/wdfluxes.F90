@@ -203,7 +203,7 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
       CALL SINFLX (ICALL, NCALL, KIJS, KIJL,        &
      &             LUPDTUS,                         &
      &             FL1,                             &
-     &             WAVNUM, CINV, XK2CG,             &
+     &             WAVNUM, CGROUP, CINV, XK2CG,     &
      &             WSWAVE, WDWAVE, AIRD,            &
      &             RAORW, WSTAR, CICOVER,           &
      &             COSWDIF, SINWDIF2,               &
@@ -217,7 +217,7 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
       IF (LCFLX) THEN
 
         CALL SDISSIP (KIJS, KIJL, FL1 ,FLD, SL,     &
-     &                WAVNUM, CGROUP, XK2CG,        &
+     &                WSWAVE, WAVNUM, CGROUP, XK2CG,&
      &                EMEAN, F1MEAN, XKMEAN,        &
      &                UFRIC, COSWDIF, RAORW) 
 

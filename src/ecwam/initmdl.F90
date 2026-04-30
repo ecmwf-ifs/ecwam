@@ -177,7 +177,8 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            DFIM     ,DFIMOFR  ,DFIMFR  ,DFIMFR2   ,              &
      &            DFIM_SIM ,DFIMOFR_SIM ,DFIMFR_SIM ,DFIMFR2_SIM ,      &
      &            DFIM_END_L, DFIM_END_U,                               &
-     &            WVPRPT_LAND
+     &            WVPRPT_LAND, SIG      ,DSII       ,SIGM1       ,DF,   &
+     &            SIG_EXT    , DSII_EXT ,IFRE_EXT   ,NFRE_EXT    ,DDEN
       USE YOWGRIBHD, ONLY : LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI, DELLAM, COSPH,                      &
      &                      NPROMA_WAM, NCHNK, IJFROMCHNK  
@@ -191,7 +192,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      LLUNSTR
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
      &                      RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
-      USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
+      USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC, FRQMAX
       USE YOWREFD  , ONLY : LLUPDTTD
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,TOOSHALLOW
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT
@@ -502,6 +503,44 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
         DFIMFR2_SIM(M) = DFIM_SIM(M)*FR(M)**2
       ENDDO
 
+      ! --------------------------------------------------
+      ! BYDRZ-specific frequency-space setup (only needed for IPHYS=2).
+      IF (IPHYS == 2) THEN
+        IF (.NOT.ALLOCATED(DF))    ALLOCATE(DF(NFRE))
+        IF (.NOT.ALLOCATED(SIG))   ALLOCATE(SIG(NFRE))
+        IF (.NOT.ALLOCATED(DDEN))  ALLOCATE(DDEN(NFRE))
+        IF (.NOT.ALLOCATED(DSII))  ALLOCATE(DSII(NFRE))
+        IF (.NOT.ALLOCATED(SIGM1)) ALLOCATE(SIGM1(NFRE))
+        DO M=1,NFRE
+          DF(M)    = DFIM(M)/DELTH
+          SIG(M)   = ZPI*FR(M)
+          DSII(M)  = ZPI*DF(M)
+          DDEN(M)  = ZPI*DFIM(M)*SIG(M)
+          SIGM1(M) = 1.0_JWRB/SIG(M)
+        ENDDO
+
+        ! DETERMINE THE NUMBER OF FREQUENCIES TO EXTEND TO
+        NFRE_EXT = CEILING(LOG(FRQMAX/FR(1))/LOG(FRATIO))+1
+        NFRE_EXT = MAX(NFRE,NFRE_EXT)
+        IF (ALLOCATED(IFRE_EXT)) THEN
+          IF (SIZE(IFRE_EXT) /= NFRE_EXT) DEALLOCATE(IFRE_EXT)
+        END IF
+        IF (.NOT.ALLOCATED(IFRE_EXT)) ALLOCATE(IFRE_EXT(NFRE_EXT))
+        IFRE_EXT = (/ (REAL(M, KIND=JWRB), M=1,NFRE_EXT) /)
+        IF (.NOT.ALLOCATED(SIG_EXT))  ALLOCATE(SIG_EXT(NFRE_EXT))
+        IF (.NOT.ALLOCATED(DSII_EXT)) ALLOCATE(DSII_EXT(NFRE_EXT))
+        IF (NFRE .LT. NFRE_EXT) THEN
+          SIG_EXT                   = SIG(1)*FRATIO**(IFRE_EXT-1.0_JWRB)
+          DSII_EXT                  = 0.5_JWRB * SIG_EXT * (FRATIO-1.0_JWRB/FRATIO)
+          ! The first and last frequency bin:
+          DSII_EXT(1)               = 0.5_JWRB * SIG_EXT(1) * (FRATIO-1.0_JWRB)
+          DSII_EXT(NFRE_EXT)        = 0.5_JWRB * SIG_EXT(NFRE_EXT) * (FRATIO-1.0_JWRB) / FRATIO
+        ELSE
+          SIG_EXT        = SIG
+          DSII_EXT       = DSII
+        END IF
+      END IF
+      ! --------------------------------------------------
 
       CALL TABU_SWELLFT
 
