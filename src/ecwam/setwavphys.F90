@@ -102,7 +102,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           CDISVIS = 0.0_JWRB
         ENDIF
 
-!!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
+!!!     EMPIRICAL CONSTANTS FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
         EGRCRV = 1108.0_JWRB
         AGRCRV = 0.06E+6_JWRB
         BGRCRV = 9.70_JWRB
@@ -192,7 +192,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ENDIF
         ENDIF
 
-!!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
+!!!     EMPIRICAL CONSTANTS FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
         EGRCRV = 1065.0_JWRB
         AGRCRV = 0.0655E+6_JWRB
         BGRCRV =  10.906_JWRB
@@ -228,7 +228,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ALPHAMIN = 0.0001_JWRB
         CHNKMIN_U = 33._JWRB
 
-!!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
+!!!     EMPIRICAL CONSTANTS FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
 !       TODO: THESE WILL REQUIRE RECALIBRATION IF USING W. DATA ASSIMILATION
         EGRCRV = 1065.0_JWRB
         AGRCRV = 0.0655E+6_JWRB
@@ -257,7 +257,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           WRITE (IU06,*) '*************************************'
           WRITE (IU06,*) '*                                   *'
           WRITE (IU06,*) '*  ERROR IN SETWAVPHYS              *'
-          WRITE (IU06,*) '*  UKNOWN PHYSICS SELECTION :       *'
+          WRITE (IU06,*) '*  UNKNOWN PHYSICS SELECTION :       *'
           WRITE (IU06,*) '*  IPHYS2_AIRSEA =' , IPHYS2_AIRSEA
           WRITE (IU06,*) '*                                   *'
           WRITE (IU06,*) '*************************************'
@@ -278,7 +278,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         WRITE (IU06,*) '*************************************'
         WRITE (IU06,*) '*                                   *'
         WRITE (IU06,*) '*  ERROR IN SETWAVPHYS                 *'
-        WRITE (IU06,*) '*  UKNOWN PHYSICS SELECTION :       *'
+        WRITE (IU06,*) '*  UNKNOWN PHYSICS SELECTION :       *'
         WRITE (IU06,*) '*  IPHYS =' , IPHYS
         WRITE (IU06,*) '*                                   *'
         WRITE (IU06,*) '*************************************'

@@ -6,9 +6,9 @@ FUNCTION CALCPHIWA(SPOS,SNEG) RESULT(PHIWA)
 !
 !      Calculate energy flux from wind into waves, obtained from wind-energy-input (Sin).
 !
-!                            / FRMAX
-!      tau = g * rho_water * | Sin(f) df
-!                            /
+!                              / FRMAX
+!      phiwa = g * rho_water * | Sin(f) df
+!                              /
 
 !----------------------------------------------------------------------
 !
