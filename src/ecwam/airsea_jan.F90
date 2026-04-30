@@ -29,14 +29,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *AIRSEA_JAN (KIJS, KIJL, FL1, WAVNUM,
+!       *CALL* *AIRSEA_JAN (KIJS, KIJL,
 !                       HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,
 !                       US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)*
 
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT.
 !          *KIJL*    - INDEX OF LAST GRIDPOINT.
-!          *FL1*     - SPECTRA
-!          *WAVNUM*  - WAVE NUMBER
 !          *HALP*    - 1/2 PHILLIPS PARAMETER
 !          *U10*     - WINDSPEED U10.
 !          *U10DIR*  - WINDSPEED DIRECTION.
