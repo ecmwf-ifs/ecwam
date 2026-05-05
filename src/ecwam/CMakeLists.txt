@@ -103,6 +103,7 @@ list( APPEND ecwam_srcs
   incdate.F90
   inisnonlin.F90
   init_fieldg.F90
+  init_freqext.F90
   init_sdiss_ardh.F90
   init_x0tauhf.F90
   initdpthflds.F90
