@@ -178,6 +178,10 @@ IF (.NOT.LLSWL6CSTB1) THEN
   DO IJ = KIJS,KIJL
     B1(IJ) = ZSWL6B1*(2.0_JWRB*SQRT(SUMDIR_IJ(IJ))*WAVNUM(IJ,MPEAK(IJ)))
   END DO
+ELSE
+  DO IJ = KIJS,KIJL
+    B1(IJ) = ZSWL6B1
+  END DO
 END IF
 !
 !/ 2) --- Calculate the derivative term only (in units of 1/s) ------- /
