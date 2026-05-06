@@ -24,6 +24,7 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   set(autopromote_flags   "-fdefault-real-8;-fdefault-double-8")
   set(checkbounds_flags   "-fcheck=bounds")
   set(fpe_flags           "-ffpe-trap=invalid,zero,overflow")
+  set(fpmodel_flags       "-ffp-contract=off")
   set(initsnan_flags      "-finit-real=snan")
   set(optimization_flags  "-O2")
 

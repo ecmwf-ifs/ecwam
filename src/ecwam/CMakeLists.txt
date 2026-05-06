@@ -506,7 +506,9 @@ if( CMAKE_Fortran_COMPILER_ID MATCHES Intel )
   set_source_files_properties( propconnect.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
   set_source_files_properties( stresso.F90 PROPERTIES COMPILE_OPTIONS "-fp-model;strict" )
 elseif( CMAKE_Fortran_COMPILER_ID MATCHES GNU )
-  set_source_files_properties( mubuf.F90 PROPERTIES COMPILE_OPTIONS "-ffp-contract=off" )
+  # TODO: This is only needed due to a known bug in the vectorization characteristics of GNU 15, and should
+  # fixed in GNU 16. See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118955 for more information.
+  set_source_files_properties( sdice3.F90 PROPERTIES COMPILE_OPTIONS "-fdisable-ipa-simdclone" )
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHES "Bit")
   set_source_files_properties(
       w_maxh.F90 sbottom.F90 PROPERTIES COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros "
