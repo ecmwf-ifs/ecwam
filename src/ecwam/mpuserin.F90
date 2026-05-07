@@ -98,7 +98,7 @@
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
      &            IDELBC   ,                                            &
      &            ICASE    ,ISHALLO  ,                                  &
-     &            IPHYS    ,                                            &
+     &            IPHYS    ,IPHYS2_AIRSEA,LLLOWWINDS     ,ZCDFAC   ,    &
      &            ISNONLIN ,                                            &
      &            IDAMPING ,                                            &
      &            LBIWBK   ,                                            &
@@ -194,7 +194,7 @@
      &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI,                   &
      &   IPROPAGS,                                                      &
      &   IREFRA,                                                        &
-     &   IPHYS,                                                         &
+     &   IPHYS, IPHYS2_AIRSEA,                                          &
      &   ISNONLIN,                                                      &
      &   IDAMPING,                                                      &
      &   LBIWBK  ,                                                      &
@@ -231,14 +231,14 @@
      &   LWCOUNORMS, LLNORMIFS2WAM, LLNORMWAM2IFS, LLNORMWAMOUT,        &
      &   LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE,                         &
      &   LICERUN, LCIWA1, LCIWA2, LCIWA3, LCISCAL,                      &
-     &   LICETH, ZALPFACB, ZALPFACX, ZALPWRS, ZIBRW_THRSH,              &
+     &   LICETH, ZALPFACB, ZALPFACX, ZALPWRS, ZCDFAC, ZIBRW_THRSH,      &
      &   LWVFLX_SNL,                                                    &
      &   LWNEMOCOU, NEMOFRCO,                                           &
      &   LWNEMOCOUSEND, LWNEMOCOUSTK, LWNEMOCOUSTRN, LWNEMOCOUWRS,      &
      &   LWNEMOTAUOC, LWNEMOCOURECV,                                    &
      &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR, LWNEMOCOUIBR,        &
      &   LWNEMOCOUDEBUG,                                                &
-     &   LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                                &
+     &   LLCAPCHNK, LLGCBZ0, LLNORMAGAM, LLLOWWINDS,                    &
      &   LWAM_USE_IO_SERV,                                              &
      &   LOUTMDLDCP,                                                    &
      &   ROAIR, ROWATER, GAM_SURF,                                      &
@@ -335,7 +335,11 @@
 !     ITESTB: MAX BLOCK NUMBER FOR OUTPUT IN BLOCK LOOPS.
 !     IREST: 1 FOR THE PRODUCTION OF RESTART FILE(S).
 !     IASSI: 1 ASSIMILATION IS DONE IF ANALYSIS RUN.
-!     IPHYS:  WAVE PHYSICS PACKAGE (0 or 1)
+!     IPHYS:  WAVE PHYSICS PACKAGE (0, 1 or 2, see SETWAVPHYS).
+!     IPHYS2_AIRSEA: 0: AS CLOSE TO WW3-ST6 AS POSSIBLE
+!     IPHYS2_AIRSEA: 1: AS CLOSE TO WW3-ST6 AS POSSIBLE, BUT ADDITIONALLY USE STRESS BALANCE (LFAC) TO UPDATE USTAR
+!     IPHYS2_AIRSEA: 2: ITERATIVE METHOD FOR THE AIR-SEA INTERACTION (U10, USTAR, CHARN, Z0)
+!     IPHYS2_AIRSEA: 3: USE U10 DIRECTLY TO DRIVE THE WIND INPUT
 !     ISNONLIN : 0 FOR OLD SNONLIN, 1 FOR NEW SNONLIN, 2 FOR LATEST BASED ON JANSSEN 2018 (ECMWF TM 813).
 !     IDAMPING : 0 NO WAVE DAMPING, 1 WAVE DAMPING ON.
 !                ONLY MEANINGFUl FOR IPHYS=0
@@ -605,6 +609,9 @@
       ICASE     = 1 
       ISHALLO   = 0   !! depricated 
       IPHYS     = 1
+      IPHYS2_AIRSEA = 0
+      LLLOWWINDS = .FALSE.
+      ZCDFAC    = 1.0_JWRB
       ISNONLIN  = 1 
       IDAMPING  = 1 
       IPROPAGS  = 0 

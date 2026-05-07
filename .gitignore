@@ -16,5 +16,6 @@ ecbundle
 *.DS_Store
 .vscode
 *.mod
+x*.sh
 __pycache__/
 

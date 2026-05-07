@@ -191,7 +191,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      LLUNSTR
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
      &                      RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
-      USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
+      USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC, FRQMAX
       USE YOWREFD  , ONLY : LLUPDTTD
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,TOOSHALLOW
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT
@@ -242,6 +242,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 #include "headbc.intfb.h"
 #include "incdate.intfb.h"
 #include "inisnonlin.intfb.h"
+#include "init_freqext.intfb.h"
 #include "init_sdiss_ardh.intfb.h"
 #include "init_x0tauhf.intfb.h"
 #include "initdpthflds.intfb.h"
@@ -502,10 +503,24 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
         DFIMFR2_SIM(M) = DFIM_SIM(M)*FR(M)**2
       ENDDO
 
+      ! --------------------------------------------------
+      ! IPHYS-SPECIFIC INITIALISATIONS
+      SELECT CASE (IPHYS)
+      CASE(0,1)
+        
+        ! FRICTION COEFFICIENTS IN OSCILLATORY BOUNDARY LAYERS
+        CALL TABU_SWELLFT
 
-      CALL TABU_SWELLFT
+        ! INITIALISATION FOR TAU_PHI_HF
+        CALL INIT_X0TAUHF
+      
+      CASE(2)
 
-      CALL INIT_X0TAUHF
+        ! INITIALISATION FOR THE EXTENDED FREQUENCY-SPACE
+        CALL INIT_FREQEXT
+
+      END SELECT
+      ! --------------------------------------------------
 
       KTAG=100
 
