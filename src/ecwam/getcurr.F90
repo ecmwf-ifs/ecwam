@@ -71,13 +71,13 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE EC_LUN   , ONLY : NULERR
       USE MPL_MODULE, ONLY : MPL_ALLREDUCE
+      USE YOWDATE_UTILS, ONLY : INCDATE
 
 ! --------------------------------------------------------------------
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "current2wam.intfb.h"
-#include "incdate.intfb.h"
 #include "wamcur.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
