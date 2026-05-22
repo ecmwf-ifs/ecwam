@@ -56,6 +56,12 @@ Some driver scripts to run tests and validate results rely on availability of:
 Building ecWAM
 --------------
 
+For the most general case, simply run
+
+    $ xbuild.sh
+
+Details:
+
 Environment variables
 
     $ export ecbuild_ROOT=<path-to-ecbuild>
@@ -147,6 +153,11 @@ then the current directory is used.
 If `--config` argument is not specified, it is assumed that a file called `config.yml`
 is present in the `<run-dir>`.
 
+For the most general case, simply run
+
+    $ xrun.sh
+
+Details:
 
 1) Create bathymetry and grid tables
 
@@ -220,6 +231,13 @@ there are following options:
   Note that this does *not* automatically export the `OMP_NUM_THREADS` variable.
 
 Note that only `ecwam-run-model` currently supports MPI.
+
+Plotting ecWAM
+=============
+
+For the most general case, simply run
+
+    $ python3 xplot.py
 
 
 GPU offload
