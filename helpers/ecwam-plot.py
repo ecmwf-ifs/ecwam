@@ -4,6 +4,7 @@ import softwaremodules
 softwaremodules.module("load ecmwf-toolbox/new")
 
 import os
+import sys
 import metview as mv
 import numpy as np
 # ---------------------------------------------------------
@@ -11,8 +12,10 @@ import numpy as np
 # Variables to be plotted
 vvars=['swh']
 
-# Tests to be plotted
-tests=['etopo1_oper_an_fc_O48_cy50r1.yml']
+# define the default test to run (defined in the tests directory)
+default_test='etopo1_oper_an_fc_O48_cy50r1.yml'
+test = sys.argv[1] if len(sys.argv) > 1 else default_test
+
 
 rundir='../ecwam_runs'             # base directory of the model runs
 plotdir='../ecwam_plots'           # directory where the plots will be saved
@@ -54,27 +57,26 @@ shade_swh = mv.mcont(
 
 # ---------------------------------------------------------
 
-# extract experiment names from test file names
-exps = [os.path.basename(test).split('.')[0] for test in tests]
+# extract experiment name from test file name
+exp = os.path.basename(test).split('.')[0]
 
-# plot (loop over variables and experiments)
+# plot (loop over variables)
 for var in vvars:
-    for exp in exps:
-        ddir=f'{rundir}/{exp}/output/'
-        
-        file=f'MPP{datestr}_000000000000'
-    
-        print(f"Processing {var} for experiment {exp}")
-        
-        g_fc     = mv.read(ddir + file)
-        fc       = g_fc.select(shortName=var)
-        dw       = mv.plot_superpage(pages = mv.mvl_regular_layout(view,1,1,1,1))
-        fc_title = mv.mtext(text_lines=[f"{var} {exp}"], text_font_size=0.5)
+    ddir=f'{rundir}/{exp}/output/'
 
-        prob_shade = globals()[f"shade_{var}"]
-        
-        mv.setoutput(mv.png_output(output_name=f"{plotdir}/{var}_{exp}"))
-        mv.plot(dw, fc, prob_shade, fc_title)
+    file=f'MPP{datestr}_000000000000'
+
+    print(f"Processing {var} for experiment {exp}")
+
+    g_fc     = mv.read(ddir + file)
+    fc       = g_fc.select(shortName=var)
+    dw       = mv.plot_superpage(pages = mv.mvl_regular_layout(view,1,1,1,1))
+    fc_title = mv.mtext(text_lines=[f"{var} {exp}"], text_font_size=0.5)
+
+    prob_shade = globals()[f"shade_{var}"]
+
+    mv.setoutput(mv.png_output(output_name=f"{plotdir}/{var}_{exp}"))
+    mv.plot(dw, fc, prob_shade, fc_title)
 
 
 print(f'\nPlots created successfully and saved into plotdir: {plotdir}')

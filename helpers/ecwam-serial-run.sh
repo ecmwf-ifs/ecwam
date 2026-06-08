@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-# define the test to run (defined in the tests directory)
-test=etopo1_oper_an_fc_O48_cy50r1.yml
+# define the default test to run (defined in the tests directory)
+default_test=etopo1_oper_an_fc_O48_cy50r1.yml
+test=${1:-$default_test}
 
 # run preprocessor (usually only has to be done once)
 build/bin/ecwam-run-preproc  --config=tests/$test
