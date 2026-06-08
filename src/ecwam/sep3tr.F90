@@ -274,11 +274,9 @@
 
 !     TOTAL ENERGY IN THE PARTITIONS 
       DO IJ=KIJS,KIJL
-        SUMENE(IJ)=MAX(ENE(IJ,1),EPSMIN)
-      ENDDO
-      DO IJ=KIJS,KIJL
-        DO IP=2,NPEAK(IJ)
-          SUMENE(IJ) = SUMENE(IJ) +  ENE(IJ,IP)
+        SUMENE(IJ)=0.0_JWRB
+        DO IP=1,NPEAK(IJ)
+          SUMENE(IJ) = SUMENE(IJ) + ENE(IJ,IP)
         ENDDO
       ENDDO
 
