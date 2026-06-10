@@ -156,16 +156,16 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
       !CALL GSTATS(1709,0)
 
-      IF (ITEST > 0) THEN
-        WRITE(IU06,*) '   SUB. WGRIBENCODE CALLED FOR ',IPARAM
-        CALL FLUSH(IU06)
-      ENDIF
-
       IF (ITABLE == 128) THEN
 !       it seems that then default table is not used when defining paramId !
         ITABPAR=IPARAM
       ELSE
         ITABPAR=ITABLE*1000+IPARAM
+      ENDIF
+
+      IF (ITEST > 0) THEN
+        WRITE(IU06,*) '   SUB. WGRIBENCODE CALLED FOR ',ITABPAR
+        CALL FLUSH(IU06)
       ENDIF
 
       IF ( ITABPAR /= 140251 .AND. IK > 0 .AND. IM > 0 ) THEN

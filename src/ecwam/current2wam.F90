@@ -101,7 +101,7 @@
       INTEGER(KIND=JWIM) :: KRET, IVAR, KPLENG, KLEN, KLENG, IDM, KDM, MDM
       INTEGER(KIND=JWIM) :: IRET, ISIZE
       INTEGER(KIND=JWIM) :: KK, MM
-      INTEGER(KIND=JWIM) :: IFORP, IPARAM, KZLEV, ICHNK, IJ, IC, IX, JY
+      INTEGER(KIND=JWIM) :: IFORP, IPARAM, IPARAMID, KZLEV, ICHNK, IJ, IC, IX, JY
       INTEGER(KIND=JWIM) :: IBUF(2)
       INTEGER(KIND=JWIM), ALLOCATABLE :: INGRIB(:)
       INTEGER(KIND=JWIM) :: NLONRGG_LOC(NGY)
@@ -221,7 +221,9 @@
      &                   NXS, NXE, NYS, NYE,                            &
      &                   FIELDG%XLON, FIELDG%YLAT,                      &
      &                   ZMISS, ZDUM1, ZDUM2,                           &
-     &                   CDATEIN, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
+     &                   CDATEIN, IFORP, IPARAM, KZLEV, KK, MM, FIELD,  &
+     &                   IPARAMID=IPARAMID)
+
 
 
         CALL IGRIB_RELEASE(KGRIB_HANDLE)
@@ -231,7 +233,7 @@
           WRITE(IU06,*) ' *                                       *'
           WRITE(IU06,*) ' *    FATAL ERROR IN SUB. CURRENT2WAM    *'
           WRITE(IU06,*) ' *      ============================     *'
-          WRITE(IU06,*) ' * DATE FOR PARAMETER ',IPARAM 
+          WRITE(IU06,*) ' * DATE FOR PARAMETER ',IPARAMID 
           WRITE(IU06,*) ' * IS ',CDATEIN
           WRITE(IU06,*) ' * IT SHOULD BE ',CDATEIN_OLD
           WRITE(IU06,*) ' *                                       *'
@@ -244,7 +246,7 @@
 
        CDATEIN_OLD=CDATEIN
 
-        IF (IPARAM == 131 .OR. IPARAM == 140) THEN
+        IF (IPARAM == 131 .OR. IPARAMID == 263140) THEN
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
           DO ICHNK = 1, NCHNK
             DO IJ = 1, NPROMA_WAM 
@@ -261,7 +263,7 @@
           ENDDO
 !$OMP     END PARALLEL DO
 
-        ELSEIF (IPARAM == 132 .OR. IPARAM == 139) THEN
+        ELSEIF (IPARAM == 132 .OR. IPARAMID == 263139) THEN
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
           DO ICHNK = 1, NCHNK
             DO IJ = 1, NPROMA_WAM 
@@ -283,7 +285,7 @@
           WRITE(IU06,*) ' *                                       *'
           WRITE(IU06,*) ' *    FATAL ERROR IN SUB. CURRENT2WAM    *'
           WRITE(IU06,*) ' *      ============================     *'
-          WRITE(IU06,*) ' * THE INPUT PARAMETER ',IPARAM 
+          WRITE(IU06,*) ' * THE INPUT PARAMETER ',IPARAMID 
           WRITE(IU06,*) ' * IS NOT RECOGNISED AS BEING A CURRENT !*' 
           WRITE(IU06,*) ' *                                       *'
           WRITE(IU06,*) ' *  PROGRAM ABORTS     PROGRAM ABORTS    *'
