@@ -212,7 +212,7 @@ jobs:
           ecmwf/fckit@refs/tags/0.13.0
           ecmwf-ifs/fiat
           ecmwf-ifs/field_api@refs/tags/v0.3.4
-          ecmwf-ifs/loki@refs/tags/0.3.2
+          ecmwf-ifs/loki@refs/heads/main
         dependency_branch: develop
         dependency_cmake_options: |
           ecmwf/fckit: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_FCKIT_VENV=ON"
