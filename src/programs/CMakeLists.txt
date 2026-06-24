@@ -14,6 +14,7 @@ foreach( prec sp dp )
       bouint
       preproc
       preset
+      rfl4wam
       combine_bathy_laked
       create_wam_bathymetry
       create_wam_bathymetry_ETOPO1 )

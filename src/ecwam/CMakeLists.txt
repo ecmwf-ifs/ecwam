@@ -31,6 +31,65 @@ list( APPEND unwam_srcs
   unwam/yowunpool.F90
 )
 
+list( APPEND wamda_srcs
+  wamda/altas.F90
+  wamda/avoidpeaks.F90
+  wamda/combinepeaks.F90
+  wamda/confile.F90
+  wamda/crossas.F90
+  wamda/crossw.F90
+  wamda/dev.F90
+  wamda/docombine.F90
+  wamda/fdur.F90
+  wamda/fillgaps.F90
+  wamda/fustar.F90
+  wamda/fwsea.F90
+  wamda/gapinterpol.F90
+  wamda/getwspec.F90
+  wamda/grdata.F90
+  wamda/grfield.F90
+  wamda/halfspread.F90
+  wamda/lasttwobins.F90
+  wamda/lowenergy.F90
+  wamda/makeframes.F90
+  wamda/mergesarcor.F90
+  wamda/mpbcastsarin.F90
+  wamda/mpexchngsarin.F90
+  wamda/mpmdl4alt.F90
+  wamda/mppewithindist.F90
+  wamda/oifield.F90
+  wamda/onestepapart.F90
+  wamda/optint.F90
+  wamda/partitioning.F90
+  wamda/readsarspec.F90
+  wamda/readsat.F90
+  wamda/rearrngsar.F90
+  wamda/resize_gap_array.F90
+  wamda/resize_getwspec.F90
+  wamda/resize_sarinput.F90
+  wamda/saras.F90
+  wamda/smoothsarspec.F90
+  wamda/sumenergy.F90
+  wamda/swellsep.F90
+  wamda/threshhold.F90
+  wamda/transmeans.F90
+  wamda/transpart.F90
+  wamda/tustreas.F90
+  wamda/update.F90
+  wamda/updatewd.F90
+  wamda/updatewfld.F90
+  wamda/upwspec.F90
+  wamda/wamassi.F90
+  wamda/wamoi.F90
+  wamda/wam_getcla.F90
+  wamda/wam_getclo.F90
+  wamda/wam_setup_assi.F90
+  wamda/wam_syminv.F90
+  wamda/windsea.F90
+  wamda/yowgap.F90
+  wamda/yowsaras.F90
+)
+
 if( NOT TARGET ecwam_intfb )
    ecbuild_generate_fortran_interfaces(
        TARGET ecwam_intfb
@@ -408,6 +467,11 @@ if( HAVE_UNWAM )
   else()
       set( MPI_Fortran_LIBRARIES ${MPI_SERIAL_LIBRARIES} )
   endif()
+endif()
+
+if( HAVE_WAMDA )
+  list(APPEND ecwam_srcs ${wamda_srcs})
+  list(APPEND ECWAM_DEFINITIONS WITH_WAMASSI)
 endif()
 
 set(MULTIO_LIBRARIES)
