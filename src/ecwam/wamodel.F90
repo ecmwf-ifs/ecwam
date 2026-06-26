@@ -91,6 +91,9 @@ SUBROUTINE WAMODEL (NADV, LINIONLY, LFRSTRST, LDSTOP, LDWRRE, BLK2GLO,&
       USE YOWABORT , ONLY : WAM_ABORT
       USE FIELD_ASYNC_MODULE, ONLY : WAIT_FOR_ASYNC_QUEUE
       USE FIELD_FACTORY_MODULE, ONLY : FIELD_NEW
+#ifdef WITH_PLUME   
+      USE WAM_PLUME_MODULE, ONLY : COMPUTE_PLUME_FLDS, WAM_PLUGINS_RUN
+#endif
 
 
 ! ----------------------------------------------------------------------
@@ -157,6 +160,11 @@ SUBROUTINE WAMODEL (NADV, LINIONLY, LFRSTRST, LDSTOP, LDWRRE, BLK2GLO,&
       LOGICAL :: LSV, LRST, LOUT
       LOGICAL :: LLNONASSI
       LOGICAL :: LPIN
+
+#ifdef WITH_PLUME   
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, 1, NCHNK) :: PLUME_FLDS
+      INTEGER(KIND=JWIM) :: IPLUME_DIFDATE
+#endif
 
 ! ----------------------------------------------------------------------
 
@@ -290,6 +298,17 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
  &                       WAM2NEMO, MIJ, VARS_4D)
 #endif
           ILOOP = ILOOP +1
+          !--------------------------------------------------------------------
+          ! Run Plume plugins at wam sub time steps
+          !--------------------------------------------------------------------
+#ifdef WITH_PLUME
+          ! Compute the diagnostic fields that Plume requires
+          PLUME_FLDS = COMPUTE_PLUME_FLDS(VARS_4D%FL1)
+          ! Parse dates to compute simulation time in seconds
+          CALL DIFDATE(CDATEA, CDTIMP, IPLUME_DIFDATE)
+          ! Run the wave plugins
+          CALL WAM_PLUGINS_RUN(PLUME_FLDS, IPLUME_DIFDATE, .TRUE.)
+#endif
         ENDDO
 
 

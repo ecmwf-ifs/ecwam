@@ -53,6 +53,12 @@ ecbuild_add_option( FEATURE UNWAM
 set( HAVE_dp ${HAVE_DOUBLE_PRECISION} )
 set( HAVE_sp ${HAVE_SINGLE_PRECISION} )
 
+ecbuild_add_option( FEATURE PLUME
+                    DEFAULT OFF
+                    DESCRIPTION "Support for Plume plugins"
+                    REQUIRED_PACKAGES "plume" )
+
+
 ### Determine ocean model precision
 ecwam_find_nemo()
 ecbuild_add_option( FEATURE OCEAN_COUPLING

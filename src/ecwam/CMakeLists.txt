@@ -428,6 +428,11 @@ if( HAVE_GPU_AWARE_MPI )
   list(APPEND ECWAM_DEFINITIONS WITH_GPU_AWARE_MPI )
 endif()
 
+if( HAVE_PLUME )
+  list( APPEND ecwam_srcs wam_plume_module.F90 )
+  list( APPEND ECWAM_DEFINITIONS WITH_PLUME )
+endif()
+
 foreach( prec sp dp )
   if( HAVE_${prec} )
     set( ${PNAME}_OCEANMODEL_LIBRARIES "" )
