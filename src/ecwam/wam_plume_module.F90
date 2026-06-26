@@ -1,0 +1,100 @@
+! (C) Copyright 1989- ECMWF.
+! 
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
+
+!-----------------------------------------------------------------------
+MODULE WAM_PLUME_MODULE
+!
+!== wam_plume_module.F90 ==
+!
+! A module to encapsulate Plume-calls from WAM. Not intended for standalone runs for now.
+!
+! Author: Clara Ducher, 11-Feb-2026
+!
+#define __FILENAME__ "wam_plume_module.F90"
+USE PARKIND_WAVE, ONLY : JWRB, JWIM
+USE YOWGRID,      ONLY : NPROMA_WAM, NCHNK
+USE YOWPARAM,     ONLY : NANG, NFRE
+USE YOMHOOK,      ONLY : LHOOK, DR_HOOK, JPHOOK
+USE YOWABORT,     ONLY : WAM_ABORT
+
+IMPLICIT NONE
+
+PRIVATE
+
+#include "femean.intfb.h"
+
+PUBLIC :: WAM_PLUGINS_RUN, WAM_PLUME_HANDLER_RUN_HANDLER
+PUBLIC :: WAM_IFS_PLUGINS_RUN, WAM_IFS_PLUME_HANDLER_RUN_HANDLER
+PUBLIC :: COMPUTE_PLUME_FLDS
+
+PROCEDURE(WAM_PLUGINS_RUN), POINTER :: WAM_PLUME_HANDLER_RUN_HANDLER => NULL()
+PROCEDURE(WAM_IFS_PLUGINS_RUN), POINTER :: WAM_IFS_PLUME_HANDLER_RUN_HANDLER => NULL()
+
+CONTAINS
+
+! Function pointer to call the run method on the Plume instance from WAM sub time steps
+SUBROUTINE WAM_PLUGINS_RUN(PLUME_FLDS, ITIME_DIFF, LLWSTEP_UPDATED)
+  REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, 1, NCHNK), INTENT(IN) :: PLUME_FLDS
+  INTEGER(KIND=JWIM), INTENT(IN) :: ITIME_DIFF
+  LOGICAL, INTENT(IN) :: LLWSTEP_UPDATED
+  REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+
+  IF (LHOOK) CALL DR_HOOK('WAM_PLUGINS_RUN',0,ZHOOK_HANDLE)
+
+  IF (ASSOCIATED(WAM_PLUME_HANDLER_RUN_HANDLER)) THEN
+    CALL WAM_PLUME_HANDLER_RUN_HANDLER(PLUME_FLDS, ITIME_DIFF, LLWSTEP_UPDATED)
+  ELSE
+    CALL WAM_ABORT("Plume run entry point pointer in WAM not associated!")
+  END IF
+
+  IF (LHOOK) CALL DR_HOOK('WAM_PLUGINS_RUN',1,ZHOOK_HANDLE)
+END SUBROUTINE
+
+! Function pointer to call the run method on the Plume instance from WAM complete time step
+SUBROUTINE WAM_IFS_PLUGINS_RUN(LLSTEP_UPDATED)
+LOGICAL, INTENT(IN) :: LLSTEP_UPDATED
+  REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+
+  IF (LHOOK) CALL DR_HOOK('WAM_IFS_PLUGINS_RUN',0,ZHOOK_HANDLE)
+
+  IF (ASSOCIATED(WAM_IFS_PLUME_HANDLER_RUN_HANDLER)) THEN
+    CALL WAM_IFS_PLUME_HANDLER_RUN_HANDLER(LLSTEP_UPDATED)
+  ELSE
+    CALL WAM_ABORT("Plume run entry point pointer in WAM not associated!")
+  END IF
+
+  IF (LHOOK) CALL DR_HOOK('WAM_IFS_PLUGINS_RUN',1,ZHOOK_HANDLE)
+END SUBROUTINE
+
+! Compute the wave diagnostic fields that Plume may require
+FUNCTION COMPUTE_PLUME_FLDS(SPECTRA) RESULT(PLUME_FLDS)
+  REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: SPECTRA
+  REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+  REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, 1, NCHNK) :: PLUME_FLDS
+  INTEGER(KIND=JWIM) :: ICHNK
+  REAL(KIND=JWRB), DIMENSION(1:NPROMA_WAM) :: EM, FM
+  REAL(KIND=JWRB), DIMENSION(1:NPROMA_WAM,NANG,NFRE) :: FL2ND
+
+  IF (LHOOK) CALL DR_HOOK('COMPUTE_PLUME_FLDS',0,ZHOOK_HANDLE)
+
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK, FL2ND, EM, FM)
+  DO ICHNK = 1, NCHNK
+    ! Second-order spectrum in the absolute frame of reference (see outblock.F90)
+    ! This direct copy is fine as long as Plume only exposes significant wave height.
+    FL2ND(1:NPROMA_WAM,:,:) = SPECTRA(1:NPROMA_WAM,:,:, ICHNK)
+    CALL FEMEAN (1, NPROMA_WAM, FL2ND, EM, FM)
+    ! SIGNIFICANT WAVE HEIGHT CONVERSION
+    PLUME_FLDS(1:NPROMA_WAM, 1, ICHNK)=4._JWRB*SQRT(MAX(EM(1:NPROMA_WAM),0._JWRB))
+  ENDDO
+!$OMP END PARALLEL DO
+
+  IF (LHOOK) CALL DR_HOOK('COMPUTE_PLUME_FLDS',1,ZHOOK_HANDLE)
+END FUNCTION
+
+END MODULE WAM_PLUME_MODULE
