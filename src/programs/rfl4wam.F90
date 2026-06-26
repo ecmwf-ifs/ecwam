@@ -1,6 +1,13 @@
-! ----------------------------------------------------------------------
+! (C) Copyright 1989- ECMWF.
+! 
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
 
-      PROGRAM RFL4WAM
+PROGRAM RFL4WAM
 
 ! ----------------------------------------------------------------------
 
@@ -167,6 +174,8 @@
 
 ! ----------------------------------------------------------------------
 
+#ifdef WITH_WAMASSI
+
       CALL MPL_INIT(KOUTPUT=1)
 
       LHOOK = .TRUE.
@@ -193,7 +202,7 @@
       ALLOCATE (IOESATID(IOEMAX), OERR(IOEMAX))
 
       CMDLINE: DO
-        IOPTVAL=WAM_GETCLO(clopts,clarg)
+        IOPTVAL=WAM_GETCLO(CLOPTS,CLARG)
         IF (IOPTVAL <= 0 )  THEN
           IF (ITEST >= 1)WRITE (*,'("IOPTVAL = ", I3)') IOPTVAL
           EXIT CMDLINE
@@ -203,7 +212,7 @@
         IF (ITEST >= 1) WRITE(*,*) ' OPTION = ', CLOPTLET
 
 !       GETS VARIABLE ARGUMENT FOR OPTION
-        MORARG=WAM_GETCLA(clarg)
+        MORARG=WAM_GETCLA(CLARG)
         IF (ITEST >= 1) WRITE(*,*) ' MORARG : ', MORARG
         IF (MORARG /= 0) THEN
           IF ( CLOPTLET == 'i' ) THEN
@@ -444,4 +453,7 @@
 
       CALL MPL_END()
 
-      END
+! end WITH_WAMASSI
+#endif
+
+END PROGRAM rfl4wam

@@ -1,0 +1,10 @@
+      MODULE YOWODB
+#ifdef WITH_ODB
+      USE DBASE_MOD, ONLY : DBASE
+      IMPLICIT NONE
+
+      CLASS(DBASE), POINTER :: WAM_YDODB => NULL()
+
+#endif
+
+      END MODULE YOWODB

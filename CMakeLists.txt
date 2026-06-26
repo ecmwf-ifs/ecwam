@@ -46,13 +46,13 @@ ecbuild_add_option( FEATURE DOUBLE_PRECISION
                     DEFAULT ON
                     DESCRIPTION "Support for Double Precision" )
 
-ecbuild_add_option( FEATURE WAMDA
-                    DEFAULT ON
-                    DESCRIPTION "Support for WAMDA" )
-
 ecbuild_add_option( FEATURE UNWAM
                     DEFAULT OFF
                     DESCRIPTION "Support for UNWAM" )
+
+ecbuild_add_option( FEATURE WAMDA
+                    DEFAULT ON
+                    DESCRIPTION "Support for WAMDA" )
 
 set( HAVE_dp ${HAVE_DOUBLE_PRECISION} )
 set( HAVE_sp ${HAVE_SINGLE_PRECISION} )
