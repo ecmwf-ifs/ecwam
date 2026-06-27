@@ -88,12 +88,6 @@ list( APPEND wamda_srcs
   wamda/windsea.F90
   wamda/yowgap.F90
   wamda/yowsaras.F90
-  wamda/getodbralt.F90
-  wamda/rfl2odb.F90
-  wamda/wam_odb_open.F90
-  wamda/wam_odb_close.F90
-  wamda/wam2odb.F90
-  wamda/yowodb.F90
 )
 
 if( NOT TARGET ecwam_intfb )
