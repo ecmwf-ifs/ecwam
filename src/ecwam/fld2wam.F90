@@ -52,7 +52,9 @@
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06
+#ifdef WAM_HAVE_UNWAM
       USE YOWPD, ONLY : MNP => npa
+#endif
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE
@@ -116,7 +118,9 @@
       ENDDO
 
       IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
         NLONRGG_LOC(:)=MNP
+#endif
       ELSE
         NLONRGG_LOC(:)=NLONRGG(:)
       ENDIF

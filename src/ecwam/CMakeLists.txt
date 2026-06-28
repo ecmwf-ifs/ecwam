@@ -136,6 +136,7 @@ list( APPEND ecwam_srcs
   file_transfer.F90
   findb.F90
   fkmean.F90
+  fld2wam.F90
   fldinter.F90
   fndprt.F90
   frcutindex.F90
@@ -155,6 +156,7 @@ list( APPEND ecwam_srcs
   h_max.F90
   halphap.F90
   headbc.F90
+  ifstowam.F90
   imphftail.F90
   implsch.F90
   incdate.F90
