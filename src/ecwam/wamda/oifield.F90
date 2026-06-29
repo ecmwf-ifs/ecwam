@@ -46,7 +46,7 @@ SUBROUTINE OIFIELD (IJS, IJL, MINIJS, MAXIJL,                     &
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : WVGRIDGLO
 
-      USE YOWABORT , ONLY : WAM_ABORT
+      USE YOWABORT,  ONLY : WAM_ABORT
       USE YOWALTAS , ONLY : NALTAVLB ,IJALT    ,LALTPASSIV,             &
      &                      NOBSPE   ,ALTDATA  ,ALTUNDATA,              &
      &                      XLONOBS  ,SIGRATIO2,DIFFALTFG
@@ -149,7 +149,7 @@ SUBROUTINE OIFIELD (IJS, IJL, MINIJS, MAXIJL,                     &
           XLATID(IJ) = NODES(IJG)%Y
         ENDDO
 #else
-          CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
 #endif
       ELSE
         DO IJ=IJS,IJL

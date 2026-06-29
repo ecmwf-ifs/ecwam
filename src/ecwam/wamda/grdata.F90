@@ -1,4 +1,4 @@
-      SUBROUTINE GRDATA(NWH, IDATAWL, LAVERAGE)
+      SUBROUTINE GRDATA(NWH, IDATAWL, LAVERAGE, NDIMIJALT, IOBSERRSATID, OBSERR)
 
 !--------------------------------------------------------------------
 
@@ -15,10 +15,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GRDATA(NWH, IDATAWL, LAVERAGE )*
+!       *CALL* *GRDATA(NWH, IDATAWL, LAVERAGE, IOBSERRSATID, OBSERR )*
 !        *NWH*  NUMBER OF RELEVANT GRIDDED OBSERVATIONS.
-!        *LAVERAGE* LOGICAL TRUE IF SUPER-OBSERVATIONS ARE TO BE 
-!                                   ASSIMILATED
+!        *IDATAWL* DATA WINDOW LENGTH IN SECONDS (i.e. time interval that is covered by the input data file).
+!        *LAVERAGE* LOGICAL TRUE IF SUPER-OBSERVATIONS (along track avarage) ARE TO BE ASSIMILATED  
+!        *NDIMIJALT* DIMENSION OF IJALT.
+!        OPTIONAL INPUT:
+!        *IOBSERRSATID* LIST OF BUFR SATELLITE ID and
+!        *OBSERR*       LIST OF THE ASSOCIATED ERROR FOR SIGNIFICANT WAVE HEIGHT IN m
 
 !     METHOD.
 !     -------
@@ -80,16 +84,16 @@
 !-----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWABORT , ONLY : WAM_ABORT
-      USE YOWALTAS , ONLY : NUMALT   ,NIJALT   ,NALTDT   ,IJALT    ,    &
-     &                      ALTDATA  ,IBUFRSAT ,NALTEDT  ,NALTUDT  ,    &
+      USE YOWABORT,  ONLY : WAM_ABORT
+      USE YOWALTAS , ONLY : NUMALT   ,NALTDT   ,IJALT    ,    &
+     &                      ALTDATA  ,NALTEDT  ,NALTUDT  ,    &
      &                      ALTEXDATA,ALTUNDATA,CDATEOBS
       USE YOWGRID  , ONLY : NCHNK  ,KIJL4CHNK, IJFROMCHNK
       USE YOWMAP   , ONLY : BLK2GLO  ,IPER     ,AMOWEP   ,              &
      &                      AMOSOP   ,XDELLA   ,ZDELLO   ,NLONRGG  ,    &
      &                      NGX      ,NGY     ,NIBLO
       USE YOWMPP   , ONLY : NPROC
-      USE YOWPARAM , ONLY : LLUNSTR
+      USE YOWPARAM , ONLY : LL1D     ,LLUNSTR
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06
 #ifdef WAM_HAVE_UNWAM
@@ -108,10 +112,16 @@
 
       INTEGER(KIND=JWIM), INTENT(OUT) :: NWH
       INTEGER(KIND=JWIM), INTENT(IN) :: IDATAWL
+      INTEGER(KIND=JWIM), INTENT(IN) :: NDIMIJALT 
       LOGICAL, INTENT(IN) :: LAVERAGE
 
+      INTEGER(KIND=JWIM), DIMENSION(:), INTENT(IN), OPTIONAL :: IOBSERRSATID
+      REAL(KIND=JWRB), DIMENSION(:), INTENT(IN), OPTIONAL :: OBSERR
+
       INTEGER(KIND=JWIM), PARAMETER :: MAXSATBC=25
+      INTEGER(KIND=JWIM) :: NOBSER, IES
       INTEGER(KIND=JWIM) :: NNMIN
+      INTEGER(KIND=JWIM) :: NMAXCOUNT
       INTEGER(KIND=JWIM) :: IJ, IJ2, I, J, IC, JSN, J1, IP1
       INTEGER(KIND=JWIM) :: ICHNK, IPRM
       INTEGER(KIND=JWIM) :: IUME, IOSZX
@@ -125,6 +135,8 @@
       INTEGER(KIND=JWIM) :: NRGG
       INTEGER(KIND=JWIM) :: ISHIFT
       INTEGER(KIND=JWIM) :: IE, IE2
+      INTEGER(KIND=JWIM), DIMENSION(NUMALT) :: JBUFRSAT 
+      INTEGER(KIND=JWIM), DIMENSION(NUMALT) :: ICUNQ, NCUNQ
       INTEGER(KIND=JWIM), DIMENSION(NUMALT) :: ICOUNT, ICOUNTT, ICOUNTD
       INTEGER(KIND=JWIM), DIMENSION(NUMALT) :: ICOUNTB, ICOUNTQCF, ICOUNTBL, IJOLD
       INTEGER(KIND=JWIM), DIMENSION(MAXSATBC) :: ISATBC, NBCT
@@ -132,6 +144,7 @@
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: NBCINCMAX
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: I_J_TOIJ
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: IFLAG 
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: ICOUNT2IJ 
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: NUMBWH, NR
 
       REAL(KIND=JWRB) :: HSMIN
@@ -167,11 +180,12 @@
       CHARACTER (LEN=12), ALLOCATABLE, DIMENSION(:,:) :: CBCDATEEND
       CHARACTER (LEN=14), ALLOCATABLE, DIMENSION(:,:) :: CDATETMP
 
-      LOGICAL :: LEOFD
+      LOGICAL :: LEOFD, LLOOP
       LOGICAL :: LOPENED
       LOGICAL :: LLBLEXIST
       LOGICAL :: LLBCTEXIST, LLDOBC, LNEW
       LOGICAL :: LBLKLIST_SWH
+      LOGICAL :: LLNEW
 
 !*     VARIABLE     TYPE     PURPOSE.
 !      --------     ----     --------
@@ -189,6 +203,12 @@
 
 !*    1. FIX TIME WINDOW EQUAL TO ONE WIND TIME STEP.
 !        --------------------------------------------
+
+      IF (PRESENT(IOBSERRSATID) .AND. PRESENT(OBSERR) ) THEN
+        NOBSER=SIZE(IOBSERRSATID)
+      ELSE
+        NOBSER=0
+      ENDIF
 
       CBEGINDT = CDTPRO
       IF (IDATAWL <= 10800) THEN
@@ -221,8 +241,8 @@
       ELSE
         NNMIN=2
       ENDIF
-      WRITE(IU06,*) '   GRIDDED DATA WILL BE KEPT WHEN THE NUMBER OF'
-      WRITE(IU06,*) '   OBSERVATIONS PER GRID BOX IS LARGER THAN ',NNMIN-1
+      WRITE(IU06,*) '          GRIDDED DATA WILL BE KEPT WHEN THE NUMBER OF'
+      WRITE(IU06,*) '          OBSERVATIONS PER GRID BOX IS LARGER THAN ',NNMIN-1
       WRITE(IU06,*) ' '
 
       IF (LAVERAGE) THEN
@@ -232,6 +252,58 @@
       ENDIF
 ! ----------------------------------------------------------------------
 
+!*    1. READ INPUT DATA TO DETERMINE THE MAXIMUM NUMBER
+!        -----------------------------------------------
+
+      DO IUME=33,99,1
+        INQUIRE ( UNIT=IUME, OPENED=LOPENED)
+        IF ( .NOT. LOPENED) THEN
+          WRITE(IU06,*) ' GRDATA : TAKES UNIT ',IUME,' AS ALTIMETER DATA INPUT UNIT'
+          WRITE(IU06,*) ' '
+          EXIT 
+        ENDIF
+      ENDDO
+
+      ICOUNTD(:) = 0
+      JBUFRSAT(:) = 0 
+      LEOFD=.FALSE.
+
+      LLOOP = .TRUE.
+      DO WHILE(LLOOP)
+        CALL READSAT (IU06, IUME, CDTPRO, IDENTI, ISENSOR,                &
+     &                CDATE, RLAT, RLON, IDES_HS, SWH,                    &
+     &                IDES_WS, WS, LEOFD, YOFID)
+
+        IF ( .NOT. LEOFD) THEN
+!         WHICH SATELLITE IS IT
+          DO ISAT=1,NUMALT
+            IF (JBUFRSAT(ISAT) == 0) THEN
+              JBUFRSAT(ISAT)=IDENTI
+              KSAT=ISAT
+              EXIT
+            ENDIF
+            IF (JBUFRSAT(ISAT) == IDENTI) THEN
+              KSAT=ISAT
+              EXIT
+            ENDIF
+          ENDDO
+          IF (ISAT > NUMALT) THEN
+            WRITE(IU06,*) ' GRDATA : WARNING MORE SATELLITES IN INPUT THAN ALLOWED BY NUMALT !!!'
+            WRITE(IU06,*) '          THE SATELLITE IS ',IDENTI
+            WRITE(IU06,*) '          NEW DATA WILL NOT BE ALLOWED IN ' 
+          ELSE
+            ICOUNTD(KSAT) = ICOUNTD(KSAT)+1
+          ENDIF
+        ELSE
+          LLOOP = .FALSE.
+          NMAXCOUNT = MAX(MAXVAL(ICOUNTD(:)),1)
+          CLOSE (IUME,IOSTAT=IOSZX)
+          WRITE(IU06,*) ' '
+          WRITE(IU06,*) ' GRDATA ICOUNTD : ',ICOUNTD
+          WRITE(IU06,*) ' '
+        ENDIF
+      ENDDO
+
 !*    2. INITIALIZE ARRAYS, counters and units.
 !        --------------------------------------
 
@@ -239,19 +311,21 @@
         ALLOCATE(I_J_TOIJ(NGX,NGY))
         I_J_TOIJ(:,:) = 0 
 
-        DO IJ = 1, NIBLO 
+        DO IJ = 1, NIBLO
           I = BLK2GLO%IXLG(IJ)
           J = NGY-BLK2GLO%KXLT(IJ)+1
           I_J_TOIJ(I,J) = IJ
         ENDDO
-
       ENDIF
 
-      ALLOCATE(IFLAG(NIBLO,NUMALT))
-      ALLOCATE(WHME(NIBLO,NUMALT))
-      ALLOCATE(WHSE(NIBLO,NUMALT))
-      ALLOCATE(NUMBWH(NIBLO,NUMALT))
-      ALLOCATE(NR(NIBLO,NUMALT))
+      ALLOCATE(IFLAG(NMAXCOUNT,NUMALT))
+      ALLOCATE(ICOUNT2IJ(NMAXCOUNT,NUMALT))
+      ALLOCATE(WHME(NMAXCOUNT,NUMALT))
+      ALLOCATE(NUMBWH(NMAXCOUNT,NUMALT))
+      IF (.NOT. LAVERAGE) THEN
+        ALLOCATE(WHSE(NMAXCOUNT,NUMALT))
+        ALLOCATE(NR(NMAXCOUNT,NUMALT))
+      ENDIF
 
       ! XLATTMP(real8), XLONTMP(real8), XWSTMP, CDATETMP   ARE
       ! TEMPORARY ARRAYS TO HOLD INDIVIDUAL TIME AND LOCATION 
@@ -259,39 +333,31 @@
       ! THIS IS OK IF THERE IS NO AVERAGING INVOLVED.
       ! HOWEVER, IT SHOULD BE CORRECTED LATER TO TAKE ORIGINAL 
       ! OBSERVATIONS INTO ACCOUNT.
-      ALLOCATE(XLATTMP (NIBLO,NUMALT))
-      ALLOCATE(XLONTMP (NIBLO,NUMALT))
-      ALLOCATE(XWSTMP  (NIBLO,NUMALT))
-      ALLOCATE(CDATETMP(NIBLO,NUMALT))
+      ALLOCATE(XLATTMP (NMAXCOUNT,NUMALT))
+      ALLOCATE(XLONTMP (NMAXCOUNT,NUMALT))
+      ALLOCATE(XWSTMP  (NMAXCOUNT,NUMALT))
+      ALLOCATE(CDATETMP(NMAXCOUNT,NUMALT))
 
-      DO ISAT=1,NUMALT
-        DO IJ=1,NIBLO
-          IFLAG(IJ,ISAT) = -1 
-          WHME(IJ,ISAT) = 0._JWRB
-          WHSE(IJ,ISAT) = 0._JWRB
-          NUMBWH(IJ,ISAT) = 0
-          NR(IJ,ISAT) = 0
-        ENDDO
-        ICOUNT(ISAT)=0
-        ICOUNTT(ISAT)=0
-        ICOUNTD(ISAT)=0
-        ICOUNTB(ISAT)=0
-        ICOUNTQCF(ISAT)=0
-        ICOUNTBL(ISAT)=0
-        IJOLD(ISAT) = 0
-        IBUFRSAT(ISAT)=0 
-        CDATEO(ISAT) = CBEGINDT
-      ENDDO
+      IFLAG(:,:) = -1
+      ICOUNT2IJ(:,:) = 0
+      WHME(:,:) = 0._JWRB
+      NUMBWH(:,:) = 0
+      ICOUNT(:) = 0
+      ICUNQ(:) = 0
+      NCUNQ(:) = 0
+      ICOUNTT(:) = 0
+      ICOUNTD(:) = 0
+      ICOUNTB(:) = 0
+      ICOUNTQCF(:) = 0
+      ICOUNTBL(:) = 0
+      IJOLD(:) = 0
+      JBUFRSAT(:) = 0 
+      CDATEO(:) = CBEGINDT
 
-
-      DO IUME=33,99,1
-        INQUIRE ( UNIT=IUME, OPENED=LOPENED)
-        IF ( .NOT. LOPENED) THEN
-          WRITE(IU06,*) ' GRDATA : TAKES UNIT ',IUME,' AS ALTIMETER DATA INPUT UNIT'
-          WRITE(IU06,*) ' '
-          GOTO 2000
-        ENDIF
-      ENDDO
+      IF (.NOT. LAVERAGE) THEN
+        WHSE(:,:) = 0._JWRB
+        NR(:,:) = 0
+      ENDIF 
 
 !     CHECK IF BLACKLISTING FILE IS PRESENT
 2000  CONTINUE
@@ -299,9 +365,9 @@
       YOFILE='wave_data_blacklist'
       INQUIRE (FILE=YOFILE,EXIST=LLBLEXIST)
       IF (LLBLEXIST) THEN
-        IOBL = IWAM_GET_UNIT(IU06, YOFILE, 'r', 'f', 0, 'READ')
-        WRITE(IU06,*) '   GRDATA : READING BLACKLISTING FILE ', YOFILE
+        WRITE(IU06,*) ' GRDATA : READING BLACKLISTING FILE ', YOFILE
         WRITE(IU06,*) ' '
+        IOBL = IWAM_GET_UNIT(IU06, YOFILE, 'r', 'f', 0, 'READ')
 
         DO IC=1,21
           READ(IOBL,'(A200)',END=200,ERR=200) CDUM
@@ -374,11 +440,9 @@
       YOFILE='biascorrection.swh'
       INQUIRE (FILE=YOFILE,EXIST=LLBCTEXIST)
       IF (LLBCTEXIST) THEN
-        IOBCT = IWAM_GET_UNIT(IU06, YOFILE, 'r', 'f', 0, 'READ')
-        WRITE(IU06,*) '   GRDATA : READING FILE WITH BIAS CORRECTION '  &
-     &                    //'TABLES  ', YOFILE
-
+        WRITE(IU06,*) ' GRDATA : READING FILE WITH BIAS CORRECTION TABLES  ',YOFILE
         WRITE(IU06,*) ' '
+        IOBCT = IWAM_GET_UNIT(IU06, YOFILE, 'r', 'f', 0, 'READ')
 
         DO IC=1,21
           READ(IOBCT,'(A)',END=2800,ERR=2800) CDUM
@@ -477,8 +541,8 @@
       ENDIF
 ! ----------------------------------------------------------------------
 
-!*    3. READ THE MEASUREMENT TAPE AND CUMULATE THE DATA ON GRID POINTS.
-!        ---------------------------------------------------------------
+!*    3. READ AGAIN AND CUMULATE THE DATA ON GRID POINTS.
+!        ------------------------------------------------
 
  3000 CONTINUE
       CALL READSAT (IU06, IUME, CDTPRO, IDENTI, ISENSOR,                &
@@ -489,22 +553,17 @@
 
 !     WHICH SATELLITE IS IT
       DO ISAT=1,NUMALT
-        IF (IBUFRSAT(ISAT) == 0) THEN
-          IBUFRSAT(ISAT)=IDENTI
+        IF (JBUFRSAT(ISAT) == 0) THEN
+          JBUFRSAT(ISAT)=IDENTI
           KSAT=ISAT
           EXIT
         ENDIF
-        IF (IBUFRSAT(ISAT) == IDENTI) THEN
+        IF (JBUFRSAT(ISAT) == IDENTI) THEN
           KSAT=ISAT
           EXIT
         ENDIF
       ENDDO
-      IF (ISAT > NUMALT) THEN
-        WRITE(IU06,*) ' GRDATA : WARNING MORE SATELLITES IN INPUT THAN ALLOWED BY NUMALT !!!'
-        WRITE(IU06,*) '          THE SATELLITE IS ',IDENTI
-        WRITE(IU06,*) '          NEW DATA WILL NOT BE ALLOWED IN ' 
-        GOTO 3000
-      ENDIF
+      IF (ISAT > NUMALT) GOTO 3000
 
       ICOUNTD(KSAT) = ICOUNTD(KSAT)+1
 
@@ -519,16 +578,16 @@
 
         ICOUNTT(KSAT) = ICOUNTT(KSAT)+1
 
-!       FIND THE MODEL INDEX CLOSEST TO THE OBSERVATION THAT IS WITHIN AN ELEMENT (IE)
+!       FIND THE MODEL INDEX IJ CLOSEST TO THE OBSERVATION THAT IS WITHIN AN ELEMENT (IE)
         IF (LLUNSTR) THEN
 #ifdef WAM_HAVE_UNWAM
-!       UNSTRUCTURED GRID:
-!       We will limit to observations that are within the elements
+!         UNSTRUCTURED GRID:
+!         `We will limit to observations that are within the elements
           XLA = REAL(RLAT,JWRU)
           XLO = REAL(RLON,JWRU)
           CALL IPELEMENT_CLOSEST(XLO,XLA,IJ,IE,XLOC,XLAC,DISTMIN)
 
-!!!    the find_element does not do periodicity very well (will need to change !!!!)
+!!!       the find_element does not do periodicity very well (will need to change !!!!)
           IF (IJ <= 0) THEN
             XLO = REAL(RLON,JWRU)-360._JWRU
             CALL IPELEMENT_CLOSEST(XLO,XLA,IJ,IE,XLOC,XLAC,DISTMIN)
@@ -539,11 +598,10 @@
             CALL IPELEMENT_CLOSEST(XLO,XLA,IJ,IE,XLOC,XLAC,DISTMIN)
           ENDIF
 #else
-          CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+        CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
 #endif
-
         ELSE
-!       STRUCTURED GRID:
+!         STRUCTURED GRID:
           J       = NGY-NINT((RLAT-AMOSOP)/XDELLA)
           XI      = MOD(RLON-AMOWEP+720._JWRB,360._JWRB)
           JSN     = NGY-J+1
@@ -563,15 +621,31 @@
 !       DATA ON THE MODEL GRID
         IF (IJ > 0) THEN
           ICOUNT(KSAT)=ICOUNT(KSAT)+1
-          IF (LLUNSTR) THEN
-            XLATTMP (IJ,KSAT)=XLAC
-            XLONTMP (IJ,KSAT)=XLOC
-          ELSE
-            XLATTMP (IJ,KSAT)=REAL(RLAT,JWRU)
-            XLONTMP (IJ,KSAT)=REAL(RLON,JWRU)
+        
+!         HAS IJ BEEN ALREADY SAMPLED?
+          LLNEW=.TRUE.
+          DO IC=1, NCUNQ(KSAT) 
+            IF ( ICOUNT2IJ(IC,KSAT) == IJ ) THEN
+              LLNEW=.FALSE.
+              ICUNQ(KSAT) = IC
+              EXIT
+            ENDIF
+          ENDDO
+          IF ( LLNEW ) THEN
+            NCUNQ(KSAT) = NCUNQ(KSAT) + 1
+            ICUNQ(KSAT) = NCUNQ(KSAT)
+            ICOUNT2IJ(ICUNQ(KSAT),KSAT) = IJ 
           ENDIF
-          XWSTMP  (IJ,KSAT)=WS
-          CDATETMP(IJ,KSAT)=CDATE
+
+          IF (LLUNSTR) THEN
+            XLATTMP (ICUNQ(KSAT),KSAT)=XLAC
+            XLONTMP (ICUNQ(KSAT),KSAT)=XLOC
+          ELSE
+            XLATTMP (ICUNQ(KSAT),KSAT)=REAL(RLAT,JWRU)
+            XLONTMP (ICUNQ(KSAT),KSAT)=REAL(RLON,JWRU)
+          ENDIF
+          XWSTMP  (ICUNQ(KSAT),KSAT)=WS
+          CDATETMP(ICUNQ(KSAT),KSAT)=CDATE
 
 !         BLACKLISTED ?
           LBLKLIST_SWH=.FALSE.
@@ -602,45 +676,45 @@
 !           the superobservation is assigned to the closest grid point.
             IF (SWH >= 0.0_JWRB) THEN
 !             if blacklisted, mark the grid box for that satellite as blacklisted
-              IF (LBLKLIST_SWH) IFLAG(IJ,ISAT) = 0
-              WHME(IJ,KSAT) = WHME(IJ,KSAT) + SWH
-              NUMBWH(IJ,KSAT) = NUMBWH(IJ,KSAT) + 1
+              IF (LBLKLIST_SWH) IFLAG(ICUNQ(KSAT),KSAT) = 0
+              WHME(ICUNQ(KSAT),KSAT) = WHME(ICUNQ(KSAT),KSAT) + SWH
+              NUMBWH(ICUNQ(KSAT),KSAT) = NUMBWH(ICUNQ(KSAT),KSAT) + 1
             ENDIF
           ELSE
 !           grid box average
-            IF (IJ /= IJOLD(KSAT)) THEN
+            IF (ICOUNT2IJ(ICUNQ(KSAT),KSAT) /= IJOLD(KSAT)) THEN
 !               NEW BOX
               CALL DIFDATE(CDATEO(KSAT),CDATE,ISHIFT)
               IF (ISHIFT < 3 .AND. ICOUNT(KSAT) > 1) THEN
                 IF (SWH-SWHO(KSAT) > 2.0_JWRB) THEN
-                    NR(IJ,KSAT)=NR(IJ,KSAT)+1
+                    NR(ICUNQ(KSAT),KSAT)=NR(ICUNQ(KSAT),KSAT)+1
                   GO TO 3000
                 ENDIF
               ENDIF
-              IJOLD(KSAT) = IJ
+              IJOLD(KSAT) = ICOUNT2IJ(ICUNQ(KSAT),KSAT)
               SWHO(KSAT) = SWH
             ELSE
 !             SUDDEN POSITVE STEPS ARE REFUSED.
               IF (SWH-SWHO(KSAT) > 1.0_JWRB) THEN
-                NR(IJ,KSAT) = NR(IJ,KSAT)+1
+                NR(ICUNQ(KSAT),KSAT) = NR(ICUNQ(KSAT),KSAT)+1
                 GO TO 3000
               ENDIF
             ENDIF
 
             IF (SWH >= 0._JWRB) THEN
 !             if blacklisted, mark the grid box for that satellite as blacklisted
-              IF (LBLKLIST_SWH) IFLAG(IJ,ISAT) = 0
-              WHME(IJ,KSAT) = WHME(IJ,KSAT) + SWH
-              WHSE (IJ,KSAT) = WHSE(IJ,KSAT) + SWH**2
-              NUMBWH(IJ,KSAT) = NUMBWH(IJ,KSAT) + 1
+              IF (LBLKLIST_SWH) IFLAG(ICUNQ(KSAT),KSAT) = 0
+              WHME(ICUNQ(KSAT),KSAT) = WHME(ICUNQ(KSAT),KSAT) + SWH
+              WHSE (ICUNQ(KSAT),KSAT) = WHSE(ICUNQ(KSAT),KSAT) + SWH**2
+              NUMBWH(ICUNQ(KSAT),KSAT) = NUMBWH(ICUNQ(KSAT),KSAT) + 1
             ENDIF
 
 !           A PREVIOUS SUDDEN NEGATIVE STEP IS COMPENSATED.
             IF (SWHO(KSAT)-SWH > 2.0_JWRB) THEN
-              NR(IJ,KSAT) = NR(IJ,KSAT)+1
-              WHME(IJ,KSAT) = WHME(IJ,KSAT) - SWHO(KSAT)
-              WHSE (IJ,KSAT) = WHSE(IJ,KSAT) - SWHO(KSAT)**2
-              NUMBWH(IJ,KSAT) = NUMBWH(IJ,KSAT) - 1
+              NR(ICUNQ(KSAT),KSAT) = NR(ICUNQ(KSAT),KSAT)+1
+              WHME(ICUNQ(KSAT),KSAT) = WHME(ICUNQ(KSAT),KSAT) - SWHO(KSAT)
+              WHSE (ICUNQ(KSAT),KSAT) = WHSE(ICUNQ(KSAT),KSAT) - SWHO(KSAT)**2
+              NUMBWH(ICUNQ(KSAT),KSAT) = NUMBWH(ICUNQ(KSAT),KSAT) - 1
             ENDIF
 
             SWHO(KSAT) = SWH
@@ -663,15 +737,15 @@
       NWH = 0
 
       DO ISAT=1,NUMALT
-        IF (IBUFRSAT(ISAT) /= 0) THEN
+        IF (JBUFRSAT(ISAT) /= 0) THEN
           NUWH=0
-          DO IJ = 1, NIBLO
-            NUWH=NUWH+NUMBWH(IJ,ISAT)
+          DO IC = 1,NCUNQ(ISAT)
+            NUWH=NUWH+NUMBWH(IC,ISAT)
           ENDDO
 
-          WRITE (IU06,'(" GRDATA: INPUT STATISTICS:")')
+          WRITE (IU06,'("  GRDATA: INPUT STATISTICS:")')
           WRITE (IU06,'("         THE SATELLITE IS",                    &
-     &                  " ......:", I8)') IBUFRSAT(ISAT)
+     &                  " ......:", I8)') JBUFRSAT(ISAT)
           WRITE (IU06,'("         NUMBER OF RECORDS READ FROM DATA ",   &
      &                  "FILE IS ......:", I8)') ICOUNTD(ISAT)
           WRITE (IU06,'("         THERE OF NUMBER OF BLACKLISTED ",      &
@@ -688,17 +762,17 @@
      &                  "''GRDATA'' IS FOR HS .:", I8)') NUWH
           WRITE (IU06,*) ' '
 
-          DO IJ = 1, NIBLO
-            NN = NUMBWH(IJ,ISAT)
+          DO IC = 1,NCUNQ(ISAT)
+            NN = NUMBWH(IC,ISAT)
             IF (NN >= NNMIN) THEN
 !             MEAN VALUES
-              WHME(IJ,ISAT) = WHME(IJ,ISAT)/REAL(NN,JWRB)
-              IF ( IFLAG(IJ,ISAT) /= 0 ) IFLAG(IJ,ISAT) = 1 
+              WHME(IC,ISAT) = WHME(IC,ISAT)/REAL(NN,JWRB)
+              IF ( IFLAG(IC,ISAT) /= 0 ) IFLAG(IC,ISAT) = 1 
 !             COMPUTE THE STANDARD DEVIATION.
               IF (.NOT. LAVERAGE) THEN
-                WHSE2 =  (WHSE(IJ,ISAT)-WHME(IJ,ISAT)**2*REAL(NN,JWRB)) &
+                WHSE2 =  (WHSE(IC,ISAT)-WHME(IC,ISAT)**2*REAL(NN,JWRB)) &
      &                   / (REAL(NN,JWRB)-1._JWRB)
-                WHSE(IJ,ISAT) = SQRT( MAX(WHSE2,0._JWRB))
+                WHSE(IC,ISAT) = SQRT( MAX(WHSE2,0._JWRB))
               ENDIF
             ENDIF
           ENDDO
@@ -714,40 +788,40 @@
 !         BLACKLISTED DATA WILL BE FLAGGED WITH IJALT(:,3) = 0
 
           IF (LAVERAGE) THEN
-            DO IJ = 1, NIBLO
-              NN = NUMBWH(IJ,ISAT)
+            DO IC = 1,NCUNQ(ISAT)
+              NN = NUMBWH(IC,ISAT)
               IF (NN == 0) THEN
 !               IF THERE ARE NO MEASUREMENTS.
-                IFLAG(IJ,ISAT) = -1
-              ELSEIF (WHME(IJ,ISAT) < HSMIN) THEN
+                IFLAG(IC,ISAT) = -1
+              ELSEIF (WHME(IC,ISAT) < HSMIN) THEN
 !               HS BELOW MINIMUM
-                IFLAG(IJ,ISAT) = -2
+                IFLAG(IC,ISAT) = -2
                 NWH = NWH+1
               ELSE
-                IF ( IFLAG(IJ,ISAT) /= 0 ) IFLAG(IJ,ISAT) = 1 
+                IF ( IFLAG(IC,ISAT) /= 0 ) IFLAG(IC,ISAT) = 1 
                 NWH = NWH+1
               ENDIF
             ENDDO
           ELSE
 
-            DO IJ = 1, NIBLO
-              NN = NUMBWH(IJ,ISAT)
+            DO IC = 1,NCUNQ(ISAT)
+              NN = NUMBWH(IC,ISAT)
               IF (NN == 0) THEN
 !               IF THERE ARE NO MEASUREMENTS.
-                IFLAG(IJ,ISAT) = -1 
+                IFLAG(IC,ISAT) = -1 
               ELSEIF (NN > 0 .AND. NN < NNMIN) THEN
 !               IF THERE ARE FEW MEASUREMENTS.
-                IFLAG(IJ,ISAT) = -3
+                IFLAG(IC,ISAT) = -3
                 NWH = NWH+1
               ELSEIF (NN >= NNMIN) THEN
 !               IF THE VARIANCE IS TOO LARGE.
 !               OR SWH IS TOO SMALL  OR THERE ARE TOO MANY SPIKES
-                XX = REAL(NR(IJ,ISAT),JWRB)/REAL(NN,JWRB)
-                RFWM = MAX(0.5_JWRB,0.25_JWRB*WHME(IJ,ISAT))
-                IF (WHSE(IJ,ISAT) > RFWM .OR.                          &
-     &              WHME(IJ,ISAT) < HSMIN .OR.                         &
+                XX = REAL(NR(IC,ISAT),JWRB)/REAL(NN,JWRB)
+                RFWM = MAX(0.5_JWRB,0.25_JWRB*WHME(IC,ISAT))
+                IF (WHSE(IC,ISAT) > RFWM .OR.                          &
+     &              WHME(IC,ISAT) < HSMIN .OR.                         &
      &              XX > 0.1_JWRB) THEN
-                  IFLAG(IJ,ISAT) = -4
+                  IFLAG(IC,ISAT) = -4
                   NWH = NWH+1
                 ELSE
                   NWH = NWH+1
@@ -756,34 +830,36 @@
             ENDDO
           ENDIF ! LAVERAGE
 
-        ENDIF  ! IBUFRSAT 
+        ENDIF  ! JBUFRSAT 
       ENDDO  ! ON ISAT
 
-      DEALLOCATE(WHSE)
       DEALLOCATE(NUMBWH)
-      DEALLOCATE(NR)
+      IF (.NOT. LAVERAGE) THEN
+        DEALLOCATE(WHSE)
+        DEALLOCATE(NR)
+      ENDIF
 
       IF (NWH > 0) THEN
-        ALLOCATE(IJALT(NWH,NIJALT))
-        IJALT(:,:)=0
+        ALLOCATE(IJALT(NWH,NDIMIJALT))
+        IJALT(:,:) = 0
         ALLOCATE(ALTDATA(NWH,NALTDT))
-        ALTDATA(:,:)=0._JWRB
+        ALTDATA(:,:) = 0._JWRB
         ALLOCATE(ALTEXDATA(NWH,NALTEDT))
-        ALTEXDATA(:,:)=0._JWRB
+        ALTEXDATA(:,:) = 0._JWRB
         IF (LLUNSTR) THEN
           ALLOCATE(ALTUNDATA(NWH,NALTUDT))
-          ALTUNDATA(:,:)=0._JWRU
+          ALTUNDATA(:,:) = 0._JWRU
         ENDIF
         ALLOCATE(CDATEOBS (NWH))
 
         IOBS=0
         DO ISAT=1,NUMALT
           LLDOBC=.FALSE.
-          IF (IBUFRSAT(ISAT) /= 0) THEN
+          IF (JBUFRSAT(ISAT) /= 0) THEN
             IF (LLBCTEXIST) THEN
 !             loop over all satellites
               DO IBCS=1, NSATBC
-                IF (IBUFRSAT(ISAT) == ISATBC(IBCS)) THEN
+                IF (JBUFRSAT(ISAT) == ISATBC(IBCS)) THEN
 !                 loop over number of table for a given satellite
                   DO IBCT=1,NBCT(IBCS)
                     IF (CDTPRO(1:12) >= CBCDATESTART(IBCS,IBCT) .AND.   &
@@ -797,33 +873,33 @@
               ENDDO
             ENDIF
             IF (LLDOBC) THEN
-              WRITE(IU06,*) '  BIAS CORRECTION FOR SATELLITE ',IBUFRSAT(ISAT)
+              WRITE(IU06,*) '  BIAS CORRECTION FOR SATELLITE ',JBUFRSAT(ISAT)
             ENDIF
 
-            DO IJ = 1, NIBLO
-              IF (WHME(IJ,ISAT) > 0._JWRB) THEN
+            DO IC = 1,NCUNQ(ISAT)
+              IF (WHME(IC,ISAT) > 0._JWRB) THEN
                 IOBS=IOBS+1
-                ALTDATA(IOBS,3) = WHME(IJ,ISAT)  !  1 REPLACED BY 3
-                IJALT(IOBS,1) = IJ
-                IJALT(IOBS,2) = IBUFRSAT(ISAT)
-                IJALT(IOBS,3) = IFLAG(IJ,ISAT) 
+                ALTDATA(IOBS,3) = WHME(IC,ISAT)  !  1 REPLACED BY 3
+                IJALT(IOBS,1) = ICOUNT2IJ(IC,ISAT)
+                IJALT(IOBS,2) = JBUFRSAT(ISAT)
+                IJALT(IOBS,3) = IFLAG(IC,ISAT)
 
                 ! NOTE THAT WE NEED TO PASS ALL DATA TO ODB EVEN THOSE REJECTED.
                 ! NEW FLAGS NEED TO BE DESIGNED FOR THAT.
                 ! FOR THE TIME BEING ONLY ACCEPTED OBS ARE PASSED TO ODB.
-                ALTEXDATA(IOBS,1) = REAL(XLATTMP(IJ,ISAT),JWRB)
-                ALTEXDATA(IOBS,2) = REAL(XLONTMP(IJ,ISAT),JWRB)
-                ALTEXDATA(IOBS,3) = XWSTMP(IJ,ISAT)
-                CDATEOBS (IOBS)   = CDATETMP(IJ,ISAT)
+                ALTEXDATA(IOBS,1) = REAL(XLATTMP(IC,ISAT),JWRB)
+                ALTEXDATA(IOBS,2) = REAL(XLONTMP(IC,ISAT),JWRB)
+                ALTEXDATA(IOBS,3) = XWSTMP(IC,ISAT)
+                CDATEOBS (IOBS)   = CDATETMP(IC,ISAT)
 
                 IF (LLUNSTR) THEN
-                  ALTUNDATA(IOBS,1) = XLATTMP(IJ,ISAT)
-                  ALTUNDATA(IOBS,2) = XLONTMP(IJ,ISAT)
+                  ALTUNDATA(IOBS,1) = XLATTMP(IC,ISAT)
+                  ALTUNDATA(IOBS,2) = XLONTMP(IC,ISAT)
                 ENDIF 
 
-                !! NO REAl QC ON WIND SPEED YET !!!
+                !! NO REAL QC ON WIND SPEED YET !!!
                 !! only that there is a wave height and wind speed > WSMIN
-                IF (XWSTMP(IJ,ISAT) > WSMIN) THEN
+                IF (XWSTMP(IC,ISAT) > WSMIN) THEN
                   !! wind data are passive
                   IJALT(IOBS,4) = 0 
                 ELSE
@@ -832,7 +908,7 @@
 
                 ! BIAS CORRECTION IS DONE IF NEEDED
                 IF (LLDOBC) THEN
-                  ZI=MIN(REAL(NBCINCMAX(IBCS,IBCT),JWRB), WHME(IJ,ISAT)/BCINC(IBCS,IBCT))
+                  ZI=MIN(REAL(NBCINCMAX(IBCS,IBCT),JWRB), WHME(IC,ISAT)/BCINC(IBCS,IBCT))
                   I=INT(ZI)+1
                   I=MIN(NBCINCMAX(IBCS,IBCT), I)
                   IP1=MIN(NBCINCMAX(IBCS,IBCT), I+1)
@@ -842,18 +918,35 @@
                     BCIV=(I-ZI)*BCTABLE(IBCS,IBCT,I)+(ZI-I+1)  *BCTABLE(IBCS,IBCT,IP1)
                   ENDIF
 !                 Removing the bias
-                  ALTDATA(IOBS,1)=WHME(IJ,ISAT)-BCIV
+                  ALTDATA(IOBS,1)=WHME(IC,ISAT)-BCIV
                 ELSE
-                  ALTDATA(IOBS,1)=WHME(IJ,ISAT)
+                  ALTDATA(IOBS,1)=WHME(IC,ISAT)
                 ENDIF
 
               ENDIF
             ENDDO
           ENDIF
         ENDDO
+
+!       DEFINE THE ALT DATA ERROR
+!       =========================
+
+        DO IOBS=1,NWH
+          DO IES=1, NOBSER
+              IF (IJALT(IOBS,2) == IOBSERRSATID(IES)) EXIT
+          ENDDO
+          IF (IES <= NOBSER) THEN
+            ALTDATA(IOBS,2) = OBSERR(IES)
+          ELSE
+!           ** IF NOT PROVIDED ON COMMANDLINE:
+            ALTDATA(IOBS,2) = 0.5_JWRB
+          ENDIF
+        ENDDO
+
       ENDIF
 
       DEALLOCATE(IFLAG)
+      DEALLOCATE(ICOUNT2IJ)
       DEALLOCATE(WHME)
 
       DEALLOCATE(XLATTMP)

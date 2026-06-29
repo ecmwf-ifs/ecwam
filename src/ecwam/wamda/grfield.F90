@@ -59,7 +59,8 @@ SUBROUTINE GRFIELD(BLK2GLO, FL1, INTFLDS, MINIJS, MAXIJL, WHMOD,   &
      &            ALTSDTHRSH, ALTBGTHRSH, ALTGRTHRSH, HSALTCUT,         &
      &            ALTDATA ,IBUFRSAT ,NALTUDT  ,ALTUNDATA,               &
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR ,LALTLRGR ,    &
-     &            LALTGRDOUT, LODBRALT, CSATNAME,LALTPASSIV
+     &            LALTGRDOUT, LODBRALT, CSATNAME,LALTPASSIV,            &
+     &            LRALTPREPROC
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET    ,    &
      &                      SINPH    ,COSPH,                            &
      &                      NPROMA_WAM, NCHNK, ICHNKFROMIJ, IPRMFROMIJ 
@@ -92,7 +93,7 @@ SUBROUTINE GRFIELD(BLK2GLO, FL1, INTFLDS, MINIJS, MAXIJL, WHMOD,   &
 #ifdef WITH_ODB
 #include "getodbralt.intfb.h"
 #endif
-
+#include "grdata.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "mpbcastintfld.intfb.h"
 #include "secondhh.intfb.h"
@@ -158,6 +159,7 @@ SUBROUTINE GRFIELD(BLK2GLO, FL1, INTFLDS, MINIJS, MAXIJL, WHMOD,   &
       CHARACTER(LEN=14) :: CTIME
 
       LOGICAL :: LLOPENED, LLTEST
+      LOGICAL :: LAVERAGE
       LOGICAL :: LALTCORRECTION
       LOGICAL :: LLNOTFOUND
       LOGICAL :: LDUM
@@ -187,24 +189,28 @@ IF (LHOOK) CALL DR_HOOK('GRFIELD',0,ZHOOK_HANDLE)
 !to keep track of the input order (see below).
 NIJALTP1=NIJALT+1
 
-!*    1. OPEN FILE AND READ.
-!        -------------------
+!*    1. GET THE ALTIMETER DATA
+!        ----------------------
 
 IDUM=0
 NOBS=0
+NSATOBS(:)=0
 NOBSPSAT(:)=0
 
 IF (LODBRALT) THEN
+!* INPUT DATA FROM ODB (rfl4wam needs to be run as part of preprocessing of the data
 #ifdef WITH_ODB
   CALL GETODBRALT(IREAD, NIJALTP1, NOBS, NSATOBS)
 #endif
 
-ELSE    ! if LODBRALT is false, read observations from file
+ELSE
+!* IF LODBRALT is false, read observations from file (either preprocessed or raw data)
 
-!*        READ RALT OBSERVATIONS FROM A FILE
-      WRITE(IU06,*) '  GRFIELD :  ALTIMETER DATA ARE READ FROM A FILE'
-
-      IF (IRANK == IREAD) THEN
+  IF (LRALTPREPROC) THEN
+!*  READ RALT OBSERVATIONS FROM A FILE AS PREPROCESSED BY RFL4WAM
+    WRITE(IU06,*) '     GRFIELD :  ALTIMETER DATA ARE READ FROM A FILE AS PREPRARED BY RFL4WAM'
+    WRITE(IU06,*) ''
+    IF (IRANK == IREAD) THEN
         IFIELD = 0
         IFAIL = 1
 
@@ -230,10 +236,7 @@ ELSE    ! if LODBRALT is false, read observations from file
               ALLOCATE(ALTDATA(NOBS,NALTDT))
               IF (LLUNSTR) ALLOCATE(ALTUNDATA(NOBS,NALTUDT))
 
-              READ (IUME,ERR=9000,IOSTAT=IOS)  &
-     &                             ((IJALT(IOBS,IIJALT),IOBS = 1,NOBS), &
-     &                                                IIJALT = 1,NIJALT)
-
+              READ (IUME,ERR=9000,IOSTAT=IOS) ((IJALT(IOBS,IIJALT),IOBS = 1,NOBS),IIJALT = 1,NIJALT)
               READ (IUME,ERR=9000,IOSTAT=IOS) ALTDATA
               IF (LLUNSTR) READ (IUME,ERR=9000,IOSTAT=IOS) ALTUNDATA
             ENDIF
@@ -253,20 +256,43 @@ ELSE    ! if LODBRALT is false, read observations from file
           CALL FLUSH(IU06)
           NOBS=0
         ENDIF
-        IF (NOBS == 0) THEN
-          WRITE(IU06,*) '     NO RADAR ALTIMETER (RALT) AVAILABLE'
-        ELSE
-          WRITE(IU06,*) '     RADAR ALTIMETER (RALT), TOTAL NUMBER OF ENTRIES FOUND:',  NOBS
-        ENDIF
-      ENDIF
+    ENDIF
 
-      GOTO 9001
-9000  WRITE(IU06,'("READING ERROR IN GRFIELD: ")')
-      WRITE(IU06,'(25X,"I/O STATUS IS",I8)') IOS
-      WRITE(IU06,'(25X," ABORT !!!!!!!!")')
-      CALL ABORT1
-9001  CONTINUE
+    GOTO 9001
+9000 WRITE(IU06,'("READING ERROR IN GRFIELD: ")')
+     WRITE(IU06,'(25X,"I/O STATUS IS",I8)') IOS
+     WRITE(IU06,'(25X," ABORT !!!!!!!!")')
+     CALL ABORT1
+9001 CONTINUE
+
+  ELSE
+    WRITE(IU06,*) '     GRFIELD :  ALTIMETER DATA ARE READ FROM A FILE AS PREPRARED BY URAPRE'
+    WRITE(IU06,*) ''
+!!  Currently hardcoded 
+    LAVERAGE=.TRUE.
+!!
+    IF (IRANK == IREAD) THEN
+      CALL GRDATA (NOBS, IDELALT, LAVERAGE, NIJALTP1)
+      WRITE(IU06,*) ''
+    ENDIF
+  ENDIF
+
 ENDIF   ! end of if LODBRALT block
+
+IF (IRANK == IREAD) THEN
+  IF (NOBS == 0) THEN
+    WRITE(IU06,*) '     GRFIELD: NO RADAR ALTIMETER (RALT) AVAILABLE'
+  ELSE
+    WRITE(IU06,*) '     GRFIELD: RADAR ALTIMETER, TOTAL NUMBER OF ENTRIES :',  NOBS
+    DO ISAT=1,NUMALT
+      IF (NSATOBS(ISAT) > 0 ) THEN
+!       note that NSATOBS is currently only meaningful if LODBRALT is true
+        WRITE(IU06,*) '  GRFIELD : NUMBER OF ENTRIES FOR ALTIMETER ',IBUFRSAT(ISAT),' IS ', NSATOBS(ISAT)
+      ENDIF
+    ENDDO
+  ENDIF
+ENDIF
+
 
 IF (NOBS == 0) THEN
   DO IJ = IJSLOC, IJLLOC 
@@ -284,7 +310,7 @@ IF (IRANK == IREAD) THEN
 !       REORGANISE THE IJ INDEX WHEN 2-D DECOMPOSITION
 !!      For unstructured grid this conversion for local to global can only be done
 !!      once  IJALT(IOBS,1) has been distributed (see below)
-        IF (.NOT.LL1D .AND. NPROC > 1 .AND. .NOT.LLUNSTR) THEN
+        IF (.NOT.LL1D .AND. NPROC > 1 .AND. LRALTPREPROC .AND. .NOT.LLUNSTR) THEN
           DO IOBS = 1, NOBS
             IJALT(IOBS,1) = IJ2NEWIJ(IJALT(IOBS,1))
           ENDDO
@@ -555,11 +581,13 @@ ENDIF
           IZCOMLEN = (NIJALTP1+NALTDT) * NOBSPEMAX
         ENDIF
         ALLOCATE(ZCOMBUFR(IZCOMLEN))
+
         IF (NOBSPE(IRANK) > 0 ) THEN
           CALL GSTATS(618,0)
 !!CHECK!! CALL MPL_RECV(ZCOMBUFR(1:IZCOMLEN),KSOURCE=IREAD,KTAG=KTAG, &
 !!CHECK!!                                    *******
 !!OLD!!!! CALL MPL_RECV(ZCOMBUFR(1:IZCOMLEN),KFROM  =IREAD,KTAG=KTAG, &
+
           CALL MPL_RECV(ZCOMBUFR(1:IZCOMLEN),KSOURCE=IREAD,KTAG=KTAG, &
      &       KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='GRFIELD 1:')
           IF (KRTAG /= KTAG) CALL MPL_ABORT &
@@ -623,7 +651,7 @@ ENDIF
         ELSE
           LLALT(ISAT)=.FALSE.
         ENDIF
-        WRITE(IU06,'(2X,I2,A,A25,A,I7,A,L7)') &
+        WRITE(IU06,'(5X,I2,A,A25,A,I7,A,L7)') &
      &        ISAT,'. SATELLITE: ',CSATNAME(ISAT),&
      &     '  ... NOBSPSAT=',NOBSPSAT(ISAT), &
      &     '  ... LLALT=',LLALT(ISAT)
@@ -632,7 +660,7 @@ ENDIF
 ! ----------------------------------------------------------------------
 
 !*    3. APPLY CORRECTION TO WAVE HEIGHT DATA ACCORDING TO
-!        SUPPLIED LINEAR REGRESSION COEFFICIENTS
+!        SUPPLIED LINEAR REGRESSION COEFFICIENTS (obsolete !)
 !        --------------------------------------------------
 
       DO ISAT=1,NUMALT
@@ -748,8 +776,8 @@ ENDIF
                 ENDIF
               ENDIF
 
-!             BACKGROUND CHECK (remove data that deviate too much from the first guess)
-!             ON VALID DATA ONLY.
+!              BACKGROUND CHECK (remove data that deviate too much from the first guess)
+!              ON VALID DATA ONLY.
 
               IF (ALTDATA(IOBS,1) > 0._JWRB .AND. IJALT(IOBS,3) >=0 .AND. WHMOD(IJG) > 0._JWRB) THEN
                 THRSHLD=(ALTDATA(IOBS,2)/SIGMOD)* &
@@ -795,8 +823,7 @@ ENDIF
         NTOTREJBG=ISUMBUF(6)
         NTOTSAT=ISUMBUF(7)
 
-        WRITE(IU06,*)'   TOTAL NUMBER OF GRIDDED WAVE HEIGHTS= ', &
-     &                   NOBSPSAT(ISAT)
+        WRITE(IU06,*)'   TOTAL NUMBER OF GRIDDED WAVE HEIGHTS= ', NOBSPSAT(ISAT)
         IF (NOBSPSAT(ISAT) > 0) THEN
           WRITE(IU06,*)'   NUMBER OF SUBAREA WITH DATA= ',NTOTSAT
           WRITE(IU06,*)''
@@ -809,6 +836,7 @@ ENDIF
         ENDIF
         WRITE(IU06,*)''
         WRITE(IU06,*)'-------------------------------------------------------'
+        CALL FLUSH(IU06)
 
         IF (NTOTSAT > 0) THEN
 
@@ -853,6 +881,7 @@ ENDIF
       ENDDO ! END LOOP ON SATELLITE
       DEALLOCATE(LLIN)
       WRITE(IU06,*)' '
+      CALL FLUSH(IU06)
 
 
 ! ----------------------------------------------------------------------

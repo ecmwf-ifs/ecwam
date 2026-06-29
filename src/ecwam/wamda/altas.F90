@@ -43,8 +43,9 @@ SUBROUTINE ALTAS(IJSG, IJLG, MIJ, BLK2GLO,           &
 
       USE YOWABORT , ONLY : WAM_ABORT
       USE YOWALTAS , ONLY : INTLMAX  ,KMINLMAX ,KMAXLMAX  ,NOBSPE,     &
-     &                      IJALT    ,DIFFALTFG,LODBRALT ,ALTDATA,     &
-     &                      ALTUNDATA,NIJALT
+     &                      IJALT    ,DIFFALTFG,LODBRALT  ,ALTDATA,    &
+     &                      ALTEXDATA,ALTUNDATA,NIJALT    ,CDATEOBS,   &
+     &                      LECWAMDA
       USE YOWGRID  , ONLY : COSPH    ,NPROMA_WAM, NCHNK, IJFROMCHNK, KIJL4CHNK,   &
      &                      ICHNKFROMIJ, IPRMFROMIJ
       USE YOWMAP   , ONLY : XDELLA   ,AMOSOP   ,NIBLO
@@ -125,12 +126,26 @@ IF (LHOOK) CALL DR_HOOK('ALTAS',0,ZHOOK_HANDLE)
 !!! for now, we will disactivate the geographically varying DIST
 !!! by setting XLMAX to 0 and XLMIN to maximum required value.
 
-      IF (XDELLA < 0.36_JWRB) THEN
-        XLMIN = 150000._JWRB
-        XLMAX = 0.0_JWRB
+      IF ( LECWAMDA ) THEN
+        IF (XDELLA < 0.36_JWRB) THEN
+          XLMIN = 150000._JWRB
+          XLMAX = 0.0_JWRB
+        ELSE
+          XLMIN = 300000._JWRB
+          XLMAX = 0.0_JWRB
+        ENDIF
       ELSE
-        XLMIN = 300000._JWRB
-        XLMAX = 0.0_JWRB
+!       METEOFRANCE CHOICE
+        IF(XDELLA < 0.05_JWRB) THEN
+          XLMIN = 50000._JWRB
+          XLMAX = 0._JWRB
+        ELSE IF(XDELLA < 0.3_JWRB) THEN
+          XLMIN = 170000._JWRB
+          XLMAX = 0._JWRB
+        ELSE
+          XLMIN = 300000._JWRB
+          XLMAX = 0._JWRB
+        ENDIF
       ENDIF
 
       SIGH=0.75_JWRB
@@ -183,7 +198,6 @@ IF (LHOOK) CALL DR_HOOK('ALTAS',0,ZHOOK_HANDLE)
 
         CALL MPPEWITHINDIST(BLK2GLO, DMAX, INTLMAX, KMINLMAX, KMAXLMAX)
       ENDIF
-
 
 !     SPECIFY THE MODEL ERROR:
 !     -----------------------
@@ -327,7 +341,9 @@ IF (LHOOK) CALL DR_HOOK('ALTAS',0,ZHOOK_HANDLE)
       IF (ALLOCATED(DIFFALTFG)) DEALLOCATE(DIFFALTFG)
       IF (ALLOCATED(IJALT)) DEALLOCATE(IJALT)
       IF (ALLOCATED(ALTDATA)) DEALLOCATE(ALTDATA)
+      IF (ALLOCATED(ALTEXDATA)) DEALLOCATE(ALTEXDATA)
       IF (ALLOCATED(ALTUNDATA)) DEALLOCATE(ALTUNDATA)
+      IF (ALLOCATED(CDATEOBS)) DEALLOCATE(CDATEOBS)
 
       WRITE(IU06,*) '  ALTAS ENDS NORMALLY'
       WRITE(IU06,*) ' '

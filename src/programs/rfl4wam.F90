@@ -84,7 +84,8 @@ PROGRAM RFL4WAM
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWALTAS , ONLY : IJALT    ,ALTDATA, ALTEXDATA,  ALTUNDATA, CDATEOBS
+      USE YOWALTAS , ONLY : NIJALT   ,IJALT    ,ALTDATA, ALTEXDATA,  ALTUNDATA, CDATEOBS
+      USE YOWCMDLO , ONLY : WAM_GETCLO, WAM_GETCLA
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   , &
      &            XDELLA   ,XDELLO
@@ -113,16 +114,16 @@ PROGRAM RFL4WAM
 #include "iwam_get_unit.intfb.h"
 #include "iniwcst.intfb.h"
 #include "mpdecomp.intfb.h"
+
 #ifdef WITH_ODB
 #include "rfl2odb.intfb.h"
 #endif
-#include "wam_getcla.intfb.h"
-#include "wam_getclo.intfb.h"
+
 #include "wvwaminit.intfb.h"
 
       INTEGER(KIND=JWIM) :: IDATAWL
       INTEGER(KIND=JWIM) :: IDATES, IOBSER, IMO, IOEMAX
-      INTEGER(KIND=JWIM) :: I1, JL, LEN1, IND1, NOBS, IOBS, IES 
+      INTEGER(KIND=JWIM) :: I1, JL, LEN1, IND1, NOBS, IOBS
       INTEGER(KIND=JWIM) :: IOPTVAL, MORARG 
       INTEGER(KIND=JWIM) :: IO
       INTEGER(KIND=JWIM) :: NPR, MAXLEN, IREAD, JLD
@@ -193,7 +194,7 @@ PROGRAM RFL4WAM
       IOBSER  =     0
       IMO     =    10
       IOEMAX  =    10
-      IDATAWL = 21600
+      IDATAWL = 21600 ! by default the input ralt data will cover a maximum period of 21600 s = 6 hours
       IPROPAGS = 0
       LSUBGRID = .FALSE.
       IU06 = 6
@@ -292,6 +293,7 @@ PROGRAM RFL4WAM
           ENDIF
         ENDIF
       ENDDO CMDLINE
+
       IF (ITEST >= 1) THEN
         WRITE(*,'("NUMBER OF FILES TO PROCESS: ",I2)') IDATES
         WRITE(*,'(5a13)') (CLDATES(JL),JL=1,IDATES)
@@ -301,6 +303,7 @@ PROGRAM RFL4WAM
           WRITE(*,*) 'INDIVIDUAL OBSERVATIONS ARE USED.'
         ENDIF
       ENDIF
+
       IF (IDATES == 0 ) THEN
         WRITE(*,*) 'NOTHING TO DO?'
         WRITE(*,*) 'YOU MAY HAVE GIVEN THE WRONG COMMAND LINE OPTIONS:'
@@ -324,8 +327,6 @@ PROGRAM RFL4WAM
       odb_handle  = odb_write_new(config, cerr)
 #endif
 
-! DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS.
-! ------------------------------------------------------
       Z4=1._JWRB
       NPRECR = KIND(Z4)
       I4=1
@@ -350,7 +351,7 @@ PROGRAM RFL4WAM
 
 
       NPR=NPROC
-      LL1D = .FALSE.
+      LL1D = .TRUE.
       LLIRANK = .FALSE.
       LLWVENVI = .FALSE.
 
@@ -402,35 +403,18 @@ PROGRAM RFL4WAM
         CDTPRO(13:14) = '00'
         io = IWAM_GET_UNIT(IU06, 'rfl'//CLDATES(JLD), 'w', 'u', 0, 'READWRITE')
 
-        CALL GRDATA (NOBS, IDATAWL, LAVERAGE)
+        IF (IOBSER > 0) THEN
+          CALL GRDATA (NOBS, IDATAWL, LAVERAGE, NIJALT, IOBSERRSATID=IOESATID(1:IOBSER), OBSERR=OERR(1:IOBSER))
+        ELSE
+          CALL GRDATA (NOBS, IDATAWL, LAVERAGE, NIJALT)
+        ENDIF
 
         WRITE(io) CDTPRO, NOBS
 
         IF (NOBS > 0) THEN
-        
-!         DEFINE THE ALT DATA ERROR
-
-          DO IOBS=1,NOBS
-            DO IES=1, IOBSER
-              IF (IJALT(IOBS,2) == IOESATID(IES)) EXIT
-            ENDDO
-            IF (IES <= IOBSER) THEN
-              ALTDATA(IOBS,2) = OERR(IES)
-              IF (ITEST >= 1) THEN
-                WRITE(IU06,*) 'WEIGHT: ',IOBS, IJALT(IOBS,2), IES, OERR(IES)
-              ENDIF
-            ELSE
-!             ** IF NOT PROVIDED ON COMMANDLINE:
-              ALTDATA(IOBS,2) = 0.5_JWRB
-            ENDIF
-          ENDDO
-!!! we will have to adapt for the linear regression correction
-!!!
-
           WRITE (io) IJALT 
           WRITE (io) ALTDATA
           IF (LLUNSTR) WRITE (io) ALTUNDATA
-
         ENDIF
         CLOSE (io)
 

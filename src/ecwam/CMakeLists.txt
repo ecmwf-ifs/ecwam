@@ -81,11 +81,10 @@ list( APPEND wamda_srcs
   wamda/upwspec.F90
   wamda/wamassi.F90
   wamda/wamoi.F90
-  wamda/wam_getcla.F90
-  wamda/wam_getclo.F90
   wamda/wam_setup_assi.F90
   wamda/wam_syminv.F90
   wamda/windsea.F90
+  wamda/yowcmdlo.F90
   wamda/yowgap.F90
   wamda/yowsaras.F90
 )
