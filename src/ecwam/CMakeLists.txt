@@ -139,7 +139,6 @@ list( APPEND ecwam_srcs
   fldinter.F90
   fndprt.F90
   frcutindex.F90
-  gc_dispersion.h
   get_preset_wgrib_template.F90
   getbobstrct.F90
   getgrbobstrct.F90
@@ -427,6 +426,7 @@ list( APPEND ecwam_srcs
   yowwami.F90
   yowwind.F90
   yowwndg.F90
+  yowwvdisp.F90
   z0wave.F90
 )
 

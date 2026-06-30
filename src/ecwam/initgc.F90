@@ -44,6 +44,7 @@
      &                      CM_GC, C2OSQRTVG_GC, XKMSQRTVGOC2_GC, OM3GMKM_GC,&
      &                      DELKCC_GC, DELKCC_GC_NS, DELKCC_OMXKM3_GC
       USE YOWPCONS , ONLY : G,  SURFT, SQRTGOSURFT
+      USE YOWWVDISP, ONLY : FOMEG_GC, FVG_GC, FC_GC
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -54,9 +55,6 @@
       INTEGER(KIND=JWIM) :: I
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-
-!     INCLUDE FUNCTIONS FROM GRAVITY-CAPILLARY DISPERSION REALTIONS
-#include "gc_dispersion.h"
 
 ! ----------------------------------------------------------------------
 
@@ -85,10 +83,10 @@
       DO I=1,NWAV_GC
         XK_GC(I) = XKS_GC*(KRATIO_GC)**(I-1)
         XKM_GC(I) = 1.0_JWRB/XK_GC(I)
-        OMEGA_GC(I) = FOMEG_GC(XK_GC(I))
+        OMEGA_GC(I) = FOMEG_GC(XK_GC(I), G, SURFT)
         OMXKM3_GC(I) = OMEGA_GC(I) * XKM_GC(I)**3
-        VG_GC(I) = FVG_GC(XK_GC(I))
-        C_GC(I) = FC_GC(XK_GC(I))      
+        VG_GC(I) = FVG_GC(XK_GC(I), G, SURFT)
+        C_GC(I) = FC_GC(XK_GC(I), G, SURFT)      
         CM_GC(I) = 1.0_JWRB/C_GC(I)
         C2OSQRTVG_GC(I) = C_GC(I)**2 / SQRT(VG_GC(I))
         XKMSQRTVGOC2_GC(I) = XKM_GC(I) / C2OSQRTVG_GC(I)

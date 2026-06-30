@@ -49,9 +49,6 @@
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(KIJL) :: XKS, OMS, COEF
    
-!     INCLUDE FUNCTIONS FROM GRAVITY-CAPILLARY DISPERSION REALTIONS
-#include "gc_dispersion.h"
-
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('MEANSQS_GC',0,ZHOOK_HANDLE)

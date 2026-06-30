@@ -65,8 +65,6 @@ FUNCTION STRESS_GC(ANG_GC, USTAR, Z0, Z0MIN, HALP, RNFAC) RESULT(STRESS_GC_RES)
       REAL(KIND=JWRB) :: STRESS_GC_RES
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
    
-!     INCLUDE FUNCTIONS FROM GRAVITY-CAPILLARY DISPERSION RELATIONS
-#include "gc_dispersion.h"
 #include "ns_gc.intfb.h"
 
 ! ----------------------------------------------------------------------
