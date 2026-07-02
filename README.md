@@ -153,7 +153,7 @@ then the current directory is used.
 If `--config` argument is not specified, it is assumed that a file called `config.yml`
 is present in the `<run-dir>`.
 
-For a default optimised build on the ECMWF Atos system, you can simply run:
+To run ecwam serially within the `ecwam_runs` dir, simply run:
 
     $ helpers/ecwam-serial-run.sh
 
