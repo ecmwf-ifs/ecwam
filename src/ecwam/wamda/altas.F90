@@ -332,6 +332,8 @@ IF (LHOOK) CALL DR_HOOK('ALTAS',0,ZHOOK_HANDLE)
       IF (LODBRALT) THEN
 #ifdef WITH_ODB
         CALL WAM2ODB(IJSG, IJLG, HSOIB, HSAN, U10FG, U10AN)
+#else
+        CALL WAM_ABORT("ODB support not available",__FILENAME__,__LINE__)
 #endif
       ENDIF
 
