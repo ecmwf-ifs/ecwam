@@ -56,6 +56,12 @@ Some driver scripts to run tests and validate results rely on availability of:
 Building ecWAM
 --------------
 
+For a default optimised build on the ECMWF Atos system, you can simply run:
+
+    $ helpers/ecwam-atos-build.sh
+
+For details on how to configure/debug the build, please read on.
+
 Environment variables
 
     $ export ecbuild_ROOT=<path-to-ecbuild>
@@ -147,6 +153,11 @@ then the current directory is used.
 If `--config` argument is not specified, it is assumed that a file called `config.yml`
 is present in the `<run-dir>`.
 
+To run ecwam serially within the `ecwam_runs` dir, simply run:
+
+    $ helpers/ecwam-serial-run.sh
+
+For details on how to configure/debug the build, please read on.
 
 1) Create bathymetry and grid tables
 
@@ -220,6 +231,13 @@ there are following options:
   Note that this does *not* automatically export the `OMP_NUM_THREADS` variable.
 
 Note that only `ecwam-run-model` currently supports MPI.
+
+Plotting ecWAM
+=============
+
+For minimal post-processing on the ECMWF Atos system, simply run:
+
+    $ python3 helpers/ecwam-plot.py
 
 
 GPU offload
