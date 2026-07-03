@@ -55,6 +55,7 @@ SUBROUTINE ALTAS(IJSG, IJLG, MIJ, BLK2GLO,           &
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06
+      USE YOWASSI  , ONLY : WAM2ODB
 #ifdef WAM_HAVE_UNWAM
       USE YOWPD    , ONLY : RANK
 #endif
@@ -73,10 +74,6 @@ SUBROUTINE ALTAS(IJSG, IJLG, MIJ, BLK2GLO,           &
 #include "oifield.intfb.h"
 #include "semean.intfb.h"
 #include "updatewfld.intfb.h"
-
-#ifdef WITH_ODB
-#include "wam2odb.intfb.h"
-#endif
 
       INTEGER(KIND=JWIM), INTENT(IN)                                           :: IJSG, IJLG
       INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK), INTENT(OUT)            :: MIJ
@@ -330,11 +327,7 @@ IF (LHOOK) CALL DR_HOOK('ALTAS',0,ZHOOK_HANDLE)
 !     OUTPUT TO ODB:
 !     -------------
       IF (LODBRALT) THEN
-#ifdef WITH_ODB
         CALL WAM2ODB(IJSG, IJLG, HSOIB, HSAN, U10FG, U10AN)
-#else
-        CALL WAM_ABORT("ODB support not available",__FILENAME__,__LINE__)
-#endif
       ENDIF
 
 !     CLEANING UP

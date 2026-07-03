@@ -154,7 +154,6 @@ list( APPEND ecwam_srcs
   h_max.F90
   halphap.F90
   headbc.F90
-  ifstowam.F90
   imphftail.F90
   implsch.F90
   incdate.F90
@@ -483,8 +482,6 @@ endif()
 
 if( HAVE_OCEAN_COUPLING )
   list(APPEND ECWAM_DEFINITIONS WITH_NEMO )
-  list(APPEND ECWAM_DEFINITIONS WITH_IFS )
-  list(APPEND ECWAM_DEFINITIONS WITH_ODB )
 endif()
 
 if( HAVE_ECFLOW )

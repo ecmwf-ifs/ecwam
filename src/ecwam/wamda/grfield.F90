@@ -73,6 +73,7 @@ SUBROUTINE GRFIELD(BLK2GLO, FL1, INTFLDS, MINIJS, MAXIJL, WHMOD,   &
       USE YOWSTAT  , ONLY : CDTPRO   ,YEXPVER  ,IDELALT  ,ISTREAM
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,IJ2NEWIJ
       USE YOWTEST  , ONLY : IU06
+      USE YOWASSI  , ONLY : GETODBRALT
 
 #ifdef WAM_HAVE_UNWAM
       USE YOWPD,     ONLY : NODES=>NODES_GLOBAL, RANK
@@ -90,9 +91,6 @@ SUBROUTINE GRFIELD(BLK2GLO, FL1, INTFLDS, MINIJS, MAXIJL, WHMOD,   &
 #include "abort1.intfb.h"
 #include "confile.intfb.h"
 
-#ifdef WITH_ODB
-#include "getodbralt.intfb.h"
-#endif
 #include "grdata.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "mpbcastintfld.intfb.h"
@@ -199,11 +197,7 @@ NOBSPSAT(:)=0
 
 IF (LODBRALT) THEN
 !* INPUT DATA FROM ODB (rfl4wam needs to be run as part of preprocessing of the data
-#ifdef WITH_ODB
   CALL GETODBRALT(IREAD, NIJALTP1, NOBS, NSATOBS)
-#else
-  CALL WAM_ABORT("ODB support not available",__FILENAME__,__LINE__)
-#endif
 
 ELSE
 !* IF LODBRALT is false, read observations from file (either preprocessed or raw data)

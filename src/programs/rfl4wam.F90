@@ -95,6 +95,7 @@ PROGRAM RFL4WAM
       USE YOWPARAM , ONLY : LL1D     , LLUNSTR
       USE YOWSTAT  , ONLY : CDTPRO   ,YCLASS   ,IPROPAGS ,LSUBGRID
       USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWASSI  , ONLY : RFL2ODB
 
       USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -114,11 +115,6 @@ PROGRAM RFL4WAM
 #include "iwam_get_unit.intfb.h"
 #include "iniwcst.intfb.h"
 #include "mpdecomp.intfb.h"
-
-#ifdef WITH_ODB
-#include "rfl2odb.intfb.h"
-#endif
-
 #include "wvwaminit.intfb.h"
 
       INTEGER(KIND=JWIM) :: IDATAWL
@@ -420,9 +416,7 @@ PROGRAM RFL4WAM
 
 !       TRANSFER THE CONTENT OF THE ALTIMETER RFL FILED TO ODB
         LLCLOSE = (JLD == IDATES)
-#ifdef WITH_ODB
         CALL RFL2ODB(NOBS, CLDATES(JLD), LLCLOSE) 
-#endif
 
         IF (NOBS > 0) THEN
           DEALLOCATE(IJALT)
@@ -437,7 +431,6 @@ PROGRAM RFL4WAM
 
       CALL MPL_END()
 
-! end WITH_WAMASSI
 #endif
 
 END PROGRAM rfl4wam
