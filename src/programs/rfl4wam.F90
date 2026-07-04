@@ -176,12 +176,12 @@ PROGRAM RFL4WAM
 
 #ifdef WITH_WAMASSI
 
+      CALL MPL_INIT(KOUTPUT=1)
+
 #ifdef WITH_ODB
 !     Set up callback functions for ODB
       CALL WAM_SETUP_ODB4WAM
 #endif
-
-      CALL MPL_INIT(KOUTPUT=1)
 
       LHOOK = .TRUE.
       IF (LHOOK) CALL DR_HOOK('RFL4WAM',0,ZHOOK_HANDLE)
