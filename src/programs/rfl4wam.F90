@@ -116,6 +116,9 @@ PROGRAM RFL4WAM
 #include "iniwcst.intfb.h"
 #include "mpdecomp.intfb.h"
 #include "wvwaminit.intfb.h"
+#ifdef WITH_ODB
+#include "wam_setup_odb4wam.intfb.h"
+#endif
 
       INTEGER(KIND=JWIM) :: IDATAWL
       INTEGER(KIND=JWIM) :: IDATES, IOBSER, IMO, IOEMAX
@@ -172,6 +175,11 @@ PROGRAM RFL4WAM
 ! ----------------------------------------------------------------------
 
 #ifdef WITH_WAMASSI
+
+#ifdef WITH_ODB
+!     Set up callback functions for ODB
+      CALL WAM_SETUP_ODB4WAM
+#endif
 
       CALL MPL_INIT(KOUTPUT=1)
 
