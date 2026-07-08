@@ -1,6 +1,9 @@
 grid:        O1280
+cldomain:     g
 directions:  36
 frequencies: 29
+fr1:         4.177248E-02 
+ifre1:       3
 bathymetry:  ETOPO1
 
 advection:

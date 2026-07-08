@@ -1,6 +1,8 @@
 grid:        O48
 directions:  12 
 frequencies: 25
+fr1:         4.177248E-02 
+ifre1:       1
 bathymetry:  aqua
 
 advection:

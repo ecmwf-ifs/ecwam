@@ -14,7 +14,6 @@ foreach( prec sp dp )
       bouint
       preproc
       preset
-      rfl4wam
       intwaminput
       combine_bathy_laked
       create_wam_bathymetry

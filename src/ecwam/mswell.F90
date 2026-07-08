@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE MSWELL (KIJS, KIJL, IFROMIJ, JFROMIJ, NXS, NXE, NYS, NYE, FIELDG, FL1)
+      SUBROUTINE MSWELL (KIJS, KIJL, XLON, YLAT, FL1)
 ! ----------------------------------------------------------------------
 
 !**** *MSWELL* - MAKES START SWELL FIELDS FOR WAMODEL.
@@ -22,11 +22,9 @@
 !**   INTERFACE.
 !     ----------
 
-!   *CALL* *MSWELL (KIJS, KIJL, BLK2LOC, NXS, NXE, NYS, NYE, FIELDG, FL1)
-!      *BLK2LOC*             POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
-!      *NXS:NXE*  FIRST DIMENSION OF FIELDG
-!      *NYS:NYE*  SECOND DIMENSION OF FIELDG
-!      *FIELDG*   INPUT FORCING FIELDS ON THE WAVE MODEL GRID
+!   *CALL* *MSWELL (KIJS, KIJL, XLON, YLAT, FL1)
+!      *XLON*     REAL      GRID POINT LONGITUDES
+!      *XLAT*     REAL      GRID POINT LATITUDES
 !      *FL1*      REAL      2-D SPECTRUM FOR EACH GRID POINT 
 
 !     METHOD.
@@ -119,26 +117,25 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : WVGRIDLOC, FORCING_FIELDS
 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,RAD      ,R       ,ZMISS
       USE YOWSPHERE, ONLY : SPHERICAL_COORDINATE_DISTANCE
 
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
-      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IFROMIJ, JFROMIJ
-      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
-      TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: XLON, YLAT
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(OUT) :: FL1
 
 
       INTEGER(KIND=JWIM), PARAMETER :: NLOC=4 ! TOTAL NUMBER OF SWELL SYSTEMS
-      INTEGER(KIND=JWIM) :: IJ, K, M, ILOC, IX, JY
+      INTEGER(KIND=JWIM) :: IJ, K, M, ILOC
       INTEGER(KIND=JWIM) :: NSP
       INTEGER(KIND=JWIM), DIMENSION(NLOC) :: KLOC, MLOC
 
@@ -153,41 +150,36 @@
       REAL(KIND=JWRU) :: XLO, YLA, DIST
       REAL(KIND=JWRU), DIMENSION(NLOC) :: YLAT0, XLON0
 
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+
 !----------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('MSWELL',0,ZHOOK_HANDLE)
 
-        CQ0=16.0_JWRB/(3*ZPI)
-
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ = KIJS, KIJL
-              FL1(IJ,K,M)=0.0_JWRB
-            ENDDO
-          ENDDO
-        ENDDO
+        CQ0=16.0_JWRB/(3.0_JWRB*ZPI)
 
 !       DEFINE THE SWELL SYSTEMS
-        H0(1)=2.0_JWRB
+        H0(1)=12.0_JWRB
         THETA0(1)=135.0_JWRB
         OMEGAP(1)=0.3117_JWRB
         XL(1)=250000.0_JWRB
         YLAT0(1)=47.0_JWRU
         XLON0(1)=165.0_JWRU
 
-        H0(2)=2.0_JWRB
+        H0(2)=8.0_JWRB
         THETA0(2)=90.0_JWRB
         OMEGAP(2)=0.3117_JWRB
         XL(2)=200000.0_JWRB
         YLAT0(2)=-50.0_JWRU
         XLON0(2)=20.0_JWRU
 
-        H0(3)=2.0_JWRB
+        H0(3)=8.0_JWRB
         THETA0(3)=180.0_JWRB
         OMEGAP(3)=0.3117_JWRB
         XL(3)=200000.0_JWRB
         YLAT0(3)=35.0_JWRU
         XLON0(3)=331.0_JWRU
 
-        H0(4)=2.0_JWRB
+        H0(4)=8.0_JWRB
         THETA0(4)=45.0_JWRB
         OMEGAP(4)=0.3117_JWRB
         XL(4)=150000.0_JWRB
@@ -195,7 +187,6 @@
         XLON0(4)=329.0_JWRU
 
         NSP=5
-
 
         DO ILOC=1,NLOC
           THETA0(ILOC)=RAD*THETA0(ILOC)
@@ -231,7 +222,7 @@
             IF (COSDIR > 0.0_JWRB) THEN
               Q0(K) = CQ0*COSDIR**4
             ELSE
-              Q0(K) = 0. 
+              Q0(K) = 0._JWRB 
             ENDIF
           ENDDO
           E0=H0(ILOC)**2/16.0_JWRB
@@ -247,26 +238,39 @@
           ENDDO
         ENDDO
 
-        DO IJ = KIJS, KIJL
-          IX = IFROMIJ(IJ)
-          JY = JFROMIJ(IJ)
-          XLO=FIELDG%XLON(IX,JY)
-          YLA=FIELDG%YLAT(IX,JY)
-          IF (YLA == ZMISS .OR. XLO == ZMISS) CYCLE 
 
-          DO ILOC=1,NLOC
-            CALL SPHERICAL_COORDINATE_DISTANCE(XLON0(ILOC),XLO,YLAT0(ILOC),YLA,DIST)
-            DIST=2*R*DIST/XL(ILOC)
-            IF (DIST < 10.0_JWRU) THEN
-              SPRD=EXP(-DIST)
-              DO M=1,NFRE
-                DO K=1,NANG
-                  FL1(IJ,K,M)=FL1(IJ,K,M)+FL0(ILOC,K,M)*SPRD 
-                ENDDO
-              ENDDO
-            ENDIF
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ = KIJS, KIJL
+              FL1(IJ,K,M)=0.0_JWRB
+            ENDDO
           ENDDO
-
         ENDDO
+
+        DO IJ = KIJS, KIJL
+          IF (YLAT(IJ) /= ZMISS .AND. XLON(IJ) /= ZMISS) THEN
+
+            XLO = REAL(XLON(IJ),JWRU)
+            YLA = REAL(YLAT(IJ),JWRU)
+
+            DO ILOC=1,NLOC
+              DIST = 0.0_JWRU
+              CALL SPHERICAL_COORDINATE_DISTANCE(XLON0(ILOC),XLO,YLAT0(ILOC),YLA,DIST)
+
+              DIST=DIST*REAL(2.0_JWRB*R/XL(ILOC),JWRU)
+              IF (DIST < 10.0_JWRU) THEN
+                SPRD=EXP(REAL(-DIST,JWRB))
+                DO M=1,NFRE
+                  DO K=1,NANG
+                    FL1(IJ,K,M)=FL1(IJ,K,M)+FL0(ILOC,K,M)*SPRD 
+                  ENDDO
+                ENDDO
+              ENDIF
+            ENDDO
+
+          ENDIF
+        ENDDO
+
+IF (LHOOK) CALL DR_HOOK('MSWELL',1,ZHOOK_HANDLE)
 
       END SUBROUTINE MSWELL

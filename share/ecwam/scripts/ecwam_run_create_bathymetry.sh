@@ -173,12 +173,12 @@ else
     echo "\n\n\t Getting ETOPO1 data set\n"
     log ${SCRIPTS_DIR}/ecwam_retrieve.sh ${ETOPO1} ${DATA_DIR}/${ETOPO1}
     ln -sf ${DATA_DIR}/${ETOPO1} ETOPO1_Ice_g_int.xyz
-    CREATE_WAM_BATHYMETRY_EXE=${CREATE_WAM_BATHYMETRY_ETOPO1}
+    CREATE_WAM_BATHYMETRY_EXE=${CREATE_WAM_BATHYMETRY_ETOPO1}-${prec}
   else
     echo "\n\n\t Getting ETOPO2 data set\n"
     log ${SCRIPTS_DIR}/ecwam_retrieve.sh ${ETOPO2} ${DATA_DIR}/${ETOPO2}
     ln -sf ${DATA_DIR}/${ETOPO2} etopo2_2006apr.dat
-    CREATE_WAM_BATHYMETRY_EXE=${CREATE_WAM_BATHYMETRY_ETOPO2}
+    CREATE_WAM_BATHYMETRY_EXE=${CREATE_WAM_BATHYMETRY_ETOPO2}-${prec}
   fi
 
   assert_executable_is_available ${CREATE_WAM_BATHYMETRY_EXE} || abort 4
@@ -245,13 +245,20 @@ EOF
   mkdir -p ${DATA_DIR}/data/bathymetry/$(dirname ${WAM_TOPO})
   mv wam_topo_${cwamresol} ${DATA_DIR}/data/bathymetry/${WAM_TOPO}
 
-  for ip in 0 1 2; do
-    if [[ ! -r wam_grib_subgrid_${ip} ]] ; then
-      echo "\n\n\t File wam_grib_subgrid_${ip} does not exist\n\n"
-      abort 9
-    fi
-     mv wam_grib_subgrid_${ip} ${DATA_DIR}/data/bathymetry/${subgrid_files[$ip]}
-  done
+  if [[ $llobstrout = T ]] ; then
+    for ip in 0 1 2; do
+      if [[ ! -r wam_grib_subgrid_${ip} ]] ; then
+        echo "\n\n\t File wam_grib_subgrid_${ip} does not exist\n\n"
+        abort 9
+      fi
+       mv wam_grib_subgrid_${ip} ${DATA_DIR}/data/bathymetry/${subgrid_files[$ip]}
+    done
+  else
+    for ip in 0 1 2
+    do
+      echo "llobstrout was set to true. no need for this file" > ${DATA_DIR}/data/bathymetry/${subgrid_files[$ip]}
+    done
+  fi
 
 fi
 

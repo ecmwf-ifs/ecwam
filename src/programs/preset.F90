@@ -4,42 +4,17 @@
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation
-! nor does it submit to any jurisdiction.
+! nor does it submit to any jurisdiction
 !
 
 PROGRAM preset
 
 ! ----------------------------------------------------------------------
 
-!**** *PRESET* - GENERATES ALL BINARY FILES REQUIRED FOR A WAMODEL START
-!             OR GENERATES SPECTRAL GRIB FILE REQUIRED FOR A WAMODEL
-!             START. IN THAT CASE NO DRAG COEFFICIENT FIELD IS REQUIRED
+!**** *PRESET* - GENERATES ALL PURE BINARY FILES REQUIRED FOR A INITIAL WAMODEL START
+!             OR GENERATES SPECTRAL GRIB FILE REQUIRED FOR A WAMODEL INITIAL START.
+!             IN THAT CASE NO DRAG COEFFICIENT FIELD IS REQUIRED
 !             TO RUN WAMODEL (SEE LNOCDIN IN WAMODEL).
-!             OR CONVERTS AND INTERPOLATES GRIB SPECTRA PARAMETER 250 
-!             INTO PARAMETER 251. THE CORRESPONDING DRAG COEFFICIENT 
-!             FIELD SHOULD BE PROVIDED WITH AN APPROPRIATE MARS REQUEST.
-
-!     SUSANNE HASSELMANN  MPI     JULY 1986.
-!     ANNEGRET SPEIDEL    MPI      MAY 1988 PARAMETER STATEMENTS.
-!     ANNEGRET SPEIDEL    MPI NOVEMBER 1988 CRAY-2 VERSION.
-!     CYCLE_3 MODICIFATIONS:
-!     ----------------------
-!     RENATE PORTZ       MPI      JUNE 1990 COMPUTATION OF INITIAL
-!                                           JONSWAP SPECTRA FROM
-!                                           INITIAL WIND FIELD.
-!     CYCLE_4 MODIFICATIONS:
-!     ----------------------
-!     H. GUNTHER  GKSS/ECMWF  DECEMBER 1990
-!     J. BIDLOT    ECMWF   FEBRUARY 1996  MESSAGE PASSING
-!     J. BIDLOT    ECMWF   MARCH 1997  MODIFY ROUTINES FOR OUTPUT OF
-!                          RESTART FILE 
-!     B. HANSEN    ECMWF   APRIL    1997  RESTART FACILITY.
-!     B. HANSEN    ECMWF   JANUARY  1998  NAMELIST INPUT.
-!     B. HANSEN    ECMWF   FEBRUARY 1998  WRITE 2DSP TO FDB.
-!     J. BIDLOT    ECMWF   MARCH 1998 PRODUCE GRIB SPECTRA (215) AND
-!                                     INTERPOLATE TO OUTPUT GRID.
-!                                     NO LAW FILE IS PRODUCED THEN.
-!     J. BIDLOT    ECMWF   OCTOBER 1998   MODULES.
 
 !*    PURPOSE.
 !     --------
@@ -79,15 +54,13 @@ PROGRAM preset
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,TH       ,IFRE1    , FR1
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
-      USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,    &
-     &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP ,    &
-     &            NGRIB_VERSION
+      USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP , NGRIB_VERSION
       USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL     , NTOTIJ  ,    &
      &            NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK,             & 
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
-      USE YOWMAP   , ONLY : CLDOMAIN ,BLK2GLO   ,IRGG    ,AMOWEP   ,    &
-     &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,    &
-     &            BLK2LOC  ,NGX      ,NGY      ,NIBLO
+      USE YOWICE   , ONLY : LCIWA1
+      USE YOWMAP   , ONLY : CLDOMAIN ,BLK2GLO  ,BLK2LOC  ,NGX      ,    &
+     &            NGY      ,NIBLO 
       USE YOWNEMOFLDS , ONLY : NEMO2WAM
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
@@ -102,7 +75,7 @@ PROGRAM preset
      &            IDELPRO  ,IDELWI   ,IDELWO   ,                        &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,              &
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,VARS_4D  ,    &
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,              &
      &            NBLKS    ,NBLKE
       USE YOWTABL  , ONLY :  FAC0     ,FAC1     ,FAC2     ,FAC3    ,    &
      &            FAK      ,FRHF      ,DFIMHF    , OMEGA   ,THH    ,    &
@@ -137,7 +110,7 @@ PROGRAM preset
 #include "mfredir.intfb.h"
 #include "mstart.intfb.h"
 #include "mswell.intfb.h"
-#include "outspec.intfb.h"
+#include "outwspec.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 #include "prewind.intfb.h"
 #include "readmdlconf.intfb.h"
@@ -149,8 +122,9 @@ PROGRAM preset
       INTEGER(KIND=JWIM), PARAMETER :: NGPTOTG=NC*NR
       INTEGER(KIND=JWIM), PARAMETER :: NFIELDS=1
       INTEGER(KIND=JWIM) :: ILEN, IREAD, IOPTI
-      INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IJ, K, M, IX, JY
       INTEGER(KIND=JWIM) :: IPRM, ICHNK
+      INTEGER(KIND=JWIM) :: IJSG, IJLG, IJSB, IJLB, KIJS, KIJL, IFCST
       INTEGER(KIND=JWIM) :: IU05
 
       INTEGER(KIND=JWIM) :: I4(2)
@@ -162,9 +136,16 @@ PROGRAM preset
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: X4(2)
       REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: XLON, YLAT
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: WSWAVE, WDWAVE
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:) :: FLCHNK 
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:) :: SPEC
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:,:) :: FL1
+
       TYPE(FORCING_FIELDS) :: FIELDG
 
       CHARACTER(LEN=1) :: CLTUNIT
+      CHARACTER(LEN=14) :: CDATE, CDATED
       CHARACTER(LEN=70) :: HEADER
       CHARACTER(LEN=120) :: SFILENAME, ISFILENAME
 
@@ -264,6 +245,8 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       YEXPVER  = USERID//'a'
 
       NPROMA_WAM = 0
+
+      LCIWA1 = .FALSE.
 
 !*    1. DEFINE UNIT NAMES.
 !        ------------------
@@ -542,7 +525,10 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       WRITE (IU06,*) '  '
       WRITE (IU06,*) ' END OF USER INPUT PROTOCOLL'
       WRITE (IU06,'(''  NUMBER OF DIRECTION BINS  NANG = '',I4)') NANG
+      WRITE (IU06,'(''  NUMBER OF FREQUENCY BINS  NFRE_RED = '',I4)') NFRE_RED
       WRITE (IU06,'(''  NUMBER OF FREQUENCY BINS  NFRE = '',I4)') NFRE
+      WRITE (IU06,'(''  NPROMA_WAM = '',I8)') NPROMA_WAM
+      WRITE (IU06,'(''  NCHNK = '',I8)') NCHNK
 
 ! ----------------------------------------------------------------------
 
@@ -562,36 +548,53 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       IREAD=1
 
-      IF (.NOT. VARS_4D%LALLOC) CALL VARS_4D%ALLOC(UBOUNDS=[NPROMA_WAM,NANG,NFRE,NCHNK])
+      IF (LGRIBOUT) THEN
+        IJSG = IJFROMCHNK(1,1)
+        IJLG = IJSG + SUM(KIJL4CHNK) - 1
+        ALLOCATE(SPEC(IJSG:IJLG, NANG, NFRE))
+        WRITE(IU06,*) '  '
+        WRITE(IU06,*) ' SPEC ALLOCATED'
+        CALL FLUSH(IU06)
+      ELSE
+        IF (.NOT. ALLOCATED(FL1)) ALLOCATE(FL1(NPROMA_WAM,NANG,NFRE,NCHNK))
+        WRITE(IU06,*) '  '
+        WRITE(IU06,*) ' FL1 ALLOCATED'
+        CALL FLUSH(IU06)
+      ENDIF
 
-      IF (.NOT. FF_NOW%LALLOC) CALL FF_NOW%ALLOC(UBOUNDS=[NPROMA_WAM,NCHNK]) 
+      IF (IOPTI /= 3 .OR. .NOT.LGRIBOUT ) THEN
+        IF (.NOT. FF_NOW%LALLOC) CALL FF_NOW%ALLOC(UBOUNDS=[NPROMA_WAM,NCHNK]) 
+        WRITE(IU06,*) '  '
+        WRITE(IU06,*) ' FF_NOW ALLOCATED'
+        CALL FLUSH(IU06)
 
-      WSPMIN = 0.0_JWRB
-      DO ICHNK=1,NCHNK
-        FF_NOW%WSWAVE(:,ICHNK) = WSPMIN
-        FF_NOW%WDWAVE(:,ICHNK) = 0.0_JWRB
-        FF_NOW%USTRA(:,ICHNK) = 0.0_JWRB
-        FF_NOW%VSTRA(:,ICHNK) = 0.0_JWRB
-        FF_NOW%UFRIC(:,ICHNK) =  FF_NOW%WSWAVE(:,ICHNK)*0.035847_JWRB
-        FF_NOW%TAUW(:,ICHNK) = 0.1_JWRB*FF_NOW%UFRIC(:,ICHNK)
-        FF_NOW%TAUWDIR(:,ICHNK) = 0.0_JWRB
-        FF_NOW%Z0M(:,ICHNK) = 0.00001_JWRB
-        FF_NOW%CHRNCK(:,ICHNK) = 0.018_JWRB
-        FF_NOW%AIRD(:,ICHNK) = ROAIR
-        FF_NOW%WSTAR(:,ICHNK) = 0.0_JWRB
-        FF_NOW%CICOVER(:,ICHNK) = 0.0_JWRB
-        FF_NOW%CITHICK(:,ICHNK) = 0.0_JWRB
-      ENDDO
+        WSPMIN = 0.0_JWRB
+        DO ICHNK=1,NCHNK
+          FF_NOW%WSWAVE(:,ICHNK) = WSPMIN
+          FF_NOW%WDWAVE(:,ICHNK) = 0.0_JWRB
+          FF_NOW%USTRA(:,ICHNK) = 0.0_JWRB
+          FF_NOW%VSTRA(:,ICHNK) = 0.0_JWRB
+          FF_NOW%UFRIC(:,ICHNK) =  FF_NOW%WSWAVE(:,ICHNK)*0.035847_JWRB
+          FF_NOW%TAUW(:,ICHNK) = 0.1_JWRB*FF_NOW%UFRIC(:,ICHNK)
+          FF_NOW%TAUWDIR(:,ICHNK) = 0.0_JWRB
+          FF_NOW%Z0M(:,ICHNK) = 0.00001_JWRB
+          FF_NOW%CHRNCK(:,ICHNK) = 0.018_JWRB
+          FF_NOW%AIRD(:,ICHNK) = ROAIR
+          FF_NOW%WSTAR(:,ICHNK) = 0.0_JWRB
+          FF_NOW%CICOVER(:,ICHNK) = 0.0_JWRB
+          FF_NOW%CITHICK(:,ICHNK) = 0.0_JWRB
+        ENDDO
+      ENDIF
 
-      IF (.NOT. FF_NEXT%LALLOC) CALL FF_NEXT%ALLOC(UBOUNDS=[NPROMA_WAM,NCHNK])
 
-      IF (.NOT. NEMO2WAM%LALLOC) CALL NEMO2WAM%ALLOC(UBOUNDS=[NPROMA_WAM,NCHNK])
+      IF (IOPTI /= 3) THEN
+        IF (.NOT. FF_NEXT%LALLOC) CALL FF_NEXT%ALLOC(UBOUNDS=[NPROMA_WAM,NCHNK])
+        IF (.NOT. NEMO2WAM%LALLOC) CALL NEMO2WAM%ALLOC(UBOUNDS=[NPROMA_WAM,NCHNK])
+      ENDIF
 
       IF (IOPTI > 0 .AND. IOPTI /= 3) THEN
 
-!!!! might need to restict call when needed !!!
-!!! remove that call in 40R3
-      CALL CIGETDEAC
+        IF(LCIWA1) CALL CIGETDEAC
 
         LLINIT = .FALSE.
         LLINIT_FIELDG = .TRUE.
@@ -603,10 +606,20 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
      &                FIELDS, LWCUR, MASK_IN,                      &
      &                NEMO2WAM)
 
-      DO ICHNK=1,NCHNK
-        FF_NOW%TAUW(:,ICHNK) = 0.1_JWRB * FF_NOW%UFRIC(:,ICHNK)**2
-      ENDDO
+        IF (.NOT. ALLOCATED(WSWAVE)) ALLOCATE(WSWAVE(NPROMA_WAM,NCHNK))
+        IF (.NOT. ALLOCATED(WDWAVE)) ALLOCATE(WDWAVE(NPROMA_WAM,NCHNK))
 
+        DO ICHNK=1,NCHNK
+          FF_NOW%TAUW(:,ICHNK) = 0.1_JWRB * FF_NOW%UFRIC(:,ICHNK)**2
+          WSWAVE(:,ICHNK) = FF_NOW%WSWAVE(:,ICHNK)
+          WDWAVE(:,ICHNK) = FF_NOW%WDWAVE(:,ICHNK)
+        ENDDO
+
+        IF (FF_NEXT%LALLOC) CALL FF_NEXT%DEALLOC()
+        IF (NEMO2WAM%LALLOC) CALL NEMO2WAM%DEALLOC()
+        IF (LGRIBOUT) THEN
+          IF (FF_NOW%LALLOC) CALL FF_NOW%DEALLOC()
+        ENDIF
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -628,15 +641,44 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !        -------------------------------
 
       IF (IOPTI /= 3) THEN
+        IF (.NOT. ALLOCATED(FLCHNK)) ALLOCATE(FLCHNK(NPROMA_WAM, NANG, NFRE))
+        WRITE(IU06,*) '  '
+        WRITE(IU06,*) ' FLCHNK ALLOCATED'
+        CALL FLUSH(IU06)
+
         THETAQ = THETA * RAD
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK,KIJS,KIJL,IJSB,IJLB,M,K,IJ,FLCHNK)
         DO ICHNK = 1, NCHNK
           CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,                      &
      &                 FM, ALFA, GAMMA, SA, SB,                          &
-     &                 1, NPROMA_WAM, VARS_4D%FL1(:,:,:,ICHNK),              &
-     &                 FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK))
+     &                 1, NPROMA_WAM, FLCHNK,                            &
+     &                 WSWAVE(:,ICHNK), WDWAVE(:,ICHNK))
+
+          KIJS = 1
+          IJSB = IJFROMCHNK(KIJS, ICHNK)
+          KIJL = KIJL4CHNK(ICHNK)
+          IJLB = IJFROMCHNK(KIJL, ICHNK)
+
+          IF (LGRIBOUT) THEN
+            DO M = 1, NFRE
+              DO K = 1, NANG
+                SPEC(IJSB:IJLB,K,M) = FLCHNK(KIJS:KIJL,K,M)
+              ENDDO
+            ENDDO
+          ELSE
+            DO M=1,NFRE
+              DO K=1,NANG
+                FL1(KIJS:KIJL,K,M,ICHNK) = FLCHNK(KIJS:KIJL,K,M)
+              ENDDO
+            ENDDO
+          ENDIF
+
         ENDDO
 !$OMP END PARALLEL DO
+
+        DEALLOCATE(FLCHNK)
+        IF (ALLOCATED(WSWAVE)) DEALLOCATE(WSWAVE)
+        IF (ALLOCATED(WDWAVE)) DEALLOCATE(WDWAVE)
 
         CDTPRO  = ZERO
         CDATEWO = ZERO
@@ -645,38 +687,86 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       ELSE
 
+ !      USE FIELDG TO GET THE GRID POINTS COORDINATES
+        IF(.NOT. FIELDG%LALLOC) CALL FIELDG%ALLOC(LBOUNDS=[NXFFS, NYFFS], UBOUNDS=[NXFFE, NYFFE])
+        WRITE(IU06,*) '  '
+        WRITE(IU06,*) ' FIELDG ALLOCATED'
+        CALL FLUSH(IU06)
+
         LLINIALL=.FALSE.
         LLOCAL=.TRUE.
-        IF(.NOT. FIELDG%LALLOC) CALL FIELDG%ALLOC(LBOUNDS=[NXFFS, NYFFS], UBOUNDS=[NXFFE, NYFFE])
-
         CALL INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL, &
      &                   NXFFS, NXFFE, NYFFS, NYFFE, FIELDG)
 
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
+        IF (.NOT. ALLOCATED(XLON)) ALLOCATE(XLON(NPROMA_WAM,NCHNK))
+        IF (.NOT. ALLOCATED(YLAT)) ALLOCATE(YLAT(NPROMA_WAM,NCHNK))
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK,IPRM,IX,JY)
         DO ICHNK = 1, NCHNK
-          CALL MSWELL (1, NPROMA_WAM, BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK), NXFFS, NXFFE, NYFFS, &
-     &                 NYFFE, FIELDG, VARS_4D%FL1(:,:,:,ICHNK) )
+           DO IPRM = 1, NPROMA_WAM
+             IX = BLK2LOC%IFROMIJ(IPRM,ICHNK)
+             JY = BLK2LOC%JFROMIJ(IPRM,ICHNK)
+             XLON(IPRM,ICHNK)=FIELDG%XLON(IX,JY)
+             YLAT(IPRM,ICHNK)=FIELDG%YLAT(IX,JY)
+          ENDDO
         ENDDO
 !$OMP END PARALLEL DO
 
         CALL FIELDG%DEALLOC()
 
+!       SET THE SWELL SPECTRA
+        WRITE(IU06,*) '  '
+        WRITE(IU06,*) ' MSWELL STARTS'
+        CALL FLUSH(IU06)
 
-        IF (LLUNSTR) THEN
-#ifdef WAM_HAVE_UNWAM
+        IF (.NOT. ALLOCATED(FLCHNK)) ALLOCATE(FLCHNK(NPROMA_WAM, NANG, NFRE))
+
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK,KIJS,KIJL,IJSB,IJLB,M,K,IJ,FLCHNK)
+        DO ICHNK = 1, NCHNK
+
+          KIJS = 1
+          IJSB = IJFROMCHNK(KIJS, ICHNK)
+          KIJL = KIJL4CHNK(ICHNK)
+          IJLB = IJFROMCHNK(KIJL, ICHNK)
+
+          CALL MSWELL (1, NPROMA_WAM, XLON(:,ICHNK), YLAT(:,ICHNK), FLCHNK)
+
+          IF (LLUNSTR) THEN
 !         reset points with no flux out of the boundary to 0
-          DO ICHNK = 1, NCHNK
+#ifdef WAM_HAVE_UNWAM
             DO M=1,NFRE
               DO K=1,NANG
-                DO IPRM = 1, KIJL4CHNK(ICHNK)
-                  IJ = IJFROMCHNK(IPRM, ICHNK)
-                  VARS_4D%FL1(IPRM, K, M, ICHNK) = VARS_4D%FL1(IPRM, K, M, ICHNK) * IOBPD(K,IJ)
+                DO IJ=KIJS,KIJL
+                  FLCHNK(IJ,K,M) = FLCHNK(IJ,K,M) * IOBPD(K,IJ)
                 ENDDO
               ENDDO
             ENDDO
-          ENDDO
 #endif
-        ENDIF
+          ENDIF
+
+          IF (LGRIBOUT) THEN
+            DO M = 1, NFRE
+              DO K = 1, NANG
+                SPEC(IJSB:IJLB,K,M) = FLCHNK(KIJS:KIJL,K,M)
+              ENDDO
+            ENDDO
+          ELSE
+            DO M=1,NFRE
+              DO K=1,NANG
+                FL1(KIJS:KIJL,K,M,ICHNK) = FLCHNK(KIJS:KIJL,K,M)
+              ENDDO
+            ENDDO
+          ENDIF
+
+        ENDDO
+!$OMP END PARALLEL DO
+
+        WRITE(IU06,*) '  '
+        WRITE(IU06,*) ' MSWELL DONE'
+        CALL FLUSH(IU06)
+
+        DEALLOCATE(XLON)
+        DEALLOCATE(YLAT)
+        DEALLOCATE(FLCHNK)
 
       ENDIF
 
@@ -689,24 +779,25 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       IF (.NOT.LGRIBOUT) THEN
         CALL SAVSTRESS(WVENVI, FF_NOW, NBLKS, NBLKE, CDATEA, CDATEA) 
       ENDIF
-
+      IF (WVENVI%LALLOC) CALL WVENVI%DEALLOC()
+      IF (FF_NOW%LALLOC) CALL FF_NOW%DEALLOC()
 
 !     SPECTRA :
-      WRITE (IU06,*) ' SAVING SPECTRA '
+      WRITE (IU06,*) ' SAVING SPECTRA ',LGRIBOUT
       CALL FLUSH(IU06)
       IF (LGRIBOUT) THEN
 !       THE COLD START SPECTRA WILL BE SAVED AS GRIB FILES.
-        CDTPRO  = CDATEA
-        CALL OUTSPEC(VARS_4D%FL1, FF_NOW)
+        CDTPRO = CDATEA
 
+        CDATE=CDTPRO
+        CDATED=CDTPRO
+        IFCST = 0
+        CALL OUTWSPEC(IJSG, IJLG, SPEC, MARSTYPE, CDATE, CDATED, IFCST)
       ELSE
-        CALL SAVSPEC(VARS_4D%FL1, NBLKS, NBLKE, CDATEA, CDATEA, CDUM)
+        CALL SAVSPEC(FL1, NBLKS, NBLKE, CDATEA, CDATEA, CDUM)
       ENDIF
 
 ! ----------------------------------------------------------------------
-
-!*    9. END OF JOB: DELETE WORK FILES.
-!        ------------------------------
 
       WRITE (IU06,*) ' '
       WRITE (IU06,*) ' PROGRAM PRESET: ALL DONE'
