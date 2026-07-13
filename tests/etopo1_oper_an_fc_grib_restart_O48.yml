@@ -90,7 +90,7 @@ validation:
       time: 2023-01-01 06:00:00
       minimum: 0.4326539111291028E-02
       relative_tolerance: 1.e-14
-      hashes: ['0x3F9382527C89D368']
+      hashes: ['0x3F71B8B47FCE4627']
     - name: swh
       time: 2023-01-01 06:00:00
       maximum: 0.6512642507920472E+01 

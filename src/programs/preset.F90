@@ -4,7 +4,7 @@
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation
-! nor does it submit to any jurisdiction
+! nor does it submit to any jurisdiction.
 !
 
 PROGRAM preset
@@ -58,9 +58,9 @@ PROGRAM preset
       USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL     , NTOTIJ  ,    &
      &            NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK,             & 
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
-      USE YOWICE   , ONLY : LCIWA1
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LCIWA1
       USE YOWMAP   , ONLY : CLDOMAIN ,BLK2GLO  ,BLK2LOC  ,NGX      ,    &
-     &            NGY      ,NIBLO 
+     &            NGY      ,NIBLO
       USE YOWNEMOFLDS , ONLY : NEMO2WAM
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
@@ -137,7 +137,7 @@ PROGRAM preset
       REAL(KIND=JWRB) :: X4(2)
       REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: XLON, YLAT
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: WSWAVE, WDWAVE
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: CICOVER, WSWAVE, WDWAVE
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:) :: FLCHNK 
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:) :: SPEC
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:,:) :: FL1
@@ -167,6 +167,7 @@ PROGRAM preset
      &          CLDOMAIN,                                               &
      &          NANG, IFRE1, FR1, NFRE, NFRE_RED,                       &
      &          IOPTI, ITEST, ITESTB,                                   &
+     &          LICERUN, LMASKICE,                                      &
      &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH, SWAMPWIND ,      &
      &          USERID, RUNID, PATH, CPATH,                             &
      &          CDATEA, IDELWI, CLTUNIT,                                &
@@ -233,6 +234,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       CDATEA = ZERO
       CLTUNIT= 'H' 
       IDELWI =    0
+
+      LICERUN = .FALSE.
+      LMASKICE = .TRUE.
 
       LLUNSTR  =.FALSE.
       LPREPROC =.FALSE.
@@ -606,11 +610,13 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
      &                FIELDS, LWCUR, MASK_IN,                      &
      &                NEMO2WAM)
 
+        IF (.NOT. ALLOCATED(CICOVER)) ALLOCATE(CICOVER(NPROMA_WAM,NCHNK))
         IF (.NOT. ALLOCATED(WSWAVE)) ALLOCATE(WSWAVE(NPROMA_WAM,NCHNK))
         IF (.NOT. ALLOCATED(WDWAVE)) ALLOCATE(WDWAVE(NPROMA_WAM,NCHNK))
 
         DO ICHNK=1,NCHNK
           FF_NOW%TAUW(:,ICHNK) = 0.1_JWRB * FF_NOW%UFRIC(:,ICHNK)**2
+          CICOVER(:,ICHNK) = FF_NOW%CICOVER(:,ICHNK)
           WSWAVE(:,ICHNK) = FF_NOW%WSWAVE(:,ICHNK)
           WDWAVE(:,ICHNK) = FF_NOW%WDWAVE(:,ICHNK)
         ENDDO
@@ -644,6 +650,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         IF (.NOT. ALLOCATED(FLCHNK)) ALLOCATE(FLCHNK(NPROMA_WAM, NANG, NFRE))
         WRITE(IU06,*) '  '
         WRITE(IU06,*) ' FLCHNK ALLOCATED'
+        WRITE(IU06,*) ' NCHNK = ', NCHNK
         CALL FLUSH(IU06)
 
         THETAQ = THETA * RAD
@@ -652,6 +659,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
           CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,                      &
      &                 FM, ALFA, GAMMA, SA, SB,                          &
      &                 1, NPROMA_WAM, FLCHNK,                            &
+     &                 CICOVER(:,ICHNK),                                 &
      &                 WSWAVE(:,ICHNK), WDWAVE(:,ICHNK))
 
           KIJS = 1
@@ -677,6 +685,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !$OMP END PARALLEL DO
 
         DEALLOCATE(FLCHNK)
+        IF (ALLOCATED(CICOVER)) DEALLOCATE(CICOVER)
         IF (ALLOCATED(WSWAVE)) DEALLOCATE(WSWAVE)
         IF (ALLOCATED(WDWAVE)) DEALLOCATE(WDWAVE)
 

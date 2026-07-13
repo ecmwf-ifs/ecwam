@@ -165,6 +165,8 @@ fi
 llunstr=F
 lgribout=$(read_config lgribout --default=F)
 
+nproma=$(read_config nproma --default=24)
+
 assert_executable_is_available ${PRESET}-${prec} || abort 4
 
 # Directory where the output from this job will be saved
@@ -228,7 +230,7 @@ cat > PREINFO <<EOF
  NFRE_RED  = ${wamnfre}
  FR1       = ${fr1}
  IFRE1     = ${ifre1}
-
+ NPROMA_WAM = ${nproma}
 /
 EOF
 
