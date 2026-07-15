@@ -29,7 +29,7 @@ jobs:
       fail-fast: false  # false: try to complete all jobs
 
       matrix:
-        build_type: [Bit]
+        build_type: [Bit, Debug]
         prec: ['DP', 'SP']
         name:
           - linux gnu-14
@@ -214,7 +214,7 @@ jobs:
           ecmwf-ifs/field_api: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_ACC=OFF -DENABLE_SINGLE_PRECISION=${{ matrix.prec == 'SP' }} -DENABLE_DOUBLE_PRECISION=${{ matrix.prec == 'DP' }}"
           ecmwf-ifs/loki: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF"
         cmake_options: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.cmake_options }} -DENABLE_MPI=ON -DENABLE_LOKI=ON -DLOKI_MODE=idem-stack -DENABLE_SINGLE_PRECISION=${{ matrix.prec == 'SP' }}"
-        ctest_options: "${{ matrix.ctest_options }}"
+        ctest_options: "${{ matrix.ctest_options }} ${{ matrix.build_type == 'Debug' && '-R cy50r1' || '' }}"
 
     - name: Verify tools
       run: |
