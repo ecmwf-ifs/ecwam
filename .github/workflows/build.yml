@@ -35,6 +35,7 @@ jobs:
           - linux gnu-14
           - linux nvhpc-23.5
           - linux intel-classic
+          - linux intel-modern
           - macos
 
         include:
@@ -65,6 +66,15 @@ jobs:
             compiler_cxx: icpc
             compiler_fc: ifort
             python-version: '3.8'
+            caching: true
+
+          - name: linux intel-modern
+            os: ubuntu-24.04
+            compiler: intel-modern
+            compiler_cc: icx
+            compiler_cxx: icpx
+            compiler_fc: ifx
+            python-version: '3.11'
             caching: true
 
           - name: macos
@@ -163,7 +173,7 @@ jobs:
     - name: Install Intel oneAPI compiler
       if: contains( matrix.compiler, 'intel' )
       run: |
-        ${ECWAM_TOOLS}/install-intel-oneapi.sh
+        ${ECWAM_TOOLS}/install-intel-oneapi.sh --compiler ${{ matrix.compiler }}
         source /opt/intel/oneapi/setvars.sh
         printenv >> $GITHUB_ENV
         echo "CACHE_SUFFIX=$CC-$($CC -dumpversion)" >> $GITHUB_ENV
