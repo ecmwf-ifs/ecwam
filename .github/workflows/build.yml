@@ -32,22 +32,12 @@ jobs:
         build_type: [Bit]
         prec: ['DP', 'SP']
         name:
-          - linux gnu-10
           - linux gnu-14
           - linux nvhpc-25.9
           - linux intel-classic
           - macos
 
         include:
-
-          - name: linux gnu-10
-            os: ubuntu-22.04
-            compiler: gnu-10
-            compiler_cc: gcc-10
-            compiler_cxx: g++-10
-            compiler_fc: gfortran-10
-            python-version: '3.8'
-            caching: true
 
           - name: linux gnu-14
             os: ubuntu-24.04
