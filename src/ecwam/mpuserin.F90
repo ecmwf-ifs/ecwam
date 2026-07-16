@@ -214,7 +214,7 @@
      &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,ALTGRTHRSH,HSALTCUT, &
      &   ISTREAM, NLOCGRB, IREFDATE,                                    &
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,                           &
-     &   LGUST, LADEN, LRELWIND, LALTGRDOUT, LSUBGRID, LALTPAS,         &
+     &   LGUST, LADEN, LRELWIND, RWFAC, LALTGRDOUT, LSUBGRID, LALTPAS,  &
      &   LLSOURCE,                                                      &
      &   LNSESTART,                                                     &
      &   LLUNSTR, LPREPROC, LVECTOR, IVECTOR,                           &
@@ -439,8 +439,10 @@
 !                (SEE GRFIELD). 
 !     LGUST:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO GUSTINESS 
 !     LADEN:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO AIR DENSITY
-!     LRELWIND: IF TRUE THEN RELATIVE WINDS ARE USED WITH RESPECT TO
-!               SURFACE CURRENTS.
+!     LRELWIND: IF TRUE THEN RELATIVE WINDS ARE USED WITH RESPECT TO SURFACE CURRENTS.
+!     RWFAC     REDUCTION FACTOR OF THE SURFACE CURRENTS
+!               WHEN USED TO COMPUTE THE RELATIVE WINDS
+!               0 <= RWFAC <= 1
 !     LLWSWAVE: FLAG USE TO ACTIVATE USE OF WAVE PARAMETER WIND SPEED AS
 !               INPUT TO CONSTRUCT THE WIND FORCING - UNCOUPLED RUNS ONLY
 !     LLWDWAVE: FLAG USE TO ACTIVATE USE OF WAVE PARAMETER WIND DIRECTION
@@ -569,6 +571,7 @@
       IDELWI    =  0
       IDELALT   =  21600 
       IDELINT   =  0
+      IDELRES   =  0
 
       IDELCUR   =  0
       CDATECURA = ZERO
@@ -591,7 +594,7 @@
 
       XKMSS_CUTOFF = 0.0_JWRB
 
-      LSECONDORDER = .TRUE.
+      LSECONDORDER = .FALSE.
 
       LFDB      = .TRUE. 
       LGRIBIN   = .TRUE. 
@@ -605,7 +608,7 @@
       ICASE     = 1 
       ISHALLO   = 0   !! depricated 
       IPHYS     = 1
-      ISNONLIN  = 1 
+      ISNONLIN  = 0 
       IDAMPING  = 1 
       IPROPAGS  = 0 
       IREFRA    = 0 
@@ -740,7 +743,7 @@
 
       LWNEMOCOUDEBUG = .FALSE.
 
-      LLCAPCHNK = .FALSE.
+      LLCAPCHNK = .TRUE.
       LLGCBZ0 = .TRUE.
       LLNORMAGAM = .TRUE.
 
@@ -769,11 +772,11 @@
 
       LICERUN = .TRUE.
 
-      LCIWA1 = .TRUE.
+      LCIWA1 = .FALSE.
 
       LCIWA2 = .FALSE.
 
-      LCIWA3 = .FALSE.    
+      LCIWA3 = .TRUE.    
 
       LCISCAL = .FALSE.      
 
@@ -796,6 +799,8 @@
       LNSESTART = .FALSE.
 
       LRELWIND = .TRUE.
+      RWFAC = 0.5_JWRB
+
 
       NDELW_LST = 0
 

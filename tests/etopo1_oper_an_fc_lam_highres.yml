@@ -1,23 +1,26 @@
-grid:        O48
-cldomain:     g
-directions:  12
-frequencies: 25
-fr1:         4.177248E-02
+grid:        lam_highres 
+cldomain:     m
+directions:  36
+frequencies: 36
+fr1:         0.055
 ifre1:       1
-bathymetry:  aqua
+bathymetry:  ETOPO1
 lsubgrid:    F
 
 advection:
     irefra: 0
-    timestep: 900
+    timestep: 90
+    fast_waves:
+        timestep: 45
+        max_frequency: 5
 physics:
     iphys: 1
-    timestep: 900
+    timestep: 180
     llgcbz0: T
     llnormagam: T
-    lmaskice: T
-    lciwa3: F
-    lciscal: F
+    lmaskice: F
+    lciwa3: T
+    lciscal: T
 
 analysis.begin: 2022-12-31 12:00:00
 analysis.end:   2023-01-01 00:00:00
@@ -32,7 +35,9 @@ lgribin: F
 lgribout: F
 
 forcings:
-    file:  data/forcings/oper_an_12h_fc_2023010100_36h_O48.grib
+    sea_ice: False 
+
+    file:  data/forcings/oper_an_12h_fc_2023010100_36h_O1280.grib
 
     at:
       - begin:     ${analysis.begin}
@@ -40,7 +45,7 @@ forcings:
         timestep:  06:00
       - begin:     ${forecast.begin}
         end:       ${forecast.end}
-        timestep:  01:00 
+        timestep:  01:00
 
 output:
     fields:
@@ -69,63 +74,29 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 3.801328565519289e-01 
+      average: 2.779599034388384e-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD85418C2C1A355']
+      hashes: ['0x3FD1CA1855B79FCE']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 9.260182952917514e-01
-      relative_tolerance: 1.e-14
-      hashes: ['0x3FEDA1F11EB8D2E3']
+      average: 2.420364921801725e-01
+      hashes: ['0x3FCEFB0D412D1B77']
 
     # 6h into forcast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 1.059431637034954e+00 
+      average: 2.628913168004307e-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF0F36E96969B1D']
+      hashes: ['0x3FD0D3361A03DABB']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 1.932673932890733e-02
+      minimum: 1.310494308392263e-02 
       relative_tolerance: 1.e-14
-      hashes: ['0x3F93CA63856C8470']
+      hashes: ['0x3F8AD6C3AFB0ECC2']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 6.511461310821066e+00 
+      maximum: 9.323344269830584e-01
       relative_tolerance: 1.e-14
-      hashes: ['0x401A0BBC838C9545']
-
-  single_precision:
-
-    # initial analysis time
-    - name: swh
-      time: 2022-12-31 12:00:00
-      average: 0.1305477499961853E+01
-      relative_tolerance: 1.e-6
-      hashes: ['0x3FF4E33C60000000']
-
-    # initial forecast time
-    - name: swh
-      time: 2023-01-01 00:00:00
-      average: 0.1425064325332642E+01
-      relative_tolerance: 1.e-6
-      hashes: ['0x3FF6CD1040000000']
-
-    # 6h into forcast
-    - name: swh
-      time: 2023-01-01 06:00:00
-      average: 0.1471550345420837E+01
-      relative_tolerance: 1.e-6
-      hashes: ['0x3FF78B7860000000']
-    - name: swh
-      time: 2023-01-01 06:00:00
-      minimum: 0.1756713353097439E-01
-      relative_tolerance: 1.e-6
-      hashes: ['0x3F91FD1E60000000']
-    - name: swh
-      time: 2023-01-01 06:00:00
-      maximum: 0.6986917018890381E+01
-      relative_tolerance: 1.e-6
-      hashes: ['0x401BF29A60000000']
+      hashes: ['0x3FEDD5AF021A77E5']

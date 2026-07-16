@@ -1,12 +1,23 @@
 grid:        O320
+cldomain:     g
 directions:  24
 frequencies: 29
+fr1:         4.177248E-02 
+ifre1:       3
 bathymetry:  ETOPO1
+lsubgrid:    T
 
 advection:
-    timestep: 900
+    irefra: 2
+    timestep: 450
 physics:
+    iphys: 1
     timestep: 900
+    llgcbz0: T
+    llnormagam: T
+    lmaskice: F
+    lciwa3: T
+    lciscal: T
 
 analysis.begin: 2022-12-31 12:00:00
 analysis.end:   2023-01-01 00:00:00
@@ -17,6 +28,8 @@ begin: ${analysis.begin}
 end:   ${forecast.end}
 
 nproma: 64
+lgribin: F
+lgribout: F
 
 forcings:
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O320.grib
@@ -29,6 +42,10 @@ forcings:
         end:       ${forecast.end}
         timestep:  01:00
 
+currents:
+    file:  data/forcings/daily_average_surface_currents_ORAS6_20221231_20230102_O320.grib
+    input_step: 86400 
+
 output:
     fields:
         name:
@@ -39,6 +56,67 @@ output:
           - dwi         # 10 metre wind direction
           - cdww        # Coefficient of drag with waves
           - wind        # 10 metre wind speed
+          - msqs        # Mean square slope of waves
+          - shww        # Significant height of wind waves
+          - shts        # Significant height of total swell
+          - mdww        # Mean direction of wind waves    
+          - mdts        # Mean direction of total swell
+          - mpww        # Mean period of wind waves
+          - mpts        # Mean period of total swell
+          - mp1         # Mean wave period based on first moment
+          - mp2         # Mean zero-crossing wave period
+          - wdw         # Wave spectral directional width
+          - p1ww        # Mean wave period based on first moment for wind waves
+          - p1ps        # Mean wave period based on first moment for swell
+          - p2ww        # Mean wave period based on second moment for wind waves
+          - p2ps        # Mean wave period based on second moment for swell
+          - dwww        # Wave spectral directional width for wind waves
+          - dwps        # Wave spectral directional width for swell
+          - wsk         # Wave spectral kurtosis
+          - bfi         # Benjamin-Feir index
+          - wsp         # Wave spectral peakedness
+          - wmb         # Model bathymetry
+          - hmax        # Maximum individual wave height
+          - tmax        # Period corresponding to maximum individual wave height
+          - ust         # U-component stokes drift
+          - vst         # V-component stokes drift
+          - phioc       # Normalised energy flux to ocean
+          - phiaw       # Normalised energy flux to waves
+          - tauoc       # Normalised momentum flux to ocean
+          - swh1        # Swell partition 1 wave height
+          - mwd1        # Swell partition 1 direction
+          - mwp1        # Swell partition 1 mean period
+          - swh2        # Swell partition 2 wave height
+          - mwd2        # Swell partition 2 direction
+          - mwp2        # Swell partition 2 mean period
+          - swh3        # Swell partition 3 wave height
+          - mwd3        # Swell partition 3 direction
+          - mwp3        # Swell partition 3 mean period
+          - sh10        # Wave height with period > 10s
+          - wss         # Spectral skewness
+          - wefxm       # Wave energy flux magnitude
+          - wefxd       # Wave energy flux direction
+          - h1012       # Significant wave height 10<=T<=12
+          - h1214       # Significant wave height 12<=T<=14
+          - h1417       # Significant wave height 14<=T<=17
+          - h1721       # Significant wave height 17<=T<=21
+          - h2125       # Significant wave height 21<=T<=25
+          - h2530       # Significant wave height 25<=T<=30
+          - weta        # Wave induced sea level correction
+          - wraf        # Spectral width index
+          - wnslc       # Number of freak waves events
+          - utaua       # U-component atmospheric stress
+          - vtaua       # V-component atmospheric stress
+          - utauo       # U-component stress into oceans
+          - vtauo       # V-component stress into oceans
+          - wphio       # Turbulence energy flux into oceans
+          - tdcmax      # Time domain maximum crest height
+          - tdhmax      # Time domain maximum wave height
+          - stcmax      # Space time maximum crest height
+          - sthmax      # Space time maximum wave height
+          - sibm        # Sea ice break up memory
+          - xwrs        # U-component wave radiative stress to sea ice
+          - ywrs        # V-component wave radiative stress to sea ice
         format: grib    # (default : grib) or binary
         at:
           - timestep: 01:00
@@ -46,7 +124,7 @@ output:
     restart:
         format: binary # (default : binary) or grib
         at:
-          - time: ${end}
+          - time: ${analysis.end}
 
 
 validation:
@@ -56,33 +134,33 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 0.1334550046812762E+01
+      average: 0.3873838464703652E+00 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF55A51265EFA31']
+      hashes: ['0x3FD8CAE59DE5B098']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1522689283126691E+01
+      average: 0.1055436157420307E+01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF85CEF700FFB2D']
+      hashes: ['0x3FF0E31106322D94']
 
-    # 6h into forcast
+    # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1602300108466806E+01
+      average: 0.1216412130066364E+01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF9A3057043DFFE']
+      hashes: ['0x3FF3766C90D17BD2']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.1582178271632631E-01
+      minimum: 0.4390841548729450E-02
       relative_tolerance: 1.e-14
-      hashes: ['0x3F903395DD52FC09']
+      hashes: ['0x3F71FC218DA8CCD8']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.7470872982664355E+01
+      maximum: 0.6931936421923670E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x401DE22C86F4741A']
+      hashes: ['0x401BBA4D8A987424']
 
   single_precision:
 
@@ -96,23 +174,23 @@ validation:
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1522688508033752E+01
+      average: 0.1522839903831482E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF85CEEA0000000']
+      hashes: ['0x3FF85D8D60000000']
 
-    # 6h into forcast
+    # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1602300763130188E+01
+      average: 0.1602508664131165E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF9A30620000000']
+      hashes: ['0x3FF9A3E020000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.1582174561917782E-01
+      minimum: 0.1582271233201027E-01
       relative_tolerance: 1.e-6
-      hashes: ['0x3F90339360000000']
+      hashes: ['0x3F9033D440000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.7470870494842529E+01
+      maximum: 0.7461367130279541E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x401DE22BE0000000']
+      hashes: ['0x401DD870A0000000']
