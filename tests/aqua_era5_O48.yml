@@ -1,19 +1,30 @@
 grid:        O48
+cldomain:     g
 directions:  12
 frequencies: 25
 fr1:         4.177248E-02
 ifre1:       1
 bathymetry:  aqua
+lsubgrid:    F
 
 advection:
+    irefra: 0
     timestep: 1200
 physics:
+    iphys: 1
     timestep: 1200
+    llgcbz0: T
+    llnormagam: T
+    lmaskice: T
+    lciwa3: F
+    lciscal: F
 
 begin:     2022-01-01 00:00:00
 end:       2022-01-01 06:00:00
 
 nproma: 24
+lgribin: F
+lgribout: F
 
 forcings:
     file:  data/forcings/era5_2022010100_36h_O48.grib
@@ -26,6 +37,12 @@ output:
     fields:
         name:
           - swh         # Significant height of combined wind waves and swell
+          - mwd         # Mean wave direction
+          - mwp         # Mean wave period
+          - pp1d        # Peak wave period
+          - dwi         # 10 metre wind direction
+          - cdww        # Coefficient of drag with waves
+          - wind        # 10 metre wind speed
         format: grib    # (default : grib) or binary
         at:
           - timestep: 01:00
@@ -43,33 +60,33 @@ validation:
     # initial time
     - name: swh
       time: 2022-01-01 00:00:00
-      average: 0.1297292357578561E+01
+      average: 3.759515218870229e-01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF4C1B5A1926918']
+      hashes: ['0x3FD80F96F8D8B75D']
 
     # After 1h
     - name: swh
       time: 2022-01-01 01:00:00
-      average: 0.1310657012118055E+01
+      average: 4.618561980882285e-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF4F8737CB51F37']
+      hashes: ['0x3FDD8F0D4C8F9B0F']
 
     # After 6h
     - name: swh
       time: 2022-01-01 06:00:00
-      average: 0.1349752334552524E+01
+      average: 7.045946694407140e-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF59895E769A4D3']
+      hashes: ['0x3FE68C0A1EC5E1AB']
     - name: swh
       time: 2022-01-01 06:00:00
-      minimum: 0.8578696971216837E+00
+      minimum: 2.176688382325517e-01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FEB73AB26ABBEEE']
+      hashes: ['0x3FCBDC928EC89785']
     - name: swh
       time: 2022-01-01 06:00:00
-      maximum: 0.6566551146080710E+01
+      maximum: 4.283898323513900e+00 
       relative_tolerance: 1.e-14
-      hashes: ['0x401A4425FBCFB63D']
+      hashes: ['0x401122B63DFB8695']
 
   single_precision:
 

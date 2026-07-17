@@ -50,7 +50,7 @@ parameters:
         awh:
                 index: 17
                 description: Altimeter wave height
-        acwh':
+        acwh:
                 index: 18
                 description: Corrected altimeter wave height
         arrc:
@@ -185,7 +185,7 @@ parameters:
         wefxm:
                 index: 62
                 description: Wave energy flux magnitude
-        wefxd':
+        wefxd:
                 index: 63
                 description: Wave energy flux direction
         h1012:

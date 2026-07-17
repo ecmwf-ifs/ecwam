@@ -77,7 +77,6 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
       USE YOWPCONS , ONLY : ZMISS
       USE YOWTEST  , ONLY : IU06
       USE YOWCOUP  , ONLY : LWCOU    ,LWNEMOCOUCIC, LWNEMOCOUCIT
-      USE YOWNEMOFLDS, ONLY : LNEMOICEREST
 
       USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK, JPHOOK
 
@@ -198,11 +197,7 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
             IY = JFROMIJ(IJ)
             IF (FIELDG%LKFR(IX,IY) <= 0.0_JWRB ) THEN
 !             if lake cover = 0, we assume open ocean point, then get sea ice thickness directly from NEMO 
-              IF (LNEMOICEREST) THEN
-                CITH(IJ)=NEMOCITHICK(IJ)
-              ELSE
-                CITH(IJ)=CICVR(IJ)*NEMOCITHICK(IJ)
-              ENDIF
+              CITH(IJ)=NEMOCITHICK(IJ)
             ELSE
 !           We should get ice thickness information from atmopsheric model
 !           but it is not yet coded. For now, parameterise it from the cover...
@@ -215,15 +210,9 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
           ENDDO
 
         ELSE
-          IF (LNEMOICEREST) THEN
-            DO IJ=KIJS,KIJL
-               CITH(IJ)=NEMOCITHICK(IJ)
-            ENDDO
-          ELSE
-            DO IJ=KIJS,KIJL
-               CITH(IJ)=CICVR(IJ)*NEMOCITHICK(IJ)
-            ENDDO
-          ENDIF
+          DO IJ=KIJS,KIJL
+            CITH(IJ)=NEMOCITHICK(IJ)
+          ENDDO
         ENDIF
 
 !       CONSISTENCY CHECK:

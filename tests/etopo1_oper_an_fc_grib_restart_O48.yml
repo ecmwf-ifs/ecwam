@@ -52,6 +52,67 @@ output:
           - dwi         # 10 metre wind direction
           - cdww        # Coefficient of drag with waves
           - wind        # 10 metre wind speed
+          - msqs        # Mean square slope of waves
+          - shww        # Significant height of wind waves
+          - shts        # Significant height of total swell
+          - mdww        # Mean direction of wind waves    
+          - mdts        # Mean direction of total swell
+          - mpww        # Mean period of wind waves
+          - mpts        # Mean period of total swell
+          - mp1         # Mean wave period based on first moment
+          - mp2         # Mean zero-crossing wave period
+          - wdw         # Wave spectral directional width
+          - p1ww        # Mean wave period based on first moment for wind waves
+          - p1ps        # Mean wave period based on first moment for swell
+          - p2ww        # Mean wave period based on second moment for wind waves
+          - p2ps        # Mean wave period based on second moment for swell
+          - dwww        # Wave spectral directional width for wind waves
+          - dwps        # Wave spectral directional width for swell
+          - wsk         # Wave spectral kurtosis
+          - bfi         # Benjamin-Feir index
+          - wsp         # Wave spectral peakedness
+          - wmb         # Model bathymetry
+          - hmax        # Maximum individual wave height
+          - tmax        # Period corresponding to maximum individual wave height
+          - ust         # U-component stokes drift
+          - vst         # V-component stokes drift
+          - phioc       # Normalised energy flux to ocean
+          - phiaw       # Normalised energy flux to waves
+          - tauoc       # Normalised momentum flux to ocean
+          - swh1        # Swell partition 1 wave height
+          - mwd1        # Swell partition 1 direction
+          - mwp1        # Swell partition 1 mean period
+          - swh2        # Swell partition 2 wave height
+          - mwd2        # Swell partition 2 direction
+          - mwp2        # Swell partition 2 mean period
+          - swh3        # Swell partition 3 wave height
+          - mwd3        # Swell partition 3 direction
+          - mwp3        # Swell partition 3 mean period
+          - sh10        # Wave height with period > 10s
+          - wss         # Spectral skewness
+          - wefxm       # Wave energy flux magnitude
+          - wefxd       # Wave energy flux direction
+          - h1012       # Significant wave height 10<=T<=12
+          - h1214       # Significant wave height 12<=T<=14
+          - h1417       # Significant wave height 14<=T<=17
+          - h1721       # Significant wave height 17<=T<=21
+          - h2125       # Significant wave height 21<=T<=25
+          - h2530       # Significant wave height 25<=T<=30
+          - weta        # Wave induced sea level correction
+          - wraf        # Spectral width index
+          - wnslc       # Number of freak waves events
+          - utaua       # U-component atmospheric stress
+          - vtaua       # V-component atmospheric stress
+          - utauo       # U-component stress into oceans
+          - vtauo       # V-component stress into oceans
+          - wphio       # Turbulence energy flux into oceans
+          - tdcmax      # Time domain maximum crest height
+          - tdhmax      # Time domain maximum wave height
+          - stcmax      # Space time maximum crest height
+          - sthmax      # Space time maximum wave height
+          - sibm        # Sea ice break up memory
+          - xwrs        # U-component wave radiative stress to sea ice
+          - ywrs        # V-component wave radiative stress to sea ice
         format: grib    # (default : grib) or binary
         at:
           - timestep: 01:00

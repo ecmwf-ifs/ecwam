@@ -484,10 +484,10 @@ PROGRAM intwaminput
           CALL IGRIB_GET_VALUE(KGRIB_HANDLE, 'frequencyScalingFactor',IFRESCALING)
           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'scaledFrequencies',SCFR)
         ELSE
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'scaledValuesOfWaveDirections',KANG)
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberOfWaveDirections',KANG)
           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberOfWaveFrequencies',KFRE)
           IF (.NOT.ALLOCATED(SCFR)) ALLOCATE(SCFR(KFRE))
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE, 'scaleFactorOfWaveFrequencies',IFRESCALING)
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'scaleFactorOfWaveFrequencies',IFRESCALING)
           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'scaledValuesOfWaveFrequencies',SCFR)
         ENDIF
 
