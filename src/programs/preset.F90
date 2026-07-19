@@ -85,6 +85,7 @@ PROGRAM preset
       USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL     , NTOTIJ  ,    &
      &            NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK,             & 
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE
       USE YOWMAP   , ONLY : CLDOMAIN ,BLK2GLO   ,IRGG    ,AMOWEP   ,    &
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,    &
      &            BLK2LOC  ,NGX      ,NGY      ,NIBLO
@@ -186,6 +187,7 @@ PROGRAM preset
      &          CLDOMAIN,                                               &
      &          NANG, IFRE1, FR1, NFRE, NFRE_RED,                       &
      &          IOPTI, ITEST, ITESTB,                                   &
+     &          LICERUN, LMASKICE,                                      &
      &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH, SWAMPWIND ,      &
      &          USERID, RUNID, PATH, CPATH,                             &
      &          CDATEA, IDELWI, CLTUNIT,                                &
@@ -252,6 +254,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       CDATEA = ZERO
       CLTUNIT= 'H' 
       IDELWI =    0
+
+      LICERUN = .FALSE.
+      LMASKICE = .TRUE.
 
       LLUNSTR  =.FALSE.
       LPREPROC =.FALSE.
@@ -633,7 +638,8 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         DO ICHNK = 1, NCHNK
           CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,                      &
      &                 FM, ALFA, GAMMA, SA, SB,                          &
-     &                 1, NPROMA_WAM, VARS_4D%FL1(:,:,:,ICHNK),              &
+     &                 1, NPROMA_WAM, VARS_4D%FL1(:,:,:,ICHNK),          &
+     &                 FF_NOW%CICOVER(:,ICHNK),                          &
      &                 FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK))
         ENDDO
 !$OMP END PARALLEL DO

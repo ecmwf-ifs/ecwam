@@ -1,21 +1,21 @@
-grid:        O640
-cldomain:     g
+grid:        lam_highres 
+cldomain:     m
 directions:  36
-frequencies: 29
-fr1:         4.177248E-02 
-ifre1:       3
+frequencies: 36
+fr1:         0.055
+ifre1:       1
 bathymetry:  ETOPO1
-lsubgrid:    T
+lsubgrid:    F
 
 advection:
-    irefra: 2
-    timestep: 720 
+    irefra: 0
+    timestep: 120
     fast_waves:
-        timestep: 360
-        max_frequency: 4
+        timestep: 60
+        max_frequency: 5
 physics:
     iphys: 1
-    timestep: 720
+    timestep: 240
     llgcbz0: T
     llnormagam: T
     lmaskice: F
@@ -35,7 +35,9 @@ lgribin: F
 lgribout: F
 
 forcings:
-    file:  data/forcings/oper_an_12h_fc_2023010100_36h_O640.grib
+    sea_ice: False 
+
+    file:  data/forcings/oper_an_12h_fc_2023010100_36h_O1280.grib
 
     at:
       - begin:     ${analysis.begin}
@@ -44,10 +46,6 @@ forcings:
       - begin:     ${forecast.begin}
         end:       ${forecast.end}
         timestep:  01:00
-
-currents:
-    file:  data/forcings/daily_average_surface_currents_ORAS6_20221231_20230102_O640.grib
-    input_step: 86400 
 
 output:
     fields:
@@ -76,30 +74,29 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 3.875267447586148e-01 
+      average: 3.188565402145367e-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD8CD3CF9C411DC']
+      hashes: ['0x3FD46825431593C4']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 1.054427510278385e+00 
-      relative_tolerance: 1.e-14
-      hashes: ['0x3FF0DEEF618A5FB6']
+      average: 2.297867064718079e-01
+      hashes: ['0x3FCD69A69AAD0D3D']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 1.213609084519249e+00 
+      average: 2.531205436037192e-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF36AF15C023804']
+      hashes: ['0x3FD03320822E515C']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.4387775653038153E-02
+      minimum: 1.261118225844372e-02
       relative_tolerance: 1.e-14
-      hashes: ['0x3F71F8EA8EE967F6']
+      hashes: ['0x3F89D3E43AE94A44']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.7122682487149604E+01
+      maximum: 9.275915911218660e-01
       relative_tolerance: 1.e-14
-      hashes: ['0x401C7DA07A5865E0']
+      hashes: ['0x3FEDAED48F7D3772']

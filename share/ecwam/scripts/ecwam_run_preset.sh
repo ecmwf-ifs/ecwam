@@ -145,16 +145,28 @@ begoffo=$(read_config forcings.at[1].begin --format="%Y%m%d%H%M%S" --default=${e
 
 # MODEL SETUP:
 ##############
+cldomain=$(read_config cldomain --default=g)
 wamnang=$(read_config directions)
 wamnfre=$(read_config frequencies)
+fr1=$(read_config fr1 --default=4.177248E-02)
+ifre1=$(read_config ifre1 --default=1)
 
 forcings_file=$(read_config forcings.file)
 
 opti=1
-fetch=50000.0
-fmax=0.2000000
+fetch=1200.0
+fmax=0.4000000
+lmaskice=$(read_config physics.lmaskice --default=$(read_config lmaskice --default=T))
+
+if [[ $(read_config forcings.sea_ice --default=True) == "True" ]] ; then
+  licerun=T
+else
+  licerun=F
+fi
 llunstr=F
-lgribout=F
+lgribout=$(read_config lgribout --default=F)
+
+nproma=$(read_config nproma --default=24)
 
 assert_executable_is_available ${PRESET}-${prec} || abort 4
 
@@ -192,6 +204,7 @@ ln -s ${DATA_DIR}/${forcings_file} sfcwindin
 cat > PREINFO <<EOF
 &NALINE
  HEADER    = " WAVE MODEL INITIALISATION "
+ CLDOMAIN  = "${cldomain}",
  CPATH     = "${WORK_DIR}"
  CDATEA    = "${begofrn}"
  IOPTI     = ${opti}
@@ -204,6 +217,8 @@ cat > PREINFO <<EOF
  SB        = 9.000000E-02
  THETA     = 0.0
  FETCH     = ${fetch}
+ LICERUN   = ${licerun},
+ LMASKICE  = ${lmaskice},
  LLUNSTR   = ${llunstr}
  ! IDELWI    =  21600
  CLTUNIT   = "S"
@@ -214,6 +229,9 @@ cat > PREINFO <<EOF
  NANG      = ${wamnang}
  NFRE      = 36
  NFRE_RED  = ${wamnfre}
+ FR1       = ${fr1}
+ IFRE1     = ${ifre1}
+ NPROMA_WAM = ${nproma}
 /
 EOF
 
