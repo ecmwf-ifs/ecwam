@@ -256,7 +256,7 @@ EOF
   else
     for ip in 0 1 2
     do
-      echo "llobstrout was set to true. no need for this file" > ${DATA_DIR}/data/bathymetry/${subgrid_files[$ip]}
+      echo "llobstrout was set to false. No need for this file" > ${DATA_DIR}/data/bathymetry/${subgrid_files[$ip]}
     done
   fi
 

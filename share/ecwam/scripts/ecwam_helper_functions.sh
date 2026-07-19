@@ -96,11 +96,13 @@ function find_preproc_files() {
 }
 
 function find_preset_files() {
-  date=${1}
-  header_list=${2}
+  local date="$1"
+  shift   # remove first argument
+  local -a header_list=("$@")  # remaining arguments become a list
+
   SEARCH_LOCATION=${ECWAM_PRESET_RUN_DIR:-${RUN_DIR}}
   found=true
-  for header in "${header_list}"; do
+  for header in "${header_list[@]}"; do
     file="restart/${header}${date}_000000000000"
     if [[ ! ( -r ${SEARCH_LOCATION}/${file} ) ]] ; then
       found=false
@@ -108,7 +110,7 @@ function find_preset_files() {
   done
   if $found ; then
     mkdir -p ${RUN_DIR}/restart
-    for header in "${header_list}"; do
+    for header in "${header_list[@]}"; do
       file="restart/${header}${date}_000000000000"
       if [[ ! ( -r ${RUN_DIR}/${file} ) ]] ; then
         echo "        ln -sf ${SEARCH_LOCATION}/${file} ${RUN_DIR}/${file}"
@@ -118,7 +120,7 @@ function find_preset_files() {
   else
     builtin echo
     builtin echo "ERROR: Initial condition files not found in ${SEARCH_LOCATION}:"
-    for header in "${header_list}"; do
+    for header in "${header_list[@]}"; do
       file="restart/${header}${date}_000000000000"
       if [[ ! ( -r ${SEARCH_LOCATION}/${file} ) ]] ; then
         builtin echo "         - ${file}"

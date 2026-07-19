@@ -121,23 +121,23 @@ validation:
     # initial time
     - name: swh
       time: 2022-01-01 00:00:00
-      average: 3.800154336489329e-01 
+      average: 3.798319828376563e-01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD8522C40DFD5CF']
+      hashes: ['0x3FD84F2ACE10CDE6']
 
     # After 1h
     - name: swh
       time: 2022-01-01 01:00:00
-      average: 4.840666128606942e-01
+      average: 4.840283485796651e-01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FDEFAF287D49E82']
+      hashes: ['0x3FDEFA5209DF23A1']
 
     # After 6h
     - name: swh
       time: 2022-01-01 06:00:00
-      average: 7.970856539059511e-01 
+      average: 7.970841426388247e-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FE981B9C5F460F3']
+      hashes: ['0x3FE981B69A99680C']
     - name: swh
       time: 2022-01-01 06:00:00
       minimum: 4.326228740126664e-03

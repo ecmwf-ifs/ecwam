@@ -9,13 +9,13 @@ lsubgrid:    F
 
 advection:
     irefra: 0
-    timestep: 90
+    timestep: 120
     fast_waves:
-        timestep: 45
+        timestep: 60
         max_frequency: 5
 physics:
     iphys: 1
-    timestep: 180
+    timestep: 240
     llgcbz0: T
     llnormagam: T
     lmaskice: F
@@ -74,29 +74,29 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 2.779599034388384e-01
+      average: 3.188565402145367e-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD1CA1855B79FCE']
+      hashes: ['0x3FD46825431593C4']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 2.420364921801725e-01
-      hashes: ['0x3FCEFB0D412D1B77']
+      average: 2.297867064718079e-01
+      hashes: ['0x3FCD69A69AAD0D3D']
 
     # 6h into forcast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 2.628913168004307e-01
+      average: 2.531205436037192e-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD0D3361A03DABB']
+      hashes: ['0x3FD03320822E515C']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 1.310494308392263e-02 
+      minimum: 1.261118225844372e-02
       relative_tolerance: 1.e-14
-      hashes: ['0x3F8AD6C3AFB0ECC2']
+      hashes: ['0x3F89D3E43AE94A44']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 9.323344269830584e-01
+      maximum: 9.275915911218660e-01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FEDD5AF021A77E5']
+      hashes: ['0x3FEDAED48F7D3772']
