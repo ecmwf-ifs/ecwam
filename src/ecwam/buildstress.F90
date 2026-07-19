@@ -63,7 +63,7 @@ SUBROUTINE BUILDSTRESS(BLK2LOC, WVENVI, FF_NOW, NEMO2WAM, IREAD)
 
 
       INTEGER(KIND=JWIM) :: ICODE_WND
-      INTEGER(KIND=JWIM) :: ILEN, LIU, IPARAM, KZLEVUWAVE, KZLEVCD
+      INTEGER(KIND=JWIM) :: ILEN, LIU, IPARAMID, KZLEVUWAVE, KZLEVCD
       INTEGER(KIND=JWIM) :: IJ, ICHNK, KIJS, KIJL
       INTEGER(KIND=JWIM) :: NXS, NXE, NYS, NYE
       INTEGER(KIND=JWIM) :: NWAVEWIND(1)
@@ -177,9 +177,9 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
       ENDIF
 
       IF ( LWAVEWIND ) THEN
-        IPARAM=245
+        IPARAMID=140245
         LLONLYPOS=.TRUE.
-        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,                  &
+        CALL READWGRIB(IU06, FILNM, IPARAMID, CDTPRO,                &
      &                 BLK2LOC,                                      &
      &                 NXS, NXE, NYS, NYE, FIELDG,                   &
      &                 FF_NOW%WSWAVE , KZLEVUWAVE, LLONLYPOS, IREAD)
@@ -246,11 +246,11 @@ IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
 !     1.4  GET DRAG COEFFICIENT
 !          --------------------
       IF ( .NOT.LNOCDIN .AND. .NOT. LNSESTART ) THEN
-        IPARAM=233
+        IPARAMID=140233
         LLONLYPOS=.TRUE.
         FILNM='cdwavein'
 !       !!!! CD was initialised above !!!!
-        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO,   &
+        CALL READWGRIB(IU06, FILNM, IPARAMID, CDTPRO, &
      &                 BLK2LOC,                       &
      &                 NXS, NXE, NYS, NYE, FIELDG,    &
      &                 CD, KZLEVCD, LLONLYPOS, IREAD)

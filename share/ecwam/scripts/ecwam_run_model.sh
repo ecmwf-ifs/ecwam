@@ -96,7 +96,7 @@ done
 cldomain=$(read_config cldomain --default=g)
 wamnang=$(read_config directions)
 wamnfre=$(read_config frequencies)
-fr1=$(read_config fr1/ --default=4.177248E-02)
+fr1=$(read_config fr1 --default=4.177248E-02)
 ifre1=$(read_config ifre1 --default=1)
 lsubgrid=$(read_config lsubgrid --default=T)
 irefra=$(read_config advection.irefra --default=0)

@@ -30,8 +30,9 @@
 
 !   *CALL* *MSTART (IOPTI, FETCH, FRMAX, THETAQ,
 !    &              FM, ALFA, ZGAMMA, SA, SB, 
-!    &              NPROMA, KIJS, KIJL,
-!    &              FL1,WSWAVE,WDWAVE)*
+!    &              KIJS, KIJL, FL1,
+!    &              CICOVER,
+!    &              WSWAVE, WDWAVE)*
 !      *IOPTI*  INTEGER   START FIELD OPTION
 !                         = 0 FROM PARAMETERS.
 !                         = 1 FROM WINDS CALM ENERGY=0.

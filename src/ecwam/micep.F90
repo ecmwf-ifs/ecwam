@@ -140,7 +140,7 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
             CICVR(IJ) = NEMOCICOVER(IJ)
           ENDDO
         ENDIF
-      ELSEIF (IPARAM == 31) THEN
+      ELSE
         DO IJ=KIJS,KIJL
           IX = IFROMIJ(IJ)
           IY = JFROMIJ(IJ)
@@ -152,16 +152,6 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
             CICVR(IJ) = 1.0_JWRB
           ELSE
             CICVR(IJ) = FIELDG%CICOVER(IX,IY)
-          ENDIF
-        ENDDO
-      ELSEIF (IPARAM == 139) THEN
-        DO IJ=KIJS,KIJL
-          IX = IFROMIJ(IJ)
-          IY = JFROMIJ(IJ)
-          IF (FIELDG%CICOVER(IX,IY) < 271.5_JWRB) THEN
-            CICVR(IJ) = 1.0_JWRB
-          ELSE
-            CICVR(IJ) = 0.0_JWRB
           ENDIF
         ENDDO
       ENDIF 

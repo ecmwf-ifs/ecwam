@@ -14,7 +14,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
      &                 NXS, NXE, NYS, NYE,                          &
      &                 XLON, YLAT,                                  &
      &                 PMISS, PPREC, PPEPS,                         &
-     &                 CDATE, IFORP, IPARAM, KZLEV, KKK, MMM, FIELD)
+     &                 CDATE, IFORP, IPARAM, KZLEV, KKK, MMM, FIELD,&
+     &                 IPARAMID)
+
 ! ----------------------------------------------------------------------    
 
 !***  *GRIB2WGRID* - UNPACKS GRIB DATA FIELD
@@ -118,6 +120,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       INTEGER(KIND=JWIM), INTENT(IN) :: KGRIB(ISIZE)
       INTEGER(KIND=JWIM), INTENT(IN) :: KLONRGG_LOC(NGY)
       INTEGER(KIND=JWIM), INTENT(OUT) :: IFORP, IPARAM, KZLEV, KKK, MMM
+      INTEGER(KIND=JWIM), INTENT(OUT), OPTIONAL :: IPARAMID 
 
       REAL(KIND=JWRB), INTENT(IN) :: PMISS, PPREC, PPEPS
       REAL(KIND=JWRB) ,DIMENSION(NXS:NXE, NYS:NYE), INTENT(IN) :: XLON, YLAT
@@ -248,6 +251,9 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'paramId',ITABPAR)
       ITABLE=ITABPAR/1000
       IPARAM=ITABPAR-ITABLE*1000
+      IF ( PRESENT(IPARAMID) ) THEN
+        IPARAMID = ITABPAR
+      ENDIF
 
 !     MAKE A DISTINCTION FOR OCEAN MODEL DATA AND TEST CONFIGURATION.
 !     ??? The option argument KRET does not seem to work
@@ -386,7 +392,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       CALL WSTREAM_STRG(ISTREAM,CSTREAM,IDUM,IDUM,CDUM,IDUM,LASTREAM)
 
       IF (CSTREAM == '****' .OR.                                        &
-     &   (LASTREAM .AND. ILEVTYPE /= 209 .AND. ILEVTYPE /= 212 .AND.    &
+     &   (LASTREAM .AND. ILEVTYPE /= 209 .AND. ILEVTYPE /= 212 .AND. ITABLE /= 140 .AND.    &
      &    .NOT.LLOCEAN) ) THEN 
         LLNONWAVE=.TRUE.
       ELSE

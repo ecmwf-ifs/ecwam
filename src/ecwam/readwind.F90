@@ -98,7 +98,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
-      USE YOWICE   , ONLY : LICERUN  ,IPARAMCI ,LICETH
+      USE YOWICE   , ONLY : LICERUN  ,LICETH
       USE YOWMAP   , ONLY : IRGG     ,NLONRGG  ,NGY      ,NIBLO    ,CLDOMAIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,LWDINTS  ,    & 
@@ -144,7 +144,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
       INTEGER(KIND=JWIM) :: NFLD  
       INTEGER(KIND=JWIM) :: I, J, IVAR, JSN
       INTEGER(KIND=JWIM) :: ISIZE
-      INTEGER(KIND=JWIM) :: IFORP, IPARAM, KZLEV, IDM 
+      INTEGER(KIND=JWIM) :: IFORP, IPARAM, IPARAMID, KZLEV, IDM 
       INTEGER(KIND=JWIM) :: IWTIME, IDTTURN
       INTEGER(KIND=JWIM) :: LNAME 
       INTEGER(KIND=JWIM) :: IRET
@@ -243,7 +243,6 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
           NFLD=3
         ELSE
           NFLD=2
-          IPARAMCI=31
         ENDIF
 
         IF (LICETH) NFLD=NFLD+1
@@ -335,7 +334,8 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
      &                     NXS, NXE, NYS, NYE,                          &
      &                     FIELDG%XLON, FIELDG%YLAT,                    &
      &                     ZMISS, ZDUM, ZDUM,                           &
-     &                     CDTWIR, IFORP, IPARAM, KZLEV, IDM, IDM, WORK)
+     &                     CDTWIR, IFORP, IPARAM, KZLEV, IDM, IDM, WORK,&
+     &                     IPARAMID=IPARAMID)
 
           CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
@@ -380,8 +380,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
               ICODE = 3
             ENDIF
 
-          ELSEIF (IPARAM == 31 .OR. IPARAM == 139) THEN
-             IPARAMCI=IPARAM
+          ELSEIF (IPARAM == 31 .OR. IPARAMID == 263001 ) THEN
 
             IF (.NOT.LICERUN) THEN
 !             SKIP SEA ICE MASK INFORMATION AS IT IS NOT NEEDED
@@ -398,7 +397,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
               LLABORT=.TRUE.
             ENDIF
 
-          ELSEIF (IPARAM == 92) THEN
+          ELSEIF (IPARAM == 92 .OR. IPARAMID == 263000) THEN
 
             IF (.NOT.LICETH) THEN
 !             SKIP SEA ICE THICKNESS INFORMATION AS IT IS NOT NEEDED
@@ -415,7 +414,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
               LLABORT=.TRUE.
             ENDIF
 
-          ELSEIF (IPARAM == 245) THEN
+          ELSEIF (IPARAMID == 140245) THEN
 
             IF (LLWSWAVE) THEN
               IF (LLNOTREAD(IVAR)) THEN 
@@ -435,7 +434,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
               ENDIF
             ENDIF
 
-          ELSEIF (IPARAM == 249) THEN
+          ELSEIF (IPARAMID == 140249) THEN
 
             IF (LLWDWAVE) THEN
               IF (LLNOTREAD(IVAR)) THEN 
@@ -456,7 +455,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
               ENDIF
             ENDIF
 
-          ELSEIF (IPARAM == 209) THEN
+          ELSEIF (IPARAMID == 140209) THEN
 
             IF (LLNOTREAD(IVAR)) THEN 
               DO J = NYS, NYE
@@ -474,7 +473,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
               LLABORT=.TRUE.
             ENDIF
 
-          ELSEIF (IPARAM == 208) THEN
+          ELSEIF (IPARAMID == 140208) THEN
 
             IF (LLNOTREAD(IVAR)) THEN 
               DO J = NYS, NYE
@@ -499,6 +498,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
             WRITE(IU06,*) ' +    ==============================      +'
             WRITE(IU06,*) ' + SUSPICIOUS WIND OR SEA ICE FIELD PARAM +'
             WRITE(IU06,*) ' + PARAM IS = ', IPARAM
+            WRITE(IU06,*) ' + PARAMID IS = ', IPARAMID
             WRITE(IU06,*) ' +                                        +'
             WRITE(IU06,*) ' ++++++++++++++++++++++++++++++++++++++++++'
             CALL ABORT1
@@ -511,13 +511,14 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
             WRITE(IU06,*) ' +    ==============================       +'
             WRITE(IU06,*) ' + WIND OR SEA ICE FIELD PARAM READ TWICE  +'
             WRITE(IU06,*) ' + PARAM IS = ', IPARAM
+            WRITE(IU06,*) ' + PARAMID IS = ', IPARAMID
             WRITE(IU06,*) ' + SUSPECT                                 +'
             WRITE(IU06,*) ' + INCOMPLETE LIST OF INPUT PARAMETERS     +'
             WRITE(IU06,*) ' + THE LIST IS :                           +'
             WRITE(IU06,*) ' + 165 or 33 or 131 or 180 U-WIND COMPONENT+'
             WRITE(IU06,*) ' + 166 or 34 or 132 or 181 V-WIND COMPONENT+'
             IF (LICERUN) THEN
-            WRITE(IU06,*) ' + 31 or 139 SEA ICE FRACTION OR SST       +'
+            WRITE(IU06,*) ' + 31 SEA ICE FRACTION                     +'
             ENDIF
             IF (LICETH) THEN
             WRITE(IU06,*) ' + 92 SEA ICE THICKNESS                    +'
@@ -606,8 +607,6 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
             ENDIF
           ENDIF
         ENDIF
-
-        IPARAMCI=31
 
         DO J = NYS, NYE
           DO I = NXS, NXE

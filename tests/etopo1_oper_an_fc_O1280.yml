@@ -11,7 +11,7 @@ advection:
     irefra: 2
     timestep: 450 
     fast_waves:
-        timestep: 225.
+        timestep: 225
         max_frequency: 7
 physics:
     iphys: 1
@@ -46,7 +46,7 @@ forcings:
         timestep:  01:00
 
 currents:
-    file:  data/forcings/daily_average_surface_currents_ORAS6_20221231_20230102_O640.grib
+    file:  data/forcings/daily_average_surface_currents_ORAS6_20221231_20230102_O1280.grib
     input_step: 86400 
 
 output:
@@ -76,30 +76,30 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 3.880528141821628e-01 
+      average: 3.878921852381331e-01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD8D5DB78821F33']
+      hashes: ['0x3FD8D339BE7E313F']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 1.052387295795608e+00 
+      average: 1.052671880035781e+00
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF0D6940FA2B032']
+      hashes: ['0x3FF0D7BE7822C29D']
 
-    # 6h into forcast
+    # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 1.212691777675868e+00 
+      average: 1.213041806873566e+00
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF3672F7E53EF71']
+      hashes: ['0x3FF3689E86933E53']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 4.388205014719627e-03 
+      minimum: 4.387390382286470e-03 
       relative_tolerance: 1.e-14
-      hashes: ['0x3F71F95DD06BFCA7']
+      hashes: ['0x3F71F883234EAA3F']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 7.157768268022219e+00 
+      maximum: 7.162006493701588e+00 
       relative_tolerance: 1.e-14
-      hashes: ['0x401CA18E013E020A']
+      hashes: ['0x401CA5E507C0C076']

@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE READWGRIB(IU06, FILNM, IPARAM, CDATE,        &
+      SUBROUTINE READWGRIB(IU06, FILNM, IPARAMID, CDATE,      &
      &                     BLK2LOC,                           &
      &                     NXS, NXE, NYS, NYE, FIELDG,        &
      &                     FIELD, KZLEV, LLONLYPOS, IREAD )
@@ -26,7 +26,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *READWGRIB*(IU06, FILNM, IPARAM, CDATE,
+!       *CALL* *READWGRIB*(IU06, FILNM, IPARAMID, CDATE,
 !    &                     IFROMIJ, JFROMIJ,
 !    &                     NXS, NXE, NYS, NYE, FIELDG,
 !    &                     FIELD, KZLEV, LLONLYPOS, IREAD )
@@ -35,7 +35,7 @@
 !      ---------   -------   --------
 !      *IU06*      INTEGER   OUTPUT UNIT FOR STANDARD OUTPUT.
 !      *FILNM*     DATA INPUT FILENAME.
-!      *IPARAM*    INTEGER   PARAMETER IDENTIFIER OF FIELD
+!      *IPARAMID*  INTEGER   PARAMETER IDENTIFIER OF FIELD
 !      *CDATE*     CHARACTER DATE OF THE REQUESTED FIELD 
 !      *IFROMIJ*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !      *JFROMIJ*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
@@ -97,7 +97,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06
       CHARACTER(LEN=*), INTENT(IN) :: FILNM
-      INTEGER(KIND=JWIM), INTENT(IN) :: IPARAM
+      INTEGER(KIND=JWIM), INTENT(IN) :: IPARAMID
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
@@ -108,7 +108,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
 
 
-      INTEGER(KIND=JWIM) :: KPARAM
+      INTEGER(KIND=JWIM) :: KPARAMID
       INTEGER(KIND=JWIM) :: ICHNK, IJ, IX, JY
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -124,20 +124,20 @@
 
       IF (LHOOK) CALL DR_HOOK('READWGRIB',0,ZHOOK_HANDLE)
 
-      CALL INWGRIB(FILNM, IREAD, CCDDATE, KPARAM, KZLEV,    &
+      CALL INWGRIB(FILNM, IREAD, CCDDATE, KPARAMID, KZLEV,    &
      &             NXS, NXE, NYS, NYE, FIELDG, WORK)
 
 !*    SIMPLE CHECKS ON THE RETRIEVED DATA 
 !     -----------------------------------
 
-      IF (KPARAM /= IPARAM) THEN
+      IF (KPARAMID /= IPARAMID) THEN
         WRITE(IU06,*)'********************************'
         WRITE(IU06,*)'*                              *'
         WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB *'
         WRITE(IU06,*)'* ===========================  *'
         WRITE(IU06,*)'*                              *'
-        WRITE(IU06,*)'* GRIB PARAMETER  ',KPARAM
-        WRITE(IU06,*)'* WAS READ INSTEAD OF ',IPARAM
+        WRITE(IU06,*)'* GRIB PARAMETER  ',KPARAMID
+        WRITE(IU06,*)'* WAS READ INSTEAD OF ',IPARAMID
         WRITE(IU06,*)'* IN FILE: ',FILNM 
         WRITE(IU06,*)'*                              *'
         WRITE(IU06,*)'********************************'

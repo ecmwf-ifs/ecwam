@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE INWGRIB (FILNM, IREAD, CDATE, IPARAM, KZLEV,             &
+      SUBROUTINE INWGRIB (FILNM, IREAD, CDATE, IPARAMID, KZLEV,           &
      &                    NXS, NXE, NYS, NYE, FIELDG, FIELD,              &
      &                    LLCHKINT, LLFIXEDSIZE, NPR,                     &
      &                    KANGNB, KFRENB, NFILE_HANDLE)
@@ -26,7 +26,7 @@
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!      *CALL INWGRIB* (FILNM, IREAD, CDATE, IPARAM, KZLEV,
+!      *CALL INWGRIB* (FILNM, IREAD, CDATE, IPARAMID, KZLEV,
 !    &                 NXS, NXE, NYS, NYE, FIELDG, FIELD,
 !    &                 LLCHKINT, LLFIXEDSIZE, NPR,
 !    &                 KANGNB, KFRENB, NFILE_HANDLE)
@@ -34,9 +34,9 @@
 !        *FILNM*  - DATA INPUT FILENAME. 
 !        *IREAD*  - ACCESS TO FILE ONLY FOR PE=IREAD.
 !        *CDATE*  - DATE/TIME OF THE DATA READ.         
-!        *IPARAM* - PARAMETER NUMBER. 
+!        *IPARAMID* PARAMETER IDENTIFIER NUMBER. 
 !        *KZLEV*  - REFERENCE LEVEL IN FULL METER
-!                   SHOULD BE 0 EXCEPT FOR 233, 245 AND 249 WHERE IT
+!                   SHOULD BE 0 EXCEPT FOR 140233, 140245 AND 140249 WHERE IT
 !                   MIGHT BE DIFFERENT THAN ZERO. 
 !        *NXS:NXE*  FIRST DIMENSION OF FIELDG
 !        *NYS:NYE*  SECOND DIMENSION OF FIELDG
@@ -96,7 +96,7 @@
       CHARACTER(LEN=*), INTENT(IN)     :: FILNM
       INTEGER(KIND=JWIM), INTENT(IN)   :: IREAD
       CHARACTER(LEN=14), INTENT(OUT)   :: CDATE
-      INTEGER(KIND=JWIM), INTENT(OUT)  :: IPARAM, KZLEV
+      INTEGER(KIND=JWIM), INTENT(OUT)  :: IPARAMID, KZLEV
       INTEGER(KIND=JWIM), INTENT(IN)   :: NXS, NXE, NYS, NYE
       TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
       REAL(KIND=JWRB), INTENT(OUT)     :: FIELD(NXS:NXE, NYS:NYE)
@@ -112,6 +112,7 @@
 
       INTEGER(KIND=JWIM), SAVE :: NBIT
 
+      INTEGER(KIND=JWIM) :: IPARAM 
       INTEGER(KIND=JWIM) :: NPRC 
       INTEGER(KIND=JWIM) :: IFORP
       INTEGER(KIND=JWIM) :: LFILE, KFILE_HANDLE, KGRIB_HANDLE 
@@ -288,7 +289,8 @@
      &                 NXS, NXE, NYS, NYE,                              &
      &                 FIELDG%XLON, FIELDG%YLAT,                        &
      &                 ZMISS, PPREC, PPEPS,                             &
-     &                 CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
+     &                 CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD,      &
+     &                 IPARAMID=IPARAMID)
 
       IF( PRESENT(KANGNB) ) KANGNB = KK 
       IF( PRESENT(KFRENB) ) KFRENB = MM 
