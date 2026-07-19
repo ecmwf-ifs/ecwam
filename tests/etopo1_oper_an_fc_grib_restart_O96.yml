@@ -35,6 +35,7 @@ lgribin: T
 lgribout: T
 
 forcings:
+    # For testing the internal interpolation scheme in ecWAM, we do not match the wind forcing resolution with the model grid resolution
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O48.grib
 
     at:

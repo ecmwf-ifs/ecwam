@@ -87,7 +87,7 @@ validation:
       relative_tolerance: 1.e-14
       hashes: ['0x3FF0DEEF618A5FB6']
 
-    # 6h into forcast
+    # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
       average: 1.213609084519249e+00 
