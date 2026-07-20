@@ -126,6 +126,7 @@
 
         IF (IRANK.NE.ISEND) THEN
           ALLOCATE(SPEC(0:NSPEC,NANG,NFRE,2))
+          KCOUNT=0
           DO IFRE = 1,NFRE
             DO IANG = 1,NANG
               DO ISPEC = 0,NSPEC

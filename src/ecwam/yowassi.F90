@@ -137,7 +137,7 @@ END SUBROUTINE
 SUBROUTINE WAM_ODB_OPEN
     USE YOWABORT    , ONLY : WAM_ABORT
     IF( .NOT. ASSOCIATED(WAM_ODB_OPEN_HANDLER) ) THEN
-        CALL WAM_ABORT("WAM_ODB_OPEN_HANDLER is not associated. Make sure WAM_SETUP_ODB4WAN was called.", &
+        CALL WAM_ABORT("WAM_ODB_OPEN_HANDLER is not associated. Make sure WAM_SETUP_ODB4WAM was called.", &
             & __FILENAME__, __LINE__)
     ELSE
         CALL WAM_ODB_OPEN_HANDLER()
