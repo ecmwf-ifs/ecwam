@@ -107,8 +107,8 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       LOGICAL, INTENT(IN)   :: LPADPOLES        ! True if poles are padded when savind to grib.
 
       ! From yowgrid
-      INTEGER(KIND=JWIM), INTENT(IN)   :: NLONRGG_SIZE 
-      INTEGER(KIND=JWIM), INTENT(IN)   :: NLONRGG(NLONRGG_SIZE) 
+      INTEGER(KIND=JWIM), INTENT(IN)   :: NLONRGG_SIZE
+      INTEGER(KIND=JWIM), INTENT(IN)   :: NLONRGG(NLONRGG_SIZE)
 
       ! From yowmap
       INTEGER(KIND=JWIM), INTENT(IN) :: IRGG                ! Grid code: 0 = regular, 1 = irregular.
@@ -129,7 +129,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       REAL(KIND=JWRB), INTENT(IN)        :: ZMISS           ! Missing data indicator (set in chief or via the ifs).
 
 
-      INTEGER(KIND=JWIM) :: ICLASS, ISTEP, ISTEP_HRS 
+      INTEGER(KIND=JWIM) :: ITYPE, ISTEP, ISTEP_HRS
       INTEGER(KIND=JWIM) :: IC, ITABPAR, IDATE, ITIME, ILEVTYPE
       INTEGER(KIND=JWIM) :: ICOUNT, NN, I, J, JSN, KK, MM
       INTEGER(KIND=JWIM) :: IY1,IM1,ID1,IH1,IMN1,ISS1,IDATERES
@@ -197,7 +197,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
         IF ( ITMIN /= 0 .OR. ITMAX /= 0 ) THEN
 !         NEED TO CHANGE TO SPECIFIC TEMPLATE FOR ENCODING ITMIN AND ITMAX
-          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'numberOfForecastsInEnsemble',IDUM,KRET=IRET )
+          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'numberOfForecastsInEnsemble',IDUM,IRET )
           IF ( IRET == 0 ) THEN
             IF ( IDUM > 0 ) THEN
               CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'productDefinitionTemplateNumber', NTRG2TMPP)
@@ -265,7 +265,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
           WRITE(NULERR,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
           WRITE(NULERR,*) ' PARAMETERS KNOWN BY ECCODES !!!'
           WRITE(NULERR,*) ' '
-          WRITE(NULERR,*) ' IN THE MEANTIME, YOU MIGHT WANT TO USE EXPERIMENTAL PARAMETER TABLE 212' 
+          WRITE(NULERR,*) ' IN THE MEANTIME, YOU MIGHT WANT TO USE EXPERIMENTAL PARAMETER TABLE 212'
           WRITE(NULERR,*) ' SET LLRSTGRIBPARAM TO TRUE IN THE INPUT NAMELIST AND RERUN'
           WRITE(NULERR,*) ' ADAPT THE ARCHIVING ACCORDINGLY.'
           WRITE(NULERR,*) ' ************************************************************************'
@@ -287,10 +287,10 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
          (MARSTYPE == 'fg' .AND. IFCST == 0) ) THEN
 
         READ(CDATE(1:8),'(I8)') IDATE
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'date',IDATE)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'dataDate',IDATE)
         READ(CDATE(9:12),'(I4)') ITIME
 
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'time',ITIME)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'dataTime',ITIME)
 
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepUnits','h')
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepType','instant')
@@ -299,11 +299,11 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'endStep',IFCST)
 
         IF ( MARSTYPE == 'fg' .AND. IFCST == 0 ) THEN
-          ICLASS = 1
+          ITYPE = 1
         ELSEIF ( MARSTYPE == '4v' ) THEN
-          ICLASS = 6
+          ITYPE = 6
         ELSEIF ( MARSTYPE == 'an' .AND. IFCST == 0 ) THEN
-          ICLASS = 2
+          ITYPE = 2
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',C12)
           IF (C12(1:4) == 'elda' .OR. C12(1:4) == 'lwda') THEN
             IDATERES=IDATE*100+ITIME/100
@@ -341,21 +341,54 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
               ENDIF
             ENDIF
 !           in hours
-            CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'offsetToEndOf4DvarWindow',IDUM,KRET=IRET)
+            CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'offsetToEndOf4DvarWindow',IDUM,IRET)
             IF ( IRET == 0 ) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'offsetToEndOf4DvarWindow',NWINOFF)
           ENDIF
         ELSEIF ( MARSTYPE == 'cf' ) THEN
-          ICLASS = 10
+          ITYPE = 10
         ELSEIF ( MARSTYPE == 'pf' ) THEN
-          ICLASS = 11
+          ITYPE = 11
         ELSE
-          ICLASS = 9
+          ITYPE = 9
         ENDIF
 
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'type',ICLASS)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'type',ITYPE)
 
-        IF (ICLASS /= 9 .AND. ICLASS /= 10 .AND. ICLASS /= 11 &
-           .AND. ICLASS /= 6 .AND. IFCST > 0) THEN
+        SELECT CASE(MARSTYPE)
+        CASE ('an')
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','an')      ! Analysis products
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',0)     ! Analysis
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',0) ! Analysis
+        CASE ('4v','4i','me')
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','an')      ! Analysis products
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',0)     ! Analysis
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',6) ! Start of data assimilation
+          ! Here we cheat, as the anoffset of the IFS template is the 4Dvar window lenght
+          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'offsetToEndOf4DvarWindow',NWINOFF,IRET)
+          IF (IRET==0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'lengthOf4DvarWindow',NWINOFF)
+        CASE ('fc')
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','fc')      ! Forecast products
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',2)     ! Forecast
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',1) ! Forecast
+        CASE ('cf')
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','cf')      ! Control forecast products
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',4)     ! Ensemble Forecast
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',1) ! Forecast
+        CASE ('pf')
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','pf')      ! Perturbed forecast products
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',4)     ! Ensemble Forecast
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',1) ! Forecast
+        CASE('sg','sf','fg')
+        CASE DEFAULT
+          WRITE(IU06,*) '   SUB. WGRIBENCODE: UNKNOWN MARS TYPE: '//MARSTYPE
+          WRITE(IU06,*)'  '
+          WRITE(IU06,*)' CALL ABORT1 '
+          WRITE(IU06,*)'  '
+          CALL ABORT1
+        END SELECT
+
+        IF (ITYPE /= 9 .AND. ITYPE /= 10 .AND. ITYPE /= 11 &
+           .AND. ITYPE /= 6 .AND. IFCST > 0) THEN
           WRITE(IU06,*)' SUB: WGRIBENCODE: THIS IS A FORECAST'
           WRITE(IU06,*)' BUT MARSTYPE DOES NOT KNOW ABOUT IT'
           WRITE(IU06,*)'  '

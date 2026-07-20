@@ -1,5 +1,5 @@
 ! (C) Copyright 1989- ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -29,11 +29,11 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
 !                CT           : "I" for INTEGRATED PARAMETERS AND
 !                               "S" for SPECTRA
 !                OUTPUT:
-!                IGRIB_HANDLE : GRIB HANDLE THAT WILL BE CREATED. 
+!                IGRIB_HANDLE : GRIB HANDLE THAT WILL BE CREATED.
 
 !                OPTIONAL INPUT:
 !                LLCREATE       IF TRUE, FORCE CREATION OF TEMPLATE FROM FILE
-!                NBITSPERVALUE  NUMBER OF BITS FOR CODING. 
+!                NBITSPERVALUE  NUMBER OF BITS FOR CODING.
 !                               IF PRESENT, IT WILL OVERRULE NGRBRESI AND NGRBRESS
 
 !     METHOD.
@@ -77,7 +77,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
 #include "abort1.intfb.h"
 #include "wstream_strg.intfb.h"
 
-      CHARACTER(LEN=1), INTENT(IN) :: CT 
+      CHARACTER(LEN=1), INTENT(IN) :: CT
       INTEGER(KIND=JWIM), INTENT(OUT) :: IGRIB_HANDLE
       LOGICAL, INTENT(IN), OPTIONAL :: LLCREATE
       INTEGER(KIND=JWIM) , INTENT(IN), OPTIONAL :: NBITSPERVALUE
@@ -90,7 +90,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
       INTEGER(KIND=JWIM) :: IDIRSCALING, IFRESCALING
       INTEGER(KIND=JWIM) :: NJ
       INTEGER(KIND=JWIM) :: KSYSNB, KMETNB, KREFDATE
-      INTEGER(KIND=JWIM) :: IDUM, IRET 
+      INTEGER(KIND=JWIM) :: IDUM, IRET
       INTEGER(KIND=JWIM) :: IGRIB_HANDLE_IFS
       INTEGER(KIND=JWIM), DIMENSION(:), ALLOCATABLE :: PL
 
@@ -100,7 +100,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
 
       CHARACTER(LEN=96) :: CLWORD
 
-      LOGICAL :: LLCRT 
+      LOGICAL :: LLCRT
 
 !-------------------------------------------------------------------
 
@@ -109,7 +109,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
       IF( PRESENT(LLCREATE) ) THEN
         LLCRT = LLCREATE
       ELSE
-        LLCRT = .FALSE. 
+        LLCRT = .FALSE.
       ENDIF
 
 
@@ -147,12 +147,13 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 !     DEFINE YOUR OWN LOCAL HEADER
 !     -----------------------------
       IF (.NOT. LGRHDIFS .OR. LLCRT) THEN
-        ! LOCAL MARS TABLE USED.
+
+        ! Use latest tables version for the GRIB-2 samples
+        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'tablesVersionLatest', ISPEC2TAB)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'tablesVersion', ISPEC2TAB)
 
         IF (CT == "S") THEN
-          ! Use latest tables version for the GRIB-2 samples
-          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'tablesVersionLatest', ISPEC2TAB)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'tablesVersion', ISPEC2TAB)
+          ! LOCAL MARS TABLE USED.
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'setLocalDefinition', 1)
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber', 1)
           IF ( NTOTENS > 0 ) THEN
@@ -169,7 +170,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ! CLASS
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'class',YCLASS)
         ! TYPE
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'type',2)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'type',MARSTYPE)
         ! STREAM
         IF (ISTREAM > 0) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
@@ -177,8 +178,8 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           WRITE(IU06,*) ''
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!! '
-          WRITE(IU06,*) ' ISTREAM MUST ALWAYS BE SPECIFIED > 0 !!!' 
-          WRITE(IU06,*) ' SEE INPUT NAMELIST wam_input' 
+          WRITE(IU06,*) ' ISTREAM MUST ALWAYS BE SPECIFIED > 0 !!!'
+          WRITE(IU06,*) ' SEE INPUT NAMELIST wam_input'
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) ''
           CALL ABORT1
@@ -325,7 +326,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ENDDO
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValuesOfWaveFrequencies',SCFR)
         DEALLOCATE(SCFR)
-        
+
       ENDIF
 
 !     GEOGRAPHY
@@ -344,7 +345,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
 
         ! NUMBER OF POINTS ALONG A MERIDIAN
-        IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN 
+        IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN
           NJ = NINT(180.0_JWRU/DXDELLA) + 1
         ELSE
           NJ = NGY
@@ -360,7 +361,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ELSE
           ALLOCATE(PL(NJ))
           PL(:)=0
-          IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN 
+          IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN
             KST = NINT((90.0_JWRU - DAMONOP ) / DXDELLA)
           ELSE
             KST = 0
@@ -408,7 +409,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ENDIF
 
         ! LATITUDE INCREMENT
-        IF ( IQGAUSS /= 1 ) THEN 
+        IF ( IQGAUSS /= 1 ) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'jDirectionIncrementInDegrees',DXDELLA)
         ENDIF
 
@@ -436,4 +437,4 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
 IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',1,ZHOOK_HANDLE)
 
-END SUBROUTINE PRESET_WGRIB_TEMPLATE 
+END SUBROUTINE PRESET_WGRIB_TEMPLATE
