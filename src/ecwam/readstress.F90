@@ -37,7 +37,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWMPP   , ONLY : NPROC
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : LL1D     ,LLUNSTR
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWSPEC  , ONLY : IJ2NEWIJ
@@ -49,6 +49,7 @@
 #endif
 
       USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
 
 ! ----------------------------------------------------------------------
 
@@ -63,11 +64,13 @@
 
       INTEGER(KIND=JWIM) :: LFILE, IUNIT
       INTEGER(KIND=JWIM) :: IFLD, IJ
+      INTEGER(KIND=JWIM) :: IJINF_IN, IJSUP_IN
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP) :: RFIELD_G 
 
       LOGICAL :: LLEXIST
+      LOGICAL :: LRSTPARAL_IN, LL1D_IN
 
 ! ----------------------------------------------------------------------
 
@@ -85,19 +88,39 @@
         WRITE (IU06,*) '*  COULD NOT FIND FILE ',FILENAME
         WRITE (IU06,*) '*                                   *'
         WRITE (IU06,*) '*************************************'
-        WRITE (*,*) '*************************************'
-        WRITE (*,*) '*                                   *'
-        WRITE (*,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
-        WRITE (*,*) '*  IN READSTRESS :                  *'
-        WRITE (*,*) '*  COULD NOT FIND FILE ',FILENAME
-        WRITE (*,*) '*                                   *'
-        WRITE (*,*) '*************************************'
+        WRITE (NULERR,*) '*************************************'
+        WRITE (NULERR,*) '*                                   *'
+        WRITE (NULERR,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
+        WRITE (NULERR,*) '*  IN READSTRESS :                  *'
+        WRITE (NULERR,*) '*  COULD NOT FIND FILE ',FILENAME
+        WRITE (NULERR,*) '*                                   *'
+        WRITE (NULERR,*) '*************************************'
         CALL ABORT1
       ENDIF
       IUNIT=IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0, 'READWRITE')
 
-      READ(IUNIT) CDTPRO,CDATEWO,CDAWIFL,CDATEFL
+      READ(IUNIT) CDTPRO, CDATEWO, CDAWIFL, CDATEFL, LRSTPARAL_IN, LL1D_IN, IJINF_IN, IJSUP_IN
 
+      IF ( IJINF_IN /= IJINF .OR. IJSUP_IN /= IJSUP ) THEN
+        WRITE (NULERR,*) '******************************************************'
+        WRITE (NULERR,*) '*                                                    *'
+        WRITE (NULERR,*) '*  ERROR IN READSTRESS :                             *'
+        WRITE (NULERR,*) '*  FOR IRANK    ,NPROC : ', IRANK    ,NPROC
+        WRITE (NULERR,*) '*  THE SIZE OF THE INPUT RESTART FIELDS DO NOT MATCH *' 
+        WRITE (NULERR,*) '*  IJINF_IN , IJINF : ', IJINF_IN , IJINF
+        WRITE (NULERR,*) '*  IJSUP_IN , IJSUP : ', IJSUP_IN , IJSUP
+        WRITE (NULERR,*) '*  LRSTPARAL_IN, LRSTPARAL : ', LRSTPARAL_IN, LRSTPARAL
+        IF ( LRSTPARAL ) THEN
+          IF ( LL1D_IN .NEQV. LL1D ) THEN
+            WRITE (NULERR,*) '*  RESTART FILE CREATED WITH MODEL DECOMPOSITION : ', LL1D_IN
+            WRITE (NULERR,*) '*  BUT THE CURRENT MODEL DECOMPOSITION IS ', LL1D
+            WRITE (NULERR,*) '*  CHANGE LL1D IN THE INPUT NAMELIST TO BE ', LL1D_IN
+          ENDIF
+        ENDIF
+        WRITE (NULERR,*) '*                                                    *'
+        WRITE (NULERR,*) '******************************************************'
+        CALL ABORT1
+      ENDIF
 
       IF (LLUNSTR .AND. .NOT.LRSTPARAL) THEN
 #ifdef WAM_HAVE_UNWAM
