@@ -380,10 +380,10 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',1) ! Forecast
         CASE('sg','sf','fg')
         CASE DEFAULT
-          WRITE(IU06,*) '   SUB. WGRIBENCODE: UNKNOWN MARS TYPE: '//MARSTYPE
-          WRITE(IU06,*)'  '
-          WRITE(IU06,*)' CALL ABORT1 '
-          WRITE(IU06,*)'  '
+          WRITE(NULERR,*) '   SUB. WGRIBENCODE: UNKNOWN MARS TYPE: '//MARSTYPE
+          WRITE(NULERR,*)'  '
+          WRITE(NULERR,*)' CALL ABORT1 '
+          WRITE(NULERR,*)'  '
           CALL ABORT1
         END SELECT
 
