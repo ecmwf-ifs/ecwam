@@ -526,7 +526,7 @@
 !       WAVE LONG CUT-OFF FORECAST
         CSTREAM = 'lwda'
         MARSFCTYPE = 'fc'
-        KSTREAM = 1247
+        KSTREAM = 1248
         LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1098) THEN
 !       WAVE DESTINE FORECAST
@@ -690,7 +690,7 @@
 !       ENSEMBLE DATA ASSIMILATION 
         CSTREAM = 'elda'
         MARSFCTYPE = 'fc'
-        KSTREAM = 1249
+        KSTREAM = 1250
         LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1088) THEN
 !       ENSEMBLE WAVE DATA ASSIMILATION 
@@ -700,7 +700,7 @@
         LASTREAM=.FALSE.
       ELSE IF(ISTREAM.EQ.1250) THEN
 !       ENSEMBLE WAVE DATA ASSIMILATION 
-        CSTREAM = 'elda'
+        CSTREAM = 'ewla'
         MARSFCTYPE = 'fc'
         KSTREAM = 1249
         LASTREAM=.FALSE.
