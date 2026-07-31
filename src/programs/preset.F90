@@ -335,7 +335,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       NTOTENS = 0
       NENSFNB = 0  
-      ISTREAM =1045 !! if changed to an ifs stream also change LNEWLVTP
+      ISTREAM =1025 !! if changed to an ifs stream also change LNEWLVTP
       NLOCGRB = 1
       NSYSNB  = -1
       NMETNB  = -1

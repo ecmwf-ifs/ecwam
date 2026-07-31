@@ -1,5 +1,5 @@
 ! (C) Copyright 1989- ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -29,11 +29,11 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
 !                CT           : "I" for INTEGRATED PARAMETERS AND
 !                               "S" for SPECTRA
 !                OUTPUT:
-!                IGRIB_HANDLE : GRIB HANDLE THAT WILL BE CREATED. 
+!                IGRIB_HANDLE : GRIB HANDLE THAT WILL BE CREATED.
 
 !                OPTIONAL INPUT:
 !                LLCREATE       IF TRUE, FORCE CREATION OF TEMPLATE FROM FILE
-!                NBITSPERVALUE  NUMBER OF BITS FOR CODING. 
+!                NBITSPERVALUE  NUMBER OF BITS FOR CODING.
 !                               IF PRESENT, IT WILL OVERRULE NGRBRESI AND NGRBRESS
 
 !     METHOD.
@@ -52,11 +52,9 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LWCOUSAMEGRID
-      USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRIBHD, ONLY : LL_GRID_SIMPLE_MATRIX,                      &
-     &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESI ,    &
-     &            NGRBRESS, LGRHDIFS ,LNEWLVTP,                         &
-     &            NSPEC2TAB, NSPEC2TMPD, NSPEC2TMPP 
+      USE YOWFRED  , ONLY : FR, TH
+      USE YOWGRIBHD, ONLY : NTENCODE ,IMDLGRBID_G,IMDLGRBID_M, &
+                            NGRBRESI, NGRBRESS, LGRHDIFS, NSPEC2TMPD, NSPEC2TMPP
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWMAP   , ONLY : IRGG     ,IQGAUSS  ,DAMOWEP   ,DAMOSOP   ,  &
      &            DAMOEAP  ,DAMONOP  ,DXDELLA  ,DXDELLO   ,NLONRGG   ,  &
@@ -73,47 +71,36 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, LLCREATE, NBITSPERVALUE)
                           & IGRIB_CLONE, &
                           & IGRIB_SET_VALUE, &
                           & IGRIB_GET_VALUE
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE EC_LUN   , ONLY : NULERR
+      USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "wstream_strg.intfb.h"
 
-      CHARACTER(LEN=1), INTENT(IN) :: CT 
+      CHARACTER(LEN=1), INTENT(IN) :: CT
       INTEGER(KIND=JWIM), INTENT(OUT) :: IGRIB_HANDLE
       LOGICAL, INTENT(IN), OPTIONAL :: LLCREATE
       INTEGER(KIND=JWIM) , INTENT(IN), OPTIONAL :: NBITSPERVALUE
 
 
-      INTEGER(KIND=JWIM) :: IC, JC, KST,JSN, KK, MM
-      INTEGER(KIND=JWIM) :: ICLASS,ICENTRE,IFS_STREAM
-      INTEGER(KIND=JWIM) :: IREPR, IRESFLAGS
+      INTEGER(KIND=JWIM) :: JC, KST, JSN, KK, MM
+      INTEGER(KIND=JWIM) :: ICENTRE, ISPEC2TAB
+      INTEGER(KIND=JWIM) :: IRESFLAGS
       INTEGER(KIND=JWIM) :: IBITSPERVALUE
       INTEGER(KIND=JWIM) :: IDIRSCALING, IFRESCALING
       INTEGER(KIND=JWIM) :: NJ
       INTEGER(KIND=JWIM) :: KSYSNB, KMETNB, KREFDATE
-      INTEGER(KIND=JWIM) :: IDUM, IRET 
+      INTEGER(KIND=JWIM) :: IDUM, IRET
       INTEGER(KIND=JWIM) :: IGRIB_HANDLE_IFS
-      INTEGER(KIND=JWIM) :: ITHETA(NANG)
-      INTEGER(KIND=JWIM) :: IFREQ(NFRE_RED)
       INTEGER(KIND=JWIM), DIMENSION(:), ALLOCATABLE :: PL
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRU) :: RMOEAP
-      REAL(KIND=JWRB) :: ZTHETA(NANG)
-      REAL(KIND=JWRB) :: ZFREQ(NFRE_RED)
       REAL(KIND=JWRB), ALLOCATABLE :: SCFR(:), SCTH(:)
 
-! The following must NOT be changed from a 4 byte real
-      REAL(KIND=4) :: REAL4
-
-      CHARACTER(LEN=2) :: MARSFCTYPE
-      CHARACTER(LEN=4) :: CSTREAM
       CHARACTER(LEN=96) :: CLWORD
 
-      LOGICAL :: LASTREAM
-      LOGICAL :: LLCRT 
+      LOGICAL :: LLCRT
 
 !-------------------------------------------------------------------
 
@@ -122,7 +109,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
       IF( PRESENT(LLCREATE) ) THEN
         LLCRT = LLCREATE
       ELSE
-        LLCRT = .FALSE. 
+        LLCRT = .FALSE.
       ENDIF
 
 
@@ -155,14 +142,18 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
       ENDIF
 
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',0)
+      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfLevel','surface')
 
 !     DEFINE YOUR OWN LOCAL HEADER
 !     -----------------------------
       IF (.NOT. LGRHDIFS .OR. LLCRT) THEN
-        ! LOCAL MARS TABLE USED.
+
+        ! Use latest tables version for the GRIB-2 samples
+        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'tablesVersionLatest', ISPEC2TAB)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'tablesVersion', ISPEC2TAB)
 
         IF (CT == "S") THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'tablesVersion', NSPEC2TAB)
+          ! LOCAL MARS TABLE USED.
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'setLocalDefinition', 1)
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber', 1)
           IF ( NTOTENS > 0 ) THEN
@@ -179,7 +170,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ! CLASS
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'class',YCLASS)
         ! TYPE
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'type',2)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'type',MARSTYPE)
         ! STREAM
         IF (ISTREAM > 0) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
@@ -187,8 +178,8 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           WRITE(IU06,*) ''
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!! '
-          WRITE(IU06,*) ' ISTREAM MUST ALWAYS BE SPECIFIED > 0 !!!' 
-          WRITE(IU06,*) ' SEE INPUT NAMELIST wam_input' 
+          WRITE(IU06,*) ' ISTREAM MUST ALWAYS BE SPECIFIED > 0 !!!'
+          WRITE(IU06,*) ' SEE INPUT NAMELIST wam_input'
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) ''
           CALL ABORT1
@@ -303,33 +294,11 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 !     --------------------------------------------------
 
         IF (CT == "S") THEN
-!         SPECTRA USE THEIR OWN GRIB TABLE !!!
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'tablesVersion', NSPEC2TAB)
           IF ( NTOTENS > 0 ) THEN
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'productDefinitionTemplateNumber', NSPEC2TMPP)
           ELSE
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'productDefinitionTemplateNumber', NSPEC2TMPD)
           ENDIF
-        ENDIF
-
-!       RESET STREAM IF NEEDED
-        CALL IGRIB_GET_VALUE(IGRIB_HANDLE_IFS,'stream',IFS_STREAM)
-        IF (.NOT.LNEWLVTP) THEN
-!         GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
-          CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,       &
-     &                      MARSFCTYPE, ISTREAM, LASTREAM) 
-          IF (CSTREAM == '****') THEN
-            WRITE(IU06,*) '*****************************************'
-            WRITE(IU06,*) ''
-            WRITE(IU06,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!'
-            WRITE(IU06,*) ' IFS STREAM UNKNOWN '
-            WRITE(IU06,*) ' INPUT ISTREAM = ', IFS_STREAM
-            WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
-            WRITE(IU06,*) ''
-            WRITE(IU06,*) '*****************************************'
-            CALL ABORT1
-          ENDIF
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
         ENDIF
 
       ENDIF
@@ -357,7 +326,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ENDDO
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValuesOfWaveFrequencies',SCFR)
         DEALLOCATE(SCFR)
-        
+
       ENDIF
 
 !     GEOGRAPHY
@@ -376,7 +345,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
 
         ! NUMBER OF POINTS ALONG A MERIDIAN
-        IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN 
+        IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN
           NJ = NINT(180.0_JWRU/DXDELLA) + 1
         ELSE
           NJ = NGY
@@ -392,7 +361,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ELSE
           ALLOCATE(PL(NJ))
           PL(:)=0
-          IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN 
+          IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN
             KST = NINT((90.0_JWRU - DAMONOP ) / DXDELLA)
           ELSE
             KST = 0
@@ -440,7 +409,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ENDIF
 
         ! LATITUDE INCREMENT
-        IF ( IQGAUSS /= 1 ) THEN 
+        IF ( IQGAUSS /= 1 ) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'jDirectionIncrementInDegrees',DXDELLA)
         ENDIF
 
@@ -468,4 +437,4 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
 IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',1,ZHOOK_HANDLE)
 
-END SUBROUTINE PRESET_WGRIB_TEMPLATE 
+END SUBROUTINE PRESET_WGRIB_TEMPLATE
