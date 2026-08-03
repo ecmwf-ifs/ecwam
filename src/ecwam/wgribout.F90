@@ -61,7 +61,7 @@
       INTEGER(KIND=JWIM), DIMENSION(ISIZE), INTENT(INOUT) :: KGRIB_BUFR
       LOGICAL, INTENT(IN) :: LFDB
 
-      INTEGER :: IERR, ITABPAR, ICLASS
+      INTEGER :: IERR, ITABPAR, ITYPE
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -86,12 +86,12 @@
         CEXPVER=C12(1:4)
         CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',C12)
         CSTREAM=C12(1:4)
-        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',ICLASS)
+        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',ITYPE)
         WRITE(IU06,*)'  '
         WRITE(IU06,*)'   WGRIBOUT : PARAM= ',ITABPAR,     &
      &                            ' EXPVER=',CEXPVER,     &
      &                            ' STREAM=',CSTREAM,     &
-     &                            ' CLASS=', ICLASS
+     &                            ' TYPE=  ',ITYPE
         CALL FLUSH(IU06)
       ENDIF
 
