@@ -46,7 +46,7 @@ jobs:
             modules: ~
             env_vars:
               OMP_STACKSIZE: 128M
-            build_options: --with-fckit --with-loki --with-acc --with-cuda --with-gpu-aware-mpi --with-static-linking
+            build_options: --with-fckit --with-loki --with-acc --with-cuda --with-gpu-aware-mpi --with-static-linking --with-single-precision
 
           - name: ac-cpu intel sp
             site: ac-batch
@@ -61,7 +61,7 @@ jobs:
             arch: ecmwf/hpc2020/intel/2021.4.0/hpcx-openmpi/2.9.0
             modules: ~
             env_vars: {}
-            build_options: --with-fckit
+            build_options: --with-fckit --with-single-precision
 
     runs-on: [self-hosted, linux, hpc]
     env:
