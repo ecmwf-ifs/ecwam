@@ -118,7 +118,7 @@ ecbuild_add_option( FEATURE LOKI
 set( LOKI_MODE "scc-stack" CACHE STRING "Transformation mode for Loki source transformations" )
 
 ### OpenACC
-if( ${CMAKE_VERSION} VERSION_LESS "3.25" AND HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" )
+if( ${CMAKE_VERSION} VERSION_LESS "3.25" AND HAVE_LOKI )
   if ( ${PNAME}_ENABLE_ACC OR (NOT DEFINED ${PNAME}_ENABLE_ACC AND ENABLE_ACC) )
     # Incredibly inconvenient: FindOpenACC does _not_ set OpenACC_FOUND, only
     # the language-specific components OpenACC_Fortran_FOUND and OpenACC_C_FOUND.
@@ -138,7 +138,7 @@ endif()
 ecbuild_add_option( FEATURE ACC
                     DESCRIPTION "OpenACC" DEFAULT OFF
                     REQUIRED_PACKAGES "OpenACC COMPONENTS Fortran"
-                    CONDITION HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" )
+                    CONDITION HAVE_LOKI )
 
 ### CUDA
 include(CheckLanguage)
