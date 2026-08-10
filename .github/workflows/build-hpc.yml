@@ -116,5 +116,5 @@ jobs:
 
             echo "::group::ecwam test"
             source build/env.sh
-            ctest --test-dir build/ecwam
+            ctest --test-dir build/ecwam --output-on-failure
             echo "::endgroup::"
