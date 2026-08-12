@@ -34,7 +34,10 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   set(fpe_flags           "-fpe0")
   set(vectorization_flags "-march=core-avx2 -no-fma")
   set(fpmodel_flags       "-fp-model precise -fp-speculation=safe")
-  set(transcendentals_flags "-fast-transcendentals")
+  if(CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
+    # ifx does not use this flag
+    set(transcendentals_flags "-fast-transcendentals")
+  endif()
   set(heap_arrays_flags   "-heap-arrays 32")
   set(optimization_flags  "-O2")
 
