@@ -234,6 +234,7 @@ jobs:
           ecmwf-ifs/field_api: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_ACC=OFF -DENABLE_SINGLE_PRECISION=${{ matrix.prec == 'SP' }} -DENABLE_DOUBLE_PRECISION=${{ matrix.prec == 'DP' }}"
           ecmwf-ifs/loki: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF"
         cmake_options: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.cmake_options }} -DENABLE_MPI=ON -DENABLE_SINGLE_PRECISION=${{ matrix.prec == 'SP' }}"
+        # Debug build runs are **very** slow so we only run the most canonical case
         ctest_options: "${{ matrix.ctest_options }} ${{ matrix.build_type == 'Debug' && '-R ^ecwam_test_etopo1_oper_an_fc_(O48)_(sp|dp)(_preproc|_preset|_mpi4_omp1|_mpi1_omp4)?$' || '' }}"
 
     - name: Verify tools
