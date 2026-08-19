@@ -30,6 +30,7 @@ jobs:
         name:
           - ac-gpu nvhpc sp
           - ac-cpu intel sp
+          - ac-cpu gnu sp
 
         include:
           - name: ac-gpu nvhpc sp
@@ -59,6 +60,21 @@ jobs:
               #SBATCH --mem=60GB
               #SBATCH --qos=np
             arch: ecmwf/hpc2020/intel/2021.4.0/hpcx-openmpi/2.9.0
+            modules: ~
+            env_vars: {}
+            build_options: --with-fckit --with-single-precision
+
+          - name: ac-cpu gnu sp
+            site: ac-batch
+            sbatch_options: |
+              #SBATCH --time=00:20:00
+              #SBATCH --nodes=1
+              #SBATCH --ntasks=4
+              #SBATCH --cpus-per-task=32
+              #SBATCH --hint=nomultithread
+              #SBATCH --mem=60GB
+              #SBATCH --qos=np
+            arch: ecmwf/hpc2020/gnu/15.2.0/hpcx-openmpi/2.18.0
             modules: ~
             env_vars: {}
             build_options: --with-fckit --with-single-precision
