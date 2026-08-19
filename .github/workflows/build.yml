@@ -32,7 +32,7 @@ jobs:
         build_type: [Bit, Debug]
         prec: ['DP', 'SP']
         name:
-          - linux gnu-14
+          - linux gnu-15
           - linux nvhpc-23.5
           - linux intel-classic
           - linux intel-modern
@@ -40,12 +40,12 @@ jobs:
 
         include:
 
-          - name: linux gnu-14
+          - name: linux gnu-15
             os: ubuntu-24.04
-            compiler: gnu-14
-            compiler_cc: gcc-14
-            compiler_cxx: g++-14
-            compiler_fc: gfortran-14
+            compiler: gnu-15
+            compiler_cc: gcc-15
+            compiler_cxx: g++-15
+            compiler_fc: gfortran-15
             python-version: '3.11'
             caching: true
 
@@ -120,7 +120,17 @@ jobs:
           brew install libaec
           brew install coreutils
         else
+          if [[ "${{ matrix.compiler }}" == "gnu-15" ]]; then
+            # GCC 15 is not available from Ubuntu 24.04's standard repositories.
+            sudo add-apt-repository --yes --no-update ppa:ubuntu-toolchain-r/test
+          fi
+
           sudo apt-get update
+
+          if [[ "${{ matrix.compiler }}" == "gnu-15" ]]; then
+            sudo apt-get install --yes gcc-15 g++-15 gfortran-15
+          fi
+
           sudo apt-get install libaec-dev
           sudo apt-get install ninja-build
         fi
