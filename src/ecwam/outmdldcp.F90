@@ -26,7 +26,7 @@ SUBROUTINE OUTMDLDCP( NEMO2WAM, WAM2NEMO, NTYPE )
 
 ! ----------------------------------------------------------------------
 
-USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+USE PARKIND_WAVE, ONLY : JWIM, JWIB, JWRB, JWRU
 USE YOWDRVTYPE  , ONLY : WAVE2OCEAN, OCEAN2WAVE
 USE YOWCOUT  , ONLY : JPPFLAG, FFLAG, GFLAG, NFLAG, NIPRMOUT, LFDB
 USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_WAM_I
@@ -52,6 +52,7 @@ USE YOWGRIB  , ONLY : JPKSIZE_T, &
                     & IGRIB_GET_MESSAGE_SIZE, &
                     & IGRIB_CLONE, &
                     & IGRIB_RELEASE
+USE YOWDATE_UTILS, ONLY : DIFDATE
 
 ! ----------------------------------------------------------------------
 
@@ -61,7 +62,6 @@ IMPLICIT NONE
 #include "outgrid.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 #include "wgribencode.intfb.h"
-#include "difdate.intfb.h"
 
 TYPE(OCEAN2WAVE), INTENT(IN), OPTIONAL :: NEMO2WAM
 TYPE(WAVE2OCEAN), INTENT(IN), OPTIONAL :: WAM2NEMO
@@ -72,6 +72,7 @@ INTEGER(KIND=JWIM), PARAMETER :: NBITSPERVALUE = 24  !! need a higher precision 
 INTEGER(KIND=JWIM) :: IJ, IPRM, IJGLO, ITMIN, ITMAX, IK, IM, IR, IFLAG, IDT, KSTEP, IX, JSN, I,J,K ,IK1, IK2
 INTEGER(KIND=JWIM) :: LFILE, IUOUT, ICOUNT
 INTEGER(KIND=JWIM) :: IFCST, IT, IPARAM, ITABLE, IZLEV
+INTEGER(KIND=JWIB) :: IFCST_B
 INTEGER(KIND=JWIM) :: ICHNK, KIJS, KIJL, IJSB, IJLB
 INTEGER(KIND=JWIM) :: IGRIB_HANDLE
 INTEGER(KIND=JWIM) :: ISIZE, ITYPE, IFLDS
@@ -120,9 +121,10 @@ ENDIF
 
 ! DATES AND STEPS FOR ITYPE > 0
 IF (ITYPE>0) THEN
-  CALL DIFDATE(CDATEF, CDTPRO, IFCST)
+  CALL DIFDATE(CDATEF, CDTPRO, IFCST_B)
   CDATE = CDATEF
-  WRITE(CDI8,'(I8.8)') IFCST/IDELPRO
+  WRITE(CDI8,'(I8.8)') IFCST_B/IDELPRO
+  IFCST = IFCST_B/3600  ! BUG: WGRIBENCODE expects forecast step in hours, not seconds
   MARSTYPE_DUM = 'fc'
 ELSE
   CDATE = '20220220000000' ! set any date and time as the start date of the run might still be unknown

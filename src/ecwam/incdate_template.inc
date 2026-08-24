@@ -1,75 +1,10 @@
-! (C) Copyright 1989- ECMWF.
-! 
-! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
-! In applying this licence, ECMWF does not waive the privileges and immunities
-! granted to it by virtue of its status as an intergovernmental organisation
-! nor does it submit to any jurisdiction.
-!
-
 ! ======================================================================
-
-      SUBROUTINE INCDATE (CDATE, ISHIFT)
-
+! TEMPLATE FOR INCDATE IMPLEMENTATION
+! This file is included by specific typed versions of INCDATE
+! The following must be defined before including:
+!   - INCDATE_ROUTINE: name of the specific routine
+!   - ISHIFT_KIND: the integer kind for ISHIFT argument
 ! ======================================================================
-
-!**** *INCDATE* - TO UPDATE DATE TIME GROUP
-
-!     J. BIDLOT   FEB 2007    RE-INRODUCING THE OLD WAY WITHOUT 
-!                             THE NEED FOR ECLIB. ADDING SECONDS
-
-!**   PURPOSE.
-!     --------
-!       UPDATING DATE TIME GROUP.
-
-!**   INTERFACE.
-!     ----------
-
-!       *CALL* *INCDATE (CDATE,ISHIFT)*
-!         *CDATE*  CHAR*12 - DATE TIME GROUP (YYYYMMDDHHMM) OR
-!                  CHAR*14 - DATE TIME GROUP (YYYYMMDDHHMMSS)
-!         *ISHIFT* INTEGER - TIME INCREMENT IN SECONDS, RESTRICTIONS:
-!                            SINCE ISHIFT IS AN INTEGER
-!                            -MAXINT < ISHIFT <  +MAXINT
-!                             WHERE MAXINT=2**(IREP-1)
-!                             WHERE IREPR IS THE INTEGER REPRESENTATION
-!                             USUALLY 32 BITS --> MAXINT=2147482648
-!                             (ABOUT 68 YEARS).
-
-!     METHOD.
-!     -------
-
-!       THE DATE AND TIME CAN BE SUPPLIED IN THE Y2K COMPLIANT
-!       14 CHARACTER OR 12 CHARACTER FORMAT. IF THE 10 CHARACTER
-!       FORMAT IS USED, AN ERROR MESSAGE WILL BE ISSUED. 
-
-!     EXTERNALS.
-!     ----------
-
-!     REFERENCES.
-!     -----------
-
-
-! ----------------------------------------------------------------------
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-
-      IMPLICIT NONE
-#include "abort1.intfb.h"
-
-      INTEGER(KIND=JWIM), INTENT(IN) :: ISHIFT
-      CHARACTER(LEN=*), INTENT(INOUT) :: CDATE
-
-      INTEGER(KIND=JWIM) :: IL, IRET
-      INTEGER(KIND=JWIM) :: IYEAR, IMON, IDAY, IHOUR, IMIN, ISEC
-      INTEGER(KIND=JWIM) :: MON(12)
-
-      CHARACTER(LEN=80) :: CLFMT
-
-      LOGICAL :: LLND
-
-      DATA MON /31,28,31,30,31,30,31,31,30,31,30,31/
-
-! ----------------------------------------------------------------------
 
 !*    1.0 SPLIT DATE TIME GROUP INTO SECOND, MINUTE, HOUR, DAY, MONTH,
 !*        YEAR DEPENDENT ON THE FORMAT OF CDATE.
@@ -148,7 +83,7 @@
 !         -----------------------------------------------------------
 
 
-      ISEC=ISEC+MOD(ISHIFT,60)
+      ISEC=ISEC+MOD(ISHIFT,INT(60,KIND=ISHIFT_KIND))
       IF (ISEC >= 60) THEN
         IMIN = IMIN+ISEC/60
         ISEC = ISEC-(ISEC/60)*60
@@ -157,7 +92,7 @@
         ISEC = ISEC-((ISEC-59)/60)*60
       END IF
 
-      IMIN=IMIN+ISHIFT/60
+      IMIN=IMIN+ISHIFT/INT(60,KIND=ISHIFT_KIND)
 
 !     2.1 POSITIVE SHIFT GREATER THAN 1 MINUTE.
 
@@ -247,25 +182,3 @@
         ENDIF
         WRITE(CDATE,'(5I2.2)')IYEAR, IMON, IDAY, IHOUR, IMIN
       ENDIF
-
-      RETURN
-
-      CONTAINS
-
-      INTEGER(KIND=JWIM) FUNCTION MFEB_LENGTH(IYEAR)
-!     LENGTH OF FEBRUARY IN DAYS FOR YEAR IYEAR (YYYY)
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      IMPLICIT NONE
-      INTEGER(KIND=JWIM), INTENT(IN) :: IYEAR
-      IF (MOD(IYEAR,400) == 0) THEN
-        MFEB_LENGTH=29
-      ELSEIF (MOD(IYEAR,100) == 0) THEN
-        MFEB_LENGTH=28
-      ELSEIF (MOD(IYEAR,4) == 0) THEN
-        MFEB_LENGTH=29
-      ELSE
-        MFEB_LENGTH=28
-      ENDIF
-      END FUNCTION MFEB_LENGTH
-
-      END SUBROUTINE INCDATE

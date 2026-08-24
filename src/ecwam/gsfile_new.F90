@@ -78,15 +78,15 @@
 
 ! ----------------------------------------------------------------------
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWIB, JWRB, JWRU
 
       USE YOWTEXT  , ONLY : LRESTARTED,USERID   ,PATH
+      USE YOWDATE_UTILS, ONLY : DIFDATE
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "difdate.intfb.h"
 #include "file_transfer.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ICH
@@ -97,7 +97,8 @@
 
       INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
       INTEGER(KIND=JWIM), PARAMETER :: KKNAME=7
-      INTEGER(KIND=JWIM) :: IL, LIU, LIP, LUSI, LNAME, INDXF, ISHIFT, IFAIL
+      INTEGER(KIND=JWIM) :: IL, LIU, LIP, LUSI, LNAME, INDXF, IFAIL
+      INTEGER(KIND=JWIB) :: ISHIFT
 
       CHARACTER(LEN=8) :: IU
       CHARACTER(LEN=8) :: PLIST
