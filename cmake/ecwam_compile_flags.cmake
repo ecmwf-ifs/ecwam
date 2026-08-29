@@ -45,7 +45,10 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
   set(autopromote_flags   "-r8")
   set(fpe_flags           "-Ktrap=fp")
   set(vectorization_flags "-O3 -fast")
-  string(REPLACE "-O2" "" ${PNAME}_Fortran_FLAGS_BIT ${${PNAME}_Fortran_FLAGS_BIT})
+
+  # Remove -O2 from ecwam's compiler flags if it was already defined in a bundle
+  ecbuild_remove_fortran_flags( "-O2" BUILD BIT PROJECT)
+
   set(checkbounds_flags   "-Mbounds")
   set(fpmodel_flags       "-Kieee")
 
@@ -85,12 +88,12 @@ endif()
 if( CMAKE_BUILD_TYPE MATCHES "Debug" )
   foreach( debug_flag    fpe initsnan checkbounds )
     if( ${debug_flag}_flags )
-      set( ${PNAME}_Fortran_FLAGS_DEBUG "${${PNAME}_Fortran_FLAGS_DEBUG} ${${debug_flag}_flags}" )
+      ecbuild_add_fortran_flags( ${${debug_flag}_flags} NAME ${debug_flag} BUILD DEBUG PROJECT)
     endif()
   endforeach()
   if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     # In case '-check all' has been added, we need to remove the '-check arg_temp_created' warnings
-    set( ${PNAME}_Fortran_FLAGS_DEBUG "${${PNAME}_Fortran_FLAGS_DEBUG} -check noarg_temp_created" )
+    ecbuild_add_fortran_flags( "-check noarg_temp_created" NAME temp_array_warn BUILD DEBUG PROJECT)
   endif()
 endif()
 
