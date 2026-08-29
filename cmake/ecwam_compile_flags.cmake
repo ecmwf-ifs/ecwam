@@ -69,7 +69,7 @@ if( DEFINED vectorization_flags )
   # vectorization flags must be per-sourcefile overrideable, so are set via ${PNAME}_Fortran_FLAGS
   set( ${PNAME}_Fortran_FLAGS_BIT "${${PNAME}_Fortran_FLAGS_BIT} ${vectorization_flags}" )
 endif()
-if( DEFINED fpmodel_flags )
+if( DEFINED fpmodel_flags AND NOT "${${PNAME}_Fortran_FLAGS}" MATCHES "${fpmodel_flags}" )
   ecbuild_add_fortran_flags( "${fpmodel_flags}"   NAME fpmodel BUILD BIT)
 endif()
 if( DEFINED transcendentals_flags )
