@@ -123,7 +123,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 !!! mapping chuncks to block ONLY for actual grid points !!!!
 #ifdef WAM_GPU
 #ifdef OMPGPU
-        !$omp target teams distribute
+        !$omp target teams distribute private(KIJS,IJSB,KIJL,IJLB,M,K)
 #else
         !$acc parallel loop gang private(KIJS, IJSB, KIJL, IJLB) vector_length(NPROMA_WAM)
 #endif
@@ -303,7 +303,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 #ifdef WAM_GPU
 #ifdef OMPGPU
-!$omp target teams distribute
+!$omp target teams distribute private(KIJS,KIJL,M,K)
 #else
 !$acc parallel loop gang private(KIJS, KIJL) vector_length(NPROMA)
 #endif
@@ -415,7 +415,7 @@ ENDIF  ! end sub time steps (if needed)
 !!!  So need to convert back to the nproma_wam chuncks
 #ifdef WAM_GPU
 #ifdef OMPGPU
-        !$omp target teams distribute
+        !$omp target teams distribute private(KIJS,IJSB,KIJL,IJLB)
 #else
         !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
 #endif
@@ -428,7 +428,7 @@ ENDIF  ! end sub time steps (if needed)
             KIJL = KIJL4CHNK(ICHNK)
             IJLB = IJFROMCHNK(KIJL, ICHNK)
 #ifdef OMPGPU
-            !$omp parallel do collapse(3)
+            !$omp parallel do collapse(3) private(II)
 #else
             !$acc loop independent collapse(3)
 #endif

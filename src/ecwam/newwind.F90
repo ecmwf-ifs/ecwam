@@ -132,7 +132,7 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
           KIJL = NPROMA_WAM
           IF (ICODE_WND == 3 ) THEN
 #ifdef OMPGPU
-            !$omp parallel do
+            !$omp parallel do private(TLWMAX)
 #else
             !$acc loop vector
 #endif

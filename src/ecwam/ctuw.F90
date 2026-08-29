@@ -419,7 +419,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !     ---------------------
 
 #ifdef OMPGPU
-      !$omp target teams distribute map(to:KXLT)
+      !$omp target teams distribute private(KP1,KM1,SP,SM,DELFR0)
 #else
       !$acc parallel loop private(km1,kp1,sp,sm,DELFR0,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM)
 #endif
@@ -503,7 +503,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !       -------------------
         IF (IREFRA == 0) THEN
 #ifdef OMPGPU
-!$omp parallel do collapse(2)
+!$omp parallel do collapse(2) private(JH,TANPH,DRGP,DRGM,DTHP,DTHM)
 #else
 !$acc loop collapse(2) private(DTHP,DTHM)
 #endif
@@ -522,7 +522,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*      SHALLOW WATER AND DEPTH REFRACTION.
 !       -----------------------------------
 #ifdef OMPGPU
-!$omp parallel do collapse(2) private(DTHP,DTHM)
+!$omp parallel do collapse(2) &
+!$omp& private(JH,TANPH,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM,DTHP,DTHM)
 #else
 !$acc loop collapse(2) private(DTHP,DTHM)
 #endif
@@ -547,7 +548,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
           DELFR0 = 0.25_JWRB*DELPRO/((FRATIO-1)*ZPI)
 
 #ifdef OMPGPU
-!$omp parallel do private(MP1,MM1,DFP,DFM,DTHP,DTHM)
+!$omp parallel do private(IJ,MP1,MM1,DFP,DFM,DTHP,DTHM)
 #else
 !$acc loop private(MP1,MM1,DFP,DFM) private(DTHP,DTHM)
 #endif

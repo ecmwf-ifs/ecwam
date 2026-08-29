@@ -61,7 +61,7 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
 !!! mapping chuncks to block ONLY for actual grid points !!!!
 #ifdef WAM_GPU
 #ifdef OMPGPU
-!$omp target teams distribute
+!$omp target teams distribute private(KIJS,IJSB,KIJL,IJLB)
 #else
 !$acc kernels loop private(ICHNK, KIJS, IJSB, KIJL, IJLB)
 #endif
@@ -75,7 +75,7 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
         IJLB = IJFROMCHNK(KIJL, ICHNK)
 
 #ifdef OMPGPU
-!$omp parallel do
+!$omp parallel do private(IJ)
 #else
 !$acc loop
 #endif
