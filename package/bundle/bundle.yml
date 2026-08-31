@@ -34,7 +34,7 @@ projects :
 
     - field_api :
         git     : https://github.com/ecmwf-ifs/field_api.git
-        version : v0.3.4
+        version : v0.3.10
         cmake   : >
             ENABLE_SINGLE_PRECISION=OFF
 

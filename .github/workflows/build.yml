@@ -230,7 +230,7 @@ jobs:
           ecmwf/eccodes@refs/tags/2.44.0
           ecmwf/fckit@refs/tags/0.13.0
           ecmwf-ifs/fiat
-          ecmwf-ifs/field_api@refs/tags/v0.3.4
+          ecmwf-ifs/field_api@refs/tags/v0.3.10
           ecmwf-ifs/loki@refs/heads/main
         dependency_branch: develop
         dependency_cmake_options: |
