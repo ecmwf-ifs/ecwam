@@ -56,8 +56,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : NGRIB_VERSION,  LL_GRID_SIMPLE_MATRIX,      &
      &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESI ,    &
-     &            NGRBRESS, LGRHDIFS ,LNEWLVTP,                         &
-     &            NSPEC2TAB, NSPEC2TMPD, NSPEC2TMPP 
+     &            NGRBRESS, LGRHDIFS ,LNEWLVTP, NSPEC2TMPD, NSPEC2TMPP
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS, NGRIB_HANDLE_IFS2
       USE YOWMAP   , ONLY : IRGG     ,IQGAUSS  ,DAMOWEP   ,DAMOSOP   ,  &
      &            DAMOEAP  ,DAMONOP  ,DXDELLA  ,DXDELLO   ,NLONRGG   ,  &
@@ -79,7 +78,6 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "wstream_strg.intfb.h"
 
       CHARACTER(LEN=1), INTENT(IN) :: CT 
       INTEGER(KIND=JWIM), INTENT(OUT) :: IGRIB_HANDLE
@@ -89,7 +87,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
 
 
       INTEGER(KIND=JWIM) :: IC, JC, KST,JSN, KK, MM
-      INTEGER(KIND=JWIM) :: ICLASS,ICENTRE,IFS_STREAM
+      INTEGER(KIND=JWIM) :: ICLASS, ICENTRE, ISPEC2TAB
       INTEGER(KIND=JWIM) :: IREPR, IRESFLAGS
       INTEGER(KIND=JWIM) :: IGRIB_VERSION, IBITSPERVALUE
       INTEGER(KIND=JWIM) :: IDIRSCALING, IFRESCALING
@@ -110,11 +108,8 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
 ! The following must NOT be changed from a 4 byte real
       REAL(KIND=4) :: REAL4
 
-      CHARACTER(LEN=2) :: MARSFCTYPE
-      CHARACTER(LEN=4) :: CSTREAM
       CHARACTER(LEN=96) :: CLWORD
 
-      LOGICAL :: LASTREAM
       LOGICAL :: LLCRT 
 
 !-------------------------------------------------------------------
@@ -213,11 +208,17 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
       ENDIF
 
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',0)
+      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfLevel','surface')
 
 !     DEFINE YOUR OWN LOCAL HEADER
 !     -----------------------------
       IF (.NOT. LGRHDIFS .OR. LLCRT) THEN
-        ! LOCAL MARS TABLE USED.
+
+        IF ( IGRIB_VERSION == 2 ) THEN
+          ! Use latest tables version for the GRIB-2 samples
+          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'tablesVersionLatest', ISPEC2TAB)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'tablesVersion', ISPEC2TAB)
+        ENDIF
 
         IF (CT == "S") THEN
           IF ( IGRIB_VERSION == 1 ) THEN
@@ -226,7 +227,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
             ! not used in uncoupled mode.
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',3)
           ELSEIF ( IGRIB_VERSION == 2 ) THEN
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'tablesVersion', NSPEC2TAB)
+            ! LOCAL MARS TABLE USED.
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'setLocalDefinition', 1)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber', 1)
             IF ( NTOTENS > 0 ) THEN
@@ -244,7 +245,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ! CLASS
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'class',YCLASS)
         ! TYPE
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'type',2)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'type',MARSTYPE)
         ! STREAM
         IF (ISTREAM > 0) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
@@ -409,11 +410,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 !     --------------------------------------------------
 
         IF (CT == "S") THEN
-!         SPECTRA USE THEIR OWN GRIB TABLE !!!
           IF ( IGRIB_VERSION == 1 ) THEN
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber', 13)
           ELSEIF ( IGRIB_VERSION == 2 ) THEN
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'tablesVersion', NSPEC2TAB)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'setLocalDefinition', 1)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber', 1)
             IF ( NTOTENS > 0 ) THEN
@@ -465,26 +464,6 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
           ENDIF
 
-        ENDIF
-
-!       RESET STREAM IF NEEDED
-        CALL IGRIB_GET_VALUE(IGRIB_HANDLE_IFS,'stream',IFS_STREAM)
-        IF (.NOT.LNEWLVTP) THEN
-!         GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
-          CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,       &
-     &                      MARSFCTYPE, ISTREAM, LASTREAM) 
-          IF (CSTREAM == '****') THEN
-            WRITE(IU06,*) '*****************************************'
-            WRITE(IU06,*) ''
-            WRITE(IU06,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!'
-            WRITE(IU06,*) ' IFS STREAM UNKNOWN '
-            WRITE(IU06,*) ' INPUT ISTREAM = ', IFS_STREAM
-            WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
-            WRITE(IU06,*) ''
-            WRITE(IU06,*) '*****************************************'
-            CALL ABORT1
-          ENDIF
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
         ENDIF
 
       ENDIF
