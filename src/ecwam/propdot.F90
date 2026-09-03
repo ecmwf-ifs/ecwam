@@ -101,8 +101,14 @@
       IF (LHOOK) CALL DR_HOOK('PROPDOT',0,ZHOOK_HANDLE)
 
 
+#ifdef OMPGPU
+      !$omp target data map(alloc:DDPHI,DDLAM,DUPHI,DULAM,DVPHI,DVLAM,DCO,OMDD) &
+      !$omp & map(to:BLK2GLO,WAVNUM_EXT,CGROUP_EXT,OMOSNH2KD_EXT,COSPHM1_EXT,DEPTH_EXT, &
+      !$omp & U_EXT,V_EXT,THDC,THDD,SDOT,SINTH,COSTH)
+#else
       !$acc data create(DDPHI,DDLAM,DUPHI,DULAM,DVPHI,DVLAM,DCO,OMDD) &
       !$acc & present(COSPHM1_EXT,U_EXT,V_EXT,SINTH,COSTH)
+#endif
 !*    2.2 DEPTH AND CURRENT GRADIENTS.
 !         ----------------------------
 
@@ -112,47 +118,81 @@
      &              DDPHI, DDLAM, DUPHI,            &
      &              DULAM, DVPHI, DVLAM)
 
-
 !*    2.3 COSINE OF LATITUDES IF SPHERICAL PROPAGATION.
 !         ---------------------------------------------
 
         IF (ICASE == 1) THEN
+#ifdef OMPGPU
+          !$omp target teams distribute parallel do
+#else
           !$acc kernels
+#endif
           DO IJ = KIJS,KIJL
             DCO(IJ) = COSPHM1_EXT(IJ)
           ENDDO
+#ifdef OMPGPU
+          !$omp end target teams distribute parallel do
+#else
           !$acc end kernels
+#endif
         ELSE
+#ifdef OMPGPU
+          !$omp target teams distribute parallel do
+#else
           !$acc kernels
+#endif
           DO IJ = KIJS,KIJL
             DCO(IJ) = 1.0_JWRB
           ENDDO
+#ifdef OMPGPU
+          !$omp end target teams distribute parallel do
+#else
           !$acc end kernels
+#endif
         ENDIF
 
 !*    2.4 DEPTH GRADIENT PART OF SIGMA DOT.
 !         ---------------------------------
 
         IF (IREFRA == 3) THEN
+#ifdef OMPGPU
+          !$omp target teams distribute parallel do
+#else
           !$acc kernels
+#endif
           DO IJ = KIJS,KIJL
             OMDD(IJ) = V_EXT(IJ)*DDPHI(IJ) + U_EXT(IJ)*DDLAM(IJ)*DCO(IJ)
           ENDDO
+#ifdef OMPGPU
+          !$omp end target teams distribute parallel do
+#else
           !$acc end kernels
+#endif
         ELSEIF (IREFRA == 2) THEN
+#ifdef OMPGPU
+          !$omp target teams distribute parallel do
+#else
           !$acc kernels
+#endif
           DO IJ = KIJS,KIJL
             OMDD(IJ) = 0.0_JWRB
           ENDDO
+#ifdef OMPGPU
+          !$omp end target teams distribute parallel do
+#else
           !$acc end kernels
+#endif
         ENDIF
-        !$acc end kernels
 
 
 !*    2.5. LOOP OVER DIRECTIONS.
 !          ---------------------
 
+#ifdef OMPGPU
+        !$omp target teams distribute private(SD,CD,SS,SC,CC)
+#else
         !$acc parallel loop
+#endif
         DO K=1,NANG
           SD = SINTH(K)
           CD = COSTH(K)
@@ -161,12 +201,20 @@
 !            ----------------------------
 
           IF (IREFRA == 1 .OR. IREFRA == 3) THEN
+#ifdef OMPGPU
+            !$omp parallel do
+#else
             !$acc loop
+#endif
             DO IJ = KIJS,KIJL
               THDD(IJ,K) = SD*DDPHI(IJ) - CD*DDLAM(IJ)*DCO(IJ)
             ENDDO
           ELSE
+#ifdef OMPGPU
+            !$omp parallel do
+#else
             !$acc loop
+#endif
             DO IJ = KIJS,KIJL
               THDD(IJ,K) = 0.0_JWRB
             ENDDO
@@ -180,7 +228,11 @@
             SS  = SD**2
             SC  = SD*CD
             CC  = CD**2
+#ifdef OMPGPU
+            !$omp parallel do
+#else
             !$acc loop
+#endif
             DO IJ = KIJS,KIJL
               SDOT(IJ,K,NFRE_RED) = -SC*DUPHI(IJ) - CC*DVPHI(IJ)      &
      &                        - (SS*DULAM(IJ) + SC*DVLAM(IJ))*DCO(IJ)
@@ -191,8 +243,13 @@
 !*    2.5.3 LOOP OVER FREQUENCIES.
 !           ----------------------
 
+#ifndef OMPGPU
             !$acc loop independent collapse(2)
+#endif
             DO M=1,NFRE_RED
+#ifdef OMPGPU
+              !$omp parallel do
+#endif
               DO IJ=KIJS,KIJL
                 SDOT(IJ,K,M) = (SDOT(IJ,K,NFRE_RED)*CGROUP_EXT(IJ,M)   &
      &           + OMDD(IJ)*OMOSNH2KD_EXT(IJ,M)) * WAVNUM_EXT(IJ,M) 
@@ -203,9 +260,13 @@
 
 !*      BRANCH BACK TO 2.5 FOR NEXT DIRECTION.
         ENDDO
+#ifdef OMPGPU
+        !$omp end target teams distribute
+        !$omp end target data
+#else
         !$acc end parallel loop
-
         !$acc end data
+#endif
 
       IF (LHOOK) CALL DR_HOOK('PROPDOT',1,ZHOOK_HANDLE)
 
