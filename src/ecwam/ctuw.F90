@@ -419,9 +419,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !     ---------------------
 
 #ifdef OMPGPU
-      !$omp target teams distribute private(KP1,KM1,SP,SM,DELFR0,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM)
+      !$omp target teams distribute private(KP1,KM1,SP,SM,DELFR0,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM) &
+      !$omp & map(to: THDC,THDD,SDOT)
 #else
-      !$acc parallel loop private(km1,kp1,sp,sm,DELFR0,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM)
+      !$acc parallel loop private(km1,kp1,sp,sm,DELFR0,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM) &
+      !$acc & present(THDC,THDD,SDOT)
 #endif
       DO K=1,NANG
         KP1 = K+1

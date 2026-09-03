@@ -373,9 +373,32 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
 ENDIF
 #endif
 
-IF (ALLOCATED(THDD)) DEALLOCATE(THDD)
-IF (ALLOCATED(THDC)) DEALLOCATE(THDC)
-IF (ALLOCATED(SDOT)) DEALLOCATE(SDOT)
+IF (ALLOCATED(THDD)) THEN
+#ifdef OMPGPU
+   !$omp target exit data map(delete: THDD)
+#else
+   !$acc exit data delete(THDD)
+#endif
+   DEALLOCATE(THDD)
+ENDIF
+
+IF (ALLOCATED(THDC)) THEN
+#ifdef OMPGPU
+   !$omp target exit data map(delete: THDC)
+#else
+   !$acc exit data delete(THDC)
+#endif
+   DEALLOCATE(THDC)
+ENDIF
+
+IF (ALLOCATED(SDOT)) THEN
+#ifdef OMPGPU
+   !$omp target exit data map(delete: SDOT)
+#else
+   !$acc exit data delete(SDOT)
+#endif
+   DEALLOCATE(SDOT)
+ENDIF
 
 #ifdef OMPGPU
 !$omp end target data

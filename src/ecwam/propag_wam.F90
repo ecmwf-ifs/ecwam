@@ -201,9 +201,30 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 !          ---------------------
 
            IF (LLUPDTTD) THEN
-             IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJSG:IJLG, NANG))
-             IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJSG:IJLG, NANG))
-             IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJSG:IJLG, NANG, NFRE_RED))
+             IF (.NOT.ALLOCATED(THDC)) THEN
+               ALLOCATE(THDC(IJSG:IJLG, NANG))
+#ifdef OMPGPU
+               !$omp target enter data map(alloc: THDC)
+#else
+               !$acc enter data create(THDC)
+#endif
+             ENDIF
+             IF (.NOT.ALLOCATED(THDD)) THEN
+               ALLOCATE(THDD(IJSG:IJLG, NANG))
+#ifdef OMPGPU
+               !$omp target enter data map(alloc: THDD)
+#else
+               !$acc enter data create(THDD)
+#endif
+             ENDIF
+             IF (.NOT.ALLOCATED(SDOT)) THEN
+               ALLOCATE(SDOT(IJSG:IJLG, NANG, NFRE_RED))
+#ifdef OMPGPU
+               !$omp target enter data map(alloc: SDOT)
+#else
+               !$acc enter data create(SDOT)
+#endif
+             ENDIF
 
 !            NEED HALO VALUES
              CALL  PROENVHALO (NINF, NSUP,                            &
@@ -216,9 +237,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 #ifdef WAM_GPU
 #ifdef OMPGPU
-             !$omp target data map(alloc:THDC,THDD,SDOT) map(to:BUFFER_EXT,BLK2GLO)
+             !$omp target data map(to:BUFFER_EXT,BLK2GLO)
 #else
-             !$acc data create(THDC,THDD,SDOT) present(BUFFER_EXT,BLK2GLO)
+             !$acc data present(BUFFER_EXT,BLK2GLO)
 #endif
 #else
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
@@ -227,12 +248,12 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1, IJLG)
                CALL PROPDOT(KIJS, KIJL, NINF, NSUP,                                &
-     &                      BLK2GLO,                                               &
+     &                      BLK2GLO, IJSG, IJLG,                                           &
      &                      BUFFER_EXT(:,1:NFRE_RED), BUFFER_EXT(:,NFRE_RED+1:2*NFRE_RED), &
      &                      BUFFER_EXT(:,2*NFRE_RED+1:3*NFRE_RED),      &
      &                      BUFFER_EXT(:,3*NFRE_RED+2), BUFFER_EXT(:,3*NFRE_RED+3),    &
      &                      BUFFER_EXT(:,3*NFRE_RED+4), BUFFER_EXT(:,3*NFRE_RED+5),    &
-     &                      THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
+     &                      THDC, THDD, SDOT)
              ENDDO
 #ifdef WAM_GPU
 #ifdef OMPGPU

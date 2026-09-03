@@ -8,7 +8,7 @@
 !
 
       SUBROUTINE PROPDOT(KIJS, KIJL, NINF, NSUP,                &
-     &                   BLK2GLO,                               &
+     &                   BLK2GLO, IJSG, IJLG,                   &
      &                   WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT, &
      &                   COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT,  & 
      &                   THDC, THDD, SDOT)
@@ -80,12 +80,12 @@
 #include "abort1.intfb.h"
 #include "gradi.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, NINF, NSUP
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, NINF, NSUP, IJSG, IJLG
       TYPE(WVGRIDGLO), INTENT(IN) :: BLK2GLO
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NFRE_RED), INTENT(IN) :: WAVNUM_EXT, CGROUP_EXT, OMOSNH2KD_EXT
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1), INTENT(IN) :: COSPHM1_EXT, DEPTH_EXT, U_EXT, V_EXT
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG), INTENT(INOUT) :: THDC, THDD
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE_RED), INTENT(INOUT) :: SDOT
+      REAL(KIND=JWRB), DIMENSION(IJSG:IJLG, NANG), INTENT(INOUT) :: THDC, THDD
+      REAL(KIND=JWRB), DIMENSION(IJSG:IJLG, NANG, NFRE_RED), INTENT(INOUT) :: SDOT
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M
@@ -107,7 +107,7 @@
       !$omp & U_EXT,V_EXT,THDC,THDD,SDOT,SINTH,COSTH)
 #else
       !$acc data create(DDPHI,DDLAM,DUPHI,DULAM,DVPHI,DVLAM,DCO,OMDD) &
-      !$acc & present(COSPHM1_EXT,U_EXT,V_EXT,SINTH,COSTH)
+      !$acc & present(COSPHM1_EXT,U_EXT,V_EXT,SINTH,COSTH,THDC,THDD,SDOT)
 #endif
 !*    2.2 DEPTH AND CURRENT GRADIENTS.
 !         ----------------------------
