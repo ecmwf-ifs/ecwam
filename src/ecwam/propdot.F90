@@ -116,28 +116,35 @@
 !*    2.3 COSINE OF LATITUDES IF SPHERICAL PROPAGATION.
 !         ---------------------------------------------
 
-        !$acc kernels
         IF (ICASE == 1) THEN
+          !$acc kernels
           DO IJ = KIJS,KIJL
             DCO(IJ) = COSPHM1_EXT(IJ)
           ENDDO
+          !$acc end kernels
         ELSE
+          !$acc kernels
           DO IJ = KIJS,KIJL
             DCO(IJ) = 1.0_JWRB
           ENDDO
+          !$acc end kernels
         ENDIF
 
 !*    2.4 DEPTH GRADIENT PART OF SIGMA DOT.
 !         ---------------------------------
 
         IF (IREFRA == 3) THEN
+          !$acc kernels
           DO IJ = KIJS,KIJL
             OMDD(IJ) = V_EXT(IJ)*DDPHI(IJ) + U_EXT(IJ)*DDLAM(IJ)*DCO(IJ)
           ENDDO
+          !$acc end kernels
         ELSEIF (IREFRA == 2) THEN
+          !$acc kernels
           DO IJ = KIJS,KIJL
             OMDD(IJ) = 0.0_JWRB
           ENDDO
+          !$acc end kernels
         ENDIF
         !$acc end kernels
 
