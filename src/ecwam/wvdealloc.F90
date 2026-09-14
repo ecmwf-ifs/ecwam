@@ -87,18 +87,8 @@
 
       IF(MIJ%LALLOC) CALL MIJ%DEALLOC()
 
-      IF (WVENVI%LALLOC)THEN
-         CALL WVENVI%DEALLOC()
-      ENDIF
-
-      IF (BLK2GLO%LALLOC)THEN
-         CALL BLK2GLO%DEALLOC()
-      ENDIF
-
-      IF (BLK2LOC%LALLOC)THEN
-         CALL BLK2LOC%DEALLOC()
-      ENDIF
-
+      !... We deallocate F_BOUT here even though it's allocated in WAMODEL rather than
+      !... WVALLOC. That's purely because NIPRMOUT isn't initialised when we call WVALLOC
       IF (ASSOCIATED(F_BOUT)) THEN
          CALL FIELD_DELETE(F_BOUT)
          NULLIFY(F_BOUT)

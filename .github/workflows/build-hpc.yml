@@ -42,16 +42,9 @@ jobs:
               #SBATCH --gpus-per-task=1
               #SBATCH --mem=0
               #SBATCH --qos=dg
-            modules:
-              - cmake
-              - fcm
-              - ninja
-              - ecbuild
-              - prgenv/nvidia
-              - nvidia/22.11
-              - hpcx-openmpi/2.14.0-cuda
-              - python3/3.11.10-01
-            gpu: 1
+            arch: ecmwf/hpc2020/nvhpc/24.5/hpcx-openmpi/2.19.0-cuda
+            modules: ~
+            build_options: --with-fckit --with-loki --with-acc --with-cuda --with-gpu-aware-mpi --with-static-linking
 
           - name: ac-cpu intel sp
             site: ac-batch
@@ -63,16 +56,9 @@ jobs:
               #SBATCH --hint=nomultithread
               #SBATCH --mem=60GB
               #SBATCH --qos=np
-            modules:
-              - cmake
-              - fcm
-              - ninja
-              - ecbuild
-              - prgenv/intel
-              - intel/2021.4.0
-              - hpcx-openmpi/2.9.0
-              - python3
-            gpu: 0
+            arch: ecmwf/hpc2020/intel/2021.4.0/hpcx-openmpi/2.9.0
+            modules: ~
+            build_options: --with-fckit
 
     runs-on: [self-hosted, linux, hpc]
     env:
@@ -83,94 +69,41 @@ jobs:
           site: ${{ matrix.site }}
           troika_user: ${{ secrets.HPC_CI_SSH_USER }}
           sbatch_options: ${{ matrix.sbatch_options }}
-          template_data: |
-            cmake_options:
-              - -DENABLE_MPI=ON
-              - -DENABLE_LOKI=${{ matrix.gpu }}
-              - -DENABLE_ACC=${{ matrix.gpu }}
-              - -DENABLE_CUDA=${{ matrix.gpu }}
-              - -DENABLE_GPU_AWARE_MPI=${{ matrix.gpu }}
-              - -DENABLE_SINGLE_PRECISION=ON
-              - -DENABLE_DOUBLE_PRECISION=OFF
-              - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
-            dependencies:
-              ecmwf/eccodes:
-                version: 2.44.0
-                cmake_options:
-                  - -DENABLE_MEMFS=ON
-                  - -DENABLE_JPG=OFF
-                  - -DENABLE_PNG=OFF
-                  - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
-              ecmwf/fckit:
-                version: 0.13.0
-                cmake_options:
-                  - -DENABLE_TESTS=OFF
-                  - -DENABLE_FCKIT_VENV=ON
-                  - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
-              ecmwf-ifs/fiat:
-                cmake_options:
-                  - -DENABLE_MPI=ON
-                  - -DENABLE_SINGLE_PRECISION=ON
-                  - -DENABLE_DOUBLE_PRECISION=OFF
-                  - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
-                  - -DENABLE_DR_HOOK_NVTX=OFF
-              ecmwf-ifs/field_api:
-                version: v0.3.4
-                cmake_options:
-                  - -DENABLE_TESTS=OFF
-                  - -DENABLE_ACC=${{ matrix.gpu }}
-                  - -DENABLE_CUDA=${{ matrix.gpu }}
-                  - -DENABLE_SINGLE_PRECISION=ON
-                  - -DENABLE_DOUBLE_PRECISION=OFF
-                  - -DBUILD_SHARED_LIBS=${{ !matrix.gpu }}
-              ecmwf-ifs/loki:
-                version: 0.3.2
-                cmake_options:
-                  - -DENABLE_NO_INSTALL=${{ !matrix.gpu }}
-                  - -DENABLE_TESTS=OFF
           template: |
+            REPO=${{ github.event.pull_request.head.repo.full_name || github.repository }}
+            SHA=${{ github.event.pull_request.head.sha || github.sha }}
+            { set +x; } 2>/dev/null # trace off
+
+            echo "::group::Load modules"
             {% for module in "${{ join(matrix.modules, ',') }}".split(',') %}
               module load {{module}}
             {% endfor %}
+            echo "::endgroup::"
 
-            BASEDIR=$PWD
-
-            {% for name, options in dependencies.items() %}
-                mkdir -p {{name}}
-                pushd {{name}}
-
-                git init
-                git remote add origin ${{ github.server_url }}/{{name}}
-                git fetch origin {{options['version']}}
-                git reset --hard FETCH_HEAD
-
-                cmake -G Ninja -S . -B build \
-                  {% for name in dependencies %}
-                    {% set org, proj = name.split('/') %}
-                    -D{{proj}}_ROOT=$BASEDIR/{{name}}/installation \
-                  {% endfor %}
-                  {{ options['cmake_options']|join(' ') }}
-                cmake --build build
-                cmake --install build --prefix installation
-                popd
-            {% endfor %}
-
-            REPO=${{ github.event.pull_request.head.repo.full_name || github.repository }}
-            SHA=${{ github.event.pull_request.head.sha || github.sha }}
+            echo "::group::Checkout $(basename $REPO)"
+            { set -x; } 2>/dev/null # trace on
             mkdir -p $REPO
             pushd $REPO
             git init
             git remote add origin ${{ github.server_url }}/$REPO
             git fetch origin $SHA
             git reset --hard FETCH_HEAD
-            popd
+            { set +x; } 2>/dev/null # trace off
+            echo "::endgroup::"
 
-            cmake -G Ninja -S $REPO -B build \
-              {% for name in dependencies %}
-                {% set org, proj = name.split('/') %}
-                -D{{proj}}_ROOT=$BASEDIR/{{name}}/installation \
-              {% endfor %}
-              {{ cmake_options|join(' ') }}
+            echo "::group::ecwam-bundle create"
+            { set -x; } 2>/dev/null # trace on
+            ./package/bundle/ecwam-bundle create --bundle package/bundle/bundle.yml
+            { set +x; } 2>/dev/null # trace off
+            echo "::endgroup::"
 
-            cmake --build build
-            ctest --test-dir build
+            echo "::group::ecwam-bundle build"
+            { set -x; } 2>/dev/null # trace on
+            ./package/bundle/ecwam-bundle build --arch package/bundle/arch/${{matrix.arch}} --ninja --keep-going --retry-verbose ${{matrix.build_options}}
+            { set +x; } 2>/dev/null # trace off
+            echo "::endgroup::"
+
+            echo "::group::ecwam test"
+            source build/env.sh
+            ctest --test-dir build/ecwam
+            echo "::endgroup::"

@@ -446,7 +446,17 @@
       IR = DEFINE_PARAMETER( 81, 'sthmax', 140134, 0, 0, 0, .True., .True., &
                            & 'SPACE TIME MAXIMUM WAVE HEIGHT' )
 
+!     PARAMETER 082
+      IR = DEFINE_PARAMETER( 82, 'sibm', 262025, 0, 0, 0, .True., .True., &
+                           & 'SEA ICE BREAK UP MEMORY' )
 
+!     PARAMETER 083
+      IR = DEFINE_PARAMETER( 83, 'xwrs', 140149, 0, 0, 0, .True., .True., &
+                           & 'U-COMP WAVE RADIATIVE STRESS TO SEA ICE' )
+
+!     PARAMETER 084
+      IR = DEFINE_PARAMETER( 84, 'ywrs', 140150, 0, 0, 0, .True., .True., &
+                           & 'V-COMP WAVE RADIATIVE STRESS TO SEA ICE' )
 !     add new definition here:
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

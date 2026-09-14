@@ -10,7 +10,7 @@
       SUBROUTINE FNDPRT (KIJS, KIJL, NPMAX,                             &
      &                   NPEAK, MIJ, NTHP, NFRP,                        &
      &                   FLLOW, LLCOSDIFF, FLNOISE,                     &
-     &                   FL1, SWM,                                      &
+     &                   FL1, SWM, SUNASGN,                             &
      &                   ENE, DIR, PER)
 
 ! ----------------------------------------------------------------------
@@ -34,7 +34,7 @@
 !       *CALL* *FNDPRT (KIJS, KIJL, NPMAX,
 !     &                 NPEAK, MIJ, NTHP, NFRP,
 !     &                 FLLOW, LLCOSDIFF, FLNOISE,
-!     &                 FL1, SWM,
+!     &                 FL1, SWM, SUNASGN,
 !     &                 ENE, DIR, PER)
 
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
@@ -53,6 +53,7 @@
 !                     THIS IS POSSIBLE BECAUSE WE SUPPLY SWELL SPECTRA
 !                     IN WHICH THE WIND SEA HAS BEEN REMOVED. SOME OF
 !                     THE ENERGY LEAKING OUT FROM THE WINDSEA SPECTRUM
+!          *SUNASGN*- SPECTRA OF ALL UNASSIGNED SPECTRAL COMPONENTS
 !          *EME*    - MEAN WAVE ENERGY FOR EACH WAVE SYSTEM 
 !          *DIR*    - MEAN WAVE DIRECTION FOR EACH WAVE SYSTEM
 !          *PER*    - MEAN PERIOD BASED ON -1 MOMENT FOR EACH WAVE SYSTEM.
@@ -82,17 +83,18 @@
       IMPLICIT NONE
 #include "parmean.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, NPMAX
-      INTEGER(KIND=JWIM), INTENT(IN), DIMENSION(KIJL) :: MIJ
-      INTEGER(KIND=JWIM), INTENT(INOUT), DIMENSION(KIJL) :: NPEAK
-      INTEGER(KIND=JWIM), INTENT(IN), DIMENSION(KIJL,NPMAX) :: NTHP, NFRP
+      INTEGER(KIND=JWIM), INTENT(IN)                            :: KIJS, KIJL, NPMAX
+      INTEGER(KIND=JWIM), INTENT(INOUT), DIMENSION(KIJL)        :: NPEAK
+      INTEGER(KIND=JWIM), INTENT(IN),    DIMENSION(KIJL)        :: MIJ
+      INTEGER(KIND=JWIM), INTENT(IN),    DIMENSION(KIJL,NPMAX)  :: NTHP, NFRP
 
-      REAL(KIND=JWRB), INTENT(IN), DIMENSION(KIJL) :: FLNOISE
-      REAL(KIND=JWRB), INTENT(IN), DIMENSION(KIJL,NANG,NFRE) :: FLLOW, FL1
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(INOUT) :: SWM
-      REAL(KIND=JWRB), INTENT(OUT), DIMENSION(KIJL,0:NPMAX) :: DIR, PER, ENE
-
-      LOGICAL, INTENT(IN), DIMENSION(KIJL,NANG) :: LLCOSDIFF
+      REAL(KIND=JWRB), INTENT(IN),    DIMENSION(KIJL,NANG,NFRE) :: FLLOW
+      LOGICAL,         INTENT(IN),    DIMENSION(KIJL,NANG)      :: LLCOSDIFF
+      REAL(KIND=JWRB), INTENT(IN),    DIMENSION(KIJL)           :: FLNOISE
+      REAL(KIND=JWRB), INTENT(IN),    DIMENSION(KIJL,NANG,NFRE) :: FL1
+      REAL(KIND=JWRB), INTENT(INOUT), DIMENSION(KIJL,NANG,NFRE) :: SWM
+      REAL(KIND=JWRB), INTENT(OUT),   DIMENSION(KIJL,NANG,NFRE) :: SUNASGN
+      REAL(KIND=JWRB), INTENT(OUT),   DIMENSION(KIJL,0:NPMAX)   :: DIR, PER, ENE
 
 
       INTEGER(KIND=JWIM) :: ITHC, IFRC
@@ -122,6 +124,8 @@
 
       HALF_SECTOR=75.0_JWRB
       NANGH=NINT((HALF_SECTOR/360.0_JWRB)*NANG)+1
+
+      SUNASGN(:,:,:) =  FL1(:,:,:)
 
 !     POINTS BELOW THE MINIMUM LEVEL BELONG TO THE WINDSEA PART
 !     AND CAN BE EXCLUDED FROM THE PARTITIONS OF THE SWELL SPECTRUM
@@ -303,6 +307,14 @@
             ENDDO
           ENDDO
         ENDIF
+
+        DO IP = 1, NPEAK(IJ)
+          DO M=1,NFRE
+            DO K=1,NANG
+              IF (SPEC(K,M,IP,IJ) > 0.0_JWRB) SUNASGN(IJ,K,M) = 0.0_JWRB
+            ENDDO
+          ENDDO
+        ENDDO
 
       ENDDO ! loop IJ
 
