@@ -365,7 +365,7 @@ list( APPEND ecwam_srcs
 
 # Loki GPU transformations must use the alternate driver-layer with the FIELD_API
 # offload instructions
-if(HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack")
+if( HAVE_LOKI )
   list(APPEND ecwam_srcs wamintgr_loki_gpu.F90)
   list(REMOVE_ITEM ecwam_srcs wamintgr.F90)
   list(APPEND ecwam_srcs cireduce_loki_gpu.F90)
@@ -517,24 +517,18 @@ if( HAVE_LOKI )
 
   set( LOKI_FRONTEND "fp" CACHE STRING "Frontend parser for Loki source transformations" )
 
-  if( LOKI_MODE MATCHES "idem|idem-stack" )
-     set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config )
-  else()
-     set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
-     target_compile_definitions( ${ecwam} PRIVATE WAM_GPU )
-  endif()
+  set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
+  target_compile_definitions( ${ecwam} PRIVATE WAM_GPU )
 
-  if( NOT LOKI_MODE MATCHES "idem|idem-stack")
-    # Preprocess propags2.F90 for GPU enabled runs using Loki
-    loki_transform_target( TARGET ${ecwam}
-      MODE "loop-unroll-fuse"
-      FRONTEND ${LOKI_FRONTEND}
-      CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_propags2_loki.config
-      PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_propags2_plan_ecwam.cmake
-      SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/
-    )
-  endif()
+  # Preprocess propags2.F90 for GPU enabled runs using Loki
+  loki_transform_target( TARGET ${ecwam}
+    MODE "loop-unroll-fuse"
+    FRONTEND ${LOKI_FRONTEND}
+    CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_propags2_loki.config
+    PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_propags2_plan_ecwam.cmake
+    SOURCES
+      ${CMAKE_CURRENT_SOURCE_DIR}/
+  )
 
   # Apply Loki source file transformation to lib target
   loki_transform_target( TARGET ${ecwam}

@@ -175,6 +175,8 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
 
               ELSE
                 DO ICHNK=1, NCHNK
+                  OLDUCUR(:,ICHNK) = WVENVI%UCUR(:,ICHNK)
+                  OLDVCUR(:,ICHNK) = WVENVI%VCUR(:,ICHNK)
                   WVENVI%UCUR(:,ICHNK)=0.0_JWRB
                   WVENVI%VCUR(:,ICHNK)=0.0_JWRB
                 ENDDO
@@ -222,6 +224,8 @@ SUBROUTINE GETCURR(LWCUR, IREAD, BLK2LOC,            &
                 ENDIF
               ELSE
                 DO ICHNK=1, NCHNK
+                  OLDUCUR(:,ICHNK) = WVENVI%UCUR(:,ICHNK)
+                  OLDVCUR(:,ICHNK) = WVENVI%VCUR(:,ICHNK)
                   WVENVI%UCUR(:,ICHNK)=0.0_JWRB
                   WVENVI%VCUR(:,ICHNK)=0.0_JWRB
                 ENDDO
