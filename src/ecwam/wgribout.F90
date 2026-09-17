@@ -1,5 +1,5 @@
 ! (C) Copyright 1989- ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -10,7 +10,7 @@
       SUBROUTINE WGRIBOUT (IU06, ITEST, LFDB, IU, IGRIB_HANDLE, ISIZE, KGRIB_BUFR)
 ! ----------------------------------------------------------------------
 
-!****  *WGRIBOUT* OUTPUT GRIB MESSAGE. 
+!****  *WGRIBOUT* OUTPUT GRIB MESSAGE.
 
 !       PURPOSE.
 !       --------
@@ -29,7 +29,7 @@
 !                    !!! WITH GRIB_API SOFTWARE !!!
 !          *IGRIB_HANDLE* GRIB MESSAGE HANDLE.
 !          *ISIZE*   GRIB MESSAGE SIZE.
-!          *KGRIB_BUFR* GRIB MESSAGE. 
+!          *KGRIB_BUFR* GRIB MESSAGE.
 
 !      METHOD.
 !      -------
@@ -61,7 +61,7 @@
       INTEGER(KIND=JWIM), DIMENSION(ISIZE), INTENT(INOUT) :: KGRIB_BUFR
       LOGICAL, INTENT(IN) :: LFDB
 
-      INTEGER :: IERR, ITABPAR, ICLASS
+      INTEGER :: IERR, ITABPAR, ITYPE
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -86,12 +86,12 @@
         CEXPVER=C12(1:4)
         CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',C12)
         CSTREAM=C12(1:4)
-        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',ICLASS)
+        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',ITYPE)
         WRITE(IU06,*)'  '
         WRITE(IU06,*)'   WGRIBOUT : PARAM= ',ITABPAR,     &
      &                            ' EXPVER=',CEXPVER,     &
      &                            ' STREAM=',CSTREAM,     &
-     &                            ' CLASS=', ICLASS
+     &                            ' TYPE=', ITYPE
         CALL FLUSH(IU06)
       ENDIF
 
