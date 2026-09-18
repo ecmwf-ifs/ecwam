@@ -361,6 +361,19 @@
         MARSFCTYPE = 'fc'
         KSTREAM = 1045
         LASTREAM=.TRUE.
+      ELSE IF(ISTREAM.EQ.1222) THEN
+!       SEASONAL FORECAST DAILY AND SUB-DAILY DATA
+        CSTREAM = 'wams'
+        MARSFCTYPE = 'fc'
+        IF(NTOTENS.EQ.0) THEN
+          MARSFCTYPE = 'fc'
+        ELSEIF(NENSFNB.EQ.0) THEN
+          MARSFCTYPE = 'cf'
+        ELSE
+          MARSFCTYPE = 'fc'
+        ENDIF
+        KSTREAM = 1220
+        LASTREAM=.FALSE.
       ELSE IF(ISTREAM.EQ.1071) THEN
 !       DETERMINISTIC WAVE MONTHLY MEANS AND CLIMATOLOGY
         CSTREAM = 'moda'
