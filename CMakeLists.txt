@@ -7,7 +7,7 @@
 # nor does it submit to any jurisdiction.
 
 cmake_minimum_required( VERSION 3.24 FATAL_ERROR )
-find_package( ecbuild 3.8 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild )
+find_package( ecbuild 3.15.2 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild )
 
 set( ECWAM_PROJECT_NAME ecwam )
 
@@ -52,6 +52,12 @@ ecbuild_add_option( FEATURE UNWAM
 
 set( HAVE_dp ${HAVE_DOUBLE_PRECISION} )
 set( HAVE_sp ${HAVE_SINGLE_PRECISION} )
+
+ecbuild_add_option( FEATURE PLUME
+                    DEFAULT OFF
+                    DESCRIPTION "Support for Plume plugins"
+                    REQUIRED_PACKAGES "plume" )
+
 
 ### Determine ocean model precision
 ecwam_find_nemo()
@@ -99,7 +105,7 @@ ecbuild_add_option( FEATURE LOKI
 set( LOKI_MODE "scc-stack" CACHE STRING "Transformation mode for Loki source transformations" )
 
 ### OpenACC
-if( ${CMAKE_VERSION} VERSION_LESS "3.25" AND HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" )
+if( ${CMAKE_VERSION} VERSION_LESS "3.25" AND HAVE_LOKI )
   if ( ${PNAME}_ENABLE_ACC OR (NOT DEFINED ${PNAME}_ENABLE_ACC AND ENABLE_ACC) )
     # Incredibly inconvenient: FindOpenACC does _not_ set OpenACC_FOUND, only
     # the language-specific components OpenACC_Fortran_FOUND and OpenACC_C_FOUND.
@@ -119,7 +125,7 @@ endif()
 ecbuild_add_option( FEATURE ACC
                     DESCRIPTION "OpenACC" DEFAULT OFF
                     REQUIRED_PACKAGES "OpenACC COMPONENTS Fortran"
-                    CONDITION HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" )
+                    CONDITION HAVE_LOKI )
 
 ### CUDA
 include(CheckLanguage)

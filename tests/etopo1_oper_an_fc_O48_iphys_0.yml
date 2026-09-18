@@ -1,12 +1,23 @@
 grid:        O48
+cldomain:     g
 directions:  12 
 frequencies: 25
+fr1:         4.177248E-02 
+ifre1:       1
 bathymetry:  ETOPO1
+lsubgrid:    T
 
 advection:
+    irefra: 0
     timestep: 900
 physics:
+    iphys: 0
     timestep: 900
+    llgcbz0: T
+    llnormagam: T
+    lmaskice: F
+    lciwa3: T
+    lciscal: T
 
 analysis.begin: 2022-12-31 12:00:00
 analysis.end:   2023-01-01 00:00:00
@@ -16,8 +27,9 @@ forecast.end:   2023-01-01 06:00:00
 begin: ${analysis.begin}
 end:   ${forecast.end}
 
-nproma: 24
-iphys: 0
+nproma: 32
+lgribin: F
+lgribout: F
 
 forcings:
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O48.grib
@@ -25,7 +37,7 @@ forcings:
     at:
       - begin:     ${analysis.begin}
         end:       ${analysis.end}
-        timestep:  06:00 
+        timestep:  06:00
       - begin:     ${forecast.begin}
         end:       ${forecast.end}
         timestep:  01:00 
@@ -37,7 +49,7 @@ output:
           - mwd         # Mean wave direction
           - mwp         # Mean wave period
           - pp1d        # Peak wave period
-          - dwi         # 10 metre wind direction 
+          - dwi         # 10 metre wind direction
           - cdww        # Coefficient of drag with waves
           - wind        # 10 metre wind speed
         format: grib    # (default : grib) or binary
@@ -47,7 +59,7 @@ output:
     restart:
         format: binary # (default : binary) or grib
         at:
-          - time: ${end}
+          - time: ${analysis.end}
 
 
 validation:
@@ -57,63 +69,63 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 0.1337362278436861E+01
+      average: 0.3830924202241997E+00
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF565D5FD0CA556']
+      hashes: ['0x3FD88496120D56DD']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1490252638493936E+01
+      average: 0.1120570318637665E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF7D8132691BF26']
+      hashes: ['0x3FF1EDDB2476AC53']
 
-    # 6h into forcast
+    # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1549563711889876E+01
+      average: 0.1252364915640471E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF8CB03519A2A87']
+      hashes: ['0x3FF409AFCB355685']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.2299725580886074E-01
+      minimum: 0.4326539111291028E-02
       relative_tolerance: 1.e-14
-      hashes: ['0x3F978C97B663204D']
+      hashes: ['0x3F71B8B47FCE4627']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.7301215285182999E+01
+      maximum: 0.7335172288887112E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x401D3471C79BAA49']
+      hashes: ['0x401D5737678D2EB5']
 
   single_precision:
 
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 0.1337408304214478E+01
+      average: 0.3830676078796387E+00
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF5660640000000']
+      hashes: ['0x3FD8842E00000000']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1490256071090698E+01
+      average: 0.1120494842529297E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF7D816C0000000']
+      hashes: ['0x3FF1ED8C00000000']
 
-    # 6h into forcast
+    # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1549521923065186E+01
+      average: 0.1252345442771912E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF8CAD780000000']
+      hashes: ['0x3FF4099B60000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.2299725636839867E-01
+      minimum: 0.4326540511101484E-02
       relative_tolerance: 1.e-6
-      hashes: ['0x3F978C97C0000000']
+      hashes: ['0x3F71B8B4E0000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.7301214218139648E+01
+      maximum: 0.7335172653198242E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x401D347180000000']
+      hashes: ['0x401D573780000000']

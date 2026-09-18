@@ -371,7 +371,7 @@ list( APPEND ecwam_srcs
 
 # Loki GPU transformations must use the alternate driver-layer with the FIELD_API
 # offload instructions
-if(HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack")
+if( HAVE_LOKI )
   list(APPEND ecwam_srcs wamintgr_loki_gpu.F90)
   list(REMOVE_ITEM ecwam_srcs wamintgr.F90)
   list(APPEND ecwam_srcs cireduce_loki_gpu.F90)
@@ -425,6 +425,11 @@ endif()
 
 if( HAVE_GPU_AWARE_MPI )
   list(APPEND ECWAM_DEFINITIONS WITH_GPU_AWARE_MPI )
+endif()
+
+if( HAVE_PLUME )
+  list( APPEND ecwam_srcs wam_plume_module.F90 )
+  list( APPEND ECWAM_DEFINITIONS WITH_PLUME )
 endif()
 
 foreach( prec sp dp )
@@ -500,30 +505,22 @@ if( HAVE_LOKI )
 
   set( LOKI_FRONTEND "fp" CACHE STRING "Frontend parser for Loki source transformations" )
 
-  if( LOKI_MODE MATCHES "idem|idem-stack" )
-     set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config )
-  else()
-     set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
-  endif()
+  set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
 
   foreach(prec sp dp )
      if( HAVE_${prec} )
 
-        if( NOT LOKI_MODE MATCHES "idem|idem-stack" )
-           target_compile_definitions( ecwam_${prec} PRIVATE WAM_GPU )
-        endif()
+        target_compile_definitions( ecwam_${prec} PRIVATE WAM_GPU )
 
-        if( NOT LOKI_MODE MATCHES "idem|idem-stack")
-          # Preprocess propags2.F90 for GPU enabled runs using Loki
-          loki_transform_target( TARGET ecwam_${prec}
-            MODE "loop-unroll-fuse"
-            FRONTEND ${LOKI_FRONTEND}
-            CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_propags2_loki.config
-            PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_propags2_plan_ecwam.cmake
-            SOURCES
-              ${CMAKE_CURRENT_SOURCE_DIR}/
-          )
-        endif()
+        # Preprocess propags2.F90 for GPU enabled runs using Loki
+        loki_transform_target( TARGET ecwam_${prec}
+          MODE "loop-unroll-fuse"
+          FRONTEND ${LOKI_FRONTEND}
+          CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_propags2_loki.config
+          PLAN ${CMAKE_CURRENT_BINARY_DIR}/loki_propags2_plan_ecwam.cmake
+          SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/
+        )
 
         # Apply Loki source file transformation to lib target
         loki_transform_target( TARGET ecwam_${prec}

@@ -69,7 +69,22 @@ PROGRAM CREATE_BATHY_ETOPO1
 !     meandepth.dat
 !     and
 !     obstructions_*.dat
- 
+
+!**************************************************************************
+
+!!! WARNING !!!! 
+
+! The creation of the bathymetry is a task that is too time consuming to run all the time
+! in the small tests that are run automatically in the github build system.
+! For this reason, a copy of those files is saved the first first and
+! only if something has changed in the configuration of those tests, will they be recomputed.
+! HOWEVER, it will NOT detect whether the fortran code related to their creation and output
+! has changed since they were first created.
+! IF SUCH CHANGES ARE MADE, THEN YOU WILL NEED TO MAKE SURE THE FILES ARE RECREATED.
+! This can be achieved for you and other potential developers by incrementing by 1
+! the variable ecwam_bathymetry_version found in
+! /share/ecwam/scripts/ecwam_runtime.sh
+
 !**************************************************************************
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU

@@ -14,7 +14,7 @@ projects :
 
     - ecbuild : 
         git     : https://github.com/ecmwf/ecbuild
-        version : 3.14.2
+        version : 3.15.2
         bundle  : false
 
     - eccodes :
@@ -40,7 +40,7 @@ projects :
 
     - loki :
         git     : https://github.com/ecmwf-ifs/loki
-        version : 0.3.2
+        version : main
         optional: true
         require : ecbuild
         cmake   : >

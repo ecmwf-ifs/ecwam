@@ -138,7 +138,7 @@ if [[ ${laqua} = true ]]; then
   touch wam_topo
 else
 # Make sure we have the correct bathymetry
-    ${SCRIPTS_DIR}/ecwam_run_create_bathymetry.sh --run-dir=${RUN_DIR} || {
+    ${SCRIPTS_DIR}/ecwam_run_create_bathymetry.sh --run-dir=${RUN_DIR} --prec=${prec}  || {
     echo "Could not run ecwam_run_create_bathymetry"
     exit 1
   }

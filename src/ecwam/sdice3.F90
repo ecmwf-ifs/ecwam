@@ -127,8 +127,7 @@
 
            DO M = 1,NFRE
               DO IJ = KIJS,KIJL
-!                  ALP(IJ,M) = (2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))) * ALPFAC(IJ) * ZALPFACB
-                 ALP(IJ,M) = (2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))) * ALPFAC(IJ) ! (old way to ensure bit-identicality)
+                 ALP(IJ,M) = (2._JWRB*CDICE*(CITH(IJ)**(1.25_JWRB))*(FR(M)**(4.5_JWRB))) * ALPFAC(IJ) * ZALPFACB
               END DO
            END DO
 

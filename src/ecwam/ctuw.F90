@@ -477,9 +477,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
               WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
               WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
-#ifdef _OPENACC
+
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
-#endif
             ENDDO
           ENDDO
         ELSE
@@ -493,9 +492,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
               WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
               WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
-#ifdef _OPENACC
+
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
-#endif
             ENDDO
           ENDDO
         ENDIF
@@ -520,6 +518,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
                 WMPMN(IJ,K,M,0) =(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
                 WMPMN(IJ,K,M,1) =(-DTHP+ABS(DTHP))/FRATIO
                 WMPMN(IJ,K,M,-1)=(DTHM+ABS(DTHM))*FRATIO
+
+                SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WMPMN(IJ,K,M,0)
               ENDDO
             ENDDO
         ENDIF
@@ -533,6 +533,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !!!   THE SUM IS NEEDED LATER ON !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #ifndef _OPENACC
+
+!!!!!!!!!! Jean Bidlot commented on OPENACC implementation:
+!!!!!!!!!! excluding this test for real application is ill advised since the check could dependent on 
+!!!!!!!!!! surface currents if current refraction is active
+
       DO K=1,NANG
         DO M = MSTART, MEND
           DO IJ=KIJS,KIJL
@@ -605,8 +610,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               ENDIF
             ENDDO
 
-            SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
-
 
             IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
 
@@ -630,7 +633,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
                 ENDIF
               ENDDO
 
-              SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WMPMN(IJ,K,M,0)
             ENDIF
 
 !           SUM < 1  ?

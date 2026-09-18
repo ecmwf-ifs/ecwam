@@ -29,33 +29,23 @@ jobs:
       fail-fast: false  # false: try to complete all jobs
 
       matrix:
-        #build_type: [Release,Debug] # Debug tests takes too long
-        build_type: [Release]
+        build_type: [Bit, Debug]
         prec: ['DP', 'SP']
         name:
-          - linux gnu-10
-          - linux gnu-14
+          - linux gnu-15
           - linux nvhpc-25.9
           - linux intel-classic
+          - linux intel-modern
           - macos
 
         include:
 
-          - name: linux gnu-10
-            os: ubuntu-22.04
-            compiler: gnu-10
-            compiler_cc: gcc-10
-            compiler_cxx: g++-10
-            compiler_fc: gfortran-10
-            python-version: '3.8'
-            caching: true
-
-          - name: linux gnu-14
+          - name: linux gnu-15
             os: ubuntu-24.04
-            compiler: gnu-14
-            compiler_cc: gcc-14
-            compiler_cxx: g++-14
-            compiler_fc: gfortran-14
+            compiler: gnu-15
+            compiler_cc: gcc-15
+            compiler_cxx: g++-15
+            compiler_fc: gfortran-15
             python-version: '3.11'
             caching: true
 
@@ -65,7 +55,7 @@ jobs:
             compiler_cc: nvc
             compiler_cxx: nvc++
             compiler_fc: nvfortran
-            cmake_options: -DCMAKE_CXX_FLAGS=--diag_suppress177
+            cmake_options: -DCMAKE_CXX_FLAGS=--diag_suppress177 -DECBUILD_Fortran_FLAGS=-tp=haswell
             # nvc++ 25.9 has a codegen bug where an AVX-512 SCALEFS node is
             # emitted by an idiom-recognition pass even on non-AVX-512 targets,
             # causing llc to ICE on some GH runner CPUs. Pin -tp=haswell to
@@ -81,6 +71,15 @@ jobs:
             compiler_cxx: icpc
             compiler_fc: ifort
             python-version: '3.8'
+            caching: true
+
+          - name: linux intel-modern
+            os: ubuntu-24.04
+            compiler: intel-modern
+            compiler_cc: icx
+            compiler_cxx: icpx
+            compiler_fc: ifx
+            python-version: '3.11'
             caching: true
 
           - name: macos
@@ -126,7 +125,17 @@ jobs:
           brew install libaec
           brew install coreutils
         else
+          if [[ "${{ matrix.compiler }}" == "gnu-15" ]]; then
+            # GCC 15 is not available from Ubuntu 24.04's standard repositories.
+            sudo add-apt-repository --yes --no-update ppa:ubuntu-toolchain-r/test
+          fi
+
           sudo apt-get update
+
+          if [[ "${{ matrix.compiler }}" == "gnu-15" ]]; then
+            sudo apt-get install --yes gcc-15 g++-15 gfortran-15
+          fi
+
           sudo apt-get install libaec-dev
           sudo apt-get install ninja-build
         fi
@@ -180,7 +189,7 @@ jobs:
     - name: Install Intel oneAPI compiler
       if: contains( matrix.compiler, 'intel' )
       run: |
-        ${ECWAM_TOOLS}/install-intel-oneapi.sh
+        ${ECWAM_TOOLS}/install-intel-oneapi.sh --compiler ${{ matrix.compiler }}
         source /opt/intel/oneapi/setvars.sh
         printenv >> $GITHUB_ENV
         echo "CACHE_SUFFIX=$CC-$($CC -dumpversion)" >> $GITHUB_ENV
@@ -198,6 +207,16 @@ jobs:
         # Add mpirun to path for testing
         [ -z ${MPI_HOME+x} ] || echo "${MPI_HOME}/bin" >> $GITHUB_PATH
 
+        # Force UCX (and thus OpenMPI's UCX PML) onto TCP + shared-memory transports.
+        # The GitHub-hosted Azure runners intermittently expose a MANA (mana_0) RDMA/
+        # InfiniBand device on which UCX fails to create UD queue-pairs, causing
+        # MPI_Init to abort ("failed to create UD QP ... Operation not supported").
+        # These are single-node tests that never need RDMA, so restrict transports to
+        # loopback TCP + shared memory to make MPI startup deterministic.
+        echo "UCX_TLS=tcp,self,sm" >> $GITHUB_ENV
+        echo "UCX_NET_DEVICES=lo"  >> $GITHUB_ENV
+        echo "UCX_LOG_LEVEL=error" >> $GITHUB_ENV
+
     - name: Build & Test
       id: build-test
       uses: ecmwf-actions/build-package@v2
@@ -207,12 +226,12 @@ jobs:
         cache_suffix: "${{ matrix.build_type }}-${{ env.CACHE_SUFFIX }}"
         recreate_cache: ${{ matrix.caching == false }}
         dependencies: |
-          ecmwf/ecbuild@refs/tags/3.14.2
+          ecmwf/ecbuild@refs/tags/3.15.2
           ecmwf/eccodes@refs/tags/2.44.0
           ecmwf/fckit@refs/tags/0.13.0
           ecmwf-ifs/fiat
           ecmwf-ifs/field_api@refs/tags/v0.3.4
-          ecmwf-ifs/loki@refs/tags/0.3.2
+          ecmwf-ifs/loki@refs/heads/main
         dependency_branch: develop
         dependency_cmake_options: |
           ecmwf/fckit: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_FCKIT_VENV=ON"
@@ -220,8 +239,9 @@ jobs:
           ecmwf/eccodes: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_MEMFS=ON -DENABLE_JPG=OFF -DENABLE_PNG=OFF ${{ matrix.dep_eccodes_extra_options }}"
           ecmwf-ifs/field_api: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_ACC=OFF -DENABLE_SINGLE_PRECISION=${{ matrix.prec == 'SP' }} -DENABLE_DOUBLE_PRECISION=${{ matrix.prec == 'DP' }}"
           ecmwf-ifs/loki: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF"
-        cmake_options: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.cmake_options }} -DENABLE_MPI=ON -DENABLE_LOKI=ON -DLOKI_MODE=idem-stack -DENABLE_SINGLE_PRECISION=${{ matrix.prec == 'SP' }} -DENABLE_DOUBLE_PRECISION=${{ matrix.prec == 'DP' }}"
-        ctest_options: "${{ matrix.ctest_options }}"
+        cmake_options: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.cmake_options }} -DENABLE_MPI=ON -DENABLE_SINGLE_PRECISION=${{ matrix.prec == 'SP' }} -DENABLE_DOUBLE_PRECISION=${{ matrix.prec == 'DP' }}"
+        # Debug build runs are **very** slow so we only run the most canonical case
+        ctest_options: "${{ matrix.ctest_options }} ${{ matrix.build_type == 'Debug' && '-R ^ecwam_test_etopo1_oper_an_fc_(O48)_(sp|dp)(_preproc|_preset|_mpi4_omp1|_mpi1_omp4)?$' || '' }}"
 
     - name: Verify tools
       run: |
