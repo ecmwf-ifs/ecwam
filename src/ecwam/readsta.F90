@@ -73,7 +73,7 @@
 
 !---------------------------------------------------------------------- 
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWIB, JWRB, JWRU
 
       USE YOWCARD  , ONLY : JPCL     ,CARD
       USE YOWTEST  , ONLY : IU06 
@@ -85,7 +85,8 @@
 #include "abort1.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IUIN
-      INTEGER(KIND=JWIM), INTENT(OUT) :: ANALPD, FOREPD, IS, IASS, NF 
+      INTEGER(KIND=JWIM), INTENT(OUT) :: IS, IASS, NF 
+      INTEGER(KIND=JWIB), INTENT(OUT) :: ANALPD, FOREPD
       INTEGER(KIND=JWIM), INTENT(OUT) :: NPROC_RST
       INTEGER(KIND=JWIM), INTENT(OUT) :: ISTAT(3)
       CHARACTER(LEN=14), INTENT(OUT) :: CBDT, CEDT
@@ -116,8 +117,8 @@
 !          -----------------------------
 
       READ (CARD(1), '(15X,A14,4X,A14)') CBDT, CEDT
-      READ (CARD(4), '(18X,I7)') ANALPD
-      READ (CARD(5), '(18X,I10)') FOREPD
+      READ (CARD(4), '(18X,I12)') ANALPD
+      READ (CARD(5), '(18X,I12)') FOREPD
       READ (CARD(6), '(28X,I7)') IS
       READ (CARD(7), '(14X,A14,4X,A14)') CABDT, CAEDT
       IASS=0

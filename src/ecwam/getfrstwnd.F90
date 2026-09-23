@@ -54,6 +54,7 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
       USE YOWWIND  , ONLY : CDATEWL
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWDATE_UTILS, ONLY : INCDATE
 
 ! ----------------------------------------------------------------------
 
@@ -61,7 +62,6 @@ SUBROUTINE GETFRSTWND (CDTWIS, CDTWIE,                 &
 
 #include "cdustarz0.intfb.h"
 #include "getwnd.intfb.h"
-#include "incdate.intfb.h"
 
       CHARACTER(LEN=14), INTENT(INOUT) :: CDTWIS
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIE
