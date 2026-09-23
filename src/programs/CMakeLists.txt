@@ -21,7 +21,7 @@ foreach( prec sp dp )
       ecbuild_add_executable(
           TARGET          ecwam-${program}-${prec}
           SOURCES         ${program}.F90
-          LIBS            ecwam_${prec} ${OpenMP_Fortran_LIBRARIES}
+          LIBS            ecwam_${prec} ${OpenMP_Fortran_LIBRARIES} eccodes_f90
           LINKER_LANGUAGE Fortran
       )
       ecwam_target_compile_definitions_FILENAME( ecwam-${program}-${prec} )

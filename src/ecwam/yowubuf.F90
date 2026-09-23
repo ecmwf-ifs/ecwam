@@ -172,6 +172,27 @@
 !      *LLWMPMN*   LOGICAL ARRAY, TRUE IF WMPMN > 0. AT ALL GRID POINTS.
 
 ! ----------------------------------------------------------------------
+#ifdef OMPGPU
+!$omp declare target(WLAT)
+!$omp declare target(KLAT)
+!$omp declare target(KLON)
+!$omp declare target(WCOR)
+!$omp declare target(KCOR)
+!$omp declare target(KCR)
+!$omp declare target(JXO)
+!$omp declare target(JYO)
+!$omp declare target(WLATN)
+!$omp declare target(WCORN)
+!$omp declare target(WLONN)
+!$omp declare target(WKPMN)
+!$omp declare target(SUMWN)
+!$omp declare target(KPM)
+!$omp declare target(MPM)
+!$omp declare target(WMPMN)
+!$omp declare target(OBSLAT)
+!$omp declare target(OBSLON)
+!$omp declare target(OBSCOR)
+#else
 !$acc declare create(WLAT)
 !$acc declare create(KLAT)
 !$acc declare create(KLON)
@@ -191,4 +212,5 @@
 !$acc declare create(OBSLAT)
 !$acc declare create(OBSLON)
 !$acc declare create(OBSCOR)
+#endif
         END MODULE YOWUBUF

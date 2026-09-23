@@ -64,5 +64,5 @@
 !                            DONE IN LATITUNAL BANDS
 !                            (like it used to be done).
 ! ----------------------------------------------------------------------
-!$acc declare create( nfre_red )
+!$loki create device( NFRE_RED )
       END MODULE YOWPARAM
