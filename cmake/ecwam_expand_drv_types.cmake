@@ -18,7 +18,7 @@ macro( ecwam_expand_drv_types )
       list(APPEND FYPP_ARGS -DPARKIND1_SINGLE_NEMO)
    endif()
 
-   if( HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" )
+   if( HAVE_LOKI )
       list(APPEND FYPP_ARGS -DWAM_GPU)
    endif()
 
