@@ -60,7 +60,8 @@ SUBROUTINE WAMININEMOIO(LNEMOIO)
 ! -----------------------------------------------------------
 
 USE PARKIND_WAVE, ONLY : JWIM
-USE MPL_MODULE,   ONLY : LMPLUSERCOMM, MPLUSERCOMM, MPI_COMM_WORLD
+USE MPL_MODULE,   ONLY : LMPLUSERCOMM, MPLUSERCOMM
+USE MPL_MPIF,     ONLY : MPI_COMM_WORLD
 
 ! -----------------------------------------------------------
 

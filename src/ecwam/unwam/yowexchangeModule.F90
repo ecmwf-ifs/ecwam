@@ -15,7 +15,10 @@ module yowExchangeModule
   use yowMpiModule
   implicit none
   private
-  public :: initNbrDomains, exchange, createMPITypes, setDimSize, finalizeExchangeModule
+  public :: initNbrDomains, exchange, setDimSize, finalizeExchangeModule
+#ifdef WAM_HAVE_MPI_F08
+  public :: createMPITypes
+#endif
 
   !> Holds some data belong to a neighbor Domain
   type, public :: t_neighborDomain
@@ -78,8 +81,10 @@ module yowExchangeModule
     contains
 !     procedure :: exchangeGhostIds
 !     final :: finalizeNeighborDomain
+#ifdef WAM_HAVE_MPI_F08
     procedure :: finalize
     procedure :: createMPIType
+#endif
 
   end type
 
@@ -107,6 +112,7 @@ module yowExchangeModule
   contains
 
 
+#ifdef WAM_HAVE_MPI_F08
   subroutine finalize(this)
     use yowError
     use yowMpiModule
@@ -234,6 +240,7 @@ module yowExchangeModule
     call mpi_type_commit(this%p3DR8recvType,ierr)
     if(ierr /= MPI_SUCCESS) PARALLEL_ABORT("createMPIType", ierr)
   end subroutine
+#endif
 
   subroutine initNbrDomains(nConnD)
     use yowError
@@ -246,6 +253,7 @@ module yowExchangeModule
     if(stat/=0)  ABORT('neighborDomains allocation failure')
   end subroutine
 
+#ifdef WAM_HAVE_MPI_F08
   subroutine createMPITypes()    
     implicit none
     integer(KIND=JWIM) :: i
@@ -254,6 +262,7 @@ module yowExchangeModule
       call neighborDomains(i)%createMPIType()
     end do
   end subroutine
+#endif
 
   !> exchange values in U.
   !> \param[inout] U array with values to exchange. np+ng long.
@@ -660,9 +669,11 @@ module yowExchangeModule
     integer(KIND=JWIM) :: i
 
     if(allocated(neighborDomains)) then
+#ifdef WAM_HAVE_MPI_F08
       do i=1, size(neighborDomains)
         call neighborDomains(i)%finalize()
       end do
+#endif
       deallocate(neighborDomains)
     endif
   end subroutine
