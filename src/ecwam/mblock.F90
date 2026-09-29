@@ -50,6 +50,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWDRVTYPE, ONLY : ALLOC
       USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMAP   , ONLY : BLK2GLO  ,AMOSOP   ,XDELLA, NLONRGG,  &
      &                      NGX      ,NGY      ,NIBLO
@@ -71,7 +72,7 @@
 !        -------------------------------------------
 
 
-      IF(.NOT. BLK2GLO%LALLOC) CALL BLK2GLO%ALLOC(BLK2GLO, UBOUNDS=[NIBLO])
+      IF(.NOT. BLK2GLO%LALLOC) CALL ALLOC(BLK2GLO, UBOUNDS=[NIBLO])
 
       DO IJ=1,NIBLO
         BLK2GLO%IXLG(IJ) = 0

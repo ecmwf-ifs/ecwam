@@ -16,6 +16,8 @@
 #:set type2field_dp = {'real': 'RB', 'int': 'IM', 'ocean': 'RD'}
 #:set type2dtype = {'real': 'REAL(KIND=JWRB)', 'int': 'INTEGER(KIND=JWIM)', 'ocean': 'REAL(KIND=JWRO)'}
 #:set type2kind = {'real': 'JWRB', 'int': 'JWIM', 'ocean': 'JWRO'}
+#:set methods = ['ALLOC', 'DEALLOC']
+#:set gpu_methods = ['SYNC_DEVICE_RDWR', 'SYNC_DEVICE_RDONLY', 'SYNC_HOST_RDWR', 'SYNC_HOST_RDONLY', 'GET_DEVICE_DATA_RDWR', 'GET_DEVICE_DATA_RDONLY', 'GET_DEVICE_DATA_WRONLY', 'GET_HOST_DATA_RDWR', 'GET_HOST_DATA_RDONLY', 'DELETE_DEVICE_DATA']
 $:f.close()
 #:endmute
 #!
@@ -31,6 +33,19 @@ MODULE ${obj.upper()}$_TYPE_MOD
    IMPLICIT NONE
 
    PRIVATE
+
+#:for method in methods
+   INTERFACE ${method}$
+      MODULE PROCEDURE ${obj.upper()}$_${method}$
+   END INTERFACE ${method}$
+#:endfor
+#:if defined('WAM_GPU')
+#:for method in gpu_methods
+   INTERFACE ${method}$
+      MODULE PROCEDURE ${obj.upper()}$_${method}$
+   END INTERFACE ${method}$
+#:endfor
+#:endif
 
    TYPE ${obj.upper()}$
    #:set rank = _def['rank']
@@ -51,24 +66,12 @@ MODULE ${obj.upper()}$_TYPE_MOD
        #:endfor
    #:endfor
       LOGICAL :: LALLOC = .FALSE.
-   CONTAINS
-      PROCEDURE, NOPASS :: ALLOC => ${obj.upper()}$_ALLOC
-      PROCEDURE, NOPASS :: DEALLOC => ${obj.upper()}$_DEALLOC
-#:if defined('WAM_GPU')
-      PROCEDURE, NOPASS :: SYNC_DEVICE_RDWR => ${obj.upper()}$_SYNC_DEVICE_RDWR
-      PROCEDURE, NOPASS :: SYNC_DEVICE_RDONLY => ${obj.upper()}$_SYNC_DEVICE_RDONLY
-      PROCEDURE, NOPASS :: SYNC_HOST_RDWR => ${obj.upper()}$_SYNC_HOST_RDWR
-      PROCEDURE, NOPASS :: SYNC_HOST_RDONLY => ${obj.upper()}$_SYNC_HOST_RDONLY
-      PROCEDURE, NOPASS :: GET_DEVICE_DATA_RDWR => ${obj.upper()}$_GET_DEVICE_DATA_RDWR
-      PROCEDURE, NOPASS :: GET_DEVICE_DATA_RDONLY => ${obj.upper()}$_GET_DEVICE_DATA_RDONLY
-      PROCEDURE, NOPASS :: GET_DEVICE_DATA_WRONLY => ${obj.upper()}$_GET_DEVICE_DATA_WRONLY
-      PROCEDURE, NOPASS :: GET_HOST_DATA_RDWR => ${obj.upper()}$_GET_HOST_DATA_RDWR
-      PROCEDURE, NOPASS :: GET_HOST_DATA_RDONLY => ${obj.upper()}$_GET_HOST_DATA_RDONLY
-      PROCEDURE, NOPASS :: DELETE_DEVICE_DATA => ${obj.upper()}$_DELETE_DEVICE_DATA
-#:endif
    END TYPE ${obj.upper()}$
 
-   PUBLIC :: ${obj.upper()}$
+   PUBLIC :: ${obj.upper()}$, ${', '.join(methods)}$
+#:if defined('WAM_GPU')
+   PUBLIC :: ${', '.join(gpu_methods)}$
+#:endif
 
    CONTAINS
 

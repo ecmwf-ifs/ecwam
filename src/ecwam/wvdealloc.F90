@@ -24,6 +24,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWDRVTYPE, ONLY : DEALLOC
       USE YOWCOUP  , ONLY : LWNEMOCOU, LWCOU
       USE YOWMEAN  , ONLY : INTFLDS
       USE YOWWIND  , ONLY : FF_NEXT
@@ -53,39 +54,39 @@
 !         -------------------------
 
       IF (INTFLDS%LALLOC) THEN
-        CALL INTFLDS%DEALLOC(INTFLDS)
+        CALL DEALLOC(INTFLDS)
       ENDIF
 
       IF (FF_NEXT%LALLOC) THEN
-         CALL FF_NEXT%DEALLOC(FF_NEXT)
+         CALL DEALLOC(FF_NEXT)
       ENDIF
 
       IF (FF_NOW%LALLOC) THEN
-         CALL FF_NOW%DEALLOC(FF_NOW)
+         CALL DEALLOC(FF_NOW)
       ENDIF
 
       IF (VARS_4D%LALLOC) THEN
-         CALL VARS_4D%DEALLOC(VARS_4D)
+         CALL DEALLOC(VARS_4D)
       ENDIF
 
       IF (WVPRPT%LALLOC)THEN
-         CALL WVPRPT%DEALLOC(WVPRPT)
+         CALL DEALLOC(WVPRPT)
       ENDIF
 
       IF (WVPRPT_LAND%LALLOC)THEN
-         CALL WVPRPT_LAND%DEALLOC(WVPRPT_LAND)
+         CALL DEALLOC(WVPRPT_LAND)
       ENDIF
 
       IF (.NOT. LWNEMOCOU) THEN
         IF (WAM2NEMO%LALLOC) THEN
-           CALL WAM2NEMO%DEALLOC(WAM2NEMO)
+           CALL DEALLOC(WAM2NEMO)
         ENDIF
         IF (NEMO2WAM%LALLOC) THEN
-           CALL NEMO2WAM%DEALLOC(NEMO2WAM)
+           CALL DEALLOC(NEMO2WAM)
         ENDIF
       ENDIF
 
-      IF(MIJ%LALLOC) CALL MIJ%DEALLOC(MIJ)
+      IF(MIJ%LALLOC) CALL DEALLOC(MIJ)
 
       !... We deallocate F_BOUT here even though it's allocated in WAMODEL rather than
       !... WVALLOC. That's purely because NIPRMOUT isn't initialised when we call WVALLOC
