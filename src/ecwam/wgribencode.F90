@@ -135,6 +135,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       INTEGER(KIND=JWIM) :: IY1,IM1,ID1,IH1,IMN1,ISS1,IDATERES
       INTEGER(KIND=JWIM) :: IY2,IM2,ID2,IH2,IMN2,ISS2
       INTEGER(KIND=JWIM) :: IDUM, IRET, IERR
+      INTEGER(KIND=JWIM) :: LMDLGRBID
       INTEGER(KIND=JWIM) :: NWINOFF
       INTEGER(KIND=JWIM) :: NPROMA, MTHREADS, JC, JCS, JCL, JJ, ITHRS
 
@@ -150,6 +151,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
       LOGICAL :: LLSPECNOT251  ! true if spectral encoding is required for a paramId other than 140251
                                ! In that case the log10 rescaling will not be used !!!
+      LOGICAL :: LLDASTREAM
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('WGRIBENCODE',0,ZHOOK_HANDLE)
@@ -324,7 +326,15 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
         ELSEIF ( MARSTYPE == 'an' .AND. IFCST == 0 ) THEN
           ITYPE = 2
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',C12)
-          IF (C12(1:4) == 'elda' .OR. C12(1:4) == 'lwda') THEN
+          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier',LMDLGRBID)
+          IF (LMDLGRBID == 109 .OR. LMDLGRBID == 209) THEN
+!           CY50R1: wave output uses the corresponding wave stream.
+            LLDASTREAM = C12(1:4) == 'ewla' .OR. C12(1:4) == 'lwwv'
+          ELSE
+!           CY50R2: wave output retains the atmospheric DA stream.
+            LLDASTREAM = C12(1:4) == 'elda' .OR. C12(1:4) == 'lwda'
+          ENDIF
+          IF (LLDASTREAM) THEN
             IDATERES=IDATE*100+ITIME/100
             IY2=IDATERES/1000000
             IDATERES=IDATERES-IY2*1000000
