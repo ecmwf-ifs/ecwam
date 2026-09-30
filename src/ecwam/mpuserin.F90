@@ -1065,7 +1065,11 @@
 !     Most of the namelist selection will be written to the logfiles in userin.
 
 !     Some are printed below
+#ifdef OMPGPU
+!$omp target enter data map(to:NFRE_RED, IREFRA)
+#else
 !$acc update device(NFRE_RED, IREFRA)
+#endif
 
       IF (IRANK == 1) THEN
         WRITE(6,*) '==============================================='

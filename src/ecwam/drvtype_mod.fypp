@@ -16,6 +16,8 @@
 #:set type2field_dp = {'real': 'RB', 'int': 'IM', 'ocean': 'RD'}
 #:set type2dtype = {'real': 'REAL(KIND=JWRB)', 'int': 'INTEGER(KIND=JWIM)', 'ocean': 'REAL(KIND=JWRO)'}
 #:set type2kind = {'real': 'JWRB', 'int': 'JWIM', 'ocean': 'JWRO'}
+#:set methods = ['ALLOC', 'DEALLOC']
+#:set gpu_methods = ['SYNC_DEVICE_RDWR', 'SYNC_DEVICE_RDONLY', 'SYNC_HOST_RDWR', 'SYNC_HOST_RDONLY', 'GET_DEVICE_DATA_RDWR', 'GET_DEVICE_DATA_RDONLY', 'GET_DEVICE_DATA_WRONLY', 'GET_HOST_DATA_RDWR', 'GET_HOST_DATA_RDONLY', 'DELETE_DEVICE_DATA']
 $:f.close()
 #:endmute
 #!
@@ -31,6 +33,19 @@ MODULE ${obj.upper()}$_TYPE_MOD
    IMPLICIT NONE
 
    PRIVATE
+
+#:for method in methods
+   INTERFACE ${method}$
+      MODULE PROCEDURE ${obj.upper()}$_${method}$
+   END INTERFACE ${method}$
+#:endfor
+#:if defined('WAM_GPU')
+#:for method in gpu_methods
+   INTERFACE ${method}$
+      MODULE PROCEDURE ${obj.upper()}$_${method}$
+   END INTERFACE ${method}$
+#:endfor
+#:endif
 
    TYPE ${obj.upper()}$
    #:set rank = _def['rank']
@@ -51,30 +66,18 @@ MODULE ${obj.upper()}$_TYPE_MOD
        #:endfor
    #:endfor
       LOGICAL :: LALLOC = .FALSE.
-   CONTAINS
-      PROCEDURE :: ALLOC => ${obj.upper()}$_ALLOC
-      PROCEDURE :: DEALLOC => ${obj.upper()}$_DEALLOC
-#:if defined('WAM_GPU')
-      PROCEDURE :: SYNC_DEVICE_RDWR => ${obj.upper()}$_SYNC_DEVICE_RDWR
-      PROCEDURE :: SYNC_DEVICE_RDONLY => ${obj.upper()}$_SYNC_DEVICE_RDONLY
-      PROCEDURE :: SYNC_HOST_RDWR => ${obj.upper()}$_SYNC_HOST_RDWR
-      PROCEDURE :: SYNC_HOST_RDONLY => ${obj.upper()}$_SYNC_HOST_RDONLY
-      PROCEDURE :: GET_DEVICE_DATA_RDWR => ${obj.upper()}$_GET_DEVICE_DATA_RDWR
-      PROCEDURE :: GET_DEVICE_DATA_RDONLY => ${obj.upper()}$_GET_DEVICE_DATA_RDONLY
-      PROCEDURE :: GET_DEVICE_DATA_WRONLY => ${obj.upper()}$_GET_DEVICE_DATA_WRONLY
-      PROCEDURE :: GET_HOST_DATA_RDWR => ${obj.upper()}$_GET_HOST_DATA_RDWR
-      PROCEDURE :: GET_HOST_DATA_RDONLY => ${obj.upper()}$_GET_HOST_DATA_RDONLY
-      PROCEDURE :: DELETE_DEVICE_DATA => ${obj.upper()}$_DELETE_DEVICE_DATA
-#:endif
    END TYPE ${obj.upper()}$
 
-   PUBLIC :: ${obj.upper()}$
+   PUBLIC :: ${obj.upper()}$, ${', '.join(methods)}$
+#:if defined('WAM_GPU')
+   PUBLIC :: ${', '.join(gpu_methods)}$
+#:endif
 
    CONTAINS
 
    SUBROUTINE ${obj.upper()}$_ALLOC(SELF, UBOUNDS, LBOUNDS)
       #:set rank = _def['rank']
-      CLASS(${obj.upper()}$) :: SELF
+      TYPE(${obj.upper()}$) :: SELF
       INTEGER(KIND=JWIM), INTENT(IN) :: UBOUNDS(${rank}$)
       INTEGER(KIND=JWIM), INTENT(IN), OPTIONAL :: LBOUNDS(${rank}$)
       INTEGER(KIND=JWIM) :: LLBOUNDS(${rank}$)
@@ -91,30 +94,42 @@ MODULE ${obj.upper()}$_TYPE_MOD
       #:endfor
 
       SELF%LALLOC = .TRUE.
+#ifdef OMPGPU
+      !$omp target enter data map(to:SELF)
+#else
       !$acc enter data copyin(SELF)
+#endif
 
    END SUBROUTINE ${obj.upper()}$_ALLOC
 
    SUBROUTINE ${obj.upper()}$_DEALLOC(SELF)
-      CLASS(${obj.upper()}$) :: SELF
+      TYPE(${obj.upper()}$) :: SELF
 
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
       NULLIFY(SELF%${var.upper()}$)
+#ifdef OMPGPU
+      !$omp target exit data map(release:SELF%${var.upper()}$)
+#else
       !$acc exit data detach(SELF%${var.upper()}$)
+#endif
       CALL FIELD_DELETE(SELF%F_${var.upper()}$)
       NULLIFY(SELF%F_${var.upper()}$)
           #:endfor
       #:endfor
 
       SELF%LALLOC = .FALSE.
+#ifdef OMPGPU
+      !$omp target exit data map(delete:SELF)
+#else
       !$acc exit data delete(SELF)
+#endif
 
    END SUBROUTINE ${obj.upper()}$_DEALLOC
 
 #:if defined('WAM_GPU')
    SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA_RDWR(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
-      CLASS(${obj.upper()}$) :: SELF
+      TYPE(${obj.upper()}$) :: SELF
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
             #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
@@ -137,7 +152,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
              #:for var in vars
          IF(${f'L_{var.upper()}'}$)THEN
              CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDWR(SELF%${var.upper()}$)
+#ifdef OMPGPU
+             !$omp target enter data map(to:SELF%${var.upper()}$)
+#else
              !$acc enter data attach(SELF%${var.upper()}$)
+#endif
          ENDIF
              #:endfor
          #:endfor
@@ -146,7 +165,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
          #:for _, vars in zip(_def['types'], _def['vars'])
              #:for var in vars
          CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDWR(SELF%${var.upper()}$)
+#ifdef OMPGPU
+         !$omp target enter data map(to:SELF%${var.upper()}$)
+#else
          !$acc enter data attach(SELF%${var.upper()}$)
+#endif
              #:endfor
          #:endfor
       ENDIF
@@ -154,7 +177,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
    END SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA_RDWR
 
    SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA_WRONLY(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
-      CLASS(${obj.upper()}$) :: SELF
+      TYPE(${obj.upper()}$) :: SELF
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
             #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
@@ -177,7 +200,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
              #:for var in vars
          IF(${f'L_{var.upper()}'}$)THEN
              CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_WRONLY(SELF%${var.upper()}$)
+#ifdef OMPGPU
+             !$omp target enter data map(to:SELF%${var.upper()}$)
+#else
              !$acc enter data attach(SELF%${var.upper()}$)
+#endif
          ENDIF
              #:endfor
          #:endfor
@@ -186,7 +213,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
          #:for _, vars in zip(_def['types'], _def['vars'])
              #:for var in vars
          CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_WRONLY(SELF%${var.upper()}$)
+#ifdef OMPGPU
+         !$omp target enter data map(to:SELF%${var.upper()}$)
+#else
          !$acc enter data attach(SELF%${var.upper()}$)
+#endif
              #:endfor
          #:endfor
       ENDIF
@@ -194,7 +225,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
    END SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA_WRONLY
 
    SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA_RDONLY(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
-      CLASS(${obj.upper()}$) :: SELF
+      TYPE(${obj.upper()}$) :: SELF
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
             #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
@@ -217,7 +248,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
              #:for var in vars
          IF(${f'L_{var.upper()}'}$)THEN
              CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDONLY(SELF%${var.upper()}$)
+#ifdef OMPGPU
+             !$omp target enter data map(to:SELF%${var.upper()}$)
+#else
              !$acc enter data attach(SELF%${var.upper()}$)
+#endif
          ENDIF
              #:endfor
          #:endfor
@@ -226,7 +261,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
          #:for _, vars in zip(_def['types'], _def['vars'])
              #:for var in vars
          CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDONLY(SELF%${var.upper()}$)
+#ifdef OMPGPU
+         !$omp target enter data map(to:SELF%${var.upper()}$)
+#else
          !$acc enter data attach(SELF%${var.upper()}$)
+#endif
              #:endfor
          #:endfor
       ENDIF
@@ -234,7 +273,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
    END SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA_RDONLY
 
    SUBROUTINE ${obj.upper()}$_SYNC_DEVICE_RDWR(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$, QUEUE)
-      CLASS(${obj.upper()}$) :: SELF
+      TYPE(${obj.upper()}$) :: SELF
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
             #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
@@ -273,7 +312,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
    END SUBROUTINE ${obj.upper()}$_SYNC_DEVICE_RDWR
 
    SUBROUTINE ${obj.upper()}$_SYNC_DEVICE_RDONLY(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$, QUEUE)
-      CLASS(${obj.upper()}$) :: SELF
+      TYPE(${obj.upper()}$) :: SELF
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
             #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
@@ -312,7 +351,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
    END SUBROUTINE ${obj.upper()}$_SYNC_DEVICE_RDONLY
 
    SUBROUTINE ${obj.upper()}$_GET_HOST_DATA_RDONLY(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
-      CLASS(${obj.upper()}$) :: SELF
+      TYPE(${obj.upper()}$) :: SELF
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
             #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
@@ -334,7 +373,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
          #:for _, vars in zip(_def['types'], _def['vars'])
              #:for var in vars
          IF(${f'L_{var.upper()}'}$)THEN
+#ifdef OMPGPU
+             !$omp target exit data map(release:SELF%${var.upper()}$)
+#else
              !$acc exit data detach(SELF%${var.upper()}$)
+#endif
              CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDONLY(SELF%${var.upper()}$)
          ENDIF
              #:endfor
@@ -343,7 +386,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
          !... copy entire struct
          #:for _, vars in zip(_def['types'], _def['vars'])
              #:for var in vars
+#ifdef OMPGPU
+         !$omp target exit data map(release:SELF%${var.upper()}$)
+#else
          !$acc exit data detach(SELF%${var.upper()}$)
+#endif
          CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDONLY(SELF%${var.upper()}$)
              #:endfor
          #:endfor
@@ -352,7 +399,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
    END SUBROUTINE ${obj.upper()}$_GET_HOST_DATA_RDONLY
 
    SUBROUTINE ${obj.upper()}$_GET_HOST_DATA_RDWR(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
-      CLASS(${obj.upper()}$) :: SELF
+      TYPE(${obj.upper()}$) :: SELF
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
             #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
@@ -373,7 +420,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
          #:for _, vars in zip(_def['types'], _def['vars'])
              #:for var in vars
          IF(${f'L_{var.upper()}'}$)THEN
+#ifdef OMPGPU
+             !$omp target exit data map(release:SELF%${var.upper()}$)
+#else
              !$acc exit data detach(SELF%${var.upper()}$)
+#endif
              CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDWR(SELF%${var.upper()}$)
          ENDIF
              #:endfor
@@ -382,7 +433,11 @@ MODULE ${obj.upper()}$_TYPE_MOD
          !... copy entire struct
          #:for _, vars in zip(_def['types'], _def['vars'])
              #:for var in vars
+#ifdef OMPGPU
+         !$omp target exit data map(release:SELF%${var.upper()}$)
+#else
          !$acc exit data detach(SELF%${var.upper()}$)
+#endif
          CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDWR(SELF%${var.upper()}$)
              #:endfor
          #:endfor
@@ -391,7 +446,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
    END SUBROUTINE ${obj.upper()}$_GET_HOST_DATA_RDWR
 
    SUBROUTINE ${obj.upper()}$_SYNC_HOST_RDONLY(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$, QUEUE)
-      CLASS(${obj.upper()}$) :: SELF
+      TYPE(${obj.upper()}$) :: SELF
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
             #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
@@ -430,7 +485,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
    END SUBROUTINE ${obj.upper()}$_SYNC_HOST_RDONLY
 
    SUBROUTINE ${obj.upper()}$_SYNC_HOST_RDWR(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$, QUEUE)
-      CLASS(${obj.upper()}$) :: SELF
+      TYPE(${obj.upper()}$) :: SELF
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars
             #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
@@ -469,7 +524,7 @@ MODULE ${obj.upper()}$_TYPE_MOD
    END SUBROUTINE ${obj.upper()}$_SYNC_HOST_RDWR
 
    SUBROUTINE ${obj.upper()}$_DELETE_DEVICE_DATA(SELF)
-      CLASS(${obj.upper()}$) :: SELF
+      TYPE(${obj.upper()}$) :: SELF
 
       #:for _, vars in zip(_def['types'], _def['vars'])
           #:for var in vars

@@ -78,7 +78,7 @@
       USE YOWCOUT  , ONLY : NTRAIN   ,LLPARTITION
       USE YOWFRED  , ONLY : FR       ,TH       ,FRIC     ,OLDWSFC, ZPIFR
       USE YOWPCONS , ONLY : G        ,EPSMIN, NPMAX
-      USE YOWMAP   , ONLY : CLDOMAIN
+      USE YOWMAP   , ONLY : LCLDOMAIN
       USE YOWPARAM , ONLY : NANG     ,NFRE
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -106,7 +106,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NTRAIN), INTENT(OUT) :: EMTRAIN, THTRAIN, PMTRAIN
 
 
-      INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IJ, K, M, NT
 
       REAL(KIND=JWRB) :: COEF
       REAL(KIND=JWRB) :: CHECKTA
@@ -159,7 +159,7 @@
         ENDDO
       ENDDO
 
-      IF (.NOT.(CLDOMAIN == 's')) THEN
+      IF (.NOT. LCLDOMAIN) THEN
 !     CHECK THAT TOTAL SWELL MEAN FREQUENCY IS LOWER THAN WINDSEA ONE
 !     OTHERWISE RESET WIND SECTOR TO WINDSEA
 
@@ -245,9 +245,13 @@
      &               F1, SWM,                                       &
      &               EMTRAIN  ,THTRAIN  ,PMTRAIN)
       ELSE
-        EMTRAIN(:,:) = 0.0_JWRB
-        THTRAIN(:,:) = 0.0_JWRB
-        PMTRAIN(:,:) = 0.0_JWRB
+        DO NT=1,NTRAIN
+          DO IJ=KIJS,KIJL
+            EMTRAIN(IJ,NT) = 0.0_JWRB
+            THTRAIN(IJ,NT) = 0.0_JWRB
+            PMTRAIN(IJ,NT) = 0.0_JWRB
+          ENDDO
+        ENDDO
       ENDIF
 
 !*    2.2 COMPUTATION OF TOTAL SWELL OUTPUT PARAMETERS

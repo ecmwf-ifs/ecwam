@@ -353,7 +353,8 @@
           ENDDO
         
         ELSE
-          GAMNORMA(KIJS:KIJL,:) = 1.0_JWRB
+          GAMNORMA(KIJS:KIJL,1) = 1.0_JWRB
+          GAMNORMA(KIJS:KIJL,2) = 1.0_JWRB
         ENDIF
 
 

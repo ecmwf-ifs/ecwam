@@ -107,7 +107,12 @@ IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
 !*    1. INITIALISE.
 !        -----------
 
+#ifdef OMPGPU
+!$omp target data map(to:BLK2GLO,KLAT,KLON,WLAT,DPTHEXT,UEXT,VEXT,DELLAM,COSPH, &
+!$omp& DDPHI,DDLAM,DUPHI,DULAM,DVPHI,DVLAM)
+#else
 !$acc data present(KLAT,WLAT,DPTHEXT) copyin(DELLAM)
+#endif
 
       NLAND=NSUP+1
       ONEO2DELPHI = 0.5_JWRB/DELPHI
@@ -118,7 +123,11 @@ IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
 !        --------------------------
 
       IF (IREFRA == 1 .OR. IREFRA == 3) THEN
+#ifdef OMPGPU
+        !$omp target teams distribute parallel do private(IPP,IPM,IPP2,IPM2,ILP,ILM,KX,DPTP,DPTM)
+#else
         !$acc kernels
+#endif
         DO IJ=KIJS,KIJL
           IPP = KLAT(IJ,2,1)
           IPM = KLAT(IJ,1,1)
@@ -149,14 +158,26 @@ IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
             DDLAM(IJ) = 0.0_JWRB 
           ENDIF
         ENDDO
+#ifdef OMPGPU
+        !$omp end target teams distribute parallel do
+#else
         !$acc end kernels
+#endif
       ELSE
-        !$acc kernels 
+#ifdef OMPGPU
+        !$omp target teams distribute parallel do
+#else
+        !$acc kernels
+#endif
         DO IJ=KIJS,KIJL
           DDPHI(IJ) = 0.0_JWRB
           DDLAM(IJ) = 0.0_JWRB
         ENDDO
-        !$acc end kernels 
+#ifdef OMPGPU
+        !$omp end target teams distribute parallel do
+#else
+        !$acc end kernels
+#endif
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -165,7 +186,11 @@ IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
 !        -------------------------------------
 
       IF (IREFRA == 2 .OR. IREFRA == 3) THEN
+#ifdef OMPGPU
+        !$omp target teams distribute parallel do private(IPP,IPM,IPP2,IPM2,ILP,ILM,KX,UP,UM,VP,VM)
+#else
         !$acc kernels
+#endif
         DO IJ=KIJS,KIJL
           IPP = KLAT(IJ,2,1)
 !         exact 0 means that the current field was not defined, hence
@@ -213,9 +238,13 @@ IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
             DVLAM(IJ) = 0.0_JWRB
           ENDIF
         ENDDO
+#ifdef OMPGPU
+        !$omp end target teams distribute parallel do
+        !$omp target teams distribute parallel do private(KX,CGMAX)
+#else
         !$acc end kernels
-
         !$acc kernels
+#endif
         DO IJ=KIJS,KIJL
           KX  = BLK2GLO%KXLT(IJ)
           CGMAX = CURRENT_GRADIENT_MAX*COSPH(KX)
@@ -224,20 +253,36 @@ IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
           DULAM(IJ) = SIGN(MIN(ABS(DULAM(IJ)),CGMAX),DULAM(IJ))
           DVLAM(IJ) = SIGN(MIN(ABS(DVLAM(IJ)),CGMAX),DVLAM(IJ))
         ENDDO
+#ifdef OMPGPU
+        !$omp end target teams distribute parallel do
+#else
         !$acc end kernels
+#endif
 
       ELSE
+#ifdef OMPGPU
+        !$omp target teams distribute parallel do
+#else
         !$acc kernels
+#endif
         DO IJ=KIJS,KIJL
           DUPHI(IJ) = 0.0_JWRB
           DVPHI(IJ) = 0.0_JWRB
           DULAM(IJ) = 0.0_JWRB
           DVLAM(IJ) = 0.0_JWRB
         ENDDO
+#ifdef OMPGPU
+        !$omp end target teams distribute parallel do
+#else
         !$acc end kernels
+#endif
       ENDIF
 
+#ifdef OMPGPU
+!$omp end target data
+#else
 !$acc end data
+#endif
 
 IF (LHOOK) CALL DR_HOOK('GRADI',1,ZHOOK_HANDLE)
 

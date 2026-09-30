@@ -122,7 +122,14 @@ SUBROUTINE CAL_SECOND_ORDER_SPEC(KIJS, KIJL, F1, WAVNUM, DEPTH, SIG)
 !***     1.12 ENERGY CONSERVING INTERPOLATION SCHEME
 !        -------------------------------------------
  
-         PF1(:,:,:) = 0._JWRB
+         DO M=1,NFREH
+           DO K=1,NANGH
+             DO IJ=KIJS,KIJL
+               PF1(IJ,K,M) = 0._JWRB
+             ENDDO
+           ENDDO
+         ENDDO
+
          DO M=1,NFREH
             M0 = MR*M
             DO K=1,NANGH

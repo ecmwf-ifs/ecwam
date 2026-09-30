@@ -13,8 +13,10 @@ SCRIPTS_DIR="$( cd $( dirname "${BASH_SOURCE[0]}" ) && pwd -P )"
 # e.g. when a bug is fixed.
 export ecwam_bathymetry_version=2
 
-ECWAM_CACHE_PATH_DEFAULT=${HOME}/cache/ecwam
-[[ ${HPCPERM} ]] && ECWAM_CACHE_PATH_DEFAULT=${HPCPERM}/cache/ecwam
+if [[ -z ${ECWAM_CACHE_PATH_DEFAULT:-} ]]; then
+  ECWAM_CACHE_PATH_DEFAULT=${HOME}/cache/ecwam
+  [[ ${HPCPERM:-} ]] && ECWAM_CACHE_PATH_DEFAULT=${HPCPERM}/cache/ecwam
+fi
 
 export ECWAM_CACHE_PATH=${ECWAM_CACHE_PATH:-${ECWAM_CACHE_PATH_DEFAULT}}
 export ecwam_ROOT=${ecwam_ROOT:-${SCRIPTS_DIR}/../../..}
