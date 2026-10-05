@@ -119,7 +119,7 @@ IF (LFRSTCTU) THEN
   IF (.NOT. ALLOCATED(KCR)) ALLOCATE(KCR(NANG,4))
 
 #ifdef OMPGPU
-!$omp target enter data map(to:JXO, JYO, KCR, KPM)
+!$omp target enter data map(to:JXO, JYO, KCR, KPM, MPM)
 #endif
 
 #ifdef OMPGPU
@@ -202,6 +202,9 @@ IF (.NOT. ALLOCATED(WKPMN)) ALLOCATE(WKPMN(IJS:IJL,NANG,NFRE_RED,-1:1))
 
 IF (IREFRA == 2 .OR. IREFRA == 3) THEN
   IF (.NOT. ALLOCATED(WMPMN)) ALLOCATE(WMPMN(IJS:IJL,NANG,NFRE_RED,-1:1))
+#ifdef OMPGPU
+  !$omp target enter data map(to:WMPMN)
+#endif
 
 #ifndef WAM_GPU
   IF (.NOT. ALLOCATED(LLWLATN)) ALLOCATE(LLWLATN(NANG,NFRE_RED,2,2))

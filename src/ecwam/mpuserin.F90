@@ -1066,7 +1066,7 @@
 
 !     Some are printed below
 #ifdef OMPGPU
-!$omp target enter data map(to:NFRE_RED, IREFRA)
+!$omp target update to(NFRE_RED, IREFRA)
 #else
 !$acc update device(NFRE_RED, IREFRA)
 #endif
