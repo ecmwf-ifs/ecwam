@@ -47,7 +47,7 @@ SUBROUTINE OUTSPEC (FL1, FF_NOW)
 
 !-------------------------------------------------------------------
 
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWIB, JWRB, JWRU
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWCOUP  , ONLY : LWCOU, LIFS_IO_SERV_ENABLED,                &
@@ -61,13 +61,13 @@ SUBROUTINE OUTSPEC (FL1, FF_NOW)
 
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
       USE YOWABORT, ONLY : WAM_ABORT
+      USE YOWDATE_UTILS, ONLY : DIFDATE
 
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
 #include "outwspec.intfb.h"
-#include "difdate.intfb.h"
 
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(IN) :: FL1
       TYPE(FORCING_FIELDS), INTENT(IN) :: FF_NOW
@@ -76,6 +76,7 @@ SUBROUTINE OUTSPEC (FL1, FF_NOW)
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: IJSG, IJLG, IJSB, IJLB, KIJS, KIJL, ICHNK
       INTEGER(KIND=JWIM) :: IFCST
+      INTEGER(KIND=JWIB) :: IFCST_B
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM) :: ZMASK
@@ -137,13 +138,13 @@ IF (LHOOK) CALL DR_HOOK('OUTSPEC',0,ZHOOK_HANDLE)
         IF (LWCOU .AND. MARSTYPE == 'fg') THEN
           CDATE=CDATEA
           CDATED=CDATEA
-          CALL DIFDATE (CDATEA, CDTPRO, IFCST)
-          IFCST = IFCST/3600
+          CALL DIFDATE (CDATEA, CDTPRO, IFCST_B)
+          IFCST = IFCST_B/3600
         ELSEIF (LWCOU .AND. MARSTYPE == '4v') THEN
           CDATE=CDATEA
           CDATED=CDATEA
-          CALL DIFDATE (CDATEA, CDTPRO, IFCST)
-          IFCST = IFCST/3600
+          CALL DIFDATE (CDATEA, CDTPRO, IFCST_B)
+          IFCST = IFCST_B/3600
         ELSE
           CDATE=CDTPRO
           CDATED=CDTPRO
@@ -153,8 +154,8 @@ IF (LHOOK) CALL DR_HOOK('OUTSPEC',0,ZHOOK_HANDLE)
 !*    0.2.  THIS IS A  FORECAST DATE.
         CDATE=CDATEF
         CDATED=CDTPRO
-        CALL DIFDATE (CDATEF, CDTPRO, IFCST)
-        IFCST = IFCST/3600
+        CALL DIFDATE (CDATEF, CDTPRO, IFCST_B)
+        IFCST = IFCST_B/3600
       ENDIF
 !-----------------------------------------------------------------------
 

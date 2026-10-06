@@ -45,13 +45,12 @@ USE YOWWIND  , ONLY : CDAWIFL, CDATEWO, CDATEFL
 USE FIELD_ASYNC_MODULE, ONLY : WAIT_FOR_ASYNC_QUEUE
 
 USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
-
+      USE YOWDATE_UTILS, ONLY : INCDATE
 ! ----------------------------------------------------------------------
 
 IMPLICIT NONE
 
 #include "implsch.intfb.h"
-#include "incdate.intfb.h"
 #include "newwind.intfb.h"
 #include "propag_wam.intfb.h"
 #include "wam_user_clock.intfb.h"
