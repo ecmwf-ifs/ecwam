@@ -706,27 +706,33 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
 
          ELSE
 
+!          The restart is one record per (direction, frequency) plane, so a
+!          whole frequency band is NANG records laid end to end. Read the
+!          band in one go rather than a record at a time, but keep handing
+!          MPDISTRIBFL a single direction: KDEL/MDEL also size its exchange
+!          buffers, so widening them inflates every MPI message with it.
            DO MLOOP= 1, NFRE, MDEL
              MINF=MLOOP
              MSUP=MIN(MLOOP+MDEL-1,NFRE)
-             DO KLOOP=1,NANG,KDEL
-               KINF=KLOOP
-               KSUP=MIN(KLOOP+KDEL-1, NANG)
 
-               ALLOCATE(RFL(1:NIBLO, KINF:KSUP, MINF:MSUP))
-!              READ RESTART SPECTRA FROM PE ISEND (IREAD) 
-               IF (IRANK == ISEND) THEN
-                 LOUNIT = .FALSE.
-                 LCUNIT = .FALSE.
-                 IF (MINF == 1 .AND. KINF == 1) LOUNIT = .TRUE.
-                 IF (MSUP == NFRE .AND. KSUP == NANG) LCUNIT = .TRUE.
+             ALLOCATE(RFL(1:NIBLO, 1:NANG, MINF:MSUP))
 
-                 CALL READFL(RFL, 1, NIBLO, KINF, KSUP, MINF, MSUP,       &
-     &                       FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARALR)
-               ENDIF
+!            READ RESTART SPECTRA FROM PE ISEND (IREAD)
+             IF (IRANK == ISEND) THEN
+               LOUNIT = .FALSE.
+               LCUNIT = .FALSE.
+               IF (MINF == 1)    LOUNIT = .TRUE.
+               IF (MSUP == NFRE) LCUNIT = .TRUE.
 
-               CALL MPDISTRIBFL(ISEND, KTAG, NBLKS, NBLKE, KINF, KSUP, MINF, MSUP, RFL)
+               CALL READFL(RFL, 1, NIBLO, 1, NANG, MINF, MSUP,           &
+     &                     FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARALR)
+             ENDIF
+
+             DO KLOOP = 1, NANG
+               CALL MPDISTRIBFL(ISEND, KTAG, NBLKS, NBLKE, KLOOP, KLOOP, &
+     &                          MINF, MSUP, RFL(1:NIBLO, KLOOP:KLOOP, MINF:MSUP))
                KTAG=KTAG+1
+             ENDDO
 
 !             KEEP CORRESPONDING CONTRIBUTION TO FL1
 !$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, K, M)
@@ -737,14 +743,14 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
                 IJLB = IJFROMCHNK(KIJL, ICHNK)
 
                 DO M = MINF, MSUP
-                  DO K = KINF, KSUP
+                  DO K = 1, NANG
                     FL1(KIJS:KIJL, K, M, ICHNK) = RFL(IJSB:IJLB, K, M)
                   ENDDO
                 ENDDO
 
                 IF (KIJL < NPROMA_WAM) THEN
                   DO M = MINF, MSUP
-                    DO K = KINF, KSUP
+                    DO K = 1, NANG
                       FL1(KIJL+1:NPROMA_WAM, K, M, ICHNK) = FL1(1, K, M, ICHNK)
                     ENDDO
                   ENDDO
@@ -753,8 +759,7 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
               ENDDO
 !$OMP         END PARALLEL DO
 
-               DEALLOCATE(RFL)
-             ENDDO
+             DEALLOCATE(RFL)
            ENDDO
 
          ENDIF

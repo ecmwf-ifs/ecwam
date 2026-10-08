@@ -83,6 +83,16 @@ if( DEFINED threading_flags)
   ecbuild_add_fortran_flags( "${threading_flags}"   NAME threading_flags )
 endif()
 
+# Supplying a COMPILE_FLAGS file makes ecbuild purge the default flags of every
+# language it has loaded, not just Fortran, and the rules above restore Fortran
+# only. C therefore has to be given its optimisation back here, or it compiles
+# with no -O at all.
+ecbuild_add_c_flags( "-g -O0"          NAME c_base_debug     BUILD DEBUG )
+ecbuild_add_c_flags( "-O2 -DNDEBUG"    NAME c_optimization   BUILD BIT )
+ecbuild_add_c_flags( "-O3 -DNDEBUG"    NAME c_release        BUILD RELEASE )
+ecbuild_add_c_flags( "-O3 -g"          NAME c_production     BUILD PRODUCTION )
+ecbuild_add_c_flags( "-O2 -g -DNDEBUG" NAME c_relwithdebinfo BUILD RELWITHDEBINFO )
+
 if( CMAKE_BUILD_TYPE MATCHES "Debug" )
   foreach( debug_flag    fpe initsnan checkbounds )
     if( ${debug_flag}_flags )

@@ -46,6 +46,7 @@ if( NOT TARGET ecwam_intfb )
 endif()
 
 list( APPEND ecwam_srcs
+  bswap_array.c
   abort1.F90
   adjust.F90
   airsea.F90
@@ -493,7 +494,11 @@ foreach( prec sp dp )
 
     # add autopromotion of reals if we are compiling in double precision
     if( prec MATCHES "dp" )
-      target_compile_options( ecwam_${prec} PRIVATE ${autopromote_flags} )
+      # Fortran only: the target also carries C sources, and the C compiler
+      # rejects these flags.
+      foreach( autopromote_flag IN LISTS autopromote_flags )
+        target_compile_options( ecwam_${prec} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:${autopromote_flag}> )
+      endforeach()
     endif()
 
 	if( HAVE_CUDA AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" )

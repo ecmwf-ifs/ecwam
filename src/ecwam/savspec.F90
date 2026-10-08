@@ -80,7 +80,7 @@
 
       CHARACTER(LEN=296) :: FILENAME
 
-      LOGICAL :: LOUNIT
+      LOGICAL :: LOUNIT, LCUNIT
 
 ! ----------------------------------------------------------------------
 
@@ -112,7 +112,7 @@
 !$OMP    END PARALLEL DO
 
          CALL WRITEFL(RFL, IJSG, IJLG, 1, NANG, 1, NFRE,               &
-     &                FILENAME, IUNIT, LOUNIT, LRSTPARALW)
+     &                FILENAME, IUNIT, LOUNIT, .TRUE., LRSTPARALW)
 
          DEALLOCATE(RFL)
       ELSE
@@ -124,40 +124,46 @@
         DO MLOOP= 1, NFRE, MDEL
           MINF=MLOOP
           MSUP=MIN(MLOOP+MDEL-1,NFRE)
-          DO KLOOP = 1, NANG, KDEL
-            KINF=KLOOP
-            KSUP=MIN(KLOOP+KDEL-1,NANG)
 
-            LOUNIT = .FALSE.
-            IF (MINF == 1 .AND. KINF == 1) LOUNIT = .TRUE.
+!         Mirror of GETSPEC: write the band in one go rather than a record
+!         at a time, but keep handing MPGATHERFL a single direction, since
+!         KDEL/MDEL also size its exchange buffers.
+          LOUNIT = .FALSE.
+          LCUNIT = .FALSE.
+          IF (MINF == 1)    LOUNIT = .TRUE.
+          IF (MSUP == NFRE) LCUNIT = .TRUE.
 
-            ALLOCATE(RFL(NIBLO, KINF:KSUP, MINF:MSUP))
+          ALLOCATE(RFL(NIBLO, 1:NANG, MINF:MSUP))
 
-!$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, M, K, IPRM, IJ)
-            DO ICHNK = 1, NCHNK
-              DO M = MINF, MSUP
-                DO K = KINF, KSUP 
-                  DO IPRM = 1, KIJL4CHNK(ICHNK)
-                    IJ = IJFROMCHNK(IPRM,ICHNK)
-                    IF (IJ >= IJSLOC .AND. IJ <= IJLLOC) THEN
-                      IJ = IJ + IJGLOBAL_OFFSET 
-                      RFL(IJ, K, M) = FL1(IPRM, K, M, ICHNK)
-                    ENDIF
-                  ENDDO
-                 ENDDO
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, M, K, IPRM, IJ)
+          DO ICHNK = 1, NCHNK
+            DO M = MINF, MSUP
+              DO K = 1, NANG
+                DO IPRM = 1, KIJL4CHNK(ICHNK)
+                  IJ = IJFROMCHNK(IPRM,ICHNK)
+                  IF (IJ >= IJSLOC .AND. IJ <= IJLLOC) THEN
+                    IJ = IJ + IJGLOBAL_OFFSET 
+                    RFL(IJ, K, M) = FL1(IPRM, K, M, ICHNK)
+                  ENDIF
+                ENDDO
                ENDDO
              ENDDO
-!$OMP        END PARALLEL DO
+           ENDDO
+!$OMP      END PARALLEL DO
 
-            CALL MPGATHERFL(IRECV, NBLKS, NBLKE, KINF, KSUP, MINF, MSUP, RFL)
-
-
-            IF (IRANK == IPFGTBL(JPPFLAG+1) .OR. NPROC == 1) THEN
-              CALL WRITEFL(RFL, 1, NIBLO, KINF, KSUP, MINF, MSUP,       &
-     &                     FILENAME, IUNIT, LOUNIT, LRSTPARALW)
-            ENDIF
-            DEALLOCATE(RFL)
+!         One direction per call: MPGATHERFL sizes its send/receive buffers
+!         by (KSUP-KINF+1)*(MSUP-MINF+1), so gathering the whole band at once
+!         inflates them 36-fold and costs far more than the saved calls.
+          DO KLOOP = 1, NANG
+            CALL MPGATHERFL(IRECV, NBLKS, NBLKE, KLOOP, KLOOP, MINF, MSUP, &
+     &                      RFL(1:NIBLO, KLOOP:KLOOP, MINF:MSUP))
           ENDDO
+
+          IF (IRANK == IPFGTBL(JPPFLAG+1) .OR. NPROC == 1) THEN
+            CALL WRITEFL(RFL, 1, NIBLO, 1, NANG, MINF, MSUP,            &
+     &                   FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARALW)
+          ENDIF
+          DEALLOCATE(RFL)
         ENDDO
       ENDIF
 
