@@ -156,7 +156,7 @@
       REAL(KIND=JWRB) :: RNU_ATM, RNUM_ATM
       REAL(KIND=JWRB) :: WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
       REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
-      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE, ZHOOK_HANDLE_TIME_1
       REAL(KIND=JWRB) :: RMISS
       REAL(KIND=JWRB) :: ZRCHAR
       REAL(KIND=JWRU) :: time0, time, timestep_start, timestep0_start
@@ -348,6 +348,9 @@
      &             RNU_ATM, RNUM_ATM,                                   &
      &             IDUM,IDUM, .FALSE.)
         time = (timestep_start+wam_user_clock())*1.e-6
+        IF (ISTEP == 1) THEN
+          IF (LHOOK) CALL DR_HOOK('RUNWAM:TIME_1',0,ZHOOK_HANDLE_TIME_1)
+        ENDIF
         ISTEP = ISTEP+1
         IF (IRANK==1) THEN
           CALL WAM_MEMINFO(6,ISTEP)
@@ -360,6 +363,7 @@
         time = (timestep0_start+wam_user_clock())*1.e-6
         WRITE(6,'(A,F8.2,A)') " WAVEMDL STEPS TOOK ",time," SECONDS"
       ENDIF
+      IF (LHOOK) CALL DR_HOOK('RUNWAM:TIME_1',1,ZHOOK_HANDLE_TIME_1)
 
 
 !     3. CLOSE ODB DATABASE OF SATELLITE DATA
