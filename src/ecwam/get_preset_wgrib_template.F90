@@ -25,7 +25,7 @@ SUBROUTINE GET_PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV)
 !     SUBROUTINE GET_PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE)
 !                INPUT:
 !                CT           : "I" for INTEGRATED PARAMETERS AND
-!                               "2" for INTGRATED PARAMETERS in GRIB 2                            
+!                               "2" for INTGRATED PARAMETERS in GRIB 2
 !                               "S" for SPECTRA
 !                OPTIONAL INPUT:
 !                NGRIBV         GRIB VERSION TO BE USED (if absent then = NGRIB_VERSION)
@@ -65,7 +65,7 @@ SUBROUTINE GET_PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV)
     IF (LHOOK) CALL DR_HOOK('GET_PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
     IF ( PRESENT(NGRIBV) ) THEN
-      IGRIB_VERSION = NGRIBV  
+      IGRIB_VERSION = NGRIBV
     ELSE
       IGRIB_VERSION = -1
     ENDIF

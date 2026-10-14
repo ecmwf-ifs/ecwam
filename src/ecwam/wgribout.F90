@@ -91,7 +91,7 @@
         WRITE(IU06,*)'   WGRIBOUT : PARAM= ',ITABPAR,     &
      &                            ' EXPVER=',CEXPVER,     &
      &                            ' STREAM=',CSTREAM,     &
-     &                            ' TYPE=', ITYPE
+     &                            ' TYPE=  ',ITYPE
         CALL FLUSH(IU06)
       ENDIF
 
