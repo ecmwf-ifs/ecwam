@@ -259,7 +259,7 @@
 
       IF (NFLDPPE(IRANK) > 0) THEN
         IF (ALLOCATED(GOUT)) DEALLOCATE(GOUT)
-        ALLOCATE(GOUT(NFLDPPE(IRANK),NGX,NGY))
+        ALLOCATE(GOUT(NGX,NGY,NFLDPPE(IRANK)))
       ENDIF
 
       ICNT(:)=0
@@ -295,7 +295,7 @@
 #endif
           END IF
 
-          CALL MAKEGRID (GTEMP, GOUT(IFLD,:,:), ZMISS)
+          CALL MAKEGRID (GTEMP, GOUT(:,:,IFLD), ZMISS)
           IFLD=IFLD+1
 
         ENDIF ! (IPFGTBL) 

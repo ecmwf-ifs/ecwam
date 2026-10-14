@@ -113,7 +113,7 @@
             WRITE (IU20) CDTPRO, NGX, NGY, IRGG
             WRITE (IU20) AMOWEP,AMOSOP,AMOEAP,AMONOP
             WRITE (IU20) ZDELLO, NLONRGG, DELPHI
-            WRITE (IU20) GOUT(IFLAG,:,:)
+            WRITE (IU20) GOUT(:,:,IFLAG)
           ENDIF
         ENDDO
       ENDIF
@@ -147,11 +147,11 @@
           IF (GFLAG(IFLAG)) THEN
             IF (IRANK == IPFGTBL(IFLAG)) THEN
               ICOUNT=ICOUNT+1
-              IF (ICOUNT > SIZE(GOUT,1)) THEN
+              IF (ICOUNT > SIZE(GOUT,3)) THEN
                 WRITE(NULERR,*) ' -------------------------------------'
                 WRITE(NULERR,*) ' ERROR in OUTINT '
                 WRITE(NULERR,*) ' ACCESSING MORE FIELDS THAN AVAILABLE'
-                WRITE(NULERR,*) ' SIZE(GOUT,1) = ',SIZE(GOUT,1) 
+                WRITE(NULERR,*) ' SIZE(GOUT,3) = ',SIZE(GOUT,3) 
                 WRITE(NULERR,*) ' -------------------------------------'
                 CALL ABORT1
               ENDIF
@@ -163,7 +163,7 @@
               ITMIN=INFOBOUT(IT,4)
               ITMAX=INFOBOUT(IT,5)
 
-              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, GOUT(ICOUNT,:,:),    &
+              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, GOUT(:,:,ICOUNT),    &
      &                        ITABLE, IPARAM, IZLEV, ITMIN, ITMAX, 0 , 0, &
      &                        CDATE, IFCST, MARSTYPE, LFDB, IUOUT)
             ENDIF

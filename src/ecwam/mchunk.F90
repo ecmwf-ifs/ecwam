@@ -89,7 +89,11 @@ ENDDO
     CALL ABORT1
   ENDIF
 
+#ifdef OMPGPU
+!$omp target enter data map(to:IJFROMCHNK,KIJL4CHNK)
+#else
 !$acc update device(IJFROMCHNK,KIJL4CHNK)
+#endif
 
 
 IF (LHOOK) CALL DR_HOOK('MCHUNK',1,ZHOOK_HANDLE)

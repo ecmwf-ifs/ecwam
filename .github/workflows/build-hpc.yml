@@ -31,10 +31,12 @@ jobs:
           - ac-gpu nvhpc sp
           - ac-cpu intel sp
           - ac-cpu gnu sp
+          - lumi-g rocm-afar omp-offload sp
 
         include:
           - name: ac-gpu nvhpc sp
             site: ac-batch
+            troika_user_secret: HPC_CI_SSH_USER
             sbatch_options: |
               #SBATCH --time=00:20:00
               #SBATCH --nodes=1
@@ -51,6 +53,7 @@ jobs:
 
           - name: ac-cpu intel sp
             site: ac-batch
+            troika_user_secret: HPC_CI_SSH_USER
             sbatch_options: |
               #SBATCH --time=00:20:00
               #SBATCH --nodes=1
@@ -66,6 +69,7 @@ jobs:
 
           - name: ac-cpu gnu sp
             site: ac-batch
+            troika_user_secret: HPC_CI_SSH_USER
             sbatch_options: |
               #SBATCH --time=00:20:00
               #SBATCH --nodes=1
@@ -79,6 +83,26 @@ jobs:
             env_vars: {}
             build_options: --with-fckit --with-single-precision
 
+          - name: lumi-g rocm-afar omp-offload sp
+            site: lumi
+            troika_user_secret: LUMI_CI_SSH_USER
+            account_secret: LUMI_CI_PROJECT
+            sbatch_options: |
+              #SBATCH --time=00:30:00
+              #SBATCH --nodes=1
+              #SBATCH --ntasks-per-node=4
+              #SBATCH --cpus-per-task=7
+              #SBATCH --gpus-per-task=1
+              #SBATCH --partition=dev-g
+              #SBATCH --account={0}
+            output_dir: /scratch/{0}/github-actions/ecwam/lumi-g/${{ github.run_id }}/${{ github.run_attempt }}
+            workdir: /scratch/{0}/github-actions/ecwam/lumi-g/${{ github.run_id }}/${{ github.run_attempt }}
+            arch: eurohpc/lumi/rocm-afar/23.2
+            modules: ~
+            env_vars:
+              ECWAM_CACHE_PATH_DEFAULT: /scratch/project_465000527/nawabahm/cache/ecwam
+            build_options: --with-fckit --with-omp-offload --with-static-linking --with-loki --with-single-precision --cmake="ENABLE_AEC=OFF" --with-hipfort
+
     runs-on: [self-hosted, linux, hpc]
     env:
       GH_TOKEN: ${{ github.token }}
@@ -86,8 +110,10 @@ jobs:
       - uses: ecmwf-actions/reusable-workflows/ci-hpc-generic@v2
         with:
           site: ${{ matrix.site }}
-          troika_user: ${{ secrets.HPC_CI_SSH_USER }}
-          sbatch_options: ${{ matrix.sbatch_options }}
+          troika_user: ${{ secrets[matrix.troika_user_secret] }}
+          sbatch_options: ${{ format(matrix.sbatch_options, secrets[matrix.account_secret]) }}
+          output_dir: ${{ format(matrix.output_dir, secrets[matrix.account_secret]) || '' }}
+          workdir: ${{ format(matrix.workdir, secrets[matrix.account_secret]) || '' }}
           template_data: |
             env_vars: ${{ toJSON(matrix.env_vars) }}
           template: |

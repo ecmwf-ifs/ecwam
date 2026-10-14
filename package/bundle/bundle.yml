@@ -34,7 +34,7 @@ projects :
 
     - field_api :
         git     : https://github.com/ecmwf-ifs/field_api.git
-        version : v0.3.4
+        version : v0.3.10
         cmake   : >
             ENABLE_SINGLE_PRECISION=OFF
 
@@ -76,10 +76,20 @@ options :
         cmake : >
             ENABLE_ACC=ON
 
+    - with-omp-offload :
+        help  : Enable GPU offload using OpenMP
+        cmake : >
+            ENABLE_OMP_OFFLOAD=ON
+
     - with-cuda :
         help  : Enable FIELD_API CUDA backend
         cmake : >
             ENABLE_CUDA=ON
+
+    - with-hipfort :
+        help  : Enable FIELD_API HIPFORT backend
+        cmake : >
+            ENABLE_HIPFORT=ON
 
     - without-loki-install :
         help  : Skip installation of Loki (Requires Loki to be on the PATH)

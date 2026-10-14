@@ -101,9 +101,6 @@ ecbuild_add_option( FEATURE LOKI
                     DESCRIPTION "Apply Loki transformations to ecWam physics"
                     REQUIRED_PACKAGES "loki" )
 
-# Set default Loki transformation mode
-set( LOKI_MODE "scc-stack" CACHE STRING "Transformation mode for Loki source transformations" )
-
 ### OpenACC
 if( ${CMAKE_VERSION} VERSION_LESS "3.25" AND HAVE_LOKI )
   if ( ${PNAME}_ENABLE_ACC OR (NOT DEFINED ${PNAME}_ENABLE_ACC AND ENABLE_ACC) )
@@ -127,21 +124,42 @@ ecbuild_add_option( FEATURE ACC
                     REQUIRED_PACKAGES "OpenACC COMPONENTS Fortran"
                     CONDITION HAVE_LOKI )
 
+## check for OpenMP offload
+include(features/OMP)
+ecbuild_add_option( FEATURE OMP_OFFLOAD 
+                    DEFAULT OFF
+                    DESCRIPTION "Enable GPU offload via OpenMP"
+                    CONDITION HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" AND ${_HAVE_OMP_OFFLOAD})
+
+# Set default Loki transformation mode
+if( HAVE_OMP_OFFLOAD )
+  set( LOKI_MODE "sccs-hoist" CACHE STRING "Transformation mode for Loki source transformations" )
+else()
+  set( LOKI_MODE "scc-stack" CACHE STRING "Transformation mode for Loki source transformations" )
+endif()
+
 ### CUDA
 include(CheckLanguage)
 check_language(CUDA)
 ecbuild_add_option( FEATURE CUDA
     DESCRIPTION "CUDA" DEFAULT OFF
-    CONDITION CMAKE_CUDA_COMPILER AND HAVE_ACC )
+    CONDITION CMAKE_CUDA_COMPILER AND (HAVE_ACC OR HAVE_OMP_OFFLOAD) )
 if( HAVE_CUDA )
     enable_language( CUDA )
 endif()
+
+### check for HIP
+find_package(hipfort COMPONENTS hip)
+ecbuild_add_option( FEATURE HIPFORT
+                    DEFAULT OFF
+                    DESCRIPTION "Support for the HIP Fortran runtime API"
+                    CONDITION hipfort_FOUND AND HAVE_OMP_OFFLOAD )
 
 ### GPU-aware MPI
 ecbuild_add_option( FEATURE GPU_AWARE_MPI
                     DEFAULT OFF
                     DESCRIPTION "Enable GPU-aware MPI"
-                    CONDITION HAVE_ACC AND MPI_Fortran_HAVE_F08_MODULE )
+                    CONDITION (HAVE_ACC OR HAVE_OMP_OFFLOAD) AND MPI_Fortran_HAVE_F08_MODULE )
 
 ### Sources
 
