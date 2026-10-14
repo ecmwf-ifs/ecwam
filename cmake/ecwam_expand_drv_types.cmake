@@ -14,7 +14,7 @@
 
 macro( ecwam_expand_drv_types )
 
-   if( HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" )
+   if( HAVE_LOKI )
       list(APPEND FYPP_ARGS -DWAM_GPU)
    endif()
 

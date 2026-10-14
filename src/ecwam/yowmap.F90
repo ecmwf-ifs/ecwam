@@ -50,6 +50,7 @@
 
       LOGICAL              :: LLOBSTRCT
       LOGICAL              :: LAQUA
+      LOGICAL              :: LCLDOMAIN
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------

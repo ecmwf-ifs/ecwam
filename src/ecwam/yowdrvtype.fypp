@@ -12,6 +12,7 @@
 #:set ymlstring = f.read()
 #:set input = ecwam_yaml_reader.yaml.safe_load(ymlstring)
 #:set objtypes = input['objtypes']
+#:set gpu_methods = ['SYNC_DEVICE_RDWR', 'SYNC_DEVICE_RDONLY', 'SYNC_HOST_RDWR', 'SYNC_HOST_RDONLY', 'GET_DEVICE_DATA_RDWR', 'GET_DEVICE_DATA_RDONLY', 'GET_DEVICE_DATA_WRONLY', 'GET_HOST_DATA_RDWR', 'GET_HOST_DATA_RDONLY', 'DELETE_DEVICE_DATA']
 $:f.close()
 #:endmute
 #!
@@ -19,7 +20,10 @@ $:f.close()
 MODULE YOWDRVTYPE
 
 #:for obj in objtypes
-   USE ${obj.upper()}$_TYPE_MOD, ONLY : ${obj.upper()}$
+   USE ${obj.upper()}$_TYPE_MOD, ONLY : ${obj.upper()}$, ALLOC, DEALLOC
+#ifdef WAM_GPU
+   USE ${obj.upper()}$_TYPE_MOD, ONLY : ${', '.join(gpu_methods)}$
+#endif
 #:endfor
 
 END MODULE YOWDRVTYPE

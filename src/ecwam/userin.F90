@@ -169,7 +169,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 #include "mpcrtbl.intfb.h"
 #include "readsta.intfb.h"
 #include "set_wflags.intfb.h"
-#include "wstream_strg.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(OUT) :: IFORCA
       LOGICAL, INTENT(IN) :: LWCUR
@@ -177,7 +176,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
       INTEGER(KIND=JWIM) :: ITG, IC, I, J, ISAT
       INTEGER(KIND=JWIM) :: LEN
-      INTEGER(KIND=JWIM) :: IFS_STREAM, KSTREAM
       INTEGER(KIND=JWIM) :: IDELT_NEW
       INTEGER(KIND=JWIM) :: ISHIFT
       INTEGER(KIND=JWIM) :: IDELPRO_NEW
@@ -192,12 +190,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       REAL(KIND=JWRB) :: WSPEED, WTHETA
       REAL(KIND=JWRB) :: DEPTHMAX
 
-      CHARACTER(LEN=2) :: MARSFCTYPE
       CHARACTER(LEN=3) :: CITG
-      CHARACTER(LEN=4) :: CSTREAM
       CHARACTER(LEN=256) :: CLFORM
 
-      LOGICAL :: LERROR, LASTREAM
+      LOGICAL :: LERROR
       LOGICAL :: LLNALTGO
       LOGICAL :: LRSTPARAL
 
@@ -245,37 +241,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
       IF (LGRHDIFS) THEN
 !       GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
-        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS2,'stream',IFS_STREAM)
-        IF (.NOT.LNEWLVTP) THEN
-          CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,      &
-     &                      MARSFCTYPE, ISTREAM, LASTREAM)
-          IF (CSTREAM == '****') THEN
-            WRITE(IU06,*) '*****************************************'
-            WRITE(IU06,*) ''
-            WRITE(IU06,*) ' ERROR IN USERIN !!!!'
-            WRITE(IU06,*) ' IFS STREAM UNKNOWN '
-            WRITE(IU06,*) ' IFS STREAM = ', IFS_STREAM
-            WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
-            WRITE(IU06,*) ''
-            WRITE(IU06,*) '*****************************************'
-            CALL WAM_ABORT(__FILENAME__,__LINE__)
-          ENDIF
-        ELSE
-          ISTREAM=IFS_STREAM
-        ENDIF
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS2,'stream',ISTREAM)
       ELSEIF (ISTREAM <= 0) THEN
-        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
-        WRITE(IU06,*)'+                                          +'
-        WRITE(IU06,*)'+ SUBROUTINE USERIN :                      +'
-        WRITE(IU06,*)'+ READ NAMELIST FAILED                     +'
-        WRITE(IU06,*)'+ ISTREAM MUST BE SPECIFIED > 0 !!!!       +'
-        WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
-        WRITE(IU06,*)'+                                          +'
-        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
-        CALL WAM_ABORT("Expected positive value for ISTREAM",__FILENAME__,__LINE__)
-      ENDIF
-
-      IF (ISTREAM <= 0) THEN
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'+ SUBROUTINE USERIN :                      +'
@@ -1304,15 +1271,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '  '
       CALL FLUSH(IU06)
 
-      CALL WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,MARSFCTYPE,     &
-     &                  KSTREAM, LASTREAM)
-
       WRITE(IU06,'("  HARD DRIVE PATH NAME : ",/,5X,A70)') CPATH
       WRITE(IU06,*) '  '
       WRITE(IU06,'("  CURRENT RUN:")')
       WRITE(IU06,'("  GRIB VERSION: ", I4)') NGRIB_VERSION 
       WRITE(IU06,'("  GRIB TABLE..: ", I4)') NLOCGRB
-      WRITE(IU06,'("  STREAM .....: ", A4)') CSTREAM
+      WRITE(IU06,'("  STREAM .....: ", I4)') ISTREAM
       WRITE(IU06,'("  CLASS.......: ", A4)') YCLASS
       WRITE(IU06,'("  EXPERIMENT..: ", A4)') YEXPVER
       IF ( CLDOMAIN == 'g' ) THEN
@@ -1729,35 +1693,39 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
       IF (NOUTS > 0 .AND. .NOT.LRESTARTED) THEN
         DO J=1,NOUTS
-          CALL DIFDATE (CDATEA, COUTS(J), ISHIFT)
-          IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELPRO) /= 0) THEN
-            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
-            WRITE(IU06,*) '+                                       +'
-            WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN       +'
-            WRITE(IU06,*) '+    ============================       +'
-            WRITE(IU06,*) '+ SPECTRA OUTPUT DATE IS NOT AT THE END +'
-            WRITE(IU06,*) '+ OF A PROPAGATION TIMESTEP.            +'
-            WRITE(IU06,*) '+ DATE IS : ', COUTS(J)
-            WRITE(IU06,*) '+ PROGRAM WILL IGNORE THIS OUTPUT TIME  +'
-            WRITE(IU06,*) '+                                       +'
-            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
-          ENDIF
-        ENDDO
-        IF (LLSOURCE) THEN
-          DO J=1,NOUTS
+          IF (LWAMANOUT .OR. COUTS(J) > CDATEF) THEN
             CALL DIFDATE (CDATEA, COUTS(J), ISHIFT)
-            IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELT) /= 0) THEN
+            IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELPRO) /= 0) THEN
               WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
               WRITE(IU06,*) '+                                       +'
               WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN       +'
               WRITE(IU06,*) '+    ============================       +'
               WRITE(IU06,*) '+ SPECTRA OUTPUT DATE IS NOT AT THE END +'
-              WRITE(IU06,*) '+ OF A SOURCE TERM TIMESTEP IDELT= ', IDELT
-              WRITE(IU06,*) '+ DATE IS : ', COUTS(J)
-              WRITE(IU06,*) '+ PROGRAM WILL ABORT '
+              WRITE(IU06,*) '+ OF A PROPAGATION TIMESTEP.            +'
+              WRITE(IU06,*) '+ DATE IS : ', COUTS(J), ' ISHIFT=',ISHIFT
+              WRITE(IU06,*) '+ PROGRAM WILL IGNORE THIS OUTPUT TIME  +'
               WRITE(IU06,*) '+                                       +'
               WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
-              LERROR = .TRUE.
+            ENDIF
+          ENDIF
+        ENDDO
+        IF (LLSOURCE) THEN
+          DO J=1,NOUTS
+            IF (LWAMANOUT .OR. COUTS(J) > CDATEF) THEN
+              CALL DIFDATE (CDATEA, COUTS(J), ISHIFT)
+              IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELT) /= 0) THEN
+                WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+                WRITE(IU06,*) '+                                       +'
+                WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN       +'
+                WRITE(IU06,*) '+    ============================       +'
+                WRITE(IU06,*) '+ SPECTRA OUTPUT DATE IS NOT AT THE END +'
+                WRITE(IU06,*) '+ OF A SOURCE TERM TIMESTEP IDELT= ', IDELT
+                WRITE(IU06,*) '+ DATE IS : ', COUTS(J), ' ISHIFT=',ISHIFT
+                WRITE(IU06,*) '+ PROGRAM WILL ABORT '
+                WRITE(IU06,*) '+                                       +'
+                WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+                LERROR = .TRUE.
+              ENDIF
             ENDIF
           ENDDO
         ENDIF

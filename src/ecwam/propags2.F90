@@ -70,7 +70,7 @@ SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S,
 #include "abort1.intfb.h"
 
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3SF1:ND3EF1), INTENT(IN) :: F1
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3S:ND3E), INTENT(OUT) :: F3
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3S:ND3E), INTENT(INOUT) :: F3
       INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP, KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(IN) :: NANG, ND3SF1, ND3EF1, ND3S, ND3E
 
@@ -96,13 +96,20 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
 
+#ifdef OMPGPU
+          !$omp target teams distribute parallel do collapse(3) map(to:F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN, &
+          !$omp & WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
+#else
           !$acc parallel loop independent collapse(3) &
           !$acc & present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,KPM)
+#endif
           DO K = 1, NANG
             DO M = ND3S, ND3E
 
+#ifndef OMPGPU
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
+#endif
               DO IJ = KIJS, KIJL
                 F3(IJ,K,M) =                                            &
      &                (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ           ,K  ,M) &
@@ -118,15 +125,23 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
             ENDDO
           ENDDO
+#ifdef OMPGPU
+          !$omp end target teams distribute parallel do
+#else
           !$acc end parallel loop 
+#endif
 
         ELSE
 !*      DEPTH AND CURRENT REFRACTION.
 !       -----------------------------
-
+#ifdef OMPGPU
+          !$omp target teams distribute parallel do collapse(3) &
+          !$omp & map(to:F1,F3,SUMWN,WLONN,KLON,WLATN,KLAT,WCORN,KCOR,WKPMN,KPM,WMPMN,MPM)
+#else
           !$acc parallel loop independent collapse(3) &
           !$acc & present(F1,F3,SUMWN,WLONN,KLON,WLATN,KLAT,WCORN,KCOR, &
           !$acc &         WKPMN,KPM,WMPMN,MPM)
+#endif
           DO M = ND3S, ND3E
             DO K = 1, NANG
 
@@ -189,7 +204,11 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
             ENDDO
           ENDDO
+#ifdef OMPGPU
+          !$omp end target teams distribute parallel do
+#else
           !$acc end parallel loop
+#endif
 
         ENDIF
 

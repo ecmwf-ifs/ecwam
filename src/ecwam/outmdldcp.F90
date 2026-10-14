@@ -561,7 +561,7 @@ IF(IRANK == 1) THEN
       ! grib coding
       CALL WGRIBENCODE( IU06, ITEST, &
  &                      NGX, NGY, &
- &                      GOUT(ICOUNT,:,:),  &
+ &                      GOUT(:,:,ICOUNT),  &
  &                      ITABLE, IPARAM, &
  &                      IZLEV, &
  &                      ITMIN, ITMAX, &

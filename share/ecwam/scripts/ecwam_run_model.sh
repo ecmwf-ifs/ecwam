@@ -304,7 +304,7 @@ cat > wam_namelist << EOF
   LLRSTGRIBPARAM        = T,
   YCLASS                = "rd",
   YEXPVER               = "wave",
-  ISTREAM               = 1045,
+  ISTREAM               = 1025,
   CPATH                 = "${WORK_DIR}",
   LGRIBIN               = ${lgribin},
   LNOCDIN               = ${lnocdin},

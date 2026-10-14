@@ -387,7 +387,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
       IF (CSTREAM == '****' .OR.                                        &
      &   (LASTREAM .AND. ILEVTYPE /= 209 .AND. ILEVTYPE /= 212 .AND.    &
-     &    .NOT.LLOCEAN) ) THEN 
+     &    ITABLE /= 140 .AND. .NOT.LLOCEAN) ) THEN
         LLNONWAVE=.TRUE.
       ELSE
         LLNONWAVE=.FALSE.
