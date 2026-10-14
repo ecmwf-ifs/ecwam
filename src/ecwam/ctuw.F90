@@ -99,7 +99,7 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DRDP,DRDM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DRCP,DRCM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CURMASK
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: CGX, CGY
+      REAL(KIND=JWRB), DIMENSION(2) :: CGX, CGY
 
 
 ! ----------------------------------------------------------------------
@@ -152,17 +152,17 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
 !*          LOOP OVER DIRECTIONS.
 !           ---------------------
-!$acc loop private(CGX,CGY)
+!$acc loop
 
             DO K=1,NANG
 
 !             FIND MEAN GROUP VELOCITY COMPONENTS FOR DIRECTION TH(K)+180
 !             -----------------------------------------------------------
-!$acc loop private(CGYP,IX,KY,UU,UREL,ISSU,VV,VREL,ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
+!$acc loop private(CGX,CGY,CGYP,IX,KY,UU,UREL,ISSU,VV,VREL,ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
                   DO IJ=KIJS,KIJL
 !                   IC = 1 
 
-                    CGX(IJ,1)=                                              &
+                    CGX(1)=                                              &
      &                 0.5_JWRB*(CGROUP_EXT(IJ,M)+CGROUP_EXT(KLON(IJ,1),M)) &
      &                    *SINTH(K)*COSPHM1_EXT(IJ)
 !                   IRREGULAR GRID
@@ -173,21 +173,21 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !                   REGULAR GRID
                       CGYP=CGROUP_EXT(KLAT(IJ,1,1),M)
                     ENDIF
-                    CGY(IJ,1)=0.5_JWRB*(CGROUP_EXT(IJ,M)+DP(IJ,1)*CGYP)*COSTH(K)
+                    CGY(1)=0.5_JWRB*(CGROUP_EXT(IJ,M)+DP(IJ,1)*CGYP)*COSTH(K)
 
                     IX=BLK2GLO%IXLG(IJ)
                     KY=BLK2GLO%KXLT(IJ)
                     IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
                       UU=U_EXT(IJ)*COSPHM1_EXT(IJ)
-                      UREL=CGX(IJ,1)+UU
-                      ISSU(1)=ISAMESIGN(UREL,CGX(IJ,1))
+                      UREL=CGX(1)+UU
+                      ISSU(1)=ISAMESIGN(UREL,CGX(1))
                       VV=V_EXT(IJ)*0.5_JWRB*(1.0_JWRB+DP(IJ,1))
-                      VREL=CGY(IJ,1)+VV
-                      ISSV(1)=ISAMESIGN(VREL,CGY(IJ,1))
+                      VREL=CGY(1)+VV
+                      ISSV(1)=ISAMESIGN(VREL,CGY(1))
                     ELSE
-                      UREL=CGX(IJ,1)
+                      UREL=CGX(1)
                       ISSU(1)=1
-                      VREL=CGY(IJ,1)
+                      VREL=CGY(1)
                       ISSV(1)=1
                     ENDIF
                     DXP=-DELPRO*UREL*CMTODEG
@@ -201,7 +201,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
                     DYDW(1)=ADYP(1)*(1-ISSV(1))
 !                   GET ADVECTION WEIGHT FOR ALL NEIGHBOURING GRID POINTS
 !                   IC = 2 
-                    CGX(IJ,2)=                                              &
+                    CGX(2)=                                              &
      &                 0.5_JWRB*(CGROUP_EXT(IJ,M)+CGROUP_EXT(KLON(IJ,2),M)) &
      &                    *SINTH(K)*COSPHM1_EXT(IJ)
 !                   IRREGULAR GRID
@@ -212,18 +212,18 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !                   REGULAR GRID
                       CGYP=CGROUP_EXT(KLAT(IJ,2,1),M)
                     ENDIF
-                    CGY(IJ,2)=0.5_JWRB*(CGROUP_EXT(IJ,M)+DP(IJ,2)*CGYP)*COSTH(K)
+                    CGY(2)=0.5_JWRB*(CGROUP_EXT(IJ,M)+DP(IJ,2)*CGYP)*COSTH(K)
                     IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
                       UU=U_EXT(IJ)*COSPHM1_EXT(IJ)
-                      UREL=CGX(IJ,2)+UU
-                      ISSU(2)=ISAMESIGN(UREL,CGX(IJ,2))
+                      UREL=CGX(2)+UU
+                      ISSU(2)=ISAMESIGN(UREL,CGX(2))
                       VV=V_EXT(IJ)*0.5_JWRB*(1.0_JWRB+DP(IJ,2))
-                      VREL=CGY(IJ,2)+VV
-                      ISSV(2)=ISAMESIGN(VREL,CGY(IJ,2))
+                      VREL=CGY(2)+VV
+                      ISSV(2)=ISAMESIGN(VREL,CGY(2))
                     ELSE
-                      UREL=CGX(IJ,2)
+                      UREL=CGX(2)
                       ISSU(2)=1
-                      VREL=CGY(IJ,2)
+                      VREL=CGY(2)
                       ISSV(2)=1
                     ENDIF
                     DXP=-DELPRO*UREL*CMTODEG
