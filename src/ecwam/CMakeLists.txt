@@ -62,6 +62,7 @@ list( APPEND ecwam_srcs
   chnkmin.F90
   cigetdeac.F90
   cimsstrn.F90
+  cpgrbobstrct.F90
   ctcor.F90
   ctuw.F90
   ctuwdrv.F90
