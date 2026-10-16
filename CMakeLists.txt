@@ -129,13 +129,12 @@ include(features/OMP)
 ecbuild_add_option( FEATURE OMP_OFFLOAD 
                     DEFAULT OFF
                     DESCRIPTION "Enable GPU offload via OpenMP"
-                    CONDITION HAVE_LOKI AND NOT LOKI_MODE MATCHES "idem|idem-stack" AND ${_HAVE_OMP_OFFLOAD})
+                    CONDITION HAVE_LOKI AND ${_HAVE_OMP_OFFLOAD})
 
-# Set default Loki transformation mode
-if( HAVE_OMP_OFFLOAD )
-  set( LOKI_MODE "sccs-hoist" CACHE STRING "Transformation mode for Loki source transformations" )
-else()
-  set( LOKI_MODE "scc-stack" CACHE STRING "Transformation mode for Loki source transformations" )
+# Set default Loki transformation mode (shared with IFS in bundle builds)
+set( LOKI_MODE "scc" CACHE STRING "Transformation mode for Loki source transformations" )
+if( HAVE_LOKI AND NOT LOKI_MODE MATCHES "^(scc|sccs-stack|sccs-hoist)$" )
+  ecbuild_critical("Unsupported loki mode: ${LOKI_MODE}")
 endif()
 
 ### CUDA

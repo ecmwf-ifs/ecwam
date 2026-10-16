@@ -244,13 +244,15 @@ GPU offload
 ===========
 ecWAM can be offloaded for GPU execution. GPU optimised code for the wave propagation kernel is commited to source,
 whereas GPU code for the source-term computation is generated at build-time build-time using ECMWF's source-to-source
-translation toolchain Loki. Currently, three Loki transformations are supported:
-- Single-column-coalesced (scc): Fuse vector loops and promote to the outermost level to target the SIMT execution model
-- scc-hoist: The scc transformation with temporary arrays hoisted to the driver-layer (the default)
-- scc-stack: The scc transformation with a pool allocator used to allocate temporary arrays
+translation toolchain Loki. Currently, three Loki GPU transformations are supported:
+- Single-column-coalesced (scc, the default): Fuse vector loops and promote to the outermost level to target the SIMT execution model
+- sccs-hoist: The single-column-scalar transformation with temporary arrays hoisted to the driver-layer
+- sccs-stack: The single-column-scalar transformation with a pool allocator used to allocate temporary arrays
 
-The scc-hoist and scc-stack transformations offer superior performance to the scc transformation. Currently, only the
-OpenACC programming model on Nvidia GPUs is supported.
+The sccs-hoist and sccs-stack transformations offer superior performance to the scc transformation.
+OpenACC offload on Nvidia GPUs supports all three modes; OpenMP offload supports `scc` and `sccs-hoist`.
+The default is `scc` for both backends. The `build-hpc` CI explicitly selects `sccs-stack` for OpenACC and
+`sccs-hoist` for OpenMP offload.
 
 NB: GPU offload is not supported for ecWAM 1.4.0, 1.5.0 and 1.5.1.
 

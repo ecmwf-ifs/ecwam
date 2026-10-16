@@ -49,7 +49,7 @@ jobs:
             modules: ~
             env_vars:
               OMP_STACKSIZE: 128M
-            build_options: --with-fckit --with-loki --with-acc --with-cuda --with-gpu-aware-mpi --with-static-linking --with-single-precision
+            build_options: --with-fckit --with-loki --loki-mode=sccs-stack --with-acc --with-cuda --with-gpu-aware-mpi --with-static-linking --with-single-precision
 
           - name: ac-cpu intel sp
             site: ac-batch
@@ -101,7 +101,7 @@ jobs:
             modules: ~
             env_vars:
               ECWAM_CACHE_PATH_DEFAULT: /scratch/project_465000527/nawabahm/cache/ecwam
-            build_options: --with-fckit --with-omp-offload --with-static-linking --with-loki --with-single-precision --cmake="ENABLE_AEC=OFF" --with-hipfort
+            build_options: --with-fckit --with-omp-offload --with-static-linking --with-loki --loki-mode=sccs-hoist --with-single-precision --cmake="ENABLE_AEC=OFF" --with-hipfort
 
     runs-on: [self-hosted, linux, hpc]
     env:
