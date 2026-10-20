@@ -120,7 +120,7 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
         CALL GSTATS(1492,0)
 #ifdef WAM_GPU
 #ifdef OMPGPU
-!$omp target teams distribute thread_limit( NPROMA_WAM ) private(KIJS,KIJL)
+!$omp target teams distribute private(KIJS,KIJL)
 #else
 !$acc parallel loop gang present(FF_NEXT,FF_NOW) private(KIJS,KIJL) vector_length(NPROMA_WAM)
 #endif
