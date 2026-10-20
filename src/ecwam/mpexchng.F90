@@ -126,20 +126,21 @@
       CALL GSTATS(1892,0)
 #ifdef WAM_GPU
 #ifdef OMPGPU
-!$omp target teams distribute private(IPROC) &
+!$omp target teams distribute parallel do collapse(3) private(IPROC,IJ,KCOUNT) &
 !$omp & map(to:ZCOMBUFS,FLD,NTOPELST,NTOPE,IJTOPE)
 #else
 !$acc parallel loop gang present(ZCOMBUFS,FLD,NTOPELST,NTOPE,IJTOPE)
 #endif
       DO INGB=1,NGBTOPE !Total number of PE's to which information will be sent
+#ifndef OMPGPU
         IPROC=NTOPELST(INGB)  !To which PE to send informations
-#ifdef OMPGPU
-          !$omp parallel do collapse(3) private(IJ,KCOUNT)
-#else
           !$acc loop vector collapse(3) private(IJ,KCOUNT,M,K,IH)
 #endif
           DO M = ND3S, ND3E
             DO K = 1, NDIM2
+#ifdef OMPGPU
+              IPROC=NTOPELST(INGB)  !To which PE to send informations
+#endif
               DO IH = 1, NTOPE(IPROC) !How many halo points to be sent
                 IJ=IJTOPE(IH,IPROC) !The index of which points to send
                 KCOUNT = (M - ND3S) * (NDIM2 * NTOPE(IPROC)) + (K - 1) * NTOPE(IPROC) + IH
@@ -149,7 +150,7 @@
         ENDDO
       ENDDO
 #ifdef OMPGPU
-!$omp end target teams distribute
+!$omp end target teams distribute parallel do
 #else
 !$acc end parallel loop
 #endif
@@ -256,20 +257,21 @@
       CALL GSTATS(1893,0)
 #ifdef WAM_GPU
 #ifdef OMPGPU
-      !$omp target teams distribute private(IPROC) &
+      !$omp target teams distribute parallel do collapse(3) private(IPROC,IJ,KCOUNT) &
       !$omp & map(to:ZCOMBUFR,FLD,NFROMPELST,NFROMPE,NIJSTART)
 #else
       !$acc parallel loop gang present(ZCOMBUFR,FLD,NFROMPELST,NFROMPE,NIJSTART)
 #endif
       DO INGB=1,NGBFROMPE
+#ifndef OMPGPU
         IPROC=NFROMPELST(INGB)
-#ifdef OMPGPU
-        !$omp parallel do collapse(3) private(IJ,KCOUNT)
-#else
         !$acc loop vector collapse(3) private(IJ,KCOUNT,M,K,IH)
 #endif
         DO M = ND3S, ND3E
           DO K = 1, NDIM2
+#ifdef OMPGPU
+            IPROC=NFROMPELST(INGB)
+#endif
             DO IH = 1, NFROMPE(IPROC)
               IJ=NIJSTART(IPROC)+IH-1
               KCOUNT = (M - ND3S) * (NDIM2 * NFROMPE(IPROC)) + (K - 1) * NFROMPE(IPROC) + IH
@@ -279,7 +281,7 @@
         ENDDO
       ENDDO
 #ifdef OMPGPU
-      !$omp end target teams distribute
+      !$omp end target teams distribute parallel do
 #else
       !$acc end parallel loop
 #endif
