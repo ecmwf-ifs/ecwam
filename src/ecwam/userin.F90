@@ -653,6 +653,13 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ENDIF
       WRITE(IU06,*) ' COUPLING WITH NEMO (LWNEMOCOU) : ',LWNEMOCOU
       WRITE(IU06,*) '  '
+!     THE NEMO -> WAM FIELDS OF THE LAW RESTART FILE (SEE RECVNEMOFIELDS) ARE
+!     ONLY HANDLED FOR PER-TASK RESTART FILES.
+      IF (LWNEMOCOU .AND. (.NOT.LRSTPARALR .OR. .NOT.LRSTPARALW)) THEN
+        CALL WAM_ABORT("NEMO-coupled runs require per-task binary restarts: "// &
+     &                 "LRSTPARALR and LRSTPARALW must both be TRUE",            &
+     &                 __FILENAME__, __LINE__)
+      ENDIF
       WRITE(IU06,*) ' STARTING DATE ........... : ',CDATEA
       WRITE(IU06,*) ' END DATE ................ : ',CDATEE
       IF (CDATEF < CDATEE) THEN
