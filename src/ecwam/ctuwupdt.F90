@@ -98,6 +98,7 @@ IF (LFRSTCTU) THEN
 
   IF (.NOT. ALLOCATED(MPM)) ALLOCATE(MPM(NFRE_RED,-1:1))
 #ifdef OMPGPU
+  !$omp target enter data map(alloc:MPM)
   !$omp target teams distribute parallel do
 #else
   !$acc kernels
@@ -119,7 +120,7 @@ IF (LFRSTCTU) THEN
   IF (.NOT. ALLOCATED(KCR)) ALLOCATE(KCR(NANG,4))
 
 #ifdef OMPGPU
-!$omp target enter data map(to:JXO, JYO, KCR, KPM, MPM)
+!$omp target enter data map(alloc:JXO, JYO, KCR, KPM)
 #endif
 
 #ifdef OMPGPU
@@ -197,13 +198,13 @@ IF (.NOT. ALLOCATED(WCORN)) ALLOCATE(WCORN(IJS:IJL,NANG,NFRE_RED,4,2))
 IF (.NOT. ALLOCATED(WKPMN)) ALLOCATE(WKPMN(IJS:IJL,NANG,NFRE_RED,-1:1))
 
 #ifdef OMPGPU
-!$omp target enter data map(to:SUMWN,WLATN,WLONN,WCORN,WKPMN)
+!$omp target enter data map(alloc:SUMWN,WLATN,WLONN,WCORN,WKPMN)
 #endif
 
 IF (IREFRA == 2 .OR. IREFRA == 3) THEN
   IF (.NOT. ALLOCATED(WMPMN)) ALLOCATE(WMPMN(IJS:IJL,NANG,NFRE_RED,-1:1))
 #ifdef OMPGPU
-  !$omp target enter data map(to:WMPMN)
+  !$omp target enter data map(alloc:WMPMN)
 #endif
 
 #ifndef WAM_GPU
@@ -227,7 +228,7 @@ ENDIF
 
 #ifdef WAM_GPU
 #ifdef OMPGPU
-!$omp target data map(to:KLAT,WLAT,KCOR,WCOR,WLATN,WLONN,WCORN)
+!$omp target data map(alloc:KLAT,WLAT,KCOR,WCOR,WLATN,WLONN,WCORN)
 #else
 !$acc data present(KLAT,WLAT,KCOR,WCOR,WLATN,WLONN,WCORN)
 #endif
