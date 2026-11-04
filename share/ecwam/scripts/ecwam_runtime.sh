@@ -55,5 +55,5 @@ export MPL_MBX_SIZE=${MPL_MBX_SIZE:-${MBX_SIZE}}
 # Allow MPI to be initialised outside of DR_HOOK
 export DR_HOOK_ASSERT_MPI_INITIALIZED=0
 
-# export python interpreter
-export ECWAM_PYTHON_INTERP=@ECWAM_PYTHON_INTERP@
+# Runtime YAML parsing can use system Python even when the build needs fckit.
+export ECWAM_PYTHON_INTERP=@ECWAM_RUNTIME_PYTHON_INTERP@
