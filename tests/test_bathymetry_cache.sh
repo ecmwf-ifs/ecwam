@@ -9,6 +9,8 @@
 # ETOPO2, reference levels, and generated products are created locally.
 # A test-only cache version is reused for the runtime stub, cache checksum,
 # and product directory; the production version does not matter for this test.
+# The real runtime is also sourced in a subshell to check dataset and reference-level
+# defaults and overrides; it only sets environment variables, not downloads.
 #
 # For both ETOPO1 and ETOPO2, this test verifies that:
 # - Normal runs reuse cached products without invoking the generator.
@@ -41,6 +43,24 @@ test_dir=$(mktemp -d)
 trap 'status=$?; if [[ ${status} -ne 0 && -f ${test_dir}/output.log ]]; then cat "${test_dir}/output.log"; fi; rm -rf "${test_dir}"' EXIT
 export TEST_DIR=${test_dir}
 mkdir -p "${test_dir}/scripts" "${test_dir}/data/inputs"
+(
+  unset ETOPO1 ETOPO2 ETOPO1_reference_levels ETOPO2_reference_levels
+  source "${scripts_dir}/ecwam_runtime.sh"
+  [[ ${ETOPO1} == data/bathymetry/ETOPO1/ETOPO1_Ice_g_int.xyz ]]
+  [[ ${ETOPO2} == data/bathymetry/ETOPO2/etopo2_2006apr.dat ]]
+  [[ ${ETOPO1_reference_levels} == data/bathymetry/ETOPO1/reference_levels.v2 ]]
+  [[ ${ETOPO2_reference_levels} == data/bathymetry/ETOPO2/reference_levels.v1 ]]
+  export ETOPO1=inputs/custom_etopo1
+  export ETOPO2=inputs/custom_etopo2
+  export ETOPO1_reference_levels=inputs/custom_etopo1_reference_levels
+  export ETOPO2_reference_levels=inputs/custom_etopo2_reference_levels
+  source "${scripts_dir}/ecwam_runtime.sh"
+  source "${scripts_dir}/ecwam_runtime.sh"
+  [[ ${ETOPO1} == inputs/custom_etopo1 ]]
+  [[ ${ETOPO2} == inputs/custom_etopo2 ]]
+  [[ ${ETOPO1_reference_levels} == inputs/custom_etopo1_reference_levels ]]
+  [[ ${ETOPO2_reference_levels} == inputs/custom_etopo2_reference_levels ]]
+)
 for script in ecwam_run_create_bathymetry.sh ecwam_parse_commandline.sh; do
   ln -s "${scripts_dir}/${script}" "${test_dir}/scripts/${script}"
 done
