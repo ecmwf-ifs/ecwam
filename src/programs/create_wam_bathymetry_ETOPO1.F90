@@ -610,6 +610,7 @@ PROGRAM CREATE_BATHY_ETOPO1
          ENDDO
          J=MIN(MAX(J,1),ILAT)
 
+         I=1
          DO IX=1,NLONRGG(K)
 
 !          ETOPO1 STARTS AT -180
@@ -619,8 +620,10 @@ PROGRAM CREATE_BATHY_ETOPO1
            ENDIF
 
 !          DETERMINE CLOSEST ETOPO1 I INDEX TO WAM POINT
-           DO I=1,ILON-1
+           IF (ALON(I) > XLON) I=1
+           DO WHILE (I < ILON)
              IF (ALON(I) <= XLON .AND. XLON < ALON(I+1) ) EXIT
+             I=I+1
            ENDDO
 
            NIM=INT(0.5_JWRU*ZDELLO(K)*REAL(INVRES,JWRU))
