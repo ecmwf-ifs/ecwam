@@ -18,8 +18,24 @@ if [[ $(basename ${SCRIPTS_DIR}) == "bin" ]]; then
 fi
 
 source ${SCRIPTS_DIR}/ecwam_runtime.sh
+ECWAM_CONTEXT=create_bathymetry
 source ${SCRIPTS_DIR}/ecwam_parse_commandline.sh
 source ${SCRIPTS_DIR}/ecwam_helper_functions.sh
+
+function link_bathymetry_input() {
+  local input_file="$1"
+  local link_name="$2"
+  if [[ ${input_file} == /* ]]; then
+    if [[ ! -f ${input_file} || ! -r ${input_file} ]]; then
+      echo "ERROR: Absolute bathymetry input is not a readable file: ${input_file}"
+      return 1
+    fi
+  else
+    log "${SCRIPTS_DIR}/ecwam_retrieve.sh" "${input_file}" "${DATA_DIR}/${input_file}" || return 1
+    input_file="${DATA_DIR}/${input_file}"
+  fi
+  ln -sf -- "${input_file}" "${link_name}"
+}
 
 function cleanup() {
   shopt -s nullglob
@@ -110,11 +126,10 @@ else
   echo "\n\n\t UNSUPPORTED value for bathymetry: ${wambathy}\n"
   abort 1
 fi
-${SCRIPTS_DIR}/ecwam_retrieve.sh ${REFERENCE_LEVELS} ${DATA_DIR}/${REFERENCE_LEVELS}
-ln -sf ${DATA_DIR}/${REFERENCE_LEVELS} ${WORK_DIR}/reference_levels
+link_bathymetry_input "${REFERENCE_LEVELS}" "${WORK_DIR}/reference_levels" || exit 1
 
 cat > for_md5 <<EOF
-${ecwam_bathymetry_version}
+${ECWAM_BATHYMETRY_VERSION}
 EOF
 
 if [ -f grid_description ]; then
@@ -138,21 +153,26 @@ cat reference_levels >> for_md5
 md5=$(cat for_md5 | md5sum | awk '{print $1}')
 
 # Only double-precision files are cached
-WAM_TOPO=v${ecwam_bathymetry_version}/bathymetry_dp_${wamresol}_nfre${wamnfre}_${wambathy}_${md5}
+WAM_TOPO=v${ECWAM_BATHYMETRY_VERSION}/bathymetry_dp_${wamresol}_nfre${wamnfre}_${wambathy}_${md5}
 
 subgrid_files=()
 for ip in 0 1 2; do
-   subgrid_files+=(v${ecwam_bathymetry_version}/wam_grib_subgrid_dp_${wamresol}_${ip}_${wamnfre}_${wambathy}_${md5})
+  subgrid_files+=(v${ECWAM_BATHYMETRY_VERSION}/wam_grib_subgrid_dp_${wamresol}_${ip}_${wamnfre}_${wambathy}_${md5})
 done
 
 grid_files_found=true
-for file in ${WAM_TOPO} ${subgrid_files[@]}; do
-    ${SCRIPTS_DIR}/ecwam_retrieve.sh data/bathymetry/${file} ${DATA_DIR}/data/bathymetry/${file} || {
-      grid_files_found=false
-      echo "Could not retrieve data/bathymetry/${file}"
-      break
-    }
-done
+if [[ ${regenerate} == true ]]; then
+  grid_files_found=false
+  echo "\n\n\t Regenerating bathymetry and subgrid files; generated-product caches will not be retrieved\n"
+else
+  for file in ${WAM_TOPO} ${subgrid_files[@]}; do
+      ${SCRIPTS_DIR}/ecwam_retrieve.sh data/bathymetry/${file} ${DATA_DIR}/data/bathymetry/${file} || {
+        grid_files_found=false
+        echo "Could not retrieve data/bathymetry/${file}"
+        break
+      }
+  done
+fi
 
 if [[ ${grid_files_found} == true ]]; then
   echo "\n\n\t File ${WAM_TOPO} and subgrid files have been found\n"
@@ -162,22 +182,20 @@ else
 
   # We update the file names with the current precision to ensure we never accidentally
   # cache single-precision files
-  WAM_TOPO=v${ecwam_bathymetry_version}/bathymetry_${prec}_${wamresol}_nfre${wamnfre}_${wambathy}_${md5}
+  WAM_TOPO=v${ECWAM_BATHYMETRY_VERSION}/bathymetry_${prec}_${wamresol}_nfre${wamnfre}_${wambathy}_${md5}
 
   subgrid_files=()
   for ip in 0 1 2; do
-     subgrid_files+=(v${ecwam_bathymetry_version}/wam_grib_subgrid_${prec}_${wamresol}_${ip}_${wamnfre}_${wambathy}_${md5})
+    subgrid_files+=(v${ECWAM_BATHYMETRY_VERSION}/wam_grib_subgrid_${prec}_${wamresol}_${ip}_${wamnfre}_${wambathy}_${md5})
   done
 
   if [[ $wambathy = "ETOPO1" ]] ; then
     echo "\n\n\t Getting ETOPO1 data set\n"
-    log ${SCRIPTS_DIR}/ecwam_retrieve.sh ${ETOPO1} ${DATA_DIR}/${ETOPO1}
-    ln -sf ${DATA_DIR}/${ETOPO1} ETOPO1_Ice_g_int.xyz
+    link_bathymetry_input "${ETOPO1}" ETOPO1_Ice_g_int.xyz || exit 1
     CREATE_WAM_BATHYMETRY_EXE=${CREATE_WAM_BATHYMETRY_ETOPO1}-${prec}
   else
     echo "\n\n\t Getting ETOPO2 data set\n"
-    log ${SCRIPTS_DIR}/ecwam_retrieve.sh ${ETOPO2} ${DATA_DIR}/${ETOPO2}
-    ln -sf ${DATA_DIR}/${ETOPO2} etopo2_2006apr.dat
+    link_bathymetry_input "${ETOPO2}" etopo2_2006apr.dat || exit 1
     CREATE_WAM_BATHYMETRY_EXE=${CREATE_WAM_BATHYMETRY_ETOPO2}-${prec}
   fi
 

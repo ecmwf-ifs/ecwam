@@ -163,7 +163,7 @@ To run ecwam serially within the `ecwam_runs` dir, simply run:
 
 For details on how to configure/debug the build, please read on.
 
-1) Create bathymetry and grid tables
+### Create bathymetry and grid tables
 
 ```shell
 ecwam-run-preproc --run-dir=<run-dir> --config=<path-to-config.yml>
@@ -184,7 +184,26 @@ or with symbolic links to found data in the `ECWAM_DATA_PATH`s.
 
 Grid tables are always computed and never cached. THey are placed in the `<run-dir>`
 
-2) Create initial conditions
+**Bathymetry versions**
+
+> [!WARNING]
+> Changes that alter generated bathymetry results for the same inputs must also
+> increase `ECWAM_BATHYMETRY_VERSION` in
+> [share/ecwam/scripts/ecwam_runtime.sh](share/ecwam/scripts/ecwam_runtime.sh)
+> to prevent reuse of outdated cached products.
+
+`ECWAM_BATHYMETRY_VERSION` selects both generator behavior and the cache version.
+Override it in the environment with `export ECWAM_BATHYMETRY_VERSION=2` to use
+v2 cached products and restore the historical ETOPO1 Antarctic shallow-water-to-land rule
+when generating bathymetry.
+
+ecWAM 1.5.0 removed this rule without increasing the bathymetry cache version.
+Releases 1.5.0 through 1.5.14 retained cache version 2, so existing v2 caches
+can contain products with or without the historical rule.
+Use `--regenerate` (or `ECWAM_REGENERATE_BATHYMETRY=true` with preproc) to replace
+uncertain products. Rerun preproc after changing versions to rebuild grid tables.
+
+### Create initial conditions
 
 ```shell
 ecwam-run-preset --run-dir=<run-dir> --config=<path-to-config.yml>
@@ -199,7 +218,7 @@ they are retrieved in similar fashion as the bathymetry files (see above).
 This package also contains some scripts to generate MARS requests to retrieve data from the ECWMF operational
 forecast or from the ERA5 reanalysis data set. This is useful to generate new tests or for longer runs.
 
-3) Run wave model
+### Run wave model
 
 ```shell
 ecwam-run-model --run-dir=<run-dir> --config=<path-to-config.yml>
@@ -209,7 +228,7 @@ With initial conditions, forcings, and grid tables in place we can run the actua
 The advection and physics time step needs to be configured via the configuration file in accordance
 the grid resolution.
 The configuration file offers options to output GRIB output fields at regular time intervals, or
-binary restart files similar to the initial condition files generated in step 2.
+binary restart files similar to the [initial conditions](#create-initial-conditions).
 After the run, the output files will be in `<run-dir>/output/` and log files will be in `<run-dir>/logs/model`.
 One log file called `statistics.log` contains computed norms which can be used to validate results.
 Such validation will occur automatically when the configuration file contains a `validation` section.
