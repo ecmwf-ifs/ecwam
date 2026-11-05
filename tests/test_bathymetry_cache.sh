@@ -39,15 +39,21 @@
 set -euo pipefail
 
 scripts_dir=$1
-unset ECWAM_REGENERATE_BATHYMETRY
-export ecwam_bathymetry_version="<version-does-not-matter-for-this-test>"
+unset ECWAM_REGENERATE_BATHYMETRY ECWAM_BATHYMETRY_VERSION
 test_dir=$(mktemp -d)
 trap 'status=$?; if [[ ${status} -ne 0 && -f ${test_dir}/output.log ]]; then cat "${test_dir}/output.log"; fi; rm -rf "${test_dir}"' EXIT
 export TEST_DIR=${test_dir}
 mkdir -p "${test_dir}/scripts" "${test_dir}/data/inputs"
+default_bathymetry_version=$(
+  source "${scripts_dir}/ecwam_runtime.sh"
+  printf '%s' "${ECWAM_BATHYMETRY_VERSION}"
+)
+[[ -n ${default_bathymetry_version} ]]
+test_versions=("<version-does-not-matter-for-this-test>" "<another-version-does-not-matter-for-this-test>")
 (
   unset ETOPO1 ETOPO2 ETOPO1_reference_levels ETOPO2_reference_levels
   source "${scripts_dir}/ecwam_runtime.sh"
+  [[ ${ECWAM_BATHYMETRY_VERSION} == "${default_bathymetry_version}" ]]
   [[ ${ETOPO1} == data/bathymetry/ETOPO1/ETOPO1_Ice_g_int.xyz ]]
   [[ ${ETOPO2} == data/bathymetry/ETOPO2/etopo2_2006apr.dat ]]
   [[ ${ETOPO1_reference_levels} == data/bathymetry/ETOPO1/reference_levels.v2 ]]
@@ -63,6 +69,15 @@ mkdir -p "${test_dir}/scripts" "${test_dir}/data/inputs"
   [[ ${ETOPO1_reference_levels} == inputs/custom_etopo1_reference_levels ]]
   [[ ${ETOPO2_reference_levels} == inputs/custom_etopo2_reference_levels ]]
 )
+for version in '' "${test_versions[@]}"; do
+  (
+    export ECWAM_BATHYMETRY_VERSION=${version}
+    source "${scripts_dir}/ecwam_runtime.sh"
+    source "${scripts_dir}/ecwam_runtime.sh"
+    [[ ${ECWAM_BATHYMETRY_VERSION} == "${version:-${default_bathymetry_version}}" ]]
+  )
+done
+export ECWAM_BATHYMETRY_VERSION=${test_versions[0]}
 export ETOPO1=inputs/etopo1
 export ETOPO2=inputs/etopo2
 export ETOPO1_reference_levels=inputs/reference_levels
@@ -142,8 +157,8 @@ printf 'cached ETOPO1\n' > "${test_dir}/data/inputs/etopo1"
 printf 'cached ETOPO2\n' > "${test_dir}/data/inputs/etopo2"
 printf 'cached reference levels\n' > "${test_dir}/data/inputs/reference_levels"
 input_checksum=$(cksum "${test_dir}"/data/inputs/*)
-checksum=$(printf '%s\nO80 test grid\ncached reference levels\n' "${ecwam_bathymetry_version}" | md5sum | cut -d ' ' -f 1)
-products_dir=${test_dir}/data/data/bathymetry/v${ecwam_bathymetry_version}
+checksum=$(printf '%s\nO80 test grid\ncached reference levels\n' "${ECWAM_BATHYMETRY_VERSION}" | md5sum | cut -d ' ' -f 1)
+products_dir=${test_dir}/data/data/bathymetry/v${ECWAM_BATHYMETRY_VERSION}
 mkdir -p "${products_dir}"
 
 function seed_products() {
@@ -236,7 +251,7 @@ export ETOPO2="${test_dir}/absolute inputs/ETOPO2 input"
 export ETOPO1_reference_levels="${test_dir}/absolute inputs/reference levels"
 export ETOPO2_reference_levels=${ETOPO1_reference_levels}
 export TEST_EXPECTED_REFERENCE_LEVELS=${ETOPO1_reference_levels}
-absolute_checksum=$(printf '%s\nO80 test grid\ncustom reference levels\n' "${ecwam_bathymetry_version}" | md5sum | cut -d ' ' -f 1)
+absolute_checksum=$(printf '%s\nO80 test grid\ncustom reference levels\n' "${ECWAM_BATHYMETRY_VERSION}" | md5sum | cut -d ' ' -f 1)
 
 for bathymetry in ETOPO1 ETOPO2; do
   export TEST_BATHYMETRY=${bathymetry}
@@ -274,6 +289,21 @@ for bathymetry in ETOPO1 ETOPO2; do
   [[ ! -e ${test_dir}/generated && ! -s ${test_dir}/retrieved ]]
   export ETOPO1="${test_dir}/absolute inputs/ETOPO1 input"
   export ETOPO2="${test_dir}/absolute inputs/ETOPO2 input"
+done
+
+for version in "${test_versions[@]}"; do
+  export ECWAM_BATHYMETRY_VERSION=${version}
+  export TEST_BATHYMETRY=ETOPO1
+  version_checksum=$(printf '%s\nO80 test grid\ncustom reference levels\n' "${version}" | md5sum | cut -d ' ' -f 1)
+  version_dir=${test_dir}/data/data/bathymetry/v${version}
+  run_wrapper --regenerate
+  [[ $(readlink "${test_dir}/run/wam_topo") == "${version_dir}/bathymetry_dp_O80_nfre29_ETOPO1_${version_checksum}" ]]
+  for index in 0 1 2; do
+    [[ $(readlink "${test_dir}/run/wam_subgrid_${index}") == "${version_dir}/wam_grib_subgrid_dp_O80_${index}_29_ETOPO1_${version_checksum}" ]]
+  done
+  run_wrapper
+  [[ ! -e ${test_dir}/generated ]]
+  [[ $(grep -c "^data/bathymetry/v${version}/" "${test_dir}/retrieved") -eq 4 ]]
 done
 
 printf 'Bathymetry cache tests passed\n'

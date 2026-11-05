@@ -60,6 +60,8 @@ fi
   echo "    OMP_NUM_THREADS=<NTHREADS>  # OpenMP threads"
   echo "    ECWAM_RUN_DIR               # Default run directory. If not set, current directory is assumed."
   echo "    ECWAM_CACHE_PATH            # Path where downloaded and computed data will be stored."
+  echo "    ECWAM_BATHYMETRY_VERSION    # 3 (default): current bathymetry; 2: restore the historical ETOPO1 Antarctic rule."
+  echo "                                # Selects both generator behavior and the cache version/key."
   echo "    ECWAM_REGENERATE_BATHYMETRY # true/1: regenerate bathymetry products; false/0: normal cache reuse (default)."
   echo "                                # Equivalent to --regenerate in the bathymetry wrapper; --regenerate always enables it."
   echo "    ECWAM_DATA_PATH             # ':'-separated list of search locations for downloaded and computed data."
