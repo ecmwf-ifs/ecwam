@@ -32,7 +32,7 @@ endforeach()
 # scripts
 ###############################################################################################
 
-set( install_permissions OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE WORLD_EXECUTE OWNER_WRITE )
+set( install_permissions OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE OWNER_WRITE )
 file (GLOB files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} scripts/*.sh scripts/*.py scripts/ecwam-*)
 list( REMOVE_ITEM files scripts/ecwam_runtime.sh )
 
