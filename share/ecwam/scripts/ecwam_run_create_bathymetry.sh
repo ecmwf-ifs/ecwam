@@ -18,6 +18,7 @@ if [[ $(basename ${SCRIPTS_DIR}) == "bin" ]]; then
 fi
 
 source ${SCRIPTS_DIR}/ecwam_runtime.sh
+ECWAM_CONTEXT=create_bathymetry
 source ${SCRIPTS_DIR}/ecwam_parse_commandline.sh
 source ${SCRIPTS_DIR}/ecwam_helper_functions.sh
 
@@ -146,13 +147,18 @@ for ip in 0 1 2; do
 done
 
 grid_files_found=true
-for file in ${WAM_TOPO} ${subgrid_files[@]}; do
-    ${SCRIPTS_DIR}/ecwam_retrieve.sh data/bathymetry/${file} ${DATA_DIR}/data/bathymetry/${file} || {
-      grid_files_found=false
-      echo "Could not retrieve data/bathymetry/${file}"
-      break
-    }
-done
+if [[ ${regenerate} == true ]]; then
+  grid_files_found=false
+  echo "\n\n\t Regenerating bathymetry and subgrid files; generated-product caches will not be retrieved\n"
+else
+  for file in ${WAM_TOPO} ${subgrid_files[@]}; do
+      ${SCRIPTS_DIR}/ecwam_retrieve.sh data/bathymetry/${file} ${DATA_DIR}/data/bathymetry/${file} || {
+        grid_files_found=false
+        echo "Could not retrieve data/bathymetry/${file}"
+        break
+      }
+  done
+fi
 
 if [[ ${grid_files_found} == true ]]; then
   echo "\n\n\t File ${WAM_TOPO} and subgrid files have been found\n"
