@@ -99,6 +99,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       USE YOWMAP   , ONLY : IPER, IRGG, IQGAUSS, NGX, NGY, NLONRGG, CLDOMAIN,    &
      &                      AMOWEP , AMOSOP , AMOEAP , AMONOP , XDELLA,  XDELLO, &
      &                      DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO
+      USE YOWMPP   , ONLY : NPRECI
       USE YOWPARAM , ONLY : NANG, NFRE_RED
       USE YOWPCONS , ONLY : PI, ZPI, G, ZMISS
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,           &
@@ -107,7 +108,9 @@ PROGRAM CREATE_BATHY_ETOPO1
       USE YOWUBUF  , ONLY : NPROPAGS, NANG_OBS, KTOIS, KTOOBSTRUCT
       USE YOWUNIT  , ONLY : IU08
 
-      USE YOWGRIB  , ONLY : IGRIB_OPEN_FILE, IGRIB_CLOSE_FILE
+      USE YOWGRIB  , ONLY : IGRIB_OPEN_FILE, IGRIB_CLOSE_FILE, JPKSIZE_T, &
+         &                     IGRIB_GET_MESSAGE_SIZE, IGRIB_GET_MESSAGE, &
+         &                     IGRIB_WRITE_BYTES, IGRIB_RELEASE
 
 ! ----------------------------------------------------------------------
 
@@ -120,7 +123,15 @@ PROGRAM CREATE_BATHY_ETOPO1
 #include "ktoobs.intfb.h"
 #include "mfr.intfb.h"
 #include "preset_wgrib_template.intfb.h"
+#include "wgribencode_model.intfb.h"
 #include "wgribenout.intfb.h"
+
+      TYPE :: OBSTRUCTION_GRIB_MESSAGE
+        INTEGER(KIND=JWIM), ALLOCATABLE :: WORDS(:)
+        INTEGER(KIND=JPKSIZE_T) :: BYTES
+      END TYPE OBSTRUCTION_GRIB_MESSAGE
+
+      TYPE(OBSTRUCTION_GRIB_MESSAGE), ALLOCATABLE :: YGRIB_MESSAGES(:)
 
 !!    Parameters that can be adapted to tune the mean bathymetry
 !!    **********************************************************
@@ -183,6 +194,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM) :: NOBSTRCT, NIOBSLON, NBLOCKLAND, NTOTPTS
       INTEGER(KIND=JWIM) :: INVRES
       INTEGER(KIND=JWIM) :: ITABLE, IPARAM, IZLEV, IFCST, ITEST, ITMIN, ITMAX
+      INTEGER(KIND=JWIM) :: IGRIB_HANDLE
       INTEGER(KIND=INT64) :: ITIMER_START, ITIMER_PHASE, ITIMER_RATE
       INTEGER(KIND=INT64) :: ITIMER_OBSTRUCTION
 
@@ -864,6 +876,7 @@ IF ( LLOBSTROUT ) THEN
       ALLOCATE(IOBSRLAT(NGX,NGY,2))
       ALLOCATE(IOBSRLON(NGX,NGY,2))
       ALLOCATE(FIELD(NGX,NGY))
+      ALLOCATE(YGRIB_MESSAGES(NANG))
 
       WRITE(1,'(I4)') NFRE_RED
 
@@ -898,8 +911,8 @@ IF ( LLOBSTROUT ) THEN
 !     -------------------------
 
       DO M=1,NFRE_RED
-    WRITE(IU06,*) 'OBSTRUCTION FREQUENCY ', M
-    CALL SYSTEM_CLOCK(COUNT=ITIMER_OBSTRUCTION)
+        WRITE(IU06,*) 'OBSTRUCTION FREQUENCY ', M
+        CALL SYSTEM_CLOCK(COUNT=ITIMER_OBSTRUCTION)
 
 !!!!    COMPUTE THE OBSTRUCTIONS ONLY WHEN IT IS MEANINGFUL
         IF (DXDELLA <= 2.0_JWRU*RESOL ) THEN
@@ -2428,6 +2441,14 @@ IF ( LLOBSTROUT ) THEN
           DO IP = 0, NPROPAGS 
             DO IANG = 1, NANG
 
+              IF (.NOT. LFDB .AND. IP > 0) THEN
+                IF (KTOIS(IANG,IP) == KTOIS(IANG,0) .AND. &
+     &              KTOOBSTRUCT(IANG,IP) == KTOOBSTRUCT(IANG,0)) THEN
+                  CALL IGRIB_WRITE_BYTES(IU08(IP),YGRIB_MESSAGES(IANG)%WORDS,YGRIB_MESSAGES(IANG)%BYTES)
+                  CYCLE
+                ENDIF
+              ENDIF
+
               IS = KTOIS(IANG,IP)
 
               IF ( IS > 0 .AND. LLOBSTRON ) THEN
@@ -2519,9 +2540,21 @@ IF ( LLOBSTROUT ) THEN
               IFCST=0
 
 
-              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,                   &
-     &                        ITABLE, IPARAM, IZLEV, ITMIN, ITMAX, IANG , M,  &
-     &                        CDATE, IFCST, MARSTYPE, LFDB, IU08(IP))
+              IF (.NOT. LFDB .AND. IP == 0) THEN
+                CALL WGRIBENCODE_MODEL(IU06, ITEST, NGX, NGY, FIELD, &
+     &                                ITABLE, IPARAM, IZLEV, ITMIN, ITMAX, IANG, M, &
+     &                                CDATE, IFCST, MARSTYPE, IGRIB_HANDLE)
+                CALL IGRIB_GET_MESSAGE_SIZE(IGRIB_HANDLE,YGRIB_MESSAGES(IANG)%BYTES)
+                IF (ALLOCATED(YGRIB_MESSAGES(IANG)%WORDS)) DEALLOCATE(YGRIB_MESSAGES(IANG)%WORDS)
+                ALLOCATE(YGRIB_MESSAGES(IANG)%WORDS((YGRIB_MESSAGES(IANG)%BYTES+NPRECI-1)/NPRECI))
+                CALL IGRIB_GET_MESSAGE(IGRIB_HANDLE,YGRIB_MESSAGES(IANG)%WORDS)
+                CALL IGRIB_WRITE_BYTES(IU08(IP),YGRIB_MESSAGES(IANG)%WORDS,YGRIB_MESSAGES(IANG)%BYTES)
+                CALL IGRIB_RELEASE(IGRIB_HANDLE)
+              ELSE
+                CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD, &
+     &                          ITABLE, IPARAM, IZLEV, ITMIN, ITMAX, IANG, M, &
+     &                          CDATE, IFCST, MARSTYPE, LFDB, IU08(IP))
+              ENDIF
 
             ENDDO
           ENDDO
@@ -2574,6 +2607,7 @@ IF ( LLOBSTROUT ) THEN
         CALL REPORT_TIMING('Obstruction output', ITIMER_OBSTRUCTION)
       ENDDO ! END LOOP ON FREQUENCIES
 
+      DEALLOCATE(YGRIB_MESSAGES)
 
       IF ( LLGRIBOUT ) THEN
         DO IP = 0, NPROPAGS 
