@@ -11,7 +11,7 @@ SCRIPTS_DIR="$( cd $( dirname "${BASH_SOURCE[0]}" ) && pwd -P )"
 
 # Version of topography result, to be increased when results for same run would be different.
 # e.g. when a bug is fixed.
-export ecwam_bathymetry_version=2
+export ecwam_bathymetry_version=3
 
 if [[ -z ${ECWAM_CACHE_PATH_DEFAULT:-} ]]; then
   ECWAM_CACHE_PATH_DEFAULT=${HOME}/cache/ecwam
