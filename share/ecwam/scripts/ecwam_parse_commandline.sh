@@ -64,11 +64,13 @@ fi
   echo "                                # Equivalent to --regenerate in the bathymetry wrapper; --regenerate always enables it."
   echo "    ECWAM_DATA_PATH             # ':'-separated list of search locations for downloaded and computed data."
   echo "                                # Note that \$ECWAM_CACHE_PATH is foremost also a search location, taking precedence."
-  echo "    ETOPO1                     # Override the ETOPO1 dataset path relative to the data/cache roots."
-  echo "    ETOPO2                     # Override the ETOPO2 dataset path relative to the data/cache roots."
-  echo "    ETOPO1_reference_levels     # Override the ETOPO1 reference-level path relative to the data/cache roots."
-  echo "    ETOPO2_reference_levels     # Override the ETOPO2 reference-level path relative to the data/cache roots."
-  echo "                                # Missing files can be downloaded; their contents enter the bathymetry cache key."
+  echo "    ETOPO1                      # Override the ETOPO1 dataset path. *"
+  echo "    ETOPO2                      # Override the ETOPO2 dataset path. *"
+  echo "    ETOPO1_reference_levels     # Override the ETOPO1 reference-level path. *"
+  echo "    ETOPO2_reference_levels     # Override the ETOPO2 reference-level path. *"
+  echo "                                # * Absolute paths must be readable files and bypass retrieval."
+  echo "                                #   Relative paths use the data/cache roots and can be downloaded if missing."
+  echo "                                #   Reference-level contents enter the bathymetry cache key."
 }
 
 config=""
