@@ -184,6 +184,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM) :: INVRES
       INTEGER(KIND=JWIM) :: ITABLE, IPARAM, IZLEV, IFCST, ITEST, ITMIN, ITMAX
       INTEGER(KIND=INT64) :: ITIMER_START, ITIMER_PHASE, ITIMER_RATE
+      INTEGER(KIND=INT64) :: ITIMER_OBSTRUCTION
 
       INTEGER(KIND=JWIM) :: IDUM(15)
       INTEGER(KIND=JWIM), DIMENSION(NREF) :: LEVEL, NDEPTH
@@ -897,6 +898,8 @@ IF ( LLOBSTROUT ) THEN
 !     -------------------------
 
       DO M=1,NFRE_RED
+    WRITE(IU06,*) 'OBSTRUCTION FREQUENCY ', M
+    CALL SYSTEM_CLOCK(COUNT=ITIMER_OBSTRUCTION)
 
 !!!!    COMPUTE THE OBSTRUCTIONS ONLY WHEN IT IS MEANINGFUL
         IF (DXDELLA <= 2.0_JWRU*RESOL ) THEN
@@ -947,6 +950,7 @@ IF ( LLOBSTROUT ) THEN
 !       LOOP OVER ADEVECTION DIRECTIONS
 !       IS=1 is for the south-north advection
 !       IS=2 is for the north-south advection
+        CALL REPORT_TIMING('Obstruction thresholds', ITIMER_OBSTRUCTION)
         WRITE(IU06,*) 'CREATE NORTH-SOUTH OBSTRUCTIONS '
         DO IS=1,2
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
@@ -1125,6 +1129,7 @@ IF ( LLOBSTROUT ) THEN
 !       -----------------------
 !       IS=1 is for the west-east advection
 !       IS=2 is for the east-west advection
+  CALL REPORT_TIMING('Obstruction north-south', ITIMER_OBSTRUCTION)
         WRITE(IU06,*) 'CREATE EAST-WEST OBSTRUCTIONS '
         DO IS=1,2
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
@@ -1294,6 +1299,7 @@ IF ( LLOBSTROUT ) THEN
 !       IS=1 is for the southeast-northwest advection
 !       IS=2 is for the northwest-southeast advection
 
+        CALL REPORT_TIMING('Obstruction east-west', ITIMER_OBSTRUCTION)
         WRITE(IU06,*) 'CREATE NORTH-WEST-SOUTH-EAST OBSTRUCTIONS '
 
 !       first search north-south
@@ -1591,6 +1597,7 @@ IF ( LLOBSTROUT ) THEN
 !       IS=1 is for the southwest-northeast advection
 !       IS=2 is for the northeast-southwest advection
 
+        CALL REPORT_TIMING('Obstruction northwest-southeast', ITIMER_OBSTRUCTION)
         WRITE(IU06,*) 'CREATE SOUTH-WEST-NORTH-EAST OBSTRUCTIONS '
 
 !       first search north-south
@@ -1890,6 +1897,7 @@ IF ( LLOBSTROUT ) THEN
 !       IS=3 is for the southwest-northeast advection
 !       IS=4 is for the northwest-southeast advection
 
+        CALL REPORT_TIMING('Obstruction southwest-northeast', ITIMER_OBSTRUCTION)
         WRITE(IU06,*) 'CREATE GRID CORNER OBSTRUCTIONS '
 
 !       first search north-south
@@ -2200,6 +2208,7 @@ IF ( LLOBSTROUT ) THEN
 !$OMP END PARALLEL DO
         ENDDO
 
+        CALL REPORT_TIMING('Obstruction corners', ITIMER_OBSTRUCTION)
         ENDIF ! end if xdella too small, do not compute obstructions
 
 
@@ -2562,6 +2571,7 @@ IF ( LLOBSTROUT ) THEN
 
         ENDIF  ! LLGRIBOUT
 
+        CALL REPORT_TIMING('Obstruction output', ITIMER_OBSTRUCTION)
       ENDDO ! END LOOP ON FREQUENCIES
 
 
