@@ -129,7 +129,7 @@ fi
 link_bathymetry_input "${REFERENCE_LEVELS}" "${WORK_DIR}/reference_levels" || exit 1
 
 cat > for_md5 <<EOF
-${ecwam_bathymetry_version}
+${ECWAM_BATHYMETRY_VERSION}
 EOF
 
 if [ -f grid_description ]; then
@@ -153,11 +153,11 @@ cat reference_levels >> for_md5
 md5=$(cat for_md5 | md5sum | awk '{print $1}')
 
 # Only double-precision files are cached
-WAM_TOPO=v${ecwam_bathymetry_version}/bathymetry_dp_${wamresol}_nfre${wamnfre}_${wambathy}_${md5}
+WAM_TOPO=v${ECWAM_BATHYMETRY_VERSION}/bathymetry_dp_${wamresol}_nfre${wamnfre}_${wambathy}_${md5}
 
 subgrid_files=()
 for ip in 0 1 2; do
-   subgrid_files+=(v${ecwam_bathymetry_version}/wam_grib_subgrid_dp_${wamresol}_${ip}_${wamnfre}_${wambathy}_${md5})
+  subgrid_files+=(v${ECWAM_BATHYMETRY_VERSION}/wam_grib_subgrid_dp_${wamresol}_${ip}_${wamnfre}_${wambathy}_${md5})
 done
 
 grid_files_found=true
@@ -182,11 +182,11 @@ else
 
   # We update the file names with the current precision to ensure we never accidentally
   # cache single-precision files
-  WAM_TOPO=v${ecwam_bathymetry_version}/bathymetry_${prec}_${wamresol}_nfre${wamnfre}_${wambathy}_${md5}
+  WAM_TOPO=v${ECWAM_BATHYMETRY_VERSION}/bathymetry_${prec}_${wamresol}_nfre${wamnfre}_${wambathy}_${md5}
 
   subgrid_files=()
   for ip in 0 1 2; do
-     subgrid_files+=(v${ecwam_bathymetry_version}/wam_grib_subgrid_${prec}_${wamresol}_${ip}_${wamnfre}_${wambathy}_${md5})
+    subgrid_files+=(v${ECWAM_BATHYMETRY_VERSION}/wam_grib_subgrid_${prec}_${wamresol}_${ip}_${wamnfre}_${wambathy}_${md5})
   done
 
   if [[ $wambathy = "ETOPO1" ]] ; then
