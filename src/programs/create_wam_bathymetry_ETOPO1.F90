@@ -33,7 +33,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 !     INPUT FILES:
 !     -----------
-!     ETOPO1_Ice_g_int.xyz 
+!     ETOPO1_Ice_g_int.bin : HEADERLESS BIG-ENDIAN SIGNED 16-BIT DEPTHS
+!     ETOPO1_Ice_g_int.xyz : FALLBACK IF THE BINARY FILE IS ABSENT
 
 !     USER INPUT WHICH SPECIFIES WHAT CONFIGURATION IS REQUIRED
 !     input_to_wam_bathymetry...
@@ -87,7 +88,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 !**************************************************************************
 
-      USE ISO_FORTRAN_ENV, ONLY : INT64
+      USE ISO_FORTRAN_ENV, ONLY : INT16, INT64, FILE_STORAGE_SIZE
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : KCOUSTEP
@@ -234,6 +235,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       LOGICAL :: LORIGINAL, LLPRINT
       LOGICAL :: LLAND, LREALLAND, L1ST, LNSW
       LOGICAL :: LLGRID
+      LOGICAL :: LLBINARY
       LOGICAL :: LLGRIBIN !! funtionality not yet fully coded
       LOGICAL :: LLOBSTROUT, LLGRIBOUT
       LOGICAL :: LLOBSTRON
@@ -490,16 +492,14 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       CALL REPORT_TIMING('Initialization', ITIMER_PHASE)
 
-      OPEN(20,FILE='ETOPO1_Ice_g_int.xyz')
-
 !     READ INPUT DATA
       NTOT=ILON*ILAT
-      DO J = 1,ILAT
-        DO I = 1,ILON
-          READ(20,*,END=101) ALON(I),ALAT(J),IDEPTH(I,J)
-        ENDDO
-      ENDDO
-101   CONTINUE
+      INQUIRE(FILE='ETOPO1_Ice_g_int.bin',EXIST=LLBINARY)
+      IF (LLBINARY) THEN
+        CALL READ_BINARY('ETOPO1_Ice_g_int.bin', IU06, ALON, ALAT, IDEPTH)
+      ELSE
+        CALL READ_ASCII('ETOPO1_Ice_g_int.xyz', IU06, ALON, ALAT, IDEPTH)
+      ENDIF
 
       CALL REPORT_TIMING('ETOPO1 input', ITIMER_PHASE)
 
@@ -2577,6 +2577,146 @@ ENDIF  !!! LLOBSTROUT
 CALL REPORT_TIMING('Total', ITIMER_START)
 
 CONTAINS
+
+      SUBROUTINE READ_BINARY(CFILENAME, KOUTPUT, PLON, PLAT, KDEPTH)
+        CHARACTER(LEN=*), INTENT(IN) :: CFILENAME
+        INTEGER(KIND=JWIM), INTENT(IN) :: KOUTPUT
+        REAL(KIND=JWRU), INTENT(OUT) :: PLON(ILON), PLAT(ILAT)
+        INTEGER(KIND=JWIM), INTENT(OUT) :: KDEPTH(ILON,ILAT)
+        INTEGER(KIND=INT64) :: IINPUT_SIZE
+        INTEGER :: IINPUT_STATUS, IINPUT_UNIT
+        INTEGER(KIND=INT16) :: IDEPTH_ROW(ILON)
+        INTEGER(KIND=JWIM) :: ILON_INDEX, ILAT_INDEX
+        CHARACTER(LEN=256) :: CERROR
+
+        IF (FILE_STORAGE_SIZE /= 8) THEN
+          WRITE(KOUTPUT,*) 'ETOPO1 binary input requires 8-bit file storage units'
+          CALL ABORT1
+        ENDIF
+        OPEN(NEWUNIT=IINPUT_UNIT,FILE=CFILENAME,STATUS='OLD',ACTION='READ', &
+     &       ACCESS='STREAM',FORM='UNFORMATTED',CONVERT='BIG_ENDIAN', &
+     &       IOSTAT=IINPUT_STATUS,IOMSG=CERROR)
+        IF (IINPUT_STATUS /= 0) THEN
+          WRITE(KOUTPUT,*) 'Cannot open ', TRIM(CFILENAME), ': ', TRIM(CERROR)
+          CALL ABORT1
+        ENDIF
+        INQUIRE(UNIT=IINPUT_UNIT,SIZE=IINPUT_SIZE,IOSTAT=IINPUT_STATUS,IOMSG=CERROR)
+        IF (IINPUT_STATUS /= 0) THEN
+          WRITE(KOUTPUT,*) 'Cannot determine size of ', TRIM(CFILENAME), ': ', TRIM(CERROR)
+          CALL ABORT1
+        ENDIF
+        IF (IINPUT_SIZE /= 2_INT64*INT(ILON,INT64)*INT(ILAT,INT64)) THEN
+          WRITE(KOUTPUT,*) 'Incorrect size of ', TRIM(CFILENAME), ': ', IINPUT_SIZE, &
+     &                    '; expected ', 2_INT64*INT(ILON,INT64)*INT(ILAT,INT64)
+          CALL ABORT1
+        ENDIF
+        DO ILON_INDEX=1,ILON
+          PLON(ILON_INDEX)=ETOPO1_LONGITUDE(ILON_INDEX)
+        ENDDO
+        DO ILAT_INDEX=1,ILAT
+          PLAT(ILAT_INDEX)=ETOPO1_LATITUDE(ILAT_INDEX)
+          READ(IINPUT_UNIT,IOSTAT=IINPUT_STATUS,IOMSG=CERROR) IDEPTH_ROW
+          IF (IINPUT_STATUS /= 0) THEN
+            WRITE(KOUTPUT,*) 'Cannot read ', TRIM(CFILENAME), ' at latitude row ', &
+     &                      ILAT_INDEX, ': ', TRIM(CERROR)
+            CALL ABORT1
+          ENDIF
+          KDEPTH(:,ILAT_INDEX)=INT(IDEPTH_ROW,JWIM)
+        ENDDO
+        CLOSE(IINPUT_UNIT,IOSTAT=IINPUT_STATUS,IOMSG=CERROR)
+        IF (IINPUT_STATUS /= 0) THEN
+          WRITE(KOUTPUT,*) 'Cannot close ', TRIM(CFILENAME), ': ', TRIM(CERROR)
+          CALL ABORT1
+        ENDIF
+      END SUBROUTINE READ_BINARY
+
+      SUBROUTINE READ_ASCII(CFILENAME, KOUTPUT, PLON, PLAT, KDEPTH)
+        CHARACTER(LEN=*), INTENT(IN) :: CFILENAME
+        INTEGER(KIND=JWIM), INTENT(IN) :: KOUTPUT
+        REAL(KIND=JWRU), INTENT(OUT) :: PLON(ILON), PLAT(ILAT)
+        INTEGER(KIND=JWIM), INTENT(OUT) :: KDEPTH(ILON,ILAT)
+        INTEGER :: IINPUT_STATUS, IINPUT_UNIT
+        INTEGER(KIND=JWIM) :: ILON_INDEX, ILAT_INDEX
+        CHARACTER(LEN=256) :: CERROR
+
+        OPEN(NEWUNIT=IINPUT_UNIT,FILE=CFILENAME,STATUS='OLD',ACTION='READ', &
+     &       FORM='FORMATTED',IOSTAT=IINPUT_STATUS,IOMSG=CERROR)
+        IF (IINPUT_STATUS /= 0) THEN
+          WRITE(KOUTPUT,*) 'Cannot open ', TRIM(CFILENAME), ': ', TRIM(CERROR)
+          CALL ABORT1
+        ENDIF
+        DO ILAT_INDEX=1,ILAT
+          DO ILON_INDEX=1,ILON
+            READ(IINPUT_UNIT,*,IOSTAT=IINPUT_STATUS,IOMSG=CERROR) &
+     &        PLON(ILON_INDEX),PLAT(ILAT_INDEX),KDEPTH(ILON_INDEX,ILAT_INDEX)
+            IF (IINPUT_STATUS /= 0) THEN
+              IF (IS_IOSTAT_END(IINPUT_STATUS)) THEN
+                WRITE(KOUTPUT,*) 'Unexpected end of ', TRIM(CFILENAME)
+              ELSE
+                WRITE(KOUTPUT,*) 'Invalid input in ', TRIM(CFILENAME)
+              ENDIF
+              WRITE(KOUTPUT,*) 'At longitude/latitude indices ', ILON_INDEX, ILAT_INDEX, &
+     &                        ': ', TRIM(CERROR)
+              CALL ABORT1
+            ENDIF
+          ENDDO
+        ENDDO
+        CLOSE(IINPUT_UNIT,IOSTAT=IINPUT_STATUS,IOMSG=CERROR)
+        IF (IINPUT_STATUS /= 0) THEN
+          WRITE(KOUTPUT,*) 'Cannot close ', TRIM(CFILENAME), ': ', TRIM(CERROR)
+          CALL ABORT1
+        ENDIF
+      END SUBROUTINE READ_ASCII
+
+!     Longitude for a 1-based ETOPO1 column index (1..21601), west to east.
+!     The nominal axis runs from -180 to +180 degrees in 1/60-degree steps.
+!     ETOPO1_Ice_g_int.xyz encodes coordinates to six significant decimal
+!     digits, with -2.498E-15 at the nominal zero column (10801).
+!     Integer rounding and the zero exception below reproduce the audited
+!     ASCII coordinates bit-for-bit when read as REAL(KIND=JWRU). Using the
+!     nominal axis directly would not be bit-identical to the ASCII input.
+      PURE FUNCTION ETOPO1_LONGITUDE(KINDEX) RESULT(PLON)
+        INTEGER(KIND=JWIM), INTENT(IN) :: KINDEX
+        REAL(KIND=JWRU) :: PLON
+        INTEGER(KIND=JWIM) :: INUMERATOR, ISCALE, IROUNDED
+
+        INUMERATOR=KINDEX-10801
+        IF (INUMERATOR == 0) THEN
+          PLON=-2.498E-15_JWRU
+        ELSE
+          ISCALE=1000
+          DO WHILE (ABS(INUMERATOR)*ISCALE < 6000000)
+            ISCALE=ISCALE*10
+          ENDDO
+          IROUNDED=(ABS(INUMERATOR)*ISCALE+30)/60
+          PLON=REAL(SIGN(IROUNDED,INUMERATOR),JWRU)/REAL(ISCALE,JWRU)
+        ENDIF
+      END FUNCTION ETOPO1_LONGITUDE
+
+!     Latitude for a 1-based ETOPO1 row index (1..10801), north to south.
+!     The nominal axis runs from +90 to -90 degrees in 1/60-degree steps.
+!     ETOPO1_Ice_g_int.xyz encodes coordinates to six significant decimal
+!     digits, with 1.9984E-14 at the nominal equator row (5401).
+!     Integer rounding and the equator exception below reproduce the audited
+!     ASCII coordinates bit-for-bit when read as REAL(KIND=JWRU). Using the
+!     nominal axis directly would not be bit-identical to the ASCII input.
+      PURE FUNCTION ETOPO1_LATITUDE(KINDEX) RESULT(PLAT)
+        INTEGER(KIND=JWIM), INTENT(IN) :: KINDEX
+        REAL(KIND=JWRU) :: PLAT
+        INTEGER(KIND=JWIM) :: INUMERATOR, ISCALE, IROUNDED
+
+        INUMERATOR=5401-KINDEX
+        IF (INUMERATOR == 0) THEN
+          PLAT=1.9984E-14_JWRU
+        ELSE
+          ISCALE=1000
+          DO WHILE (ABS(INUMERATOR)*ISCALE < 6000000)
+            ISCALE=ISCALE*10
+          ENDDO
+          IROUNDED=(ABS(INUMERATOR)*ISCALE+30)/60
+          PLAT=REAL(SIGN(IROUNDED,INUMERATOR),JWRU)/REAL(ISCALE,JWRU)
+        ENDIF
+      END FUNCTION ETOPO1_LATITUDE
 
       SUBROUTINE REPORT_TIMING(CLABEL, KTIMER_START)
         CHARACTER(LEN=*), INTENT(IN) :: CLABEL
