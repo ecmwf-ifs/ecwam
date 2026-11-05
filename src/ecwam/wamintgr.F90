@@ -44,13 +44,12 @@ USE YOWSTAT  , ONLY : CDTPRO, IDELPRO, IDELT, IDELWI, LLSOURCE, TIME_PROPAG, &
 USE YOWWIND  , ONLY : CDAWIFL, CDATEWO, CDATEFL
 
 USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
-      
+      USE YOWDATE_UTILS, ONLY : INCDATE
 ! ----------------------------------------------------------------------
 
 IMPLICIT NONE
 
 #include "implsch.intfb.h"
-#include "incdate.intfb.h"
 #include "newwind.intfb.h"
 #include "propag_wam.intfb.h"
 #include "wam_user_clock.intfb.h"

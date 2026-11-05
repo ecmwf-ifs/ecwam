@@ -229,6 +229,7 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE EC_LUN   , ONLY : NULERR
       USE OML_MOD  , ONLY : OML_GET_MAX_THREADS
+      USE YOWDATE_UTILS, ONLY : INCDATE
 
 ! -------------------------------------------------------------------
 
@@ -240,7 +241,6 @@ SUBROUTINE INITMDL (NADV,                                 &
 #include "getspec.intfb.h"
 #include "getstress.intfb.h"
 #include "headbc.intfb.h"
-#include "incdate.intfb.h"
 #include "inisnonlin.intfb.h"
 #include "init_sdiss_ardh.intfb.h"
 #include "init_x0tauhf.intfb.h"
