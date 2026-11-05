@@ -22,6 +22,21 @@ ECWAM_CONTEXT=create_bathymetry
 source ${SCRIPTS_DIR}/ecwam_parse_commandline.sh
 source ${SCRIPTS_DIR}/ecwam_helper_functions.sh
 
+function link_bathymetry_input() {
+  local input_file="$1"
+  local link_name="$2"
+  if [[ ${input_file} == /* ]]; then
+    if [[ ! -f ${input_file} || ! -r ${input_file} ]]; then
+      echo "ERROR: Absolute bathymetry input is not a readable file: ${input_file}"
+      return 1
+    fi
+  else
+    log "${SCRIPTS_DIR}/ecwam_retrieve.sh" "${input_file}" "${DATA_DIR}/${input_file}" || return 1
+    input_file="${DATA_DIR}/${input_file}"
+  fi
+  ln -sf -- "${input_file}" "${link_name}"
+}
+
 function cleanup() {
   shopt -s nullglob
   LOG_DIR=${RUN_DIR}/logs/create_bathymetry
@@ -111,8 +126,7 @@ else
   echo "\n\n\t UNSUPPORTED value for bathymetry: ${wambathy}\n"
   abort 1
 fi
-${SCRIPTS_DIR}/ecwam_retrieve.sh ${REFERENCE_LEVELS} ${DATA_DIR}/${REFERENCE_LEVELS}
-ln -sf ${DATA_DIR}/${REFERENCE_LEVELS} ${WORK_DIR}/reference_levels
+link_bathymetry_input "${REFERENCE_LEVELS}" "${WORK_DIR}/reference_levels" || exit 1
 
 cat > for_md5 <<EOF
 ${ecwam_bathymetry_version}
@@ -177,13 +191,11 @@ else
 
   if [[ $wambathy = "ETOPO1" ]] ; then
     echo "\n\n\t Getting ETOPO1 data set\n"
-    log ${SCRIPTS_DIR}/ecwam_retrieve.sh ${ETOPO1} ${DATA_DIR}/${ETOPO1}
-    ln -sf ${DATA_DIR}/${ETOPO1} ETOPO1_Ice_g_int.xyz
+    link_bathymetry_input "${ETOPO1}" ETOPO1_Ice_g_int.xyz || exit 1
     CREATE_WAM_BATHYMETRY_EXE=${CREATE_WAM_BATHYMETRY_ETOPO1}-${prec}
   else
     echo "\n\n\t Getting ETOPO2 data set\n"
-    log ${SCRIPTS_DIR}/ecwam_retrieve.sh ${ETOPO2} ${DATA_DIR}/${ETOPO2}
-    ln -sf ${DATA_DIR}/${ETOPO2} etopo2_2006apr.dat
+    link_bathymetry_input "${ETOPO2}" etopo2_2006apr.dat || exit 1
     CREATE_WAM_BATHYMETRY_EXE=${CREATE_WAM_BATHYMETRY_ETOPO2}-${prec}
   fi
 

@@ -21,6 +21,8 @@
 # - Cached ETOPO datasets and reference levels remain unchanged.
 # - Disabling obstruction output creates empty subgrid placeholders.
 # - Generator failure returns an error and preserves the old bathymetry.
+# - Absolute dataset and reference-level paths, including spaces, are linked
+#   directly without retrieval; missing absolute files fail without downloads.
 #
 # NO DOWNLOADS OR NETWORK REQUESTS ARE MADE BY THIS TEST, on any server.
 # The real retrieval script is never invoked. Its stub only logs requests
@@ -61,6 +63,10 @@ mkdir -p "${test_dir}/scripts" "${test_dir}/data/inputs"
   [[ ${ETOPO1_reference_levels} == inputs/custom_etopo1_reference_levels ]]
   [[ ${ETOPO2_reference_levels} == inputs/custom_etopo2_reference_levels ]]
 )
+export ETOPO1=inputs/etopo1
+export ETOPO2=inputs/etopo2
+export ETOPO1_reference_levels=inputs/reference_levels
+export ETOPO2_reference_levels=inputs/reference_levels
 for script in ecwam_run_create_bathymetry.sh ecwam_parse_commandline.sh; do
   ln -s "${scripts_dir}/${script}" "${test_dir}/scripts/${script}"
 done
@@ -70,10 +76,10 @@ export RUN_DIR=${TEST_DIR}/run
 export DATA_DIR=${TEST_DIR}/data
 export ECWAM_CACHE_PATH=${DATA_DIR}
 export ECWAM_PROJECT_NAME=ecwam
-export ETOPO1=inputs/etopo1
-export ETOPO2=inputs/etopo2
-export ETOPO1_reference_levels=inputs/reference_levels
-export ETOPO2_reference_levels=inputs/reference_levels
+export ETOPO1=${ETOPO1:-inputs/etopo1}
+export ETOPO2=${ETOPO2:-inputs/etopo2}
+export ETOPO1_reference_levels=${ETOPO1_reference_levels:-inputs/reference_levels}
+export ETOPO2_reference_levels=${ETOPO2_reference_levels:-inputs/reference_levels}
 export CREATE_WAM_BATHYMETRY_ETOPO1=${TEST_DIR}/generator
 export CREATE_WAM_BATHYMETRY_ETOPO2=${TEST_DIR}/generator
 export LAUNCH_SERIAL=""
@@ -114,6 +120,14 @@ set -eu
 printf 'generated\n' >> "${TEST_DIR}/generated"
 test -r reference_levels
 test -r ETOPO1_Ice_g_int.xyz || test -r etopo2_2006apr.dat
+if [[ -n ${TEST_EXPECTED_REFERENCE_LEVELS:-} ]]; then
+  [[ $(readlink -f reference_levels) == "${TEST_EXPECTED_REFERENCE_LEVELS}" ]]
+  if [[ ${TEST_BATHYMETRY} == ETOPO1 ]]; then
+    [[ $(readlink -f ETOPO1_Ice_g_int.xyz) == "${ETOPO1}" ]]
+  else
+    [[ $(readlink -f etopo2_2006apr.dat) == "${ETOPO2}" ]]
+  fi
+fi
 if [[ ${TEST_FAIL_GENERATOR:-false} == true ]]; then
   exit 1
 fi
@@ -210,6 +224,56 @@ for bathymetry in ETOPO1 ETOPO2; do
   fi
   [[ $(cat "${products_dir}/bathymetry_dp_O80_nfre29_${bathymetry}_${checksum}") == 'old bathymetry' ]]
   unset TEST_FAIL_GENERATOR
+done
+
+mkdir -p "${test_dir}/absolute inputs"
+cp "${test_dir}/data/inputs/etopo1" "${test_dir}/absolute inputs/ETOPO1 input"
+cp "${test_dir}/data/inputs/etopo2" "${test_dir}/absolute inputs/ETOPO2 input"
+printf 'custom reference levels\n' > "${test_dir}/absolute inputs/reference levels"
+absolute_input_checksum=$(cksum "${test_dir}"/absolute\ inputs/*)
+export ETOPO1="${test_dir}/absolute inputs/ETOPO1 input"
+export ETOPO2="${test_dir}/absolute inputs/ETOPO2 input"
+export ETOPO1_reference_levels="${test_dir}/absolute inputs/reference levels"
+export ETOPO2_reference_levels=${ETOPO1_reference_levels}
+export TEST_EXPECTED_REFERENCE_LEVELS=${ETOPO1_reference_levels}
+absolute_checksum=$(printf '%s\nO80 test grid\ncustom reference levels\n' "${ecwam_bathymetry_version}" | md5sum | cut -d ' ' -f 1)
+
+for bathymetry in ETOPO1 ETOPO2; do
+  export TEST_BATHYMETRY=${bathymetry}
+  run_wrapper --regenerate # Absolute inputs must be linked directly without retrieval.
+  [[ ! -s ${test_dir}/retrieved ]]
+  [[ $(wc -l < "${test_dir}/generated") -eq 1 ]]
+  [[ $(cat "${test_dir}/run/wam_topo") == 'fresh bathymetry' ]]
+  [[ $(readlink "${test_dir}/run/wam_topo") == "${products_dir}/bathymetry_dp_O80_nfre29_${bathymetry}_${absolute_checksum}" ]]
+  [[ $(cksum "${test_dir}"/absolute\ inputs/*) == "${absolute_input_checksum}" ]]
+
+  if [[ ${bathymetry} == ETOPO1 ]]; then
+    export ETOPO1_reference_levels=${test_dir}/missing/reference_levels
+  else
+    export ETOPO2_reference_levels=${test_dir}/missing/reference_levels
+  fi
+  # A missing absolute reference file must fail without cache or network fallback.
+  if run_wrapper --regenerate; then
+    echo 'Expected missing absolute reference-level file to fail' >&2
+    exit 1
+  fi
+  [[ ! -e ${test_dir}/generated && ! -s ${test_dir}/retrieved ]]
+  export ETOPO1_reference_levels=${TEST_EXPECTED_REFERENCE_LEVELS}
+  export ETOPO2_reference_levels=${TEST_EXPECTED_REFERENCE_LEVELS}
+
+  if [[ ${bathymetry} == ETOPO1 ]]; then
+    export ETOPO1=${test_dir}/missing/etopo1
+  else
+    export ETOPO2=${test_dir}/missing/etopo2
+  fi
+  # A missing absolute dataset must fail before retrieval or generator execution.
+  if run_wrapper --regenerate; then
+    echo 'Expected missing absolute ETOPO file to fail' >&2
+    exit 1
+  fi
+  [[ ! -e ${test_dir}/generated && ! -s ${test_dir}/retrieved ]]
+  export ETOPO1="${test_dir}/absolute inputs/ETOPO1 input"
+  export ETOPO2="${test_dir}/absolute inputs/ETOPO2 input"
 done
 
 printf 'Bathymetry cache tests passed\n'
