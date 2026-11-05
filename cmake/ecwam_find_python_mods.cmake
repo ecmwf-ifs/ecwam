@@ -11,6 +11,7 @@ macro( ecwam_find_python_mods )
    # Look for python interpreter and pyyaml
    find_package( Python3 COMPONENTS Interpreter REQUIRED)
    set(ECWAM_PYTHON_INTERP ${Python3_EXECUTABLE})
+   set(ECWAM_RUNTIME_PYTHON_INTERP ${Python3_EXECUTABLE})
 
    set( pyyaml_FOUND OFF )
    # Look for pyyaml
@@ -51,5 +52,11 @@ macro( ecwam_find_python_mods )
      set( FYPP ${FCKIT_VENV_EXE} -m fypp )
      set(ECWAM_PYTHON_INTERP ${FCKIT_VENV_EXE})
    endif()
+
+   # Runtime YAML parsing needs pyyaml, but not the fypp build dependency.
+   if( NOT pyyaml_FOUND )
+     set(ECWAM_RUNTIME_PYTHON_INTERP ${FCKIT_VENV_EXE})
+   endif()
+   ecbuild_info("${ECWAM_PROJECT_NAME} runtime Python interpreter: ${ECWAM_RUNTIME_PYTHON_INTERP}")
 
 endmacro()
