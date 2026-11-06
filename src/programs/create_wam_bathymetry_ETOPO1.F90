@@ -33,7 +33,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 !     INPUT FILES:
 !     -----------
-!     ETOPO1_Ice_g_int.xyz 
+!     ETOPO1_Ice_g_int.bin : HEADERLESS BIG-ENDIAN SIGNED 16-BIT DEPTHS
+!     ETOPO1_Ice_g_int.xyz : FALLBACK IF THE BINARY FILE IS ABSENT
 
 !     USER INPUT WHICH SPECIFIES WHAT CONFIGURATION IS REQUIRED
 !     input_to_wam_bathymetry...
@@ -82,11 +83,12 @@ PROGRAM CREATE_BATHY_ETOPO1
 ! has changed since they were first created.
 ! IF SUCH CHANGES ARE MADE, THEN YOU WILL NEED TO MAKE SURE THE FILES ARE RECREATED.
 ! This can be achieved for you and other potential developers by incrementing by 1
-! the variable ecwam_bathymetry_version found in
+! the variable ECWAM_BATHYMETRY_VERSION found in
 ! /share/ecwam/scripts/ecwam_runtime.sh
 
 !**************************************************************************
 
+      USE ISO_FORTRAN_ENV, ONLY : INT16, INT64, FILE_STORAGE_SIZE
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : KCOUSTEP
@@ -97,6 +99,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       USE YOWMAP   , ONLY : IPER, IRGG, IQGAUSS, NGX, NGY, NLONRGG, CLDOMAIN,    &
      &                      AMOWEP , AMOSOP , AMOEAP , AMONOP , XDELLA,  XDELLO, &
      &                      DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO
+      USE YOWMPP   , ONLY : NPRECI
       USE YOWPARAM , ONLY : NANG, NFRE_RED
       USE YOWPCONS , ONLY : PI, ZPI, G, ZMISS
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,           &
@@ -105,7 +108,9 @@ PROGRAM CREATE_BATHY_ETOPO1
       USE YOWUBUF  , ONLY : NPROPAGS, NANG_OBS, KTOIS, KTOOBSTRUCT
       USE YOWUNIT  , ONLY : IU08
 
-      USE YOWGRIB  , ONLY : IGRIB_OPEN_FILE, IGRIB_CLOSE_FILE
+      USE YOWGRIB  , ONLY : IGRIB_OPEN_FILE, IGRIB_CLOSE_FILE, JPKSIZE_T, &
+         &                     IGRIB_GET_MESSAGE_SIZE, IGRIB_GET_MESSAGE, &
+         &                     IGRIB_WRITE_BYTES, IGRIB_RELEASE
 
 ! ----------------------------------------------------------------------
 
@@ -118,7 +123,15 @@ PROGRAM CREATE_BATHY_ETOPO1
 #include "ktoobs.intfb.h"
 #include "mfr.intfb.h"
 #include "preset_wgrib_template.intfb.h"
+#include "wgribencode_model.intfb.h"
 #include "wgribenout.intfb.h"
+
+      TYPE :: OBSTRUCTION_GRIB_MESSAGE
+        INTEGER(KIND=JWIM), ALLOCATABLE :: WORDS(:)
+        INTEGER(KIND=JPKSIZE_T) :: BYTES
+      END TYPE OBSTRUCTION_GRIB_MESSAGE
+
+      TYPE(OBSTRUCTION_GRIB_MESSAGE), ALLOCATABLE :: YGRIB_MESSAGES(:)
 
 !!    Parameters that can be adapted to tune the mean bathymetry
 !!    **********************************************************
@@ -181,6 +194,9 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM) :: NOBSTRCT, NIOBSLON, NBLOCKLAND, NTOTPTS
       INTEGER(KIND=JWIM) :: INVRES
       INTEGER(KIND=JWIM) :: ITABLE, IPARAM, IZLEV, IFCST, ITEST, ITMIN, ITMAX
+      INTEGER(KIND=JWIM) :: IGRIB_HANDLE
+      INTEGER(KIND=INT64) :: ITIMER_START, ITIMER_PHASE, ITIMER_RATE
+      INTEGER(KIND=INT64) :: ITIMER_OBSTRUCTION
 
       INTEGER(KIND=JWIM) :: IDUM(15)
       INTEGER(KIND=JWIM), DIMENSION(NREF) :: LEVEL, NDEPTH
@@ -232,6 +248,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       LOGICAL :: LORIGINAL, LLPRINT
       LOGICAL :: LLAND, LREALLAND, L1ST, LNSW
       LOGICAL :: LLGRID
+      LOGICAL :: LLBINARY
       LOGICAL :: LLGRIBIN !! funtionality not yet fully coded
       LOGICAL :: LLOBSTROUT, LLGRIBOUT
       LOGICAL :: LLOBSTRON
@@ -239,6 +256,9 @@ PROGRAM CREATE_BATHY_ETOPO1
       LOGICAL, ALLOCATABLE, DIMENSION(:,:) :: LLSM
 
 !----------------------------------------------------------------------
+
+      CALL SYSTEM_CLOCK(COUNT=ITIMER_START, COUNT_RATE=ITIMER_RATE)
+      ITIMER_PHASE=ITIMER_START
 
       PRPLRADI=1.0_JWRB
       CALL INIWCST(PRPLRADI)
@@ -483,16 +503,18 @@ PROGRAM CREATE_BATHY_ETOPO1
       ALLOCATE(PERCENTLAND(NGX,NGY))
       ALLOCATE(PERCENTSHALLOW(NGX,NGY))
 
-      OPEN(20,FILE='ETOPO1_Ice_g_int.xyz')
+      CALL REPORT_TIMING('Initialization', ITIMER_PHASE)
 
 !     READ INPUT DATA
       NTOT=ILON*ILAT
-      DO J = 1,ILAT
-        DO I = 1,ILON
-          READ(20,*,END=101) ALON(I),ALAT(J),IDEPTH(I,J)
-        ENDDO
-      ENDDO
-101   CONTINUE
+      INQUIRE(FILE='ETOPO1_Ice_g_int.bin',EXIST=LLBINARY)
+      IF (LLBINARY) THEN
+        CALL READ_BINARY('ETOPO1_Ice_g_int.bin', IU06, ALON, ALAT, IDEPTH)
+      ELSE
+        CALL READ_ASCII('ETOPO1_Ice_g_int.xyz', IU06, ALON, ALAT, IDEPTH)
+      ENDIF
+
+      CALL REPORT_TIMING('ETOPO1 input', ITIMER_PHASE)
 
 !     OUTPUT ORIGINAL DATA SET ON SUB AREA
 
@@ -555,6 +577,27 @@ PROGRAM CREATE_BATHY_ETOPO1
       ENDDO
       CALL FLUSH(IU06)
 
+    !     Historical compatibility note:
+    !     Before commit 52462439, first released in 1.5.0, this location forced
+    !     IDEPTH(I,J)=1 for YJ <= -64 degrees and IDEPTH(I,J) >= -250 m,
+    !     after reference-level corrections and before averaging onto the WAM grid.
+    !     Removing that rule changed Antarctic depths and potentially the mask,
+    !     without increasing ECWAM_BATHYMETRY_VERSION beyond 2. Thus cache v2
+    !     does not uniquely identify the scientific behavior.
+
+      IF (BATHYMETRY_VERSION(IU06) == 2) THEN
+        DO J=1,ILAT
+          YJ=ALAT(J)
+          IF (YJ <= -64.0_JWRU) THEN
+            DO I=1,ILON
+              IF (IDEPTH(I,J) >= -250_JWRU) IDEPTH(I,J)=1
+            ENDDO
+          ENDIF
+        ENDDO
+      ENDIF
+
+      CALL REPORT_TIMING('Source corrections and diagnostics', ITIMER_PHASE)
+
 !     COMPUTE MEAN DEPTH 
 
       DO K=1,NGY
@@ -580,6 +623,7 @@ PROGRAM CREATE_BATHY_ETOPO1
          ENDDO
          J=MIN(MAX(J,1),ILAT)
 
+         I=1
          DO IX=1,NLONRGG(K)
 
 !          ETOPO1 STARTS AT -180
@@ -589,8 +633,10 @@ PROGRAM CREATE_BATHY_ETOPO1
            ENDIF
 
 !          DETERMINE CLOSEST ETOPO1 I INDEX TO WAM POINT
-           DO I=1,ILON-1
+           IF (ALON(I) > XLON) I=1
+           DO WHILE (I < ILON)
              IF (ALON(I) <= XLON .AND. XLON < ALON(I+1) ) EXIT
+             I=I+1
            ENDDO
 
            NIM=INT(0.5_JWRU*ZDELLO(K)*REAL(INVRES,JWRU))
@@ -672,6 +718,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 
          ENDDO
       ENDDO
+
+      CALL REPORT_TIMING('Mean-depth calculation', ITIMER_PHASE)
 
 !     RESET TO LAND SEA POINTS THAT ARE NOT DEEP ENOUGH
       NPTS=0
@@ -815,6 +863,8 @@ PROGRAM CREATE_BATHY_ETOPO1
 
 
 
+CALL REPORT_TIMING('Depth postprocessing and output', ITIMER_PHASE)
+
 IF ( LLOBSTROUT ) THEN
 
 !     CREATE OBSTRUCTIONS COEFFICIENTS:
@@ -826,6 +876,7 @@ IF ( LLOBSTROUT ) THEN
       ALLOCATE(IOBSRLAT(NGX,NGY,2))
       ALLOCATE(IOBSRLON(NGX,NGY,2))
       ALLOCATE(FIELD(NGX,NGY))
+      ALLOCATE(YGRIB_MESSAGES(NANG))
 
       WRITE(1,'(I4)') NFRE_RED
 
@@ -860,6 +911,8 @@ IF ( LLOBSTROUT ) THEN
 !     -------------------------
 
       DO M=1,NFRE_RED
+        WRITE(IU06,*) 'OBSTRUCTION FREQUENCY ', M
+        CALL SYSTEM_CLOCK(COUNT=ITIMER_OBSTRUCTION)
 
 !!!!    COMPUTE THE OBSTRUCTIONS ONLY WHEN IT IS MEANINGFUL
         IF (DXDELLA <= 2.0_JWRU*RESOL ) THEN
@@ -910,6 +963,7 @@ IF ( LLOBSTROUT ) THEN
 !       LOOP OVER ADEVECTION DIRECTIONS
 !       IS=1 is for the south-north advection
 !       IS=2 is for the north-south advection
+        CALL REPORT_TIMING('Obstruction thresholds', ITIMER_OBSTRUCTION)
         WRITE(IU06,*) 'CREATE NORTH-SOUTH OBSTRUCTIONS '
         DO IS=1,2
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
@@ -1088,6 +1142,7 @@ IF ( LLOBSTROUT ) THEN
 !       -----------------------
 !       IS=1 is for the west-east advection
 !       IS=2 is for the east-west advection
+  CALL REPORT_TIMING('Obstruction north-south', ITIMER_OBSTRUCTION)
         WRITE(IU06,*) 'CREATE EAST-WEST OBSTRUCTIONS '
         DO IS=1,2
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
@@ -1257,6 +1312,7 @@ IF ( LLOBSTROUT ) THEN
 !       IS=1 is for the southeast-northwest advection
 !       IS=2 is for the northwest-southeast advection
 
+        CALL REPORT_TIMING('Obstruction east-west', ITIMER_OBSTRUCTION)
         WRITE(IU06,*) 'CREATE NORTH-WEST-SOUTH-EAST OBSTRUCTIONS '
 
 !       first search north-south
@@ -1554,6 +1610,7 @@ IF ( LLOBSTROUT ) THEN
 !       IS=1 is for the southwest-northeast advection
 !       IS=2 is for the northeast-southwest advection
 
+        CALL REPORT_TIMING('Obstruction northwest-southeast', ITIMER_OBSTRUCTION)
         WRITE(IU06,*) 'CREATE SOUTH-WEST-NORTH-EAST OBSTRUCTIONS '
 
 !       first search north-south
@@ -1853,6 +1910,7 @@ IF ( LLOBSTROUT ) THEN
 !       IS=3 is for the southwest-northeast advection
 !       IS=4 is for the northwest-southeast advection
 
+        CALL REPORT_TIMING('Obstruction southwest-northeast', ITIMER_OBSTRUCTION)
         WRITE(IU06,*) 'CREATE GRID CORNER OBSTRUCTIONS '
 
 !       first search north-south
@@ -2163,6 +2221,7 @@ IF ( LLOBSTROUT ) THEN
 !$OMP END PARALLEL DO
         ENDDO
 
+        CALL REPORT_TIMING('Obstruction corners', ITIMER_OBSTRUCTION)
         ENDIF ! end if xdella too small, do not compute obstructions
 
 
@@ -2382,6 +2441,14 @@ IF ( LLOBSTROUT ) THEN
           DO IP = 0, NPROPAGS 
             DO IANG = 1, NANG
 
+              IF (.NOT. LFDB .AND. IP > 0) THEN
+                IF (KTOIS(IANG,IP) == KTOIS(IANG,0) .AND. &
+     &              KTOOBSTRUCT(IANG,IP) == KTOOBSTRUCT(IANG,0)) THEN
+                  CALL IGRIB_WRITE_BYTES(IU08(IP),YGRIB_MESSAGES(IANG)%WORDS,YGRIB_MESSAGES(IANG)%BYTES)
+                  CYCLE
+                ENDIF
+              ENDIF
+
               IS = KTOIS(IANG,IP)
 
               IF ( IS > 0 .AND. LLOBSTRON ) THEN
@@ -2473,9 +2540,21 @@ IF ( LLOBSTROUT ) THEN
               IFCST=0
 
 
-              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,                   &
-     &                        ITABLE, IPARAM, IZLEV, ITMIN, ITMAX, IANG , M,  &
-     &                        CDATE, IFCST, MARSTYPE, LFDB, IU08(IP))
+              IF (.NOT. LFDB .AND. IP == 0) THEN
+                CALL WGRIBENCODE_MODEL(IU06, ITEST, NGX, NGY, FIELD, &
+     &                                ITABLE, IPARAM, IZLEV, ITMIN, ITMAX, IANG, M, &
+     &                                CDATE, IFCST, MARSTYPE, IGRIB_HANDLE)
+                CALL IGRIB_GET_MESSAGE_SIZE(IGRIB_HANDLE,YGRIB_MESSAGES(IANG)%BYTES)
+                IF (ALLOCATED(YGRIB_MESSAGES(IANG)%WORDS)) DEALLOCATE(YGRIB_MESSAGES(IANG)%WORDS)
+                ALLOCATE(YGRIB_MESSAGES(IANG)%WORDS((YGRIB_MESSAGES(IANG)%BYTES+NPRECI-1)/NPRECI))
+                CALL IGRIB_GET_MESSAGE(IGRIB_HANDLE,YGRIB_MESSAGES(IANG)%WORDS)
+                CALL IGRIB_WRITE_BYTES(IU08(IP),YGRIB_MESSAGES(IANG)%WORDS,YGRIB_MESSAGES(IANG)%BYTES)
+                CALL IGRIB_RELEASE(IGRIB_HANDLE)
+              ELSE
+                CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD, &
+     &                          ITABLE, IPARAM, IZLEV, ITMIN, ITMAX, IANG, M, &
+     &                          CDATE, IFCST, MARSTYPE, LFDB, IU08(IP))
+              ENDIF
 
             ENDDO
           ENDDO
@@ -2525,8 +2604,10 @@ IF ( LLOBSTROUT ) THEN
 
         ENDIF  ! LLGRIBOUT
 
+        CALL REPORT_TIMING('Obstruction output', ITIMER_OBSTRUCTION)
       ENDDO ! END LOOP ON FREQUENCIES
 
+      DEALLOCATE(YGRIB_MESSAGES)
 
       IF ( LLGRIBOUT ) THEN
         DO IP = 0, NPROPAGS 
@@ -2536,6 +2617,190 @@ IF ( LLOBSTROUT ) THEN
 
       CALL FLUSH(IU06)
 
+      CALL REPORT_TIMING('Obstructions', ITIMER_PHASE)
+
 ENDIF  !!! LLOBSTROUT
+
+CALL REPORT_TIMING('Total', ITIMER_START)
+
+CONTAINS
+
+      SUBROUTINE READ_BINARY(CFILENAME, KOUTPUT, PLON, PLAT, KDEPTH)
+        CHARACTER(LEN=*), INTENT(IN) :: CFILENAME
+        INTEGER(KIND=JWIM), INTENT(IN) :: KOUTPUT
+        REAL(KIND=JWRU), INTENT(OUT) :: PLON(ILON), PLAT(ILAT)
+        INTEGER(KIND=JWIM), INTENT(OUT) :: KDEPTH(ILON,ILAT)
+        INTEGER(KIND=INT64) :: IINPUT_SIZE
+        INTEGER :: IINPUT_STATUS, IINPUT_UNIT
+        INTEGER(KIND=INT16) :: IDEPTH_ROW(ILON)
+        INTEGER(KIND=JWIM) :: ILON_INDEX, ILAT_INDEX
+        CHARACTER(LEN=256) :: CERROR
+
+        IF (FILE_STORAGE_SIZE /= 8) THEN
+          WRITE(KOUTPUT,*) 'ETOPO1 binary input requires 8-bit file storage units'
+          CALL ABORT1
+        ENDIF
+        OPEN(NEWUNIT=IINPUT_UNIT,FILE=CFILENAME,STATUS='OLD',ACTION='READ', &
+     &       ACCESS='STREAM',FORM='UNFORMATTED',CONVERT='BIG_ENDIAN', &
+     &       IOSTAT=IINPUT_STATUS,IOMSG=CERROR)
+        IF (IINPUT_STATUS /= 0) THEN
+          WRITE(KOUTPUT,*) 'Cannot open ', TRIM(CFILENAME), ': ', TRIM(CERROR)
+          CALL ABORT1
+        ENDIF
+        INQUIRE(UNIT=IINPUT_UNIT,SIZE=IINPUT_SIZE,IOSTAT=IINPUT_STATUS,IOMSG=CERROR)
+        IF (IINPUT_STATUS /= 0) THEN
+          WRITE(KOUTPUT,*) 'Cannot determine size of ', TRIM(CFILENAME), ': ', TRIM(CERROR)
+          CALL ABORT1
+        ENDIF
+        IF (IINPUT_SIZE /= 2_INT64*INT(ILON,INT64)*INT(ILAT,INT64)) THEN
+          WRITE(KOUTPUT,*) 'Incorrect size of ', TRIM(CFILENAME), ': ', IINPUT_SIZE, &
+     &                    '; expected ', 2_INT64*INT(ILON,INT64)*INT(ILAT,INT64)
+          CALL ABORT1
+        ENDIF
+        DO ILON_INDEX=1,ILON
+          PLON(ILON_INDEX)=ETOPO1_LONGITUDE(ILON_INDEX)
+        ENDDO
+        DO ILAT_INDEX=1,ILAT
+          PLAT(ILAT_INDEX)=ETOPO1_LATITUDE(ILAT_INDEX)
+          READ(IINPUT_UNIT,IOSTAT=IINPUT_STATUS,IOMSG=CERROR) IDEPTH_ROW
+          IF (IINPUT_STATUS /= 0) THEN
+            WRITE(KOUTPUT,*) 'Cannot read ', TRIM(CFILENAME), ' at latitude row ', &
+     &                      ILAT_INDEX, ': ', TRIM(CERROR)
+            CALL ABORT1
+          ENDIF
+          KDEPTH(:,ILAT_INDEX)=INT(IDEPTH_ROW,JWIM)
+        ENDDO
+        CLOSE(IINPUT_UNIT,IOSTAT=IINPUT_STATUS,IOMSG=CERROR)
+        IF (IINPUT_STATUS /= 0) THEN
+          WRITE(KOUTPUT,*) 'Cannot close ', TRIM(CFILENAME), ': ', TRIM(CERROR)
+          CALL ABORT1
+        ENDIF
+      END SUBROUTINE READ_BINARY
+
+      SUBROUTINE READ_ASCII(CFILENAME, KOUTPUT, PLON, PLAT, KDEPTH)
+        CHARACTER(LEN=*), INTENT(IN) :: CFILENAME
+        INTEGER(KIND=JWIM), INTENT(IN) :: KOUTPUT
+        REAL(KIND=JWRU), INTENT(OUT) :: PLON(ILON), PLAT(ILAT)
+        INTEGER(KIND=JWIM), INTENT(OUT) :: KDEPTH(ILON,ILAT)
+        INTEGER :: IINPUT_STATUS, IINPUT_UNIT
+        INTEGER(KIND=JWIM) :: ILON_INDEX, ILAT_INDEX
+        CHARACTER(LEN=256) :: CERROR
+
+        OPEN(NEWUNIT=IINPUT_UNIT,FILE=CFILENAME,STATUS='OLD',ACTION='READ', &
+     &       FORM='FORMATTED',IOSTAT=IINPUT_STATUS,IOMSG=CERROR)
+        IF (IINPUT_STATUS /= 0) THEN
+          WRITE(KOUTPUT,*) 'Cannot open ', TRIM(CFILENAME), ': ', TRIM(CERROR)
+          CALL ABORT1
+        ENDIF
+        DO ILAT_INDEX=1,ILAT
+          DO ILON_INDEX=1,ILON
+            READ(IINPUT_UNIT,*,IOSTAT=IINPUT_STATUS,IOMSG=CERROR) &
+     &        PLON(ILON_INDEX),PLAT(ILAT_INDEX),KDEPTH(ILON_INDEX,ILAT_INDEX)
+            IF (IINPUT_STATUS /= 0) THEN
+              IF (IS_IOSTAT_END(IINPUT_STATUS)) THEN
+                WRITE(KOUTPUT,*) 'Unexpected end of ', TRIM(CFILENAME)
+              ELSE
+                WRITE(KOUTPUT,*) 'Invalid input in ', TRIM(CFILENAME)
+              ENDIF
+              WRITE(KOUTPUT,*) 'At longitude/latitude indices ', ILON_INDEX, ILAT_INDEX, &
+     &                        ': ', TRIM(CERROR)
+              CALL ABORT1
+            ENDIF
+          ENDDO
+        ENDDO
+        CLOSE(IINPUT_UNIT,IOSTAT=IINPUT_STATUS,IOMSG=CERROR)
+        IF (IINPUT_STATUS /= 0) THEN
+          WRITE(KOUTPUT,*) 'Cannot close ', TRIM(CFILENAME), ': ', TRIM(CERROR)
+          CALL ABORT1
+        ENDIF
+      END SUBROUTINE READ_ASCII
+
+!     Longitude for a 1-based ETOPO1 column index (1..21601), west to east.
+!     The nominal axis runs from -180 to +180 degrees in 1/60-degree steps.
+!     ETOPO1_Ice_g_int.xyz encodes coordinates to six significant decimal
+!     digits, with -2.498E-15 at the nominal zero column (10801).
+!     Integer rounding and the zero exception below reproduce the audited
+!     ASCII coordinates bit-for-bit when read as REAL(KIND=JWRU). Using the
+!     nominal axis directly would not be bit-identical to the ASCII input.
+      PURE FUNCTION ETOPO1_LONGITUDE(KINDEX) RESULT(PLON)
+        INTEGER(KIND=JWIM), INTENT(IN) :: KINDEX
+        REAL(KIND=JWRU) :: PLON
+        INTEGER(KIND=JWIM) :: INUMERATOR, ISCALE, IROUNDED
+
+        INUMERATOR=KINDEX-10801
+        IF (INUMERATOR == 0) THEN
+          PLON=-2.498E-15_JWRU
+        ELSE
+          ISCALE=1000
+          DO WHILE (ABS(INUMERATOR)*ISCALE < 6000000)
+            ISCALE=ISCALE*10
+          ENDDO
+          IROUNDED=(ABS(INUMERATOR)*ISCALE+30)/60
+          PLON=REAL(SIGN(IROUNDED,INUMERATOR),JWRU)/REAL(ISCALE,JWRU)
+        ENDIF
+      END FUNCTION ETOPO1_LONGITUDE
+
+!     Latitude for a 1-based ETOPO1 row index (1..10801), north to south.
+!     The nominal axis runs from +90 to -90 degrees in 1/60-degree steps.
+!     ETOPO1_Ice_g_int.xyz encodes coordinates to six significant decimal
+!     digits, with 1.9984E-14 at the nominal equator row (5401).
+!     Integer rounding and the equator exception below reproduce the audited
+!     ASCII coordinates bit-for-bit when read as REAL(KIND=JWRU). Using the
+!     nominal axis directly would not be bit-identical to the ASCII input.
+      PURE FUNCTION ETOPO1_LATITUDE(KINDEX) RESULT(PLAT)
+        INTEGER(KIND=JWIM), INTENT(IN) :: KINDEX
+        REAL(KIND=JWRU) :: PLAT
+        INTEGER(KIND=JWIM) :: INUMERATOR, ISCALE, IROUNDED
+
+        INUMERATOR=5401-KINDEX
+        IF (INUMERATOR == 0) THEN
+          PLAT=1.9984E-14_JWRU
+        ELSE
+          ISCALE=1000
+          DO WHILE (ABS(INUMERATOR)*ISCALE < 6000000)
+            ISCALE=ISCALE*10
+          ENDDO
+          IROUNDED=(ABS(INUMERATOR)*ISCALE+30)/60
+          PLAT=REAL(SIGN(IROUNDED,INUMERATOR),JWRU)/REAL(ISCALE,JWRU)
+        ENDIF
+      END FUNCTION ETOPO1_LATITUDE
+
+      SUBROUTINE REPORT_TIMING(CLABEL, KTIMER_START)
+        CHARACTER(LEN=*), INTENT(IN) :: CLABEL
+        INTEGER(KIND=INT64), INTENT(INOUT) :: KTIMER_START
+        INTEGER(KIND=INT64) :: ITIMER_NOW
+
+        CALL SYSTEM_CLOCK(COUNT=ITIMER_NOW)
+        IF (ITIMER_RATE > 0) THEN
+          WRITE(IU06,'(A,A,A,F12.3,A)') 'TIMING ', CLABEL, ': ', &
+     &      REAL(ITIMER_NOW-KTIMER_START,JWRU)/REAL(ITIMER_RATE,JWRU), ' s'
+          FLUSH(IU06)
+        ENDIF
+        KTIMER_START=ITIMER_NOW
+      END SUBROUTINE REPORT_TIMING
+
+      FUNCTION BATHYMETRY_VERSION(KOUTPUT) RESULT(IVERSION)
+        INTEGER(KIND=JWIM), INTENT(IN) :: KOUTPUT
+        INTEGER(KIND=JWIM) :: IVERSION
+        INTEGER :: IENVSTATUS
+        CHARACTER(LEN=16) :: CVALUE
+
+        CVALUE=''
+        ! -1 means the version is not set: use the current version.
+        IVERSION=-1
+        CALL GET_ENVIRONMENT_VARIABLE('ECWAM_BATHYMETRY_VERSION', CVALUE, STATUS=IENVSTATUS)
+        IF (IENVSTATUS /= 0 .AND. IENVSTATUS /= 1) THEN
+          WRITE(KOUTPUT,*) 'Cannot read ECWAM_BATHYMETRY_VERSION'
+          CALL ABORT1
+        ENDIF
+        IF (LEN_TRIM(CVALUE) > 0) THEN
+          READ(CVALUE,*,IOSTAT=IENVSTATUS) IVERSION
+          IF (IENVSTATUS /= 0) THEN
+            WRITE(KOUTPUT,*) 'ECWAM_BATHYMETRY_VERSION must be an integer'
+            CALL ABORT1
+          ENDIF
+        ENDIF
+        WRITE(KOUTPUT,*) 'ECWAM_BATHYMETRY_VERSION = ', IVERSION
+      END FUNCTION BATHYMETRY_VERSION
 
 END PROGRAM CREATE_BATHY_ETOPO1

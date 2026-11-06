@@ -1,6 +1,6 @@
 ---
-name: Update validation norms
-description: Instructions on how to update the reference validation norms for a specified set of tests and build precisions.
+name: update-validation-norms
+description: Update ecWAM reference validation norms when test configurations or numerical results intentionally change, validating debug and optimised builds in both precisions.
 ---
 
 - Each ecWAM test yaml config in ecwam/tests/ contains a set of reference norms for the swh (significant wave height).
