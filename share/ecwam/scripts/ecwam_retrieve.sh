@@ -119,7 +119,12 @@ if [ ! -f "${DOWNLOAD_DIR}/${FILE}" ]; then
   ### From here ...
   # This is not ideal, just saves a download of compressed ETOPO1/ETOPO2 dataset on HPC.
   # Better would be that the uncompressed bathymetry is present in a directory part of ECWAM_DATA_PATH
-  if [ -f ~rdx/data/wave/bathymetry_data/${FILE}.gz ]; then
+  if [ -f ~rdx/data/wave/bathymetry_data/${FILE} ]; then
+    FILE_RDX_PATH=~rdx/data/wave/bathymetry_data/${FILE}
+    echo "File was found in ${FILE_RDX_PATH}"
+    FILE_COMPRESSED=$(basename ${FILE_RDX_PATH})
+    ln -sf ${FILE_RDX_PATH} ${FILE_COMPRESSED}
+  elif [ -f ~rdx/data/wave/bathymetry_data/${FILE}.gz ]; then
     FILE_RDX_PATH=~rdx/data/wave/bathymetry_data/${FILE}.gz
     echo "File was found in ${FILE_RDX_PATH}"
     FILE_COMPRESSED=$(basename ${FILE_RDX_PATH})
