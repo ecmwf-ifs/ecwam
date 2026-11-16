@@ -688,11 +688,14 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
 
           IF (KPMONOP == KRMONOP .AND. KPMOSOP == KRMOSOP .AND.           &
      &        KPMOWEP == KRMOWEP .AND. KPMOEAP == KRMOEAP       ) THEN
-            IF (JRGG == KRGG .AND. NXS == 1 .AND. NC == NXE .AND. NYS == 1 .AND. NR == NGY) THEN
+            IF (NXS == 1 .AND. NC == NXE .AND. NYS == 1 .AND. NR == NGY) THEN
 
               LLINTERPOL=.FALSE.
 
-              IF (KRGG == 1) THEN
+!             THE GRIDS ARE COMPARED ON THEIR GEOMETRY, NOT ON HOW THEY ARE LABELLED:
+!             A GRID WITH THE SAME NUMBER OF POINTS ON EVERY LATITUDE CAN BE ENCODED
+!             AS REGULAR OR AS REDUCED WITH A CONSTANT PL (JRGG /= KRGG).
+              IF (KRGG == 1 .OR. JRGG /= KRGG) THEN
                 DO J = 1, NGY 
                   IF (RLONRGG(J) /= KLONRGG_LOC(J)) THEN
                     LLINTERPOL=.TRUE.
@@ -711,10 +714,11 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
          LLINTERPOL=.FALSE.
 
          ! Very basic test that the assumption of no interpolation is correct
-         IF (JRGG /= KRGG .OR. NR /= NGY) THEN
+         IF (NR /= NGY) THEN
             LLINTERPOL=.TRUE.
          ELSE
-           IF (KRGG == 1) THEN
+!          SAME GEOMETRY CHECK AS ABOVE, INDEPENDENT OF THE REGULAR/REDUCED LABEL
+           IF (KRGG == 1 .OR. JRGG /= KRGG) THEN
              DO J = 1, NGY 
                IF (RLONRGG(J) /= KLONRGG_LOC(J)) THEN
                  LLINTERPOL=.TRUE.
