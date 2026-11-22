@@ -53,6 +53,10 @@ Some driver scripts to run tests and validate results rely on availability of:
 - md5sum (part of GNU Coreutils; on MacOS, install with `brew install coreutils`)
 - Python with pyyaml or fckit
 
+Runtime YAML parsing uses the Python interpreter found by CMake when it has pyyaml,
+even if the build needs fckit's virtual environment for fypp. If pyyaml is missing,
+fckit's virtual environment is required for runtime parsing as well.
+
 Building ecWAM
 --------------
 

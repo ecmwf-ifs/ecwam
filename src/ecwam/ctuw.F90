@@ -87,6 +87,7 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
       REAL(KIND=JWRB) :: CGYP, CGTH
       REAL(KIND=JWRB) :: DELTH0, DELFR0, SP, SM, DTHP, DTHM, DFP, DFM 
       REAL(KIND=JWRB) :: TANPH
+      REAL(KIND=JWRB) :: DRGP, DRGM, DRDP, DRDM, DRCP, DRCM
       REAL(KIND=JWRB) :: DXX, DYY
       REAL(KIND=JWRB) :: UU, VV, UREL, VREL
       REAL(KIND=JWRB) :: XLAT, XLON
@@ -95,9 +96,6 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
       REAL(KIND=JWRB), DIMENSION(2) :: ADXP, ADYP
       REAL(KIND=JWRB), DIMENSION(2) :: DXUP, DXDW, DYUP, DYDW
       REAL(KIND=JWRB), DIMENSION(4) :: WEIGHT
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DRGP,DRGM
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DRDP,DRDM
-      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: DRCP,DRCM
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CURMASK
       REAL(KIND=JWRB), DIMENSION(2) :: CGX, CGY
 
@@ -418,164 +416,95 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*    LOOP OVER DIRECTIONS.
 !     ---------------------
 
+      DELFR0 = 0.25_JWRB*DELPRO/((FRATIO-1)*ZPI)
+
 #ifdef OMPGPU
-      !$omp target teams distribute private(KP1,KM1,SP,SM,DELFR0,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM) &
-      !$omp & map(to: THDC,THDD,SDOT)
+      !$omp target teams distribute parallel do collapse(3) &
+      !$omp & private(KP1,KM1,SP,SM,JH,TANPH,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM) &
+      !$omp & private(MP1,MM1,DFP,DFM,DTHP,DTHM) map(to: THDC,THDD,SDOT)
 #else
-      !$acc parallel loop private(km1,kp1,sp,sm,DELFR0,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM) &
-      !$acc & present(THDC,THDD,SDOT)
+      !$acc parallel loop gang vector collapse(3) &
+      !$acc & private(KP1,KM1,SP,SM,JH,TANPH,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM) &
+      !$acc & private(MP1,MM1,DFP,DFM,DTHP,DTHM) present(THDC,THDD,SDOT)
 #endif
       DO K=1,NANG
-        KP1 = K+1
-        IF (KP1 > NANG) KP1 = 1
-        KM1 = K-1
-        IF (KM1 < 1) KM1 = NANG
+        DO M = MSTART, MEND
+          DO IJ=KIJS,KIJL
+            KP1 = K+1
+            IF (KP1 > NANG) KP1 = 1
+            KM1 = K-1
+            IF (KM1 < 1) KM1 = NANG
 
-!*      COMPUTE GRID REFRACTION.
-!       ------------------------
-        SP  = DELTH0*(SINTH(K)+SINTH(KP1))/R
-        SM  = DELTH0*(SINTH(K)+SINTH(KM1))/R
+!*          COMPUTE GRID REFRACTION.
+!           ------------------------
+            SP  = DELTH0*(SINTH(K)+SINTH(KP1))/R
+            SM  = DELTH0*(SINTH(K)+SINTH(KM1))/R
 
-#ifdef OMPGPU
-        !$omp parallel do private(jh,tanph)
-#else
-        !$acc loop private(jh,tanph)
-#endif
-        DO IJ = KIJS,KIJL
-          JH=BLK2GLO%KXLT(IJ)
-          TANPH = SINPH(JH)/COSPH(JH)
-          DRGP(IJ) = TANPH*SP
-          DRGM(IJ) = TANPH*SM
-        ENDDO
+            JH=BLK2GLO%KXLT(IJ)
+            TANPH = SINPH(JH)/COSPH(JH)
+            DRGP = TANPH*SP
+            DRGM = TANPH*SM
 
-!*      COMPUTE DEPTH REFRACTION.
-!       -------------------------
-        IF (IREFRA == 1) THEN
-#ifdef OMPGPU
-!$omp parallel do
-#else
-!$acc loop
-#endif
-          DO IJ = KIJS,KIJL
-            DRDP(IJ) = (THDD(IJ,K) + THDD(IJ,KP1))*DELTH0
-            DRDM(IJ) = (THDD(IJ,K) + THDD(IJ,KM1))*DELTH0
-          ENDDO
-        ELSE
-#ifdef OMPGPU
-!$omp parallel do
-#else
-!$acc loop
-#endif
-          DO IJ = KIJS,KIJL
-            DRDP(IJ) =  0.0_JWRB
-            DRDM(IJ) =  0.0_JWRB
-          ENDDO
-        ENDIF
+!*          COMPUTE DEPTH REFRACTION.
+!           -------------------------
+            IF (IREFRA == 1) THEN
+              DRDP = (THDD(IJ,K) + THDD(IJ,KP1))*DELTH0
+              DRDM = (THDD(IJ,K) + THDD(IJ,KM1))*DELTH0
+            ELSE
+              DRDP =  0.0_JWRB
+              DRDM =  0.0_JWRB
+            ENDIF
 
-!*      COMPUTE CURRENT REFRACTION.
-!       ---------------------------
+!*          COMPUTE CURRENT REFRACTION.
+!           ---------------------------
+            IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
+              DRCP = CURMASK(IJ)*(THDC(IJ,K) + THDC(IJ,KP1))*DELTH0
+              DRCM = CURMASK(IJ)*(THDC(IJ,K) + THDC(IJ,KM1))*DELTH0
+            ELSE
+              DRCP = 0.0_JWRB
+              DRCM = 0.0_JWRB
+            ENDIF
 
-        IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
-#ifdef OMPGPU
-!$omp parallel do
-#else
-!$acc loop
-#endif
-          DO IJ = KIJS,KIJL
-            DRCP(IJ) = CURMASK(IJ)*(THDC(IJ,K) + THDC(IJ,KP1))*DELTH0
-            DRCM(IJ) = CURMASK(IJ)*(THDC(IJ,K) + THDC(IJ,KM1))*DELTH0
-          ENDDO
-        ELSE
-#ifdef OMPGPU
-!$omp parallel do
-#else
-!$acc loop
-#endif
-          DO IJ = KIJS,KIJL
-            DRCP(IJ) = 0.0_JWRB 
-            DRCM(IJ) = 0.0_JWRB
-          ENDDO
-        ENDIF
+!*          REFRACTION WEIGHTS IN INTEGRATION SCHEME.
+!           -----------------------------------------
+            IF (IREFRA == 0) THEN
+!*            NO DEPTH REFRACTION.
+              DTHP = DRGP*CGROUP_EXT(IJ,M) + DRCP
+              DTHM = DRGM*CGROUP_EXT(IJ,M) + DRCM
+            ELSE
+!*            SHALLOW WATER AND DEPTH REFRACTION.
+              DTHP = DRGP*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDP+DRCP
+              DTHM = DRGM*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDM+DRCM
+            ENDIF
+            WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
+            WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
+            WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
 
+            SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
 
-!*      REFRACTION WEIGHTS IN INTEGRATION SCHEME.
-!       -----------------------------------------
-
-!*      NO DEPTH REFRACTION.
-!       -------------------
-        IF (IREFRA == 0) THEN
-#ifdef OMPGPU
-!$omp parallel do collapse(2) private(JH,TANPH,DTHP,DTHM)
-#else
-!$acc loop collapse(2) private(DTHP,DTHM)
-#endif
-          DO M = MSTART, MEND
-            DO IJ=KIJS,KIJL
-              DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M) + DRCP(IJ)
-              DTHM = DRGM(IJ)*CGROUP_EXT(IJ,M) + DRCM(IJ)
-              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
-              WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
-              WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
-
-              SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
-            ENDDO
-          ENDDO
-        ELSE
-!*      SHALLOW WATER AND DEPTH REFRACTION.
-!       -----------------------------------
-#ifdef OMPGPU
-!$omp parallel do collapse(2) private(DTHP,DTHM)
-#else
-!$acc loop collapse(2) private(DTHP,DTHM)
-#endif
-          DO M = MSTART, MEND
-            DO IJ=KIJS,KIJL
-              DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDP(IJ)+DRCP(IJ)
-              DTHM = DRGM(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDM(IJ)+DRCM(IJ)
-              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
-              WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
-              WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
-
-              SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
-            ENDDO
-          ENDDO
-        ENDIF
-
-!*      COMPUTE FREQUENCY SHIFTING DUE TO CURRENTS.
-!       -------------------------------------------
-
-        IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
-
-          DELFR0 = 0.25_JWRB*DELPRO/((FRATIO-1)*ZPI)
-
-#ifdef OMPGPU
-!$omp parallel do private(IJ,MP1,MM1,DFP,DFM,DTHP,DTHM)
-#else
-!$acc loop private(MP1,MM1,DFP,DFM) private(DTHP,DTHM)
-#endif
-            DO M = MSTART, MEND
+!*          COMPUTE FREQUENCY SHIFTING DUE TO CURRENTS.
+!           -------------------------------------------
+            IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
               MP1 = MIN(NFRE_RED,M+1)
               MM1 = MAX(1,M-1)
               DFP = DELFR0/FR(M)
               DFM = DELFR0/FR(MM1)
 
-              DO IJ=KIJS,KIJL
-                DTHP = CURMASK(IJ) * (SDOT(IJ,K,M) + SDOT(IJ,K,MP1))*DFP
-                DTHM = CURMASK(IJ) * (SDOT(IJ,K,M) + SDOT(IJ,K,MM1))*DFM
-                WMPMN(IJ,K,M,0) =(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
-                WMPMN(IJ,K,M,1) =(-DTHP+ABS(DTHP))/FRATIO
-                WMPMN(IJ,K,M,-1)=(DTHM+ABS(DTHM))*FRATIO
+              DTHP = CURMASK(IJ) * (SDOT(IJ,K,M) + SDOT(IJ,K,MP1))*DFP
+              DTHM = CURMASK(IJ) * (SDOT(IJ,K,M) + SDOT(IJ,K,MM1))*DFM
+              WMPMN(IJ,K,M,0) =(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
+              WMPMN(IJ,K,M,1) =(-DTHP+ABS(DTHP))/FRATIO
+              WMPMN(IJ,K,M,-1)=(DTHM+ABS(DTHM))*FRATIO
 
-                SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WMPMN(IJ,K,M,0)
-              ENDDO
-            ENDDO
-        ENDIF
-
-      ENDDO  ! END LOOP ON DIRECTIONS
+              SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WMPMN(IJ,K,M,0)
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
 #ifdef OMPGPU
-!$omp end target teams distribute
+      !$omp end target teams distribute parallel do
 #else
-!$acc end parallel
+      !$acc end parallel loop
 #endif
 
 !     CHECK THAT WEIGHTS ARE LESS THAN 1
@@ -755,18 +684,13 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 #ifdef OMPGPU
 !$omp target teams distribute parallel do collapse(3)
 #else
-!$acc parallel loop collapse(3)
+!$acc parallel loop gang vector collapse(3)
 #endif
       DO K=1,NANG
         DO M = MSTART, MEND
           DO IJ=KIJS,KIJL
 
 !           POINTS ON SURROUNDING LATITUDES 
-#ifdef OMPGPU
-!$omp parallel do collapse(2)
-#else
-!$acc loop collapse(2)
-#endif
             DO IC=1,2
               DO ICL=1,2
                 WLATN(IJ,K,M,IC,ICL) = WLATN(IJ,K,M,IC,ICL)*OBSLAT(IJ,M,IC) 
@@ -774,21 +698,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
             ENDDO
 
 !           POINTS ON SURROUNDING LONGITUDE
-#ifdef OMPGPU
-!$omp parallel do
-#else
-!$acc loop
-#endif
             DO IC=1,2
               WLONN(IJ,K,M,IC) = WLONN(IJ,K,M,IC)*OBSLON(IJ,M,IC)
             ENDDO
 
 !           SURROUNDING CORNER POINTS
-#ifdef OMPGPU
-!$omp parallel do collapse(2)
-#else
-!$acc loop collapse(2)
-#endif
             DO ICR=1,4
               DO ICL=1,2
                 WCORN(IJ,K,M,ICR,ICL) = WCORN(IJ,K,M,ICR,ICL)*OBSCOR(IJ,M,KCR(K,ICR))
@@ -801,7 +715,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 #ifdef OMPGPU
 !$omp end target teams distribute parallel do
 #else
-!$acc end parallel
+!$acc end parallel loop
 #endif
 
 IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)

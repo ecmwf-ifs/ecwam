@@ -51,7 +51,7 @@ SUBROUTINE PROENVHALO (NINF, NSUP,                            &
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: DEPTH, DELLAM1, COSPHM1, UCUR, VCUR
 
       INTEGER(KIND=JWIM) :: IJ, M
-      INTEGER(KIND=JWIM) :: ICHNK, KIJS, KIJL, IJSB, IJLB
+      INTEGER(KIND=JWIM) :: ICHNK, IJB
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE, ZHOOK_HANDLE_MPI
 
@@ -64,50 +64,39 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
 !!! mapping chuncks to block ONLY for actual grid points !!!!
 #ifdef WAM_GPU
 #ifdef OMPGPU
-!$omp target teams distribute private(KIJS,IJSB,KIJL,IJLB)
+!$omp target teams distribute parallel do collapse(3) private(IJB)
 #else
-!$acc kernels loop private(ICHNK, KIJS, IJSB, KIJL, IJLB)
+!$acc parallel loop gang vector collapse(3) private(IJB)
 #endif
 #else
-!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, IJ)
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJB, M, IJ)
 #endif
       DO ICHNK = 1, NCHNK
-        KIJS = 1
-        IJSB = IJFROMCHNK(KIJS, ICHNK)
-        KIJL = KIJL4CHNK(ICHNK)
-        IJLB = IJFROMCHNK(KIJL, ICHNK)
-
-#ifdef OMPGPU
-!$omp parallel do private(IJ)
-#else
-!$acc loop
-#endif
-        DO M = 1, NFRE_RED
-          DO IJ = IJSB, IJLB
-            BUFFER_EXT(IJ, M) = WAVNUM(IJ - IJSB + KIJS, M,ICHNK)
-            BUFFER_EXT(IJ, M + NFRE_RED) = CGROUP(IJ - IJSB + KIJS, M,ICHNK)
-            BUFFER_EXT(IJ, M + 2*NFRE_RED) = OMOSNH2KD(IJ - IJSB + KIJS, M,ICHNK)
+!       THE EXTRA ITERATION M = NFRE_RED+1 COPIES THE FIELDS WITHOUT A FREQUENCY INDEX
+        DO M = 1, NFRE_RED+1
+          DO IJ = 1, NPROMA_WAM
+            IF (IJ <= KIJL4CHNK(ICHNK)) THEN
+              IJB = IJFROMCHNK(1, ICHNK) + IJ - 1
+              IF (M <= NFRE_RED) THEN
+                BUFFER_EXT(IJB, M) = WAVNUM(IJ, M, ICHNK)
+                BUFFER_EXT(IJB, M + NFRE_RED) = CGROUP(IJ, M, ICHNK)
+                BUFFER_EXT(IJB, M + 2*NFRE_RED) = OMOSNH2KD(IJ, M, ICHNK)
+              ELSE
+                BUFFER_EXT(IJB, 3*NFRE_RED+1) = DELLAM1(IJ, ICHNK)
+                BUFFER_EXT(IJB, 3*NFRE_RED+2) = COSPHM1(IJ, ICHNK)
+                BUFFER_EXT(IJB, 3*NFRE_RED+3) = DEPTH(IJ, ICHNK)
+                BUFFER_EXT(IJB, 3*NFRE_RED+4) = UCUR(IJ, ICHNK)
+                BUFFER_EXT(IJB, 3*NFRE_RED+5) = VCUR(IJ, ICHNK)
+              ENDIF
+            ENDIF
           ENDDO
-        ENDDO
-
-#ifdef OMPGPU        
-!$omp parallel do
-#else
-!$acc loop
-#endif
-        DO IJ = IJSB, IJLB
-          BUFFER_EXT(IJ, 3*NFRE_RED+1) = DELLAM1(IJ - IJSB + KIJS,ICHNK)
-          BUFFER_EXT(IJ, 3*NFRE_RED+2) = COSPHM1(IJ - IJSB + KIJS,ICHNK)
-          BUFFER_EXT(IJ, 3*NFRE_RED+3) = DEPTH(IJ - IJSB + KIJS,ICHNK)
-          BUFFER_EXT(IJ, 3*NFRE_RED+4) = UCUR(IJ - IJSB + KIJS,ICHNK)
-          BUFFER_EXT(IJ, 3*NFRE_RED+5) = VCUR(IJ - IJSB + KIJS,ICHNK)
         ENDDO
       ENDDO
 #ifdef WAM_GPU
 #ifdef OMPGPU
-!$omp end target teams distribute
+!$omp end target teams distribute parallel do
 #else
-!$acc end kernels
+!$acc end parallel loop
 #endif
 #else
 !$OMP END PARALLEL DO

@@ -72,7 +72,8 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
       USE YOWGRIB  , ONLY : IGRIB_NEW_FROM_SAMPLES, &
                           & IGRIB_CLONE, &
                           & IGRIB_SET_VALUE, &
-                          & IGRIB_GET_VALUE
+                          & IGRIB_GET_VALUE, &
+                          & IGRIB_IS_DEFINED
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE EC_LUN   , ONLY : NULERR
 
@@ -114,8 +115,9 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
       CHARACTER(LEN=2)   :: MARSFCTYPE
       CHARACTER(LEN=4)   :: CSTREAM
 
-      LOGICAL :: LLCRT 
+      LOGICAL :: LLCRT, LLMTG2DEFINED
       LOGICAL            :: LASTREAM
+      LOGICAL            :: LLREGGG
 
 !-------------------------------------------------------------------
 
@@ -474,10 +476,14 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 !       Query the wave handle after setting its generatingProcessIdentifier above.
         IMTG2 = 0
         IF (IGRIB_VERSION == 2 .AND. .NOT.LNEWLVTP) THEN
-          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'MTG2Switch',IMTG2,KRET=IRET)
-          IF (IRET /= 0) THEN
-            WRITE(IU06,*) ' ERROR IN PRESET_WGRIB_TEMPLATE: CANNOT READ MTG2Switch ', IRET
-            CALL ABORT1
+!         Older ecCodes versions do not define MTG2Switch and use legacy encoding.
+          CALL IGRIB_IS_DEFINED(IGRIB_HANDLE,'MTG2Switch',LLMTG2DEFINED)
+          IF (LLMTG2DEFINED) THEN
+            CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'MTG2Switch',IMTG2,KRET=IRET)
+            IF (IRET /= 0) THEN
+              WRITE(IU06,*) ' ERROR IN PRESET_WGRIB_TEMPLATE: CANNOT READ MTG2Switch ', IRET
+              CALL ABORT1
+            ENDIF
           ENDIF
         ENDIF
 
@@ -583,7 +589,28 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
       IF (.NOT. LGRHDIFS .OR. LLCRT .OR. .NOT. LWCOUSAMEGRID ) THEN
 
+        ! A GAUSSIAN GRID WITH THE SAME NUMBER OF POINTS ON EVERY LATITUDE IS
+        ! A REGULAR (FULL) GAUSSIAN GRID AND IS ENCODED AS SUCH, WHATEVER IRGG SAYS.
+        ! THE EXCEPTION IS WHEN THE GRID DEFINITION FILES ARE CREATED (LLCRT):
+        ! IRGG IS DERIVED FROM THEIR gridType WHEN THEY ARE READ BACK (SEE
+        ! WVGETGRIDINFO) AND IT SELECTS CODE PATHS IN THE PROPAGATION, SO THEIR
+        ! LABELLING IS LEFT UNCHANGED.
+        LLREGGG = .FALSE.
         IF ( IQGAUSS == 1 ) THEN
+          IF ( IRGG == 0 ) THEN
+            LLREGGG = .TRUE.
+          ELSEIF ( .NOT. LLCRT .AND. ALLOCATED(NLONRGG) ) THEN
+            LLREGGG = ALL(NLONRGG(1:NGY) == NGX)
+          ENDIF
+        ENDIF
+
+        IF ( LLREGGG ) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','regular_gg')
+          IF ( IGRIB_VERSION == 1 ) THEN
+            IREPR=4
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'dataRepresentationType',IREPR)
+          ENDIF
+        ELSEIF ( IQGAUSS == 1 ) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','reduced_gg')
           IF ( IGRIB_VERSION == 1 ) THEN
             IREPR=4
@@ -610,7 +637,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ENDIF
 
         ! NUMBER OF POINTS PER LATITUDE
-        IF (IRGG == 0) THEN
+        IF (IRGG == 0 .OR. LLREGGG) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'Ni',NGX)
         ELSE
           ALLOCATE(PL(NJ))
@@ -629,7 +656,14 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ENDIF
 
 !       RESOLUTION AND COMPONENT FLAGS
-        IF ( IQGAUSS == 1 ) THEN
+        IF ( LLREGGG ) THEN
+          ! i DIRECTION INCREMENT GIVEN
+          IF ( IGRIB_VERSION == 1 ) THEN
+            IRESFLAGS=128
+          ELSE
+            IRESFLAGS=32
+          ENDIF
+        ELSEIF ( IQGAUSS == 1 ) THEN
           IRESFLAGS=0
         ELSE
           IRESFLAGS=128
@@ -667,7 +701,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'longitudeOfLastGridPointInDegrees',RMOEAP)
 
         ! LONGITUDE INCREMENT
-        IF (IRGG == 0) THEN
+        IF (IRGG == 0 .OR. LLREGGG) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'iDirectionIncrementInDegrees',DXDELLO)
         ENDIF
 

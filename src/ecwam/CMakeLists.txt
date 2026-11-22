@@ -62,6 +62,7 @@ list( APPEND ecwam_srcs
   chnkmin.F90
   cigetdeac.F90
   cimsstrn.F90
+  cpgrbobstrct.F90
   ctcor.F90
   ctuw.F90
   ctuwdrv.F90
@@ -202,6 +203,7 @@ list( APPEND ecwam_srcs
   readbou.F90
   readfl.F90
   readmdlconf.F90
+  readnemofld.F90
   readpre.F90
   readsta.F90
   readstress.F90
@@ -303,6 +305,7 @@ list( APPEND ecwam_srcs
   wnfluxes.F90
   wposnam.F90
   writefl.F90
+  writenemofld.F90
   writestress.F90
   writsta.F90
   wsigstar.F90

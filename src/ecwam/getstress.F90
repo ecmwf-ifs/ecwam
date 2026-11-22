@@ -45,6 +45,8 @@
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
+      USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOCOURECV
+      USE YOWNEMOFLDS, ONLY : LREST_NEMO_ICE
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE, ONLY : MPL_BROADCAST
@@ -58,6 +60,7 @@
 #include "expand_string.intfb.h"
 #include "grstname.intfb.h"
 #include "mpdistribscfld.intfb.h"
+#include "readnemofld.intfb.h"
 #include "readstress.intfb.h"
 
       TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
@@ -88,6 +91,7 @@
 
 
       ZERO = ' '
+      LREST_NEMO_ICE = .FALSE.
 
       IJSG = IJFROMCHNK(1,1)
       IJLG = IJSG + SUM(KIJL4CHNK) - 1
@@ -129,6 +133,11 @@
 
         IF (LRSTPARALR .OR. IRANK == IREAD) THEN
           CALL READSTRESS(IJINF, IJSUP, NREAL, RFIELD, FILENAME, LRSTPARALR)
+        ENDIF
+
+!       NEMO -> WAM FIELDS THAT MAY FOLLOW IN PER-TASK FILES (SEE WRITENEMOFLD)
+        IF (LRSTPARALR .AND. LWNEMOCOU .AND. LWNEMOCOURECV) THEN
+          CALL READNEMOFLD(IJINF, IJSUP, FILENAME, NEMO2WAM)
         ENDIF
 
         IF (.NOT.LRSTPARALR) THEN

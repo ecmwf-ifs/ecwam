@@ -93,7 +93,6 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NTRAIN), INTENT(OUT) :: EMTRAIN, THTRAIN, PMTRAIN
 
 
-      INTEGER(KIND=JWIM) :: NPMAX_LOC
       INTEGER(KIND=JWIM) :: IJ, M, K, IP
       INTEGER(KIND=JWIM) :: ISORT, I, IPLOC
       INTEGER(KIND=JWIM) :: IFL, IFH, ITHL, ITHH
@@ -339,15 +338,13 @@
 !        WE ONLY NEED THE FIRST NTRAIN TO BE SORTED
 !        -----------------------------------------------------------------
 
-      NPMAX_LOC=MAXVAL(NPEAK(:))
-
       DO ISORT=1,NTRAIN
         DO IJ=KIJS,KIJL
           IPNOW(IJ)=0
           ENMAX(IJ)=0.0_JWRB
         ENDDO
 
-        DO IP=1,NPMAX_LOC
+        DO IP=1,NPMAX
           DO IJ=KIJS,KIJL
             IF (ENE(IJ,IP) > ENMAX(IJ)) THEN
               IPNOW(IJ) = IP

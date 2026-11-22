@@ -76,23 +76,23 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 0.3878921852381332E+00
+      average: 0.3877938862547833E+00
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD8D339BE7E3140']
+      hashes: ['0x3FD8D19D72C364FA']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1052671880035781E+01
+      average: 0.1052497251848669E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF0D7BE7822C29D']
+      hashes: ['0x3FF0D7075BBD1E57']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1213041806873566E+01
+      average: 0.1212939432220211E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF3689E86933E53']
+      hashes: ['0x3FF368332D96A245']
     - name: swh
       time: 2023-01-01 06:00:00
       minimum: 0.4387390382286470E-02
@@ -103,3 +103,36 @@ validation:
       maximum: 0.7162006493701588E+01
       relative_tolerance: 1.e-14
       hashes: ['0x401CA5E507C0C076']
+
+  single_precision:
+
+    # initial analysis time
+    - name: swh
+      time: 2022-12-31 12:00:00
+      average: 0.3849158287048340E+00
+      relative_tolerance: 1.e-6
+      hashes: ['0x3FD8A27600000000']
+
+    # initial forecast time
+    - name: swh
+      time: 2023-01-01 00:00:00
+      average: 0.1052916526794434E+01
+      relative_tolerance: 1.e-6
+      hashes: ['0x3FF0D8BF00000000']
+
+    # 6h into forecast
+    - name: swh
+      time: 2023-01-01 06:00:00
+      average: 0.1214508175849915E+01
+      relative_tolerance: 1.e-6
+      hashes: ['0x3FF36EA020000000']
+    - name: swh
+      time: 2023-01-01 06:00:00
+      minimum: 0.4387390334159136E-02
+      relative_tolerance: 1.e-6
+      hashes: ['0x3F71F88320000000']
+    - name: swh
+      time: 2023-01-01 06:00:00
+      maximum: 0.7162003993988037E+01
+      relative_tolerance: 1.e-6
+      hashes: ['0x401CA5E460000000']

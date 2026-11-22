@@ -11,7 +11,7 @@ SCRIPTS_DIR="$( cd $( dirname "${BASH_SOURCE[0]}" ) && pwd -P )"
 
 # Version of topography result, to be increased when results for same run would be different.
 # e.g. when a bug is fixed.
-export ecwam_bathymetry_version=2
+export ecwam_bathymetry_version=3
 
 if [[ -z ${ECWAM_CACHE_PATH_DEFAULT:-} ]]; then
   ECWAM_CACHE_PATH_DEFAULT=${HOME}/cache/ecwam
@@ -55,5 +55,5 @@ export MPL_MBX_SIZE=${MPL_MBX_SIZE:-${MBX_SIZE}}
 # Allow MPI to be initialised outside of DR_HOOK
 export DR_HOOK_ASSERT_MPI_INITIALIZED=0
 
-# export python interpreter
-export ECWAM_PYTHON_INTERP=@ECWAM_PYTHON_INTERP@
+# Runtime YAML parsing can use system Python even when the build needs fckit.
+export ECWAM_PYTHON_INTERP=@ECWAM_RUNTIME_PYTHON_INTERP@

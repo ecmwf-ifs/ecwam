@@ -134,23 +134,23 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 0.3740910048130137E+00
+      average: 0.3739831684083922E+00
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD7F11B65D9943B']
+      hashes: ['0x3FD7EF5719646262']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1052354948638136E+01
+      average: 0.1052087275193418E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF0D6722482F3EE']
+      hashes: ['0x3FF0D5597777E550']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1214298695088632E+01
+      average: 0.1214144382502896E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF36DC477EFB2CA']
+      hashes: ['0x3FF36D22A8F78D89']
     - name: swh
       time: 2023-01-01 06:00:00
       minimum: 0.4390841548729450E-02
@@ -158,32 +158,32 @@ validation:
       hashes: ['0x3F71FC218DA8CCD8']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.6929218100210148E+01
+      maximum: 0.6929218097262090E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x401BB784F31D03EE']
+      hashes: ['0x401BB784F2EA5E3C']
 
   single_precision:
 
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 0.3740437030792236E+00
+      average: 0.3739366233348846E+00
       relative_tolerance: 1.e-6
-      hashes: ['0x3FD7F05500000000']
+      hashes: ['0x3FD7EE93E0000000']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1052176475524902E+01
+      average: 0.1051908493041992E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF0D5B700000000']
+      hashes: ['0x3FF0D49E00000000']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1214112639427185E+01
+      average: 0.1213957667350769E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF36D0160000000']
+      hashes: ['0x3FF36C5EE0000000']
     - name: swh
       time: 2023-01-01 06:00:00
       minimum: 0.4390842281281948E-02
