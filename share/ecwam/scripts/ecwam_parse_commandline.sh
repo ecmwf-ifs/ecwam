@@ -12,6 +12,9 @@ function usage() {
   echo "    $(basename ${0}) --help"
   echo "    $(basename ${0}) --completed [--run-dir RUN_DIR]"
   echo "    $(basename ${0}) [--run-dir RUN_DIR] [--config CONFIG] [--launch LAUNCH_CMD] [--cache CACHE_PATH] [--halt] [--prec PRECISION]"
+if [[ ${ECWAM_CONTEXT:-unset} == "create_bathymetry" ]]; then
+  echo "                     [--regenerate]"
+fi
 if [[ ${ECWAM_CONTEXT:-unset} == "model" ]]; then
   echo "                     [--np NTASKS] [--nt NTHREADS]"
 fi
@@ -33,6 +36,10 @@ function help() {
   echo "                               This overrides defaults set by 'LAUNCH' environment variable"
   echo "    --cache CACHE_PATH         Path where downloaded and computed data will be stored"
   echo "                               Default: ${ECWAM_CACHE_PATH}"
+if [[ ${ECWAM_CONTEXT:-unset} == "create_bathymetry" ]]; then
+  echo "    --regenerate               Recompute bathymetry and subgrid files instead of retrieving cached products."
+  echo "                               Replaces generated files in DATA_DIR; ETOPO datasets and reference levels remain cached."
+fi
   echo "    --halt                     Flag to stop before launching the binary execution, e.g. to allow for manually"
   echo "                               launching, or checking of generated inputs."
 if [[ ${ECWAM_CONTEXT:-unset} == "model" ]]; then
@@ -53,12 +60,34 @@ fi
   echo "    OMP_NUM_THREADS=<NTHREADS>  # OpenMP threads"
   echo "    ECWAM_RUN_DIR               # Default run directory. If not set, current directory is assumed."
   echo "    ECWAM_CACHE_PATH            # Path where downloaded and computed data will be stored."
+  echo "    ECWAM_BATHYMETRY_VERSION    # 3 (default): current bathymetry; 2: restore the historical ETOPO1 Antarctic rule."
+  echo "                                # Selects both generator behavior and the cache version/key."
+  echo "    ECWAM_REGENERATE_BATHYMETRY # true/1: regenerate bathymetry products; false/0: normal cache reuse (default)."
+  echo "                                # Equivalent to --regenerate in the bathymetry wrapper; --regenerate always enables it."
   echo "    ECWAM_DATA_PATH             # ':'-separated list of search locations for downloaded and computed data."
   echo "                                # Note that \$ECWAM_CACHE_PATH is foremost also a search location, taking precedence."
+  echo "    ETOPO1                      # Override the ETOPO1 dataset path. *"
+  echo "    ETOPO2                      # Override the ETOPO2 dataset path. *"
+  echo "    ETOPO1_reference_levels     # Override the ETOPO1 reference-level path. *"
+  echo "    ETOPO2_reference_levels     # Override the ETOPO2 reference-level path. *"
+  echo "                                # * Absolute paths must be readable files and bypass retrieval."
+  echo "                                #   Relative paths use the data/cache roots and can be downloaded if missing."
+  echo "                                #   Reference-level contents enter the bathymetry cache key."
 }
 
 config=""
 dryrun=false
+regenerate=false
+if [[ ${ECWAM_CONTEXT:-unset} == "create_bathymetry" ]]; then
+  case "${ECWAM_REGENERATE_BATHYMETRY:-false}" in
+    true|1) regenerate=true ;;
+    false|0) regenerate=false ;;
+    *)
+      echo "ECWAM_REGENERATE_BATHYMETRY must be true, false, 1, or 0" >&2
+      exit 1
+      ;;
+  esac
+fi
 do_check_completed=false
 run_dir=""
 cache=""
@@ -105,6 +134,13 @@ while test $# -gt 0; do
         ;;
       --halt)
         dryrun=true
+        ;;
+      --regenerate)
+        if [[ ${ECWAM_CONTEXT:-unset} != "create_bathymetry" ]]; then
+          echo "--regenerate is only supported by ecwam_run_create_bathymetry.sh"
+          exit 1
+        fi
+        regenerate=true
         ;;
       --config|-c)
         if [[ ${val::1} == "-" || ${val} == "" ]] ; then

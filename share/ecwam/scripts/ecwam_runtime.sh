@@ -11,7 +11,7 @@ SCRIPTS_DIR="$( cd $( dirname "${BASH_SOURCE[0]}" ) && pwd -P )"
 
 # Version of topography result, to be increased when results for same run would be different.
 # e.g. when a bug is fixed.
-export ecwam_bathymetry_version=3
+export ECWAM_BATHYMETRY_VERSION=${ECWAM_BATHYMETRY_VERSION:-3}
 
 if [[ -z ${ECWAM_CACHE_PATH_DEFAULT:-} ]]; then
   ECWAM_CACHE_PATH_DEFAULT=${HOME}/cache/ecwam
@@ -32,10 +32,10 @@ export PREPROC=${PREPROC:-${ECWAM_PROJECT_NAME}-preproc}
 export PRESET=${PRESET:-${ECWAM_PROJECT_NAME}-preset}
 export MODEL=${CHIEF:-${ECWAM_PROJECT_NAME}-chief}
 
-export ETOPO1=data/bathymetry/ETOPO1/ETOPO1_Ice_g_int.xyz
-export ETOPO2=data/bathymetry/ETOPO2/etopo2_2006apr.dat
-export ETOPO1_reference_levels=data/bathymetry/ETOPO1/reference_levels.v2
-export ETOPO2_reference_levels=data/bathymetry/ETOPO2/reference_levels.v1
+export ETOPO1=${ETOPO1:-data/bathymetry/ETOPO1/ETOPO1_Ice_g_int.xyz}
+export ETOPO2=${ETOPO2:-data/bathymetry/ETOPO2/etopo2_2006apr.dat}
+export ETOPO1_reference_levels=${ETOPO1_reference_levels:-data/bathymetry/ETOPO1/reference_levels.v2}
+export ETOPO2_reference_levels=${ETOPO2_reference_levels:-data/bathymetry/ETOPO2/reference_levels.v1}
 
 # Executable runtime environment
 export LAUNCH=${LAUNCH:-}

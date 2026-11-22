@@ -82,7 +82,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 ! has changed since they were first created.
 ! IF SUCH CHANGES ARE MADE, THEN YOU WILL NEED TO MAKE SURE THE FILES ARE RECREATED.
 ! This can be achieved for you and other potential developers by incrementing by 1
-! the variable ecwam_bathymetry_version found in
+! the variable ECWAM_BATHYMETRY_VERSION found in
 ! /share/ecwam/scripts/ecwam_runtime.sh
 
 !**************************************************************************
@@ -554,6 +554,25 @@ PROGRAM CREATE_BATHY_ETOPO1
         ENDDO
       ENDDO
       CALL FLUSH(IU06)
+
+    !     Historical compatibility note:
+    !     Before commit 52462439, first released in 1.5.0, this location forced
+    !     IDEPTH(I,J)=1 for YJ <= -64 degrees and IDEPTH(I,J) >= -250 m,
+    !     after reference-level corrections and before averaging onto the WAM grid.
+    !     Removing that rule changed Antarctic depths and potentially the mask,
+    !     without increasing ECWAM_BATHYMETRY_VERSION beyond 2. Thus cache v2
+    !     does not uniquely identify the scientific behavior.
+
+      IF (BATHYMETRY_VERSION(IU06) == 2) THEN
+        DO J=1,ILAT
+          YJ=ALAT(J)
+          IF (YJ <= -64.0_JWRU) THEN
+            DO I=1,ILON
+              IF (IDEPTH(I,J) >= -250_JWRU) IDEPTH(I,J)=1
+            ENDDO
+          ENDIF
+        ENDDO
+      ENDIF
 
 !     COMPUTE MEAN DEPTH 
 
@@ -2537,5 +2556,31 @@ IF ( LLOBSTROUT ) THEN
       CALL FLUSH(IU06)
 
 ENDIF  !!! LLOBSTROUT
+
+CONTAINS
+
+      FUNCTION BATHYMETRY_VERSION(KOUTPUT) RESULT(IVERSION)
+        INTEGER(KIND=JWIM), INTENT(IN) :: KOUTPUT
+        INTEGER(KIND=JWIM) :: IVERSION
+        INTEGER :: IENVSTATUS
+        CHARACTER(LEN=16) :: CVALUE
+
+        CVALUE=''
+        ! -1 means the version is not set: use the current version.
+        IVERSION=-1
+        CALL GET_ENVIRONMENT_VARIABLE('ECWAM_BATHYMETRY_VERSION', CVALUE, STATUS=IENVSTATUS)
+        IF (IENVSTATUS /= 0 .AND. IENVSTATUS /= 1) THEN
+          WRITE(KOUTPUT,*) 'Cannot read ECWAM_BATHYMETRY_VERSION'
+          CALL ABORT1
+        ENDIF
+        IF (LEN_TRIM(CVALUE) > 0) THEN
+          READ(CVALUE,*,IOSTAT=IENVSTATUS) IVERSION
+          IF (IENVSTATUS /= 0) THEN
+            WRITE(KOUTPUT,*) 'ECWAM_BATHYMETRY_VERSION must be an integer'
+            CALL ABORT1
+          ENDIF
+        ENDIF
+        WRITE(KOUTPUT,*) 'ECWAM_BATHYMETRY_VERSION = ', IVERSION
+      END FUNCTION BATHYMETRY_VERSION
 
 END PROGRAM CREATE_BATHY_ETOPO1

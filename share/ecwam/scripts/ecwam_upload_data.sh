@@ -48,9 +48,9 @@ function compress () {
   esac
 }
 
-# Upload bathymetry files from ${ECWAM_CACHE_PATH}/data/bathymetry/v${ecwam_bathymetry_version}
+# Upload bathymetry files from ${ECWAM_CACHE_PATH}/data/bathymetry/v${ECWAM_BATHYMETRY_VERSION}
 
-location=data/bathymetry/v${ecwam_bathymetry_version}
+location=data/bathymetry/v${ECWAM_BATHYMETRY_VERSION}
 cd ${ECWAM_CACHE_PATH}/${location}
 COMPRESSION_DIR=${ECWAM_CACHE_PATH}/${location}
 mkdir -p ${COMPRESSION_DIR}

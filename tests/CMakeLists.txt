@@ -6,6 +6,11 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
+ecbuild_add_test( TARGET ${PROJECT_NAME}_test_bathymetry_cache
+        COMMAND bash
+        ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test_bathymetry_cache.sh
+          ${PROJECT_SOURCE_DIR}/share/ecwam/scripts )
+
 foreach( prec sp dp )
   if( HAVE_${prec} )
     ecwam_add_test( ${PROJECT_NAME}_test_aqua_era5_O48 CONFIG aqua_era5_O48.yml PREC ${prec} )
