@@ -54,7 +54,7 @@ test_versions=("<version-does-not-matter-for-this-test>" "<another-version-does-
   unset ETOPO1 ETOPO2 ETOPO1_reference_levels ETOPO2_reference_levels
   source "${scripts_dir}/ecwam_runtime.sh"
   [[ ${ECWAM_BATHYMETRY_VERSION} == "${default_bathymetry_version}" ]]
-  [[ ${ETOPO1} == data/bathymetry/ETOPO1/ETOPO1_Ice_g_int.xyz ]]
+  [[ ${ETOPO1} == data/bathymetry/ETOPO1/ETOPO1_Ice_g_int.bin ]]
   [[ ${ETOPO2} == data/bathymetry/ETOPO2/etopo2_2006apr.dat ]]
   [[ ${ETOPO1_reference_levels} == data/bathymetry/ETOPO1/reference_levels.v2 ]]
   [[ ${ETOPO2_reference_levels} == data/bathymetry/ETOPO2/reference_levels.v1 ]]
