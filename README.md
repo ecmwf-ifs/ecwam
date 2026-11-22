@@ -184,6 +184,9 @@ or with symbolic links to found data in the `ECWAM_DATA_PATH`s.
 
 Grid tables are always computed and never cached. THey are placed in the `<run-dir>`
 
+See [Combining bathymetry with IFS lake information](doc/bathymetry-lake-combination.md)
+for program inputs, depth-update rules, wet/dry-mask guarantees as used in the IFS.
+
 2) Create initial conditions
 
 ```shell

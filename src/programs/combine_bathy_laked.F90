@@ -17,10 +17,32 @@ PROGRAM combine_bathy_laked
 !     --------
 
 !     TO COMBINE BATHY WITH IFS LAND SEA MASK and LAKE COVER USING LAKE DEPTH DATA
+!
+!     Run without arguments in a directory containing these GRIB inputs:
+!       wam_grid_tables : model bathymetry from preproc (paramId 140219)
+!       lsm             : IFS land/sea mask (paramId 172)
+!       clake           : IFS lake cover (paramId 26)
+!       lakedl          : IFS lake depth in metres (paramId 228007)
+!     All grids and scanning orders must match. Output is written to new_bathy;
+!     input files are never overwritten.
+!
+!     Existing wet points with clake >= 0.65 receive the IFS depth, capped at
+!     999 m. With lsm <= 0.5 and clake <= 0.01, use a shallow-depth-dependent
+!     weighted average instead. Other depths are unchanged. The reported
+!     "new lake points" count refers to depth replacements, not new wet points.
+!
+!     Only depths may change: every wet point must remain wet and every dry
+!     point must remain dry. The GRIB mask is defined by missing values, not
+!     by depth sign or zero. Save the original mask and verify it point by
+!     point after reencoding, before opening the output file. On a change,
+!     report the first failed point, its original wet/dry status and output depth.
+!     Before updating, reject missing, negative, or non-finite lake depths
+!     selected for use at existing wet points. Zero is a valid lake depth.
 
 ! ----------------------------------------------------------------------
 
 USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+USE, INTRINSIC :: IEEE_ARITHMETIC, ONLY : IEEE_IS_FINITE
 
 USE YOWABORT , ONLY : WAM_ABORT
 USE YOWGRIBINFO, ONLY : WVGETGRIDINFO
@@ -66,6 +88,7 @@ CHARACTER(LEN=80) :: FILENAME, OUTFILENAME
 CHARACTER(LEN=80), DIMENSION(NPARAM) :: INFILENAME
 
 LOGICAL :: LLEXIST
+LOGICAL, ALLOCATABLE, DIMENSION(:) :: LLWET_INPUT
 
 LOGICAL :: LLSCANNS, LLSCANNS_LAKE, LLSAMEGRID
 
@@ -213,6 +236,8 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
   CALL IGRIB_GET_VALUE(KGRIB_HANDLE_BATHY,'getNumberOfValues',NUMBEROFVALUES)
   ALLOCATE(VALUES_BATHY(NUMBEROFVALUES))
   CALL IGRIB_GET_VALUE(KGRIB_HANDLE_BATHY,'values',VALUES_BATHY)
+  ALLOCATE(LLWET_INPUT(NUMBEROFVALUES))
+  LLWET_INPUT(:) = VALUES_BATHY(:) /= ZMISS
 
   ! LAKE VARIABLES
   ALLOCATE(VALUES_LAKE(NUMBEROFVALUES,NPARAM))
@@ -235,6 +260,8 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
 ! COMBINING DATA
 ! ---------------
 
+  CALL VALIDATE_LAKE_DEPTHS()
+
   MTHREADS=1
 !$ MTHREADS=OMP_GET_MAX_THREADS()
   NPROMA=NUMBEROFVALUES/MTHREADS + 1
@@ -251,7 +278,7 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
     JCL = MIN(JCS+NPROMA-1, NUMBEROFVALUES)
 
     DO IC = JCS, JCL
-      !! If land sea mask <= THRSLSM or lake cover > THRSLAKE then add that point to BATHY
+      !! Update depths only at existing wet points selected by lake cover or LSM.
       !  -----------------------------------------------------------------------
       IF ( VALUES_LAKE(IC,2) >= THRSLAKE ) THEN
       !! Lake point with cover above and equal to THRSLAKE, take the lake value
@@ -288,8 +315,6 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
     CALL IGRIB_RELEASE(KGRIB_HANDLE_LAKE(IP))
   ENDDO
 
-  DEALLOCATE(VALUES_LAKE)
-
 ! SAVING NEW BATHY
 ! ----------------
 
@@ -300,7 +325,11 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
   CALL IGRIB_SET_VALUE(KGRIB_HANDLE_NEW_BATHY,'missingValue',ZMISS)
   CALL IGRIB_SET_VALUE(KGRIB_HANDLE_NEW_BATHY,'values',VALUES_BATHY)
 
-  DEALLOCATE(VALUES_BATHY)
+  ! Verification POST-encoding for extra safety: ensure the wet/dry mask remains unchanged
+  CALL IGRIB_GET_VALUE(KGRIB_HANDLE_NEW_BATHY,'values',VALUES_BATHY)
+  CALL VERIFY_UNCHANGED_MASK()
+
+  DEALLOCATE(VALUES_BATHY, VALUES_LAKE, LLWET_INPUT)
 
   ! Save to file
   LFILE=0
@@ -326,6 +355,64 @@ ELSE
   CALL WAM_ABORT("Adding Lake information to binary bathymetry not available",__FILENAME__,__LINE__)
 
 ENDIF ! GRIB OR BINARY INPUT
+
+CONTAINS
+
+SUBROUTINE VALIDATE_LAKE_DEPTHS()
+  INTEGER(KIND=JWIM) :: JC, IFAIL
+
+  IFAIL = NUMBEROFVALUES + 1
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC) REDUCTION(MIN:IFAIL)
+  DO JC = 1, NUMBEROFVALUES
+    IF ( LLWET_INPUT(JC) .AND. (VALUES_LAKE(JC,2) >= THRSLAKE .OR. &
+ &       (VALUES_LAKE(JC,1) <= THRSLSM .AND. VALUES_LAKE(JC,2) <= 0.01_JWRU)) ) THEN
+      IF ( .NOT. IEEE_IS_FINITE(VALUES_LAKE(JC,3)) ) THEN
+        IFAIL = MIN(IFAIL, JC)
+      ELSEIF ( VALUES_LAKE(JC,3) < 0.0_JWRU ) THEN
+        IFAIL = MIN(IFAIL, JC)
+      ENDIF
+    ENDIF
+  ENDDO
+!$OMP END PARALLEL DO
+
+  IF ( IFAIL <= NUMBEROFVALUES ) THEN
+    WRITE(IU06,*) 'Invalid lake depth selected at point ', IFAIL
+    WRITE(IU06,*) 'input bathymetry = ', VALUES_BATHY(IFAIL)
+    WRITE(IU06,*) 'lsm, clake, lakedl = ', VALUES_LAKE(IFAIL,:)
+    IF ( .NOT. IEEE_IS_FINITE(VALUES_LAKE(IFAIL,3)) ) THEN
+      WRITE(IU06,*) 'Non-finite lake depth selected at this point'
+    ELSEIF ( VALUES_LAKE(IFAIL,3) == ZMISS ) THEN
+      WRITE(IU06,*) 'Missing lake depth selected at this point'
+    ELSE
+      WRITE(IU06,*) 'Negative lake depth selected at this point'
+    ENDIF
+    CALL FLUSH(IU06)
+    CALL WAM_ABORT("Invalid lake depth selected for bathymetry update",__FILENAME__,__LINE__)
+  ENDIF
+END SUBROUTINE VALIDATE_LAKE_DEPTHS
+
+SUBROUTINE VERIFY_UNCHANGED_MASK()
+  INTEGER(KIND=JWIM) :: JC, IFAIL
+
+  ! Compare each point, not just totals: no wet/dry changes are permitted.
+  ! MIN selects the first changed point deterministically; report it serially.
+  IFAIL = NUMBEROFVALUES + 1
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC) REDUCTION(MIN:IFAIL)
+  DO JC = 1, NUMBEROFVALUES
+    IF ( LLWET_INPUT(JC) .NEQV. (VALUES_BATHY(JC) /= ZMISS) ) THEN
+      IFAIL = MIN(IFAIL, JC)
+    ENDIF
+  ENDDO
+!$OMP END PARALLEL DO
+
+  IF ( IFAIL <= NUMBEROFVALUES ) THEN
+    WRITE(IU06,*) 'Wet/dry mask changed at point ', IFAIL
+    WRITE(IU06,*) 'input wet, output depth = ', LLWET_INPUT(IFAIL), VALUES_BATHY(IFAIL)
+    WRITE(IU06,*) 'lsm, clake, lakedl = ', VALUES_LAKE(IFAIL,:)
+    CALL FLUSH(IU06)
+    CALL WAM_ABORT("Lake processing must preserve the wet/dry mask",__FILENAME__,__LINE__)
+  ENDIF
+END SUBROUTINE VERIFY_UNCHANGED_MASK
 
 
 END PROGRAM 
